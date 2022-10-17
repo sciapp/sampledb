@@ -15,6 +15,7 @@ from ..files import get_files_for_object
 from ..markdown_images import find_referenced_markdown_images, get_markdown_image
 from ..object_permissions import set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, set_object_permissions_for_all_users, object_permissions
 from ..schemas import validate_schema, validate
+from ..schemas.validate import validate_eln_urls
 from ..actions import get_action
 from ..comments import get_comments_for_object
 from ..components import get_component_by_uuid, get_component, Component
@@ -638,7 +639,7 @@ def entry_preprocessor(
                 entry_preprocessor(data[key], refs, markdown_images)
         else:
             if data['_type'] in ['sample', 'object_reference', 'measurement']:
-                if data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']:
+                if (data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']) and 'eln_source_url' not in data:
                     o = get_object(data['object_id'])
                     if o.component_id is not None:
                         c = get_component(o.component_id)
@@ -647,7 +648,7 @@ def entry_preprocessor(
                     else:
                         data['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
             if data['_type'] == 'user':
-                if data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']:
+                if (data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']) and 'eln_source_url' not in data:
                     try:
                         u = get_user(data.get('user_id'))  # type: ignore
                         if u.component_id is not None:
@@ -692,13 +693,16 @@ def parse_entry(
             for key in entry_data:
                 parse_entry(entry_data[key], component)
         else:
-            data_component_uuid: typing.Optional[str]
             if entry_data.get('_type') == 'user':
                 user_id = _get_id(entry_data.get('user_id'), mandatory=False)
                 if user_id is None:
                     return
-                data_component_uuid = _get_uuid(entry_data.get('component_uuid'))
-                if data_component_uuid == flask.current_app.config['FEDERATION_UUID']:
+                if 'component_uuid' not in entry_data and 'eln_source_url' in entry_data:
+                    try:
+                        validate_eln_urls(entry_data, [])
+                    except errors.ValidationError:
+                        raise errors.InvalidDataExportError('Invalid .eln file URLs')
+                elif _get_uuid(entry_data.get('component_uuid')) == flask.current_app.config['FEDERATION_UUID']:
                     try:
                         user = get_user(user_id)
                     except errors.UserDoesNotExistError:
@@ -721,8 +725,12 @@ def parse_entry(
                 data_obj_id = _get_id(entry_data.get('object_id'), mandatory=False)
                 if data_obj_id is None:
                     return
-                data_component_uuid = _get_uuid(entry_data.get('component_uuid'), mandatory=False)
-                if data_component_uuid == flask.current_app.config['FEDERATION_UUID']:
+                if 'component_uuid' not in entry_data and 'eln_source_url' in entry_data:
+                    try:
+                        validate_eln_urls(entry_data, [])
+                    except errors.ValidationError:
+                        raise errors.InvalidDataExportError('Invalid .eln file URLs')
+                elif _get_uuid(entry_data.get('component_uuid')) == flask.current_app.config['FEDERATION_UUID']:
                     try:
                         obj = get_object(data_obj_id)
                     except errors.ObjectDoesNotExistError:

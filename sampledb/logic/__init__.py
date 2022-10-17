@@ -18,6 +18,7 @@ from . import datatypes
 from . import dataverse_export
 from . import default_permissions
 from . import eln_export
+from . import eln_import
 from . import errors
 from . import export
 from . import favorites
@@ -80,6 +81,7 @@ __all__ = [
     'dataverse_export',
     'default_permissions',
     'eln_export',
+    'eln_import',
     'errors',
     'export',
     'favorites',

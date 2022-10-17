@@ -202,6 +202,9 @@
               <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.export', user_id=current_user.id) }}">{{ _('Export Data') }}</a></li>
+            {% if config['ENABLE_ELN_FILE_IMPORT'] %}
+              <li><a href="{{ url_for('frontend.upload_eln_import') }}">{{ _('Import Data') }}</a></li>
+            {% endif %}
               <li role="separator" class="divider"></li>
               <li><form class="form-navbar-signout" action="{{ url_for('frontend.sign_out') }}" method="post">{{ signout_form().csrf_token() }}<button type="submit" class="btn btn-link">{{ _('Sign out') }}</button></form></li>
             </ul>

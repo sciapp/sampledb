@@ -110,6 +110,7 @@ def parse_configuration_values() -> None:
         'DISABLE_INSTRUMENTS',
         'ENABLE_FUNCTION_CACHES',
         'ENABLE_CONTENT_SECURITY_POLICY',
+        'ENABLE_ELN_FILE_IMPORT',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -677,6 +678,8 @@ TEMPORARY_FILE_TIME_LIMIT = 7 * 24 * 60 * 60
 
 # CSP headers should be set, however this value can be used to disable them if necessary
 ENABLE_CONTENT_SECURITY_POLICY = True
+
+ENABLE_ELN_FILE_IMPORT = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

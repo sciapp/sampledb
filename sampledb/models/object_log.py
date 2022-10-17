@@ -36,6 +36,7 @@ class ObjectLogEntryType(enum.Enum):
     EXPORT_TO_DATAVERSE = 12
     LINK_PROJECT = 13
     UNLINK_PROJECT = 14
+    IMPORT_FROM_ELN_FILE = 15
 
 
 class ObjectLogEntry(Model):

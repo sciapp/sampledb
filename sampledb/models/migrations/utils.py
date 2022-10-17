@@ -5,6 +5,7 @@
 
 import importlib
 import os
+import sys
 import typing
 
 from ... import db
@@ -66,7 +67,7 @@ def find_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typ
     """
     migrations_dir = os.path.abspath(os.path.dirname(__file__))
 
-    migrations = {}
+    migrations: typing.Dict[int, typing.Tuple[str, typing.Callable[[typing.Any], bool]]] = {}
 
     for migration_file in os.listdir(migrations_dir):
         if not migration_file.endswith('.py'):
@@ -82,7 +83,9 @@ def find_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typ
         except AttributeError:
             continue
         # prevent duplicate migration indices
-        assert migration_index not in migrations
+        if migration_index in migrations:
+            print(f"Duplicate migration index {migration_index} used in {migration_name} and {migrations[migration_index][0]}", file=sys.stderr)
+            sys.exit(1)
         migrations[migration_index] = (migration_name, migration_function)
 
     migration_indices = list(sorted(migrations.keys()))

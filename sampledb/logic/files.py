@@ -413,13 +413,20 @@ def create_local_file_reference(
     return file
 
 
-def create_url_file(object_id: int, user_id: int, url: str) -> File:
+def create_url_file(
+        object_id: int,
+        user_id: int,
+        url: str,
+        *,
+        create_log_entry: bool = True
+) -> File:
     """
     Create a file as a link to a URL and add it to the object and user logs.
 
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user
     :param url: the file URL
+    :param create_log_entry: whether to create a log entry
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -437,7 +444,8 @@ def create_url_file(object_id: int, user_id: int, url: str) -> File:
         }
     )
     file = File.from_database(db_file)
-    _create_file_logs(file)
+    if create_log_entry:
+        _create_file_logs(file)
     return file
 
 
@@ -446,7 +454,9 @@ def create_database_file(
         user_id: int,
         file_name: str,
         save_content: typing.Callable[[typing.BinaryIO], None],
-        hash: typing.Optional[File.HashInfo] = None
+        hash: typing.Optional[File.HashInfo] = None,
+        *,
+        create_log_entry: bool = True
 ) -> File:
     """
     Create a new database file and add it to the object and user logs.
@@ -459,6 +469,7 @@ def create_database_file(
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
     :param hash: the hash info for this file
+    :param create_log_entry: whether to create a log entry
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -495,7 +506,8 @@ def create_database_file(
     db_file.binary_data = binary_data
     db.session.commit()
     file = File.from_database(db_file)
-    _create_file_logs(file)
+    if create_log_entry:
+        _create_file_logs(file)
     return file
 
 

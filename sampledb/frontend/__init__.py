@@ -22,6 +22,7 @@ from . import authentication_forms
 from . import background_tasks
 from . import dataverse_export
 from . import download_service
+from . import eln_import
 from . import export
 from . import favicon
 from . import group_categories
@@ -53,6 +54,7 @@ __all__ = [
     'background_tasks',
     'dataverse_export',
     'download_service',
+    'eln_import',
     'export',
     'favicon',
     'group_categories',

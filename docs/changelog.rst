@@ -1,6 +1,14 @@
 Changelog
 =========
 
+
+Version 0.24
+------------
+
+Currently in development.
+
+- Added .eln file import
+
 Version 0.23
 ------------
 

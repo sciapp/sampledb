@@ -133,7 +133,10 @@ def empty_database(
     with engine.begin() as connection:
         # delete views, as SQLAlchemy cannot reflect them
         connection.execute(db.text("DROP VIEW IF EXISTS user_object_permissions_by_all"))
+        # delete instruments -> objects_current foreign key, as it prevents sorting the tables
         connection.execute(db.text("ALTER TABLE IF EXISTS instruments DROP CONSTRAINT IF EXISTS instruments_object_id_fkey"))
+        # delete users -> eln_imports foreign key, as it prevents sorting the tables
+        connection.execute(db.text("ALTER TABLE IF EXISTS users DROP CONSTRAINT IF EXISTS fk_users_eln_import_id"))
     # delete tables, etc
     metadata.reflect(bind=engine)
     if only_delete:

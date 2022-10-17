@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Import Data') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1 class="text-center">{{ _('Import Data') }}</h1>
+  <div class="container" style="max-width:600px">
+    <p class="text-center help-block">{{ _('%(service_name)s can import objects from .eln files exported by other electronic lab notebooks.', service_name=service_name) }} <a href="https://github.com/TheELNConsortium/TheELNFileFormat">{{ _('Read more.') }}</a></p>
+  <form class="form-horizontal" method="post" id="form-eln_import" enctype="multipart/form-data">
+    {{ upload_eln_file_form.csrf_token() }}
+
+    <div class="input-group form-group">
+      <span class="input-group-addon"><i class="fa fa-file"></i></span>
+      <input id="input-file-text" type="text" class="form-control disabled" disabled />
+      <span class="input-group-btn">
+        <label class="btn btn-primary">
+          <i class="fa fa-folder-open"></i> {{ _('Browse...') }} <input type="file" id="input-file-upload" accept=".eln" name="{{ upload_eln_file_form.eln_file.name }}" style="display: none">
+        </label>
+      </span>
+    </div>
+    <div class="text-center form-group">
+      <button type="submit" id="button-file-submit" class="btn btn-primary">{{ _('Import Data')}}</button>
+    </div>
+  </form>
+  {% if pending_eln_imports %}
+  <h2 class="text-center">{{ _('Pending Files') }}</h2>
+    <p class="text-center help-block">{{ _('These files were uploaded before but were not imported completely. They will expire one day after being uploaded.')}}</p>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>{{ _('File Name') }}</th>
+        <th>{{ _('Uploaded at') }}</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for eln_import in pending_eln_imports %}
+      <tr>
+        <td {% if not eln_import.is_valid %}class="invalid-eln-file"{% endif %}>
+          {{ eln_import.file_name }}
+          {% if eln_import.invalid_reason %}
+            <span data-toggle="tooltip" data-placement="top" title="{{ eln_import.invalid_reason }}"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></span>
+          {% endif %}
+        </td>
+        <td>{{ eln_import.upload_utc_datetime | babel_format_datetime }}</td>
+        <td>
+          <form action="{{ url_for('.eln_import', eln_import_id=eln_import.id) }}" method="post">
+          {{ delete_eln_import_forms[loop.index0].csrf_token() }}
+          {% if eln_import.is_valid %}
+            <a href="{{ url_for('.eln_import', eln_import_id=eln_import.id) }}" class="btn btn-xs btn-primary">{{ _('Review') }}</a>
+          {% else %}
+            <button type="button" class="btn btn-xs btn-primary disabled" disabled>{{ _('Review') }}</button>
+          {% endif %}
+            <button type="submit" class="btn btn-xs btn-danger" name="{{ delete_eln_import_forms[loop.index0].submit.name }}" value="delete">{{ _('Delete') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  $(function() {
+    let file_upload = $('#input-file-upload');
+    let file_submit = $('#button-file-submit');
+    let file_text = $('#input-file-text');
+    function changeHandler() {
+      var files = file_upload[0].files;
+      if (files.length === 1) {
+        file_text.val(files[0].name);
+        file_submit.prop('disabled', false);
+        file_submit.removeClass('disabled');
+      } else {
+        file_text.val("");
+        file_submit.prop('disabled', true);
+        file_submit.addClass('disabled');
+      }
+    }
+    file_upload.on('change', changeHandler);
+    changeHandler();
+  });
+  </script>
+{% endblock %}

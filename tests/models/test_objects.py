@@ -61,7 +61,7 @@ def objects(engine):
         user_id_column=User.id,
         action_id_column=Action.id,
         action_schema_column=Action.schema,
-        data_validator=lambda data, schema: jsonschema.validate(data, schema),
+        data_validator=lambda data, schema, allow_disabled_languages=False: jsonschema.validate(data, schema),
         schema_validator=lambda schema: jsonschema.Draft4Validator.check_schema(schema)
     )
     objects.bind = engine
@@ -317,14 +317,14 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
 
     object = objects.create_object(action_id=action.id, data={'d': 0}, schema={'s': 0}, user_id=user.id)
     assert data_validator_calls == [
-        (({'d': 0}, {'s': 0}), {})
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False})
     ]
     assert schema_validator_calls == [
         (({'s': 0},), {})
     ]
     objects.update_object(object.object_id, data={'d': 1}, schema={'s': 1}, user_id=user.id)
     assert data_validator_calls == [
-        (({'d': 0}, {'s': 0}), {}),
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False}),
         (({'d': 1}, {'s': 1}), {})
     ]
     assert schema_validator_calls == [
@@ -333,7 +333,7 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
     ]
     objects.restore_object_version(object.object_id, version_id=0, user_id=user.id)
     assert data_validator_calls == [
-        (({'d': 0}, {'s': 0}), {}),
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False}),
         (({'d': 1}, {'s': 1}), {}),
         (({'d': 0}, {'s': 0}), {'allow_disabled_languages': True})
     ]

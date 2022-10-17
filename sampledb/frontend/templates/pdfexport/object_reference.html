@@ -1,4 +1,15 @@
 {% if data and data.object_id %}
+  {% if "eln_source_url" in data and data.eln_source_url %}
+    {% if "eln_object_url" in data and data.eln_object_url %}
+      <a href="{{ data.eln_object_url }}">
+    {% endif %}
+    {{ _('Object') }} #{{ data.object_id }} @
+    {% if not ("eln_object_url" in data and data.eln_object_url) %}
+      <a href="{{ data.eln_source_url }}">
+    {% endif %}
+    {{ data.eln_source_url }}
+    </a>
+  {% else %}
   {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
       {% set component_uuid = data.component_uuid %}
     {% else %}
@@ -15,6 +26,7 @@
         <a href="{{ url_for('frontend.object', object_id=data.object_id, _external=True) }}">#{{ data.object_id }}</a>
       {% endif %}
     {% endwith %}
+  {% endif %}
 {% else %}
   &mdash;
 {% endif %}

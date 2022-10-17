@@ -34,8 +34,8 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
-from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for, get_groups_form_data
-from ...logic.utils import get_translated_text
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data
+from ...logic.utils import get_translated_text, relative_url_for
 from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
 from .permissions import get_object_if_current_user_has_read_permissions
 from ..labels import PAGE_SIZES, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
@@ -588,7 +588,10 @@ def objects() -> FlaskResponseT:
             'fed_id': obj.fed_object_id,
             'component_id': obj.component_id,
             'display_properties': {},
-            'component': obj.component
+            'component': obj.component,
+            'eln_import_id': obj.eln_import_id,
+            'eln_object_id': obj.eln_object_id,
+            'eln_import': obj.eln_import,
         })
 
         for property_name in display_properties:
@@ -1067,10 +1070,12 @@ def referencable_objects() -> FlaskResponseT:
 
     def dictify(x: ObjectInfo) -> typing.Dict[str, typing.Any]:
         name = get_translated_text(x.name_json) or '—'
-        if x.component_name is None:
-            name += f' (#{x.object_id})'
-        else:
+        if x.component_name is not None:
             name += f' (#{x.object_id}, #{x.fed_object_id} @ {x.component_name})'
+        elif x.eln_import_id is not None:
+            name += f' (#{x.object_id}, {x.eln_object_id} @ {_(".eln file")}) #{x.eln_import_id}'
+        else:
+            name += f' (#{x.object_id})'
         return {
             'id': x.object_id,
             'text': markupsafe.escape(name),
@@ -1078,7 +1083,8 @@ def referencable_objects() -> FlaskResponseT:
             'action_id': x.action_id,
             'max_permission': x.max_permission,
             'tags': [markupsafe.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else [],
-            'is_fed': x.fed_object_id is not None
+            'is_fed': x.fed_object_id is not None,
+            'is_eln_imported': x.eln_import_id is not None,
         }
 
     return flask.jsonify({

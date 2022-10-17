@@ -8,6 +8,8 @@ import typing
 import flask
 
 from .utils import get_translated_text
+from .actions import get_action
+from .action_types import ActionType
 
 
 def generate_ro_crate_metadata(
@@ -52,6 +54,18 @@ def generate_ro_crate_metadata(
     }
 
     for object_info in infos['objects']:
+        if object_info['action_id'] is not None:
+            action = get_action(object_info['action_id'])
+            if action.type_id is None:
+                object_type = 'other'
+            else:
+                object_type = {
+                    ActionType.SAMPLE_CREATION: "sample",
+                    ActionType.MEASUREMENT: "measurement",
+                    ActionType.SIMULATION: "simulation",
+                }.get(action.type_id, 'other')
+        else:
+            object_type = 'other'
         ro_crate_metadata["@graph"].append({
             "@id": f"./objects/{object_info['id']}",
             "@type": "Dataset",
@@ -59,8 +73,9 @@ def generate_ro_crate_metadata(
             "description": f"Object #{object_info['id']}",
             "dateCreated": object_info['versions'][0]['utc_datetime'],
             "dateModified": object_info['versions'][-1]['utc_datetime'],
-            "author": {"@id": f"./users/{object_info['versions'][0]['user_id']}"},
+            "author": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
+            "genre": object_type,
             "comment": [],
             "hasPart": [
                 {
@@ -85,7 +100,7 @@ def generate_ro_crate_metadata(
                 "name": f"{get_translated_text(version_info['data'].get('name', {}).get('text', {}), 'en')}" if version_info['data'] is not None else '',
                 "description": f"Object #{object_info['id']} version #{version_info['id']}",
                 "dateCreated": version_info['utc_datetime'],
-                "author": {"@id": f"./users/{version_info['user_id']}"},
+                "author": {"@id": f"./users/{version_info['user_id']}"} if version_info['user_id'] is not None else None,
                 "url": flask.url_for('frontend.object_version', object_id=object_info['id'], version_id=version_info['id'], _external=True),
                 "hasPart": [
                     {
@@ -128,7 +143,7 @@ def generate_ro_crate_metadata(
                 "parentItem": {
                     "@id": f"./objects/{object_info['id']}"
                 },
-                "author": {"@id": f"./users/{comment['author_id']}"},
+                "author": {"@id": f"./users/{comment['author_id']}"} if comment['author_id'] is not None else None,
                 "dateCreated": comment['utc_datetime'],
                 "text": comment['content']
             })
@@ -178,7 +193,7 @@ def generate_ro_crate_metadata(
                     "description": f"File #{file_info['id']} for Object #{object_info['id']}",
                     "author": {
                         "@id": f"./users/{file_info['uploader_id']}"
-                    },
+                    } if file_info['uploader_id'] is not None else None,
                     "dateCreated": file_info['utc_datetime'],
                     "contentType": file_type,
                     "contentSize": len(file_content),

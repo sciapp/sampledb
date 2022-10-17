@@ -36,6 +36,7 @@ class UserLogEntryType(enum.Enum):
     UPDATE_LOCATION = 13
     LINK_PUBLICATION = 14
     CREATE_INSTRUMENT_LOG_ENTRY = 15
+    IMPORT_FROM_ELN_FILE = 16
 
 
 class UserLogEntry(Model):

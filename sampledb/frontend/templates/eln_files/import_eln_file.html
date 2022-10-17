@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Import Data') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1 class="text-center">{{ _('Import Data') }}</h1>
+  <div class="container" style="max-width:600px">
+    <p class="text-center help-block">{{ _('%(service_name)s can import objects from .eln files exported by other electronic lab notebooks.', service_name=service_name) }} <a href="https://github.com/TheELNConsortium/TheELNFileFormat">{{ _('Read more.') }}</a></p>
+    <form class="form-horizontal" method="post" id="form-eln_import" enctype="multipart/form-data">
+      {{ import_eln_file_form.csrf_token() }}
+      <p>{{ _('The following objects can be imported from this .eln file:') }}</p>
+      <ul>
+      {% for object_info in parsed_eln_file_data['objects'] %}
+        {% set object_form = import_eln_file_form.object_forms.entries[loop.index0] %}
+        {{ object_form.csrf_token() }}
+        <li>
+          {{ object_info.id }}: {{ object_info.name }} {% if object_info.url %}({{ object_info.url }}){% endif %}
+          <ul>
+            <li>{{ object_info.versions | length }} {{ _('versions') }}</li>
+            <li>{{ object_info.files | length }} {{ _('files') }}</li>
+            <li>{{ object_info.comments | length }} {{ _('comments') }}</li>
+          </ul>
+          {% if object_info.type != 'other' and object_form.action_type_id.data %}
+            <input type="hidden" name="{{ object_form.action_type_id.name }}" value="{{ object_form.action_type_id.data }}" />
+          {% else %}
+          <div class="form-group">
+            <label class="control-label col-sm-3">
+              {{ _('Import as') }}
+            </label>
+            <div class="col-sm-9" style="">
+              <select class="selectpicker form-control" name="{{ object_form.action_type_id.name }}" data-style="btn btn-default">
+              {% for action_type_id, action_type in object_form.action_type_id.choices %}
+                <option value="{{ action_type.id }}" {% if object_form.action_type_id.data == action_type_id %}selected="selected"{% endif %}>{{ action_type.object_name | get_translated_text(default=_('Unnamed Object')) }}</option>
+              {% endfor %}
+              </select>
+            </div>
+          </div>
+          {% endif %}
+          {% if object_info.id in parsed_eln_file_data.import_notes and parsed_eln_file_data.import_notes[object_info.id] | length > 0 %}
+            <div class="row" style="margin-bottom: 15px">
+              <div class="col-sm-3 text-right"><strong>{{ _('Note') }}</strong></div>
+              {% if parsed_eln_file_data.import_notes[object_info.id] | length == 4 %}
+                <div class="col-sm-9">{{ parsed_eln_file_data.import_notes[object_info.id][0] }}</div>
+              {% else %}
+                <ul class="col-sm-9">
+                {% for import_note in parsed_eln_file_data.import_notes[object_info.id] %}
+                  <li>{{ import_note }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+      {% if parsed_eln_file_data.users %}
+      <p>{{ _('The following users will also be created from this .eln file:') }}</p>
+      <ul>
+      {% for user_info in parsed_eln_file_data.users | sort(attribute='id') %}
+        <li>
+          {{ user_info.id }}: {{ user_info.name or '—' }} {% if user_info.url %}({{ user_info.url }}){% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+      {% endif %}
+      <div class="text-center" style="margin-top: 2em">
+        <button type="submit" class="btn btn-primary">{{ _('Import Data')}}</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+{% endblock %}
