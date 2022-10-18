@@ -1247,7 +1247,7 @@
   <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.js') }}"></script>
+  <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
@@ -1413,10 +1413,15 @@
           });
           $('#activity_log_counter').html('' + activity_log.find('tr:visible').length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
           window.activity_log_toggle.current_state[category] = should_show;
-          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', window.activity_log_toggle.current_state);
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(window.activity_log_toggle.current_state), {sameSite: 'Lax'});
         };
         window.activity_log_toggle.current_state = {};
-        var activity_log_filter_state = Cookies.getJSON('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE');
+        let activity_log_filter_state;
+        try {
+          activity_log_filter_state = JSON.parse(Cookies.get('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE'));
+        } catch(e) {
+            // ignore invalid cookies
+        }
         if (activity_log_filter_state === undefined) {
           activity_log_filter_state = {
             "versions": true,
@@ -1427,7 +1432,7 @@
             "references": true,
             "other": true
           };
-          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(activity_log_filter_state), {sameSite: 'Lax'});
         }
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
@@ -1472,16 +1477,21 @@
             }
             $('#file_table_counter').html('' + file_table.find('tr:visible').length + '&thinsp;/&thinsp;' + file_table.find('tr').length);
             window.file_table_toggle.current_state[category] = should_show;
-            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', window.file_table_toggle.current_state);
+            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', JSON.stringify(window.file_table_toggle.current_state), {sameSite: 'Lax'});
           };
           window.file_table_toggle.current_state = {};
-          var file_table_filter_state = Cookies.getJSON('SAMPLEDB_FILE_TABLE_FILTER_STATE');
+          let file_table_filter_state;
+          try {
+            file_table_filter_state = JSON.parse(Cookies.get('SAMPLEDB_FILE_TABLE_FILTER_STATE'));
+          }catch (e) {
+            // ignore invalid cookies
+          }
           if (file_table_filter_state === undefined) {
             file_table_filter_state = {
               "notebooks": true,
               "other": true
             };
-            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', file_table_filter_state);
+            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', JSON.stringify(file_table_filter_state), {sameSite: 'Lax'});
           }
           window.file_table_toggle(file_table_filter_state['notebooks'], "notebooks");
           window.file_table_toggle(file_table_filter_state['other'], "other");
