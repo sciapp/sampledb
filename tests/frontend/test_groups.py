@@ -235,6 +235,7 @@ def test_add_user(flask_server, user_session, user):
 
     r = session.get(invitation_url)
     assert r.status_code == 200
+    sampledb.db.session.rollback()
 
     assert len(sampledb.logic.groups.get_user_groups(new_user.id)) == 1
     assert sampledb.logic.groups.get_user_groups(new_user.id)[0].id == group_id

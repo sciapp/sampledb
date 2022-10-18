@@ -5,7 +5,7 @@ import sampledb.utils
 
 
 def test_migrations():
-    engine = sampledb.db.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI, {})
+    engine = sampledb.db.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
     sampledb.utils.empty_database(engine, only_delete=False)
 
     # load and execute SQL previously created with pg_dump

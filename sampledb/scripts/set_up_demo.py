@@ -24,7 +24,7 @@ def main(arguments):
     if len(arguments) != 0:
         print(__doc__)
         exit(1)
-    app = create_app()
+    app = create_app(include_dashboard=False)
     if not app.config.get("SERVER_NAME"):
         app.config["SERVER_NAME"] = "localhost:8000"
     with app.app_context():

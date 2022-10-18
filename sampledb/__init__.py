@@ -149,7 +149,7 @@ def build_translations(pybabel_path):
     subprocess.run([pybabel_path, "compile", "-d", translations_directory], check=True)
 
 
-def create_app():
+def create_app(include_dashboard: bool = True) -> flask.Flask:
     app = flask.Flask(__name__)
     app.wsgi_app = ProxyFix(app.wsgi_app)
 
@@ -162,7 +162,8 @@ def create_app():
     mail.init_app(app)
     db.init_app(app)
     babel.init_app(app)
-    sampledb.dashboard.init_app(app)
+    if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
+        sampledb.dashboard.init_app(app)
 
     app.register_blueprint(sampledb.api.server.api)
     app.register_blueprint(sampledb.api.federation.federation_api)
@@ -200,7 +201,7 @@ def create_app():
         sampledb.logic.utils.print_deprecation_warnings()
 
     if app.config['ENABLE_BACKGROUND_TASKS']:
-        app.before_first_request(lambda: sampledb.logic.background_tasks.start_handler_threads(app))
+        sampledb.logic.background_tasks.start_handler_threads(app)
 
     def signal_handler(sig, _):
         if sig == signal.SIGTERM:

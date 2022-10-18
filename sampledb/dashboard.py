@@ -56,9 +56,6 @@ def _get_ip():
 
 
 def init_app(app):
-    if not app.config['ENABLE_MONITORINGDASHBOARD']:
-        return
-
     # late import to only create dashboard Blueprint if it should be used
     try:
         import flask_monitoringdashboard as dashboard
