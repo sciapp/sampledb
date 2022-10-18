@@ -4321,6 +4321,9 @@ msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 msgid "Unsupported item type for horizontal_table style."
 msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
 #, python-format
 msgid ""
 "This is an archived version of the object information. For the current "
@@ -4917,6 +4920,9 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
 msgid "files selected"
 msgstr "Dateien ausgewählt"
+
+msgid "Show less"
+msgstr "Weniger anzeigen"
 
 msgid "hide plot"
 msgstr "Plot ausblenden"
@@ -5568,16 +5574,16 @@ msgstr ""
 "'%(type2)s' konvertieren."
 
 #, python-format
+msgid "Unable to convert property '%(title)s' of type '%(type)s'."
+msgstr "Konnte Eigenschaft '%(title)s' von Typ '%(type)s' nicht umwandeln."
+
+#, python-format
 msgid ""
 "Unable to convert quantity '%(title)s' to different dimensionality: "
 "%(dimensionality1)s -> %(dimensionality2)s"
 msgstr ""
 "Konnte physikalische Größe '%(title)s' nicht von Dimensionalität "
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
-
-#, python-format
-msgid "Unable to convert property '%(title)s' of type '%(type)s'."
-msgstr "Konnte Eigenschaft '%(title)s' von Typ '%(type)s' nicht umwandeln."
 
 #, python-format
 msgid "The text must be one of %(choices)s."
