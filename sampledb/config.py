@@ -447,6 +447,10 @@ CSRF_ENABLED = True
 # automatically generated default, but should be replaced using environment variable SAMPLEDB_SECRET_KEY
 SECRET_KEY = generate_secret_key(num_bits=256)
 
+# sameSite attribute for cookies
+# see: https://flask.palletsprojects.com/en/2.2.x/security/#set-cookie-options
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 # whether or not SQLAlchemy should track modifications
 # see: http://flask-sqlalchemy.pocoo.org/2.3/config/
 # deprecated and should stay disabled, as we manually add modified objects
