@@ -171,10 +171,10 @@ def text_equals(db_obj: typing.Any, text: typing.Union[datatypes.Text, str]) -> 
                 ),
                 *[
                     db.and_(
-                        db_obj['text'].has_key(language.lang_code),
-                        db_obj['text'][language.lang_code].astext == text_str
+                        db_obj['text'].has_key(lang_code),
+                        db_obj['text'][lang_code].astext == text_str
                     )
-                    for language in languages.get_languages()
+                    for lang_code in languages.get_language_codes()
                 ]
             )
         ),
@@ -200,10 +200,10 @@ def text_contains(db_obj: typing.Any, text: typing.Union[datatypes.Text, str]) -
                 ),
                 *[
                     db.and_(
-                        db_obj['text'].has_key(language.lang_code),
-                        db_obj['text'][language.lang_code].astext.like('%' + text_str + '%')
+                        db_obj['text'].has_key(lang_code),
+                        db_obj['text'][lang_code].astext.like('%' + text_str + '%')
                     )
-                    for language in languages.get_languages()
+                    for lang_code in languages.get_language_codes()
                 ]
             )
         ),

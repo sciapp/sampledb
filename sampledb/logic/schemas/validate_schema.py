@@ -18,7 +18,7 @@ from .utils import units_are_valid
 from .validate import validate
 from .templates import substitute_templates
 from .conditions import validate_condition_schema
-from ..languages import get_languages
+from ..languages import get_language_codes
 from .. import datatypes
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -51,10 +51,7 @@ def validate_schema(
         raise ValidationError('invalid schema (type must be str)', path)
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
-    all_language_codes = {
-        language.lang_code
-        for language in get_languages()
-    }
+    all_language_codes = get_language_codes()
     if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
         raise ValidationError('title must be str or dict', path)
     if isinstance(schema['title'], dict):
@@ -112,10 +109,7 @@ def validate_schema(
 
 
 def _validate_note_in_schema(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
-    all_language_codes = {
-        language.lang_code
-        for language in get_languages()
-    }
+    all_language_codes = get_language_codes()
     if 'note' in schema and not isinstance(schema['note'], str) and not isinstance(schema['note'], dict):
         raise ValidationError('note must be str or dict', path)
     if 'note' in schema and isinstance(schema['note'], dict):
@@ -274,10 +268,7 @@ def _validate_object_schema(
     except InvalidTemplateIDError:
         raise ValidationError('template must be the ID of a template action', path)
 
-    all_language_codes = {
-        language.lang_code
-        for language in get_languages()
-    }
+    all_language_codes = get_language_codes()
 
     if schema.get('template') is not None:
         invalid_template_action_ids = list(invalid_template_action_ids) + [typing.cast(int, schema['template'])]
@@ -449,10 +440,7 @@ def _validate_text_schema(schema: typing.Dict[str, typing.Any], path: typing.Lis
     if invalid_keys:
         raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
 
-    all_language_codes = {
-        language.lang_code
-        for language in get_languages()
-    }
+    all_language_codes = get_language_codes()
     if 'languages' in schema:
         if schema['languages'] != 'all':
             if not isinstance(schema['languages'], list) or len(schema['languages']) == 0:
@@ -624,10 +612,7 @@ def _validate_quantity_schema(schema: typing.Dict[str, typing.Any], path: typing
     if missing_keys:
         raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
 
-    all_language_codes = {
-        language.lang_code
-        for language in get_languages()
-    }
+    all_language_codes = get_language_codes()
 
     if isinstance(schema['units'], str):
         if not units_are_valid(schema['units']):

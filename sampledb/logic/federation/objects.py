@@ -690,7 +690,7 @@ def parse_entry(
                         pass
                     except errors.ObjectDoesNotExistError:
                         pass
-            all_lang_codes = [lang.lang_code for lang in languages.get_languages()]
+            all_lang_codes = languages.get_language_codes()
 
             if entry_data.get('_type') == 'text':
                 text_data = entry_data.get('text')

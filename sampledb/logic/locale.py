@@ -33,12 +33,9 @@ def guess_request_locale() -> str:
 
 def get_allowed_language_codes() -> typing.List[str]:
     supported_language_codes = list(SUPPORTED_LOCALES.keys())
-    language_codes_allowed = {
-        language.lang_code: language.enabled_for_user_interface
-        for language in languages.get_languages()
-    }
+    allowed_language_codes = languages.get_language_codes(only_enabled_for_user_interface=True)
     return [
         lang_code
         for lang_code in supported_language_codes
-        if language_codes_allowed.get(lang_code, False)
+        if lang_code in allowed_language_codes
     ]

@@ -259,3 +259,28 @@ def filter_translations(
             filtered_translations[language_code] = translation
 
     return filtered_translations
+
+
+def get_language_codes(
+        only_enabled_for_input: bool = False,
+        only_enabled_for_user_interface: bool = False
+) -> typing.Set[str]:
+    """
+    Return a set of known language codes.
+
+    :param only_enabled_for_input: only return codes for languages enabled
+        for input
+    :param only_enabled_for_user_interface: only return codes for languages
+        enabled for the user interface
+    :return: the set of language codes
+    """
+    query = models.Language.query
+    if only_enabled_for_input:
+        query = query.filter_by(enabled_for_input=True)
+    if only_enabled_for_user_interface:
+        query = query.filter_by(enabled_for_user_interface=True)
+    language_code_tuples = query.with_entities(models.Language.lang_code).all()
+    return {
+        language_code_tuple[0]
+        for language_code_tuple in language_code_tuples
+    }

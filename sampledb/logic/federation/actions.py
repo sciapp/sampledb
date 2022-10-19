@@ -10,7 +10,7 @@ from .instruments import _parse_instrument_ref, _get_or_create_instrument_id, In
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from ..actions import get_action, get_mutable_action, create_action, Action
 from ..action_translations import set_action_translation, get_action_translations_for_action
-from ..languages import get_languages, get_language, get_language_by_lang_code
+from ..languages import get_languages, get_language, get_language_by_lang_code, get_language_codes
 from ..instruments import get_instrument
 from ..markdown_images import get_markdown_image, find_referenced_markdown_images
 from ..components import Component, get_component, get_component_by_uuid
@@ -359,10 +359,7 @@ def _parse_schema(
         return
     if path is None:
         path = []
-    all_language_codes = {
-        language.lang_code
-        for language in get_languages()
-    }
+    all_language_codes = get_language_codes()
     for key in ['title', 'placeholder', 'default', 'note']:
         if key in schema and isinstance(schema[key], dict):
             for lang_code in list(schema[key].keys()):
