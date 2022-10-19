@@ -156,12 +156,13 @@ def action(action_id):
     may_grant = Permissions.GRANT in permissions
     mode = flask.request.args.get('mode', None)
     if mode == 'edit':
-        if action.schema:
-            original_schema = copy.deepcopy(action.schema)
+        action_schema = action.schema
+        if action_schema:
+            original_schema = copy.deepcopy(action_schema)
             try:
-                reverse_substitute_templates(action.schema)
+                reverse_substitute_templates(action_schema)
             except errors.ActionDoesNotExistError:
-                action.schema = original_schema
+                action_schema = original_schema
                 flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
                 if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
                     flask.abort(400)
@@ -170,7 +171,7 @@ def action(action_id):
             if action.fed_id is not None:
                 flask.flash(_('Editing imported actions is not yet supported.'), 'error')
             return flask.abort(403)
-        return show_action_form(action)
+        return show_action_form(action, action_schema=action_schema)
 
     return flask.render_template(
         'actions/action.html',
@@ -268,7 +269,12 @@ def _get_lines_for_path(schema: dict, path: typing.List[str]) -> typing.Optional
     return new_error_lines
 
 
-def show_action_form(action: typing.Optional[Action] = None, previous_action: typing.Optional[Action] = None, action_type_id: typing.Optional[int] = None):
+def show_action_form(
+        action: typing.Optional[Action] = None,
+        previous_action: typing.Optional[Action] = None,
+        action_type_id: typing.Optional[int] = None,
+        action_schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+):
     action_translations = []
     load_translations = False
 
@@ -280,7 +286,7 @@ def show_action_form(action: typing.Optional[Action] = None, previous_action: ty
     if action is not None:
         action_translations = get_action_translations_for_action(action.id, use_fallback=True)
         load_translations = True
-        schema_json = json.dumps(action.schema, indent=2)
+        schema_json = json.dumps(action_schema, indent=2)
         submit_text = "Save"
     elif previous_action is not None:
         action_translations = get_action_translations_for_action(previous_action.id, use_fallback=True)
