@@ -182,7 +182,7 @@ def get_action_types(filter_fed_defaults: bool = False) -> typing.List[ActionTyp
     if filter_fed_defaults:
         query = query.filter(db.or_(models.ActionType.fed_id > 0, models.ActionType.fed_id.is_(None)))
 
-    query = query.order_by(db.nullslast(models.ActionType.order_index), models.ActionType.id)
+    query = query.order_by(db.nulls_last(models.ActionType.order_index), models.ActionType.id)
 
     return [
         ActionType.from_database(action_type)
