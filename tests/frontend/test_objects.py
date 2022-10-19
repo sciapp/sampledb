@@ -1236,7 +1236,7 @@ def test_update_object_permissions(flask_server, user):
         'all_user_permissions': 'none',
         'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
-        'user_permissions-0-user_id': '42',
+        'user_permissions-0-user_id': str(user.id + 1000),
         'user_permissions-0-permissions': 'read',
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
