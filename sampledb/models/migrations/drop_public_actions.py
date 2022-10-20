@@ -11,35 +11,35 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    table_exists = db.session.execute("""
+    table_exists = db.session.execute(db.text("""
         SELECT table_name
         FROM information_schema.tables
         WHERE table_name = 'public_actions'
-    """).fetchall()
+    """)).fetchall()
     if not table_exists:
         return False
 
     # Perform migration
-    public_actions = db.session.execute("""
+    public_actions = db.session.execute(db.text("""
         SELECT action_id
         FROM public_actions
-    """).fetchall()
-    all_user_action_permissions = db.session.execute("""
+    """)).fetchall()
+    all_user_action_permissions = db.session.execute(db.text("""
         SELECT action_id, permissions
         FROM all_user_action_permissions
-    """).fetchall()
+    """)).fetchall()
     all_user_action_permissions = {
         action_id: permissions
         for action_id, permissions in all_user_action_permissions
     }
     for action_id, in public_actions:
         if action_id not in all_user_action_permissions:
-            db.session.execute("""
+            db.session.execute(db.text("""
                 INSERT INTO all_user_action_permissions
                 (action_id, permissions)
                 VALUES (:action_id, 'READ')
-            """, {'action_id': action_id})
-    db.session.execute("""
+            """), {'action_id': action_id})
+    db.session.execute(db.text("""
         DROP TABLE public_actions
-    """)
+    """))
     return True

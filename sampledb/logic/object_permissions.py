@@ -141,7 +141,7 @@ def get_user_object_permissions(
         FROM user_object_permissions_by_all
         WHERE (user_id = :user_id OR user_id IS NULL) AND (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE)
         """)
-        permissions_int = db.engine.execute(stmt, {
+        permissions_int = db.session.execute(stmt, {
             'user_id': user_id,
             'object_id': object_id,
             'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS']
@@ -266,7 +266,10 @@ def get_object_info_with_permissions(
 
     table = stmt.alias('tbl')
 
-    where = table.c.action_id.in_(db.select([Action.__table__.c.id], whereclause=action_filter)) if action_filter is not None else None
+    if action_filter is not None:
+        where = table.c.action_id.in_(db.select(Action.__table__.c.id).where(action_filter))
+    else:
+        where = None
 
     if object_ids is not None:
         object_id_where = table.c.object_id.in_(tuple(object_ids))
@@ -275,12 +278,12 @@ def get_object_info_with_permissions(
         else:
             where = db.and_(where, object_id_where)
 
-    table = db.select(
-        columns=[table],
-        whereclause=where
-    ).order_by(db.desc(table.c.object_id)).limit(limit).offset(offset)
+    stmt = table.select()
+    if where is not None:
+        stmt = stmt.where(where)
+    stmt = stmt.order_by(db.desc(table.c.object_id)).limit(limit).offset(offset)
 
-    object_infos = db.session.execute(table, parameters).fetchall()
+    object_infos = db.session.execute(stmt, parameters).fetchall()
 
     return typing.cast(typing.List[Object], object_infos)
 

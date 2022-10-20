@@ -124,7 +124,7 @@ def update_language(
     }
     all_language_codes.add(lang_code)
 
-    language = models.Language.query.get(language_id)
+    language = models.Language.query.filter_by(id=language_id).first()
     if language.lang_code != lang_code:
         if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
             raise errors.LanguageAlreadyExistsError()
@@ -174,7 +174,7 @@ def get_language(language_id: int) -> Language:
     :return: the language
     :raise errors.LanguageDoesNotExistError: when no language with the given language ID exists
     """
-    language = models.Language.query.get(language_id)
+    language = models.Language.query.filter_by(id=language_id).first()
     if language is None:
         raise errors.LanguageDoesNotExistError()
     return Language.from_database(language)

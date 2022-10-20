@@ -10,17 +10,17 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db):
-    constraints = db.session.execute("""
+    constraints = db.session.execute(db.text("""
          SELECT conname
          FROM pg_catalog.pg_constraint
          WHERE conname = 'objects_current_not_null_check'
-    """).fetchall()
+    """)).fetchall()
 
     if len(constraints) > 0:
         return False
 
     # Perform migration
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE objects_current
             ADD CONSTRAINT objects_current_not_null_check
                 CHECK (
@@ -41,5 +41,5 @@ def run(db):
             ALTER COLUMN schema DROP NOT NULL,
             ALTER COLUMN user_id DROP NOT NULL,
             ALTER COLUMN utc_datetime DROP NOT NULL
-    """)
+    """))
     return True

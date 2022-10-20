@@ -11,17 +11,17 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    column_names = db.session.execute("""
+    column_names = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'action_types'
-    """).fetchall()
+    """)).fetchall()
     if ('enable_project_link',) in column_names:
         return False
 
     # Perform migration
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE action_types
         ADD enable_project_link BOOLEAN DEFAULT FALSE NOT NULL
-    """)
+    """))
     return True

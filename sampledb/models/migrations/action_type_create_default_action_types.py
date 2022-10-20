@@ -12,19 +12,19 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db):
-    action_type_columns = db.session.execute("""
+    action_type_columns = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'action_types';
-        """).fetchall()
+        """)).fetchall()
     pre_translation = ('name',) in action_type_columns
 
     existing_action_type_ids = [
         action_type[0]
-        for action_type in db.session.execute("""
+        for action_type in db.session.execute(db.text("""
                     SELECT id
                     FROM action_types;
-                """).fetchall()
+                """)).fetchall()
     ]
 
     # checks if translatable columns still exist in action_types
@@ -96,10 +96,10 @@ def run(db):
                 continue
 
             # Perform migration
-            db.session.execute("""
+            db.session.execute(db.text("""
                 INSERT INTO action_types (id, name, description, object_name, object_name_plural, view_text, perform_text, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects)
                 VALUES (:id, :name, :description, :object_name, :object_name_plural, :view_text, :perform_text, :admin_only, :show_on_frontpage, :show_in_navbar, :enable_labels, :enable_files, :enable_locations, :enable_publications, :enable_comments, :enable_activity_log, :enable_related_objects)
-            """, params=action_type)
+            """), params=action_type)
             performed_migration = True
 
         return performed_migration
@@ -159,10 +159,10 @@ def run(db):
 
         existing_action_type_ids = [
             action_type[0]
-            for action_type in db.session.execute("""
+            for action_type in db.session.execute(db.text("""
                              SELECT id
                              FROM action_types
-                         """).fetchall()
+                         """)).fetchall()
         ]
 
         for action_type in default_action_types:
@@ -171,18 +171,18 @@ def run(db):
                 continue
 
             # Perform migration
-            db.session.execute("""
+            db.session.execute(db.text("""
                           INSERT INTO action_types (id, admin_only, show_on_frontpage, show_in_navbar, enable_labels, enable_files, enable_locations, enable_publications, enable_comments, enable_activity_log, enable_related_objects)
                           VALUES (:id, :admin_only, :show_on_frontpage, :show_in_navbar, :enable_labels, :enable_files, :enable_locations, :enable_publications, :enable_comments, :enable_activity_log, :enable_related_objects)
-                      """, params=action_type)
+                      """), params=action_type)
             performed_migration = True
 
             if action_type['id'] in scicat_export_types:
-                db.session.execute("""
+                db.session.execute(db.text("""
                     UPDATE action_types
                     SET scicat_export_type = :export_type
                     WHERE id = :id
-                """, {
+                """), {
                     "id": action_type['id'],
                     "export_type": scicat_export_types[action_type['id']]
                 })

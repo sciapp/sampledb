@@ -10,15 +10,22 @@ def test_migrations():
 
     # load and execute SQL previously created with pg_dump
     sql_file_name = os.path.join(os.path.dirname(__file__), '..', 'test_data', 'demo.sql')
+    sql_statements = []
     with open(sql_file_name, 'r', encoding='utf8') as sql_file:
         sql_statement = ''
         for sql_line in sql_file.readlines():
             if sql_line.startswith('--'):
                 if sql_statement.strip():
-                    engine.execute(sampledb.db.text(sql_statement.replace(':', r'\:')))
+                    sql_statements.append(sql_statement.replace(':', r'\:'))
                     sql_statement = ''
                 continue
             sql_statement += sql_line
+
+    with engine.begin() as connection:
+        # detach connection, as demo.sql statements change state
+        connection.detach()
+        for sql_statement in sql_statements:
+            connection.execute(sampledb.db.text(sql_statement))
 
     # create missing tables using SQLAlchemy
     sampledb.db.metadata.create_all(bind=engine)

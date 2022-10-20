@@ -22,11 +22,11 @@ def should_skip_by_index(db: typing.Any, index: int) -> bool:
         return False
 
     return db.session.execute(
-        """
+        db.text("""
         SELECT migration_index
         FROM migration_index
         WHERE migration_index >= :index
-        """,
+        """),
         {'index': index}
     ).first() is not None
 
@@ -46,11 +46,11 @@ def update_migration_index(db: typing.Any, index: int) -> None:
         return
 
     assert db.session.execute(
-        """
+        db.text("""
         UPDATE migration_index
         SET migration_index = :index
         WHERE migration_index < :index
-        """,
+        """),
         {"index": index}
     ).rowcount == 1
 

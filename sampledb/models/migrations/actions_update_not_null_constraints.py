@@ -11,16 +11,16 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    constraints = db.session.execute("""
+    constraints = db.session.execute(db.text("""
              SELECT conname
              FROM pg_catalog.pg_constraint
              WHERE conname = 'actions_not_null_check'
-        """).fetchall()
+        """)).fetchall()
     if len(constraints) > 0:
         return False
 
     # Perform migration
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE actions
             ADD CONSTRAINT actions_not_null_check
                 CHECK ((
@@ -32,5 +32,5 @@ def run(db):
                 )),
             ALTER COLUMN type_id DROP NOT NULL,
             ALTER COLUMN schema DROP NOT NULL
-    """)
+    """))
     return True

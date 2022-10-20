@@ -11,9 +11,9 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    enum_values = db.session.execute("""
+    enum_values = db.session.execute(db.text("""
         SELECT unnest(enum_range(NULL::userlogentrytype))::text;
-    """).fetchall()
+    """)).fetchall()
     if ('CREATE_LOCATION',) in enum_values:
         return False
 
@@ -22,10 +22,10 @@ def run(db):
     connection = db.engine.connect()
     connection.detach()
     connection.execution_options(autocommit=False)
-    connection.execute("COMMIT")
-    connection.execute("""
+    connection.execute(db.text("COMMIT"))
+    connection.execute(db.text("""
         ALTER TYPE userlogentrytype
         ADD VALUE 'CREATE_LOCATION'
-    """)
+    """))
     connection.close()
     return True

@@ -104,7 +104,7 @@ def get_comment(comment_id: int, component_id: typing.Optional[int] = None) -> C
     :raise errors.CommentDoesNotExistError: when no comment with the given ID exists
     """
     if component_id is None:
-        comment = models.Comment.query.get(comment_id)
+        comment = models.Comment.query.filter_by(id=comment_id).first()
     else:
         # ensure that the component can be found
         components.get_component(component_id)
@@ -132,7 +132,7 @@ def update_comment(
     :raise errors.CommentDoesNotExistError: when no comment with the given ID
         exists
     """
-    comment = models.Comment.query.get(comment_id)
+    comment = models.Comment.query.filter_by(id=comment_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()
     if comment.component_id is None and user_id is None:

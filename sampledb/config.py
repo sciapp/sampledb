@@ -224,17 +224,18 @@ def check_config(
             )
         elif can_run:
             engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'])
-            user_table_exists = bool(engine.execute(
-                "SELECT * "
-                "FROM information_schema.columns "
-                "WHERE table_name = 'users'"
-            ).fetchall())
-            if user_table_exists:
-                users_exist = bool(engine.execute(
-                    "SELECT * FROM users"
-                ).fetchall())
-            else:
-                users_exist = False
+            with engine.begin() as connection:
+                user_table_exists = bool(connection.execute(sqlalchemy.text(
+                    "SELECT * "
+                    "FROM information_schema.columns "
+                    "WHERE table_name = 'users'"
+                )).fetchall())
+                if user_table_exists:
+                    users_exist = bool(connection.execute(sqlalchemy.text(
+                        "SELECT * FROM users"
+                    )).fetchall())
+                else:
+                    users_exist = False
             if users_exist:
                 print(
                     'ADMIN_PASSWORD is set, but there already are users in '

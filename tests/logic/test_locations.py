@@ -592,7 +592,7 @@ def test_create_location_type():
         enable_responsible_users=True,
         show_location_log=True,
     ).id
-    location_type = sampledb.models.locations.LocationType.query.get(location_type_id)
+    location_type = sampledb.models.locations.LocationType.query.filter_by(id=location_type_id).first()
     assert location_type.id == location_type_id
     assert location_type.name == {'en': 'Example Location Type'}
     assert location_type.location_name_singular == {'en': 'Example Location'}
@@ -618,7 +618,7 @@ def test_update_location_type():
         enable_responsible_users=True,
         show_location_log=True,
     )
-    location_type = sampledb.models.locations.LocationType.query.get(locations.LocationType.LOCATION)
+    location_type = sampledb.models.locations.LocationType.query.filter_by(id=locations.LocationType.LOCATION).first()
     assert location_type.id == locations.LocationType.LOCATION
     assert location_type.name == {'en': 'Example Location Type'}
     assert location_type.location_name_singular == {'en': 'Example Location'}

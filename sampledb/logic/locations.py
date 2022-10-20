@@ -709,7 +709,7 @@ def update_location_type(
     :raise errors.LocationTypeDoesNotExistError: if no location type with the
         given ID exists
     """
-    location_type = locations.LocationType.query.get(location_type_id)
+    location_type = locations.LocationType.query.filter_by(id=location_type_id).first()
     if location_type is None:
         raise errors.LocationTypeDoesNotExistError()
     location_type.name = name

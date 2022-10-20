@@ -194,7 +194,7 @@ def update_project(
     if 'en' not in name:
         raise errors.MissingEnglishTranslationError()
 
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
 
@@ -219,7 +219,7 @@ def delete_project(project_id: int) -> None:
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     # project object permissions and project default permissions will be
@@ -238,7 +238,7 @@ def get_project(project_id: int) -> Project:
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     return Project.from_database(project)
@@ -265,7 +265,7 @@ def get_project_member_user_ids_and_permissions(project_id: int, include_groups:
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id).all()
@@ -323,7 +323,7 @@ def get_project_member_group_ids_and_permissions(project_id: int) -> typing.Dict
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     group_permissions = projects.GroupProjectPermissions.query.filter_by(project_id=project_id).all()
@@ -390,7 +390,7 @@ def invite_user_to_project(
     :raise errors.UserAlreadyMemberOfProjectError: when the user with the given
         user ID already is a member of this project
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     get_user(user_id)
@@ -440,7 +440,7 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
     if permissions == Permissions.NONE:
         # project members with no permissions are not stored
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     get_user(user_id)
@@ -490,7 +490,7 @@ def add_group_to_project(project_id: int, group_id: int, permissions: Permission
     if permissions == Permissions.NONE:
         # project members with no permissions are not stored
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     group = groups.get_group(group_id)
@@ -524,7 +524,7 @@ def remove_user_from_project(project_id: int, user_id: int) -> None:
     :raise errors.NoMemberWithGrantPermissionsForProjectError: when there would
         be no user or group with grant permissions left
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     get_user(user_id)
@@ -561,7 +561,7 @@ def remove_group_from_project(project_id: int, group_id: int) -> None:
     :raise errors.GroupNotMemberOfProjectError: when the group is not a member of
         the project
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     group = groups.get_group(group_id)
@@ -598,7 +598,7 @@ def update_user_project_permissions(project_id: int, user_id: int, permissions: 
     if permissions == Permissions.NONE:
         remove_user_from_project(project_id=project_id, user_id=user_id)
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     get_user(user_id)
@@ -643,7 +643,7 @@ def update_group_project_permissions(project_id: int, group_id: int, permissions
     if permissions == Permissions.NONE:
         remove_group_from_project(project_id=project_id, group_id=group_id)
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     groups.get_group(group_id)

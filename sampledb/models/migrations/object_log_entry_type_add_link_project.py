@@ -11,9 +11,9 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db):
     # Skip migration by condition
-    enum_values = db.session.execute("""
+    enum_values = db.session.execute(db.text("""
         SELECT unnest(enum_range(NULL::objectlogentrytype))::text;
-    """).fetchall()
+    """)).fetchall()
     if ('LINK_PROJECT',) in enum_values:
         return False
 
@@ -22,10 +22,10 @@ def run(db):
     connection = db.engine.connect()
     connection.detach()
     connection.execution_options(autocommit=False)
-    connection.execute("COMMIT")
-    connection.execute("""
+    connection.execute(db.text("COMMIT"))
+    connection.execute(db.text("""
         ALTER TYPE objectlogentrytype
         ADD VALUE 'LINK_PROJECT'
-    """)
+    """))
     connection.close()
     return True

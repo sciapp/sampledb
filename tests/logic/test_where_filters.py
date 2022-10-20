@@ -51,21 +51,21 @@ def objects(engine):
 @pytest.fixture
 def languages(engine):
     sampledb.models.Language.__table__.create(bind=engine)
-    connection = engine.connect()
-    query = db.text('''
-        INSERT INTO languages
-        (id, lang_code, names, datetime_format_datetime, datetime_format_moment, enabled_for_input)
-        VALUES
-        (:language_id, :lang_code, '{}', '', '', true)
-    ''')
-    connection.execute(query, {
-        'language_id': sampledb.models.Language.ENGLISH,
-        'lang_code': 'en'
-    })
-    connection.execute(query, {
-        'language_id': sampledb.models.Language.GERMAN,
-        'lang_code': 'de'
-    })
+    with engine.begin() as connection:
+        query = db.text('''
+            INSERT INTO languages
+            (id, lang_code, names, datetime_format_datetime, datetime_format_moment, enabled_for_input)
+            VALUES
+            (:language_id, :lang_code, '{}', '', '', true)
+        ''')
+        connection.execute(query, {
+            'language_id': sampledb.models.Language.ENGLISH,
+            'lang_code': 'en'
+        })
+        connection.execute(query, {
+            'language_id': sampledb.models.Language.GERMAN,
+            'lang_code': 'de'
+        })
 
 
 def test_text_equals(objects, languages):
