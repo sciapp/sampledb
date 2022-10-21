@@ -43,6 +43,12 @@ def process_template_action_schema(
                 for property_name in template_action_schema['propertyOrder']
                 if property_name not in SKIPPED_TEMPLATE_PROPERTY_NAMES
             ]
+        elif key == 'show_more':
+            processed_schema['show_more'] = [
+                property_name
+                for property_name in template_action_schema['show_more']
+                if property_name not in SKIPPED_TEMPLATE_PROPERTY_NAMES
+            ]
         elif key not in SKIPPED_TEMPLATE_KEYS:
             processed_schema[key] = template_action_schema[key]
     return processed_schema
@@ -73,6 +79,8 @@ def substitute_templates(
         template_schema = process_template_action_schema(template_schema)
         if schema.get('title'):
             del template_schema['title']
+        if 'show_more' in schema and 'show_more' in template_schema:
+            del template_schema['show_more']
         if 'note' in schema and 'note' in template_schema:
             del template_schema['note']
         schema.update(template_schema)
