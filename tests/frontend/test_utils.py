@@ -1,3 +1,4 @@
+import copy
 import glob
 import os.path
 import re
@@ -95,14 +96,48 @@ def test_fingerprinted_static_uses(app):
         "'sampledb/img/ghs0%d.png' | format(hazard_index"
     ]
 
+    # allow duplicate usage of image files
+    duplicate_matches = [
+        static_file_name
+        for static_file_name in static_files
+        if static_file_name.startswith('sampledb/img/')
+    ]
+
+    uses_by_template = {}
+    template_parents = {}
+
     for template_file_name in template_files:
         template_file_path = os.path.join(template_path, template_file_name)
         with open(template_file_path, 'r') as template_file:
-            matches = re.findall(r'fingerprinted_static\((.*?)\)', template_file.read())
-            if matches is not None:
+            template_file_content = template_file.read()
+            matches = re.findall(r'{% extends (.*?) %}', template_file_content)
+            if matches:
+                assert len(matches) == 1
+                match = matches[0]
+                assert match[0] in '\'"'
+                parent_template_name = match[1:-1]
+                template_parents[template_file_name] = parent_template_name
+            uses_by_template[template_file_name] = []
+            matches = re.findall(r'fingerprinted_static\((.*?)\)', template_file_content)
+            if matches:
                 for match in matches:
                     if match in special_matches:
                         continue
                     assert match[0] == match[-1]
                     assert match[0] in '\'"'
-                    assert match[1:-1] in static_files
+                    static_file_name = match[1:-1]
+                    assert static_file_name in static_files
+                    if static_file_name in duplicate_matches:
+                        continue
+                    uses_by_template[template_file_name].append(static_file_name)
+
+    template_file_names_to_check = copy.deepcopy(template_files)
+    while template_file_names_to_check:
+        template_file_name = template_file_names_to_check.pop(0)
+        if template_file_name in template_parents:
+            parent_template_name = template_parents[template_file_name]
+            if parent_template_name in template_file_names_to_check:
+                template_file_names_to_check.append(template_file_name)
+                continue
+            uses_by_template[template_file_name].extend(uses_by_template[parent_template_name])
+        assert len(uses_by_template[template_file_name]) == len(set(uses_by_template[template_file_name]))

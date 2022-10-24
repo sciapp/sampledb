@@ -38,12 +38,6 @@
     {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
         <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
     {% endif %}
-    {% if get_user_language(current_user).lang_code == 'de' %}
-        <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
-        <script type="text/javascript">
-            Plotly.setPlotConfig({locale: 'de'})
-        </script>
-    {% endif %}
 
     <script type="text/javascript">
         window.mde_fields = [];

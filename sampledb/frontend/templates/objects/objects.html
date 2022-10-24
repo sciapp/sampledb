@@ -11,7 +11,6 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
     <script type="text/javascript">

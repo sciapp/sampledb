@@ -607,8 +607,6 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
 
   {% if not config['TIMEZONE'] %}
     <script>
