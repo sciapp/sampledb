@@ -11,7 +11,7 @@ from .objects import Objects
 from .users import User
 
 
-class DataverseExport(db.Model):
+class DataverseExport(db.Model):  # type: ignore
     __tablename__ = 'dataverse_exports'
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
@@ -19,7 +19,13 @@ class DataverseExport(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, object_id: int, dataverse_url: str, user_id: int, utc_datetime: typing.Optional[datetime.datetime] = None):
+    def __init__(
+            self,
+            object_id: int,
+            dataverse_url: str,
+            user_id: int,
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.object_id = object_id
         self.dataverse_url = dataverse_url
         self.user_id = user_id
@@ -27,5 +33,5 @@ class DataverseExport(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(object_id={1.object_id}, dataverse_url={1.dataverse_url})>'.format(type(self).__name__, self)

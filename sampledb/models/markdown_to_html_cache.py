@@ -7,7 +7,7 @@ from .. import db
 import sqlalchemy.dialects.postgresql as postgresql
 
 
-class MarkdownToHTMLCacheEntry(db.Model):
+class MarkdownToHTMLCacheEntry(db.Model):  # type: ignore
     __tablename__ = 'markdown_to_html_cache_entries'
 
     id = db.Column(db.Integer, primary_key=True)

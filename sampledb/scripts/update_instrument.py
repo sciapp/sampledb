@@ -6,6 +6,8 @@ Usage: python -m sampledb update_instrument <instrument_id> <name> <description>
 """
 
 import sys
+import typing
+
 from .. import create_app
 from ..logic.instruments import get_instrument
 from ..logic.instrument_translations import set_instrument_translation
@@ -13,13 +15,13 @@ from ..logic.errors import InstrumentDoesNotExistError
 from ..logic.languages import Language
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 3:
         print(__doc__)
         exit(1)
-    instrument_id, name, description = arguments
+    instrument_id_str, name, description = arguments
     try:
-        instrument_id = int(instrument_id)
+        instrument_id = int(instrument_id_str)
     except ValueError:
         print("Error: instrument_id must be an integer", file=sys.stderr)
         exit(1)

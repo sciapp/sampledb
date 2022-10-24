@@ -7,18 +7,20 @@ Usage: python -m sampledb export_action_schema <action_id> <schema_file_name>
 
 import json
 import sys
+import typing
+
 from .. import create_app
 from ..logic.actions import get_action
 from ..logic.errors import ActionDoesNotExistError
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 2:
         print(__doc__)
         exit(1)
-    action_id, schema_file_name = arguments
+    action_id_str, schema_file_name = arguments
     try:
-        action_id = int(action_id)
+        action_id = int(action_id_str)
     except ValueError:
         print("Error: action_id must be an integer", file=sys.stderr)
         exit(1)

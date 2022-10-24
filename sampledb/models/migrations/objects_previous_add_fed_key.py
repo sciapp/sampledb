@@ -5,11 +5,13 @@ Add fed_object_id column to objects_previous table.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 73
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     column_names = db.session.execute(db.text("""
         SELECT column_name

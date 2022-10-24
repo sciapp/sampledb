@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 import sampledb
 import sampledb.utils
-from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables
+from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables, Object
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -31,10 +31,6 @@ class Action(Base):
     __tablename__ = 'test_actions'
     id = db.Column(db.Integer, primary_key=True)
     schema = db.Column(postgresql.JSONB)
-
-
-class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObject):
-    pass
 
 
 @pytest.fixture
@@ -62,7 +58,6 @@ def session(engine):
 def objects(engine):
     objects = VersionedJSONSerializableObjectTables(
         'test_objects',
-        object_type=Object,
         user_id_column=User.id,
         action_id_column=Action.id,
         action_schema_column=Action.schema,
@@ -305,7 +300,6 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
 
     objects = VersionedJSONSerializableObjectTables(
         'test_objects2',
-        object_type=Object,
         user_id_column=User.id,
         action_id_column=Action.id,
         action_schema_column=Action.schema,

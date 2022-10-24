@@ -94,6 +94,8 @@ def set_project_object_permissions(object_id: int, project_id: int, permissions:
 
 def _get_object_responsible_user_ids(object_id: int) -> typing.List[int]:
     object = objects.get_object(object_id)
+    if object.action_id is None:
+        return []
     try:
         action = actions.get_action(object.action_id)
     except errors.ActionDoesNotExistError:
@@ -179,6 +181,9 @@ def get_user_object_permissions(
 
 
 def set_initial_permissions(obj: Object) -> None:
+    if obj.user_id is None:
+        # no global default permissions
+        return
     default_user_permissions = get_default_permissions_for_users(creator_id=obj.user_id)
     for user_id, permissions in default_user_permissions.items():
         set_user_object_permissions(object_id=obj.object_id, user_id=user_id, permissions=permissions)
@@ -345,7 +350,7 @@ def get_objects_with_permissions(
     else:
         action_filter = None
 
-    parameters = {
+    parameters: typing.Dict[str, typing.Any] = {
         'min_permissions_int': permissions.value,
         'user_id': user_id
     }

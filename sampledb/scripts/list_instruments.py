@@ -4,12 +4,13 @@ Script for listing all instruments in SampleDB.
 
 Usage: python -m sampledb list_instruments
 """
+import typing
 
 from .. import create_app
 from ..logic.instruments import get_instruments
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
         exit(1)

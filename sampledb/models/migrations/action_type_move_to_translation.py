@@ -5,13 +5,15 @@ Splits action types into action_types and action_type_translations
 
 import os
 
+import flask_sqlalchemy
+
 from ..languages import Language
 
 MIGRATION_INDEX = 51
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     column_names = db.session.execute(db.text("""
             SELECT column_name

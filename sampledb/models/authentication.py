@@ -18,7 +18,7 @@ class AuthenticationType(enum.Enum):
     API_TOKEN = 4
 
 
-class Authentication(db.Model):
+class Authentication(db.Model):  # type: ignore
     __tablename__ = "authentications"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -44,7 +44,7 @@ class Authentication(db.Model):
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
 
 
-class TwoFactorAuthenticationMethod(db.Model):
+class TwoFactorAuthenticationMethod(db.Model):  # type: ignore
     __tablename__ = "two_factor_authentication_methods"
 
     id = db.Column(db.Integer, primary_key=True)

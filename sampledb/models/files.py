@@ -10,7 +10,7 @@ from .. import db
 from .objects import Objects
 
 
-class File(db.Model):
+class File(db.Model):  # type: ignore
     __tablename__ = 'files'
     __table_args__ = (
         db.CheckConstraint(

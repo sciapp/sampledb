@@ -21,7 +21,7 @@ location_user_association_table = db.Table(
 )
 
 
-class LocationType(db.Model):
+class LocationType(db.Model):  # type: ignore
     __tablename__ = 'location_types'
     __table_args__ = (
         db.CheckConstraint(
@@ -63,7 +63,7 @@ class LocationType(db.Model):
             show_location_log: bool,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
-    ):
+    ) -> None:
         self.name = name
         self.location_name_singular = location_name_singular
         self.location_name_plural = location_name_plural
@@ -76,11 +76,11 @@ class LocationType(db.Model):
         self.fed_id = fed_id
         self.component_id = component_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, name="{1.name}")>'.format(type(self).__name__, self)
 
 
-class Location(db.Model):
+class Location(db.Model):  # type: ignore
     __tablename__ = 'locations'
     __table_args__ = (
         db.CheckConstraint(
@@ -109,7 +109,7 @@ class Location(db.Model):
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             type_id: typing.Optional[int] = None
-    ):
+    ) -> None:
         self.name = name
         self.description = description
         self.parent_location_id = parent_location_id
@@ -117,11 +117,11 @@ class Location(db.Model):
         self.component_id = component_id
         self.type_id = type_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, name="{1.name}", description="{1.description}", parent_location_id={1.parent_location_id})>'.format(type(self).__name__, self)
 
 
-class ObjectLocationAssignment(db.Model):
+class ObjectLocationAssignment(db.Model):  # type: ignore
     __tablename__ = 'object_location_assignments'
     __table_args__ = (
         db.CheckConstraint(
@@ -159,9 +159,9 @@ class ObjectLocationAssignment(db.Model):
             responsible_user_id: typing.Optional[int] = None,
             confirmed: bool = False,
             declined: bool = False,
-            fed_id: int = None,
-            component_id: int = None
-    ):
+            fed_id: typing.Optional[int] = None,
+            component_id: typing.Optional[int] = None
+    ) -> None:
         self.object_id = object_id
         self.location_id = location_id
         self.user_id = user_id
@@ -175,5 +175,5 @@ class ObjectLocationAssignment(db.Model):
         self.fed_id = fed_id
         self.component_id = component_id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed}, declined={1.declined})>'.format(type(self).__name__, self)

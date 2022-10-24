@@ -4,6 +4,9 @@ Create default action type for schema templates.
 """
 
 import os
+
+import flask_sqlalchemy
+
 from ..actions import ActionType
 from ..languages import Language
 
@@ -11,7 +14,7 @@ MIGRATION_INDEX = 70
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Add TEMPLATE to default action types
     existing_action_type_ids = [
         action_type[0]

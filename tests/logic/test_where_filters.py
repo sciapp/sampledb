@@ -12,13 +12,9 @@ import sqlalchemy as db
 import sampledb
 import sampledb.utils
 from sampledb.logic import datatypes, where_filters
-from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables
+from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables, Object
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
-
-
-class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObject):
-    pass
 
 
 @pytest.fixture
@@ -38,9 +34,7 @@ def engine():
 
 @pytest.fixture
 def objects(engine):
-    objects = VersionedJSONSerializableObjectTables(
-        'objects', object_type=Object
-    )
+    objects = VersionedJSONSerializableObjectTables('objects')
     objects.bind = engine
 
     # create the object tables

@@ -9,11 +9,12 @@ each individual test.
 
 Usage: python -m sampledb build_translations
 """
+import typing
 
 import sampledb
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if arguments:
         print(__doc__)
         exit(1)

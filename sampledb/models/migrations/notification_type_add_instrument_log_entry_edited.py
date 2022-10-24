@@ -5,11 +5,13 @@ Add INSTRUMENT_LOG_ENTRY_EDITED enum value to NotificationType enum.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 34
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     enum_values = db.session.execute(db.text("""
         SELECT unnest(enum_range(NULL::notificationtype))::text;

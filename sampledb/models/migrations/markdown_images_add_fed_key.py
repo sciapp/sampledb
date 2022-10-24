@@ -5,11 +5,13 @@ Add component_id and id columns, fed key unique constraint and id primary key co
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 92
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     column_names = db.session.execute(db.text("""
         SELECT column_name

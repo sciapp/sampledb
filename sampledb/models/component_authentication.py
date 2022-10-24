@@ -15,7 +15,7 @@ class ComponentAuthenticationType(enum.Enum):
     TOKEN = 1
 
 
-class ComponentAuthentication(db.Model):
+class ComponentAuthentication(db.Model):  # type: ignore
     __tablename__ = "component_authentications"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -38,7 +38,7 @@ class ComponentAuthentication(db.Model):
         return '<{0}(id={1.id})>'.format(type(self).__name__, self)
 
 
-class OwnComponentAuthentication(db.Model):
+class OwnComponentAuthentication(db.Model):  # type: ignore
     __tablename__ = "own_component_authentications"
 
     id = db.Column(db.Integer, primary_key=True)

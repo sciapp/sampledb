@@ -7,11 +7,13 @@ Previously, these actions were implicitly public.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 47
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Perform migration
     common_actions = db.session.execute(db.text("""
         SELECT id

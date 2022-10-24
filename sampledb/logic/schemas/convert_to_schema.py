@@ -167,15 +167,21 @@ def _try_convert_object_reference_to_object_reference(
         if 'object_id' in data:
             try:
                 referenced_object = objects.get_object(data['object_id'])
-                action = actions.get_action(referenced_object.action_id)
-                action_type_id = action.type_id
+                if referenced_object.action_id is None:
+                    action_type_id = None
+                else:
+                    action = actions.get_action(referenced_object.action_id)
+                    action_type_id = action.type_id
             except errors.ObjectDoesNotExistError:
                 pass
             except errors.ActionDoesNotExistError:
                 pass
             else:
-                if action_type_id == new_schema['action_type_id']:
-                    action_type_compatible = True
+                if action_type_id is not None:
+                    if isinstance(new_schema['action_type_id'], int) and action_type_id == new_schema['action_type_id']:
+                        action_type_compatible = True
+                    if isinstance(new_schema['action_type_id'], list) and action_type_id in new_schema['action_type_id']:
+                        action_type_compatible = True
         else:
             action_type_compatible = True
     action_compatible = 'action_id' not in new_schema or new_schema['action_id'] is None or ('action_id' in previous_schema and new_schema['action_id'] == previous_schema['action_id'])
@@ -188,8 +194,11 @@ def _try_convert_object_reference_to_object_reference(
             except errors.ObjectDoesNotExistError:
                 pass
             else:
-                if action_id == new_schema['action_id']:
-                    action_compatible = True
+                if action_id is not None:
+                    if isinstance(new_schema['action_id'], int) and action_id == new_schema['action_id']:
+                        action_compatible = True
+                    if isinstance(new_schema['action_id'], list) and action_id in new_schema['action_id']:
+                        action_compatible = True
         else:
             action_compatible = True
     if action_type_compatible and action_compatible:
@@ -211,17 +220,21 @@ def _try_convert_object_reference_to_legacy_object_reference(
         if 'object_id' in data:
             try:
                 referenced_object = objects.get_object(data['object_id'])
-                action = actions.get_action(referenced_object.action_id)
-                action_type_id = action.type_id
+                if referenced_object.action_id is None:
+                    action_type_id = None
+                else:
+                    action = actions.get_action(referenced_object.action_id)
+                    action_type_id = action.type_id
             except errors.ObjectDoesNotExistError:
                 pass
             except errors.ActionDoesNotExistError:
                 pass
             else:
-                if new_schema['type'] == 'sample' and action_type_id == ActionType.SAMPLE_CREATION:
-                    return data, []
-                if new_schema['type'] == 'measurement' and action_type_id == ActionType.MEASUREMENT:
-                    return data, []
+                if action_type_id is not None:
+                    if new_schema['type'] == 'sample' and action_type_id == ActionType.SAMPLE_CREATION:
+                        return data, []
+                    if new_schema['type'] == 'measurement' and action_type_id == ActionType.MEASUREMENT:
+                        return data, []
     return None
 
 

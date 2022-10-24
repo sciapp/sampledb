@@ -8,6 +8,7 @@ import datetime
 import json
 import os
 import sys
+import typing
 
 
 import sampledb
@@ -20,7 +21,7 @@ from sampledb.logic.actions import create_action
 from ..logic import groups, object_permissions, projects, comments, files
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
         exit(1)
@@ -111,27 +112,27 @@ This example shows how Markdown can be used for instrument Notes.
         log_category_error = sampledb.logic.instrument_log_entries.create_instrument_log_category(
             instrument_id=instrument.id,
             title='Error',
-            theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.RED
+            theme=sampledb.models.instrument_log_entries.InstrumentLogCategoryTheme.RED
         )
         log_category_warning = sampledb.logic.instrument_log_entries.create_instrument_log_category(
             instrument_id=instrument.id,
             title='Warning',
-            theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.YELLOW
+            theme=sampledb.models.instrument_log_entries.InstrumentLogCategoryTheme.YELLOW
         )
         log_category_success = sampledb.logic.instrument_log_entries.create_instrument_log_category(
             instrument_id=instrument.id,
             title='Success',
-            theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.GREEN
+            theme=sampledb.models.instrument_log_entries.InstrumentLogCategoryTheme.GREEN
         )
         log_category_other = sampledb.logic.instrument_log_entries.create_instrument_log_category(
             instrument_id=instrument.id,
             title='Other',
-            theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.BLUE
+            theme=sampledb.models.instrument_log_entries.InstrumentLogCategoryTheme.BLUE
         )
         log_category_normal = sampledb.logic.instrument_log_entries.create_instrument_log_category(
             instrument_id=instrument.id,
             title='Normal',
-            theme=sampledb.logic.instrument_log_entries.InstrumentLogCategoryTheme.GRAY
+            theme=sampledb.models.instrument_log_entries.InstrumentLogCategoryTheme.GRAY
         )
         for category in sampledb.logic.instrument_log_entries.get_instrument_log_categories(instrument.id):
             sampledb.logic.instrument_log_entries.create_instrument_log_entry(
@@ -201,15 +202,15 @@ This example shows how Markdown can be used for instrument Notes.
         independent_object = sampledb.logic.objects.create_object(data=data, schema=schema, user_id=instrument_responsible_user.id, action_id=independent_action.id)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
-        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: stream.write("Dies ist ein Test".encode('utf-8')))
-        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs01.png'), 'rb').read()))
+        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: typing.cast(None, stream.write("Dies ist ein Test".encode('utf-8'))))
+        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: typing.cast(None, stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs01.png'), 'rb').read())))
         files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
         files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')
         sampledb.logic.publications.link_publication_to_object(instrument_responsible_user.id, instrument_object.id, '10.5281/zenodo.4012175', 'sciapp/sampledb', 'Example')
 
         projects.link_project_and_object(project_id, instrument_object.object_id, instrument_responsible_user.id)
 
-        object_permissions.set_object_permissions_for_anonymous_users(instrument_object.id, object_permissions.Permissions.READ)
+        object_permissions.set_object_permissions_for_anonymous_users(instrument_object.id, sampledb.models.Permissions.READ)
 
         with open(os.path.join(schema_directory, 'ombe_measurement_updated.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
@@ -219,7 +220,7 @@ This example shows how Markdown can be used for instrument Notes.
         )
         sampledb.logic.action_translations.set_action_translation(Language.ENGLISH, instrument_action.id, "Updated Sample Creation", "", "")
 
-        object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
+        object_permissions.set_group_object_permissions(independent_object.object_id, group_id, sampledb.models.Permissions.READ)
 
         instrument = create_instrument()
         set_instrument_translation(Language.ENGLISH, instrument.id, name="XRR", description="X-Ray Reflectometry")
@@ -260,8 +261,8 @@ This example shows how Markdown can be used for instrument Notes.
                 "units": "mg"
             }
         }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id)
-        object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
-        object_permissions.set_user_object_permissions(independent_object.object_id, api_user.id, object_permissions.Permissions.WRITE)
+        object_permissions.set_group_object_permissions(independent_object.object_id, group_id, sampledb.models.Permissions.READ)
+        object_permissions.set_user_object_permissions(independent_object.object_id, api_user.id, sampledb.models.Permissions.WRITE)
         independent_object = sampledb.logic.objects.create_object(data={
             "name": {
                 "_type": "text",
@@ -278,7 +279,7 @@ This example shows how Markdown can be used for instrument Notes.
                 "units": "mg"
             }
         }, schema=schema, user_id=instrument_responsible_user.id, action_id=action.id)
-        object_permissions.set_group_object_permissions(independent_object.object_id, group_id, object_permissions.Permissions.READ)
+        object_permissions.set_group_object_permissions(independent_object.object_id, group_id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
         instrument = create_instrument()
@@ -520,10 +521,10 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.notifications.create_other_notification(instrument_responsible_user.id, "This is a demo.")
         sampledb.logic.object_permissions.set_user_object_permissions(independent_object.id, instrument_responsible_user.id, sampledb.models.Permissions.GRANT)
         sampledb.logic.notifications.create_notification_for_having_received_an_objects_permissions_request(instrument_responsible_user.id, independent_object.id, admin.id)
-        sampledb.logic.location_permissions.set_location_permissions_for_all_users(campus.id, sampledb.logic.location_permissions.Permissions.WRITE)
-        sampledb.logic.location_permissions.set_location_permissions_for_all_users(building_a.id, sampledb.logic.location_permissions.Permissions.WRITE)
-        sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42a.id, sampledb.logic.location_permissions.Permissions.WRITE)
-        sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42b.id, sampledb.logic.location_permissions.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(campus.id, sampledb.models.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(building_a.id, sampledb.models.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42a.id, sampledb.models.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42b.id, sampledb.models.Permissions.WRITE)
 
         container_type = sampledb.logic.locations.create_location_type(
             name={"en": "Container"},
@@ -543,7 +544,7 @@ This example shows how Markdown can be used for instrument Notes.
             user_id=instrument_responsible_user.id,
             type_id=container_type.id
         )
-        sampledb.logic.location_permissions.set_location_permissions_for_all_users(container.id, sampledb.logic.location_permissions.Permissions.WRITE)
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(container.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.locations.set_location_responsible_users(container.id, [instrument_responsible_user.id, admin.id])
 
         for object in sampledb.logic.objects.get_objects():

@@ -5,13 +5,15 @@ Add the scicat_export_type column to the action_types table.
 
 import os
 
+import flask_sqlalchemy
+
 from ..actions import ActionType
 
 MIGRATION_INDEX = 110
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Add column to action_type table
     client_column_names = db.session.execute(db.text("""
         SELECT column_name

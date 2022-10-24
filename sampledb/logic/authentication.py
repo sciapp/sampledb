@@ -4,7 +4,7 @@ import flask
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, User, HTTPMethod
+from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod
 from . import errors, api_log
 
 
@@ -170,7 +170,7 @@ def login(login: str, password: str) -> typing.Optional[logic.users.User]:
     return None
 
 
-def login_via_api_token(api_token: str) -> typing.Optional[User]:
+def login_via_api_token(api_token: str) -> typing.Optional[logic.users.User]:
     """
     Authenticate a user using an API token.
 
@@ -190,7 +190,7 @@ def login_via_api_token(api_token: str) -> typing.Optional[User]:
             continue
         if _validate_password_authentication(authentication_method, password):
             api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
-            return authentication_method.user  # type: ignore
+            return logic.users.User.from_database(authentication_method.user)
     return None
 
 

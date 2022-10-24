@@ -70,11 +70,12 @@ class ObjectFiles(Resource):
                 "message": "JSON object body required"
             }, 400
         object = get_object(object_id=object_id)
-        action = get_action(action_id=object.action_id)
-        if action.type is None or not action.type.enable_files:
-            return {
-                "message": "Adding files is not enabled for objects of this type"
-            }, 403
+        if object.action_id is not None:
+            action = get_action(action_id=object.action_id)
+            if action.type is None or not action.type.enable_files:
+                return {
+                    "message": "Adding files is not enabled for objects of this type"
+                }, 403
         if 'object_id' in request_json:
             if request_json['object_id'] != object.object_id:
                 return {

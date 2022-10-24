@@ -17,7 +17,7 @@ class BackgroundTaskStatus(enum.Enum):
         }
 
 
-class BackgroundTask(db.Model):
+class BackgroundTask(db.Model):  # type: ignore
     __tablename__ = 'background_tasks'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -26,5 +26,5 @@ class BackgroundTask(db.Model):
     data = db.Column(db.JSON, nullable=False)
     status = db.Column(db.Enum(BackgroundTaskStatus), nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, auto_delete={1.auto_delete}, data={1.data}, status={1.status})>'.format(type(self).__name__, self)

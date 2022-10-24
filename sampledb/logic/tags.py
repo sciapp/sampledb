@@ -39,9 +39,9 @@ def get_object_tags(object: objects.Object) -> typing.Sequence[str]:
 def update_object_tag_usage(object: objects.Object, new_subversion: bool = False) -> None:
     previous_tags: typing.Sequence[str] = ()
     new_tags = get_object_tags(object)
-    if object.fed_version_id is None:
+    if object.component_id is None or object.fed_object_id is None or object.fed_version_id is None:
         if object.version_id > 0:
-            previous_object = typing.cast(typing.Optional[objects.Object], objects.Objects.get_object_version(object.object_id, object.version_id - 1))
+            previous_object = objects.Objects.get_object_version(object.object_id, object.version_id - 1)
             if previous_object is not None:
                 previous_tags = get_object_tags(previous_object)
     else:
@@ -51,14 +51,14 @@ def update_object_tag_usage(object: objects.Object, new_subversion: bool = False
         if current.version_id != object.version_id:
             return
         if new_subversion:
-            previous_object = typing.cast(typing.Optional[objects.Object], objects.Objects.get_previous_subversion(object.object_id, object.version_id))
+            previous_object = objects.Objects.get_previous_subversion(object.object_id, object.version_id)
             if previous_object is not None:
                 previous_tags = get_object_tags(previous_object)
         elif object.fed_version_id > 0:
             previous_object = None
             prev_version = object.fed_version_id - 1
             while previous_object is None and prev_version >= 0:
-                previous_object = typing.cast(typing.Optional[objects.Object], objects.Objects.get_fed_object_version(object.component_id, object.fed_object_id, prev_version))
+                previous_object = objects.Objects.get_fed_object_version(object.component_id, object.fed_object_id, prev_version)
                 prev_version -= 1
             if previous_object is not None:
                 previous_tags = get_object_tags(previous_object)

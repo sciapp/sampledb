@@ -5,11 +5,13 @@ Replace string description column with JSON column in object_location_assignment
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 57
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     column_info = db.session.execute(db.text("""
         SELECT column_name, data_type

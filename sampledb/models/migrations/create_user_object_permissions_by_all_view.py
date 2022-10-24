@@ -6,11 +6,13 @@ with minimum permissions.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 7
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     table_exists = db.session.execute(db.text("""
         SELECT table_name

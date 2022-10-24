@@ -5,11 +5,13 @@ Replace NOT NULL constraints per column by NOT NULL constraints conditioned by f
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 74
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     constraints = db.session.execute(db.text("""
              SELECT conname

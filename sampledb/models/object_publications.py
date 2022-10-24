@@ -7,7 +7,7 @@ from .. import db
 from . import Objects
 
 
-class ObjectPublication(db.Model):
+class ObjectPublication(db.Model):  # type: ignore
     __tablename__ = 'object_publications'
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
@@ -17,5 +17,4 @@ class ObjectPublication(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(object_id, doi),
-        {},
     )

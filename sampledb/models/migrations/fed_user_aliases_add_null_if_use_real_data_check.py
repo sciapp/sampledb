@@ -5,11 +5,13 @@ Add null if use_real_* is set check to fed_user_aliases.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 109
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     constraints = db.session.execute(db.text("""
          SELECT conname
          FROM pg_catalog.pg_constraint

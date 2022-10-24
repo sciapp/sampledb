@@ -12,7 +12,7 @@ from .objects import Objects
 from .users import User
 
 
-class SciCatExport(db.Model):
+class SciCatExport(db.Model):  # type: ignore
     __tablename__ = 'scicat_exports'
 
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
@@ -30,7 +30,7 @@ class SciCatExport(db.Model):
             user_id: int,
             type: SciCatExportType,
             utc_datetime: typing.Optional[datetime.datetime] = None
-    ):
+    ) -> None:
         self.object_id = object_id
         self.scicat_url = scicat_url
         self.scicat_pid = scicat_pid
@@ -40,5 +40,5 @@ class SciCatExport(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(object_id={1.object_id}, scicat_url={1.scicat_url})>'.format(type(self).__name__, self)

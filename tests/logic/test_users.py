@@ -23,7 +23,7 @@ def user(flask_server):
         sampledb.db.session.commit()
         # force attribute refresh
         assert user.id is not None
-    return user
+    return sampledb.logic.users.User.from_database(user)
 
 
 @pytest.fixture
@@ -33,27 +33,26 @@ def component():
 
 
 def test_get_users_by_name():
-    user1 = sampledb.models.User(
+    user1 = sampledb.logic.users.create_user(
         name="User",
         email="example@example.com",
-        type=sampledb.models.UserType.PERSON)
-    db.session.add(user1)
-    db.session.commit()
-    user2 = sampledb.models.User(
+        type=sampledb.models.UserType.PERSON
+    )
+    user2 = sampledb.logic.users.create_user(
         name="User",
         email="example@example.com",
-        type=sampledb.models.UserType.PERSON)
-    db.session.add(user2)
-    db.session.commit()
+        type=sampledb.models.UserType.PERSON
+    )
 
     users = sampledb.logic.users.get_users_by_name("User")
     assert len(users) == 2
     assert user1 in users
     assert user2 in users
 
-    user2.name = "Test-User"
-    db.session.add(user2)
-    db.session.commit()
+    sampledb.logic.users.update_user(
+        user2.id, None, name="Test-User"
+    )
+    user2 = sampledb.logic.users.get_user(user2.id)
 
     users = sampledb.logic.users.get_users_by_name("User")
     assert len(users) == 1
@@ -62,24 +61,23 @@ def test_get_users_by_name():
 
 
 def test_get_users_exclude_hidden():
-    user1 = sampledb.models.User(
+    user1 = sampledb.logic.users.create_user(
         name="User",
         email="example@example.com",
-        type=sampledb.models.UserType.PERSON)
-    db.session.add(user1)
-    db.session.commit()
-    user2 = sampledb.models.User(
+        type=sampledb.models.UserType.PERSON
+    )
+    user2 = sampledb.logic.users.create_user(
         name="User",
         email="example@example.com",
-        type=sampledb.models.UserType.PERSON)
-    db.session.add(user2)
-    db.session.commit()
+        type=sampledb.models.UserType.PERSON
+    )
 
     users = sampledb.logic.users.get_users()
     users.sort(key=lambda u: u.id)
     assert users == [user1, user2]
 
     sampledb.logic.users.set_user_hidden(user1.id, True)
+    user1 = sampledb.logic.users.get_user(user1.id)
 
     users = sampledb.logic.users.get_users()
     users.sort(key=lambda u: u.id)

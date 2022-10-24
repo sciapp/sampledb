@@ -10,7 +10,7 @@ from .. import db
 from .objects import Objects
 
 
-class Comment(db.Model):
+class Comment(db.Model):  # type: ignore
     __tablename__ = 'comments'
     __table_args__ = (
         db.CheckConstraint(

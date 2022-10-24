@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 import flask
 import requests
 
-from .components import get_component_by_uuid, Component
+from .components import get_component_by_uuid
 from .. import db
 from .units import prettify_units
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
@@ -219,12 +219,12 @@ def _convert_metadata_to_process(
                     obj = objects.get_fed_object(object_id, component_id)
                 else:
                     obj = objects.get_object(object_id)
-                if Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
+                if Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id) and obj.data:
                     object_name = _translations_to_str(obj.data.get('name', {}).get('text'))
                 else:
                     object_name = None
                 if obj.component:
-                    component_name = Component.from_database(obj.component).get_name()
+                    component_name = obj.component.get_name()
                     fed_id = obj.fed_object_id
                 else:
                     component_name = None
@@ -318,11 +318,11 @@ def upload_object(
     sampledb_metadata = object.data
     schema = object.schema
 
-    action = actions.get_action(object.action_id)
-    if action.instrument:
-        instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')
-    else:
-        instrument_name = None
+    instrument_name = None
+    if object.action_id:
+        action = actions.get_action(object.action_id)
+        if action.instrument:
+            instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')
 
     author_ids = set()
     for entry in object_log.get_object_log_entries(object.id, user_id):
@@ -341,11 +341,12 @@ def upload_object(
     authors.sort(key=lambda author: author.name)  # type: ignore
 
     tags = set()
-    for property in object.data.values():
-        if '_type' in property and property['_type'] == 'tags':
-            for tag in property['tags']:
-                if tag in tag_whitelist:
-                    tags.add(tag)
+    if object.data:
+        for property in object.data.values():
+            if '_type' in property and property['_type'] == 'tags':
+                for tag in property['tags']:
+                    if tag in tag_whitelist:
+                        tags.add(tag)
     sorted_tags = list(tags)
     sorted_tags.sort()
 
@@ -381,12 +382,15 @@ def upload_object(
                 "value": author.affiliation
             }
 
-    method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist)
+    if sampledb_metadata is not None and schema is not None:
+        method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist)
+    else:
+        method_parameters = []
 
     if object.component is None or object.component.uuid == flask.current_app.config['SERVICE_NAME']:
         description = f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
     else:
-        object_component = Component.from_database(object.component)
+        object_component = object.component
         description = f'Dataset exported as object #{object.object_id} from {flask.current_app.config["SERVICE_NAME"]} and created as object #{object.fed_object_id} at {object_component.get_name()}.'
 
     citation_metadata = {
@@ -396,7 +400,7 @@ def upload_object(
                 'typeName': 'title',
                 'multiple': False,
                 'typeClass': 'primitive',
-                'value': sampledb_metadata['name']['text'].get('en', json.dumps(sampledb_metadata['name']['text'])) if isinstance(sampledb_metadata['name']['text'], dict) else json.dumps(sampledb_metadata['name']['text'])
+                'value': (sampledb_metadata['name']['text'].get('en', json.dumps(sampledb_metadata['name']['text'])) if isinstance(sampledb_metadata['name']['text'], dict) else json.dumps(sampledb_metadata['name']['text'])) if sampledb_metadata is not None else ''
             },
             {
                 'typeName': 'alternativeURL',

@@ -4,6 +4,9 @@ Create location log entries for object location assignments created before the l
 """
 import json
 import os
+import typing
+
+import flask_sqlalchemy
 
 from ..location_log import LocationLogEntryType
 
@@ -11,7 +14,7 @@ MIGRATION_INDEX = 117
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
     location_log_entries_exist = db.session.execute(db.text("""
         SELECT id
@@ -29,7 +32,7 @@ def run(db):
     if not object_location_assignments:
         return False
 
-    location_id_by_object_id = {}
+    location_id_by_object_id: typing.Dict[int, int] = {}
     log_entries = []
     for object_location_assignment in object_location_assignments:
         object_location_assignment_id, location_id, user_id, object_id, utc_datetime = object_location_assignment

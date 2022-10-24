@@ -5,13 +5,15 @@ Create default location types.
 import json
 import os
 
+import flask_sqlalchemy
+
 from ..locations import LocationType
 
 MIGRATION_INDEX = 115
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     existing_location_type_ids = [
         location_type[0]
         for location_type in db.session.execute(db.text("""
