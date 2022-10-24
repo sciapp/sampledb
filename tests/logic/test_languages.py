@@ -269,3 +269,64 @@ def test_get_languages_in_object_data():
     assert languages.get_languages_in_object_data(data) == {
         'en', 'de', 'xy'
     }
+
+
+def test_get_language_codes():
+    assert languages.get_language_codes() == {
+        'en',
+        'de'
+    }
+    test_language_data = [
+        ('t1', True, True),
+        ('t2', True, False),
+        ('t3', False, True),
+        ('t4', False, False),
+    ]
+    for lang_code, enabled_for_input, enabled_for_user_interface in test_language_data:
+        new_language = models.Language(
+            names={},
+            lang_code=lang_code,
+            datetime_format_datetime='',
+            datetime_format_moment='',
+            datetime_format_moment_output='',
+            enabled_for_input=enabled_for_input,
+            enabled_for_user_interface=enabled_for_user_interface
+        )
+        db.session.add(new_language)
+    db.session.commit()
+
+    assert languages.get_language_codes() == {
+        'en',
+        'de',
+        't1',
+        't2',
+        't3',
+        't4'
+    }
+
+    assert languages.get_language_codes(
+        only_enabled_for_input=True
+    ) == {
+        'en',
+        'de',
+        't1',
+        't2'
+    }
+
+    assert languages.get_language_codes(
+        only_enabled_for_user_interface=True
+    ) == {
+        'en',
+        'de',
+        't1',
+        't3'
+    }
+
+    assert languages.get_language_codes(
+        only_enabled_for_input=True,
+        only_enabled_for_user_interface=True
+    ) == {
+        'en',
+        'de',
+        't1'
+    }
