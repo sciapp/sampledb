@@ -2,9 +2,9 @@
 
 {% block stylesheets %}
     {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-tagsinput.css') }}"/>
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/inscrybmde.min.css') }}"/>
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/inline-edit.css') }}"/>
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}"/>
+    <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}"/>
+    <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/inline-edit.css') }}"/>
 {% endblock %}
 
 {% set id_prefix = "object_" %}
@@ -30,16 +30,16 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ fingerprinted_static('js/markdown_image_upload.js') }}"></script>
-    <script src="{{ fingerprinted_static('js/bootstrap-tagsinput.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('js/typeahead.bundle.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('js/inscrybmde.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('js/inline-edit.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
+    <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}"></script>
     {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-        <script src="{{ fingerprinted_static('js/sampledb-load-objects.js') }}"></script>
+        <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
     {% endif %}
     {% if get_user_language(current_user).lang_code == 'de' %}
-        <script src="{{ fingerprinted_static('js/plotly-locale-de.js') }}"></script>
+        <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
         <script type="text/javascript">
             Plotly.setPlotConfig({locale: 'de'})
         </script>

@@ -9,7 +9,7 @@ import flask
 
 from . import frontend
 
-STATIC_IMAGE_DIRECTORY = os.path.join(os.path.dirname(__file__), '..', 'static', 'img')
+STATIC_IMAGE_DIRECTORY = os.path.join(os.path.dirname(__file__), '..', 'static', 'sampledb', 'img')
 
 
 @frontend.route('/favicon.ico')

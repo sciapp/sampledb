@@ -5,12 +5,12 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}
 
 {% block content %}

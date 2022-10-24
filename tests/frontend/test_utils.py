@@ -1,7 +1,8 @@
-import json
+import glob
+import os.path
+import re
 
-import requests
-
+import sampledb
 import sampledb.frontend.utils as utils
 
 
@@ -79,3 +80,29 @@ def test_relative_url_for(app):
     with app.app_context():
         assert utils.relative_url_for('frontend.object', object_id=1) == 'objects/1'
         assert utils.relative_url_for('frontend.object', object_id=1, _external=True) == 'objects/1'
+
+
+def test_fingerprinted_static_uses(app):
+    sampledb_path = os.path.dirname(sampledb.__file__)
+    template_path = os.path.join(sampledb_path, 'frontend', 'templates')
+    static_path = os.path.join(sampledb_path, 'static')
+    template_files = glob.glob('**/*.html', recursive=True, root_dir=template_path)
+    static_files = glob.glob('**/*.*', recursive=True, root_dir=static_path)
+
+    # dynamic uses of sampledb/img/ghs*.png
+    assert 'sampledb/img/ghs01.png' in static_files
+    special_matches = [
+        "'sampledb/img/ghs0%d.png' | format(hazard_index"
+    ]
+
+    for template_file_name in template_files:
+        template_file_path = os.path.join(template_path, template_file_name)
+        with open(template_file_path, 'r') as template_file:
+            matches = re.findall(r'fingerprinted_static\((.*?)\)', template_file.read())
+            if matches is not None:
+                for match in matches:
+                    if match in special_matches:
+                        continue
+                    assert match[0] == match[-1]
+                    assert match[0] in '\'"'
+                    assert match[1:-1] in static_files

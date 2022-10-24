@@ -2,25 +2,25 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-datetimepicker.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-tagsinput.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/inscrybmde.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-tagsinput.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/typeahead.bundle.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/markdown_image_upload.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-  <script src="{{ fingerprinted_static('js/sampledb-load-objects.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
 {% endif %}
 <script type="text/javascript">
   window.mde_fields = [];

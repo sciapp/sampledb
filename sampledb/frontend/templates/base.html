@@ -9,13 +9,13 @@
   <link rel="shortcut icon" href="{{ url_for('frontend.favicon') }}">
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('frontend.apple_touch_icon') }}">
   {% block stylesheets %}
-  <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap.min.css') }}">
-  <link rel="stylesheet" href="{{ fingerprinted_static('css/font-awesome.min.css') }}">
-  <link rel="stylesheet" href="{{ fingerprinted_static('css/base.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('fontawesome/css/font-awesome.min.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/base.css') }}">
   <link rel="stylesheet" href="{{ fingerprinted_static('css/custom.css') }}">
   {% endblock %}
   {% block head_scripts %}
-  <script src="{{ fingerprinted_static('js/sampledb-toggle.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}"></script>
   {% endblock %}
   <script type="text/javascript">
     window.application_root_path = '{{ url_for('frontend.index') }}';
@@ -335,11 +335,11 @@
 {% endif %}
 
  {% block scripts %}
-  <script src="{{ fingerprinted_static('js/jquery-3.5.1.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/js.cookie.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('jquery/js/jquery-3.5.1.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap/js/bootstrap.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
 
   <script>
     $('[data-toggle="tooltip"]').tooltip();

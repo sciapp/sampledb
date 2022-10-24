@@ -73,7 +73,7 @@ def test_status_codes(flask_server, user):
         )
         component_id = component.id
         token = "invalid"
-        static_file_name = 'css/base.css'
+        static_file_name = 'css/custom.css'
         action_type_id = sampledb.models.ActionType.SAMPLE_CREATION
         action_id = sampledb.logic.actions.create_action(
             action_type_id=action_type_id,
