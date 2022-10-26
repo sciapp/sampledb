@@ -15,7 +15,7 @@
                         {{ import_information_symbol(obj) }}
                     {% elif component_id != 0 %}
                         #{{ data.object_id }} @ {{ component_name }}
-                        {{ import_information_symbol(FederationObjectRef(fed_id=data.object_id, component_uuid=component_uuid, class_name='object')) }}
+                        {{ import_information_symbol(FederationObjectRef(fed_id=data.object_id, component_uuid=component_uuid)) }}
                     {% else %}
                         <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
                     {% endif %}

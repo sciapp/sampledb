@@ -32,18 +32,20 @@ from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
-from ..logic.users import get_user
+from ..logic.users import get_user, User
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
+from ..logic.actions import Action, ActionType
+from ..logic.instruments import Instrument
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.languages import get_user_language
-from ..logic.locations import Location, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden
+from ..logic.locations import Location, LocationType, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden
 from ..logic.location_permissions import get_user_location_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.security_tokens import generate_token
 from ..logic.object_permissions import get_user_object_permissions, Permissions
-from ..logic.objects import get_object
+from ..logic.objects import get_object, Object
 
 
 def jinja_filter(name: str = ''):
@@ -688,12 +690,11 @@ def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
     return True, orcid
 
 
-@jinja_function()
 @dataclasses.dataclass(frozen=True)
-class FederationObjectRef:
+class FederationRef:
     fed_id: int
     component_uuid: str
-    class_name: str
+    referenced_class: typing.Type[typing.Any]
 
     @dataclasses.dataclass(frozen=True)
     class FederationComponentMock:
@@ -701,30 +702,51 @@ class FederationObjectRef:
         address: typing.Optional[str]
 
         def get_name(self):
-            if self.name is None:
-                if self.address is not None:
-                    regex = re.compile(r"https?://(www\.)?")    # should usually be https
-                    return regex.sub('', self.address).strip().strip('/')
-                return _('Database #%(id)s', id=self.id)  # type: ignore
-            else:
-                return self.name
+            return self.name
 
     @property
     def component(self) -> typing.Union[Component, FederationComponentMock]:
         try:
             return get_component_by_uuid(self.component_uuid)
         except errors.ComponentDoesNotExistError:
-            return FederationObjectRef.FederationComponentMock(
+            return FederationRef.FederationComponentMock(
                 name=flask_babel.gettext('Unknown database (%(uuid)s)', uuid=self.component_uuid[:8]),
                 address=None
             )
 
 
 @jinja_function()
-def get_class_name_as_snake_case(obj: typing.Any) -> str:
-    if isinstance(obj, FederationObjectRef):
-        return obj.class_name
-    return ''.join(
-        c if c.islower() else ('_' if i > 0 else '') + c.lower()
-        for i, c in enumerate(obj.__class__.__name__)
-    )
+@dataclasses.dataclass(frozen=True)
+class FederationObjectRef(FederationRef):
+    referenced_class: typing.Type[Object] = Object
+
+
+@jinja_function()
+@dataclasses.dataclass(frozen=True)
+class FederationUserRef(FederationRef):
+    referenced_class: typing.Type[User] = User
+
+
+@jinja_function()
+def get_federation_url(obj: typing.Any) -> str:
+    component_address = obj.component.address
+    if not component_address.endswith('/'):
+        component_address = component_address + '/'
+    if isinstance(obj, FederationRef):
+        obj_class = obj.referenced_class
+    else:
+        obj_class = obj.__class__
+    endpoint_and_param_name = {
+        User: ('frontend.user_profile', 'user_id'),
+        Object: ('frontend.object', 'object_id'),
+        Action: ('frontend.action', 'action_id'),
+        ActionType: ('frontend.action_type', 'type_id'),
+        Instrument: ('frontend.instrument', 'instrument_id'),
+        Location: ('frontend.location', 'location_id'),
+        LocationType: ('frontend.location_type', 'type_id'),
+    }.get(obj_class)
+    if endpoint_and_param_name is None:
+        return component_address
+    else:
+        endpoint, param_name = endpoint_and_param_name
+        return component_address + relative_url_for(endpoint, **{param_name: obj.fed_id})

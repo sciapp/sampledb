@@ -78,7 +78,7 @@ class Object:
         return self.object_id
 
     @property
-    def fed_id(self) -> int:
+    def fed_id(self) -> typing.Optional[int]:
         return self.fed_object_id
 
     @property
