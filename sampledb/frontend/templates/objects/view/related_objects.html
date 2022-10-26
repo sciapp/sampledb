@@ -33,7 +33,7 @@
   {% with component_name, component_id, component_address = get_component_information_by_uuid(related_objects_tree['component_uuid']) %}
     {% if component_id != 0 %}
       #{{ related_objects_tree['object_id'] }} @ {{ component_name }}
-      {{ federation_information_symbol_data(component_name, component_address,  related_objects_tree['object_id'], 'object') }}
+      {{ import_information_symbol(FederationObjectRef(fed_id=related_objects_tree['object_id'], component_uuid=related_objects_tree['component_uuid'], class_name='object')) }}
     {% else %}
       <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{  related_objects_tree['object_id'] }}</a>
     {% endif %}

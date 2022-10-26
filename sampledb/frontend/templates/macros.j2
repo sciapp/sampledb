@@ -39,7 +39,11 @@
 {% endmacro %}
 
 {% macro import_information_symbol(object, text=false, nolink=false) %}
-  {% if object.component is not none %}
-    {{ federation_information_symbol_data(object.component.get_name(), object.component.address, object.fed_id, get_class_name_as_snake_case(object).lower(), text, nolink) }}
+  {% if object.fed_id is not none %}
+    {% if object.component is none %}
+      {{ federation_information_symbol_data(none, none, object.fed_id, get_class_name_as_snake_case(object).lower(), text=text, nolink=nolink) }}
+    {% else %}
+      {{ federation_information_symbol_data(object.component.get_name(), object.component.address, object.fed_id, get_class_name_as_snake_case(object).lower(), text=text, nolink=nolink) }}
+    {% endif %}
   {% endif %}
 {% endmacro %}

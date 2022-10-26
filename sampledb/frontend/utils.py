@@ -2,7 +2,7 @@
 """
 
 """
-
+import dataclasses
 import json
 import base64
 import functools
@@ -26,7 +26,7 @@ import plotly
 import pytz
 
 from ..logic import errors
-from ..logic.components import get_component_or_none, get_component, get_component_by_uuid
+from ..logic.components import get_component_or_none, get_component, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
@@ -689,7 +689,41 @@ def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
 
 
 @jinja_function()
+@dataclasses.dataclass(frozen=True)
+class FederationObjectRef:
+    fed_id: int
+    component_uuid: str
+    class_name: str
+
+    @dataclasses.dataclass(frozen=True)
+    class FederationComponentMock:
+        name: str
+        address: typing.Optional[str]
+
+        def get_name(self):
+            if self.name is None:
+                if self.address is not None:
+                    regex = re.compile(r"https?://(www\.)?")    # should usually be https
+                    return regex.sub('', self.address).strip().strip('/')
+                return _('Database #%(id)s', id=self.id)  # type: ignore
+            else:
+                return self.name
+
+    @property
+    def component(self) -> typing.Union[Component, FederationComponentMock]:
+        try:
+            return get_component_by_uuid(self.component_uuid)
+        except errors.ComponentDoesNotExistError:
+            return FederationObjectRef.FederationComponentMock(
+                name=flask_babel.gettext('Unknown database (%(uuid)s)', uuid=self.component_uuid[:8]),
+                address=None
+            )
+
+
+@jinja_function()
 def get_class_name_as_snake_case(obj: typing.Any) -> str:
+    if isinstance(obj, FederationObjectRef):
+        return obj.class_name
     return ''.join(
         c if c.islower() else ('_' if i > 0 else '') + c.lower()
         for i, c in enumerate(obj.__class__.__name__)

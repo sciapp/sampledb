@@ -11,7 +11,7 @@
         {{ import_information_symbol(referenced_user, text=true) }}
         {% elif component_id != 0 %}
           {{ _('User') }} #{{ data.user_id }}
-          {{ federation_information_symbol_data(component_name, component_address, data.user_id, 'user', true) }}
+          {{ import_information_symbol(FederationObjectRef(fed_id=data.user_id, component_uuid=component_uuid, class_name='user'), text=true) }}
         {% else %}
       <a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id, _external=True) }}">{{ _('User') }} #{{ user.id }}</a>
         {% endif %}
