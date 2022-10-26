@@ -12,7 +12,7 @@
   {% for location_type in location_types %}
     <h2>
       <a href="{{ url_for('.location_type', type_id=location_type.id) }}" title="{{ location_type.name | get_translated_text }}">{{ location_type.name | get_translated_text }}</a>
-      {{ federation_information_symbol(get_component_or_none(location_type.component_id), location_type.fed_id, 'location_type') }}
+      {{ import_information_symbol(location_type) }}
     </h2>
     {% if current_user.is_admin and not current_user.is_readonly and location_type.fed_id is none %}
     <p>

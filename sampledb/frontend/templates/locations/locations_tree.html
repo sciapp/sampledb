@@ -5,7 +5,7 @@
 <li>
 {% if Permissions.READ in location_permissions %}
 <a href="{{ url_for('.location', location_id=location.id) }}">{{ location | get_location_name(False) }}</a>
-{{ federation_information_symbol(location.component, location.fed_id, 'location') }}
+{{ import_information_symbol(location) }}
   {% if location.is_hidden %}
     <p class="text-muted">
     {% if locations_tree and not is_full_location_tree_hidden(locations_map, locations_tree) %}

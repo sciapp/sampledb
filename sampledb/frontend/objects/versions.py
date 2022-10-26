@@ -71,6 +71,7 @@ def object_version(object_id, version_id):
         metadata_language=metadata_language,
         ENGLISH=english,
         is_archived=True,
+        object=object,
         object_type=get_translated_text(action_type.object_name) if action_type is not None else None,
         action=action,
         action_type=action_type,

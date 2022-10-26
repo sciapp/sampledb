@@ -17,7 +17,7 @@
                         {% if not (obj is none) %}
                             <a href="{{ url_for('frontend.object', object_id=obj.object_id) }}">{% if obj.name | get_translated_text(metadata_language) == '' %}&mdash;{% else %}{{ obj.name | get_translated_text(metadata_language) }}{% endif %}
                                 (#{{ obj.object_id }})</a>
-                            {{ federation_information_symbol(obj.component, obj.fed_object_id, 'object') }}
+                            {{ import_information_symbol(obj) }}
                         {% elif component_id != 0 %}
                             #{{ data.object_id }} @ {{ component_name }}
                             {{ federation_information_symbol_data(component_name, component_address, data.object_id, 'object') }}

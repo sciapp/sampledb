@@ -461,14 +461,14 @@
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>
         <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
-        {{ federation_information_symbol(object.component, object.fed_object_id, 'object') }}
+        {{ import_information_symbol(object) }}
       </td>
       {% if 'date' in creation_info %}
       <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
       {% endif %}
       {% if 'user' in creation_info %}
       <td>{% if object.created_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.get_name() }}</a>
-        {{ federation_information_symbol(object.created_by.component, object.created_by.fed_id, 'user') }}
+        {{ import_information_symbol(object.created_by) }}
         {% else %}&mdash;{% endif %}</td>
       {% endif %}
       {% if 'date' in last_edit_info %}
@@ -476,14 +476,14 @@
       {% endif %}
       {% if 'user' in last_edit_info %}
       <td>{% if object.modified_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.get_name() }}</a>
-        {{ federation_information_symbol(object.modified_by.component, object.modified_by.fed_id, 'user') }}
+        {{ import_information_symbol(object.modified_by) }}
         {% else %}&mdash;{% endif %}</td>
       {% endif %}
       {% if object.action is not none %}
         {% if 'instrument' in action_info %}
         {% if object.action.instrument is not none %}
           <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
-            {{ federation_information_symbol(object.action.instrument.component, object.action.instrument.fed_id, 'instrument') }}
+            {{ import_information_symbol(object.action.instrument) }}
           </td>
         {% else %}
           <td>&mdash;</td>
@@ -494,7 +494,7 @@
           <a href="{{ url_for('.action', action_id=object.action.id) }}">
             {{ object.action.name | get_translated_text(default=_('Unnamed Action')) }}
           </a>
-          {{ federation_information_symbol(object.action.component, object.action.fed_id, 'action') }}
+          {{ import_information_symbol(object.action) }}
         </td>
         {% endif %}
       {% endif %}

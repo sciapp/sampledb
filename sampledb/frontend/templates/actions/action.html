@@ -8,14 +8,14 @@
     {% if action.user_id is not none %}
       {% set action_owner = get_user(action.user_id) %}
     <a href="{{ url_for('.user_profile', user_id=action.user_id) }}" title="{{ action_owner.get_name() }}">{{ action_owner.get_name() }}</a>
-      {{ federation_information_symbol(action_owner.component, action_owner.fed_id, 'user') }} /
+      {{ import_information_symbol(action_owner) }} /
     {% endif %}
     {% if action.instrument is not none %}
       <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
-      {{ federation_information_symbol(action.instrument.component, action.instrument.fed_id, 'instrument') }} &mdash;
+      {{ import_information_symbol(action.instrument) }} &mdash;
     {% endif %}
     {{ action.name | get_translated_text }}
-    {{ federation_information_symbol(action.component, action.fed_id, 'action') }}
+    {{ import_information_symbol(action) }}
   </h1>
   {% if action.user_id is not none %}
     <p class="text-muted"><i class="fa {% if is_public %}fa-unlock{% else %}fa-lock{% endif %} fa-fw" aria-hidden="true"></i> {% if not is_public %} {{ _("This custom action is not public.") }} {% else %}  {{ _("This custom action is public.") }} {% endif %}</p>

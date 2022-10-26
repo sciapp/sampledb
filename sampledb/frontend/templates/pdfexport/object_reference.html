@@ -8,7 +8,7 @@
       {% with obj = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid) %}
         {% if not (obj is none) %}
           <a href="{{ url_for('frontend.object', object_id=obj.object_id, _external=True) }}">{{ obj.name | get_translated_text(metadata_language) }} (#{{ obj.object_id }})</a>
-          {{ federation_information_symbol(obj.component, obj.fed_object_id, 'object', true) }}
+          {{ import_information_symbol(obj, text=true) }}
         {% elif component_id != 0 %}
           {{ _('Object') }} #{{ data.object_id }}
           {{ federation_information_symbol_data(component_name, component_address, data.object_id, 'object', true) }}

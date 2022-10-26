@@ -8,7 +8,7 @@
     {% with referenced_user = get_user(data.user_id, component_id) %}
         {% if not referenced_user is none %}
       <a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.get_name() }}</a>
-          {{ federation_information_symbol(referenced_user.component, referenced_user.fed_id, 'user') }}
+          {{ import_information_symbol(referenced_user) }}
         {% elif component_id != 0 %}
           #{{ data.user_id }} @ {{ component_name }}
           {{ federation_information_symbol_data(component_name, component_address, data.user_id, 'user') }}

@@ -78,6 +78,10 @@ class Object:
         return self.object_id
 
     @property
+    def fed_id(self) -> int:
+        return self.fed_object_id
+
+    @property
     def name(self) -> typing.Union[str, typing.Dict[str, str]]:
         if self.data is not None and self.data.get('name') and isinstance(self.data['name'], dict) and self.data['name'].get('text'):
             return typing.cast(typing.Union[str, typing.Dict[str, str]], self.data['name']['text'])

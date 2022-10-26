@@ -686,3 +686,11 @@ def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
         return False, None
     # return sanitized ORCID iD on success
     return True, orcid
+
+
+@jinja_function()
+def get_class_name_as_snake_case(obj: typing.Any) -> str:
+    return ''.join(
+        c if c.islower() else ('_' if i > 0 else '') + c.lower()
+        for i, c in enumerate(obj.__class__.__name__)
+    )

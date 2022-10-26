@@ -9,7 +9,7 @@
   {% if in_export_data_model %}<span class="data_export_object_wrapper"><input type="checkbox" title="{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree['object_id']) }}" {% if 'referenced_objects' in related_objects_tree %}name="data_export_object_{{ related_objects_tree['object_id'] }}" id="data_export_object_{{ related_objects_tree['object_id'] }}" data-object-id="{{ related_objects_tree['object_id'] }}" {% else %}disabled="disabled"{% endif %} class="data_export_object data_export_object_{{ related_objects_tree['object_id'] }}"><label for="data_export_object_{{ related_objects_tree['object_id'] }}" class="fa fa-fw"><span class="sr-only">{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree['object_id']) }}</span></label></span>{% endif %}
   <a href="{{ url_for('.object', object_id=related_objects_tree['object_id']) }}">{{ object_name }} &bullet; #{{ related_objects_tree['object_id'] }}</a>
   {% if object is not none %}
-  {{ federation_information_symbol(object.component, object.fed_object_id, 'object') }}
+  {{ import_information_symbol(object) }}
   {% endif %}
   {% if related_objects_tree['permissions'] and related_objects_tree['permissions'] != 'none' %}
   {% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'])%}
