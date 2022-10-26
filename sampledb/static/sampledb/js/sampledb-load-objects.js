@@ -99,9 +99,19 @@ $(function() {
           var bloodhound = new Bloodhound({
             datumTokenizer: function (item) {
               let tokens = Bloodhound.tokenizers.whitespace(item.text);
+              // search by substrings
+              $.each(tokens, function (_, token) {
+                for(let i = 1; i < token.length - 1; i++) {
+                  tokens.push(token.substring(i, token.length));
+                }
+              });
+              // search by ID
               tokens.push('#' + item.id);
               tokens.push('' + item.id);
+              // search tags
               tokens.push.apply(tokens, item.tags);
+              // removes duplicate tokens
+              $.unique(tokens);
               return tokens;
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
@@ -134,7 +144,7 @@ $(function() {
           {
             name: 'object_picker',
             source: source,
-            limit: 10 + (!$x.prop('required') ? 1 : 0),
+            limit: 100 + (!$x.prop('required') ? 1 : 0),
             display: function (item) {
               return item.text;
             },
@@ -149,24 +159,47 @@ $(function() {
                   return '<div>' + data.text + '</div>';
                 }
               },
-              footer: function (context) {
+              header: function (context) {
                 let num_results_total = $x.num_results;
                 let num_results_shown = context.suggestions.length;
+                let query = $x.typeahead('val');
                 if (!$x.prop('required')) {
                   // the placeholder for not selecting an object does not count
                   num_results_shown -= 1;
                 }
+                let header_text_template = "";
                 if (num_results_shown === 0) {
-                  let empty_text = window.object_picker_empty_text;
-                  return '<div class="tt-footer">' + empty_text + '</div>';
+                  if (query === "") {
+                    header_text_template = window.object_picker_no_results_text_template_no_query;
+                  } else {
+                    header_text_template = window.object_picker_no_results_text_template;
+                  }
+                } else if (num_results_shown === num_results_total) {
+                  if (query === "") {
+                    header_text_template = window.object_picker_all_results_text_template_no_query;
+                  } else {
+                    header_text_template = window.object_picker_all_results_text_template;
+                  }
                 } else {
-                  let footer_text = window.object_picker_footer_text_with_placeholders.replace('PLACEHOLDER1', num_results_shown).replace('PLACEHOLDER2', num_results_total);
-                  return '<div class="tt-footer" style="border-top: 1px solid #cccccc;">' + footer_text + '</div>';
+                  if (query === "") {
+                    header_text_template = window.object_picker_some_results_text_template_no_query;
+                  } else {
+                    header_text_template = window.object_picker_some_results_text_template;
+                  }
                 }
+                let header_text = header_text_template.replace('PLACEHOLDER1', num_results_shown).replace('PLACEHOLDER2', num_results_total).replace('QUERY', query);
+                return '<div class="tt-header">' + header_text + '</div>';
               },
               empty: function (context) {
-                let empty_text = window.object_picker_empty_text;
-                return '<div class="tt-footer">' + empty_text + '</div>';
+                let query = $x.typeahead('val');
+                let empty_text_template = "";
+                if (query === "") {
+                  empty_text_template = window.object_picker_no_results_text_template_no_query;
+                } else {
+                  empty_text_template = window.object_picker_no_results_text_template;
+                }
+                let empty_text = empty_text_template.replace('QUERY', query);
+                return '<div class="tt-header">' + empty_text + '</div>';
               }
             }
           });

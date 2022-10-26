@@ -35,8 +35,12 @@
     };
     window.object_picker_select_text = "{{ _('Please select an object.') }}";
     window.object_picker_clear_text = "{{ _('Clear') }}";
-    window.object_picker_empty_text = "{{ _('Showing 0 results.') }}";
-    window.object_picker_footer_text_with_placeholders = "{{ _('Showing PLACEHOLDER1 of PLACEHOLDER2 results.') }}";
+    window.object_picker_no_results_text_template = '{{ _('No results for "QUERY"') }}';
+    window.object_picker_all_results_text_template = '{{ _('PLACEHOLDER2 results for "QUERY"') }}';
+    window.object_picker_some_results_text_template = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results for "QUERY"') }}';
+    window.object_picker_no_results_text_template_no_query = '{{ _('No results') }}';
+    window.object_picker_all_results_text_template_no_query = '{{ _('PLACEHOLDER2 results') }}';
+    window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results') }}';
   </script>
 {% endblock %}
 </head>

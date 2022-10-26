@@ -168,6 +168,8 @@ body > footer {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
     background-clip: padding-box;
     cursor: pointer;
+    overflow: scroll;
+    max-height: 250px;
 }
 
 .tt-suggestion {
@@ -188,10 +190,47 @@ body > footer {
   background-color: #428bca;
 }
 
-.tt-footer {
+.tt-header {
     text-align: center;
     padding: 3px 20px;
     cursor: default;
+    color: #888888;
+    border-bottom: 1px solid #cccccc;
+}
+
+.tt-header:last-child, .tt-suggestion:last-child {
+    border-bottom: 0 !important;
+}
+
+.objectpicker-container {
+    position: relative;
+}
+.objectpicker-container .objectpicker-caret {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    bottom: 2px;
+    background-color: white;
+    width:22px;
+    display: block;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    pointer-events: none;
+}
+.objectpicker-container .objectpicker-caret::before {
+    content: "";
+    border-top:4px dashed;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    position: absolute;
+    right: 12px;
+    color: #333333;
+    top: 50%;
+    margin-top: -2px;
+    display: inline-block;
+    width: 0;
+    height: 0;
+    pointer-events: none
 }
 
 #copyPermissionsSelect ~ .tt-menu {

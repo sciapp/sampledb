@@ -1209,11 +1209,23 @@ msgstr "Bitte wählen Sie ein Objekt aus."
 msgid "Clear"
 msgstr "Leeren"
 
-msgid "Showing 0 results."
-msgstr "Zeige 0 Ergebnisse."
+msgid "No results for \"QUERY\""
+msgstr "Keine Ergebnisse für „QUERY“"
 
-msgid "Showing PLACEHOLDER1 of PLACEHOLDER2 results."
-msgstr "Zeige PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen."
+msgid "PLACEHOLDER2 results for \"QUERY\""
+msgstr "PLACEHOLDER2 Ergebnisse für „QUERY“"
+
+msgid "PLACEHOLDER1 of PLACEHOLDER2 results for \"QUERY\""
+msgstr "PLACEHOLDER1 von PLACEHOLDER2 Ergebnisse für „QUERY“"
+
+msgid "No results"
+msgstr "Keine Ergebnisse"
+
+msgid "PLACEHOLDER2 results"
+msgstr "PLACEHOLDER2 Ergebnisse"
+
+msgid "PLACEHOLDER1 of PLACEHOLDER2 results"
+msgstr "PLACEHOLDER1 von PLACEHOLDER2 Ergebnisse"
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
@@ -5755,4 +5767,3 @@ msgid ""
 msgstr ""
 "Die plotly-Daten müssen gültig sein. Bitte prüfen Sie, welches Schema von"
 " plotly unterstützt wird."
-
