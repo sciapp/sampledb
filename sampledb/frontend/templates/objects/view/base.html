@@ -8,9 +8,8 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-datetimepicker.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-treeview.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
 {% set id_prefix = "object_" %}
@@ -162,26 +161,26 @@
     {% if show_scicat_export %}
     <div class="form-group">
       <a href="{{ url_for('.scicat_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information to %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}">
-        <img src="{{ fingerprinted_static("img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
+        <img src="{{ fingerprinted_static("sampledb/img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
       </a>
     </div>
     {% elif scicat_url %}
       <div class="form-group">
         <a href="{{ scicat_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View object information on %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}">
-          <img src="{{ fingerprinted_static("img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('View on %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
+          <img src="{{ fingerprinted_static("sampledb/img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('View on %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
         </a>
       </div>
     {% endif %}
     {% if show_dataverse_export %}
       <div class="form-group">
         <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
-          <img src="{{ fingerprinted_static("img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+          <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
         </a>
       </div>
     {% elif dataverse_url %}
       <div class="form-group">
         <a href="{{ dataverse_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View object information on %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
-          <img src="{{ fingerprinted_static("img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('View on %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+          <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('View on %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
         </a>
       </div>
     {% endif %}
@@ -189,7 +188,7 @@
       <div class="form-group">
         <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a Jupyter Notebook in %(jupyterhub_name)s to analyze this object.', jupyterhub_name=jupyterhub_name) }}">
           <button class="btn btn-primary dropdown-toggle" type="button" id="notebookDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <img src="{{ fingerprinted_static("img/jupyter-40.png") }}" style="height:1.3em; margin-top:-0.2em; margin-right: -0.2em;" alt=""/> {{ _('Create Notebook') }} <span class="caret"></span>
+            <img src="{{ fingerprinted_static("sampledb/img/jupyter-40.png") }}" style="height:1.3em; margin-top:-0.2em; margin-right: -0.2em;" alt=""/> {{ _('Create Notebook') }} <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" aria-labelledby="notebookDropdownMenuButton">
             {% for notebook_template in notebook_templates %}
@@ -1244,17 +1243,14 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ fingerprinted_static('js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/moment-timezone.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-treeview.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/js.cookie.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/markdown_image_viewer.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/sampledb-internationalization.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/plotly-latest.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
-    <script src="{{ fingerprinted_static('js/plotly-locale-de.js') }}"></script>
+    <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
     <script type="text/javascript">
       Plotly.setPlotConfig({locale: 'de'})
     </script>
@@ -1415,10 +1411,15 @@
           });
           $('#activity_log_counter').html('' + activity_log.find('tr:visible').length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
           window.activity_log_toggle.current_state[category] = should_show;
-          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', window.activity_log_toggle.current_state);
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(window.activity_log_toggle.current_state), {sameSite: 'Lax'});
         };
         window.activity_log_toggle.current_state = {};
-        var activity_log_filter_state = Cookies.getJSON('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE');
+        let activity_log_filter_state;
+        try {
+          activity_log_filter_state = JSON.parse(Cookies.get('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE'));
+        } catch(e) {
+            // ignore invalid cookies
+        }
         if (activity_log_filter_state === undefined) {
           activity_log_filter_state = {
             "versions": true,
@@ -1429,7 +1430,7 @@
             "references": true,
             "other": true
           };
-          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(activity_log_filter_state), {sameSite: 'Lax'});
         }
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
@@ -1474,16 +1475,21 @@
             }
             $('#file_table_counter').html('' + file_table.find('tr:visible').length + '&thinsp;/&thinsp;' + file_table.find('tr').length);
             window.file_table_toggle.current_state[category] = should_show;
-            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', window.file_table_toggle.current_state);
+            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', JSON.stringify(window.file_table_toggle.current_state), {sameSite: 'Lax'});
           };
           window.file_table_toggle.current_state = {};
-          var file_table_filter_state = Cookies.getJSON('SAMPLEDB_FILE_TABLE_FILTER_STATE');
+          let file_table_filter_state;
+          try {
+            file_table_filter_state = JSON.parse(Cookies.get('SAMPLEDB_FILE_TABLE_FILTER_STATE'));
+          }catch (e) {
+            // ignore invalid cookies
+          }
           if (file_table_filter_state === undefined) {
             file_table_filter_state = {
               "notebooks": true,
               "other": true
             };
-            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', file_table_filter_state);
+            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', JSON.stringify(file_table_filter_state), {sameSite: 'Lax'});
           }
           window.file_table_toggle(file_table_filter_state['notebooks'], "notebooks");
           window.file_table_toggle(file_table_filter_state['other'], "other");

@@ -4,7 +4,7 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
 {% block content %}
@@ -488,12 +488,12 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   {% if object_link_form and not object_id and not current_user.is_readonly and config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-    <script src="{{ fingerprinted_static('js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script src="{{ fingerprinted_static('js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 <script>
 
 window.translations = {{ translations | tojson }};

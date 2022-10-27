@@ -153,12 +153,12 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
             instrument_log_entry_id=log_entry.id,
             file_name="ghs01.png",
-            content=open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs01.png'), 'rb').read()
+            content=open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs01.png'), 'rb').read()
         )
         sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
             instrument_log_entry_id=log_entry.id,
             file_name="ghs02.png",
-            content=open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs02.png'), 'rb').read()
+            content=open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs02.png'), 'rb').read()
         )
         sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
             instrument_log_entry_id=log_entry.id,
@@ -203,7 +203,7 @@ This example shows how Markdown can be used for instrument Notes.
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
         files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: typing.cast(None, stream.write("Dies ist ein Test".encode('utf-8'))))
-        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: typing.cast(None, stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/img/ghs01.png'), 'rb').read())))
+        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: typing.cast(None, stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs01.png'), 'rb').read())))
         files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
         files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')
         sampledb.logic.publications.link_publication_to_object(instrument_responsible_user.id, instrument_object.id, '10.5281/zenodo.4012175', 'sciapp/sampledb', 'Example')

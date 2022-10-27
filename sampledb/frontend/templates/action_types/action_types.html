@@ -4,7 +4,7 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ fingerprinted_static('js/Sortable.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('sortable/js/Sortable.min.js') }}"></script>
     {% if current_user.is_admin and not current_user.is_readonly %}
         <script>
             let sortable;

@@ -4,22 +4,22 @@
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ fingerprinted_static('css/bootstrap-toggle.min.css') }}" />
-<link rel="stylesheet" href="{{ fingerprinted_static('css/pygments.css') }}">
-<link rel="stylesheet" href="{{ fingerprinted_static('css/inscrybmde.min.css') }}" />
-<link rel="stylesheet" href="{{ fingerprinted_static('css/schema_editor.css') }}">
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('pygments/css/pygments.css') }}">
+<link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/schema_editor.css') }}">
 {% endblock %}
 
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ fingerprinted_static('js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/bootstrap-toggle.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/markdown_image_upload.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/schema_editor.js') }}"></script>
-  <script src="{{ fingerprinted_static('js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script>
   // translations of error / help messages used in the static schema_editor.js
   window.schema_editor_translations = {
