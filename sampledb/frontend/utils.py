@@ -26,7 +26,7 @@ import plotly
 import pytz
 
 from ..logic import errors
-from ..logic.components import get_component_or_none, get_component, get_component_by_uuid, Component
+from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
@@ -78,6 +78,7 @@ jinja_filter()(get_all_translated_texts)
 
 jinja_function.functions = {}
 jinja_function()(get_component_or_none)
+jinja_function()(get_component_id_by_uuid)
 jinja_function()(get_unhandled_object_responsibility_assignments)
 jinja_function()(is_full_location_tree_hidden)
 
@@ -510,18 +511,6 @@ def fingerprinted_static(filename: str) -> str:
         filename=filename,
         v=get_fingerprint(os.path.join(STATIC_DIRECTORY, filename))
     )
-
-
-@jinja_function()
-def get_component_information_by_uuid(component_uuid: str):
-    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        return None, 0, None
-    else:
-        try:
-            component = get_component_by_uuid(component_uuid)
-            return component.get_name(), component.id, component.address
-        except errors.ComponentDoesNotExistError:
-            return flask_babel.gettext('Unknown database (%(uuid)s)', uuid=component_uuid[:8]), -1, None
 
 
 def get_search_paths(

@@ -30,12 +30,16 @@
   {% endif %}
   {% endif %}
 {% else %}
-  {% with component_name, component_id, component_address = get_component_information_by_uuid(related_objects_tree['component_uuid']) %}
-    {% if component_id != 0 %}
-      #{{ related_objects_tree['object_id'] }} @ {{ component_name }}
-      {{ import_information_symbol(FederationObjectRef(fed_id=related_objects_tree['object_id'], component_uuid=related_objects_tree['component_uuid'])) }}
-    {% else %}
-      <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{  related_objects_tree['object_id'] }}</a>
-    {% endif %}
-  {% endwith %}
+  {% if "component_uuid" in related_objects_tree and related_objects_tree.component_uuid is not none and related_objects_tree.component_uuid != config['FEDERATION_UUID'] %}
+    {% set component_uuid = related_objects_tree.component_uuid %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% if component_uuid is not none %}
+    {% set object_ref = FederationObjectRef(fed_id=related_objects_tree['object_id'], component_uuid=related_objects_tree['component_uuid']) %}
+    #{{ related_objects_tree['object_id'] }} @ {{ object_ref.component.get_name() }}
+    {{ import_information_symbol(object_ref) }}
+  {% else %}
+    <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{  related_objects_tree['object_id'] }}</a>
+  {% endif %}
 {% endif %}

@@ -177,6 +177,25 @@ def get_component_by_uuid(
     return Component.from_database(component)
 
 
+def get_component_id_by_uuid(
+        component_uuid: typing.Optional[str]
+) -> typing.Optional[int]:
+    """
+    Get the component ID for a given UUID.
+
+    :param component_uuid: a UUID, or None
+    :return: the matching component ID, or None
+    """
+    if component_uuid is None:
+        return None
+    # component_uuid is not validated as no exceptions should be raised from
+    # this function, so an invalid UUID returns None just as an unknown one.
+    component = components.Component.query.filter_by(uuid=component_uuid).first()
+    if component is None:
+        return None
+    return typing.cast(int, component.id)
+
+
 def update_component(component_id: int, name: typing.Optional[str] = None, address: typing.Optional[str] = None, description: typing.Optional[str] = '') -> None:
     """
     Updates the component's address, name and description.
