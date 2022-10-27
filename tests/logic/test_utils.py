@@ -210,3 +210,15 @@ def test_do_numeric_tags_exist():
     db.session.delete(Tag.query.filter_by(name='123').first())
     db.session.commit()
     assert not utils.do_numeric_tags_exist()
+
+
+def test_get_translated_text():
+    assert utils.get_translated_text(None) == ''
+    assert utils.get_translated_text(None, default='default') == 'default'
+    assert utils.get_translated_text('test') == 'test'
+    assert utils.get_translated_text({'en': 'test'}) == 'test'
+    assert utils.get_translated_text({'en': 'test_en', 'de': 'test_de'}) == 'test_en'
+    assert utils.get_translated_text({'en': 'test_en', 'de': 'test_de'}, 'de') == 'test_de'
+    assert utils.get_translated_text({'en': 'test_en'}, 'de') == 'test_en'
+    assert utils.get_translated_text({'de': 'test_de'}, 'en') == 'test_de'
+    assert utils.get_translated_text({'de': 'test_de'}) == 'test_de'

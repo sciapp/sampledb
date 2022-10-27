@@ -157,9 +157,15 @@ def get_translated_text(
         translated_text = text.get(language_code)
         if translated_text:
             return translated_text
+        # fall back to english
         translated_text = text.get('en')
         if translated_text:
             return translated_text
+        # fall back to first language code with non-empty content
+        for language_code in sorted(text):
+            translated_text = text[language_code]
+            if translated_text:
+                return translated_text
 
     return default
 
