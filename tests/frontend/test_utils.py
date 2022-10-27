@@ -130,6 +130,15 @@ def test_fingerprinted_static_uses(app):
                     if static_file_name in duplicate_matches:
                         continue
                     uses_by_template[template_file_name].append(static_file_name)
+            matches = re.findall(r'url_for\((.*?)\)', template_file_content)
+            if matches:
+                for match in matches:
+                    quoted_endpoint = match.split(',')[0].strip()
+                    assert quoted_endpoint[0] == quoted_endpoint[-1]
+                    assert quoted_endpoint[0] in '\'"'
+                    endpoint = quoted_endpoint[1:-1]
+                    assert endpoint != 'static'
+                    assert not endpoint.endswith('.static')
 
     template_file_names_to_check = copy.deepcopy(template_files)
     while template_file_names_to_check:
