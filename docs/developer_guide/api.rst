@@ -1595,7 +1595,9 @@ Reading a list of all locations
                 "location_id": 1,
                 "name": "Example Location",
                 "description": "This is an example location",
-                "parent_location_id": null
+                "parent_location_id": null,
+                "type_id": -99,
+                "is_hidden": false
             }
         ]
 
@@ -1629,13 +1631,17 @@ Reading a location
             "location_id": 1,
             "name": "Example Location",
             "description": "This is an example location",
-            "parent_location_id": null
+            "parent_location_id": null,
+            "type_id": -99,
+            "is_hidden": false
         }
 
     :>json number location_id: the location's ID
     :>json string name: the locations's name
     :>json string description: the locations's description
     :>json number parent_location_id: the parent location's ID
+    :>json number type_id: the location type's ID
+    :>json bool is_hidden: whether or not the location is hidden
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this location
     :statuscode 404: the location does not exist

@@ -12,6 +12,17 @@
     {{ location | get_location_name(False) }}
     {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
   </h1>
+  {% if location.is_hidden %}
+    <p class="text-muted">
+    {% if locations_tree and not is_full_location_tree_hidden(locations_map, locations_tree) %}
+      <i class="fa fa-eye fa-fw" aria-hidden="true"></i>
+      {{_("This location has been hidden from location lists, but will be shown because it contains other locations that have not been hidden.") }}
+    {% else %}
+      <i class="fa fa-eye-slash fa-fw" aria-hidden="true"></i>
+      {{_("This location has been hidden from location lists.") }}
+    {% endif %}
+    </p>
+  {% endif %}
   {% include "locations/responsible_users.html" %}
   {% if locations_tree %}
     <h2>{{ _('Sub-Locations') }}</h2>

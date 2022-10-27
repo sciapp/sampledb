@@ -225,6 +225,12 @@ $(function (){
         </select>
       </div>
     {% endif %}
+
+    {% if may_change_hidden %}
+      <label for="input-hidden" style="font-weight:400">
+        <input type="checkbox" id="input-hidden" name="{{ location_form.is_hidden.name }}" {% if location_form.is_hidden.data != False %}checked="checked"{% endif %}> {{ _('Hide this location from location lists') }}
+      </label>
+    {% endif %}
     </div>
 
     <div class="form-group row clearfix" style="padding-right:0.75em">

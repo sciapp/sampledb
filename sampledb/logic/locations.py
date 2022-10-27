@@ -69,6 +69,7 @@ class Location:
     type_id: int
     type: LocationType
     responsible_users: typing.List[users.User]
+    is_hidden: bool
     parent_location_id: typing.Optional[int] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -89,7 +90,8 @@ class Location:
             responsible_users=[
                 users.User.from_database(responsible_user)
                 for responsible_user in location.responsible_users
-            ]
+            ],
+            is_hidden=location.is_hidden,
         )
 
 
@@ -219,7 +221,8 @@ def update_location(
         description: typing.Optional[typing.Dict[str, str]],
         parent_location_id: typing.Optional[int],
         user_id: typing.Optional[int],
-        type_id: int
+        type_id: int,
+        is_hidden: bool,
 ) -> None:
     """
     Update a location's information.
@@ -231,6 +234,7 @@ def update_location(
     :param parent_location_id: the optional parent location id for the location
     :param user_id: the ID of an existing user
     :param type_id: the ID of an existing location type
+    :param is_hidden: whether the location is hidden
     :raise errors.LocationDoesNotExistError: when no location with the given
         location ID or parent location ID exists
     :raise errors.CyclicLocationError: when location ID is an ancestor of
@@ -274,6 +278,7 @@ def update_location(
     location.description = description
     location.parent_location_id = parent_location_id
     location.type_id = type_id
+    location.is_hidden = is_hidden
     db.session.add(location)
     db.session.commit()
     if user_id is not None:
@@ -339,6 +344,23 @@ def get_locations_tree() -> typing.Tuple[typing.Dict[int, Location], typing.Any]
             else:
                 unvisited_locations.append(location)
     return locations_map, locations_tree
+
+
+def is_full_location_tree_hidden(
+    locations_map: typing.Dict[int, Location],
+    locations_tree: typing.Any
+) -> bool:
+    """
+    Return whether a full locations tree only contains hidden locations.
+
+    :param locations_map: a dict mapping location IDs to locations
+    :param locations_tree: the locations tree
+    :return: whether all locations in the tree are hidden
+    """
+    return all(
+        locations_map[location_id].is_hidden and is_full_location_tree_hidden(locations_map, locations_subtree)
+        for location_id, locations_subtree in locations_tree.items()
+    )
 
 
 def _get_location_ancestors(location_id: int) -> typing.List[int]:

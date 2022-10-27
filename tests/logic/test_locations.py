@@ -136,13 +136,13 @@ def test_update_location(user: User):
     parent_location = locations.create_location({'en': "Parent Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     assert len(locations.get_locations()) == 2
-    locations.update_location(location.id, {'en': "Updated Location"}, {'en': "This is a location description"}, None, user.id, location.type_id)
+    locations.update_location(location.id, {'en': "Updated Location"}, {'en': "This is a location description"}, None, user.id, location.type_id, False)
     assert len(locations.get_locations()) == 2
     location = locations.get_location(location.id)
     assert location.name == {'en': "Updated Location"}
     assert location.description == {'en': "This is a location description"}
     assert location.parent_location_id is None
-    locations.update_location(location.id, {'en': "Updated Location"}, {'en': "This is a location description"}, parent_location.id, user.id, location.type_id)
+    locations.update_location(location.id, {'en': "Updated Location"}, {'en': "This is a location description"}, parent_location.id, user.id, location.type_id, False)
     location = locations.get_location(location.id)
     assert location.parent_location_id == parent_location.id
     user_log_entries = user_log.get_user_log_entries(user.id)
@@ -152,26 +152,26 @@ def test_update_location(user: User):
 def test_update_location_self_parent(user: User):
     location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     with pytest.raises(errors.CyclicLocationError):
-        locations.update_location(location.id, {'en': "Updated Location"}, {'en': "This is a location description"}, location.id, user.id, location.type_id)
+        locations.update_location(location.id, {'en': "Updated Location"}, {'en': "This is a location description"}, location.id, user.id, location.type_id, False)
 
 
 def test_update_location_cyclic(user: User):
     parent_location = locations.create_location({'en': "Parent Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, parent_location.id, user.id, locations.LocationType.LOCATION)
     with pytest.raises(errors.CyclicLocationError):
-        locations.update_location(parent_location.id, {'en': "Parent Location"}, {'en': "This is an example location"}, location.id, user.id, location.type_id)
+        locations.update_location(parent_location.id, {'en': "Parent Location"}, {'en': "This is an example location"}, location.id, user.id, location.type_id, False)
 
 
 def test_update_location_parent_does_not_exist(user: User):
     location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     with pytest.raises(errors.LocationDoesNotExistError):
-        locations.update_location(location.id, {'en': "Location"}, {'en': "This is an example location"}, location.id + 1, user.id, location.type_id)
+        locations.update_location(location.id, {'en': "Location"}, {'en': "This is an example location"}, location.id + 1, user.id, location.type_id, False)
 
 
 def test_update_location_which_does_not_exist(user: User):
     location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     with pytest.raises(errors.LocationDoesNotExistError):
-        locations.update_location(location.id + 1, {'en': "Location"}, {'en': "This is an example location"}, None, user.id, location.type_id)
+        locations.update_location(location.id + 1, {'en': "Location"}, {'en': "This is an example location"}, None, user.id, location.type_id, False)
 
 
 def test_get_location_tree(user: User):
@@ -179,7 +179,7 @@ def test_get_location_tree(user: User):
     parent_location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
     location = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, parent_location.id, user.id, locations.LocationType.LOCATION)
     child_location1 = locations.create_location({'en': "Location"}, {'en': "This is an example location"}, location.id, user.id, locations.LocationType.LOCATION)
-    locations.update_location(child_location2.id, {'en': "Location"}, {'en': "This is an example location"}, location.id, user.id, location.type_id)
+    locations.update_location(child_location2.id, {'en': "Location"}, {'en': "This is an example location"}, location.id, user.id, location.type_id, False)
     locations_map, locations_tree = locations.get_locations_tree()
     child_location2 = locations.get_location(child_location2.id)
     assert locations_map == {
@@ -332,7 +332,8 @@ def test_location_translations(user: User):
             description="This is an example location 2",
             parent_location_id=None,
             user_id=user.id,
-            type_id=location.type_id
+            type_id=location.type_id,
+            is_hidden=location.is_hidden,
         )
     location = locations.get_location(location.id)
     assert location.name == {
@@ -348,7 +349,8 @@ def test_location_translations(user: User):
         description={'en': "This is an example location 2"},
         parent_location_id=None,
         user_id=user.id,
-        type_id=location.type_id
+        type_id=location.type_id,
+        is_hidden=location.is_hidden,
     )
     location = locations.get_location(location.id)
     assert location.name == {
@@ -382,7 +384,8 @@ def test_location_translations(user: User):
         },
         parent_location_id=None,
         user_id=user.id,
-        type_id=location.type_id
+        type_id=location.type_id,
+        is_hidden=location.is_hidden,
     )
     location = locations.get_location(location.id)
     assert location.name == {
@@ -407,7 +410,8 @@ def test_location_translations(user: User):
             },
             parent_location_id=None,
             user_id=user.id,
-            type_id=location.type_id
+            type_id=location.type_id,
+            is_hidden=location.is_hidden,
         )
 
     location = locations.get_location(location.id)
@@ -431,7 +435,8 @@ def test_location_translations(user: User):
             },
             parent_location_id=None,
             user_id=user.id,
-            type_id=location.type_id
+            type_id=location.type_id,
+            is_hidden=location.is_hidden,
         )
 
     location = locations.get_location(location.id)
@@ -451,7 +456,8 @@ def test_location_translations(user: User):
             description={},
             parent_location_id=None,
             user_id=user.id,
-            type_id=location.type_id
+            type_id=location.type_id,
+            is_hidden=location.is_hidden
         )
 
     location = locations.get_location(location.id)

@@ -37,6 +37,7 @@ class LocationForm(FlaskForm):
     is_public = BooleanField(default=True)
     type = SelectField(validators=[DataRequired()])
     responsible_users = SelectMultipleField()
+    is_hidden = BooleanField(default=False)
 
 
 @frontend.route('/locations/')
@@ -386,8 +387,10 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
     location_translations = []
     if location is not None:
         submit_text = "Save"
+        may_change_hidden = flask_login.current_user.is_admin
     else:
         submit_text = "Create"
+        may_change_hidden = False
 
     location_types = logic.locations.get_location_types()
 
@@ -485,6 +488,10 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             location_form.responsible_users.data = [str(user.id) for user in location.responsible_users]
         else:
             location_form.responsible_users.data = []
+        if location is not None:
+            location_form.is_hidden.data = location.is_hidden
+        else:
+            location_form.is_hidden.data = False
 
     form_is_valid = False
     if location_form.validate_on_submit():
@@ -629,7 +636,8 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
                 description=descriptions,
                 parent_location_id=parent_location_id,
                 user_id=flask_login.current_user.id,
-                type_id=location_type_id
+                type_id=location_type_id,
+                is_hidden=location_form.is_hidden.data if may_change_hidden else location.is_hidden,
             )
             flask.flash(_('The location was updated successfully.'), 'success')
         if has_grant_permissions:
@@ -654,4 +662,5 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         location_type_enable_responsible_users=location_type_enable_responsible_users,
         previous_parent_location_is_invalid=previous_parent_location_is_invalid,
         has_grant_permissions=has_grant_permissions,
+        may_change_hidden=may_change_hidden,
     )
