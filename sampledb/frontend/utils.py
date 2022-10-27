@@ -524,18 +524,6 @@ def get_component_information_by_uuid(component_uuid: str):
             return flask_babel.gettext('Unknown database (%(uuid)s)', uuid=component_uuid[:8]), -1, None
 
 
-@jinja_function()
-def get_component_information(component_id: int):
-    try:
-        component = get_component(component_id)
-        component_name = component.name
-        component_id = component.id
-    except errors.ComponentDoesNotExistError:
-        component_name = None
-        component_id = -1
-    return component_name, component_id
-
-
 def get_search_paths(
         actions,
         action_types,
