@@ -1,14 +1,7 @@
 <div class="form-area">
     {# View #}
     <div class="view-switch">
-        {% if data is not none and "user_id" in data %}
-            {% with referenced_user = get_user(data.user_id) %}
-                <a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.name }}
-                    (#{{ referenced_user.id }})</a>
-            {% endwith %}
-        {% else %}
-            &mdash;
-        {% endif %}
+        {% include "objects/view/user_value.html" %}
         <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
         <div class="alert-upload-failed">
             {{ _('Your input is not valid. Please check.') }}

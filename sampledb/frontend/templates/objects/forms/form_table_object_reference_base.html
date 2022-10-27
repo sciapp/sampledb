@@ -1,7 +1,7 @@
 {% if id_prefix+'_oid' in form_data %}
   {% set selected_id = form_data[id_prefix+'_oid'] %}
 {% elif data is not none and "object_id" in data %}
-  {% if "component_uuid" in data and "component_uuid" is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none %}
     {% set sel = namespace(selected_id=None) %}
     {% for obj in referencable_objects %}
       {% if obj.fed_object_id == data["object_id"] and obj.component.uuid == data["component_uuid"] %}

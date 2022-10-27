@@ -1,5 +1,5 @@
 {% if data and data.object_id %}
-  {% if "component_uuid" in data and "component_uuid" is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none %}
       {% set component_uuid = data['component_uuid'] %}
     {% else %}
       {% set component_uuid = none %}

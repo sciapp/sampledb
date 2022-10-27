@@ -1,0 +1,22 @@
+{% if data is not none and "user_id" in data and data.user_id is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none %}
+    {% set component_uuid = data.component_uuid %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% with component_name, component_id, component_address = get_component_information_by_uuid(component_uuid) %}
+    {% with referenced_user = get_user(data.user_id, component_id) %}
+      {% if not referenced_user is none %}
+        <a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.get_name() }}</a>
+        {{ import_information_symbol(referenced_user) }}
+      {% elif component_id != 0 %}
+        #{{ data.user_id }} @ {{ component_name }}
+        {{ import_information_symbol(FederationUserRef(fed_id=data.user_id, component_uuid=component_uuid)) }}
+      {% else %}
+        #{{ data.user_id }}
+      {% endif %}
+    {% endwith %}
+  {% endwith %}
+{% else %}
+  &mdash;
+{% endif %}
