@@ -249,3 +249,70 @@ def test_get_project_group_name_prefixes():
         f"Category A / Category B / Project B / ",
         f"Category A / Project B / ",
     ]
+
+
+def test_custom_format_quantity_time():
+    schema = {
+        'type': 'quantity',
+        'title': 'example',
+        'units': ['min', 'h'],
+        'dimensionality': '[time]'
+    }
+    data = {
+        '_type': 'quantity',
+        'units': 'h',
+        'magnitude_in_base_units': 0.0,
+        'magnitude': 0.0,
+        'dimensionality': '[time]'
+    }
+    assert utils.custom_format_quantity(data, schema) == '00:00:00\u202fh'
+
+    data['units'] = 'min'
+    assert utils.custom_format_quantity(data, schema) == '00:00\u202fmin'
+
+    data['units'] = 'min'
+    data['magnitude_in_base_units'] = 12.5 * 60 + 0.2
+    data['magnitude'] = 12.5 + 0.2 / 60
+    assert utils.custom_format_quantity(data, schema) == '12:30.2\u202fmin'
+
+    data['units'] = 'h'
+    data['magnitude_in_base_units'] = ((30 * 60) + 15) * 60 + 30.1
+    data['magnitude'] = 30 + 15 / 60 + 30.1 / 3600
+    assert utils.custom_format_quantity(data, schema) == '30:15:30.1\u202fh'
+
+    data['units'] = 'h'
+    data['magnitude_in_base_units'] = 5
+    data['magnitude'] = 5 / 3600
+    assert utils.custom_format_quantity(data, schema) == '00:00:05\u202fh'
+
+    data['units'] = 'min'
+    data['magnitude_in_base_units'] = 5
+    data['magnitude'] = 5 / 60
+    assert utils.custom_format_quantity(data, schema) == '00:05\u202fmin'
+
+    data['units'] = 'h'
+    data['magnitude_in_base_units'] = 5 * 60
+    data['magnitude'] = 5 / 60
+    assert utils.custom_format_quantity(data, schema) == '00:05:00\u202fh'
+
+    data['units'] = 'min'
+    data['magnitude_in_base_units'] = 5 * 60
+    data['magnitude'] = 5
+    assert utils.custom_format_quantity(data, schema) == '05:00\u202fmin'
+
+    data['units'] = 'h'
+    data['magnitude_in_base_units'] = 5 * 3600
+    data['magnitude'] = 5
+    assert utils.custom_format_quantity(data, schema) == '05:00:00\u202fh'
+
+    data['units'] = 'min'
+    data['magnitude_in_base_units'] = 12.5 * 60 + 0.00123
+    data['magnitude'] = 12.5 + 0.00123 / 60
+    schema['display_digits'] = 4
+    assert utils.custom_format_quantity(data, schema) == '12:30.0012\u202fmin'
+
+    data['units'] = 'h'
+    data['magnitude_in_base_units'] = 12.5 * 60 + 0.00123
+    data['magnitude'] = 12.5 / 60 + 0.00123 / 3600
+    schema['display_digits'] = 4
+    assert utils.custom_format_quantity(data, schema) == '00:12:30.0012\u202fh'

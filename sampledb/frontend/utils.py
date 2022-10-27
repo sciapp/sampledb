@@ -307,8 +307,24 @@ def custom_format_quantity(
         return mdash
     if data.get('units', '1') in {'1', ''}:
         return custom_format_number(data.get('magnitude_in_base_units', 0), schema.get('display_digits', None))
-    quantity = Quantity.from_json(data)
     narrow_non_breaking_space = '\u202f'
+    magnitude = data.get('magnitude_in_base_units', 0)
+    display_digits = schema.get("display_digits", None)
+    if display_digits:
+        magnitude = round(magnitude, display_digits)
+    if data.get('units') == 'h':
+        seconds = magnitude % 60
+        magnitude -= seconds
+        minutes = int(magnitude // 60) % 60
+        magnitude -= minutes * 60
+        hours = int(magnitude // 3600)
+        return f'{hours:02d}:{minutes:02d}:{seconds:02g}{narrow_non_breaking_space}h'
+    if data.get('units') == 'min':
+        seconds = magnitude % 60
+        magnitude -= seconds
+        minutes = int(magnitude // 60)
+        return f'{minutes:02d}:{seconds:02g}{narrow_non_breaking_space}min'
+    quantity = Quantity.from_json(data)
     return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 
 
