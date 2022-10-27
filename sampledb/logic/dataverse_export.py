@@ -19,6 +19,7 @@ import requests
 from .components import get_component_by_uuid
 from .. import db
 from .units import prettify_units
+from .utils import get_translated_text
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
 from ..models import DataverseExport, Permissions, ObjectLogEntryType
 
@@ -65,13 +66,8 @@ def _flatten_metadata_object(
 
 def _translations_to_str(
         content: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
-) -> typing.Optional[str]:
-    if isinstance(content, dict):
-        if len(content) == 1:
-            content = content[list(content)[0]]
-        else:
-            content = json.dumps(content)
-    return content
+) -> str:
+    return get_translated_text(content, language_code='en')
 
 
 def get_title_for_property(
