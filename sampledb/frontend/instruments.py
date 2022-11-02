@@ -381,8 +381,9 @@ def new_instrument():
 
     instrument_form = InstrumentForm()
     instrument_form.instrument_responsible_users.choices = [
-        (str(user.id), user.name)
+        (str(user.id), user)
         for user in get_users()
+        if user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin)
     ]
     if instrument_form.validate_on_submit():
 
@@ -542,8 +543,9 @@ def edit_instrument(instrument_id):
     instrument_form = InstrumentForm()
 
     instrument_form.instrument_responsible_users.choices = [
-        (str(user.id), user.get_name())
+        (str(user.id), user)
         for user in get_users()
+        if user in instrument.responsible_users or (user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin))
     ]
     instrument_form.instrument_responsible_users.default = [
         str(user.id)

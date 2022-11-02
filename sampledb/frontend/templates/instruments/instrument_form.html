@@ -349,8 +349,8 @@
       <div class="form-group">
         <label for="input-instrument-responsible-users" class="control-label">{{ _('Instrument Scientists')}}</label>
         <select id="input-instrument-responsible-users" name="{{ instrument_form.instrument_responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No user selected') }}">
-          {% for choice in instrument_form.instrument_responsible_users.choices %}
-            <option value="{{ choice[0] }}" {% if (instrument_form.instrument_responsible_users.data and choice[0] in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and choice[0] in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ choice[1] }}</option>
+          {% for user_id_str, user in instrument_form.instrument_responsible_users.choices %}
+            <option value="{{ user_id_str }}" {% if (instrument_form.instrument_responsible_users.data and user_id_str in instrument_form.instrument_responsible_users.data) or (not instrument_form.instrument_responsible_users.data and instrument_form.instrument_responsible_users.default and user_id_str in instrument_form.instrument_responsible_users.default) %}selected="selected"{% endif %}>{{ user.get_name(include_ref=True) }}</option>
           {% endfor %}
         </select>
       </div>
