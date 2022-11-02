@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-10-06 10:05+0200\n"
+"POT-Creation-Date: 2022-10-27 15:13+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3625,6 +3625,16 @@ msgstr ""
 msgid "Create Location Type"
 msgstr "Ortstyp erstellen"
 
+msgid ""
+"This location has been hidden from location lists, but will be shown "
+"because it contains other locations that have not been hidden."
+msgstr ""
+"Dieser Ort wurde aus Ortslisten versteckt, wird aber angezeigt werden, da"
+" er andere, nicht versteckte Orte enthält."
+
+msgid "This location has been hidden from location lists."
+msgstr "Dieser Ort wurde aus Ortslisten versteckt."
+
 msgid "Sub-Locations"
 msgstr "Unter-Orte"
 
@@ -3775,6 +3785,9 @@ msgstr "Der bisherige Eltern-Ort darf keine Unter-Orte haben."
 
 msgid "Responsible Users"
 msgstr "Verantwortliche Nutzer"
+
+msgid "Hide this location from location lists"
+msgstr "Diesen Ort aus Ortslisten verstecken"
 
 msgid "Location Permissions"
 msgstr "Ortsberechtigungen"

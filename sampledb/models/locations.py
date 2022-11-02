@@ -100,6 +100,7 @@ class Location(db.Model):  # type: ignore
     type_id = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
     type = db.relationship('LocationType')
     responsible_users = db.relationship("User", secondary=location_user_association_table, order_by="User.name")
+    is_hidden = db.Column(db.Boolean, default=False, nullable=False)
 
     def __init__(
             self,

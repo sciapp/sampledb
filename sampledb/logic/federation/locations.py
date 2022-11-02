@@ -109,7 +109,8 @@ def import_location(
                 description=location_data['description'],
                 parent_location_id=parent_location_id,
                 user_id=None,
-                type_id=location_type_id
+                type_id=location_type_id,
+                is_hidden=location.is_hidden,
             )
             set_location_responsible_users(
                 location_id=location.id,

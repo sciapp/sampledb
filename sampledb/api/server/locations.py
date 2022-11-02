@@ -20,7 +20,8 @@ def location_to_json(location: locations.Location) -> typing.Dict[str, typing.An
         'name': utils.get_translated_text(location.name, 'en') if location.name else None,
         'description': utils.get_translated_text(location.description, 'en'),
         'parent_location_id': location.parent_location_id,
-        'type_id': location.type_id
+        'type_id': location.type_id,
+        'is_hidden': location.is_hidden,
     }
 
 

@@ -71,7 +71,8 @@ def test_get_location(flask_server, auth, user):
         'name': "Example Location",
         'description': "This is an example location",
         'parent_location_id': None,
-        'type_id': location.type_id
+        'type_id': location.type_id,
+        'is_hidden': False
     }
 
     parent_location = sampledb.logic.locations.create_location(
@@ -87,7 +88,8 @@ def test_get_location(flask_server, auth, user):
         description={'en': "This is an example location"},
         parent_location_id=parent_location.id,
         user_id=user.id,
-        type_id=location.type_id
+        type_id=location.type_id,
+        is_hidden=True,
     )
     r = requests.get(flask_server.base_url + 'api/v1/locations/{}'.format(location.id), auth=auth)
     assert r.status_code == 200
@@ -96,7 +98,8 @@ def test_get_location(flask_server, auth, user):
         'name': "Example Location",
         'description': "This is an example location",
         'parent_location_id': parent_location.id,
-        'type_id': location.type_id
+        'type_id': location.type_id,
+        'is_hidden': True
     }
 
 
@@ -125,7 +128,8 @@ def test_get_locations(flask_server, auth, user):
             'name': "Example Location",
             'description': "This is an example location",
             'parent_location_id': None,
-            'type_id': location.type_id
+            'type_id': location.type_id,
+            'is_hidden': False
         }
     ]
 

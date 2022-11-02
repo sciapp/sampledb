@@ -38,7 +38,7 @@ from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.languages import get_user_language
-from ..logic.locations import Location, get_location, get_unhandled_object_responsibility_assignments
+from ..logic.locations import Location, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden
 from ..logic.location_permissions import get_user_location_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.security_tokens import generate_token
@@ -77,6 +77,7 @@ jinja_filter()(get_all_translated_texts)
 jinja_function.functions = {}
 jinja_function()(get_component_or_none)
 jinja_function()(get_unhandled_object_responsibility_assignments)
+jinja_function()(is_full_location_tree_hidden)
 
 
 qrcode_cache = {}

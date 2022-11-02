@@ -38,6 +38,7 @@ Currently in development.
 - Show last user profile update time
 - Allow administrators to update user profile information
 - Added ``show_more`` option for objects
+- Allow hiding locations as administrator
 
 Version 0.20
 ------------
