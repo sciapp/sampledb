@@ -233,6 +233,10 @@ body > footer {
     pointer-events: none
 }
 
+.objectpicker-container .tt-menu {
+    width: 100%;
+}
+
 #copyPermissionsSelect ~ .tt-menu {
     top: initial !important;
     bottom: 100%;
