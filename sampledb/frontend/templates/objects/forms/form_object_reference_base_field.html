@@ -31,7 +31,7 @@
 
 {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
   <div class="objectpicker-container">
-    <input type="text" class="form-control typeahead" style="width: 100%" value="{% if selected_id is not none %}#{{ selected_id }}{% endif %}" placeholder="{{ _('No object selected') }}" {% if selected_action is none %}{% if selected_action_type is not none %}data-sampledb-valid-action-ids="{{ action_type_id_by_action_id.items() | selectattr(1, 'eq', selected_action_type) | map(attribute=0) | list | tojson }}"{% endif %}{% else %}data-sampledb-valid-action-ids="[{% if selected_action_type is not none and action_type_id_by_action_id[selected_action] != selected_action_type %}-1{% else %}{{ selected_action }}{% endif %}]"{% endif %} data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1"/>
+    <input type="text" class="form-control typeahead" style="width: 100%" value="{% if selected_id is not none %}#{{ selected_id }}{% endif %}" placeholder="{{ _('No object selected') }}" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1"/>
     <span class="objectpicker-caret"></span>
     <input type="hidden" name="{{ id_prefix+'_oid' }}" value="{% if selected_id is not none %}{{ selected_id }}{% endif %}" />
   </div>

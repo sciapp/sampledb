@@ -70,6 +70,7 @@ $(function() {
         var action_ids = idsToArray($x.data('sampledbValidActionIds'));
         var required_perm = $x.data('sampledbRequiredPerm') || 1;
         var remove_ids = idsToArray($x.data('sampledbRemove'));
+        console.log(action_ids)
         var to_add = referencable_objects
           .filter(function (el) {
             return el.max_permission >= required_perm && $.inArray(el.id, remove_ids) === -1;
@@ -225,12 +226,12 @@ $(function() {
               this.setCustomValidity('');
               form_group.removeClass('has-error');
               form_group.find('.help-block').text('');
-              field.parent().next('input[type="hidden"]').val(object_id);
+              field.closest('.objectpicker-container').find('input[type="hidden"]').val(object_id);
             } else {
               this.setCustomValidity(window.object_picker_select_text);
               form_group.addClass('has-error');
               form_group.find('.help-block').text(window.object_picker_select_text);
-              field.parent().next('input[type="hidden"]').val('');
+              field.closest('.objectpicker-container').find('input[type="hidden"]').val('');
             }
           }
           $x.on('typeahead:selected', change_handler);
