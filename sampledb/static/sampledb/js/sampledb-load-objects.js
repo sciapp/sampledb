@@ -1,3 +1,5 @@
+window.objectpicker_datasets = {};
+
 $(function() {
   function idsToArray(ids) {
     if (typeof ids === 'string') {
@@ -70,7 +72,6 @@ $(function() {
         var action_ids = idsToArray($x.data('sampledbValidActionIds'));
         var required_perm = $x.data('sampledbRequiredPerm') || 1;
         var remove_ids = idsToArray($x.data('sampledbRemove'));
-        console.log(action_ids)
         var to_add = referencable_objects
           .filter(function (el) {
             return el.max_permission >= required_perm && $.inArray(el.id, remove_ids) === -1;
@@ -97,23 +98,24 @@ $(function() {
             }).join(""));
         } else {
           $x.typeahead("destroy");
-          var bloodhound = new Bloodhound({
+          let bloodhound = new Bloodhound({
             datumTokenizer: function (item) {
-              let tokens = Bloodhound.tokenizers.whitespace(item.text);
-              // search by substrings
-              $.each(tokens, function (_, token) {
-                for(let i = 1; i < token.length - 1; i++) {
-                  tokens.push(token.substring(i, token.length));
+              let tokens = new Set([]);
+              Bloodhound.tokenizers.whitespace(item.text).forEach(function(token) {
+                tokens.add(token);
+                // search by substrings (except for ID)
+                if (token !== '(#' + item.id + ')') {
+                  for (let i = 1; i < token.length - 1; i++) {
+                    tokens.add(token.substring(i, token.length));
+                  }
                 }
               });
               // search by ID
-              tokens.push('#' + item.id);
-              tokens.push('' + item.id);
+              tokens.add('#' + item.id);
+              tokens.add('' + item.id);
               // search tags
-              tokens.push.apply(tokens, item.tags);
-              // removes duplicate tokens
-              $.unique(tokens);
-              return tokens;
+              tokens.add.apply(tokens, item.tags);
+              return Array.from(tokens);
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             local: to_add,
@@ -137,15 +139,10 @@ $(function() {
               bloodhound.search(q, syncWrap);
             }
           }
-          $x.typeahead({
-            hint: true,
-            highlight: true,
-            minLength: 0
-          },
-          {
+          let dataset = {
             name: 'object_picker',
             source: source,
-            limit: 100 + (!$x.prop('required') ? 1 : 0),
+            limit: ((window.object_picker_limit === null || window.object_picker_limit < 1) ? 'Infinity' : window.object_picker_limit + (!$x.prop('required') ? 1 : 0)),
             display: function (item) {
               return item.text;
             },
@@ -203,7 +200,16 @@ $(function() {
                 return '<div class="tt-header">' + empty_text + '</div>';
               }
             }
-          });
+          }
+          window.objectpicker_datasets[$x.closest('.objectpicker-container').find('input[type=hidden]')[0].name] = dataset;
+          $x.typeahead(
+            {
+              hint: true,
+              highlight: true,
+              minLength: 0
+            },
+            dataset
+          );
           function change_handler() {
             $x.blur();
             let field = $(this);
@@ -280,3 +286,21 @@ $(function() {
     });
   }
 });
+
+function objectpicker_show_all(button) {
+  let objectpicker_container = $(button).closest('.objectpicker-container');
+  let objectpicker = objectpicker_container.find('.typeahead.tt-input');
+  let name = objectpicker_container.find('input[type=hidden]')[0].name;
+  let dataset = window.objectpicker_datasets[name];
+  dataset["limit"] = 'Infinity';
+  objectpicker.typeahead("destroy");
+  objectpicker.typeahead(
+    {
+      hint: true,
+      highlight: true,
+      minLength: 0
+    },
+    dataset
+  );
+  objectpicker.focus();
+}

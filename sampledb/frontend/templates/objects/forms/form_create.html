@@ -100,7 +100,7 @@
         {% set selected_obj_id = request.args.get('previous_object_id') %}
         {% endif %}
         {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
-          <div class="pull-right" style="width:280px">
+          <div class="pull-right objectpicker-container" style="width:280px">
           <input id="copyPermissionsSelect" type="text" class="form-control typeahead" value="" placeholder="{{ _("No object selected") }}" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" />
           <input type="hidden" name="copy_permissions_object_id" value="" />
           </div>

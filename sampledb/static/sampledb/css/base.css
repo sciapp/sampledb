@@ -237,6 +237,11 @@ body > footer {
     width: 100%;
 }
 
+.objectpicker-show-all {
+    cursor: pointer;
+    color: #337ab7;
+}
+
 #copyPermissionsSelect ~ .tt-menu {
     top: initial !important;
     bottom: 100%;

@@ -566,6 +566,7 @@ DISABLE_SUBPROJECTS = False
 LOAD_OBJECTS_IN_BACKGROUND = True
 
 USE_TYPEAHEAD_FOR_OBJECTS = False
+TYPEAHEAD_OBJECT_LIMIT = None
 
 ENFORCE_SPLIT_NAMES = False
 
@@ -612,7 +613,13 @@ except ValueError:
     pass
 
 # parse values as integers
-for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE', 'VALID_TIME_DELTA', 'DOWNLOAD_SERVICE_TIME_LIMIT'}:
+for config_name in {
+    'MAX_CONTENT_LENGTH',
+    'MAX_BATCH_SIZE',
+    'VALID_TIME_DELTA',
+    'DOWNLOAD_SERVICE_TIME_LIMIT',
+    'TYPEAHEAD_OBJECT_LIMIT',
+}:
     value = globals().get(config_name)
     if isinstance(value, str):
         try:

@@ -283,6 +283,8 @@ Miscellaneous
      - If set, the given timezone will be used for all users instead of using their browser timezone or the one set in their preferences.
    * - SAMPLEDB_USE_TYPEAHEAD_FOR_OBJECTS
      - **Experimental**: If set, a text field with typeahead.js based suggestions will be used for object references instead of a dropdown/select field.
+   * - SAMPLEDB_TYPEAHEAD_OBJECT_LIMIT
+     - If SAMPLEDB_USE_TYPEAHEAD_FOR_OBJECTS is set, this value can set an upper limit for the number of object suggestions shown. Not set by default.
    * - SAMPLEDB_ENABLE_ANONYMOUS_USERS
      - If set, objects may be set to be readable by anonymous users, without requiring them to sign in.
    * - SAMPLEDB_SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS
