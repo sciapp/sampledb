@@ -185,8 +185,10 @@ $(function() {
                     header_text_template = window.object_picker_some_results_text_template;
                   }
                 }
-                let header_text = header_text_template.replace('PLACEHOLDER1', num_results_shown).replace('PLACEHOLDER2', num_results_total).replace('QUERY', query);
-                return '<div class="tt-header">' + header_text + '</div>';
+                let header_text = header_text_template.replace('PLACEHOLDER1', num_results_shown).replace('PLACEHOLDER2', num_results_total)
+                let header = $('<div class="tt-header">' + header_text + '</div>');
+                header.find('.query-container').text(query);
+                return header;
               },
               empty: function (context) {
                 let query = $x.typeahead('val');
@@ -196,8 +198,10 @@ $(function() {
                 } else {
                   empty_text_template = window.object_picker_no_results_text_template;
                 }
-                let empty_text = empty_text_template.replace('QUERY', query);
-                return '<div class="tt-header">' + empty_text + '</div>';
+                let empty_text = empty_text_template;
+                let empty = $('<div class="tt-header">' + empty_text + '</div>');
+                empty.find('.query-container').text(query);
+                return empty;
               }
             }
           }
