@@ -149,7 +149,7 @@ $(function() {
             templates: {
               suggestion: function(data) {
                 if (data.text === null) {
-                  return '<div class="text-center" style="border-bottom: 1px solid #cccccc">' + window.object_picker_clear_text + '</div>';
+                  return '<div>—</div>';
                 }
                 if (data.is_fed) {
                   return '<div><i class="fa fa-share-alt fa-fw" style="margin-left: -1.43571429em; margin-right:0.15em;"></i>' + data.text + '</div>';
@@ -293,7 +293,7 @@ function objectpicker_show_all(button) {
   let name = objectpicker_container.find('input[type=hidden]')[0].name;
   let dataset = window.objectpicker_datasets[name];
   dataset["limit"] = 'Infinity';
-  objectpicker.typeahead("destroy");
+  objectpicker.typeahead('destroy');
   objectpicker.typeahead(
     {
       hint: true,
@@ -303,4 +303,10 @@ function objectpicker_show_all(button) {
     dataset
   );
   objectpicker.focus();
+}
+
+function objectpicker_clear(button) {
+  let objectpicker_container = $(button).closest('.objectpicker-container');
+  let objectpicker = objectpicker_container.find('.typeahead.tt-input');
+  objectpicker.typeahead('val', '');
 }

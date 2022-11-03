@@ -237,7 +237,7 @@ body > footer {
     width: 100%;
 }
 
-.objectpicker-show-all {
+.objectpicker-button {
     cursor: pointer;
     color: #337ab7;
 }
