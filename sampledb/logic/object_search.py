@@ -1341,7 +1341,7 @@ def transform_binary_operation_to_query(
     if left_outer_filter and right_outer_filter:
         search_notes.append(('error', "Multiple array placeholders", start, end))
         if hasattr(left_operand, 'input_text') and hasattr(left_operand, 'start_position') and hasattr(right_operand, 'input_text'):
-            return Expression(left_operand.input_text + operator.input_text + right_operand.input_text, left_operand.start_position, false()), None  # type: ignore
+            return Expression(left_operand.input_text + operator.input_text + right_operand.input_text, left_operand.start_position, false()), None
         return false(), None
     if left_outer_filter:
         outer_filter = left_outer_filter
@@ -1409,7 +1409,7 @@ def transform_binary_operation_to_query(
 
     search_notes.append(('error', "Unknown binary operation", start, end))
     if hasattr(left_operand, 'start_position') and hasattr(left_operand, 'input_text') and hasattr(right_operand, 'input_text'):
-        return Expression(left_operand.input_text + operator.input_text + right_operand.input_text, left_operand.start_position, false()), None  # type: ignore
+        return Expression(left_operand.input_text + operator.input_text + right_operand.input_text, left_operand.start_position, false()), None
     return false(), None
 
 
