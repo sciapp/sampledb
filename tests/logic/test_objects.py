@@ -531,3 +531,18 @@ def test_insert_old_fed_object_version(user, action, component):
 def test_name_property(empty_fed_object, object):
     assert object.name == object.data['name']['text']
     assert empty_fed_object.name == ''
+
+
+def test_get_current_version_id(object):
+    assert sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id) == object.version_id
+
+    sampledb.logic.objects.update_object(
+        object_id=object.object_id,
+        data=object.data,
+        user_id=object.user_id,
+        schema=object.schema,
+    )
+    assert sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id) == object.version_id + 1
+
+    with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
+        sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id + 1000)

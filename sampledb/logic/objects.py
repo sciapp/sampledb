@@ -589,3 +589,17 @@ def find_user_references(object: Object, find_previous_referenced_user_ids: bool
                         previous_referenced_user_id = previous_data['user_id']
             referenced_user_ids.append((referenced_user_id, previous_referenced_user_id))
     return referenced_user_ids
+
+
+def get_current_object_version_id(object_id: int) -> int:
+    """
+    Get the ID of the current version of an object.
+
+    :param object_id: the ID of an existing object
+    :return: the object's current version ID
+    :raises errors.ObjectDoesNotExistError: if the object does not exist
+    """
+    version_id = Objects.get_current_object_version_id(object_id)
+    if version_id is None:
+        raise errors.ObjectDoesNotExistError()
+    return version_id
