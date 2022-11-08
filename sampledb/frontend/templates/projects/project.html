@@ -64,21 +64,20 @@
   <h2>{{ _('Members') }}</h2>
   <ul>
     {% for user_id, user_permissions in project_member_user_ids_and_permissions.items() %}
-      {% with user = get_user(user_id) %}
-        <li><i class="fa fa-user" aria-hidden="true"></i> <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
-        <span class="label label-default">
-        {% if user_permissions == user_permissions.READ %}{{ _('Read') }}{% endif %}
-        {% if user_permissions == user_permissions.WRITE %}{{ _('Write') }}{% endif %}
-        {% if user_permissions == user_permissions.GRANT %}{{ _('Grant') }}{% endif %}
-        </span>
-        {% if remove_project_member_form and user_id != current_user.id %}
-        <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectMember{{ user_id }}Form">
-          {{ remove_project_member_form.csrf_token() }}
-          <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">{{ _('Remove') }}</button>
-        </form>
-        {% endif %}
-        </li>
-      {% endwith %}
+      <li><i class="fa fa-user" aria-hidden="true"></i>
+        {{ user_reference(user_id) }}
+      <span class="label label-default">
+      {% if user_permissions == user_permissions.READ %}{{ _('Read') }}{% endif %}
+      {% if user_permissions == user_permissions.WRITE %}{{ _('Write') }}{% endif %}
+      {% if user_permissions == user_permissions.GRANT %}{{ _('Grant') }}{% endif %}
+      </span>
+      {% if remove_project_member_form and user_id != current_user.id %}
+      <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectMember{{ user_id }}Form">
+        {{ remove_project_member_form.csrf_token() }}
+        <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">{{ _('Remove') }}</button>
+      </form>
+      {% endif %}
+      </li>
     {% endfor %}
     {% for group_id in project_member_group_ids_and_permissions %}
       {% with group = get_group(group_id) %}

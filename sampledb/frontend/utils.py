@@ -820,3 +820,11 @@ def get_locations_form_data(
         for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
             unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, name_prefix, subtree[location_id], id_path + [location_id]))
     return all_choices, choices
+
+
+@jinja_function()
+def get_user_or_none(user_id: int) -> typing.Optional[User]:
+    try:
+        return get_user(user_id)
+    except errors.UserDoesNotExistError:
+        return None
