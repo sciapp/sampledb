@@ -12,7 +12,7 @@ from ... import logic
 from ...logic.actions import get_action_type, get_action
 from ...logic.object_permissions import Permissions, get_user_object_permissions
 from ...logic.settings import get_user_settings
-from ...logic.objects import get_object, get_object_versions
+from ...logic.objects import get_object, get_object_versions, get_current_object_version_id
 from ...logic.languages import get_language_by_lang_code, get_languages_in_object_data, get_language, Language
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
@@ -39,6 +39,7 @@ def object_versions(object_id):
 def object_version(object_id, version_id):
     english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
+    current_version_id = get_current_object_version_id(object_id=object_id)
     form = None
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     if Permissions.WRITE in user_permissions:
@@ -80,6 +81,7 @@ def object_version(object_id, version_id):
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         object_id=object_id,
         version_id=version_id,
+        current_version_id=current_version_id,
         link_version_specific_rdf=True,
         restore_form=form,
         get_user=get_user_if_exists,

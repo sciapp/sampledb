@@ -19,7 +19,13 @@
   {% if is_archived %}
   <div class="alert alert-info alert-dismissible" role="alert">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    <strong>{{ _('Note') }}:</strong> {{ _('This is an archived version of the object information. For the current information, <a href="%(latest_version_url)s">click here</a>.', latest_version_url=url_for('frontend.object', object_id=object_id))}}
+    <strong>{{ _('Note') }}:</strong>
+    {% if version_id == current_version_id %}
+      {{ _('This page contains an archived version of the current object information.') }}
+    {% else %}
+      {{ _('This page contains an archived version of previous object information.') }}
+    {% endif %}
+    {{ _('For always up-to-date information, <a href="%(latest_version_url)s">click here</a>.', latest_version_url=url_for('frontend.object', object_id=object_id)) }}
   </div>
   {% endif %}
 
