@@ -56,6 +56,8 @@ from . import utils
 from . import where_filters
 
 from ..models.objects import Objects
+from .schemas.validate import validate
+from .schemas.validate_schema import validate_schema
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -103,6 +105,7 @@ __all__ = [
     'projects',
     'publications',
     'rdf',
+    'schemas',
     'scicat_export',
     'security_tokens',
     'settings',
@@ -114,5 +117,5 @@ __all__ = [
     'where_filters',
 ]
 
-Objects._data_validator = schemas.validate
-Objects._schema_validator = schemas.validate_schema
+Objects._data_validator = validate
+Objects._schema_validator = validate_schema

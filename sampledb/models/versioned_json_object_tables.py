@@ -993,3 +993,30 @@ class VersionedJSONSerializableObjectTables(object):
         if current_object is not None and current_object.version_id == version_id:
             return current_object
         return None
+
+    @_use_transaction
+    def get_current_object_version_id(
+            self,
+            object_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Optional[int]:
+        """
+        Get the ID of the current version of an object.
+
+        :param object_id: the ID of an existing object
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the object's current version ID, or None
+        """
+        assert connection is not None  # ensured by decorator
+        current_object_info = connection.execute(
+            db
+            .select(
+                self._current_table.c.version_id,
+            )
+            .where(
+                self._current_table.c.object_id == object_id
+            )
+        ).fetchone()
+        if current_object_info is None:
+            return None
+        return typing.cast(int, current_object_info[0])
