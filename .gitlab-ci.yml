@@ -55,6 +55,31 @@ analyze:
     - python3 -m pyflakes sampledb
     - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
 
+check-translations:
+  stage: test
+  image: python:3.10-slim-bullseye
+  script:
+    - apt-get update
+    # set up Python 3
+    - apt-get install -y git python3-pip
+    # install Flask-Babel
+    - python3 -m pip install  flask-babel
+    # create a copy of the current extracted messages
+    - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_current_de.po
+    # ensure there are no fuzzy translations
+    - grep -zqv fuzzy extracted_messages_current_de.po
+    # ensure there are no empty translations
+    - "grep -zqvP 'msgstr \"\"\\n\\n' extracted_messages_current_de.po"
+    # extract and update messages
+    - pybabel extract --no-location -F babel.cfg -k lazy_gettext -o sampledb/messages.pot sampledb
+    - pybabel update -i sampledb/messages.pot -d sampledb/translations -D extracted_messages
+    - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_generated_de.po
+    # remove lines 1-19 containing the header comment and translation information
+    - sed '1,19d' extracted_messages_current_de.po > extracted_messages_current_de_without_header.po
+    - sed '1,19d' extracted_messages_generated_de.po > extracted_messages_generated_de_without_header.po
+    # compare current and generated messages to ensure there are no changes missing in the current messages
+    - diff extracted_messages_current_de_without_header.po extracted_messages_generated_de_without_header.po
+
 documentation:
   stage: test
   image: python:3.10-slim-bullseye
