@@ -174,7 +174,9 @@ def _claim_background_task(
                 status=BackgroundTaskStatus.CLAIMED
             )
         )
-        return bool(db.session.execute(stmt).rowcount == 1)
+        updated_rowcount = db.session.execute(stmt).rowcount
+        db.session.commit()
+        return bool(updated_rowcount == 1)
     except Exception:
         # database might be temporarily unavailable, assume task was not claimed
         return False
