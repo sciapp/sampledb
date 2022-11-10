@@ -28,7 +28,7 @@ def convert_to_schema(
     """
     result: typing.Optional[typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[str]]], typing.Sequence[str]]]
 
-    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'object_reference', 'quantity', 'array', 'objects', 'hazards'):
+    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'object_reference', 'quantity', 'array', 'objects', 'hazards', 'timeseries'):
         return data, []
 
     if new_schema['type'] == 'tags' and previous_schema['type'] == 'text' and isinstance(data, dict):

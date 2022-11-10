@@ -8,6 +8,7 @@ import datetime
 import json
 import os
 import sys
+import random
 import typing
 
 
@@ -955,5 +956,53 @@ This example shows how Markdown can be used for instrument Notes.
                 'object_id': 14
             }
         )
+        timeseries_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'temperature_series': {
+                        'title': 'Temperature Series',
+                        'type': 'timeseries',
+                        'units': ['degC', 'K'], 'display_digits': 2
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, timeseries_action.id, name="Timeseries Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(timeseries_action.id, sampledb.models.Permissions.READ)
+        timeseries_data: typing.List[typing.Tuple[str, float, float]] = []
+        random.seed(0)
+        for i in range(1000):
+            utc_datetime_string = (datetime.datetime.utcnow() + datetime.timedelta(milliseconds=i * 30)).strftime('%Y-%m-%d %H:%M:%S.%f')
+            if i == 0:
+                magnitude = 20.0
+            else:
+                magnitude = timeseries_data[-1][1] + random.uniform(-1, 1)
+            magnitude_in_base_units = magnitude + 273.15
+            timeseries_data.append((
+                utc_datetime_string,
+                magnitude,
+                magnitude_in_base_units
+            ))
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Timeseries Demo 1', 'de': 'Timeseries Demo 1'}
+            },
+            'temperature_series': {
+                '_type': 'timeseries',
+                'units': 'degC',
+                'data': timeseries_data
+            }
+        }
+        sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
 
     print("Success: set up demo data", flush=True)

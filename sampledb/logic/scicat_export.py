@@ -10,7 +10,7 @@ import requests
 
 from .objects import get_object
 from .object_permissions import get_user_object_permissions
-from .datatypes import DateTime, Quantity
+from .datatypes import DateTime, Quantity, Timeseries
 from . import settings, users, errors, utils
 from ..models import SciCatExport, SciCatExportType, Permissions
 from .. import db
@@ -85,6 +85,29 @@ def _convert_metadata(
             converted_data = _convert_metadata(item_data, item_schema, sub_property_whitelist, user_id)
             if converted_data is not None:
                 metadata.append(converted_data)
+        return metadata
+
+    def _convert_timeseries(
+        data: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any]
+    ) -> typing.List[typing.Any]:
+        units = data['units']
+        rows = data['data']
+        metadata = []
+        for row in rows:
+            utc_datetime_str, magnitude = row[:2]
+            utc_datetime_str = datetime.datetime.strptime(utc_datetime_str, Timeseries.DATETIME_FORMAT_STRING).isoformat()
+            if units in {'1', ''}:
+                value = magnitude
+            else:
+                value = {
+                    'value': str(float(round(magnitude, 13))),
+                    'unit': units
+                }
+            metadata.append({
+                'utc_datetime': utc_datetime_str,
+                'value': value
+            })
         return metadata
 
     def _convert_datetime(
@@ -187,6 +210,8 @@ def _convert_metadata(
         return _convert_user(data, schema)
     if schema['type'] == 'hazards' and isinstance(data, dict):
         return _convert_hazards(data, schema)
+    if schema['type'] == 'timeseries' and isinstance(data, dict):
+        return _convert_timeseries(data, schema)
     if schema['type'] == 'tags':
         # tags are exported as keywords
         return None

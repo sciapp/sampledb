@@ -23,7 +23,7 @@ import typing
 
 import pint
 
-from .units import ureg, int_ureg
+from .units import ureg, int_ureg, get_dimensionality_for_units
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -325,3 +325,70 @@ class Text:
     @classmethod
     def from_json(cls, obj: typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]) -> 'Text':
         return cls(obj['text'])
+
+
+@JSONEncoder.serializable_type('timeseries')
+class Timeseries:
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': ['timeseries']
+            },
+            'dimensionality': {
+                'type': 'string'
+            },
+            'data': {
+                'type': 'array',
+                'items': {
+                    'type': 'array',
+                    'items': {
+                        'anyOf': [
+                            {'type': 'number'},
+                            {'type': 'string'}
+                        ]
+                    }
+                }
+            },
+            'units': {
+                'anyOf': [
+                    {'type': 'null'},
+                    {'type': 'string'}
+                ]
+            }
+        },
+        'required': ['_type', 'dimensionality', 'data', 'units'],
+        'additionalProperties': False
+    }
+    DATETIME_FORMAT_STRING = '%Y-%m-%d %H:%M:%S.%f'
+
+    def __init__(
+            self,
+            data: typing.List[typing.List[typing.Union[int, float]]],
+            units: typing.Optional[str]
+    ) -> None:
+        self.data = data
+        if units is None:
+            self.units = None
+        else:
+            self.units = str(units)
+        self.dimensionality = get_dimensionality_for_units(units)
+
+    def __repr__(self) -> str:
+        return f'<{type(self).__name__}(length={len(self.data)}, units="{self.units}")>'
+
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return self.units == other.units and self.data == other.data
+
+    def to_json(self) -> typing.Dict[str, typing.Any]:
+        return {
+            'data': self.data,
+            'units': self.units,
+            'dimensionality': self.dimensionality
+        }
+
+    @classmethod
+    def from_json(cls, obj: typing.Dict[str, typing.Any]) -> 'Timeseries':
+        return cls(obj['data'], obj['units'])

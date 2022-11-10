@@ -3,9 +3,11 @@
 
 """
 
+import csv
 import datetime
 import decimal
 import functools
+import io
 import re
 
 import babel
@@ -67,6 +69,8 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_user_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'plotly_chart':
         return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'timeseries':
+        return parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
@@ -480,6 +484,52 @@ def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=
     data = {
         '_type': 'plotly_chart',
         'plotly': plotly_chart_data
+    }
+    schemas.validate(data, schema, strict=True)
+
+    return data
+
+
+@form_data_parser
+def parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=False):
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if set(keys) != {id_prefix + '__data', id_prefix + '__units'}:
+        raise ValueError('invalid timeseries form data')
+    units = form_data[id_prefix + '__units'][0]
+    try:
+        ureg.Unit(units)
+    except pint.UndefinedUnitError:
+        raise ValueError('invalid units')
+    timeseries_data = form_data.get(id_prefix + '__data', [None])[0]
+    if not timeseries_data and not required:
+        return None
+    if not timeseries_data:
+        timeseries_data = []
+    else:
+        csv_file = io.StringIO(timeseries_data)
+        reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC)
+        timeseries_data = list(reader)
+        if timeseries_data and all(isinstance(value, str) for value in timeseries_data[0]):
+            # skip header rows
+            timeseries_data = timeseries_data[1:]
+        user_timezone = pytz.timezone(current_user.timezone)
+        if user_timezone != pytz.utc:
+            # convert datetimes to UTC if necessary
+            for row in timeseries_data:
+                try:
+                    parsed_datetime = datetime.datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
+                except ValueError as exc:
+                    raise ValueError(_('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff')) from exc
+                try:
+                    local_datetime = user_timezone.localize(parsed_datetime)
+                    utc_datetime = local_datetime.astimezone(pytz.utc)
+                except Exception as exc:
+                    raise ValueError(_('unable to convert datetime from your timezone to UTC')) from exc
+                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+    data = {
+        '_type': 'timeseries',
+        'data': timeseries_data,
+        'units': units
     }
     schemas.validate(data, schema, strict=True)
 

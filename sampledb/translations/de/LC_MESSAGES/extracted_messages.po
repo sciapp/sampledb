@@ -996,6 +996,16 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
+msgid ""
+"invalid datetime in timeseries, expected format: YYYY-MM-DD "
+"hh:mm:ss.ffffff"
+msgstr ""
+"Ungültiger Zeitpunkt in Zeitreihe, erwartetes Format: JJJJ-MM-TT "
+"hh:mm:ss.ffffff"
+
+msgid "unable to convert datetime from your timezone to UTC"
+msgstr "Zeitpunkt konnte nicht von Ihrer Zeitzone in UTC umgewandelt werden"
+
 #, python-format
 msgid ""
 "The advanced search was used automatically. Search for "
@@ -4799,6 +4809,16 @@ msgstr "Feld %(index)s"
 msgid "The following languages have been disabled for input:"
 msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
 
+msgid "Data (as CSV)"
+msgstr "Daten (als CSV)"
+
+msgid ""
+"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) and "
+"magnitude"
+msgstr ""
+"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) und "
+"Wert"
+
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
 " this change."
@@ -5487,6 +5507,33 @@ msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
 #, python-format
 msgid "References %(object_name)s (#%(object_id)s) in its metadata"
 msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
+msgid "Time"
+msgstr "Zeit"
+
+msgid "Value"
+msgstr "Wert"
+
+#, python-format
+msgid "between %(start_time)s and %(end_time)s on %(date)s"
+msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
+
+#, python-format
+msgid "between %(start_datetime)s and %(end_datetime)s"
+msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
+
+#, python-format
+msgid "at %(datetime)s"
+msgstr "am %(datetime)s"
+
+msgid "View chart"
+msgstr "Graph anzeigen"
+
+msgid "View table"
+msgstr "Tabelle anzeigen"
+
+msgid "Download data"
+msgstr "Daten herunterladen"
 
 msgid "Address"
 msgstr "Adresse"

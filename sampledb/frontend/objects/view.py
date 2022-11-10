@@ -2,6 +2,7 @@
 """
 
 """
+import csv
 import datetime
 import io
 import json
@@ -36,7 +37,7 @@ from ...logic.files import FileLogEntryType
 from ...logic.components import get_component
 from ...logic.shares import get_shares_for_object
 from ...logic.notebook_templates import get_notebook_templates
-from ...logic.utils import get_translated_text
+from ...logic.utils import get_translated_text, get_data_and_schema_by_id_path
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, GenerateLabelsForm
 from ...utils import object_permissions_required
 from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
@@ -1117,3 +1118,32 @@ def new_object():
 
     # TODO: check instrument permissions
     return show_object_form(None, action, previous_object, placeholder_data=placeholder_data, possible_properties=possible_properties, passed_object_ids=passed_object_ids, show_selecting_modal=(not fields_selected), previous_actions=previous_actions)
+
+
+@frontend.route('/objects/<int:object_id>/timeseries_data/<timeseries_id>')
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+def download_timeseries_data(object_id: int, timeseries_id: str):
+    object = get_object(object_id)
+    if object.data is None:
+        return flask.abort(404)
+    if not timeseries_id.startswith('object__') and not timeseries_id.startswith(f'object{object_id}__'):
+        return flask.abort(404)
+    id_path = timeseries_id.split('__')[1:]
+    data_and_schema = get_data_and_schema_by_id_path(object.data, object.schema, id_path, convert_id_path_elements=True)
+    if data_and_schema is None:
+        return flask.abort(404)
+    data, schema = data_and_schema
+    if not isinstance(schema, dict) or schema['type'] != 'timeseries':
+        return flask.abort(404)
+    csv_io = io.StringIO()
+    writer = csv.writer(csv_io, quoting=csv.QUOTE_NONNUMERIC)
+    writer.writerow(['utc_datetime', 'magnitude in ' + str(data['units']), 'magnitude in base units'])
+    writer.writerows(data['data'])
+    csv_io = io.BytesIO(csv_io.getvalue().encode('utf-8'))
+    return flask.send_file(
+        csv_io,
+        as_attachment=True,
+        download_name='timeseries.csv',
+        mimetype='text/csv',
+        last_modified=object.utc_datetime
+    )

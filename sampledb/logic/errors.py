@@ -440,3 +440,7 @@ class FileCreationError(Exception):
 
 class ExceedingLocationCapacityError(Exception):
     pass
+
+
+class InvalidUnitsError(Exception):
+    pass

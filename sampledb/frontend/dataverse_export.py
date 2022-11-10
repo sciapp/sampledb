@@ -91,11 +91,11 @@ def dataverse_export(object_id):
             had_invalid_api_token=had_invalid_api_token
         )
 
-    properties = [
-        (metadata, path)
-        for metadata, path in logic.dataverse_export.flatten_metadata(object.data)
+    properties = {
+        tuple(whitelist_path): metadata
+        for metadata, whitelist_path, title_path in logic.dataverse_export.flatten_metadata(object.data)
         if not ('_type' in metadata and metadata['_type'] == 'tags')
-    ]
+    }
 
     root_dataverses = flask.current_app.config['DATAVERSE_ROOT_IDS'].split(',')
     dataverses = []
@@ -144,9 +144,9 @@ def dataverse_export(object_id):
     export_properties = [
         ['name']
     ]
-    for metadata, path in properties:
-        if 'property,' + ','.join(map(str, path)) in flask.request.form:
-            export_properties.append(path)
+    for whitelist_path in properties:
+        if 'property,' + ','.join(map(str, whitelist_path)) in flask.request.form:
+            export_properties.append(whitelist_path)
     if dataverse_export_form.validate_on_submit():
         file_id_whitelist = set()
         for file_id in dataverse_export_form.files.data:
