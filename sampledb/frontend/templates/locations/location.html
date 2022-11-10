@@ -43,7 +43,18 @@
   {% endif %}
 
   <div class="button-row">
-  {% if has_objects %}
+  {% if descendent_location_ids %}
+    <div class="btn-group">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 220px">
+        {{ _('View Objects') }} <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a href="{{ url_for('.objects', location_ids=location.id) }}">{{ _('… at this location') }}</a></li>
+        <li><a href="{{ url_for('.objects', location_ids=descendent_location_ids | list) }}">{{ _('… at sub-locations') }}</a></li>
+        <li><a href="{{ url_for('.objects', location_ids=[location.id] + descendent_location_ids | list) }}">{{ _('… at this location and sub-locations') }}</a></li>
+      </ul>
+  </div>
+  {% else %}
     <a href="{{ url_for('.objects', location_ids=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
   {% endif %}
   {% if Permissions.WRITE in permissions %}

@@ -718,3 +718,27 @@ def test_set_location_responsible_users(user):
     locations.set_location_responsible_users(location.id, [])
     location = locations.get_location(location.id)
     assert location.responsible_users == []
+
+
+def test_get_descendent_location_ids():
+    locations_tree = {
+        1: {
+            4: {
+                6: {},
+                7: {}
+            },
+            5: {}
+        },
+        2: {
+            8: {}
+        },
+        3: {}
+    }
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1]) == {4, 5, 6, 7}
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[2]) == {8}
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[3]) == set()
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1][4]) == {6, 7}
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1][5]) == set()
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1][4][6]) == set()
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1][4][7]) == set()
+    assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[2][8]) == set()
