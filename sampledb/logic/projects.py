@@ -894,6 +894,60 @@ def get_project_invitation(invitation_id: int) -> ProjectInvitation:
     return ProjectInvitation.from_database(invitation)
 
 
+def sort_project_id_hierarchy_list(
+        project_id_hierarchy_list: typing.List[typing.Tuple[int, int]],
+        key: typing.Callable[[Project], typing.Any]
+) -> typing.List[typing.Tuple[int, int]]:
+    """
+    Sort a project ID hierarchy list by the given key function.
+
+    :param project_id_hierarchy_list: the unsorted project ID hierarchy list
+    :param key: the key function for sorting
+    :return: the sorted project ID hierarchy list
+    """
+    def sort_sublist(
+            project_id_hierarchy_list: typing.List[typing.Tuple[int, int]],
+            sort_keys: typing.Mapping[int, typing.Any],
+            current_level: int = 0
+    ) -> typing.List[typing.Tuple[int, int]]:
+        current_level_indices = []
+        sublist_indices: typing.Dict[int, typing.List[int]] = {}
+        previous_id = None
+        for i in range(len(project_id_hierarchy_list)):
+            level, project_id = project_id_hierarchy_list[i]
+            if level == current_level:
+                current_level_indices.append(i)
+                previous_id = project_id
+            elif previous_id is not None:
+                if previous_id in sublist_indices and sublist_indices[previous_id][1] == i - 1:
+                    sublist_indices[previous_id][1] = i
+                else:
+                    sublist_indices[previous_id] = [i, i]
+
+        new_project_id_hierarchy_list = []
+        for i in sorted(current_level_indices, key=lambda i: sort_keys[project_id_hierarchy_list[i][1]]):  # type: ignore
+            new_project_id_hierarchy_list.append(project_id_hierarchy_list[i])
+            project_id = project_id_hierarchy_list[i][1]
+            if project_id in sublist_indices:
+                sublist_start, sublist_end = sublist_indices[project_id]
+                new_project_id_hierarchy_list.extend(sort_sublist(
+                    project_id_hierarchy_list=project_id_hierarchy_list[sublist_start:sublist_end + 1],
+                    sort_keys=sort_keys,
+                    current_level=current_level + 1
+                ))
+        return new_project_id_hierarchy_list
+
+    project_ids = {
+        project_id
+        for level, project_id in project_id_hierarchy_list
+    }
+    sort_keys = {
+        project_id: key(get_project(project_id))
+        for project_id in project_ids
+    }
+    return sort_sublist(project_id_hierarchy_list, sort_keys)
+
+
 def get_project_id_hierarchy_list(project_ids: typing.List[int]) -> typing.List[typing.Tuple[int, int]]:
     """
     Return a list of project IDs and the degree that they are related to a root project.

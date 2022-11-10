@@ -557,6 +557,7 @@ def projects():
         for project in projects
     }
     project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(projects_by_id))
+    project_id_hierarchy_list = logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: get_translated_text(project.name).lower())
     english = get_language(Language.ENGLISH)
     return flask.render_template(
         "projects/projects.html",
