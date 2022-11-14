@@ -461,7 +461,7 @@
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>
         <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
-        {{ import_information_symbol(object) }}
+        {{ import_information_symbol(FederationObjectRef(fed_id=object.fed_id, component_uuid=object.component.uuid)) }}
       </td>
       {% if 'date' in creation_info %}
       <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
