@@ -16,7 +16,7 @@ from .. import frontend
 from ... import logic
 from ... import models
 from ...logic import object_log, comments, errors
-from ...logic.actions import get_action, get_action_type
+from ...logic.actions import get_action, get_action_type, get_action_types, get_actions
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
 from ...logic.users import get_user, get_users
@@ -464,8 +464,12 @@ def object(object_id):
             user_id=flask_login.current_user.id
         )
         action_type_id_by_action_id = {}
-        for action in sorted_actions:
-            action_type_id_by_action_id[action.id] = action.type_id
+        for action_type in get_action_types():
+            for action in get_actions(action_type_id=action_type.id):
+                if action_type.component_id is not None and action_type.fed_id < 0:
+                    action_type_id_by_action_id[action.id] = action_type.fed_id
+                else:
+                    action_type_id_by_action_id[action.id] = action_type.id
         template_kwargs.update({
             "sorted_actions": sorted_actions,
             "action_type_id_by_action_id": action_type_id_by_action_id,
