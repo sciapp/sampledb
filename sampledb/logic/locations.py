@@ -807,3 +807,17 @@ def set_location_responsible_users(
         location.responsible_users.append(user)
     db.session.add(location)
     db.session.commit()
+
+
+def get_descendent_location_ids(
+        locations_tree: typing.Dict[typing.Optional[int], typing.Any]
+) -> typing.Set[int]:
+    location_tree_queue = [locations_tree]
+    descendent_location_ids: typing.Set[int] = set()
+    while location_tree_queue:
+        locations_tree = location_tree_queue.pop()
+        for child_location_id in locations_tree:
+            if child_location_id is not None:
+                descendent_location_ids.add(child_location_id)
+                location_tree_queue.append(locations_tree[child_location_id])
+    return descendent_location_ids

@@ -121,15 +121,15 @@ def location(location_id):
         location_id: get_user_location_permissions(location_id, flask_login.current_user.id)
         for location_id in locations_map
     }
-    has_objects = logic.locations.any_objects_at_location(location_id)
+    descendent_location_ids = logic.locations.get_descendent_location_ids(locations_tree)
     return flask.render_template(
         'locations/location.html',
         locations_map=locations_map,
         locations_tree=locations_tree,
+        descendent_location_ids=descendent_location_ids,
         location=location,
         ancestors=ancestors,
         sort_location_ids_by_name=_sort_location_ids_by_name,
-        has_objects=has_objects,
         permissions=permissions,
         permissions_by_id=permissions_by_id,
         Permissions=Permissions,

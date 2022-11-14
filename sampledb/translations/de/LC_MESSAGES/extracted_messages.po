@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-11-09 13:09+0100\n"
+"POT-Creation-Date: 2022-11-14 15:32+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3641,6 +3641,15 @@ msgstr "Unter-Orte"
 #, python-format
 msgid "Created on <a href=\"%(component_url)s\">%(component_name)s</a>"
 msgstr "Erstellt auf <a href=\"%(component_url)s\">%(component_name)s</a>"
+
+msgid "… at this location"
+msgstr "… an diesem Ort"
+
+msgid "… at sub-locations"
+msgstr "… an Unter-Orten"
+
+msgid "… at this location and sub-locations"
+msgstr "… an diesem Ort oder Unter-Orten"
 
 msgid "Edit Location"
 msgstr "Ort bearbeiten"

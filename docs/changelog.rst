@@ -39,6 +39,7 @@ Currently in development.
 - Allow administrators to update user profile information
 - Added ``show_more`` option for objects
 - Allow hiding locations as administrator
+- Allow showing objects stored at sub-locations
 
 Version 0.20
 ------------
