@@ -32,6 +32,7 @@ class LocationType:
     enable_sub_locations: bool
     enable_object_assignments: bool
     enable_responsible_users: bool
+    enable_instruments: bool
     show_location_log: bool
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -51,6 +52,7 @@ class LocationType:
             enable_sub_locations=location_type.enable_sub_locations,
             enable_object_assignments=location_type.enable_object_assignments,
             enable_responsible_users=location_type.enable_responsible_users,
+            enable_instruments=location_type.enable_instruments,
             show_location_log=location_type.show_location_log,
             fed_id=location_type.fed_id,
             component_id=location_type.component_id,
@@ -664,6 +666,7 @@ def create_location_type(
         enable_sub_locations: bool,
         enable_object_assignments: bool,
         enable_responsible_users: bool,
+        enable_instruments: bool,
         show_location_log: bool,
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None
@@ -680,6 +683,7 @@ def create_location_type(
     :param enable_sub_locations: whether locations of this type may have sub locations
     :param enable_object_assignments: whether objects may be assigned to locations of this type
     :param enable_responsible_users: whether locations of this type may have responsible users
+    :param enable_instruments: whether instruments may be assigned to locations of this type
     :param show_location_log: whether the location log should be shown for locations of this type
     :param fed_id: the federation ID of the location type
     :param component_id: origin component ID
@@ -694,6 +698,7 @@ def create_location_type(
         enable_sub_locations=enable_sub_locations,
         enable_object_assignments=enable_object_assignments,
         enable_responsible_users=enable_responsible_users,
+        enable_instruments=enable_instruments,
         show_location_log=show_location_log,
         fed_id=fed_id,
         component_id=component_id
@@ -713,6 +718,7 @@ def update_location_type(
         enable_sub_locations: bool,
         enable_object_assignments: bool,
         enable_responsible_users: bool,
+        enable_instruments: bool,
         show_location_log: bool,
 ) -> None:
     """
@@ -728,6 +734,7 @@ def update_location_type(
     :param enable_sub_locations: whether locations of this type may have sub locations
     :param enable_object_assignments: whether objects may be assigned to locations of this type
     :param enable_responsible_users: whether locations of this type may have responsible users
+    :param enable_instruments: whether instruments may be assigned to locations of this type
     :param show_location_log: whether the location log should be shown for locations of this type
     :raise errors.LocationTypeDoesNotExistError: if no location type with the
         given ID exists
@@ -743,6 +750,7 @@ def update_location_type(
     location_type.enable_sub_locations = enable_sub_locations
     location_type.enable_object_assignments = enable_object_assignments
     location_type.enable_responsible_users = enable_responsible_users
+    location_type.enable_instruments = enable_instruments
     location_type.show_location_log = show_location_log
     db.session.add(location_type)
     db.session.commit()

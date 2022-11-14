@@ -14,6 +14,13 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
+    location_types_column_names = db.session.execute(db.text("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'location_types'
+        """)).fetchall()
+    has_enable_instruments = ('enable_instruments',) in location_types_column_names
+
     existing_location_type_ids = [
         location_type[0]
         for location_type in db.session.execute(db.text("""
@@ -35,6 +42,7 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
             'enable_object_assignments': True,
             'enable_responsible_users': False,
             'show_location_log': False,
+            'enable_instruments': True
         }
     ]
 
@@ -45,10 +53,16 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
             continue
 
         # Perform migration
-        db.session.execute(db.text("""
-            INSERT INTO location_types (id, name, location_name_singular, location_name_plural, admin_only, enable_parent_location, enable_sub_locations, enable_object_assignments, enable_responsible_users, show_location_log)
-            VALUES (:id, :name, :location_name_singular, :location_name_plural, :admin_only, :enable_parent_location, :enable_sub_locations, :enable_object_assignments, :enable_responsible_users, :show_location_log)
-        """), params=location_type)
+        if has_enable_instruments:
+            db.session.execute(db.text("""
+                INSERT INTO location_types (id, name, location_name_singular, location_name_plural, admin_only, enable_parent_location, enable_sub_locations, enable_object_assignments, enable_responsible_users, show_location_log, enable_instruments)
+                VALUES (:id, :name, :location_name_singular, :location_name_plural, :admin_only, :enable_parent_location, :enable_sub_locations, :enable_object_assignments, :enable_responsible_users, :show_location_log, :enable_instruments)
+            """), params=location_type)
+        else:
+            db.session.execute(db.text("""
+                INSERT INTO location_types (id, name, location_name_singular, location_name_plural, admin_only, enable_parent_location, enable_sub_locations, enable_object_assignments, enable_responsible_users, show_location_log)
+                VALUES (:id, :name, :location_name_singular, :location_name_plural, :admin_only, :enable_parent_location, :enable_sub_locations, :enable_object_assignments, :enable_responsible_users, :show_location_log)
+            """), params=location_type)
         performed_migration = True
 
     return performed_migration

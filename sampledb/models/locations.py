@@ -45,6 +45,7 @@ class LocationType(db.Model):  # type: ignore
     enable_sub_locations = db.Column(db.Boolean, nullable=False)
     enable_object_assignments = db.Column(db.Boolean, nullable=False)
     enable_responsible_users = db.Column(db.Boolean, nullable=False)
+    enable_instruments = db.Column(db.Boolean, nullable=False)
     show_location_log = db.Column(db.Boolean, nullable=False)
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
@@ -60,6 +61,7 @@ class LocationType(db.Model):  # type: ignore
             enable_sub_locations: bool,
             enable_object_assignments: bool,
             enable_responsible_users: bool,
+            enable_instruments: bool,
             show_location_log: bool,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
@@ -72,6 +74,7 @@ class LocationType(db.Model):  # type: ignore
         self.enable_sub_locations = enable_sub_locations
         self.enable_object_assignments = enable_object_assignments
         self.enable_responsible_users = enable_responsible_users
+        self.enable_instruments = enable_instruments
         self.show_location_log = show_location_log
         self.fed_id = fed_id
         self.component_id = component_id

@@ -596,6 +596,7 @@ def test_create_location_type():
         enable_sub_locations=True,
         enable_object_assignments=True,
         enable_responsible_users=True,
+        enable_instruments=False,
         show_location_log=True,
     ).id
     location_type = sampledb.models.locations.LocationType.query.filter_by(id=location_type_id).first()
@@ -608,6 +609,7 @@ def test_create_location_type():
     assert location_type.enable_sub_locations
     assert location_type.enable_object_assignments
     assert location_type.enable_responsible_users
+    assert not location_type.enable_instruments
     assert location_type.show_location_log
 
 
@@ -622,6 +624,7 @@ def test_update_location_type():
         enable_sub_locations=True,
         enable_object_assignments=True,
         enable_responsible_users=True,
+        enable_instruments=False,
         show_location_log=True,
     )
     location_type = sampledb.models.locations.LocationType.query.filter_by(id=locations.LocationType.LOCATION).first()
@@ -634,6 +637,7 @@ def test_update_location_type():
     assert location_type.enable_sub_locations
     assert location_type.enable_object_assignments
     assert location_type.enable_responsible_users
+    assert not location_type.enable_instruments
 
 
 def test_get_location_type(component):
@@ -646,6 +650,7 @@ def test_get_location_type(component):
         enable_sub_locations=True,
         enable_object_assignments=True,
         enable_responsible_users=True,
+        enable_instruments=True,
         show_location_log=True,
     ).id
     location_type = locations.get_location_type(location_type_id=location_type_id)
@@ -658,6 +663,7 @@ def test_get_location_type(component):
     assert location_type.enable_sub_locations
     assert location_type.enable_object_assignments
     assert location_type.enable_responsible_users
+    assert location_type.enable_instruments
 
     location_type_id = locations.create_location_type(
         name={'en': 'Shared Location Type'},
@@ -668,6 +674,7 @@ def test_get_location_type(component):
         enable_sub_locations=False,
         enable_object_assignments=False,
         enable_responsible_users=False,
+        enable_instruments=False,
         show_location_log=True,
         fed_id=1,
         component_id=component.id
@@ -682,6 +689,7 @@ def test_get_location_type(component):
     assert not location_type.enable_sub_locations
     assert not location_type.enable_object_assignments
     assert not location_type.enable_responsible_users
+    assert not location_type.enable_instruments
 
 
 def test_get_location_types():
@@ -694,6 +702,7 @@ def test_get_location_types():
         enable_sub_locations=True,
         enable_object_assignments=True,
         enable_responsible_users=True,
+        enable_instruments=True,
         show_location_log=True,
     ).id
 

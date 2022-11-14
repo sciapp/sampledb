@@ -15,6 +15,11 @@
       {% if instrument.description_is_markdown %}{{ instrument.description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ instrument.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
+  {% if instrument.location is not none %}
+    <div>
+      <b>{{ _('Location') }}:</b> <a href="{{ url_for('.location', location_id=instrument.location_id) }}">{{ instrument.location | get_full_location_name(include_id=true) }}</a>
+    </div>
+  {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
     {% if (current_user.is_admin or current_user in instrument.responsible_users) and instrument.fed_id is none %}

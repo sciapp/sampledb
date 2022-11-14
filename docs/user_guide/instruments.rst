@@ -7,6 +7,8 @@ Instruments in |service_name| map real instruments to :ref:`actions` performed w
 
 You can view a list of instruments at |service_instruments_url|. To make navigating the growing list of instruments easier, users can select **favorites** by clicking the star next to an instrument's name.
 
+Each instrument can optionally be assigned to a :ref:`location <locations>`, to indicate to users where the instrument can be found.
+
 .. note::
     At this time, instruments can only be created by the |service_name| administrators. If you would like your instrument or action to be included, please `let us know`_.
 

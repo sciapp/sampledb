@@ -31,6 +31,11 @@
       {% else %}<p>{{ instrument.short_description | get_translated_text }}</p>{% endif %}
       </div>
     {% endif %}
+    {% if instrument.location is not none %}
+      <div>
+        <b>{{ _('Location') }}:</b> <a href="{{ url_for('.location', location_id=instrument.location_id) }}">{{ instrument.location | get_full_location_name(include_id=true) }}</a>
+      </div>
+    {% endif %}
     {% include "instruments/instrument_scientists.html" %}
   {% endfor %}
 {% endblock %}

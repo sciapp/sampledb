@@ -41,6 +41,7 @@ Currently in development.
 - Allow hiding locations as administrator
 - Allow showing objects stored at sub-locations
 - Added group categories
+- Allow assigning a location to an instrument
 
 Version 0.20
 ------------
