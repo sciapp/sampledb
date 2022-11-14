@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/sciapp/sampledb/develop/docs/static/img/logo.svg" align="right" width="60" height="60" />
+
 # SampleDB
 
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
