@@ -89,6 +89,7 @@ def groups():
     return flask.render_template(
         "groups/groups.html",
         groups=groups,
+        sorted_by_name=lambda groups: sorted(groups, key=lambda group: get_translated_text(group.name).lower()),
         group_membership_by_id=group_membership_by_id,
         create_group_form=create_group_form,
         show_create_form=show_create_form,

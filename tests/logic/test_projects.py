@@ -1793,3 +1793,21 @@ def test_project_translations():
             description={},
             initial_user_id=user.id
         )
+
+
+def test_sort_project_id_hierarchy_list():
+    user = sampledb.logic.users.create_user('User', 'example@example.org', sampledb.models.UserType.PERSON)
+    project_id1 = sampledb.logic.projects.create_project({"en": "a"}, {"en": ""}, user.id).id
+    project_id2 = sampledb.logic.projects.create_project({"en": "c"}, {"en": ""}, user.id).id
+    project_id3 = sampledb.logic.projects.create_project({"en": "B"}, {"en": ""}, user.id).id
+    project_id4 = sampledb.logic.projects.create_project({"en": "2-B"}, {"en": ""}, user.id).id
+    project_id5 = sampledb.logic.projects.create_project({"en": "1-B"}, {"en": ""}, user.id).id
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id=project_id3, child_project_id=project_id4)
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id=project_id3, child_project_id=project_id5)
+    project_id_hierarchy_list = sampledb.logic.projects.get_project_id_hierarchy_list([project_id1, project_id2, project_id3, project_id4, project_id5])
+    project_id_hierarchy_list = sampledb.logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: project.id)
+    assert project_id_hierarchy_list == [(0, project_id1), (0, project_id2), (0, project_id3), (1, project_id4), (1, project_id5)]
+    project_id_hierarchy_list = sampledb.logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: project.name['en'])
+    assert project_id_hierarchy_list == [(0, project_id3), (1, project_id5), (1, project_id4), (0, project_id1), (0, project_id2)]
+    project_id_hierarchy_list = sampledb.logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: project.name['en'].lower())
+    assert project_id_hierarchy_list == [(0, project_id1), (0, project_id3), (1, project_id5), (1, project_id4), (0, project_id2)]
