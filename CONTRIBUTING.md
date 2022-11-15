@@ -30,7 +30,7 @@ volumes:
   - ./sampledb:/home/sampledb/sampledb
 ~~~
 
-Also uncomment the `FLASK_ENV=development` environment variable in the compose file.
+Also uncomment the `FLASK_DEBUG=1` environment variable in the compose file.
 
 If you want to populate the database with fake data, you can use the `set_up_demo` script on an empty database:
 

@@ -17,6 +17,9 @@ import warnings
 # see the handle_warnings fixture below for how these warnings are handled
 os.environ['SQLALCHEMY_WARN_20'] = '1'
 
+# enable Flask debug mode before importing flask
+os.environ['FLASK_DEBUG'] = '1'
+
 import cherrypy
 import chromedriver_binary
 import flask
@@ -114,7 +117,6 @@ def flask_server(worker_id):
 
 def create_app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
-    os.environ['FLASK_ENV'] = 'development'
     sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     sampledb_app = sampledb.create_app()
     sampledb_app.config['TESTING'] = True
