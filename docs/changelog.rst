@@ -40,6 +40,7 @@ Currently in development.
 - Added ``show_more`` option for objects
 - Allow hiding locations as administrator
 - Allow showing objects stored at sub-locations
+- Added group categories
 
 Version 0.20
 ------------

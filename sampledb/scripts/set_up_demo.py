@@ -838,4 +838,22 @@ This example shows how Markdown can be used for instrument Notes.
             }
         }, component)
 
+        institute_category = sampledb.logic.group_categories.create_group_category(
+            name={
+                'de': 'Demo-Institut',
+                'en': 'Demo Institute'
+            }
+        )
+
+        lab_category = sampledb.logic.group_categories.create_group_category(
+            name={
+                'de': 'Demo-Labor',
+                'en': 'Demo Laboratory'
+            },
+            parent_category_id=institute_category.id
+        )
+        sampledb.logic.group_categories.set_project_group_categories(project_id, [institute_category.id, lab_category.id])
+        sampledb.logic.group_categories.set_project_group_categories(project_id2, [lab_category.id])
+        sampledb.logic.group_categories.set_basic_group_categories(group_id, [institute_category.id])
+
     print("Success: set up demo data", flush=True)

@@ -4,7 +4,7 @@
 """
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, FieldList, FormField, BooleanField
+from wtforms import StringField, IntegerField, FieldList, FormField, BooleanField, SelectMultipleField
 from wtforms.validators import InputRequired, NumberRange, DataRequired
 
 from ..logic.object_permissions import Permissions
@@ -12,10 +12,12 @@ from ..logic.object_permissions import Permissions
 
 class CreateProjectForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
+    categories = SelectMultipleField()
 
 
 class EditProjectForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
+    categories = SelectMultipleField()
 
 
 class LeaveProjectForm(FlaskForm):

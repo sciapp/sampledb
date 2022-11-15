@@ -5,16 +5,18 @@
 
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField
+from wtforms import StringField, IntegerField, SelectMultipleField
 from wtforms.validators import InputRequired, Length, DataRequired
 
 
 class EditGroupForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
+    categories = SelectMultipleField()
 
 
 class CreateGroupForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
+    categories = SelectMultipleField()
 
 
 class LeaveGroupForm(FlaskForm):

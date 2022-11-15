@@ -48,7 +48,7 @@ def test_list_groups(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups/')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    group_anchors = document.find('ul', id='groups_list').find_all('a')
+    group_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(group_anchors) == 0
 
     group_id = sampledb.logic.groups.create_group("Example Group", "", other_user.id).id
@@ -56,7 +56,7 @@ def test_list_groups(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups/')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    group_anchors = document.find('ul', id='groups_list').find_all('a')
+    group_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(group_anchors) == 1
     group_url = group_anchors[0]['href']
     assert group_url.endswith('/groups/{}'.format(group_id))
@@ -70,7 +70,7 @@ def test_list_user_groups(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    group_anchors = document.find('ul', id='groups_list').find_all('a')
+    group_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(group_anchors) == 0
 
     sampledb.logic.groups.create_group("Example Group", "", other_user.id)
@@ -78,7 +78,7 @@ def test_list_user_groups(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    group_anchors = document.find('ul', id='groups_list').find_all('a')
+    group_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(group_anchors) == 0
 
     group_id = sampledb.logic.groups.create_group("Example Group 2", "", user_session.user_id).id
@@ -86,7 +86,7 @@ def test_list_user_groups(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'groups?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    group_anchors = document.find('ul', id='groups_list').find_all('a')
+    group_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(group_anchors) == 1
     group_url = group_anchors[0]['href']
     assert group_url.endswith('/groups/{}'.format(group_id))

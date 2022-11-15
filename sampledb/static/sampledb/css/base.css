@@ -1120,3 +1120,37 @@ code {
 .urgent-notifications-counter {
     cursor: pointer;
 }
+
+.groups_list, .groups_list ul {
+    padding-left: 1.5em;
+}
+
+.groups_list_category {
+    list-style-type: none;
+}
+
+.groups_list input[type="checkbox"] {
+    display: none;
+}
+
+.groups_list .groups_list_category_label {
+    font-weight: normal;
+    cursor: pointer;
+    margin-left: -1.1em;
+}
+
+.groups_list input[type="checkbox"] ~ .groups_list {
+    display: none;
+}
+
+.groups_list input[type="checkbox"]:checked ~ .groups_list {
+    display: block;
+}
+
+.groups_list input[type="checkbox"] ~ .groups_list_category_label > i::before {
+    content: '\f0fe';
+}
+
+.groups_list input[type="checkbox"]:checked ~ .groups_list_category_label > i::before {
+    content: '\f146';
+}

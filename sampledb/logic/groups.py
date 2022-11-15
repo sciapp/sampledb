@@ -44,7 +44,11 @@ class Group:
 
     @classmethod
     def from_database(cls, group: groups.Group) -> 'Group':
-        return Group(id=group.id, name=group.name, description=group.description)
+        return Group(
+            id=group.id,
+            name=group.name,
+            description=group.description
+        )
 
 
 @dataclasses.dataclass(frozen=True)

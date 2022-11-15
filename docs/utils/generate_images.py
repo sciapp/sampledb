@@ -490,6 +490,21 @@ def other_database(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/other_database.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, last_table.location['y'] + last_table.rect['height'])))
 
 
+def group_categories(base_url, driver, categories):
+    width = 300
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(admin.id))
+    driver.get(base_url + 'groups/')
+    for category in categories:
+        driver.execute_script(f"""
+        document.getElementById('groups_list_category_{category.id}_expand').checked = 1;
+        """)
+    list = driver.find_elements(By.CLASS_NAME, 'groups_list')[0]
+    y_offset = scroll_to_element(driver, list)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/group_categories.png', (0, list.location['y'] - y_offset, width, min(list.location['y'] + max_height, list.location['y'] + list.rect['height'])))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -540,6 +555,41 @@ try:
             description={"en": "An example group for the documentation"},
             initial_user_id=user.id
         )
+
+        group1 = sampledb.logic.groups.create_group(
+            name={"en": "Work Group 1"},
+            description={"en": ""},
+            initial_user_id=user.id
+        )
+        group2 = sampledb.logic.groups.create_group(
+            name={"en": "Work Group 2"},
+            description={"en": ""},
+            initial_user_id=user.id
+        )
+        group3 = sampledb.logic.groups.create_group(
+            name={"en": "Demo University Students"},
+            description={"en": ""},
+            initial_user_id=user.id
+        )
+        category1 = sampledb.logic.group_categories.create_group_category(
+            name={
+                'en': 'Internal Groups'
+            }
+        )
+        category2 = sampledb.logic.group_categories.create_group_category(
+            name={
+                'en': 'External Groups'
+            }
+        )
+        category3 = sampledb.logic.group_categories.create_group_category(
+            name={
+                'en': 'Demo Institute'
+            },
+            parent_category_id=category1.id
+        )
+        sampledb.logic.group_categories.set_basic_group_categories(group1.id, (category3.id,))
+        sampledb.logic.group_categories.set_basic_group_categories(group2.id, (category3.id,))
+        sampledb.logic.group_categories.set_basic_group_categories(group3.id, (category2.id,))
 
         project = sampledb.logic.projects.create_project(
             name={"en": "Example Project"},
@@ -699,5 +749,6 @@ try:
                 disable_schema_editor(flask_server.base_url, driver)
                 translations(flask_server.base_url, driver)
                 other_database(flask_server.base_url, driver)
+                group_categories(flask_server.base_url, driver, [category1, category2, category3])
 finally:
     shutil.rmtree(temp_dir)

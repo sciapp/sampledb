@@ -13,6 +13,18 @@
     {{ allowed_language_ids.append(language.id) or '' }}
   {% endfor %}
   <h1>{{ _('Basic Group') }} #{{ group.id }}: {{ group.name | get_translated_text }}</h1>
+  {% if basic_group_categories %}
+    <p>
+      <strong>{{ _('Categories') }}:</strong>
+      {% for category in basic_group_categories %}
+        {%- if not loop.first %}, {% endif -%}
+        {%- for category_name in category_names[category.id] -%}
+          {%- if not loop.first %} / {% endif -%}
+          {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+        {%- endfor -%}
+      {% endfor %}
+    </p>
+  {% endif %}
   <p>{{ group.description | get_translated_text }}</p>
   <h2>{{ _('Members') }}</h2>
   <ul>
@@ -150,6 +162,21 @@
                   {% endif %}
                {% endfor %}
               </div>
+            {% if group_categories %}
+              <div class="form-group">
+                <label for="select-categories" class="control-label">{{ _("Categories") }}</label>
+                <select class="selectpicker form-control" multiple="multiple" id="select-categories" name="{{ edit_group_form.categories.name }}" data-none-selected-text="{{ _('No category selected') }}">
+                  {% for category in group_categories %}
+                    <option value="{{ category.id }}" {% if category in basic_group_categories %}selected="selected"{% endif %}>
+                      {%- for category_name in group_category_names[category.id] -%}
+                        {%- if not loop.first %} / {% endif -%}
+                        {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+                      {%- endfor -%}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% endif %}
           </div>
           <input type="hidden" id="input-translations" name="{{ edit_group_form.translations.name }}" value="">
 

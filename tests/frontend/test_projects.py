@@ -47,7 +47,7 @@ def test_list_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 0
 
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
@@ -55,7 +55,7 @@ def test_list_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 1
     project_url = project_anchors[0]['href']
     assert project_url.endswith('/projects/{}'.format(project_id))
@@ -69,7 +69,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 0
 
     other_project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
@@ -77,7 +77,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 0
 
     project_id = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
@@ -85,7 +85,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 1
     project_url = project_anchors[0]['href']
     assert project_url.endswith('/projects/{}'.format(project_id))
@@ -93,7 +93,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format('unknown'))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 2
     assert any(project_anchor['href'].endswith('/projects/{}'.format(project_id)) for project_anchor in project_anchors)
     assert any(project_anchor['href'].endswith('/projects/{}'.format(other_project_id)) for project_anchor in project_anchors)

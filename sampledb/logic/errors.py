@@ -413,3 +413,11 @@ class ObjectLocationAssignmentAlreadyDeclinedError(Exception):
 
 class LocationTypeDoesNotExistError(Exception):
     pass
+
+
+class GroupCategoryDoesNotExistError(Exception):
+    pass
+
+
+class CyclicGroupCategoryError(Exception):
+    pass
