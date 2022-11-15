@@ -116,6 +116,15 @@ def test_get_component_by_uuid():
     assert component.description == ''
 
 
+def test_get_component_id_by_uuid():
+    component_id = add_component(address='https://example.com', uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='').id
+
+    assert logic.components.get_component_id_by_uuid('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71') == component_id
+    assert logic.components.get_component_id_by_uuid('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71X') is None
+    assert logic.components.get_component_id_by_uuid('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a72') is None
+    assert logic.components.get_component_id_by_uuid(None) is None
+
+
 def test_get_component_that_does_not_exist():
     component_id = add_component(address='https://example.com', uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='').id
     assert len(models.components.Component.query.all()) == 1

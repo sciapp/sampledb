@@ -5,7 +5,7 @@
 {% block content %}
   <h1>
     <a href="{{ url_for('.location_type', type_id=location_type.id) }}" title="{{ location_type.name | get_translated_text }}">{{ location_type.name | get_translated_text }}</a>
-    {{ federation_information_symbol(component, location_type.fed_id, 'location_type') }}
+    {{ import_information_symbol(location_type) }}
   </h1>
 
   <dl>

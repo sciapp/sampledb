@@ -34,7 +34,7 @@
   </script>
   <h1>
     {% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}: {% endif %}{{ name | get_translated_text }}
-    {{ federation_information_symbol(component, fed_object_id, 'object') }}
+    {{ import_information_symbol(object) }}
   </h1>
   <h2>{{ _('Information') }}</h2>
   <div class="row" style="padding-right:0.75em">
@@ -42,7 +42,7 @@
     <div class="col-md-9">
       {% if instrument is not none %}
         <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name | get_translated_text }}</a>
-        {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
+        {{ import_information_symbol(instrument) }}
       {% else %}&mdash;{% endif %}
     </div>
   </div>
@@ -55,7 +55,7 @@
     <div class="col-md-9">
       {% if action is not none %}
         <a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
-        {{ federation_information_symbol(get_component_or_none(action.component_id), action.fed_id, 'action') }}
+        {{ import_information_symbol(action) }}
       {% else %}&mdash;{% endif %}
     </div>
   </div>
@@ -358,7 +358,7 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Uploaded by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ federation_information_symbol(file.uploader.component, file.uploader.fed_id, 'user') }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
                   </div>
                   {% elif file.storage == 'url' %}
                   <div class="row">
@@ -370,12 +370,12 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Linked by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ federation_information_symbol(file.uploader.component, file.uploader.fed_id, 'user') }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
                   </div>
                   {% else %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Posted by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ federation_information_symbol(file.uploader.component, file.uploader.fed_id, 'user') }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
                   </div>
                   {% endif %}
                   <div class="row">
@@ -705,7 +705,7 @@
                 <a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">
                   {{ location | get_location_name(True) }}
                 </a>
-                {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
+                {{ import_information_symbol(location) }}
               {% endwith %}
             {% else %}&mdash;{% endif %}
           </td>
@@ -713,7 +713,7 @@
             {% if object_location_assignment.responsible_user_id is not none %}
               {% with user = get_user(object_location_assignment.responsible_user_id) %}
                 <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ user.get_name() }}</a>
-                {{ federation_information_symbol(user.component, user.fed_id, 'user') }}
+                {{ import_information_symbol(user) }}
                 {% if object_location_assignment.confirmed %}
                   <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.')}}">&check;</span>
                 {% elif object_location_assignment.declined %}
@@ -734,7 +734,7 @@
               <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">
                 {{ user.get_name() }}
               </a>
-              {{ federation_information_symbol(user.component, user.fed_id, 'user') }}
+              {{ import_information_symbol(user) }}
             </td>
           {% endwith %}
           <td><pre class="location-description">{{ object_location_assignment.description | get_translated_text or ('&mdash;' | safe) }}</pre></td>
@@ -864,7 +864,7 @@
                 <span class="text-muted fst-italic">{{ _('Unknown User') }}</span>
               {% else %}
                 <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.get_name() }}</a>
-                {{ federation_information_symbol(comment.author.component, comment.author.fed_id, 'user') }}
+                {{ import_information_symbol(comment.author) }}
               {% endif %}, <span data-utc-datetime="{{ comment.utc_datetime | generic_format_datetime }}">{{ comment.utc_datetime | babel_format_datetime }}</span>
             </div>
           </div>

@@ -151,6 +151,7 @@ def object(object_id):
         user_may_use_as_template = False
         usable_in_action_types = None
     template_kwargs.update({
+        "object": object,
         "object_id": object_id,
         "version_id": object.version_id,
         "object_type": object_type,

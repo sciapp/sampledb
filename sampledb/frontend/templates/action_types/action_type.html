@@ -5,7 +5,7 @@
 {% block content %}
   <h1>
     <a href="{{ url_for('.action_type', type_id=action_type.id) }}" title="{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</a>
-    {{ federation_information_symbol(component, action_type.fed_id, 'action_type') }}
+    {{ import_information_symbol(action_type) }}
   </h1>
 
   <dl>

@@ -54,7 +54,7 @@ class LocationType:
             show_location_log=location_type.show_location_log,
             fed_id=location_type.fed_id,
             component_id=location_type.component_id,
-            component=location_type.component
+            component=Component.from_database(location_type.component) if location_type.component is not None else None
         )
 
 

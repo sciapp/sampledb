@@ -15,7 +15,7 @@
       {{ toggle_favorite_instrument_form.csrf_token() }}
       <h2>
         <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
-        {{ federation_information_symbol(instrument.component, instrument.fed_id, 'instrument') }}
+        {{ import_information_symbol(instrument) }}
         <button type="submit" class="fa {% if instrument.id in user_favorite_instrument_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>
     </form>

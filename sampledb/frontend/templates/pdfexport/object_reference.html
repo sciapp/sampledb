@@ -1,21 +1,19 @@
 {% if data and data.object_id %}
-  {% if "component_uuid" in data and "component_uuid" is not none %}
-      {% set component_uuid = data['component_uuid'] %}
+  {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
+      {% set component_uuid = data.component_uuid %}
     {% else %}
       {% set component_uuid = none %}
     {% endif %}
-    {% with component_name, component_id, component_address = get_component_information_by_uuid(component_uuid) %}
-      {% with obj = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid) %}
-        {% if not (obj is none) %}
-          <a href="{{ url_for('frontend.object', object_id=obj.object_id, _external=True) }}">{{ obj.name | get_translated_text(metadata_language) }} (#{{ obj.object_id }})</a>
-          {{ federation_information_symbol(obj.component, obj.fed_object_id, 'object', true) }}
-        {% elif component_id != 0 %}
-          {{ _('Object') }} #{{ data.object_id }}
-          {{ federation_information_symbol_data(component_name, component_address, data.object_id, 'object', true) }}
-        {% else %}
-          <a href="{{ url_for('frontend.object', object_id=data.object_id, _external=True) }}">#{{ data.object_id }}</a>
-        {% endif %}
-      {% endwith %}
+    {% with obj = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid) %}
+      {% if not (obj is none) %}
+        <a href="{{ url_for('frontend.object', object_id=obj.object_id, _external=True) }}">{{ obj.name | get_translated_text(metadata_language) or '—' }} (#{{ obj.object_id }})</a>
+        {{ import_information_symbol(obj, text=true) }}
+      {% elif component_uuid is not none %}
+        {{ _('Object') }} #{{ data.object_id }}
+        {{ import_information_symbol(FederationObjectRef(fed_id=data.object_id, component_uuid=component_uuid), text=true) }}
+      {% else %}
+        <a href="{{ url_for('frontend.object', object_id=data.object_id, _external=True) }}">#{{ data.object_id }}</a>
+      {% endif %}
     {% endwith %}
 {% else %}
   &mdash;

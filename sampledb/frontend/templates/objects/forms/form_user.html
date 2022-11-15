@@ -1,6 +1,6 @@
 {% if data is not none and "user_id" in data %}
   {% set sel_user_id = data.user_id %}
-  {% if 'component_uuid' in data %}
+  {% if 'component_uuid' in data and data.component_uuid is not none %}
     {% set sel = namespace(selected_id=None) %}
       {% for user in users %}
         {% if user.fed_id == data.user_id and user.component.uuid == data.component_uuid %}

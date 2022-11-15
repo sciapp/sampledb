@@ -2,7 +2,7 @@
 """
 
 """
-
+import dataclasses
 import json
 import base64
 import functools
@@ -26,24 +26,26 @@ import plotly
 import pytz
 
 from ..logic import errors
-from ..logic.components import get_component_or_none, get_component, get_component_by_uuid
+from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
-from ..logic.users import get_user
+from ..logic.users import get_user, User
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
+from ..logic.actions import Action, ActionType
+from ..logic.instruments import Instrument
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.languages import get_user_language
-from ..logic.locations import Location, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden
+from ..logic.locations import Location, LocationType, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden
 from ..logic.location_permissions import get_user_location_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.security_tokens import generate_token
 from ..logic.object_permissions import get_user_object_permissions, Permissions
-from ..logic.objects import get_object
+from ..logic.objects import get_object, Object
 
 
 def jinja_filter(name: str = ''):
@@ -76,6 +78,7 @@ jinja_filter()(get_all_translated_texts)
 
 jinja_function.functions = {}
 jinja_function()(get_component_or_none)
+jinja_function()(get_component_id_by_uuid)
 jinja_function()(get_unhandled_object_responsibility_assignments)
 jinja_function()(is_full_location_tree_hidden)
 
@@ -510,30 +513,6 @@ def fingerprinted_static(filename: str) -> str:
     )
 
 
-@jinja_function()
-def get_component_information_by_uuid(component_uuid: str):
-    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        return None, 0, None
-    else:
-        try:
-            component = get_component_by_uuid(component_uuid)
-            return component.get_name(), component.id, component.address
-        except errors.ComponentDoesNotExistError:
-            return flask_babel.gettext('Unknown database (%(uuid)s)', uuid=component_uuid[:8]), -1, None
-
-
-@jinja_function()
-def get_component_information(component_id: int):
-    try:
-        component = get_component(component_id)
-        component_name = component.name
-        component_id = component.id
-    except errors.ComponentDoesNotExistError:
-        component_name = None
-        component_id = -1
-    return component_name, component_id
-
-
 def get_search_paths(
         actions,
         action_types,
@@ -686,3 +665,65 @@ def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
         return False, None
     # return sanitized ORCID iD on success
     return True, orcid
+
+
+@dataclasses.dataclass(frozen=True)
+class FederationRef:
+    fed_id: int
+    component_uuid: str
+    referenced_class: typing.Type[typing.Any]
+
+    @dataclasses.dataclass(frozen=True)
+    class FederationComponentMock:
+        name: str
+        address: typing.Optional[str]
+
+        def get_name(self):
+            return self.name
+
+    @property
+    def component(self) -> typing.Union[Component, FederationComponentMock]:
+        try:
+            return get_component_by_uuid(self.component_uuid)
+        except errors.ComponentDoesNotExistError:
+            return FederationRef.FederationComponentMock(
+                name=flask_babel.gettext('Unknown database (%(uuid)s)', uuid=self.component_uuid[:8]),
+                address=None
+            )
+
+
+@jinja_function()
+@dataclasses.dataclass(frozen=True)
+class FederationObjectRef(FederationRef):
+    referenced_class: typing.Type[Object] = Object
+
+
+@jinja_function()
+@dataclasses.dataclass(frozen=True)
+class FederationUserRef(FederationRef):
+    referenced_class: typing.Type[User] = User
+
+
+@jinja_function()
+def get_federation_url(obj: typing.Any) -> str:
+    component_address = obj.component.address
+    if not component_address.endswith('/'):
+        component_address = component_address + '/'
+    if isinstance(obj, FederationRef):
+        obj_class = obj.referenced_class
+    else:
+        obj_class = obj.__class__
+    endpoint_and_param_name = {
+        User: ('frontend.user_profile', 'user_id'),
+        Object: ('frontend.object', 'object_id'),
+        Action: ('frontend.action', 'action_id'),
+        ActionType: ('frontend.action_type', 'type_id'),
+        Instrument: ('frontend.instrument', 'instrument_id'),
+        Location: ('frontend.location', 'location_id'),
+        LocationType: ('frontend.location_type', 'type_id'),
+    }.get(obj_class)
+    if endpoint_and_param_name is None:
+        return component_address
+    else:
+        endpoint, param_name = endpoint_and_param_name
+        return component_address + relative_url_for(endpoint, **{param_name: obj.fed_id})

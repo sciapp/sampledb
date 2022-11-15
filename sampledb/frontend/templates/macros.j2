@@ -1,45 +1,19 @@
-{% macro federation_information_symbol_data(component_name, component_address, fed_id, type, text=false, nolink=false) %}
-    {% if component_name is not none %}
-        {% if component_address is not none and not nolink %}
-            {% if component_address and not component_address.endswith('/') %}
-                {% set component_address = component_address + '/' %}
-            {% endif %}
-            {% if type == 'user' %}
-                {% set fed_url = component_address + relative_url_for('frontend.user_profile', user_id=fed_id) %}
-            {% elif type == 'instrument' %}
-                {% set fed_url = component_address + relative_url_for('frontend.instrument', instrument_id=fed_id) %}
-            {% elif type == 'action' %}
-                {% set fed_url = component_address + relative_url_for('frontend.action', action_id=fed_id) %}
-            {% elif type == 'location' %}
-                {% set fed_url = component_address + relative_url_for('frontend.location', location_id=fed_id) %}
-            {% elif type == 'location_type' %}
-                {% set fed_url = component_address + relative_url_for('frontend.location_type', type_id=fed_id) %}
-            {% elif type == 'object' %}
-                {% set fed_url = component_address + relative_url_for('frontend.object', object_id=fed_id) %}
-            {% elif type == 'action_type' %}
-                {% set fed_url = component_address + relative_url_for('frontend.action_type', type_id=fed_id) %}
-            {% else %}
-                {% set fed_url = component_address %}
-            {% endif %}
-            <a href="{{ fed_url }}">
-                {% if text %}
-                    (#{{ fed_id }} @ {{ component_name }})
-                {% else %}
-                    <i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ fed_id }} @ {{ component_name }}"></i>
-                {% endif %}
-            </a>
-        {% else %}
-            {% if text %}
-                (#{{ fed_id }} @ {{ component_name }})
-            {% else %}
-                <i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ fed_id }} @ {{ component_name }}"></i>
-            {% endif %}
-        {% endif %}
-    {% endif %}
+{% macro _federation_information_symbol(obj, text=false, nolink=false) %}
+  {% if obj.component.address is not none and not nolink %}
+    <a href="{{ get_federation_url(obj) }}">
+  {% endif %}
+  {% if text %}
+    (#{{ obj.fed_id }} @ {{ obj.component.get_name() }})
+  {% else %}
+    <i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ obj.fed_id }} @ {{ obj.component.get_name() }}"></i>
+  {% endif %}
+  {% if obj.component.address is not none and not nolink %}
+    </a>
+  {% endif %}
 {% endmacro %}
 
-{% macro federation_information_symbol(component, fed_id, type, text=false, nolink=false) %}
-    {% if component is not none %}
-        {{ federation_information_symbol_data(component.get_name(), component.address, fed_id, type, text, nolink) }}
-    {% endif %}
+{% macro import_information_symbol(object, text=false, nolink=false) %}
+  {% if object.fed_id is not none %}
+    {{ _federation_information_symbol(object, text=text, nolink=nolink) }}
+  {% endif %}
 {% endmacro %}

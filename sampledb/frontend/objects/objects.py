@@ -472,7 +472,7 @@ def objects():
             'schema': obj.schema,
             'name': obj.name,
             'action': cached_actions[obj.action_id],
-            'fed_object_id': obj.fed_object_id,
+            'fed_id': obj.fed_object_id,
             'component_id': obj.component_id,
             'display_properties': {},
             'component': obj.component

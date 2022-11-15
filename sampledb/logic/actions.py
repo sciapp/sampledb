@@ -153,7 +153,7 @@ class ActionType:
             usable_in_action_types=[],
             fed_id=action_type.fed_id,
             component_id=action_type.component_id,
-            component=action_type.component,
+            component=components.Component.from_database(action_type.component) if action_type.component is not None else None,
             scicat_export_type=action_type.scicat_export_type
         )
         previously_wrapped_action_types[action_type.id] = wrapped_action_type

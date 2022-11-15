@@ -7,10 +7,10 @@
     {{ location.type.location_name_singular | get_translated_text }} #{{ location.id }}:
     {% for ancestor in ancestors %}
       <a href="{{ url_for('.location', location_id=ancestor.id) }}">{{ ancestor | get_location_name(False) }}</a>
-      {{ federation_information_symbol(ancestor.component, ancestor.fed_id, 'location') }} /
+      {{ import_information_symbol(ancestor) }} /
     {% endfor %}
     {{ location | get_location_name(False) }}
-    {{ federation_information_symbol(location.component, location.fed_id, 'location') }}
+    {{ import_information_symbol(location) }}
   </h1>
   {% if location.is_hidden %}
     <p class="text-muted">
