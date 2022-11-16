@@ -453,6 +453,7 @@ def get_templates(user_id):
     ]
 
 
+@jinja_function()
 def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None):
     try:
         return get_user(user_id, component_id)

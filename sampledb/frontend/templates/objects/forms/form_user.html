@@ -1,38 +1,7 @@
-{% if data is not none and "user_id" in data %}
-  {% set sel_user_id = data.user_id %}
-  {% if 'component_uuid' in data and data.component_uuid is not none %}
-    {% set sel = namespace(selected_id=None) %}
-      {% for user in users %}
-        {% if user.fed_id == data.user_id and user.component.uuid == data.component_uuid %}
-          {% set sel.selected_id = user.id %}
-        {% endif %}
-      {% endfor %}
-      {% set sel_user_id = sel.selected_id %}
-  {% endif %}
-{% else %}
-  {% set sel_user_id = None %}
-{% endif %}
 <div class="form-group{% if id_prefix+'_uid' in errors %} has-error{% elif id_prefix+'_uid' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
   <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title | get_translated_text }}</label>
   <div class="col-md-9">
-  <select class="form-control selectpicker" name="{{ id_prefix }}_uid" data-live-search="true">
-      <option value="">&mdash;</option>
-  {% for user in users %}
-    {% if id_prefix+'_uid' in form_data %}
-      {% if form_data[id_prefix+'_uid'] == user.id | string %}
-      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}" selected="selected">{{ user.get_name(include_ref=True) }}</option>
-      {% else %}
-      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}">{{ user.get_name(include_ref=True) }}</option>
-      {% endif %}
-    {% else %}
-      {% if (sel_user_id == user.id) or (data is none and schema.default == "self" and user.id == current_user.id) %}
-      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}" selected="selected">{{ user.get_name(include_ref=True) }}</option>
-      {% else %}
-      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}">{{ user.get_name(include_ref=True) }}</option>
-      {% endif %}
-    {% endif %}
-  {% endfor %}
-  </select>
+    {% include "objects/forms/form_user_field.html" %}
     {% if id_prefix+'_uid' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_uid'] }}</span>{% endif %}
     {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
   </div>
