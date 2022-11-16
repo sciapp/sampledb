@@ -13,24 +13,7 @@
     </div>
     {# Form #}
     <div class="form-switch col-md-9">
-        <select class="form-control selectpicker" name="{{ id_prefix }}_uid" data-live-search="true">
-            <option value="">&mdash;</option>
-            {% for user in users %}
-                {% if id_prefix+'_uid' in form_data %}
-                    {% if form_data[id_prefix+'_uid'] == user.id | string %}
-                        <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}" selected="selected">{{ user.get_name(include_ref=True) }}</option>
-                    {% else %}
-                        <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}">{{ user.get_name(include_ref=True) }}</option>
-                    {% endif %}
-                {% else %}
-                    {% if (data is not none and "user_id" in data and data.user_id == user.id) or (data is none and schema.default == "self" and user.id == current_user.id) %}
-                        <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}" selected="selected">{{ user.get_name(include_ref=True) }}</option>
-                    {% else %}
-                        <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}">{{ user.get_name(include_ref=True) }}</option>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-        </select>
+      {% include "objects/forms/form_user_field.html" %}
         {% if id_prefix+'_uid' in errors %}
             <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_uid'] }}</span>{% endif %}
         {% if 'note' in schema %}
