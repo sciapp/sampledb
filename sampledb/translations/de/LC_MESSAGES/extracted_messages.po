@@ -1167,6 +1167,12 @@ msgstr "Endpunkt"
 msgid "This API token has not been used so far."
 msgstr "Dieses API Token ist noch nicht benutzt worden."
 
+msgid "Expand All"
+msgstr "Alle ausklappen"
+
+msgid "Collapse All"
+msgstr "Alle einklappen"
+
 msgid "Bold"
 msgstr "Fettdruck"
 

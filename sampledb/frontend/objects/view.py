@@ -340,14 +340,14 @@ def object(object_id):
         ]
         location_form = ObjectLocationAssignmentForm()
         locations_map, locations_tree = get_locations_tree()
-        locations = [('-1', '—')]
+        locations = [('-1', '—', '', '—', [], False)]
         valid_locations = []
         unvisited_location_ids_prefixes_and_subtrees = [
-            (location_id, '', locations_tree[location_id])
+            (location_id, '', locations_tree[location_id], [location_id])
             for location_id in locations_tree
         ]
         while unvisited_location_ids_prefixes_and_subtrees:
-            location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
+            location_id, prefix, subtree, id_path = unvisited_location_ids_prefixes_and_subtrees.pop(0)
             location = locations_map[location_id]
             # skip hidden locations with a fully hidden subtree
             if not (flask_login.current_user.is_admin or not location.is_hidden or not is_full_location_tree_hidden(locations_map, subtree)):
@@ -355,12 +355,13 @@ def object(object_id):
             # skip unreadable locations, but allow processing their child locations
             # in case any of them are readable
             if location_id in readable_location_ids and (not location.is_hidden or flask_login.current_user.is_admin):
-                locations.append((str(location_id), prefix + get_location_name(location, include_id=True)))
+                location_name = get_location_name(location, include_id=True)
+                locations.append((str(location_id), prefix + location_name, prefix, location_name, id_path, bool(subtree)))
                 if location.type is None or location.type.enable_object_assignments:
-                    valid_locations.append(locations[-1])
+                    valid_locations.append(locations[-1][:2])
             prefix = f'{prefix}{get_location_name(location)} / '
             for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
-                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, prefix, subtree[location_id]))
+                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, prefix, subtree[location_id], id_path + [location_id]))
 
         location_form.location.all_choices = locations
         location_form.location.choices = valid_locations
