@@ -19,7 +19,7 @@
     </div>
   {% endif %}
 {% if not current_user.is_authenticated %}
-  <div class="jumbotron">
+  <div class="jumbotron text-center">
     <h1>{{ _('Welcome to %(service_name)s', service_name=service_name)}}</h1>
     <p>{{ service_description | get_translated_text }}</p>
     <div class="container">
@@ -29,7 +29,7 @@
     </div>
   </div>
 {% else %}
-  <div class="jumbotron">
+  <div class="jumbotron text-center">
     <h1>{{ _('Welcome to %(service_name)s', service_name=service_name) }}</h1>
     <p>{{ service_description | get_translated_text }}</p>
     <div class="container">
