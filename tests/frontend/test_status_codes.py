@@ -237,6 +237,7 @@ def test_status_codes(flask_server, user):
             instrument_log_entry_id=instrument_log_entry_id,
             object_id=object_id
         )
+        task_id = 1
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -339,6 +340,8 @@ def test_status_codes(flask_server, user):
         'objects/': 200,
         f'objects/{object_id}': 200,
         f'objects/{object_id}/dataverse_export/': 200,
+        f'objects/{task_id}/dataverse_export_loading/': 404,
+        f'objects/{task_id}/dataverse_export_status/': 404,
         f'objects/{object_id}/dc.rdf': 200,
         f'objects/{object_id}/download_service/': 302,
         f'objects/{object_id}/export': 200,
@@ -450,4 +453,5 @@ def test_status_codes(flask_server, user):
         'filename': static_file_name,
         'file_name': markdown_image_file_name,
         'token': token,
+        'task_id': task_id,
     })

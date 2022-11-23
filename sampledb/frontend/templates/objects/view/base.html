@@ -179,9 +179,17 @@
     {% endif %}
     {% if show_dataverse_export %}
       <div class="form-group">
-        <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
-          <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
-        </a>
+        {% if dataverse_export_task_created %}
+          <div class="d-inline-block" tabindex="0" data-toggle="tooltip" data-placement="top" title="{{ _('The object is currently being exported.') }}">
+            <a href="#" class="btn btn-primary disabled" aria-disabled="true">
+              <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+            </a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
+            <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+          </a>
+        {% endif %}
       </div>
     {% elif dataverse_url %}
       <div class="form-group">

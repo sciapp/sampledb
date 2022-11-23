@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %} {{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME'])}}— {{ service_name }} {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% if polling %}
+  <script>
+    const POLLING_SLEEP_TIME = 10000;
+    const poll = function() {
+      $.ajax({
+        url: "{{ url_for('.dataverse_export_status', task_id=task_id) }}",
+        success: function(data, status_text, xhr) {
+          if(xhr.status === 200) { // dataverse upload was successful
+              window.location.replace(data["dataverse_url"])
+          } else if(xhr.status === 202) { // continue polling
+              setTimeout(poll, POLLING_SLEEP_TIME);
+          };
+        },
+        error: function(xhr, status_text, err) {
+          if(xhr.status === 404 || xhr.status === 406) { // task id does not exist or uploading object has failed
+              window.location.replace(xhr.responseJSON["url"])
+          }
+        }
+      });
+    }
+
+    poll();
+  </script>
+  {% endif %}
+{% endblock scripts %}
+
+{% block content %}
+  {% if polling %}
+    <h1>{{ _('Waiting for Export') }}</h1>
+    <p>{{ _('The object is currently being exported. Once the export has been completed, you will be redirected to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}</p>
+    <div class="mt-3 text-center">
+        <i class="fa fa-spinner fa-4x fa-fw fa-pulse"></i>
+    </div>
+  {% else %}
+    <h1>{{ _('Export failed') }}</h1>
+    <p>{{ _('The export failed with the following message: %(error_message)s', error_message=_(error_message, service_name=config["SERVICE_NAME"], dataverse_name=config["DATAVERSE_NAME"])) }}</p>
+  {% endif %}
+{% endblock content %}

@@ -30,3 +30,9 @@ msgstr "Gelb"
 
 msgid "Red"
 msgstr "Rot"
+
+msgid "API Token is not valid."
+msgstr "API Token ist nicht gültig."
+
+msgid "The Dataverse does not have the required metadata blocks."
+msgstr "Das Dataverse hat nicht die erforderlichen Metadatenblöcke."
