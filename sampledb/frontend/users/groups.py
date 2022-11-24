@@ -42,6 +42,12 @@ def groups():
         for group in groups
     }
     create_group_form = CreateGroupForm()
+    group_categories = list(logic.group_categories.get_group_categories())
+    group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
+    create_group_form.categories.choices = [
+        (str(category.id), category)
+        for category in group_categories
+    ]
     show_create_form = False
     if 'create' in flask.request.form:
         check_current_user_is_not_readonly()
@@ -73,6 +79,13 @@ def groups():
                         else:
                             descriptions[lang_code] = ''
                     group_id = logic.groups.create_group(names, descriptions, flask_login.current_user.id).id
+                    logic.group_categories.set_basic_group_categories(
+                        basic_group_id=group_id,
+                        category_ids=[
+                            int(category_id)
+                            for category_id in create_group_form.categories.data
+                        ]
+                    )
                 except ValueError as e:
                     flask.flash(str(e), 'error')
                     create_group_form.translations.errors.append(str(e))
@@ -86,6 +99,16 @@ def groups():
             else:
                 # create_group_form.name.errors.append('Only administrators can create basic groups.')
                 create_group_form.translations.errors.append(_('Only administrators can create basic groups.'))
+    group_categories_by_id = {
+        category.id: category
+        for category in group_categories
+    }
+    group_category_names = logic.group_categories.get_full_group_category_names()
+    group_category_tree = logic.group_categories.get_group_category_tree(
+        basic_group_ids={group.id for group in groups},
+        project_group_ids=set()
+    )
+    groups.sort(key=lambda group: get_translated_text(group.name).lower())
     return flask.render_template(
         "groups/groups.html",
         groups=groups,
@@ -94,7 +117,11 @@ def groups():
         create_group_form=create_group_form,
         show_create_form=show_create_form,
         ENGLISH=english,
-        languages=get_languages(only_enabled_for_input=True)
+        languages=get_languages(only_enabled_for_input=True),
+        group_categories=group_categories,
+        group_categories_by_id=group_categories_by_id,
+        group_category_names=group_category_names,
+        group_category_tree=group_category_tree,
     )
 
 
@@ -158,6 +185,12 @@ def group(group_id):
         leave_group_form = LeaveGroupForm()
         invite_user_form = InviteUserForm()
         edit_group_form = EditGroupForm()
+        group_categories = list(logic.group_categories.get_group_categories())
+        group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
+        edit_group_form.categories.choices = [
+            (str(category.id), category)
+            for category in group_categories
+        ]
         if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_GROUPS']:
             delete_group_form = DeleteGroupForm()
         else:
@@ -226,6 +259,13 @@ def group(group_id):
                         else:
                             descriptions[lang_code] = ''
                     logic.groups.update_group(group_id, names, descriptions)
+                    logic.group_categories.set_basic_group_categories(
+                        basic_group_id=group_id,
+                        category_ids=[
+                            int(category_id)
+                            for category_id in edit_group_form.categories.data
+                        ]
+                    )
                 except ValueError as e:
                     flask.flash(str(e), 'error')
                     edit_group_form.translations.errors.append(str(e))
@@ -312,6 +352,7 @@ def group(group_id):
         delete_group_form = None
         remove_group_member_form = None
         show_objects_link = False
+        group_categories = None
 
     group_invitations = None
     show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
@@ -324,6 +365,8 @@ def group(group_id):
 
     if english.id not in description_language_ids:
         description_language_ids.append(english.id)
+    basic_group_categories = logic.group_categories.get_basic_group_categories(group.id)
+    category_names = logic.group_categories.get_full_group_category_names()
     return flask.render_template(
         'groups/group.html',
         ENGLISH=english,
@@ -333,6 +376,10 @@ def group(group_id):
         description_language_ids=description_language_ids,
         group=group,
         group_member_ids=group_member_ids,
+        group_categories=group_categories,
+        group_category_names=logic.group_categories.get_full_group_category_names(),
+        basic_group_categories=basic_group_categories,
+        category_names=category_names,
         get_users=logic.users.get_users,
         get_user=logic.users.get_user,
         group_invitations=group_invitations,

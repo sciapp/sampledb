@@ -12,6 +12,7 @@ User Guide
     user_guide/users.rst
     user_guide/groups.rst
     user_guide/projects.rst
+    user_guide/group_categories.rst
     user_guide/instruments.rst
     user_guide/actions.rst
     user_guide/schemas.rst

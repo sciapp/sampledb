@@ -287,5 +287,7 @@ Miscellaneous
      - If set, any unhandled object responsibility assignment will be shown as an urgent notification on non-object pages (default: True).
    * - SAMPLEDB_SHOW_LAST_PROFILE_UPDATE
      - If set, show the date and time of the last user information update in each user profile (default: True). Updates by an administrator will be shown regardless of this configuration value.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES
+     - If set, only administrators will be able to manage group categories (default: True).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

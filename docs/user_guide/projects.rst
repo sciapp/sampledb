@@ -13,6 +13,8 @@ A project group may be linked to an object, which shows that the project group i
 
 Project groups may be best suited for those who want to model their object permissions in |service_name| according to an organizational hierarchy. For a simpler approach, see :ref:`groups`.
 
+Project groups can be part of multiple :ref:`group_categories`, which help finding the group in the group list.
+
 .. note::
     Administrators can disable creation of project groups by regular users. Administrators can also disable subproject support.
 

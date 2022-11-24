@@ -86,6 +86,12 @@ def project(project_id):
     description_language_ids = []
     if Permissions.WRITE in user_permissions:
         edit_project_form = EditProjectForm()
+        group_categories = list(logic.group_categories.get_group_categories())
+        group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
+        edit_project_form.categories.choices = [
+            (str(category.id), category)
+            for category in group_categories
+        ]
         for name in project.name.items():
             lang_id = get_language_by_lang_code(name[0]).id
             name_language_ids.append(lang_id)
@@ -116,6 +122,7 @@ def project(project_id):
                 translations.append(item)
     else:
         edit_project_form = None
+        group_categories = None
     show_edit_form = False
     english = get_language(Language.ENGLISH)
 
@@ -330,6 +337,13 @@ def project(project_id):
                         descriptions[lang_code] = ''
 
                 logic.projects.update_project(project_id, names, descriptions)
+                logic.group_categories.set_project_group_categories(
+                    project_group_id=project_id,
+                    category_ids=[
+                        int(category_id)
+                        for category_id in edit_project_form.categories.data
+                    ]
+                )
             except ValueError as e:
                 flask.flash(str(e), 'error')
                 edit_project_form.translations.errors.append(str(e))
@@ -437,6 +451,8 @@ def project(project_id):
             object_action = logic.actions.get_action(object.action_id)
         else:
             object = None
+    project_group_categories = logic.group_categories.get_project_group_categories(project.id)
+    group_category_names = logic.group_categories.get_full_group_category_names()
     return flask.render_template(
         'projects/project.html',
         ENGLISH=english,
@@ -453,6 +469,9 @@ def project(project_id):
         project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
         project_invitations=project_invitations,
+        project_group_categories=project_group_categories,
+        group_categories=group_categories,
+        group_category_names=group_category_names,
         show_invitation_log=show_invitation_log,
         object=object,
         object_id=object_id,
@@ -502,6 +521,12 @@ def projects():
         for project in projects
     }
     create_project_form = CreateProjectForm()
+    group_categories = list(logic.group_categories.get_group_categories())
+    group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
+    create_project_form.categories.choices = [
+        (str(category.id), category)
+        for category in group_categories
+    ]
     show_create_form = False
     if 'create' in flask.request.form:
         allowed_language_ids = [
@@ -539,6 +564,13 @@ def projects():
                             descriptions[lang_code] = ''
 
                     project_id = logic.projects.create_project(names, descriptions, flask_login.current_user.id).id
+                    logic.group_categories.set_project_group_categories(
+                        project_group_id=project_id,
+                        category_ids=[
+                            int(category_id)
+                            for category_id in create_project_form.categories.data
+                        ]
+                    )
                 except ValueError as e:
                     flask.flash(str(e), 'error')
                     create_project_form.translations.errors.append(str(e))
@@ -556,9 +588,18 @@ def projects():
         project.id: project
         for project in projects
     }
-    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(projects_by_id))
-    project_id_hierarchy_list = logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: get_translated_text(project.name).lower())
     english = get_language(Language.ENGLISH)
+    group_categories_by_id = {
+        category.id: category
+        for category in group_categories
+    }
+    group_category_names = logic.group_categories.get_full_group_category_names()
+    group_category_tree = logic.group_categories.get_group_category_tree(
+        basic_group_ids=set(),
+        project_group_ids={project.id for project in projects}
+    )
+    parent_project_ids = logic.projects.get_all_parent_project_ids()
+    projects.sort(key=lambda project: get_translated_text(project.name).lower())
     return flask.render_template(
         "projects/projects.html",
         create_project_form=create_project_form,
@@ -566,9 +607,14 @@ def projects():
         Permissions=logic.projects.Permissions,
         projects_by_id=projects_by_id,
         project_permissions_by_id=project_permissions_by_id,
-        project_id_hierarchy_list=project_id_hierarchy_list,
         languages=get_languages(only_enabled_for_input=True),
-        ENGLISH=english
+        ENGLISH=english,
+        projects=projects,
+        parent_project_ids=parent_project_ids,
+        group_categories=group_categories,
+        group_categories_by_id=group_categories_by_id,
+        group_category_names=group_category_names,
+        group_category_tree=group_category_tree,
     )
 
 

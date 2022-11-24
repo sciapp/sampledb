@@ -24,6 +24,7 @@ from . import federation
 from . import fed_logs
 from . import files
 from . import groups
+from . import group_categories
 from . import instruments
 from . import instrument_log_entries
 from . import languages
@@ -84,6 +85,7 @@ __all__ = [
     'fed_logs',
     'files',
     'groups',
+    'group_categories',
     'instruments',
     'instrument_translations',
     'instrument_log_entries',

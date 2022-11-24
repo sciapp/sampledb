@@ -49,7 +49,11 @@ class Project:
 
     @classmethod
     def from_database(cls, project: projects.Project) -> 'Project':
-        return Project(id=project.id, name=project.name, description=project.description)
+        return Project(
+            id=project.id,
+            name=project.name,
+            description=project.description
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -741,6 +745,26 @@ def delete_subproject_relationship(parent_project_id: int, child_project_id: int
         raise errors.SubprojectRelationshipDoesNotExistError()
     db.session.delete(subproject_relationship)
     db.session.commit()
+
+
+def get_all_parent_project_ids() -> typing.Dict[int, typing.Sequence[int]]:
+    """
+    Return a dict containing the parent project IDs for each existing project.
+
+    If a project's ID is not in the dict, assume it has no parent project.
+
+    :return: dict of parent project IDs
+    """
+    subproject_relationships: typing.Iterable[SubprojectRelationship] = SubprojectRelationship.query.all()
+    parent_project_ids: typing.Dict[int, typing.Set[int]] = {}
+    for relationship in subproject_relationships:
+        if relationship.child_project_id not in parent_project_ids:
+            parent_project_ids[relationship.child_project_id] = set()
+        parent_project_ids[relationship.child_project_id].add(relationship.parent_project_id)
+    return {
+        project_id: tuple(parent_project_ids[project_id])
+        for project_id in parent_project_ids
+    }
 
 
 def get_parent_project_ids(project_id: int, only_if_child_can_add_users_to_parent: bool = False) -> typing.List[int]:

@@ -2,6 +2,52 @@
 
 {% block title %}{{ _('Project Groups') }} — {{ service_name }}{% endblock %}
 
+{% macro show_project_tree(project) %}
+<a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name | get_translated_text }}</a>
+  {% if project_permissions_by_id[project.id] != Permissions.NONE %}
+    <span class="label label-default">{{ _('Member') }}
+    {% if project_permissions_by_id[project.id] == Permissions.READ %}({{ _('Read') }}){% endif %}
+    {% if project_permissions_by_id[project.id] == Permissions.WRITE %}({{ _('Write') }}){% endif %}
+    {% if project_permissions_by_id[project.id] == Permissions.GRANT %}({{ _('Grant') }}){% endif %}
+  </span>
+  {% endif %}
+  <ul>
+    {% for child_project in projects %}
+      {% if project.id in parent_project_ids.get(child_project.id, ()) %}
+        <li>
+          {{ show_project_tree(child_project) }}
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+{% macro show_group_category_tree(group_category_tree, parent_category_id=None) %}
+  <ul class="groups_list">
+  {% for category in group_categories %}
+    {% if category.id in group_category_tree['child_categories'] %}
+      {% if group_category_tree['child_categories'][category.id]['contains_project_groups'] %}
+        <li class="groups_list_category">
+          <input type="checkbox" id="groups_list_category_{{ category.id }}_expand"/>
+          <label for="groups_list_category_{{ category.id }}_expand" class="groups_list_category_label">
+            <i class="fa"></i>
+            {{ group_categories_by_id[category.id].name | get_translated_text(default=_('Unnamed Category')) }}
+          </label>
+          {{ show_group_category_tree(group_category_tree['child_categories'][category.id], category.id) }}
+        </li>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  {% for project in projects %}
+    {% if project.id in group_category_tree['project_group_ids'] and (parent_category_id is not none or not parent_project_ids.get(project.id)) %}
+      <li>
+        {{ show_project_tree(project) }}
+      </li>
+    {% endif %}
+  {% endfor %}
+  </ul>
+{% endmacro %}
+
 {% block content %}
   {% set allowed_language_ids = [] %}
   {% for language in languages %}
@@ -9,36 +55,17 @@
   {% endfor %}
   <h1>{{ _('Project Groups') }}</h1>
   <p class="text-muted">{{ _('A project group is a hierarchy of users which share the object permissions granted to it, limited by the permissions each member has for the project group itself.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/projects.html">{{ _('Read more.') }}</a></p>
-  {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS']) %}
+  {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS'] or not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES']) %}
   <p>
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">{{ _('Create Project Group') }}</button>
+    {% if current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_PROJECTS'] %}
+      <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createProjectModal">{{ _('Create Project Group') }}</button>
+    {% endif %}
+    {% if current_user.is_admin or not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] %}
+      <a href="{{ url_for('.group_categories') }}" class="btn btn-default">{{ _('Manage Group Categories') }}</a>
+    {% endif %}
   </p>
   {% endif %}
-  <ul id="projects_list">
-  {% for level, project_id in project_id_hierarchy_list %}
-    {% with project = projects_by_id[project_id] %}
-    <li><a href="{{ url_for('.project', project_id=project.id) }}">{{ project.name | get_translated_text }}</a>{% if project_permissions_by_id[project.id] != Permissions.NONE %} <span class="label label-default">{{ _('Member') }}
-    {% if project_permissions_by_id[project.id] == Permissions.READ %}({{ _('Read') }}){% endif %}
-    {% if project_permissions_by_id[project.id] == Permissions.WRITE %}({{ _('Write') }}){% endif %}
-    {% if project_permissions_by_id[project.id] == Permissions.GRANT %}({{ _('Grant') }}){% endif %}
-    </span>{% endif %}
-    {% if not config['DISABLE_SUBPROJECTS'] %}
-      {% if loop.index < project_id_hierarchy_list | length %}
-        {% if project_id_hierarchy_list[loop.index][0] > level %}
-          {{ ('<ul>' * (project_id_hierarchy_list[loop.index][0] - level)) | safe }}
-        {% elif project_id_hierarchy_list[loop.index][0] < level %}
-          {{ ('</ul>' * (level - project_id_hierarchy_list[loop.index][0])) | safe }}
-        {% endif %}
-      {% else %}
-        {% for _ in range(level) %}
-          </ul>
-        {% endfor %}
-      {% endif %}
-    {% endif %}
-    </li>
-    {% endwith %}
-  {% endfor %}
-  </ul>
+  {{ show_group_category_tree(group_category_tree) }}
   {% if not current_user.is_readonly %}
   <div class="modal fade" id="createProjectModal" tabindex="-1" role="dialog" aria-labelledby="createProjectModalLabel">
     <div class="modal-dialog" role="document">
@@ -104,6 +131,21 @@
                 {% endif %}
               </div>
             </div>
+            {% if group_categories %}
+            <div class="form-group">
+              <label for="select-categories" class="control-label">{{ _("Categories") }}</label>
+              <select class="selectpicker form-control" multiple="multiple" id="select-categories" name="{{ create_project_form.categories.name }}" data-none-selected-text="{{ _('No category selected') }}">
+                {% for category in group_categories %}
+                  <option value="{{ category.id }}">
+                    {%- for category_name in group_category_names[category.id] -%}
+                      {%- if not loop.first %} / {% endif -%}
+                      {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+                    {%- endfor -%}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endif %}
           </div>
           <input type="hidden" id="input-translations" name="{{ create_project_form.translations.name }}" value="">
 

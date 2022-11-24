@@ -24,6 +24,7 @@ from . import dataverse_export
 from . import download_service
 from . import export
 from . import favicon
+from . import group_categories
 from . import index
 from . import instruments
 from . import locations
@@ -54,6 +55,7 @@ __all__ = [
     'download_service',
     'export',
     'favicon',
+    'group_categories',
     'index',
     'instruments',
     'locations',

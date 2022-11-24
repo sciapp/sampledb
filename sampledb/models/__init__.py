@@ -10,6 +10,7 @@ from . import default_permissions
 from . import favorites
 from . import files
 from . import groups
+from . import group_categories
 from . import instruments
 from . import instrument_log_entries
 from . import instrument_translation
@@ -41,6 +42,7 @@ from .favorites import FavoriteAction, FavoriteInstrument
 from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType
 from .files import File
 from .groups import Group
+from .group_categories import GroupCategory
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .instrument_translation import InstrumentTranslation
@@ -74,6 +76,7 @@ __all__ = [
     'favorites',
     'files',
     'groups',
+    'group_categories',
     'instruments',
     'instrument_log_entries',
     'instrument_translation',
@@ -109,6 +112,7 @@ __all__ = [
     'FavoriteInstrument',
     'File',
     'Group',
+    'GroupCategory',
     'HTTPMethod',
     'Instrument',
     'InstrumentTranslation',

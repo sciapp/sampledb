@@ -238,6 +238,7 @@ def test_status_codes(flask_server, user):
             object_id=object_id
         )
         task_id = 1
+        category_id = sampledb.logic.group_categories.create_group_category(name={'en': 'Category'}).id
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -317,6 +318,9 @@ def test_status_codes(flask_server, user):
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
         'groups/': 200,
         f'groups/{group_id}': 200,
+        'group_categories/': 200,
+        'group_categories/new': 200,
+        f'group_categories/{category_id}': 200,
         'instruments/': 200,
         f'instruments/{instrument_id}': 200,
         f'instruments/{instrument_id}/edit': 200,
@@ -439,7 +443,7 @@ def test_status_codes(flask_server, user):
         'group_id': group_id,
         'project_id': project_id,
         'api_token_id': api_token_id,
-        'category_id': instrument_log_category_id,
+        'category_id': [instrument_log_category_id, category_id],
         'object_location_assignment_index': object_location_assignment_index,
         'comment_id': comment_id,
         'file_id': file_id,

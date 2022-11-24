@@ -16,6 +16,18 @@
   {% if object_id is not none %}
   <p class="text-muted">{{ _('This project group is linked to <a href=\"%(object_url)s\">%(object_type)s #%(object_id)d%(object_name)s</a>.', object_type=((object_action.type.object_name | get_translated_text) if object_action else _('Object')), object_id=object_id, object_name=((': ' + (object.data.name.text | get_translated_text)) if object else ''), object_url=url_for(".object", object_id=object_id)) }}</p>
   {% endif %}
+  {% if project_group_categories %}
+    <p>
+      <strong>{{ _('Categories') }}:</strong>
+      {% for category in project_group_categories %}
+        {%- if not loop.first %}, {% endif -%}
+        {%- for category_name in group_category_names[category.id] -%}
+          {%- if not loop.first %} / {% endif -%}
+          {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+        {%- endfor -%}
+      {% endfor %}
+    </p>
+  {% endif %}
   <p>{{ project.description | get_translated_text }}</p>
   {% if not config['DISABLE_SUBPROJECTS'] %}
   {% if parent_project_ids %}
@@ -278,6 +290,22 @@
           </div>
 
           <input type="hidden" id="input-translations" name="{{ edit_project_form.translations.name }}" value="">
+
+          {% if group_categories %}
+            <div class="form-group">
+              <label for="select-categories" class="control-label">{{ _("Categories") }}</label>
+              <select class="selectpicker form-control" multiple="multiple" id="select-categories" name="{{ edit_project_form.categories.name }}" data-none-selected-text="{{ _('No category selected') }}">
+                {% for category in group_categories %}
+                  <option value="{{ category.id }}" {% if category in project_group_categories %}selected="selected"{% endif %}>
+                    {%- for category_name in group_category_names[category.id] -%}
+                      {%- if not loop.first %} / {% endif -%}
+                      {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+                    {%- endfor -%}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
 
           </div>
           <div class="modal-footer">
