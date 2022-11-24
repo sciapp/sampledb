@@ -25,7 +25,7 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     db.session.execute(db.text(
         """
         ALTER TABLE background_tasks
-        ADD expiration_date TIMESTAMP NULL
+        ADD expiration_date TIMESTAMP NULL,
         ADD result JSON NULL
         """
     ))

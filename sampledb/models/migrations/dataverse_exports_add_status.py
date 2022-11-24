@@ -22,16 +22,19 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
 
     # Perform migration
     db.session.execute(db.text("""
-        CREATE TYPE dataverse_export_status
-        AS ENUM ('TASK_CREATED', 'EXPORT_FINISHED')
-    """))
-    db.session.execute(db.text("""
         ALTER TABLE dataverse_exports
         ALTER COLUMN dataverse_url DROP NOT NULL
     """))
     db.session.execute(db.text("""
         ALTER TABLE dataverse_exports
-        ADD COLUMN status dataverse_export_status NOT NULL
+        ADD COLUMN status dataverseexportstatus NULL
     """))
-
+    db.session.execute(db.text("""
+        UPDATE dataverse_exports
+        SET status = 'EXPORT_FINISHED'::dataverseexportstatus
+    """))
+    db.session.execute(db.text("""
+        ALTER TABLE dataverse_exports
+        ALTER COLUMN status SET NOT NULL
+    """))
     return True
