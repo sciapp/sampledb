@@ -360,6 +360,7 @@ def is_full_location_tree_hidden(
     return all(
         locations_map[location_id].is_hidden and is_full_location_tree_hidden(locations_map, locations_subtree)
         for location_id, locations_subtree in locations_tree.items()
+        if location_id in locations_map
     )
 
 

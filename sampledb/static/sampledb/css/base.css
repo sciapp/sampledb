@@ -1155,6 +1155,10 @@ code {
     content: '\f146';
 }
 
+.treepicker.bootstrap-select .selectpicker-collapsible-menu .fa {
+    color: #333333;
+}
+
 .treepicker.bootstrap-select .selectpicker-collapsible-menu {
     cursor: pointer;
     pointer-events: auto;
