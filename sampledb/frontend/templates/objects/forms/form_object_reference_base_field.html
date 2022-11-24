@@ -1,4 +1,4 @@
-{% if id_prefix+'_oid' in form_data %}
+{% if form_data.get(id_prefix+'_oid') %}
   {% set selected_id = form_data[id_prefix+'_oid'] %}
 {% elif data is not none and "object_id" in data %}
   {% if "component_uuid" in data and data.component_uuid is not none %}
@@ -13,7 +13,7 @@
     {% set selected_id = data.object_id | string %}
   {% endif %}
 {% else %}
-  {% set selected_id = None %}
+  {% set selected_id = none %}
 {% endif %}
 
 {% if schema_action_ids is none and schema_action_type_ids is none %}
