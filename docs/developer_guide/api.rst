@@ -3,6 +3,10 @@
 HTTP API
 ========
 
+The SampleDB HTTP API makes it possible to use HTTP requests to perform most actions that can be done via the web frontend. This can be very useful for automated data entry, e.g. for uploading metadata from instrument control software, and retrieval, e.g. for data analysis.
+
+There are libraries for sending HTTP requests for most programming languages, and users of Python or Matlab can use the `sampledbapi <https://ag-salinga.zivgitlabpages.uni-muenster.de/sampledb-api-wrapper/index.html>`_ package `developed at WWU Münster <https://github.com/AG-Salinga/sampledb-api-wrapper>`_ for even simpler use of the HTTP API.
+
 Authentication
 --------------
 
