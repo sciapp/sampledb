@@ -291,7 +291,7 @@ $(function() {
   }
 });
 
-function objectpicker_show_all(button) {
+function objectpicker_show_all(button, event) {
   let objectpicker_container = $(button).closest('.objectpicker-container');
   let objectpicker = objectpicker_container.find('.typeahead.tt-input');
   let name = objectpicker_container.find('input[type=hidden]')[0].name;
@@ -307,10 +307,14 @@ function objectpicker_show_all(button) {
     dataset
   );
   objectpicker.focus();
+  event.preventDefault();
+  event.stopPropagation();
 }
 
-function objectpicker_clear(button) {
+function objectpicker_clear(button, event) {
   let objectpicker_container = $(button).closest('.objectpicker-container');
   let objectpicker = objectpicker_container.find('.typeahead.tt-input');
   objectpicker.typeahead('val', '');
+  event.preventDefault();
+  event.stopPropagation();
 }
