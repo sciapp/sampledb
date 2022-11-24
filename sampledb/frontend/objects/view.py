@@ -24,7 +24,7 @@ from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
 from ...logic.object_log import ObjectLogEntryType
 from ...logic.projects import get_project
-from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object, get_locations_tree, is_full_location_tree_hidden
+from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object
 from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.files import FileLogEntryType
@@ -33,7 +33,7 @@ from ...logic.notebook_templates import get_notebook_templates
 from ...logic.utils import get_translated_text
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
 from ...utils import object_permissions_required
-from ..utils import generate_qrcode, get_user_if_exists
+from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
 from ..labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
@@ -334,55 +334,23 @@ def object(object_id):
     object_location_assignments = get_object_location_assignments(object_id)
     user_may_assign_location = user_may_edit
     if user_may_assign_location:
-        readable_location_ids = [
-            location.id
-            for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        ]
         location_form = ObjectLocationAssignmentForm()
-        locations_map, locations_tree = get_locations_tree()
-        locations = [('-1', '—')]
-        valid_locations = []
-        unvisited_location_ids_prefixes_and_subtrees = [
-            (location_id, '', locations_tree[location_id])
-            for location_id in locations_tree
-        ]
-        while unvisited_location_ids_prefixes_and_subtrees:
-            location_id, prefix, subtree = unvisited_location_ids_prefixes_and_subtrees.pop(0)
-            location = locations_map[location_id]
-            # skip hidden locations with a fully hidden subtree
-            if not (flask_login.current_user.is_admin or not location.is_hidden or not is_full_location_tree_hidden(locations_map, subtree)):
-                continue
-            # skip unreadable locations, but allow processing their child locations
-            # in case any of them are readable
-            if location_id in readable_location_ids and (not location.is_hidden or flask_login.current_user.is_admin):
-                locations.append((str(location_id), prefix + get_location_name(location, include_id=True)))
-                if location.type is None or location.type.enable_object_assignments:
-                    valid_locations.append(locations[-1])
-            prefix = f'{prefix}{get_location_name(location)} / '
-            for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
-                unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, prefix, subtree[location_id]))
-
-        location_form.location.all_choices = locations
-        location_form.location.choices = valid_locations
+        all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
+        location_form.location.all_choices = all_choices
+        location_form.location.choices = choices
         possible_responsible_users = [('-1', '—')]
         user_is_fed = {}
         for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
             possible_responsible_users.append((str(user.id), user.get_name()))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_responsible_users
-        location_is_fed = {
-            str(location.id): location.fed_id is not None
-            for location in locations_map.values()
-        }
     else:
         location_form = None
         user_is_fed = None
-        location_is_fed = None
     template_kwargs.update({
         "user_may_assign_location": user_may_assign_location,
         "object_location_assignments": object_location_assignments,
         "location_form": location_form,
-        "location_is_fed": location_is_fed,
         "user_is_fed": user_is_fed,
     })
 

@@ -1154,3 +1154,48 @@ code {
 .groups_list input[type="checkbox"]:checked ~ .groups_list_category_label > i::before {
     content: '\f146';
 }
+
+.treepicker.bootstrap-select .selectpicker-collapsible-menu .fa {
+    color: #333333;
+}
+
+.treepicker.bootstrap-select .selectpicker-collapsible-menu {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.treepicker.bootstrap-select li.searching .selectpicker-collapsible-menu {
+    display: none;
+}
+
+.treepicker.bootstrap-select .location_path {
+    display: none;
+}
+.treepicker.bootstrap-select .filter-option-inner-inner .location_path,
+.treepicker.bootstrap-select li.searching .location_path {
+    display: inline;
+}
+
+.treepicker.bootstrap-select li.searching > a > span > span,
+.treepicker.bootstrap-select .filter-option-inner-inner > span {
+    padding-left: 0 !important;
+}
+.treepicker.bootstrap-select .filter-option-inner-inner .selectpicker-collapsible-menu {
+    display: none;
+}
+
+.treepicker.bootstrap-select .selectpicker-collapsible-menu > .fa::before {
+    content: '\f146'
+}
+
+.treepicker.bootstrap-select .closed > .selectpicker-collapsible-menu > .fa::before {
+    content: '\f0fe'
+}
+
+.treepicker.bootstrap-select .filter-option-inner-inner > span .fa::before {
+    content: '';
+}
+
+.treepicker-actions {
+    padding: 4px 8px;
+}

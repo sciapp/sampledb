@@ -40,8 +40,8 @@ from ..logic.actions import Action, ActionType
 from ..logic.instruments import Instrument
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.languages import get_user_language
-from ..logic.locations import Location, LocationType, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden
-from ..logic.location_permissions import get_user_location_permissions
+from ..logic.locations import Location, LocationType, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden, get_locations_tree
+from ..logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.security_tokens import generate_token
 from ..logic.object_permissions import get_user_object_permissions, Permissions
@@ -728,3 +728,95 @@ def get_federation_url(obj: typing.Any) -> str:
     else:
         endpoint, param_name = endpoint_and_param_name
         return component_address + relative_url_for(endpoint, **{param_name: obj.fed_id})
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LocationFormInformation:
+    id: int
+    name: str
+    name_prefix: str
+    id_path: typing.Sequence[int]
+    has_subtree: bool
+    is_fed: bool
+    is_disabled: bool
+
+    @property
+    def full_name(self) -> str:
+        return self.name_prefix + self.name
+
+    @property
+    def id_string(self) -> str:
+        return str(self.id)
+
+
+def get_locations_form_data(
+        filter: typing.Callable[[Location], bool]
+) -> typing.Tuple[typing.Sequence[LocationFormInformation], typing.Sequence[typing.Tuple[str, str]]]:
+    """
+    Get location information for a location form field.
+
+    :param filter: a filter for which locations should be valid
+    :return: a list of location information and a list of valid choices
+    """
+    readable_location_ids = {
+        location.id
+        for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+    }
+    locations_map, locations_tree = get_locations_tree()
+    readable_locations_map = {
+        location_id: location
+        for location_id, location in locations_map.items()
+        if location_id in readable_location_ids
+    }
+    all_choices = [LocationFormInformation(
+        id=-1,
+        name='—',
+        name_prefix='',
+        id_path=[],
+        has_subtree=False,
+        is_fed=False,
+        is_disabled=False
+    )]
+    choices = []
+    unvisited_location_ids_prefixes_and_subtrees = [
+        (location_id, '', locations_tree[location_id], [location_id])
+        for location_id in locations_tree
+    ]
+    while unvisited_location_ids_prefixes_and_subtrees:
+        location_id, name_prefix, subtree, id_path = unvisited_location_ids_prefixes_and_subtrees.pop(0)
+        location = locations_map[location_id]
+        # skip hidden locations with a fully hidden subtree
+        is_full_subtree_hidden = is_full_location_tree_hidden(readable_locations_map, subtree)
+        if not flask_login.current_user.is_admin and location.is_hidden and is_full_subtree_hidden:
+            continue
+        # skip unreadable locations, but allow processing their child locations
+        # in case any of them are readable
+        if location_id in readable_location_ids and (not location.is_hidden or flask_login.current_user.is_admin):
+            is_disabled = not filter(location)
+            all_choices.append(LocationFormInformation(
+                id=location_id,
+                name=get_location_name(location, include_id=True),
+                name_prefix=name_prefix,
+                id_path=tuple(id_path),
+                has_subtree=bool(subtree),
+                is_fed=location.fed_id is not None,
+                is_disabled=is_disabled
+            ))
+            if not is_disabled:
+                choices.append((str(all_choices[-1].id), all_choices[-1].full_name))
+        elif not is_full_subtree_hidden:
+            all_choices.append(LocationFormInformation(
+                id=location_id,
+                name=get_location_name(location, include_id=True),
+                name_prefix=name_prefix,
+                id_path=tuple(id_path),
+                has_subtree=bool(subtree),
+                is_fed=False,
+                is_disabled=True,
+            ))
+        else:
+            continue
+        name_prefix = f'{name_prefix}{get_location_name(location)} / '
+        for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
+            unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, name_prefix, subtree[location_id], id_path + [location_id]))
+    return all_choices, choices

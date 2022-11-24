@@ -759,9 +759,11 @@
        <span class="help-block" style="color: red" id="object_location-help-block"></span>
         <div class="form-group {% if location_form.location.name in location_form.errors %}has-error{% endif %}">
           <label for="input-location" class="control-label">{{ _("Location") }}</label>
-          <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
-            {% for location_id, location_name in location_form.location.all_choices %}
-            <option {% if location_is_fed[location_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %} {% if (location_id, location_name) not in location_form.location.choices and location_id != '-1' %}disabled="disabled"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+          <select class="treepicker selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
+            {% for location_info in location_form.location.all_choices %}
+            <option {% if location_info.is_fed %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_info.id }}" {% if location_form.location.data == (location_info.id_string) %}selected="selected"{% endif %} {% if location_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if location_info.has_subtree %}option-group-{{ location_info.id }}-header{% endif %} closed {% for id in location_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (location_info.id_path | length - 1) }}em'>{% if location_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ location_info.name_prefix }}</span>{{ location_info.name }}</span>">
+              {{ location_info.full_name }}
+            </option>
             {% endfor %}
           </select>
         </div>
@@ -1269,6 +1271,7 @@
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
   <script type="text/javascript">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
