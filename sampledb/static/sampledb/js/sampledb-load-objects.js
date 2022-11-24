@@ -101,7 +101,7 @@ $(function() {
           let bloodhound = new Bloodhound({
             datumTokenizer: function (item) {
               let tokens = new Set([]);
-              Bloodhound.tokenizers.whitespace(item.text).forEach(function(token) {
+              Bloodhound.tokenizers.whitespace(item.unescaped_text).forEach(function(token) {
                 tokens.add(token);
                 // search by substrings (except for ID)
                 if (token !== '(#' + item.id + ')') {
@@ -119,7 +119,7 @@ $(function() {
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             local: to_add,
-            identify: function(item) { return item.text; },
+            identify: function(item) { return item.unescaped_text; },
           });
           function source(q, sync) {
             function syncWrap(results) {
@@ -144,7 +144,7 @@ $(function() {
             source: source,
             limit: ((window.object_picker_limit === null || window.object_picker_limit < 1) ? 'Infinity' : window.object_picker_limit + (!$x.prop('required') ? 1 : 0)),
             display: function (item) {
-              return item.text;
+              return item.unescaped_text;
             },
             templates: {
               suggestion: function(data) {
@@ -222,7 +222,7 @@ $(function() {
             let object_id = null;
             if (text) {
               for (let i = 0; i < to_add.length && !is_valid; i++) {
-                if (to_add[i].text === text) {
+                if (to_add[i].unescaped_text === text) {
                   object_id = to_add[i].id;
                   is_valid = true;
                 }
@@ -274,7 +274,7 @@ $(function() {
           } else {
             for (let i = 0; i < to_add.length; i++) {
               if (to_add[i].id === data) {
-                $x.typeahead('val', to_add[i].text);
+                $x.typeahead('val', to_add[i].unescaped_text);
                 break;
               }
             }
