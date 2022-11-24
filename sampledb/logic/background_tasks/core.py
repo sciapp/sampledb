@@ -21,13 +21,15 @@ import flask
 from ... import db
 from ...models import BackgroundTask, BackgroundTaskStatus
 from .. import errors
+from .background_dataverse_export import handle_dataverse_export_task
 from .send_mail import handle_send_mail_task
 
 TASK_WAIT_TIMEOUT = 30
 NUM_HANDLER_THREADS = 4
 
-HANDLERS: typing.Dict[str, typing.Callable[[typing.Dict[str, typing.Any]], bool]] = {
-    'send_mail': handle_send_mail_task
+HANDLERS: typing.Dict[str, typing.Callable[[typing.Dict[str, typing.Any], typing.Optional[int]], typing.Tuple[bool, typing.Optional[dict[str, typing.Any]]]]] = {
+    'send_mail': handle_send_mail_task,
+    'dataverse_export': handle_dataverse_export_task
 }
 
 should_stop = False
@@ -79,7 +81,7 @@ def post_background_task(
         start_handler_threads(flask.current_app)
         return BackgroundTaskStatus.POSTED, task
     else:
-        return _handle_background_task(type, data), None
+        return _handle_background_task(type, data, None), None
 
 
 def start_handler_threads(app: flask.Flask) -> None:
@@ -107,7 +109,7 @@ def start_handler_threads(app: flask.Flask) -> None:
     # use daemon threads during testing, as a failed test may circumvent the thread stop signal
     daemon = app.config.get('TESTING', False)
     while len(handler_threads) < NUM_HANDLER_THREADS:
-        handler_thread = threading.Thread(target=_handle_background_tasks, args=[app], daemon=daemon)
+        handler_thread = threading.Thread(target=_handle_background_tasks, args=[app, len(handler_threads) == 0], daemon=daemon)
         handler_thread.start()
         handler_threads.append(handler_thread)
 
@@ -141,9 +143,40 @@ def stop_handler_threads(app: flask.Flask) -> None:
                 running_threads.remove(handler_thread)
 
 
-def _handle_background_tasks(app: flask.Flask) -> None:
+def get_background_task_result(task_id: int, delete_when_final: bool = True) -> typing.Optional[dict[str, typing.Any]]:
+    """
+    Returns the result of a task.
+
+    Creates a short evaluation of the specified task by returning the
+    status and result as a dict. if specified, it also deletes
+    the background task from the database.
+
+    :param task_id: the id of the task
+    :param delete_when_final: if true, the task will be deleted if it is in an final state (done/failed)
+    :return: returns the status and the result of an background task as a dictionary
+    """
+    task: BackgroundTask = BackgroundTask.query.filter_by(id=task_id).first()
+    if not task:
+        return None
+
+    result = {"status": task.status, "result": ""}
+
+    if task.status.is_final():
+        if task.type == 'dataverse_export':
+            result["result"] = task.result["url" if task.status == BackgroundTaskStatus.DONE else "error_message"]
+
+        if delete_when_final:
+            db.session.delete(task)
+            db.session.commit()
+
+    return result
+
+
+def _handle_background_tasks(app: flask.Flask, should_delete_expired_tasks: bool) -> None:
     with app.app_context():
         while not should_stop:
+            if should_delete_expired_tasks:
+                BackgroundTask.delete_expired_tasks()
             try:
                 task = BackgroundTask.query.filter_by(status=BackgroundTaskStatus.POSTED).first()
             except Exception:
@@ -151,7 +184,7 @@ def _handle_background_tasks(app: flask.Flask) -> None:
                 task = None
             if task is not None:
                 if _claim_background_task(task):
-                    _set_background_task_status(task, _handle_background_task(task.type, task.data))
+                    _set_background_task_status(task, _handle_background_task(task.type, task.data, task.id))
                 else:
                     # another thread might have claimed the task first
                     continue
@@ -184,11 +217,12 @@ def _claim_background_task(
 
 def _handle_background_task(
         type: str,
-        data: typing.Dict[str, typing.Any]
+        data: typing.Dict[str, typing.Any],
+        task_id: typing.Optional[int]
 ) -> BackgroundTaskStatus:
     handler = HANDLERS.get(type)
     try:
-        if handler is not None and handler(data):
+        if handler is not None and handler(data, task_id)[0]:
             return BackgroundTaskStatus.DONE
     except Exception:
         print("Exception during handler for task:\n", traceback.format_exc(), file=sys.stderr)

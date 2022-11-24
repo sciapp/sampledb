@@ -34,7 +34,7 @@ from .background_tasks import BackgroundTask, BackgroundTaskStatus
 from .comments import Comment
 from .components import Component
 from .component_authentication import ComponentAuthentication, OwnComponentAuthentication, ComponentAuthenticationType
-from .dataverse_export import DataverseExport
+from .dataverse_export import DataverseExport, DataverseExportStatus
 from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
 from .download_service import DownloadServiceJobFile
 from .favorites import FavoriteAction, FavoriteInstrument
@@ -103,6 +103,7 @@ __all__ = [
     'AuthenticationType',
     'Comment',
     'DataverseExport',
+    'DataverseExportStatus',
     'DownloadServiceJobFile',
     'FavoriteAction',
     'FavoriteInstrument',

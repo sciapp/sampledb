@@ -21,7 +21,7 @@ from .. import db
 from .units import prettify_units
 from .utils import get_translated_text
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
-from ..models import DataverseExport, Permissions, ObjectLogEntryType
+from ..models import DataverseExport, DataverseExportStatus, Permissions, ObjectLogEntryType
 
 
 DATAVERSE_TIMEOUT = 30
@@ -284,7 +284,7 @@ def upload_object(
         property_whitelist: typing.Optional[typing.Sequence[typing.List[typing.Union[str, int]]]] = None,
         file_id_whitelist: typing.Sequence[int] = (),
         tag_whitelist: typing.Sequence[str] = ()
-) -> typing.Tuple[bool, typing.Union[str, typing.Dict[str, typing.Any]]]:
+) -> typing.Tuple[bool, str]:
     """
     Uploads object information and files to a given Dataverse.
 
@@ -586,15 +586,22 @@ def upload_object(
         if r.status_code == 201 and result['status'] == 'OK':
             persistent_id = result['data']['persistentId']
             dataverse_url = f'{server_url}/dataset.xhtml?{urlencode({"persistentId": persistent_id})}'
-            dataverse_export = DataverseExport(object_id, dataverse_url, user_id)
-            db.session.add(dataverse_export)
+            dataverse_export = DataverseExport.query.filter_by(object_id=object_id).first()
+            if dataverse_export and dataverse_export.status == DataverseExportStatus.TASK_CREATED:
+                DataverseExport.query.filter_by(object_id=object_id).update(dict(
+                    status=DataverseExportStatus.EXPORT_FINISHED,
+                    dataverse_url=dataverse_url
+                ))
+            else:
+                dataverse_export = DataverseExport(object_id, dataverse_url, user_id, DataverseExportStatus.EXPORT_FINISHED)
+                db.session.add(dataverse_export)
             db.session.commit()
             object_log.export_to_dataverse(user_id, object_id, dataverse_url)
             _upload_files_to_dataset(server_url, api_token, persistent_id, object_id, file_id_whitelist)
             return True, dataverse_url
-        return False, r.json()
+        return False, r.json()['message']
     except Exception:
-        return False, {}
+        return False, ""
 
 
 def _upload_files_to_dataset(
@@ -784,6 +791,19 @@ def _list_dataverses_nested(
                 'child_dataverses': _list_dataverses_nested(server_url, api_token, entry.get('id'))
             })
     return child_dataverses
+
+
+def get_dataverse_export_state(object_id: int) -> typing.Optional[DataverseExportStatus]:
+    """
+    Returns the current status of a dataverse export.
+
+    :param object_id: the ID of an existing object
+    :return: the current state or None
+    """
+    dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
+    if dataverse_export is None:
+        return None
+    return dataverse_export.status  # type: ignore
 
 
 def get_dataverse_url(object_id: int) -> typing.Optional[str]:

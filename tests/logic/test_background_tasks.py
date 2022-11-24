@@ -5,9 +5,9 @@ import time
 
 def test_background_tasks(app):
     handler_call_args = []
-    def test_handler(data):
+    def test_handler(data, task_id):
         handler_call_args.append(data)
-        return handler_return_value
+        return handler_return_value, None
 
     app.config['ENABLE_BACKGROUND_TASKS'] = False
 

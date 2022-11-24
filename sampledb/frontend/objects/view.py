@@ -197,15 +197,20 @@ def object(object_id):
 
     # dataverse export
     dataverse_enabled = bool(flask.current_app.config['DATAVERSE_URL'])
+    dataverse_export_task_created = False
+    dataverse_url = None
+    show_dataverse_export = False
     if dataverse_enabled:
-        dataverse_url = logic.dataverse_export.get_dataverse_url(object.id)
+        export_state = logic.dataverse_export.get_dataverse_export_state(object.id)
+        if export_state == models.DataverseExportStatus.EXPORT_FINISHED:
+            dataverse_url = logic.dataverse_export.get_dataverse_url(object.id)
+        elif export_state == models.DataverseExportStatus.TASK_CREATED:
+            dataverse_export_task_created = True
         show_dataverse_export = user_may_grant and not dataverse_url
-    else:
-        dataverse_url = None
-        show_dataverse_export = False
     template_kwargs.update({
         "show_dataverse_export": show_dataverse_export,
         "dataverse_url": dataverse_url,
+        "dataverse_export_task_created": dataverse_export_task_created
     })
 
     # scicat export

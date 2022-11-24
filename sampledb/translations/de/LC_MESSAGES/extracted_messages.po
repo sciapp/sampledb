@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-11-14 15:32+0100\n"
+"POT-Creation-Date: 2022-11-17 16:04+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.10.3\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -113,14 +113,18 @@ msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
 msgid "Failed to update action permissions."
 msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
 
+msgid "The object is currently being exported."
+msgstr "Dieses Objekt wird gerade exportiert."
+
 msgid "Exporting imported objects is not supported."
 msgstr "Das Exportieren importierter Objekte wird nicht unterstützt."
 
 msgid "No suitable Dataverses available for export."
 msgstr "Kein für Export brauchbares Dataverse verfügbar."
 
-msgid "An unknown error occurred while uploading the dataset."
-msgstr "Beim Export des Datensatzes ist ein unbekannter Fehler aufgetreten."
+#, python-format
+msgid "An error occurred while exporting the object: %(error)s"
+msgstr "Beim Export des Objekts ist ein Fehler aufgetreten: %(error)s"
 
 msgid "PDF file"
 msgstr "PDF-Dokument"
@@ -801,6 +805,9 @@ msgstr ""
 
 msgid "The SciCat export type is not set for objects of this type."
 msgstr "Der SciCat Export-Typ ist für Objekte diesen Typs nicht gesetzt."
+
+msgid "An unknown error occurred while uploading the dataset."
+msgstr "Beim Export des Datensatzes ist ein unbekannter Fehler aufgetreten."
 
 #, python-format
 msgid "%(scicat_name)s is currently unreachable, please try again later."
@@ -3942,6 +3949,24 @@ msgstr ""
 
 msgid "Continue"
 msgstr "Weiter"
+
+msgid "Waiting for Export"
+msgstr "Warten auf Export"
+
+#, python-format
+msgid ""
+"The object is currently being exported. Once the export has been "
+"completed, you will be redirected to %(dataverse_name)s."
+msgstr ""
+"Das Objekt wird gerade exportiert. Sobald der Export beendet wurde, "
+"werden Sie automatisch zu %(dataverse_name)s weitergeleitet."
+
+msgid "Export failed"
+msgstr "Export fehlgeschlagen"
+
+#, python-format
+msgid "The export failed with the following message: %(error_message)s"
+msgstr "Der Export ist mit folgender Meldung fehlgeschlagen: %(error_message)s"
 
 msgid "Object Permissions"
 msgstr "Objektberechtigungen"

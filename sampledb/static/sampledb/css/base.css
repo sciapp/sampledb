@@ -377,6 +377,7 @@ th:hover .search-helper {
     margin-left: 1em;
 }
 .object-button-bar > div > a,
+.object-button-bar > div > div > a,
 .object-button-bar > div > div > button,
 .object-button-bar > div > button,
 .object-button-bar > div > form > button {

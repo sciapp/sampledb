@@ -30,8 +30,9 @@ def post_send_mail_task(
 
 
 def handle_send_mail_task(
-        data: typing.Dict[str, typing.Any]
-) -> bool:
+        data: typing.Dict[str, typing.Any],
+        task_id: typing.Optional[int]
+) -> typing.Tuple[bool, typing.Optional[dict[str, typing.Any]]]:
     try:
         mail.send(flask_mail.Message(
             subject=data['subject'],
@@ -40,6 +41,6 @@ def handle_send_mail_task(
             body=data['text'],
             html=data['html']
         ))
-        return True
+        return True, None
     except smtplib.SMTPRecipientsRefused:
-        return False
+        return False, None
