@@ -26,7 +26,7 @@ from ..logic.location_permissions import get_user_location_permissions, get_loca
 from ..logic.users import get_user, get_users
 from ..logic.groups import get_group
 from ..logic.projects import get_project
-from .utils import check_current_user_is_not_readonly, get_location_name
+from .utils import check_current_user_is_not_readonly, get_location_name, get_groups_form_data
 from ..logic.utils import get_translated_text
 from ..models import Permissions
 
@@ -181,43 +181,32 @@ def location_permissions(location_id):
         users = logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
-        groups = logic.groups.get_groups()
-        groups = [group for group in groups if group.id not in group_permissions]
-        groups.sort(key=lambda group: group.id)
-        projects = logic.projects.get_projects()
-        projects = [project for project in projects if project.id not in project_permissions]
-        projects.sort(key=lambda project: project.id)
 
-        projects_by_id = {
-            project.id: project
-            for project in projects
-        }
-        if not flask.current_app.config['DISABLE_SUBPROJECTS']:
-            project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(projects_by_id))
-            project_id_hierarchy_list = [
-                (level, project_id, project_id not in project_permissions)
-                for level, project_id in project_id_hierarchy_list
-            ]
-        else:
-            project_id_hierarchy_list = [
-                (0, project.id, project.id not in project_permissions)
-                for project in sorted(projects, key=lambda project: project.id)
-            ]
+        groups_treepicker_info = get_groups_form_data(
+            basic_group_filter=lambda group: group.id not in group_permissions
+        )
+        show_groups_form = any(
+            not group_form_info.is_disabled
+            for group_form_info in groups_treepicker_info
+        )
+
+        projects_treepicker_info = get_groups_form_data(
+            project_group_filter=lambda group: group.id not in project_permissions
+        )
         show_projects_form = any(
-            enabled
-            for level, project_id, enabled in project_id_hierarchy_list
+            not group_form_info.is_disabled
+            for group_form_info in projects_treepicker_info
         )
     else:
         permissions_form = None
         users = None
         add_user_permissions_form = None
-        groups = None
         add_group_permissions_form = None
-        projects = None
         add_project_permissions_form = None
-        projects_by_id = None
-        project_id_hierarchy_list = None
+        show_groups_form = False
+        groups_treepicker_info = None
         show_projects_form = False
+        projects_treepicker_info = None
 
     if flask.request.method.lower() == 'post':
         if not user_may_edit:
@@ -251,13 +240,12 @@ def location_permissions(location_id):
         form=permissions_form,
         users=users,
         add_user_permissions_form=add_user_permissions_form,
-        groups=groups,
         add_group_permissions_form=add_group_permissions_form,
-        projects=projects,
         add_project_permissions_form=add_project_permissions_form,
-        projects_by_id=projects_by_id,
-        project_id_hierarchy_list=project_id_hierarchy_list,
+        show_groups_form=show_groups_form,
+        groups_treepicker_info=groups_treepicker_info,
         show_projects_form=show_projects_form,
+        projects_treepicker_info=projects_treepicker_info,
         get_user=get_user,
         get_group=get_group,
         get_project=get_project,

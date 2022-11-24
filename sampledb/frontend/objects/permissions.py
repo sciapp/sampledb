@@ -26,7 +26,7 @@ from ...logic.components import get_component, get_components
 from .forms import CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
 from ...utils import object_permissions_required
-from ..utils import get_user_if_exists, check_current_user_is_not_readonly
+from ..utils import get_user_if_exists, check_current_user_is_not_readonly, get_groups_form_data
 
 
 def on_unauthorized(object_id):
@@ -133,13 +133,29 @@ def object_permissions(object_id):
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
 
-        groups = get_user_groups(flask_login.current_user.id)
-        groups = [group for group in groups if group.id not in group_permissions]
-        groups.sort(key=lambda group: group.id)
+        user_group_ids = {
+            group.id
+            for group in get_user_groups(flask_login.current_user.id)
+        }
+        groups_treepicker_info = get_groups_form_data(
+            basic_group_filter=lambda group: group.id not in group_permissions and group.id in user_group_ids
+        )
+        show_groups_form = any(
+            not group_form_info.is_disabled
+            for group_form_info in groups_treepicker_info
+        )
 
-        projects = get_user_projects(flask_login.current_user.id, include_groups=True)
-        projects = [project for project in projects if project.id not in project_permissions]
-        projects.sort(key=lambda project: project.id)
+        user_project_ids = {
+            group.id
+            for group in get_user_projects(flask_login.current_user.id)
+        }
+        projects_treepicker_info = get_groups_form_data(
+            project_group_filter=lambda group: group.id not in project_permissions and group.id in user_project_ids
+        )
+        show_projects_form = any(
+            not group_form_info.is_disabled
+            for group_form_info in projects_treepicker_info
+        )
 
         possible_new_components = [component for component in components if component.id not in component_policies.keys()]
         component_users = {
@@ -188,37 +204,13 @@ def object_permissions(object_id):
         edit_component_policy_form = None
 
         users = []
-        groups = []
-        projects = []
         possible_new_components = None
         component_users = []
+        show_groups_form = False
+        groups_treepicker_info = None
+        show_projects_form = False
+        projects_treepicker_info = None
 
-    acceptable_project_ids = {
-        project.id
-        for project in projects
-    }
-
-    all_projects = logic.projects.get_projects()
-    all_projects_by_id = {
-        project.id: project
-        for project in all_projects
-    }
-
-    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
-        project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(all_projects_by_id))
-        project_id_hierarchy_list = [
-            (level, project_id, project_id in acceptable_project_ids)
-            for level, project_id in project_id_hierarchy_list
-        ]
-    else:
-        project_id_hierarchy_list = [
-            (0, project.id, project.id in acceptable_project_ids)
-            for project in sorted(all_projects, key=lambda project: project.id)
-        ]
-    show_projects_form = any(
-        enabled
-        for level, project_id, enabled in project_id_hierarchy_list
-    )
     return flask.render_template(
         'objects/object_permissions.html',
         instrument=instrument,
@@ -235,10 +227,10 @@ def object_permissions(object_id):
         Permissions=Permissions,
         permissions_form=permissions_form,
         users=users,
-        groups=groups,
-        projects_by_id=all_projects_by_id,
-        project_id_hierarchy_list=project_id_hierarchy_list,
+        show_groups_form=show_groups_form,
+        groups_treepicker_info=groups_treepicker_info,
         show_projects_form=show_projects_form,
+        projects_treepicker_info=projects_treepicker_info,
         edit_component_policy_form=edit_component_policy_form,
         component_users=component_users,
         copy_permissions_form=copy_permissions_form,

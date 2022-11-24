@@ -23,7 +23,8 @@ $(function () {
     if (option_group_id === null) {
       return;
     }
-    option.toggleClass('closed');
+    let duplicate_options = ul.find('span.option-group-' + option_group_id + '-header');
+    duplicate_options.toggleClass('closed');
     let child_options = ul.find('span.option-group-' + option_group_id + '-member');
     if (option.hasClass('closed')) {
       child_options.addClass('option-group-' + option_group_id + '-closed');

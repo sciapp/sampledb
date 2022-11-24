@@ -19,6 +19,7 @@ from ..authentication_forms import ChangeUserForm, AuthenticationForm, Authentic
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..permission_forms import handle_permission_forms, set_up_permissions_forms
 from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm
+from ..utils import get_groups_form_data
 
 from ... import logic
 from ...logic import user_log
@@ -27,7 +28,7 @@ from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
-from ...logic.projects import get_user_projects, get_project, get_project_id_hierarchy_list
+from ...logic.projects import get_user_projects, get_project
 from ...logic.groups import get_user_groups, get_group
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
@@ -157,31 +158,28 @@ def change_preferences(user, user_id):
     users = [user for user in users if user.id not in user_permissions]
     users.sort(key=lambda user: user.id)
 
-    groups = get_user_groups(flask_login.current_user.id)
-    groups = [group for group in groups if group.id not in group_permissions]
-    groups.sort(key=lambda group: group.id)
-
-    projects = get_user_projects(flask_login.current_user.id)
-    projects = [project for project in projects if project.id not in project_permissions]
-    projects.sort(key=lambda project: project.id)
-    projects_by_id = {
-        project.id: project
-        for project in projects
+    user_group_ids = {
+        group.id
+        for group in get_user_groups(flask_login.current_user.id)
     }
-    if not flask.current_app.config['DISABLE_SUBPROJECTS']:
-        project_id_hierarchy_list = get_project_id_hierarchy_list(list(projects_by_id))
-        project_id_hierarchy_list = [
-            (level, project_id, project_id not in project_permissions)
-            for level, project_id in project_id_hierarchy_list
-        ]
-    else:
-        project_id_hierarchy_list = [
-            (0, project.id, project.id not in project_permissions)
-            for project in sorted(projects, key=lambda project: project.id)
-        ]
+    groups_treepicker_info = get_groups_form_data(
+        basic_group_filter=lambda group: group.id not in group_permissions and group.id in user_group_ids
+    )
+    show_groups_form = any(
+        not group_form_info.is_disabled
+        for group_form_info in groups_treepicker_info
+    )
+
+    user_project_ids = {
+        group.id
+        for group in get_user_projects(flask_login.current_user.id)
+    }
+    projects_treepicker_info = get_groups_form_data(
+        project_group_filter=lambda group: group.id not in project_permissions and group.id in user_project_ids
+    )
     show_projects_form = any(
-        enabled
-        for level, project_id, enabled in project_id_hierarchy_list
+        not group_form_info.is_disabled
+        for group_form_info in projects_treepicker_info
     )
 
     if 'change' not in flask.request.form:
@@ -224,12 +222,11 @@ def change_preferences(user, user_id):
                     your_locale=your_locale,
                     get_user=get_user,
                     users=users,
-                    groups=groups,
                     get_group=get_group,
-                    projects=projects,
-                    projects_by_id=projects_by_id,
-                    project_id_hierarchy_list=project_id_hierarchy_list,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
                     show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
@@ -340,12 +337,11 @@ def change_preferences(user, user_id):
                     your_locale=your_locale,
                     get_user=get_user,
                     users=users,
-                    groups=groups,
                     get_group=get_group,
-                    projects=projects,
-                    projects_by_id=projects_by_id,
-                    project_id_hierarchy_list=project_id_hierarchy_list,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
                     show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
@@ -402,12 +398,11 @@ def change_preferences(user, user_id):
                     your_locale=your_locale,
                     get_user=get_user,
                     users=users,
-                    groups=groups,
                     get_group=get_group,
-                    projects=projects,
-                    projects_by_id=projects_by_id,
-                    project_id_hierarchy_list=project_id_hierarchy_list,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
                     show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
@@ -455,12 +450,11 @@ def change_preferences(user, user_id):
                 your_locale=your_locale,
                 get_user=get_user,
                 users=users,
-                groups=groups,
                 get_group=get_group,
-                projects=projects,
-                projects_by_id=projects_by_id,
-                project_id_hierarchy_list=project_id_hierarchy_list,
+                show_groups_form=show_groups_form,
+                groups_treepicker_info=groups_treepicker_info,
                 show_projects_form=show_projects_form,
+                projects_treepicker_info=projects_treepicker_info,
                 get_project=get_project,
                 EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                 user_permissions=user_permissions,
@@ -592,12 +586,11 @@ def change_preferences(user, user_id):
         Permissions=Permissions,
         users=users,
         get_user=get_user,
-        groups=groups,
         get_group=get_group,
-        projects=projects,
-        projects_by_id=projects_by_id,
-        project_id_hierarchy_list=project_id_hierarchy_list,
+        show_groups_form=show_groups_form,
+        groups_treepicker_info=groups_treepicker_info,
         show_projects_form=show_projects_form,
+        projects_treepicker_info=projects_treepicker_info,
         get_project=get_project,
         EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
         user_permissions=user_permissions,
