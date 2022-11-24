@@ -99,11 +99,18 @@
         {% if has_grant_for_previous_object and not 'action_submit' in request.form and request.args.get('previous_object_id') %}
         {% set selected_obj_id = request.args.get('previous_object_id') %}
         {% endif %}
+        {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
+          <div class="pull-right objectpicker-container" style="width:280px">
+          <input id="copyPermissionsSelect" type="text" class="form-control typeahead" value="" placeholder="{{ _("No object selected") }}" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" />
+          <input type="hidden" name="copy_permissions_object_id" value="" />
+          </div>
+        {% else %}
         <select id="copyPermissionsSelect" class="selectpicker pull-right" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" data-none-selected-text="{{ _("No object selected") }}">
           {% for object in existing_objects %}
           <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.name | get_translated_text }} (#{{ object.id }})</option>
           {% endfor %}
         </select>
+        {% endif %}
       </div>
       {% endif %}
         <div class="col-md-offset-3 col-md-9">
@@ -185,7 +192,7 @@
           }
       }
 
-      return ($('[data-name="help-block-pattern"]').length === 0);
+      return ($('[data-name="help-block-pattern"]').length === 0 && $('.has-error').length === 0);
     });
     {% if user_groups %}
     $('select[name="permissions_for_group_group_id"]').on('show.bs.select', function () {

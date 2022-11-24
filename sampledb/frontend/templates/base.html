@@ -33,6 +33,15 @@
         "Insert Table": "{{ _("Insert Table") }}",
         "Toggle Preview": "{{ _("Toggle Preview") }}",
     };
+    window.object_picker_select_text = "{{ _('Please select an object.') }}";
+    window.object_picker_clear_text = "{{ _('Clear') }}";
+    window.object_picker_no_results_text_template = '{{ _('No results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_all_results_text_template = '{{ _('PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_some_results_text_template = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_show_all(this, event)">Show all</span> — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_no_results_text_template_no_query = '{{ _('No results') }}';
+    window.object_picker_all_results_text_template_no_query = '{{ _('PLACEHOLDER2 results') }}';
+    window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button" onclick="objectpicker_show_all(this, event)">Show all</span>') }}';
+    window.object_picker_limit = {{ config.get('TYPEAHEAD_OBJECT_LIMIT') | tojson }};
   </script>
 {% endblock %}
 </head>
