@@ -29,8 +29,8 @@
   <h2>{{ _('Members') }}</h2>
   <ul>
     {% for user_id in group_member_ids %}
-    {% with user = get_user(user_id) %}
-      <li><a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.get_name() }}</a>
+      <li>
+        {{ user_reference(user_id) }}
         {% if not current_user.is_readonly %}
         {% if remove_group_member_form and user_id != current_user.id %}
         <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.group', group_id=group.id) }}" id="removeGroupMember{{ user_id }}Form">
@@ -40,8 +40,7 @@
         {% endif %}
         {% endif %}
       </li>
-    {% endwith %}
-  {% endfor %}
+    {% endfor %}
   </ul>
   <div class="button-row">
   {% if show_objects_link %}

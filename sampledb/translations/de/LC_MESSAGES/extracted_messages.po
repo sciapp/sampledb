@@ -4869,189 +4869,175 @@ msgstr "Referenzen"
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> created the object using data "
-"from <a href=\"%(previous_object_url)s\">object "
-"#%(previous_object_id)s</a>."
+"%(user_ref)s created the object using data from <a "
+"href=\"%(previous_object_url)s\">object #%(previous_object_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit Daten von "
-"<a href=\"%(previous_object_url)s\">Objekt #%(previous_object_id)s</a> "
+"%(user_ref)s hat das Objekt mit Daten von <a "
+"href=\"%(previous_object_url)s\">Objekt #%(previous_object_id)s</a> "
 "erstellt."
 
 #, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> created the object."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt erstellt."
+msgid "%(user_ref)s created the object."
+msgstr "%(user_ref)s hat das Objekt erstellt."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> created the object as part of "
-"a <a href=\"%(batch_url)s\">batch</a>."
+"%(user_ref)s created the object as part of a <a "
+"href=\"%(batch_url)s\">batch</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt als Teil einer "
-"<a href=\"%(batch_url)s\">Charge</a> erstellt."
+"%(user_ref)s hat das Objekt als Teil einer <a "
+"href=\"%(batch_url)s\">Charge</a> erstellt."
 
 #, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> edited the object."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt bearbeitet."
+msgid "%(user_ref)s edited the object."
+msgstr "%(user_ref)s hat das Objekt bearbeitet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> restored object <a "
-"href=\"%(version_url)s\">version #%(version_id)s</a>."
+"%(user_ref)s restored object <a href=\"%(version_url)s\">version "
+"#%(version_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(version_url)s\">Objektversion #%(version_id)s</a> "
-"wiederhergestellt."
+"%(user_ref)s hat <a href=\"%(version_url)s\">Objektversion "
+"#%(version_id)s</a> wiederhergestellt."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object in <a "
+"%(user_ref)s used the object in <a "
 "href=\"%(measurement_url)s\">%(measurement_name)s "
 "(#%(measurement_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in <a "
+"%(user_ref)s hat das Objekt in <a "
 "href=\"%(measurement_url)s\">%(measurement_name)s "
 "(#%(measurement_id)s)</a> verwendet."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object in a "
-"measurement."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in einer "
-"Messung verwendet."
+msgid "%(user_ref)s used the object in a measurement."
+msgstr "%(user_ref)s hat das Objekt in einer Messung verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create <a "
+"%(user_ref)s used the object to create <a "
 "href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
-"von <a href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a> "
-"verwendet."
+"%(user_ref)s hat das Objekt zur Erstellung von <a "
+"href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a> verwendet."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create a "
-"sample."
+msgid "%(user_ref)s used the object to create a sample."
+msgstr "%(user_ref)s hat das Objekt zur Erstellung einer Probe verwendet."
+
+#, python-format
+msgid "%(user_ref)s posted a comment for this object."
+msgstr "%(user_ref)s hat einen Kommentar für dieses Objekt eingetragen."
+
+#, python-format
+msgid "%(user_ref)s uploaded <a href=\"%(file_url)s\">%(file_name)s</a>."
+msgstr "%(user_ref)s hat <a href=\"%(file_url)s\">%(file_name)s</a> hochgeladen."
+
+#, python-format
+msgid "%(user_ref)s uploaded %(file_name)s."
+msgstr "%(user_ref)s hat %(file_name)s hochgeladen."
+
+#, python-format
+msgid "%(user_ref)s linked <a href=\"%(link_url)s\">%(link_url)s</a>."
+msgstr "%(user_ref)s hat <a href=\"%(link_url)s\">%(link_url)s</a> verlinkt."
+
+#, python-format
+msgid "%(user_ref)s posted <a href=\"%(file_url)s\">file #%(file_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
-"einer Probe verwendet."
+"%(user_ref)s hat <a href=\"%(file_url)s\">Datei #%(file_id)s</a> "
+"eingetragen."
+
+#, python-format
+msgid "%(user_ref)s posted a file."
+msgstr "%(user_ref)s hat eine Datei eingetragen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> posted a comment for this "
-"object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat einen Kommentar für dieses"
-" Objekt eingetragen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> uploaded <a "
-"href=\"%(file_url)s\">%(file_name)s</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(file_url)s\">%(file_name)s</a> hochgeladen."
-
-#, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> uploaded %(file_name)s."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat %(file_name)s hochgeladen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked <a "
-"href=\"%(link_url)s\">%(link_url)s</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(link_url)s\">%(link_url)s</a> verlinkt."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> posted <a "
-"href=\"%(file_url)s\">file #%(file_id)s</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(file_url)s\">Datei #%(file_id)s</a> eingetragen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to "
-"location <a href=\"%(location_url)s\">%(location_name)s</a> and user <a "
+"%(user_ref)s assigned this object to location <a "
+"href=\"%(location_url)s\">%(location_name)s</a> and user <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Ort <a "
+"%(user_ref)s hat das Objekt dem Ort <a "
 "href=\"%(location_url)s\">%(location_name)s</a> und Nutzer <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to "
-"location <a href=\"%(location_url)s\">%(location_name)s</a>."
+"%(user_ref)s assigned this object to location <a "
+"href=\"%(location_url)s\">%(location_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Ort <a "
+"%(user_ref)s hat das Objekt dem Ort <a "
 "href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to user "
-"<a href=\"%(other_user_url)s\">%(other_user_name)s</a>."
+"%(user_ref)s assigned this object to user <a "
+"href=\"%(other_user_url)s\">%(other_user_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Nutzer <a "
+"%(user_ref)s hat das Objekt dem Nutzer <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked publication <a "
+"%(user_ref)s linked publication <a "
 "href=\"https://doi.org/%(url_doi)s\">%(doi)s</a> to the object."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat Publikation <a "
+"%(user_ref)s hat Publikation <a "
 "href=\"https://doi.org/%(url_doi)s\">%(doi)s</a> mit dem Objekt "
 "verknüpft."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> referenced the object in the "
-"metadata of <a href=\"%(object_url)s\">%(object_name)s "
-"(#%(object_id)s)</a>."
+"%(user_ref)s referenced the object in the metadata of <a "
+"href=\"%(object_url)s\">%(object_name)s (#%(object_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten von <a href=\"%(object_url)s\">%(object_name)s "
-"(#%(object_id)s)</a> referenziert."
+"%(user_ref)s hat das Objekt in den Metadaten von <a "
+"href=\"%(object_url)s\">%(object_name)s (#%(object_id)s)</a> "
+"referenziert."
+
+#, python-format
+msgid "%(user_ref)s referenced the object in the metadata of another object."
+msgstr ""
+"%(user_ref)s hat das Objekt in den Metadaten eines anderen Objekts "
+"referenziert."
+
+#, python-format
+msgid "%(user_ref)s exported this object to a Dataverse."
+msgstr "%(user_ref)s hat das Objekt in ein Dataverse exportiert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> referenced the object in the "
-"metadata of another object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten eines anderen Objekts referenziert."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> exported this object to a "
-"Dataverse."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in ein "
-"Dataverse exportiert."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to <a "
+"%(user_ref)s linked this object to <a "
 "href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit <a "
+"%(user_ref)s hat das Objekt mit <a "
 "href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a> "
 "verknüpft."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
-"object to <a href=\"%(project_url)s\">%(project_name)s "
-"(#%(project_id)s)</a>."
+msgid "%(user_ref)s linked this object to a project group."
+msgstr "%(user_ref)s hat das Objekt mit einer Projektgruppe verknüpft."
+
+#, python-format
+msgid "%(user_ref)s deleted the project group this object was linked to."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
-"Objekts mit <a href=\"%(project_url)s\">%(project_name)s "
-"(#%(project_id)s)</a> entfernt."
+"%(user_ref)s hat die Projektgruppe gelöscht mit der das Objekt verknüpft "
+"war."
+
+#, python-format
+msgid ""
+"%(user_ref)s removed the link of this object to <a "
+"href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a>."
+msgstr ""
+"%(user_ref)s hat die Verknüpfung dieses Objekts mit <a "
+"href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a> entfernt."
+
+#, python-format
+msgid "%(user_ref)s removed the link of this object to a project group."
+msgstr ""
+"%(user_ref)s hat die Verknüpfung dieses Objekts mit einer Projektgruppe "
+"entfernt."
 
 #, python-format
 msgid ""

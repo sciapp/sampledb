@@ -11,7 +11,7 @@
   <h3>{{ _("Responsible Users:") }}</h3>
   <ul>
   {% for user in visible_responsible_users %}
-    <li><a href="{{ url_for('frontend.user_profile', user_id=user.id) }}">{{ user.get_name() }}</a></li>
+    <li>{{ user_reference(user) }}</li>
   {% endfor %}
   </ul>
 </div>

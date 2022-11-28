@@ -929,9 +929,9 @@
             {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
               <td>
               {% if 'previous_object_id' in object_log_entry.data %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
+                {{ _('%(user_ref)s created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_ref=user_reference(object_log_entry.user), previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
               {% else %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s created the object.', user_ref=user_reference(object_log_entry.user)) }}
               {% endif %}
               </td>
               <td class="text-right">
@@ -939,14 +939,14 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
+                {{ _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">{{ _('View') }}</a>
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> edited the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
@@ -955,7 +955,7 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
+                {{ _('%(user_ref)s restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_ref=user_reference(object_log_entry.user), version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
@@ -965,14 +965,14 @@
             {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT %}
               {% if object_log_entry.data['measurement_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].name | get_translated_text) }}
+                {{ _('%(user_ref)s used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_ref=user_reference(object_log_entry.user), measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].name | get_translated_text) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in a measurement.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s used the object in a measurement.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
@@ -980,21 +980,21 @@
             {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION %}
               {% if object_log_entry.data['sample_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].name | get_translated_text) }}
+                {{ _('%(user_ref)s used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_ref=user_reference(object_log_entry.user), sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].name | get_translated_text) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create a sample.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s used the object to create a sample.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
               {% endif %}
             {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a comment for this object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               {% if action is not none and action.type.enable_comments %}
@@ -1009,17 +1009,17 @@
                   {% if file.id == object_log_entry.data['file_id'] %}
                     {% if file.storage == 'local' or file.storage == 'database' %}
                       {% if action is not none and action.type.enable_files %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
+                        {{ _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
                       {% else %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded %(file_name)s.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_name=file.original_file_name) }}
+                        {{ _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) }}
                       {% endif %}
                     {% elif file.storage == 'url' %}
-                      {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), link_url=file.url) }}
+                      {{ _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) }}
                     {% else %}
                       {% if action is not none and action.type.enable_files %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
+                        {{ _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
                       {% else %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a file.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                        {{ _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) }}
                       {% endif %}
                     {% endif %}
                   {% endif %}
@@ -1036,22 +1036,22 @@
               {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
               {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                  {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
               {% elif object_location_assignment.location is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) }}
+                {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) }}
               </td>
               {% elif object_location_assignment.responsible_user_id is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                {{ _('%(user_ref)s assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
               {% endif %}
               <td class="text-right">
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
+                {{ _('%(user_ref)s linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_ref=user_reference(object_log_entry.user), url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
               </td>
               <td class="text-right">
               {% if action is not none and action.type.enable_publications %}
@@ -1061,21 +1061,21 @@
             {% elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA %}
               {% if object_log_entry.data['object_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].name | get_translated_text, object_id=object_log_entry.data['object_id']) }}
+                {{ _('%(user_ref)s referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_ref=user_reference(object_log_entry.user), object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].name | get_translated_text, object_id=object_log_entry.data['object_id']) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of another object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                  {{ _('%(user_ref)s referenced the object in the metadata of another object.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
               {% endif %}
             {% elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> exported this object to a Dataverse.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s exported this object to a Dataverse.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               {% if object_log_entry.data.get('dataverse_url') %}
@@ -1086,14 +1086,14 @@
               {% with project = get_project(object_log_entry.data.project_id) %}
               {% if project is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                {{ _('%(user_ref)s linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_ref=user_reference(object_log_entry.user), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                {{ _('%(user_ref)s linked this object to a project group.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
@@ -1102,7 +1102,7 @@
             {% elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT %}
               {% if object_log_entry.data.project_deleted %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                  {{ _('%(user_ref)s deleted the project group this object was linked to.', user_ref=user_reference(object_log_entry.user)) }}
                 </td>
                 <td class="text-right">
                 </td>
@@ -1110,14 +1110,14 @@
                 {% with project = get_project(object_log_entry.data.project_id) %}
                 {% if project is not none %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name(), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                  {{ _('%(user_ref)s removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_ref=user_reference(object_log_entry.user), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
                 </td>
                 <td class="text-right">
                   <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
                 </td>
                 {% else %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.get_name()) }}
+                  {{ _('%(user_ref)s removed the link of this object to a project group.', user_ref=user_reference(object_log_entry.user)) }}
                 </td>
                 <td class="text-right">
                 </td>

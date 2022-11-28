@@ -11,7 +11,7 @@
   <ul>
   {% for user in instrument_scientists %}
     <li>
-      <a href="{{ url_for('frontend.user_profile', user_id=user.id) }}">{{ user.get_name() }}</a>
+      {{ user_reference(user) }}
       {% if user.is_hidden %}
       <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as hidden will not be shown in user lists.') }}">{{ _('hidden') }}</span>
       {% endif %}

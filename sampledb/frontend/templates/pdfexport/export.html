@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-{% from 'macros.j2' import import_information_symbol %}
+{% from 'macros.j2' import import_information_symbol, user_reference %}
 <head>
   <meta charset="UTF-8">
   <title>{{ service_name }} {{ _('Export') }}</title>
@@ -120,8 +120,7 @@
       {{ entry.utc_datetime | babel_format_datetime }} &mdash;
       {% if entry.assigning_user_id %}
         {% with user = get_user(entry.assigning_user_id) %}
-          <a href="{{ url_for('.user_profile', user_id=entry.assigning_user_id, _external=True) }}">{{ entry.assigning_user_name }}</a>
-          {{ import_information_symbol(user, text=true) }}:
+          {{ user_reference(user, external=True, text=true) }}:
         {% endwith %}
       {% else %}
         {{ _('Unknown User') }}:
@@ -132,8 +131,7 @@
     {% if entry.responsible_user_id %}
       {% if entry.location_id %}/{% endif %}
       {% with user = get_user(entry.responsible_user_id) %}
-        <a href="{{ url_for('.user_profile', user_id=entry.responsible_user_id, _external=True) }}">{{ entry.responsible_user_name }}</a>
-        {{ import_information_symbol(user, text=true) }}
+        {{ user_reference(user, external=True, text=true) }}
       {% endwith %}
     {% endif %}
     {% if entry.description %}
@@ -167,8 +165,7 @@
         {% if comment.author is none %}
           <span>{{ _('Unknown User') }}:</span>
         {% else %}
-          <a href="{{ url_for('.user_profile', user_id=comment.user_id, _external=True) }}">{{ comment.author.get_name() }}</a>
-          {{ import_information_symbol(comment.author, text=true) }}:
+          {{ user_reference(comment.author, external=True, text=true) }}:
         {% endif %}
         <div class="object-user-content multiline" style="text-indent: 0;">{{ comment.content }}</div>
       </li>
@@ -184,8 +181,7 @@
         {% if file.uploader is none %}
           <span>{{ _('Unknown User') }}:</span>
         {% else %}
-          <a href="{{ url_for('.user_profile', user_id=file.uploader.id, _external=True) }}">{{ file.uploader.get_name() }}</a>
-          {{ import_information_symbol(file.uploader, text=true) }}:
+          {{ user_reference(file.uploader, external=True, text=true) }}:
         {% endif %}
         {% if file.is_hidden %}({{ _('hidden') }}){% else %}{{ file.title }} ({{ file.id }}){% endif %}</li>
     {% endfor %}

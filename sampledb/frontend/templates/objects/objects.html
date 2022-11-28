@@ -467,17 +467,17 @@
       <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
       {% endif %}
       {% if 'user' in creation_info %}
-      <td>{% if object.created_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.created_by.id) }}">{{ object.created_by.get_name() }}</a>
-        {{ import_information_symbol(object.created_by) }}
-        {% else %}&mdash;{% endif %}</td>
+      <td>
+        {{ user_reference(object.created_by) }}
+      </td>
       {% endif %}
       {% if 'date' in last_edit_info %}
       <td class="nowrap">{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
       {% endif %}
       {% if 'user' in last_edit_info %}
-      <td>{% if object.modified_by is not none %}<a href="{{ url_for('.user_profile', user_id=object.modified_by.id) }}">{{ object.modified_by.get_name() }}</a>
-        {{ import_information_symbol(object.modified_by) }}
-        {% else %}&mdash;{% endif %}</td>
+      <td>
+        {{ user_reference(object.modified_by) }}
+      </td>
       {% endif %}
       {% if object.action is not none %}
         {% if 'instrument' in action_info %}
