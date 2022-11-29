@@ -8,17 +8,17 @@
     <div class="col-md-12">
       <div class="form-group {% if create_other_user_form.name.name in create_other_user_form.errors %}has-error{% endif %}">
         <label for="input-name" class="control-label">{{ _('Name') }}</label>
-         <input type="text" class="form-control" id="input-name" placeholder="{{ _('Name') }}" name="{{ create_other_user_form.name.name }}" value="{{ create_other_user_form.name.data or '' }}">
+         <input type="text" class="form-control" id="input-name" placeholder="{{ _('Name') }}" name="{{ create_other_user_form.name.name }}" value="{{ create_other_user_form.name.data or '' }}" autocomplete="off">
         {% if create_other_user_form.name.name in create_other_user_form.errors %}<span class="help-block">{{ create_other_user_form.errors[create_other_user_form.name.name] | join(' ') }}</span>{% endif %}
       </div>
       <div class="form-group {% if create_other_user_form.email.name in create_other_user_form.errors %}has-error{% endif %}">
         <label for="input-email" class="control-label">{{ _('Email') }}</label>
-        <input type="text" class="form-control" id="input-email" placeholder="{{ _('Email') }}" name="{{ create_other_user_form.email.name }}" value="{{ create_other_user_form.email.data or '' }}">
+        <input type="text" class="form-control" id="input-email" placeholder="{{ _('Email') }}" name="{{ create_other_user_form.email.name }}" value="{{ create_other_user_form.email.data or '' }}" autocomplete="off">
         {% if create_other_user_form.email.name in create_other_user_form.errors %}<span class="help-block">{{ _('Please enter a valid email address.') }}</span>{% endif %}
       </div>
       <div class="form-group {% if create_other_user_form.password.name in create_other_user_form.errors %}has-error{% endif %}">
         <label for="input-password" class="control-label">{{ _('Password') }}</label>
-        <input type="password" class="form-control" id="input-password" placeholder="{{ _('Password') }}" name="{{ create_other_user_form.password.name }}" value="{{ create_other_user_form.password.data or '' }}">
+        <input type="password" class="form-control" id="input-password" placeholder="{{ _('Password') }}" name="{{ create_other_user_form.password.name }}" value="{{ create_other_user_form.password.data or '' }}" autocomplete="new-password">
         {% if create_other_user_form.password.name in create_other_user_form.errors %}<span class="help-block">{{ _('Please enter a password with at least 3 characters.')}}</span>{% endif %}
       </div>
     </div>
