@@ -338,10 +338,10 @@ def object(object_id):
         all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
         location_form.location.all_choices = all_choices
         location_form.location.choices = choices
-        possible_responsible_users = [('-1', '—')]
+        possible_responsible_users = [('-1', None)]
         user_is_fed = {}
         for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
-            possible_responsible_users.append((str(user.id), user.get_name()))
+            possible_responsible_users.append((str(user.id), user))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_responsible_users
     else:
