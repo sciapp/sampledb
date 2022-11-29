@@ -21,6 +21,11 @@
         <input type="password" class="form-control" id="input-password" placeholder="{{ _('Password') }}" name="{{ create_other_user_form.password.name }}" value="{{ create_other_user_form.password.data or '' }}" autocomplete="new-password">
         {% if create_other_user_form.password.name in create_other_user_form.errors %}<span class="help-block">{{ _('Please enter a password with at least 3 characters.')}}</span>{% endif %}
       </div>
+      <div class="form-group {% if create_other_user_form.password_confirmation.name in create_other_user_form.errors %}has-error{% endif %}">
+        <label for="input-password_confirmation" class="control-label">{{ _('Confirm Password') }}</label>
+        <input type="password" class="form-control" id="input-password_confirmation" placeholder="{{ _('Password') }}" name="{{ create_other_user_form.password_confirmation.name }}" value="{{ create_other_user_form.password_confirmation.data or '' }}" autocomplete="off">
+        {% if create_other_user_form.password_confirmation.name in create_other_user_form.errors %}<span class="help-block">{{ _('Please enter the same password as above.')}}</span>{% endif %}
+      </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">

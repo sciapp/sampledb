@@ -1491,6 +1491,12 @@ msgstr "Passwort"
 msgid "Please enter a password with at least 3 characters."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
+msgid "Confirm Password"
+msgstr "Passwort bestätigen"
+
+msgid "Please enter the same password as above."
+msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
+
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -2072,12 +2078,6 @@ msgstr "Hinzufügen"
 
 msgid "Change Password"
 msgstr "Passwort ändern"
-
-msgid "Confirm Password"
-msgstr "Passwort bestätigen"
-
-msgid "Please enter the same password as above."
-msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
 
 msgid "Change"
 msgstr "Ändern"
