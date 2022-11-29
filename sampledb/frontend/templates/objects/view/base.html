@@ -770,8 +770,8 @@
         <div class="form-group {% if location_form.responsible_user.name in location_form.errors %}has-error{% endif %}">
           <label for="input-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
           <select class="selectpicker form-control" id="input-responsible-user" name="{{ location_form.responsible_user.name }}" data-live-search="true">
-            {% for user_id, user_name in location_form.responsible_user.choices %}
-            <option {% if user_is_fed[user_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
+            {% for user_id, user in location_form.responsible_user.choices %}
+            <option {% if user_is_fed[user_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{{ user_reference(user, text=true, nolink=true) }}</option>
             {% endfor %}
           </select>
         </div>
