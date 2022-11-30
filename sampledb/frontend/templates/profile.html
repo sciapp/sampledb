@@ -84,7 +84,7 @@
       &mdash;
     {% endif %}
   </dd>
-  {% if instruments %}
+  {% if instruments and not config['DISABLE_INSTRUMENTS'] %}
     <dt>{{ _('Instruments') }}</dt>
     <dd>
      <ul style="margin-bottom: 0; padding-left: 0">

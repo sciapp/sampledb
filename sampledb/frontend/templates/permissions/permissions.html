@@ -54,7 +54,7 @@
       {{ permissions_table_fields('responsible_users', Permissions.GRANT, [Permissions.GRANT], true, none) }}
     </tr>
     {% endif %}
-    {% if show_instrument_scientists %}
+    {% if show_instrument_scientists and not config['DISABLE_INSTRUMENTS'] %}
     <tr>
       <td style="vertical-align: middle">{{ _('Instrument Scientists') }}</td>
       {{ permissions_table_fields('instrument_responsible_users', Permissions.GRANT, [Permissions.GRANT], true, none) }}

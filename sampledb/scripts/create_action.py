@@ -57,6 +57,9 @@ def main(arguments: typing.List[str]) -> None:
     app = create_app()
     with app.app_context():
         if instrument_id is not None:
+            if app.config['DISABLE_INSTRUMENTS']:
+                print('Error: instruments are disabled', file=sys.stderr)
+                exit(1)
             try:
                 get_instrument(instrument_id)
             except InstrumentDoesNotExistError:

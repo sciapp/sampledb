@@ -239,7 +239,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             permissions_for_project_id=permissions_for_project_id
                         )
                         object_ids = [object.id for object in objects]
-                        if category_ids is not None:
+                        if category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
                                 instrument_id=action.instrument.id,
                                 user_id=flask_login.current_user.id,
@@ -264,7 +264,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             permissions_for_group_id=permissions_for_group_id,
                             permissions_for_project_id=permissions_for_project_id
                         )
-                        if category_ids is not None:
+                        if category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
                                 instrument_id=action.instrument.id,
                                 user_id=flask_login.current_user.id,

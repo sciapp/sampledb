@@ -19,7 +19,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 def action_to_json(action: actions.Action) -> typing.Dict[str, typing.Any]:
     return {
         'action_id': action.id,
-        'instrument_id': action.instrument_id,
+        'instrument_id': action.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
         'user_id': action.user_id,
         'type': {
             actions.ActionType.SAMPLE_CREATION: 'sample',

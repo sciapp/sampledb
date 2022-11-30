@@ -176,7 +176,7 @@ def get_export_infos(
                         'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
                         'name': action_info.name.get('en'),
                         'user_id': action_info.user_id,
-                        'instrument_id': action_info.instrument_id,
+                        'instrument_id': action_info.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
                         'description': action_info.description.get('en'),
                         'description_is_markdown': action_info.description_is_markdown,
                         'short_description': action_info.short_description.get('en'),
@@ -188,7 +188,7 @@ def get_export_infos(
                         relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en', ''))))
         infos['actions'] = action_infos
 
-    if include_instruments:
+    if include_instruments and not flask.current_app.config['DISABLE_INSTRUMENTS']:
         instrument_infos: typing.List[typing.Dict[str, typing.Any]] = []
         for instrument_info in logic.instruments.get_instruments():
             if instrument_info.id in relevant_instrument_ids:
@@ -252,6 +252,8 @@ def get_export_infos(
                 if user_is_instrument_responsible and instrument_info.notes_is_markdown:
                     relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(instrument_info.notes.get('en', ''))))
         infos['instruments'] = instrument_infos
+    elif include_instruments:
+        infos['instruments'] = []
     if include_users:
         user_infos = []
         for user_info in logic.users.get_users(exclude_hidden=False):

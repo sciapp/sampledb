@@ -10,7 +10,7 @@
     <a href="{{ url_for('.user_profile', user_id=action.user_id) }}" title="{{ action_owner.get_name() }}">{{ action_owner.get_name() }}</a>
       {{ import_information_symbol(action_owner) }} /
     {% endif %}
-    {% if action.instrument is not none %}
+    {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
       <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
       {{ import_information_symbol(action.instrument) }} &mdash;
     {% endif %}
@@ -34,10 +34,11 @@
       {% if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
-
+  {% if not config['DISABLE_INSTRUMENTS'] %}
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
+  {% endif %}
   {% if action.type_id is none or not action.type.disable_create_objects %}
   <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
   {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}

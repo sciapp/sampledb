@@ -275,11 +275,13 @@
               <label class="control-label">
                 {{ _('Show Action information') }}
               </label>
+              {% if not config['DISABLE_INSTRUMENTS'] %}
               <div>
                 <label style="font-weight: normal">
                   <input type="checkbox" {% if 'instrument' in action_info %}checked="checked"{% endif %} name="action_info" value="instrument" /> {{ _('Show Instrument') }}
                 </label>
               </div>
+              {% endif %}
               <div>
               <label style="font-weight: normal">
                 <input type="checkbox" {% if 'action' in action_info %}checked="checked"{% endif %} name="action_info" value="action" /> {{ _('Show Action') }}
@@ -428,7 +430,7 @@
       {% if last_edit_info %}
         <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
       {% endif %}
-      {% if 'instrument' in action_info %}
+      {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Instrument') }}</th>
       {% endif %}
       {% if 'action' in action_info %}
@@ -480,7 +482,7 @@
       </td>
       {% endif %}
       {% if object.action is not none %}
-        {% if 'instrument' in action_info %}
+        {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
         {% if object.action.instrument is not none %}
           <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
             {{ import_information_symbol(object.action.instrument) }}

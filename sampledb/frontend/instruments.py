@@ -100,6 +100,8 @@ class InstrumentLogOrderForm(FlaskForm):
 @frontend.route('/instruments/')
 @flask_login.login_required
 def instruments():
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     all_instruments = get_instruments()
     instruments = []
     user_has_admin_permissions = flask_login.current_user.is_admin and get_user_settings(flask_login.current_user.id)["USE_ADMIN_PERMISSIONS"]
@@ -128,6 +130,8 @@ def instruments():
 @frontend.route('/instruments/<int:instrument_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def instrument(instrument_id):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
@@ -371,6 +375,8 @@ class InstrumentForm(FlaskForm):
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_instrument():
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     check_current_user_is_not_readonly()
@@ -535,6 +541,8 @@ def new_instrument():
 @frontend.route('/instruments/<int:instrument_id>/edit', methods=['GET', 'POST'])
 @flask_login.login_required
 def edit_instrument(instrument_id):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
@@ -776,6 +784,8 @@ def edit_instrument(instrument_id):
 @frontend.route('/instruments/<int:instrument_id>/log/<int:log_entry_id>/file_attachments/<int:file_attachment_id>')
 @flask_login.login_required
 def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_id):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
@@ -811,6 +821,8 @@ def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['GET'])
 def instrument_log_mobile_file_upload(instrument_id: int, token: str):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
@@ -833,6 +845,8 @@ def instrument_log_mobile_file_upload(instrument_id: int, token: str):
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['POST'])
 def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:

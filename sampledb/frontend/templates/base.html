@@ -158,7 +158,9 @@
         </div>
       </form>
       <ul class="nav navbar-nav">
+        {% if not config['DISABLE_INSTRUMENTS'] %}
         <li><a href="{{ url_for('frontend.instruments') }}">{{ _('Instruments') }}</a></li>
+        {% endif %}
         <li class="dropdown">
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">

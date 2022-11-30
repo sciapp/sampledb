@@ -290,7 +290,7 @@ def shared_action_preprocessor(
         refs.append(('instruments', action.instrument_id))
     if action.user_id is not None and ('users', action.user_id) not in refs:
         refs.append(('users', action.user_id))
-    if action.instrument_id is None:
+    if action.instrument_id is None or flask.current_app.config['DISABLE_INSTRUMENTS']:
         instrument = None
     else:
         i = get_instrument(action.instrument_id)

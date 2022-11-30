@@ -339,18 +339,22 @@ def show_action_form(
             action_form.instrument.data = str(-1)
         action_form.type.data = action.type.id
     else:
-        user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
-        action_form.instrument.choices = [('-1', '-')] + [
-            (str(instrument_id), get_translated_text(get_instrument(instrument_id).name, default=_('Unnamed Instrument')))
-            for instrument_id in user_instrument_ids
-        ]
-        for instrument_id in user_instrument_ids:
-            instrument_is_fed[str(instrument_id)] = get_instrument(instrument_id).component_id is not None
-        if action_form.instrument.data is None or action_form.instrument.data == str(None):
-            if previous_action is not None and previous_action.instrument_id in user_instrument_ids:
-                action_form.instrument.data = str(previous_action.instrument_id)
-            else:
-                action_form.instrument.data = '-1'
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            action_form.instrument.choices = [('-1', '-')]
+            action_form.instrument.data = '-1'
+        else:
+            user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
+            action_form.instrument.choices = [('-1', '-')] + [
+                (str(instrument_id), get_translated_text(get_instrument(instrument_id).name, default=_('Unnamed Instrument')))
+                for instrument_id in user_instrument_ids
+            ]
+            for instrument_id in user_instrument_ids:
+                instrument_is_fed[str(instrument_id)] = get_instrument(instrument_id).component_id is not None
+            if action_form.instrument.data is None or action_form.instrument.data == str(None):
+                if previous_action is not None and previous_action.instrument_id in user_instrument_ids:
+                    action_form.instrument.data = str(previous_action.instrument_id)
+                else:
+                    action_form.instrument.data = '-1'
 
     form_is_valid = False
     if not action_form.is_submitted():

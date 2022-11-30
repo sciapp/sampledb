@@ -5,6 +5,8 @@
 
 import typing
 
+import flask
+
 from . import errors
 from . import actions
 from . import favorites
@@ -72,6 +74,9 @@ def get_user_action_permissions(
 ) -> Permissions:
     if user_id is None:
         return Permissions.NONE
+
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        include_instrument_responsible_users = False
 
     additional_permissions = Permissions.NONE
 
