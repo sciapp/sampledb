@@ -533,6 +533,7 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(building_a.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42a.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42b.id, sampledb.models.Permissions.WRITE)
+        sampledb.logic.instruments.set_instrument_location(instrument.id, room_42a.id)
 
         container_type = sampledb.logic.locations.create_location_type(
             name={"en": "Container"},
@@ -543,6 +544,7 @@ This example shows how Markdown can be used for instrument Notes.
             enable_sub_locations=False,
             enable_object_assignments=True,
             enable_responsible_users=True,
+            enable_instruments=False,
             show_location_log=True,
         )
         container = sampledb.logic.locations.create_location(

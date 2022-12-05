@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-11-24 13:11+0100\n"
+"POT-Creation-Date: 2022-11-30 16:03+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3547,6 +3547,16 @@ msgstr "Instrumentverantwortliche"
 msgid "No user selected"
 msgstr "Kein Nutzer ausgewählt"
 
+msgid "No location selected"
+msgstr "Kein Ort ausgewählt"
+
+msgid ""
+"Instruments cannot be assigned to this location. Please select a "
+"different location."
+msgstr ""
+"Diesem Ort können keine Instrumente zugewiesen werden. Bitte wählen Sie "
+"einen anderen Ort aus."
+
 msgid "Instrument Log Categories"
 msgstr "Instrument Log Kategorien"
 
@@ -3694,6 +3704,15 @@ msgstr "Ja, Orten dieses Typs dürfen Objekte zugewiesen werden"
 msgid "No, objects may not be assigned to locations of this type"
 msgstr "Nein, Orten dieses Typs dürfen keine Objekte zugewiesen werden"
 
+msgid "Enable Instruments"
+msgstr "Instrumente aktivieren"
+
+msgid "Yes, instruments may be assigned to locations of this type"
+msgstr "Ja, Orten dieses Typs dürfen Instrumente zugewiesen werden"
+
+msgid "No, instruments may not be assigned to locations of this type"
+msgstr "Nein, Orten dieses Typs dürfen keine Instrumente zugewiesen werden"
+
 msgid "Enable Responsible Users"
 msgstr "Verantwortliche Nutzer aktivieren"
 
@@ -3729,6 +3748,9 @@ msgstr "Orte dieses Typs dürfen Unter-Orte haben"
 
 msgid "Objects may be assigned to locations of this type"
 msgstr "Objekte dürfen Orten dieses Typs zugewiesen werden"
+
+msgid "Instruments may be assigned to locations of this type"
+msgstr "Instrumente dürfen Orten dieses Typs zugewiesen werden"
 
 msgid "Locations of this type may have responsible users"
 msgstr "Orte dieses Typs dürfen verantwortliche Nutzer haben"
@@ -3906,9 +3928,6 @@ msgstr "Kein Ortstyp ausgewählt"
 
 msgid "Parent Location"
 msgstr "Eltern-Ort"
-
-msgid "No location selected"
-msgstr "Kein Ort ausgewählt"
 
 msgid "The previous parent location may not have any sub-locations."
 msgstr "Der bisherige Eltern-Ort darf keine Unter-Orte haben."

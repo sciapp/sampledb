@@ -70,6 +70,7 @@ def import_location_type(
                 enable_sub_locations=location_type_data['enable_sub_locations'],
                 enable_object_assignments=location_type_data['enable_object_assignments'],
                 enable_responsible_users=location_type_data['enable_responsible_users'],
+                enable_instruments=False,
                 show_location_log=location_type_data['show_location_log'],
             )
             fed_logs.update_location_type(location_type.id, component.id)
@@ -83,6 +84,7 @@ def import_location_type(
             enable_sub_locations=location_type_data['enable_sub_locations'],
             enable_object_assignments=location_type_data['enable_object_assignments'],
             enable_responsible_users=location_type_data['enable_responsible_users'],
+            enable_instruments=False,
             show_location_log=location_type_data['show_location_log'],
             fed_id=location_type_data['fed_id'],
             component_id=component_id,
@@ -167,6 +169,7 @@ def _get_or_create_location_type_id(
             enable_parent_location=False,
             enable_object_assignments=False,
             enable_responsible_users=False,
+            enable_instruments=False,
             show_location_log=False,
             fed_id=location_type_data['location_type_id'],
             component_id=component_id

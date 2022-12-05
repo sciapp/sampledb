@@ -168,6 +168,7 @@ def location_type():
         enable_sub_locations=True,
         enable_object_assignments=True,
         enable_responsible_users=True,
+        enable_instruments=False,
         show_location_log=True
     )
 

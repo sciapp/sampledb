@@ -36,6 +36,8 @@ class Instrument(db.Model):  # type: ignore
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
     translations = db.relationship('InstrumentTranslation')
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    location = db.relationship('Location')
 
     def __init__(
             self,

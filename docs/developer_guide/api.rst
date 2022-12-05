@@ -800,7 +800,8 @@ Reading a list of all instruments
                 "name": "Example Instrument",
                 "description": "This is an example instrument",
                 "is_hidden": false,
-                "instrument_scientists": [1, 42]
+                "instrument_scientists": [1, 42],
+                "location_id": null
             }
         ]
 
@@ -835,7 +836,8 @@ Reading an instrument
             "name": "Example Instrument",
             "description": "This is an example instrument",
             "is_hidden": false,
-            "instrument_scientists": [1, 42]
+            "instrument_scientists": [1, 42],
+            "location_id": 1
         }
 
     :>json number instrument_id: the instrument's ID
@@ -843,6 +845,7 @@ Reading an instrument
     :>json string description: the instruments's description
     :>json bool is_hidden: whether or not the instrument is hidden
     :>json list instrument_scientists: the instrument scientists' IDs
+    :>json number location_id: the instrument location's ID
     :statuscode 200: no error
     :statuscode 404: the instrument does not exist
 

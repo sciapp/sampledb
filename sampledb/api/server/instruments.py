@@ -18,7 +18,8 @@ def instrument_to_json(instrument: instruments.Instrument) -> typing.Dict[str, t
         'name': utils.get_translated_text(instrument.name, 'en'),
         'description': utils.get_translated_text(instrument.description, 'en'),
         'is_hidden': instrument.is_hidden,
-        'instrument_scientists': [user.id for user in instrument.responsible_users]
+        'instrument_scientists': [user.id for user in instrument.responsible_users],
+        'location_id': instrument.location_id
     }
 
 

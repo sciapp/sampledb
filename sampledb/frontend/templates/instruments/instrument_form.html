@@ -16,6 +16,7 @@
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
   <script>
   {% set allowed_language_ids = [] %}
   window.languages = [
@@ -158,7 +159,7 @@
       $('input').change();
       $('textarea').change();
       updateTranslationJSON();
-      return $(this).find('.has-error').length === 0;
+      return $(this).find('.has-error').length === $(this).find('.has-error-static').length;
     })
 
     function updateDescriptionMarkdown() {
@@ -354,6 +355,24 @@
           {% endfor %}
         </select>
       </div>
+
+    {% if instrument_form.location.choices | length > 1 or instrument_form.location.data != '-1' %}
+      <div class="form-group {% if location_is_invalid %}has-error has-error-static{% endif %}">
+        <label for="input-instrument-location" class="control-label">{{ _('Location')}}</label>
+        <select class="treepicker selectpicker form-control" id="input-instrument-location" name="{{ instrument_form.location.name }}" data-live-search="true" data-none-selected-text="{{ _('No location selected') }}">
+          {% for location_info in instrument_form.location.all_choices %}
+          <option {% if location_info.is_fed %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_info.id }}" {% if (instrument_form.location.data or instrument_form.location.default) == (location_info.id_string) %}selected="selected"{% endif %} {% if location_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if location_info.has_subtree %}option-group-{{ location_info.id }}-header{% endif %} closed {% for id in location_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (location_info.id_path | length - 1) }}em'>{% if location_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ location_info.name_prefix }}</span>{{ location_info.name }}</span>">
+            {{ location_info.full_name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if location_is_invalid %}
+        <div class="help-block">{{ _('Instruments cannot be assigned to this location. Please select a different location.') }}</div>
+        {% endif %}
+      </div>
+    {% else %}
+      <input type="hidden" name="{{ instrument_form.location.name }}" value="-1" />
+    {% endif %}
 
       <label>{{ _('Instrument Log Categories') }}</label>
       <div class="hidden" id="instrument-log-category-template">

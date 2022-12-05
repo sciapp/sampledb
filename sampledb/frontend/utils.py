@@ -387,6 +387,33 @@ def get_location_name(
 
 
 @jinja_filter()
+def get_full_location_name(
+        location_or_location_id: typing.Union[int, Location],
+        include_id: bool = False,
+        language_code: typing.Optional[str] = None
+) -> str:
+    location: typing.Optional[Location]
+    if type(location_or_location_id) is int:
+        location_id: int = location_or_location_id
+        try:
+            location = get_location(location_id)
+        except errors.LocationDoesNotExistError:
+            location = None
+    elif isinstance(location_or_location_id, Location):
+        location = location_or_location_id
+    else:
+        location = None
+    if location is None:
+        return flask_babel.gettext("Unknown Location")
+
+    full_location_name = get_location_name(location, include_id=include_id, language_code=language_code)
+    while location.parent_location_id is not None:
+        location = get_location(location.parent_location_id)
+        full_location_name = get_location_name(location, include_id=False, language_code=language_code) + ' / ' + full_location_name
+    return full_location_name
+
+
+@jinja_filter()
 def to_datatype(obj):
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
@@ -777,7 +804,9 @@ def get_locations_form_data(
         is_fed=False,
         is_disabled=False
     )]
-    choices = []
+    choices = [
+        ('-1', '')
+    ]
     unvisited_location_ids_prefixes_and_subtrees = [
         (location_id, '', locations_tree[location_id], [location_id])
         for location_id in locations_tree

@@ -17,7 +17,7 @@ from .components import get_component
 from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
-from . import users, errors, components
+from . import users, errors, components, locations
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,6 +41,8 @@ class Instrument:
     fed_id: int
     component_id: int
     component: typing.Optional[components.Component]
+    location_id: int
+    location: typing.Optional[locations.Location]
 
     @classmethod
     def from_database(cls, instrument: models.Instrument) -> 'Instrument':
@@ -63,7 +65,9 @@ class Instrument:
             short_description_is_markdown=instrument.short_description_is_markdown,
             fed_id=instrument.fed_id,
             component_id=instrument.component_id,
-            component=components.Component.from_database(instrument.component) if instrument.component is not None else None
+            component=components.Component.from_database(instrument.component) if instrument.component is not None else None,
+            location_id=instrument.location_id,
+            location=locations.Location.from_database(instrument.location) if instrument.location is not None else None,
         )
 
     def __repr__(self) -> str:
@@ -323,3 +327,25 @@ def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.L
         for instrument_user_association in instrument_id_query.order_by(instrument_user_association_table.c.instrument_id).all()
     ]
     return instrument_ids
+
+
+def set_instrument_location(instrument_id: int, location_id: typing.Optional[int]) -> None:
+    """
+    Set the location of an instrument.
+
+    :param instrument_id: the ID of an existing instrument
+    :param location_id: the ID of an existing location
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
+    :raise errors.LocationDoesNotExistError: when no location with the
+        given location ID exists
+    """
+    if location_id is not None:
+        # ensure the location exists
+        locations.get_location(location_id)
+    instrument = models.Instrument.query.filter_by(id=instrument_id).first()
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    instrument.location_id = location_id
+    db.session.add(instrument)
+    db.session.commit()

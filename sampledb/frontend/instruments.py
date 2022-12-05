@@ -13,13 +13,13 @@ import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
 import pytz
-from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField
+from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField, SelectField
 from wtforms.validators import DataRequired, ValidationError
 
 from . import frontend
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
-from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments
+from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
@@ -32,7 +32,7 @@ from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_object_info_with_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly, generate_qrcode
+from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
@@ -365,6 +365,7 @@ class InstrumentForm(FlaskForm):
     users_can_view_log_entries = BooleanField(default=False)
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
+    location = SelectField()
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -385,6 +386,13 @@ def new_instrument():
         for user in get_users()
         if user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin)
     ]
+    all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
+    instrument_form.location.choices = choices
+    instrument_form.location.all_choices = all_choices
+    instrument_form.location.default = '-1'
+    if not instrument_form.is_submitted():
+        instrument_form.location.data = instrument_form.location.default
+
     if instrument_form.validate_on_submit():
 
         try:
@@ -473,6 +481,9 @@ def new_instrument():
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
 
+        if instrument_form.location.data is not None and instrument_form.location.data != '-1':
+            set_instrument_location(instrument.id, int(instrument_form.location.data))
+
         try:
             category_data = json.loads(instrument_form.categories.data)
         except Exception:
@@ -551,6 +562,14 @@ def edit_instrument(instrument_id):
         str(user.id)
         for user in instrument.responsible_users
     ]
+    all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
+    instrument_form.location.choices = choices
+    instrument_form.location.all_choices = all_choices
+
+    if instrument.location_id is not None:
+        instrument_form.location.default = str(instrument.location_id)
+    else:
+        instrument_form.location.default = '-1'
 
     if not instrument_form.is_submitted():
         instrument_form.is_markdown.data = instrument.description_is_markdown
@@ -560,8 +579,12 @@ def edit_instrument(instrument_id):
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
         instrument_form.is_hidden.data = instrument.is_hidden
+        instrument_form.location.data = instrument_form.location.default
+    location_is_invalid = instrument_form.location.data not in {
+        location_id_str
+        for location_id_str, location_name in choices
+    }
     if instrument_form.validate_on_submit():
-
         update_instrument(
             instrument_id=instrument.id,
             description_is_markdown=instrument_form.is_markdown.data,
@@ -577,6 +600,11 @@ def edit_instrument(instrument_id):
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+
+        if instrument_form.location.data is not None and instrument_form.location.data != '-1':
+            set_instrument_location(instrument.id, int(instrument_form.location.data))
+        else:
+            set_instrument_location(instrument.id, None)
 
         # translations
         try:
@@ -740,7 +768,8 @@ def edit_instrument(instrument_id):
         ENGLISH=english,
         instrument_log_categories=get_instrument_log_categories(instrument.id),
         languages=get_languages(only_enabled_for_input=True),
-        instrument_form=instrument_form
+        instrument_form=instrument_form,
+        location_is_invalid=location_is_invalid
     )
 
 

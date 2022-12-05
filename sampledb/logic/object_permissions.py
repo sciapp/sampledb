@@ -12,7 +12,7 @@ from .. import db
 from . import errors
 from . import actions
 from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
-from .instruments import get_instrument
+from . import instruments
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
 from . import objects
 from ..models import Permissions, UserObjectPermissions, GroupObjectPermissions, ProjectObjectPermissions, AllUserObjectPermissions, AnonymousUserObjectPermissions, Action, Object, Objects
@@ -102,7 +102,7 @@ def _get_object_responsible_user_ids(object_id: int) -> typing.List[int]:
         return []
     if action.instrument_id is None:
         return []
-    instrument = get_instrument(action.instrument_id)
+    instrument = instruments.get_instrument(action.instrument_id)
     return [user.id for user in instrument.responsible_users]
 
 

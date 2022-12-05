@@ -71,6 +71,7 @@ class LocationTypeForm(FlaskForm):
     enable_sub_locations = BooleanField()
     enable_object_assignments = BooleanField()
     enable_responsible_users = BooleanField()
+    enable_instruments = BooleanField()
     show_location_log = BooleanField()
 
 
@@ -106,6 +107,7 @@ def show_location_type_form(type_id: typing.Optional[int]):
             location_type_form.enable_sub_locations.data = location_type.enable_sub_locations
             location_type_form.enable_object_assignments.data = location_type.enable_object_assignments
             location_type_form.enable_responsible_users.data = location_type.enable_responsible_users
+            location_type_form.enable_instruments.data = location_type.enable_instruments
             location_type_form.show_location_log.data = location_type.show_location_log
             # set translated texts from existing location type
             for text_name in translated_texts:
@@ -123,6 +125,7 @@ def show_location_type_form(type_id: typing.Optional[int]):
             location_type_form.enable_object_assignments.data = True
             location_type_form.enable_responsible_users.data = False
             location_type_form.show_location_log.data = False
+            location_type_form.enable_instruments.data = True
     else:
         translation_language_ids = flask.request.form.getlist('translation-languages')
         translation_language_ids = {
@@ -148,6 +151,7 @@ def show_location_type_form(type_id: typing.Optional[int]):
                 enable_sub_locations=location_type_form.enable_sub_locations.data,
                 enable_object_assignments=location_type_form.enable_object_assignments.data,
                 enable_responsible_users=location_type_form.enable_responsible_users.data,
+                enable_instruments=location_type_form.enable_instruments.data,
                 show_location_log=location_type_form.show_location_log.data,
                 **translated_texts
             ).id
@@ -159,6 +163,7 @@ def show_location_type_form(type_id: typing.Optional[int]):
                 enable_sub_locations=location_type_form.enable_sub_locations.data,
                 enable_object_assignments=location_type_form.enable_object_assignments.data,
                 enable_responsible_users=location_type_form.enable_responsible_users.data,
+                enable_instruments=location_type_form.enable_instruments.data,
                 show_location_log=location_type_form.show_location_log.data,
                 **translated_texts
             )
