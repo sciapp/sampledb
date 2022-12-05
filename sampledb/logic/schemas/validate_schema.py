@@ -904,8 +904,8 @@ def _validate_user_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
-    if 'default' in schema and schema['default'] != 'self':
-        raise ValidationError('default must be "self"', path)
+    if 'default' in schema and (schema['default'] != 'self' and type(schema['default']) is not int):
+        raise ValidationError('default must be "self" or int', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
 
