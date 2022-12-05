@@ -192,7 +192,7 @@
           }
       }
 
-      return ($('[data-name="help-block-pattern"]').length === 0 && $('.has-error').length === 0);
+      return true;
     });
     {% if user_groups %}
     $('select[name="permissions_for_group_group_id"]').on('show.bs.select', function () {
