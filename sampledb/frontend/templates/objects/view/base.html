@@ -504,7 +504,7 @@
                       </li>
                     </ul>
                   </div>
-                  <button type="submit" class="btn btn-primary disabled" style="width:11em;" id="button-upload-files"><i class="fa fa-upload fa-fw"></i> {{ _('Upload') }}</button>
+                  <button type="submit" class="btn btn-primary disabled" style="width:11em;" id="button-upload-files" disabled="disabled"><i class="fa fa-upload fa-fw"></i> {{ _('Upload') }}</button>
                 </span>
               </div>
             </form>
@@ -1533,12 +1533,16 @@
             var files = $('#input-file-upload').get(0).files;
             if (files.length === 0) {
               $('#input-file-text').val("");
+              $('#button-upload-files').addClass('disabled');
+              $('#button-upload-files').prop('disabled', true);
             } else if (files.length === 1) {
               $('#input-file-text').val(files[0].name);
               $('#button-upload-files').removeClass('disabled');
+              $('#button-upload-files').prop('disabled', false);
             } else {
               $('#input-file-text').val(files.length + " {{ _('files selected') }}");
               $('#button-upload-files').removeClass('disabled');
+              $('#button-upload-files').prop('disabled', false);
             }
             $('#input-file-names-hidden').val("");
             $('#input-file-source-hidden').val("local");
