@@ -44,14 +44,17 @@ function enableSchemaEditor() {
     node = $(node);
     node.find('[data-toggle="tooltip"]:not(.disabled)').tooltip();
 
-    if ('batch' in schema) {
-      window.schema_editor_missing_type_support = true;
-    }
-    if ('batch_name_format' in schema) {
-      window.schema_editor_missing_type_support = true;
-    }
-    if ('displayProperties' in schema) {
-      window.schema_editor_missing_type_support = true;
+    var advanced_root_object_features = [
+      'recipes', 'batch', 'batch_name_format', 'displayProperties',
+      'notebookTemplates', 'show_more'
+    ]
+
+    for (const name of advanced_root_object_features)
+    {
+      if (name in schema) {
+        window.schema_editor_missing_type_support = true;
+        break;
+      }
     }
 
     var title_label = node.find('.schema-editor-root-object-title-label');
@@ -1132,9 +1135,18 @@ function enableSchemaEditor() {
     template_id_input.selectpicker();
     template_id_input.on('change', updateProperty.bind(path));
 
-    if ('conditions' in schema) {
-      // Conditions are not supported in the graphical schema editor yet
-      window.schema_editor_missing_type_support = true;
+    var advanced_schema_features = [
+        'conditions', 'action_type_id', 'action_id',
+        'may_copy', 'dataverse_export', 'languages', 'display_digits',
+        'min_magnitude', 'max_magnitude'
+    ]
+
+    for (const name of advanced_schema_features)
+    {
+      if (name in schema) {
+        window.schema_editor_missing_type_support = true;
+        break;
+      }
     }
 
     window.schema_editor_initial_updates.push(updateProperty.bind(path))
