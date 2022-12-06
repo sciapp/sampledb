@@ -31,7 +31,7 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
           <h4 class="modal-title" id="addComponentModalLabel">{{ _('Add Database') }}</h4>
         </div>
-        <form method="post" action="{{ request.url }}" class="form-horizontal">
+        <form method="post" class="form-horizontal">
           {{ add_component_form.csrf_token() }}
           <div class="modal-body">
             <div class="form-group {% if add_component_form.address.errors %}has-error{% endif %}">
