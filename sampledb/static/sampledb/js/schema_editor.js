@@ -1017,7 +1017,9 @@ function enableSchemaEditor() {
       value_input.on('change', updateProperty.bind(path));
     }
 
-    setupValueFromSchema(path, 'generic', 'note', schema, type === 'text');
+    // Every supported type has a note input
+    setupValueFromSchema(path, 'generic', 'note', schema, true);
+
     setupValueFromSchema(path, 'text', 'default', schema, type === 'text');
     setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text');
     setupValueFromSchema(path, 'text', 'pattern', schema, type === 'text');
