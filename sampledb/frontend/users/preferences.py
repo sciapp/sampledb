@@ -28,8 +28,8 @@ from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
-from ...logic.projects import get_user_projects, get_project
-from ...logic.groups import get_user_groups, get_group
+from ...logic.projects import get_project
+from ...logic.groups import get_group
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
@@ -158,24 +158,16 @@ def change_preferences(user, user_id):
     users = [user for user in users if user.id not in user_permissions]
     users.sort(key=lambda user: user.id)
 
-    user_group_ids = {
-        group.id
-        for group in get_user_groups(flask_login.current_user.id)
-    }
     groups_treepicker_info = get_groups_form_data(
-        basic_group_filter=lambda group: group.id not in group_permissions and group.id in user_group_ids
+        basic_group_filter=lambda group: group.id not in group_permissions
     )
     show_groups_form = any(
         not group_form_info.is_disabled
         for group_form_info in groups_treepicker_info
     )
 
-    user_project_ids = {
-        group.id
-        for group in get_user_projects(flask_login.current_user.id)
-    }
     projects_treepicker_info = get_groups_form_data(
-        project_group_filter=lambda group: group.id not in project_permissions and group.id in user_project_ids
+        project_group_filter=lambda group: group.id not in project_permissions
     )
     show_projects_form = any(
         not group_form_info.is_disabled

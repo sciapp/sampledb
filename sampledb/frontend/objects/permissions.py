@@ -19,9 +19,9 @@ from ...logic.errors import ObjectDoesNotExistError, ComponentDoesNotExistError
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ...logic.shares import get_shares_for_object, add_object_share, update_object_share
 from ...logic.users import get_users, get_users_for_component
-from ...logic.groups import get_group, get_user_groups
+from ...logic.groups import get_group
 from ...logic.objects import get_object, get_fed_object
-from ...logic.projects import get_project, get_user_projects
+from ...logic.projects import get_project
 from ...logic.components import get_component, get_components
 from .forms import CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
@@ -133,24 +133,16 @@ def object_permissions(object_id):
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
 
-        user_group_ids = {
-            group.id
-            for group in get_user_groups(flask_login.current_user.id)
-        }
         groups_treepicker_info = get_groups_form_data(
-            basic_group_filter=lambda group: group.id not in group_permissions and group.id in user_group_ids
+            basic_group_filter=lambda group: group.id not in group_permissions
         )
         show_groups_form = any(
             not group_form_info.is_disabled
             for group_form_info in groups_treepicker_info
         )
 
-        user_project_ids = {
-            group.id
-            for group in get_user_projects(flask_login.current_user.id)
-        }
         projects_treepicker_info = get_groups_form_data(
-            project_group_filter=lambda group: group.id not in project_permissions and group.id in user_project_ids
+            project_group_filter=lambda group: group.id not in project_permissions
         )
         show_projects_form = any(
             not group_form_info.is_disabled
