@@ -46,6 +46,9 @@ from ..logic.datatypes import JSONEncoder
 from ..logic.security_tokens import generate_token
 from ..logic.object_permissions import get_user_object_permissions, Permissions
 from ..logic.objects import get_object, Object
+from ..logic.groups import Group, get_groups
+from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids
+from ..logic.group_categories import get_group_category_tree, get_group_categories
 
 
 def jinja_filter(name: str = ''):
@@ -857,3 +860,151 @@ def get_user_or_none(user_id: int) -> typing.Optional[User]:
         return get_user(user_id)
     except errors.UserDoesNotExistError:
         return None
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class GroupFormInformation:
+    id: int
+    name: str
+    name_prefix: str
+    id_path: typing.Sequence[int]
+    has_subtree: bool
+    is_disabled: bool
+
+    @property
+    def full_name(self) -> str:
+        return self.name_prefix + self.name
+
+
+def get_groups_form_data(
+        basic_group_filter: typing.Optional[typing.Callable[[Group], bool]] = None,
+        project_group_filter: typing.Optional[typing.Callable[[Project], bool]] = None
+) -> typing.Sequence[GroupFormInformation]:
+    """
+    Get group form information usable with a treepicker, e.g. for permission forms.
+
+    :param basic_group_filter: filter for basic groups to include, or None to
+        exclude all basic groups
+    :param project_group_filter: filter for project groups to include, or None
+        to exclude all project groups
+    :return: a group form information list
+    """
+    if basic_group_filter is not None:
+        all_basic_groups = get_groups()
+        basic_group_names_by_id = {
+            group.id: get_translated_text(
+                group.name,
+                default=flask_babel.gettext('Basic Group') + ' #' + str(group.id)
+            )
+            for group in all_basic_groups
+        }
+        valid_basic_group_ids = {
+            group.id
+            for group in all_basic_groups
+            if basic_group_filter(group)
+        }
+    if project_group_filter is not None:
+        all_project_groups = get_projects()
+        project_group_names_by_id = {
+            group.id: get_translated_text(
+                group.name,
+                default=flask_babel.gettext('Project Group') + ' #' + str(group.id)
+            )
+            for group in all_project_groups
+        }
+        valid_project_group_ids = {
+            group.id
+            for group in all_project_groups
+            if project_group_filter(group)
+        }
+        child_project_group_ids_by_id = {
+            group.id: [
+                child_group_id
+                for child_group_id in get_child_project_ids(group.id)
+                if child_group_id in valid_project_group_ids
+            ]
+            for group in all_project_groups
+        }
+    all_group_categories = get_group_categories()
+    group_category_names_by_id = {
+        group_category.id: get_translated_text(
+            group_category.name,
+            default=flask_babel.gettext('Group Category') + ' #' + str(group_category.id)
+        )
+        for group_category in all_group_categories
+    }
+    group_category_tree = get_group_category_tree(
+        basic_group_ids=None if basic_group_filter is not None else set(),
+        project_group_ids=None if project_group_filter is not None else set()
+    )
+    all_choices = []
+
+    def _add_project_group_to_all_choices(id_path, name_prefix, group_id):
+        if not id_path and get_parent_project_ids(group_id):
+            return
+        child_project_ids = child_project_group_ids_by_id[group_id]
+        project_group_name = project_group_names_by_id[group_id]
+        all_choices.append(GroupFormInformation(
+            id=group_id,
+            name=project_group_name,
+            name_prefix=name_prefix,
+            id_path=id_path + [group_id],
+            has_subtree=bool(child_project_ids),
+            is_disabled=group_id not in valid_project_group_ids
+        ))
+        name_prefix = name_prefix + project_group_name + ' / '
+        id_path = id_path + [group_id]
+        for child_project_id in sorted(child_project_ids, key=lambda group_id: project_group_names_by_id[group_id]):
+            _add_project_group_to_all_choices(
+                id_path, name_prefix, child_project_id
+            )
+
+    def _fill_all_choices(id_path, name_prefix, group_category_id, group_category_tree):
+        if not group_category_tree['contains_basic_groups'] and not group_category_tree['contains_project_groups']:
+            return
+        if group_category_id is not None:
+            group_category_name = group_category_names_by_id[group_category_id]
+            all_choices.append(GroupFormInformation(
+                id=-group_category_id,
+                name=group_category_name,
+                name_prefix=name_prefix,
+                id_path=id_path + [-group_category_id],
+                has_subtree=True,
+                is_disabled=True
+            ))
+            name_prefix = name_prefix + group_category_name + ' / '
+            id_path = id_path + [-group_category_id]
+        for group_category_id, group_category_subtree in group_category_tree['child_categories'].items():
+            _fill_all_choices(id_path, name_prefix, group_category_id, group_category_subtree)
+        if basic_group_filter is not None:
+            for group_id in sorted(group_category_tree['basic_group_ids'], key=lambda group_id: basic_group_names_by_id[group_id]):
+                all_choices.append(GroupFormInformation(
+                    id=group_id,
+                    name=basic_group_names_by_id[group_id],
+                    name_prefix=name_prefix,
+                    id_path=id_path + [group_id],
+                    has_subtree=False,
+                    is_disabled=group_id not in valid_basic_group_ids
+                ))
+        if project_group_filter is not None:
+            for group_id in sorted(group_category_tree['project_group_ids'], key=lambda group_id: project_group_names_by_id[group_id]):
+                _add_project_group_to_all_choices(id_path, name_prefix, group_id)
+
+    _fill_all_choices([], '', None, group_category_tree)
+
+    # filter out subtrees only containing disabled options
+    enabled_id_paths = {
+        tuple(group_form_information.id_path)
+        for group_form_information in all_choices
+        if not group_form_information.is_disabled
+    }
+    all_choices = [
+        group_form_information
+        for group_form_information in all_choices
+        if not group_form_information.is_disabled or (group_form_information.has_subtree and any(
+            tuple(group_form_information.id_path) == id_path[:len(group_form_information.id_path)]
+            for id_path in enabled_id_paths
+        ))
+    ]
+
+    return all_choices

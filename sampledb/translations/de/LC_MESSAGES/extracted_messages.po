@@ -846,6 +846,15 @@ msgstr "Unbenannter Ort"
 msgid "Unknown database (%(uuid)s)"
 msgstr "Unbekannte Datenbank (%(uuid)s)"
 
+msgid "Basic Group"
+msgstr "Einfache Gruppe"
+
+msgid "Project Group"
+msgstr "Projektgruppe"
+
+msgid "Group Category"
+msgstr "Gruppen-Kategorie"
+
 msgid "Uploading files for imported objects is not yet supported."
 msgstr ""
 "Das Hochladen von Dateien wird für importierte Objekte noch nicht "
@@ -3249,14 +3258,8 @@ msgstr ""
 msgid "Create Group Category"
 msgstr "Gruppen-Kategorie erstellen"
 
-msgid "Group Category"
-msgstr "Gruppen-Kategorie"
-
 msgid "Parent Category"
 msgstr "Eltern-Kategorie"
-
-msgid "Basic Group"
-msgstr "Einfache Gruppe"
 
 msgid "Categories"
 msgstr "Kategorien"
@@ -5290,9 +5293,6 @@ msgstr "Einfache Gruppe hinzufügen"
 
 msgid "Add Project Group"
 msgstr "Projektgruppe hinzufügen"
-
-msgid "Project Group"
-msgstr "Projektgruppe"
 
 #, python-format
 msgid ""

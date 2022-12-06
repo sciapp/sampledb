@@ -210,7 +210,7 @@
     </div>
     </form>
   {% endif %}
-  {% if add_group_permissions_form and groups %}
+  {% if add_group_permissions_form and show_groups_form and groups_treepicker_info %}
     <h3>{{ _('Add Basic Group') }}</h3>
     <form action="{{ form_url }}" method="post">
     {{ add_group_permissions_form.csrf_token }}
@@ -221,10 +221,12 @@
       <tbody>
       <tr>
         <td>
-          <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
-          {% for group in groups %}
-            <option value="{{ group.id }}">{{ group.name | get_translated_text }} (#{{ group.id }})</option>
-          {% endfor %}
+          <select class="treepicker selectpicker form-control" id="input-location" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
+            {% for group_info in groups_treepicker_info %}
+            <option value="{{ group_info.id }}" {% if group_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if group_info.has_subtree %}option-group-{{ group_info.id }}-header{% endif %} closed {% for id in group_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (group_info.id_path | length - 1) }}em'>{% if group_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ group_info.name_prefix }}</span>{{ group_info.name }}</span>">
+              {{ group_info.full_name }}
+            </option>
+            {% endfor %}
           </select>
         </td>
         {{ permissions_table_fields('new_group', Permissions.READ, [Permissions.READ, Permissions.WRITE, Permissions.GRANT], false, add_group_permissions_form.permissions.name) }}
@@ -236,7 +238,7 @@
     </div>
     </form>
   {% endif %}
-  {% if add_project_permissions_form and projects_by_id and show_projects_form %}
+  {% if add_project_permissions_form and show_projects_form and projects_treepicker_info %}
     <h3>{{ _('Add Project Group') }}</h3>
     <form action="{{ form_url }}" method="post">
     {{ add_project_permissions_form.csrf_token }}
@@ -247,10 +249,12 @@
       <tbody>
       <tr>
         <td>
-          <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
-          {% for level, project_id, enabled in project_id_hierarchy_list %}
-            <option value="{{ project_id }}" {% if not enabled %}disabled="disabled"{% endif %}>{{ ('&nbsp;' * (4 * level)) | safe }}{{ projects_by_id[project_id].name | get_translated_text }} (#{{ project_id }})</option>
-          {% endfor %}
+          <select class="treepicker selectpicker form-control" id="input-location" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
+            {% for group_info in projects_treepicker_info %}
+            <option value="{{ group_info.id }}" {% if group_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if group_info.has_subtree %}option-group-{{ group_info.id }}-header{% endif %} closed {% for id in group_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (group_info.id_path | length - 1) }}em'>{% if group_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ group_info.name_prefix }}</span>{{ group_info.name }}</span>">
+              {{ group_info.full_name }}
+            </option>
+            {% endfor %}
           </select>
         </td>
         {{ permissions_table_fields('new_project', Permissions.READ, [Permissions.READ, Permissions.WRITE, Permissions.GRANT], false, add_project_permissions_form.permissions.name) }}
