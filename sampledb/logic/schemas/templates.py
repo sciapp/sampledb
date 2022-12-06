@@ -124,12 +124,9 @@ def update_schema_using_template_action(
             schema.update(template_action_schema)
             if title is not None:
                 schema['title'] = title
-        if 'properties' in schema:
+        elif 'properties' in schema:
             for property_name, property_schema in schema['properties'].items():
                 if type(property_schema) is dict:
-                    if property_schema.get('type') == 'object' and property_schema.get('template') == template_action_id:
-                        # do not update uses of a template recursively
-                        continue
                     schema['properties'][property_name] = update_schema_using_template_action(property_schema, template_action_id, template_action_schema)
     return schema
 
