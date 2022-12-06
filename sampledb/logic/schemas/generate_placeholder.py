@@ -5,8 +5,11 @@ Implementation of generate_placeholder(schema)
 
 import typing
 
-from ..errors import UndefinedUnitError, SchemaError
+from flask_login import current_user
+
+from ..errors import UndefinedUnitError, SchemaError, UserDoesNotExistError
 from .utils import get_dimensionality_for_units
+from ..users import get_user
 
 
 def generate_placeholder(
@@ -49,7 +52,7 @@ def generate_placeholder(
     elif schema['type'] == 'hazards':
         return _generate_hazards_placeholder(schema, path)
     elif schema['type'] == 'user':
-        return _generate_user_placeholder(schema, path)  # type: ignore
+        return _generate_user_placeholder(schema, path)
     elif schema['type'] == 'plotly_chart':
         return _generate_plotly_chart_placeholder(schema, path)
     else:
@@ -236,14 +239,32 @@ def _generate_object_reference_placeholder(schema: typing.Dict[str, typing.Any],
     return None
 
 
-def _generate_user_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _generate_user_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
     """
     Generates a placeholder user object based on an object schema.
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :return: None, as there can be no default user
+    :return: the generated object or None, if there is no default user
     """
+    if 'default' in schema:
+        if schema['default'] == 'self' and current_user and current_user.is_authenticated:
+            user_id = current_user.id
+        elif type(schema['default']) is int:
+            user_id = schema['default']
+        else:
+            user_id = None
+        if user_id is not None:
+            try:
+                # ensure the user exists
+                get_user(user_id)
+            except UserDoesNotExistError:
+                pass
+            else:
+                return {
+                    '_type': 'user',
+                    'user_id': user_id
+                }
     return None
 
 
