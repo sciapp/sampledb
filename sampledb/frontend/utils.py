@@ -879,7 +879,7 @@ class GroupFormInformation:
 def get_groups_form_data(
         basic_group_filter: typing.Optional[typing.Callable[[Group], bool]] = None,
         project_group_filter: typing.Optional[typing.Callable[[Project], bool]] = None
-) -> typing.Sequence[GroupFormInformation]:
+) -> typing.Tuple[bool, typing.Sequence[GroupFormInformation]]:
     """
     Get group form information usable with a treepicker, e.g. for permission forms.
 
@@ -887,7 +887,8 @@ def get_groups_form_data(
         exclude all basic groups
     :param project_group_filter: filter for project groups to include, or None
         to exclude all project groups
-    :return: a group form information list
+    :return: a tuple containing whether any group is enabled and the group
+        form information list
     """
     if basic_group_filter is not None:
         all_basic_groups = get_groups()
@@ -1006,5 +1007,9 @@ def get_groups_form_data(
             for id_path in enabled_id_paths
         ))
     ]
+    any_choice_enabled = any(
+        not group_form_information.is_disabled
+        for group_form_information in all_choices
+    )
 
-    return all_choices
+    return any_choice_enabled, all_choices
