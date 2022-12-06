@@ -133,20 +133,12 @@ def object_permissions(object_id):
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
 
-        groups_treepicker_info = get_groups_form_data(
+        show_groups_form, groups_treepicker_info = get_groups_form_data(
             basic_group_filter=lambda group: group.id not in group_permissions
         )
-        show_groups_form = any(
-            not group_form_info.is_disabled
-            for group_form_info in groups_treepicker_info
-        )
 
-        projects_treepicker_info = get_groups_form_data(
+        show_projects_form, projects_treepicker_info = get_groups_form_data(
             project_group_filter=lambda group: group.id not in project_permissions
-        )
-        show_projects_form = any(
-            not group_form_info.is_disabled
-            for group_form_info in projects_treepicker_info
         )
 
         possible_new_components = [component for component in components if component.id not in component_policies.keys()]
