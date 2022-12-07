@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-11-30 16:03+0100\n"
+"POT-Creation-Date: 2022-12-07 11:29+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3031,6 +3031,9 @@ msgstr "Eine Liste von Auswahlmöglichkeiten; ein Wert pro Zeile."
 
 msgid "Choices"
 msgstr "Auswahlmöglichkeiten"
+
+msgid "Unit or a list of units the user can choose from, separated by commas."
+msgstr "Einheit oder Liste von auswählbaren Einheiten, getrennt durch Kommata."
 
 msgid "Units"
 msgstr "Einheiten"
