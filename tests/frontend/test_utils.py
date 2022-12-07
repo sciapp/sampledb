@@ -150,3 +150,102 @@ def test_fingerprinted_static_uses(app):
                 continue
             uses_by_template[template_file_name].extend(uses_by_template[parent_template_name])
         assert len(uses_by_template[template_file_name]) == len(set(uses_by_template[template_file_name]))
+
+
+def test_get_basic_group_name_prefixes():
+    user = sampledb.logic.users.create_user(
+        name="Test User",
+        email="example@example.org",
+        type=sampledb.models.UserType.PERSON
+    )
+    group = sampledb.logic.groups.create_group(
+        name={'en': 'Example Group'},
+        description={'en': ''},
+        initial_user_id=user.id
+    )
+    assert utils.get_basic_group_name_prefixes(group.id) == []
+    category_a = sampledb.logic.group_categories.create_group_category(
+        name={'en': 'Category A'},
+        parent_category_id=None
+    )
+    sampledb.logic.group_categories.set_basic_group_categories(
+        basic_group_id=group.id,
+        category_ids=[category_a.id]
+    )
+    assert utils.get_basic_group_name_prefixes(group.id) == [
+        f"Category A / "
+    ]
+    category_b = sampledb.logic.group_categories.create_group_category(
+        name={'en': 'Category B'},
+        parent_category_id=category_a.id
+    )
+    sampledb.logic.group_categories.set_basic_group_categories(
+        basic_group_id=group.id,
+        category_ids=[category_a.id, category_b.id]
+    )
+    assert utils.get_basic_group_name_prefixes(group.id) == [
+        f"Category A / ",
+        f"Category A / Category B / ",
+    ]
+
+
+def test_get_project_group_name_prefixes():
+    user = sampledb.logic.users.create_user(
+        name="Test User",
+        email="example@example.org",
+        type=sampledb.models.UserType.PERSON
+    )
+    project_a = sampledb.logic.projects.create_project(
+        name={'en': 'Project A'},
+        description={'en': ''},
+        initial_user_id=user.id
+    )
+    assert utils.get_project_group_name_prefixes(project_a.id) == []
+    category_a = sampledb.logic.group_categories.create_group_category(
+        name={'en': 'Category A'},
+        parent_category_id=None
+    )
+    sampledb.logic.group_categories.set_project_group_categories(
+        project_group_id=project_a.id,
+        category_ids=[category_a.id]
+    )
+    assert utils.get_project_group_name_prefixes(project_a.id) == [
+        f"Category A / "
+    ]
+    category_b = sampledb.logic.group_categories.create_group_category(
+        name={'en': 'Category B'},
+        parent_category_id=category_a.id
+    )
+    sampledb.logic.group_categories.set_project_group_categories(
+        project_group_id=project_a.id,
+        category_ids=[category_a.id, category_b.id]
+    )
+    assert utils.get_project_group_name_prefixes(project_a.id) == [
+        f"Category A / ",
+        f"Category A / Category B / ",
+    ]
+    project_b = sampledb.logic.projects.create_project(
+        name={'en': 'Project B'},
+        description={'en': ''},
+        initial_user_id=user.id
+    )
+    assert utils.get_project_group_name_prefixes(project_a.id) == [
+        f"Category A / ",
+        f"Category A / Category B / ",
+    ]
+    sampledb.logic.projects.create_subproject_relationship(project_b.id, project_a.id)
+    assert utils.get_project_group_name_prefixes(project_a.id) == [
+        f"Category A / ",
+        f"Category A / Category B / ",
+        f"Project B / ",
+    ]
+    sampledb.logic.group_categories.set_project_group_categories(
+        project_group_id=project_b.id,
+        category_ids=[category_a.id, category_b.id]
+    )
+    assert utils.get_project_group_name_prefixes(project_a.id) == [
+        f"Category A / ",
+        f"Category A / Category B / ",
+        f"Category A / Category B / Project B / ",
+        f"Category A / Project B / ",
+    ]

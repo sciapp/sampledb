@@ -855,6 +855,12 @@ msgstr "Projektgruppe"
 msgid "Group Category"
 msgstr "Gruppen-Kategorie"
 
+msgid "Unnamed Category"
+msgstr "Unbenannte Kategorie"
+
+msgid "Unnamed Project Group"
+msgstr "Unbenannte Projektgruppe"
+
 msgid "Uploading files for imported objects is not yet supported."
 msgstr ""
 "Das Hochladen von Dateien wird für importierte Objekte noch nicht "
@@ -3234,9 +3240,6 @@ msgstr ""
 msgid "Group Categories"
 msgstr "Gruppen-Kategorien"
 
-msgid "Unnamed Category"
-msgstr "Unbenannte Kategorie"
-
 msgid "Delete Group Category"
 msgstr "Gruppen-Kategorie löschen"
 
@@ -5287,6 +5290,9 @@ msgstr "Anonyme Nutzer"
 
 msgid "All Signed-In Users"
 msgstr "Alle angemeldeten Nutzer"
+
+msgid "Unnamed Basic Group"
+msgstr "Unbenannte einfache Gruppe"
 
 msgid "Add User"
 msgstr "Nutzer hinzufügen"

@@ -304,6 +304,18 @@ def test_get_full_group_category_names():
     }
 
 
+def test_get_full_group_category_name():
+    category = sampledb.logic.group_categories.create_group_category(
+        name={'en': 'Test Category'}
+    )
+    child_category = sampledb.logic.group_categories.create_group_category(
+        name={'en': 'Test Category 2'},
+        parent_category_id=category.id
+    )
+    assert sampledb.logic.group_categories.get_full_group_category_name(category.id) == [category.name]
+    assert sampledb.logic.group_categories.get_full_group_category_name(child_category.id) == [category.name, child_category.name]
+
+
 def test_category_has_ancestor():
     category = sampledb.logic.group_categories.create_group_category(
         name={'en': 'Test Category'}

@@ -47,8 +47,8 @@ from ..logic.security_tokens import generate_token
 from ..logic.object_permissions import get_user_object_permissions, Permissions
 from ..logic.objects import get_object, Object
 from ..logic.groups import Group, get_groups
-from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids
-from ..logic.group_categories import get_group_category_tree, get_group_categories
+from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
+from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name
 
 
 def jinja_filter(name: str = ''):
@@ -1013,3 +1013,38 @@ def get_groups_form_data(
     )
 
     return any_choice_enabled, all_choices
+
+
+@jinja_function()
+def get_basic_group_name_prefixes(group_id: int) -> typing.List[str]:
+    group_categories = get_basic_group_categories(group_id)
+    return sorted([
+        ' / '.join(
+            get_translated_text(category_name, default=flask_babel.gettext("Unnamed Category"))
+            for category_name in get_full_group_category_name(group_category.id)
+        ) + ' / '
+        for group_category in group_categories
+    ])
+
+
+@jinja_function()
+def get_project_group_name_prefixes(project_id: int) -> typing.List[str]:
+    group_categories = get_project_group_categories(project_id)
+    name_prefixes = [
+        ' / '.join(
+            get_translated_text(category_name, default=flask_babel.gettext("Unnamed Category"))
+            for category_name in get_full_group_category_name(group_category.id)
+        ) + ' / '
+        for group_category in group_categories
+    ]
+    parent_project_ids = get_parent_project_ids(project_id)
+    for parent_project_id in parent_project_ids:
+        parent_project = get_project(parent_project_id)
+        parent_project_name = get_translated_text(parent_project.name, default=flask_babel.gettext("Unnamed Project Group"))
+        parent_project_name_prefixes = get_project_group_name_prefixes(parent_project_id)
+        if parent_project_name_prefixes:
+            for parent_project_name_prefix in parent_project_name_prefixes:
+                name_prefixes.append(parent_project_name_prefix + parent_project_name + ' / ')
+        else:
+            name_prefixes.append(parent_project_name + ' / ')
+    return sorted(name_prefixes)
