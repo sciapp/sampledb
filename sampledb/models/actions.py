@@ -53,7 +53,6 @@ class ActionType(db.Model):  # type: ignore
     disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     is_template = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     fed_id = db.Column(db.Integer, nullable=True)
-    order_index = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     usable_in_action_types = db.relationship('ActionType', secondary=usable_in_action_types_table,
                                              primaryjoin=id == usable_in_action_types_table.c.owner_action_type,
@@ -61,6 +60,7 @@ class ActionType(db.Model):  # type: ignore
     component = db.relationship('Component')
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
     translations = db.relationship('ActionTypeTranslation')
+    order_index = db.Column(db.Integer, nullable=True)
 
     def __repr__(self) -> str:
         return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
