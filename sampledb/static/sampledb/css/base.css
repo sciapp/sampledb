@@ -1261,3 +1261,10 @@ code {
 .treepicker-actions {
     padding: 4px 8px;
 }
+
+.group-name-prefix {
+    display: block;
+    font-size: 85%;
+    line-height: 1;
+    padding: 2px 0;
+}

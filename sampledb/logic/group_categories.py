@@ -336,6 +336,22 @@ def get_full_group_category_names() -> typing.Dict[int, typing.Sequence[typing.D
     }
 
 
+def get_full_group_category_name(
+        category_id: int
+) -> typing.Sequence[typing.Dict[str, str]]:
+    """
+    Get the full sequence of ancestor names for a category.
+
+    :param category_id: the ID of an existing category
+    :return: the names for the category
+    :raise errors.GroupCategoryDoesNotExist: if no group category with the given ID exists
+    """
+    category = get_group_category(category_id=category_id)
+    if category.parent_category_id is None:
+        return [category.name]
+    return list(get_full_group_category_name(category_id=category.parent_category_id)) + [category.name]
+
+
 def get_basic_group_categories(
         basic_group_id: int
 ) -> typing.Sequence[GroupCategory]:

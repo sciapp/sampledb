@@ -99,7 +99,10 @@
           {% set project = get_project(project_id) %}
           <tr>
             <td>
-              <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }} (#{{ project.id }})</a>
+              {% for name_prefix in get_project_group_name_prefixes(project_id) %}
+                <span class="text-muted group-name-prefix">{{ name_prefix }}</span>
+              {% endfor %}
+              <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text(default=_('Unnamed Project Group')) }} (#{{ project.id }})</a>
               {{ project_permissions_form.csrf_token }}
               <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
             </td>
@@ -111,7 +114,10 @@
           {% set project = get_project(project_id) %}
           <tr>
             <td style="vertical-align: middle">
-              <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }} (#{{ project.id }})</a>
+              {% for name_prefix in get_project_group_name_prefixes(project_id) %}
+                <span class="text-muted group-name-prefix">{{ name_prefix }}</span>
+              {% endfor %}
+              <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text(default=_('Unnamed Project Group')) }} (#{{ project.id }})</a>
             </td>
             {{ permissions_table_fields('project', project_permissions[project_id], [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT], true, none) }}
           </tr>
@@ -127,7 +133,10 @@
           {% set group = get_group(group_id) %}
           <tr>
             <td>
-              <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }} (#{{ group.id }})</a>
+              {% for name_prefix in get_basic_group_name_prefixes(group_id) %}
+                <span class="text-muted group-name-prefix">{{ name_prefix }}</span>
+              {% endfor %}
+              <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text(default=_('Unnamed Basic Group')) }} (#{{ group.id }})</a>
               {{ group_permissions_form.csrf_token }}
               <input type="hidden" name="{{ group_permissions_form.group_id.name }}" value="{{ group_id }}">
             </td>
@@ -139,7 +148,10 @@
           {% set group = get_group(group_id) %}
           <tr>
             <td style="vertical-align: middle">
-              <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }} (#{{ group.id }})</a>
+              {% for name_prefix in get_basic_group_name_prefixes(group_id) %}
+                <span class="text-muted group-name-prefix">{{ name_prefix }}</span>
+              {% endfor %}
+              <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text(default=_('Unnamed Basic Group')) }} (#{{ group.id }})</a>
             </td>
             {{ permissions_table_fields('group', group_permissions[group_id], [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT], true, none) }}
           </tr>
