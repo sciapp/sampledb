@@ -109,7 +109,7 @@ def check_config(
     if missing_config_keys:
         print(
             ansi_color(
-                'Missing required configuration values:\n -' +
+                'Missing required configuration values:\n - ' +
                 '\n - '.join(missing_config_keys) +
                 '\n',
                 color=31

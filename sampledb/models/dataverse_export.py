@@ -24,8 +24,8 @@ class DataverseExport(db.Model):  # type: ignore
     object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
     dataverse_url = db.Column(db.String, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    status = db.Column(db.Enum(DataverseExportStatus), nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.Enum(DataverseExportStatus), nullable=False)
 
     def __init__(
             self,

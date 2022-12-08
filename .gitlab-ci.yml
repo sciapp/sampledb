@@ -55,6 +55,44 @@ analyze:
     - python3 -m pyflakes sampledb
     - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
 
+check-migrations:
+  stage: test
+  image: python:3.10-slim-bullseye
+  services:
+    - postgres:12
+  script:
+    # define environment variables needed for SampleDB demo
+    - export SAMPLEDB_CONTACT_EMAIL=example@example.org
+    - export SAMPLEDB_MAIL_SERVER=example.org
+    - export SAMPLEDB_MAIL_SENDER=example@example.org
+    # set up system dependencies
+    - apt-get update
+    - apt-get install -y git python3-pip libpython3-dev libpangocairo-1.0-0 gettext postgresql-client
+    # set up database without upgrade
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_without_upgrade.sql
+    # re-create database to ensure it is entirely empty
+    - dropdb -h postgres -U postgres postgres
+    - createdb -h postgres -U postgres postgres
+    # check out stable version
+    - git remote add upstream https://github.com/sciapp/sampledb.git
+    - git fetch upstream master
+    - git checkout FETCH_HEAD
+    # set up database with stable version
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # check out current version again
+    - git checkout -
+    # upgrade database using migrations
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
+    # ensure both backups yield identical backups
+    - diff --context postgres_without_upgrade.sql postgres_with_upgrade_from_master.sql
+
 check-translations:
   stage: test
   image: python:3.10-slim-bullseye
