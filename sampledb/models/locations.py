@@ -145,7 +145,7 @@ class ObjectLocationAssignment(db.Model):  # type: ignore
     responsible_user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     description = db.Column(postgresql.JSON, nullable=True)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    utc_datetime = db.Column(db.DateTime, nullable=True)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     location = db.relationship('Location')
     fed_id = db.Column(db.Integer, nullable=True)
