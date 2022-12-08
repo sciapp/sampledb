@@ -17,7 +17,7 @@ class File(db.Model):  # type: ignore
             '(fed_id IS NOT NULL AND component_id IS NOT NULL) OR (user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
             name='files_not_null_check'
         ),
-        db.UniqueConstraint('fed_id', 'component_id', name='files_fed_id_component_id_key')
+        db.UniqueConstraint('fed_id', 'object_id', 'component_id', name='files_fed_id_component_id_key')
     )
 
     id = db.Column(db.Integer, primary_key=True)
