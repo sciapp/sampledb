@@ -24,9 +24,9 @@ class Language(db.Model):  # type: ignore
     names = db.Column(db.JSON, nullable=False)
     datetime_format_datetime = db.Column(db.String)
     datetime_format_moment = db.Column(db.String)
-    datetime_format_moment_output = db.Column(db.String, nullable=False, default='lll', server_default='lll')
     enabled_for_input = db.Column(db.Boolean, nullable=False)
     enabled_for_user_interface = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
+    datetime_format_moment_output = db.Column(db.String, nullable=False, default='lll', server_default='lll')
 
     def __init__(
             self,
