@@ -28,7 +28,7 @@ from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
 
 
-def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None, possible_properties=None, passed_object_id=None, show_selecting_modal=False):
+def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None, possible_properties=None, passed_object_ids=None, show_selecting_modal=False, previous_actions=None):
     if object is None and previous_object is None:
         data = generate_placeholder(action.schema)
         if placeholder_data:
@@ -139,7 +139,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         has_grant_for_previous_object = False
     errors = {}
     form_data = {}
-    previous_actions = []
+    if not previous_actions:
+        override_previous_actions = False
+        previous_actions = []
+    else:
+        override_previous_actions = True
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
@@ -285,7 +289,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             action = [name for name in form_data if name.startswith('action_')][0]
             previous_actions.append(action)
 
-    if previous_actions:
+    if previous_actions and not override_previous_actions:
         try:
             for action in previous_actions:
                 _apply_action_to_data(action, data, schema)
@@ -430,7 +434,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             get_component=get_component,
             ENGLISH=english,
             possible_properties=possible_properties,
-            passed_object_id=passed_object_id,
+            passed_object_ids=passed_object_ids,
             show_selecting_modal=show_selecting_modal
         )
     else:

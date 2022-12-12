@@ -858,4 +858,37 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.group_categories.set_project_group_categories(project_id2, [lab_category.id])
         sampledb.logic.group_categories.set_basic_group_categories(group_id, [institute_category.id])
 
+        multi_measurement_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'samples': {
+                        'title': 'Samples',
+                        'type': 'array',
+                        'style': 'list',
+                        'items': {
+                            'title': 'Sample',
+                            'type': 'sample'
+                        }
+                    },
+                    'comment': {
+                        'title': {'en': 'Comment', 'de': 'Kommentar'},
+                        'type': 'text',
+                        'markdown': True,
+                        'languages': "all"
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, multi_measurement_action.id, name="multi measurement_action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(multi_measurement_action.id, sampledb.models.Permissions.READ)
+
     print("Success: set up demo data", flush=True)

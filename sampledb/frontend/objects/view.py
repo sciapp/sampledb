@@ -800,8 +800,6 @@ def new_object():
     if not action_id and not previous_object_id:
         return flask.abort(404)
 
-    object_id = flask.request.args.get('object_id', None)
-
     previous_object = None
     action = None
     if previous_object_id:
@@ -836,72 +834,107 @@ def new_object():
 
     placeholder_data = {}
     possible_properties = {}
+    previous_actions = []
 
-    if object_id is not None:
+    passed_object_ids = flask.request.args.getlist('object_id')
+    if passed_object_ids:
         try:
-            object_id = int(object_id)
+            passed_object_ids = [
+                int(passed_object_id)
+                for passed_object_id in passed_object_ids
+            ]
         except ValueError:
-            object_id = None
+            passed_object_ids = []
         else:
-            if object_id <= 0:
-                object_id = None
-    if object_id is not None:
+            if any(passed_object_id <= 0 for passed_object_id in passed_object_ids):
+                passed_object_ids = []
+    if passed_object_ids:
         try:
-            passed_object = get_object(object_id)
+            passed_objects = [
+                get_object(passed_object_id)
+                for passed_object_id in passed_object_ids
+            ]
         except errors.ObjectDoesNotExistError:
-            object_id = None
-    if object_id is not None and action is not None and action.schema is not None:
-        passed_object_action = logic.actions.get_action(passed_object.action_id)
+            passed_object_ids = []
+            passed_objects = []
+    else:
+        passed_objects = []
+    if passed_object_ids and passed_objects and action is not None and action.schema is not None:
+        passed_object_actions = [
+            logic.actions.get_action(passed_object.action_id)
+            for passed_object in passed_objects
+        ]
 
         allowed_types = ["object_reference"]
-        if models.ActionType.MEASUREMENT in [passed_object_action.type_id, passed_object_action.type.fed_id]:
+        if all(models.ActionType.MEASUREMENT in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
             allowed_types.append("measurement")
 
-        if models.ActionType.SAMPLE_CREATION in [passed_object_action.type_id, passed_object_action.type.fed_id]:
+        if all(models.ActionType.SAMPLE_CREATION in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
             allowed_types.append("sample")
 
-        possible_properties = {}
-
-        for property_name, property_data in action.schema.get('properties', {}).items():
-            property_type = property_data.get('type', '')
-            property_action_id = property_data.get('action_id', None)
-            property_action_type_id = property_data.get('action_type_id', None)
+        def is_property_schema_compatible(property_schema, allowed_types, passed_object_actions):
+            property_type = property_schema.get('type', '')
+            property_action_id = property_schema.get('action_id', None)
+            property_action_type_id = property_schema.get('action_type_id', None)
 
             if property_type not in allowed_types:
-                continue
+                return False
 
             if property_action_id:
                 valid_action_ids = [property_action_id] if type(property_action_id) == int else property_action_id
-                if valid_action_ids and passed_object_action.id not in valid_action_ids:
-                    continue
+                if valid_action_ids and any(passed_object_action.id not in valid_action_ids for passed_object_action in passed_object_actions):
+                    return False
 
             if property_action_type_id:
                 valid_action_type_ids = [property_action_type_id] if type(property_action_type_id) == int else property_action_type_id
-                if valid_action_type_ids and passed_object_action.type_id not in valid_action_type_ids:
-                    continue
+                if valid_action_type_ids and any(passed_object_action.type_id not in valid_action_type_ids for passed_object_action in passed_object_actions):
+                    return False
 
-            possible_properties[property_name] = property_data
+            return True
+
+        possible_properties = {}
+
+        for property_name, property_schema in action.schema.get('properties', {}).items():
+            if len(passed_object_ids) == 1 and is_property_schema_compatible(property_schema, allowed_types, passed_object_actions):
+                possible_properties[property_name] = property_schema
+            if property_schema.get('type') == 'array' and is_property_schema_compatible(property_schema['items'], allowed_types, passed_object_actions):
+                possible_properties[property_name] = property_schema
+
+        passed_object_property_names = []
 
         if len(possible_properties) == 1:
-            property_key = list(possible_properties.keys())[0]
-            placeholder_data = {
-                (property_key, ): {
-                    '_type': possible_properties[property_key].get('type', ''),
-                    'object_id': object_id
-                }
-            }
+            passed_object_property_names.extend(possible_properties)
         elif len(possible_properties) > 1:
             if fields_selected:
-                placeholder_data = {
-                    (property_key, ): {
-                        '_type': possible_properties[property_key].get('type', ''),
-                        'object_id': object_id
-                    }
-                    for property_key in flask.request.form
-                    if property_key in possible_properties
-                }
+                for property_key in flask.request.form:
+                    if property_key in possible_properties:
+                        passed_object_property_names.append(property_key)
             else:
                 placeholder_data = None
+        for property_key in passed_object_property_names:
+            if possible_properties[property_key].get('type') == 'array':
+                placeholder_data[(property_key, )] = [
+                    {
+                        '_type': possible_properties[property_key].get('type', ''),
+                        'object_id': passed_object_id
+                    }
+                    for passed_object_id in passed_object_ids
+                ]
+                if possible_properties[property_key].get('type') == 'array':
+                    num_min_items = possible_properties[property_key].get('minItems', 0)
+                    num_default_items = possible_properties[property_key].get('defaultItems', 0)
+                    num_passed_objects = len(passed_object_ids)
+                    if num_default_items > num_passed_objects:
+                        previous_actions.extend([f'action_object__{property_key}__{num_passed_objects}__remove'] * (num_default_items - num_passed_objects))
+                    if num_min_items > num_passed_objects:
+                        placeholder_data[(property_key,)].extend([None] * (num_min_items - num_passed_objects))
+                    if num_passed_objects > max(num_default_items, num_min_items):
+                        previous_actions.extend([f'action_object__{property_key}__?__add'] * (num_passed_objects - max(num_default_items, num_min_items)))
+            else:
+                placeholder_data[(property_key, )] = {
+                    '_type': possible_properties[property_key].get('type', ''),
+                    'object_id': passed_object_ids[0]
+                }
 
     # TODO: check instrument permissions
-    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data, possible_properties=possible_properties, passed_object_id=object_id, show_selecting_modal=(not fields_selected))
+    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data, possible_properties=possible_properties, passed_object_ids=passed_object_ids, show_selecting_modal=(not fields_selected), previous_actions=previous_actions)

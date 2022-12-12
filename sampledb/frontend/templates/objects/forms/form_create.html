@@ -3,10 +3,10 @@
 {% block title %}{{ _('New Object') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  {% if possible_properties|length > 1 and passed_object_id and show_selecting_modal %}
+  {% if possible_properties|length > 1 and passed_object_ids and show_selecting_modal %}
   <div class="modal fade" id="selectionModal" tabindex="-1" role="dialog" data-target="selectionModalLabel">
     <div class="modal-dialog" role="document">
-      <form class="form" method="post" action="{{ url_for('.new_object', action_id=action_id, object_id=passed_object_id, fields_selected=True) }}">
+      <form class="form" method="post" action="{{ url_for('.new_object', action_id=action_id, object_id=passed_object_ids, fields_selected=True) }}">
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -215,7 +215,7 @@
         permissions_object_id_select.selectpicker('val', null);
     }
     {% endif %}
-    {% if possible_properties|length > 1 and passed_object_id and show_selecting_modal %}
+    {% if possible_properties|length > 1 and passed_object_ids and show_selecting_modal %}
       $('#selectionModal').modal('show');
     {% endif %}
 
