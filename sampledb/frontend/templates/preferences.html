@@ -237,9 +237,11 @@
               NotificationType.OTHER: (_("Other"), False)
             }
         %}
+        {% set instrument_related_notification_types = [NotificationType.INSTRUMENT_LOG_ENTRY_CREATED, NotificationType.INSTRUMENT_LOG_ENTRY_EDITED]%}
         {% for notification_type in notification_types %}
           {% set notification_description = notification_types[notification_type][0] %}
           {% set notification_can_be_ignored = notification_types[notification_type][1] %}
+          {% if notification_type not in instrument_related_notification_types %}
           <tr>
             <td style="vertical-align: middle">{{ notification_description }}</td>
             {% for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL] %}
@@ -251,6 +253,7 @@
             </td>
             {% endfor %}
           </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>

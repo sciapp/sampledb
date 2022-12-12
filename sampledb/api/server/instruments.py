@@ -4,6 +4,8 @@ RESTful API for SampleDB
 """
 import typing
 
+import flask
+
 from .authentication import multi_auth
 from ..utils import Resource, ResponseData
 from ...logic.instruments import get_instrument, get_instruments
@@ -26,6 +28,10 @@ def instrument_to_json(instrument: instruments.Instrument) -> typing.Dict[str, t
 class Instrument(Resource):
     @multi_auth.login_required
     def get(self, instrument_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(
                 instrument_id=instrument_id
@@ -40,6 +46,8 @@ class Instrument(Resource):
 class Instruments(Resource):
     @multi_auth.login_required
     def get(self) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return []
         instruments = get_instruments()
         return [
             instrument_to_json(instrument)

@@ -56,7 +56,7 @@
           {% if action.user is not none %}
             {{ action.user.name }} /
           {% endif %}
-          {% if action.instrument is not none %}
+          {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
             {{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} &mdash;
           {% endif %}
           {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }}{% if action.component_id is not none %}, #{{ action.fed_id }} @ {{ get_component(action.component_id).get_name() }}{% endif %})

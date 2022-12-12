@@ -315,7 +315,7 @@ def upload_object(
     schema = object.schema
 
     instrument_name = None
-    if object.action_id:
+    if object.action_id and not flask.current_app.config['DISABLE_INSTRUMENTS']:
         action = actions.get_action(object.action_id)
         if action.instrument:
             instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')

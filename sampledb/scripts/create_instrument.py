@@ -21,6 +21,9 @@ def main(arguments: typing.List[str]) -> None:
     name, description = arguments
     app = create_app()
     with app.app_context():
+        if app.config['DISABLE_INSTRUMENTS']:
+            print('Error: instruments are disabled', file=sys.stderr)
+            exit(1)
         instruments = get_instruments()
         for instrument in instruments:
             if instrument.name.get('en') == name:

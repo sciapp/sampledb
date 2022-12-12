@@ -37,6 +37,7 @@
     {{ import_information_symbol(object) }}
   </h1>
   <h2>{{ _('Information') }}</h2>
+  {% if not config['DISABLE_INSTRUMENTS'] %}
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
     <div class="col-md-9">
@@ -46,6 +47,7 @@
       {% else %}&mdash;{% endif %}
     </div>
   </div>
+  {% endif %}
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">{{ _('Action') }}
       {% if action is not none %}

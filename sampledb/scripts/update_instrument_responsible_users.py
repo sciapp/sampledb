@@ -33,6 +33,9 @@ def main(arguments: typing.List[str]) -> None:
         instrument_responsible_user_ids.append(user_id)
     app = create_app()
     with app.app_context():
+        if app.config['DISABLE_INSTRUMENTS']:
+            print('Error: instruments are disabled', file=sys.stderr)
+            exit(1)
         try:
             instrument = get_instrument(instrument_id)
         except InstrumentDoesNotExistError:

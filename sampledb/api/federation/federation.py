@@ -116,6 +116,8 @@ class Objects(Resource):
 
         while len(refs) > 0:
             type, id = refs.pop()
+            if type == 'instruments' and flask.current_app.config['DISABLE_INSTRUMENTS']:
+                continue
             if type in ref_ids and id not in ref_ids[type]:
                 processed = preprocessors[type](id, component, refs, markdown_images)
                 if processed is not None:

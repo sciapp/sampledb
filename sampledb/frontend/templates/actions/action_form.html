@@ -302,6 +302,7 @@
         {% endif %}
       </div>
 
+      {% if not config['DISABLE_INSTRUMENTS'] %}
       <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}style="display: none"{% endif %}>
         <label for="input-instrument" class="control-label">{{ _('Instrument') }}</label>
         <select class="selectpicker form-control" id="input-instrument" name="{{ action_form.instrument.name }}" {% if not may_change_instrument %}disabled="disabled"{% endif %} data-none-selected-text="{{ _('No instrument selected') }}">
@@ -310,6 +311,9 @@
           {% endfor %}
         </select>
       </div>
+      {% else %}
+        <input name="{{ action_form.instrument.name }}" type="hidden" value="-1" {% if not may_change_instrument %}disabled="disabled"{% endif %} />
+      {% endif %}
 
       <div class="checkbox">
         <label for="input-is_hidden" style="font-weight:400">

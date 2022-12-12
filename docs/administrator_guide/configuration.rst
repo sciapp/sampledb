@@ -293,5 +293,7 @@ Miscellaneous
      - If set, show the date and time of the last user information update in each user profile (default: True). Updates by an administrator will be shown regardless of this configuration value.
    * - SAMPLEDB_ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES
      - If set, only administrators will be able to manage group categories (default: True).
+   * - SAMPLEDB_DISABLE_INSTRUMENTS
+     - If set, features related to instruments will be disabled (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

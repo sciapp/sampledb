@@ -42,6 +42,7 @@ Currently in development.
 - Allow showing objects stored at sub-locations
 - Added group categories
 - Allow assigning a location to an instrument
+- Allow disabling instrument features
 
 Version 0.20
 ------------

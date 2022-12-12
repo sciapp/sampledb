@@ -603,6 +603,8 @@ SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS = True
 
 SHOW_LAST_PROFILE_UPDATE = True
 
+DISABLE_INSTRUMENTS = False
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -660,6 +662,7 @@ for config_name in {
     'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
     'SHOW_LAST_PROFILE_UPDATE',
     'USE_TYPEAHEAD_FOR_OBJECTS',
+    'DISABLE_INSTRUMENTS',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):
