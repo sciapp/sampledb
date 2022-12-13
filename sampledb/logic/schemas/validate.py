@@ -516,14 +516,10 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
         if sample.action_id is None:
             raise ValidationError('object must be sample', path)
         action = actions.get_action(sample.action_id)
-        if action.component is not None and action.type_id is not None:
-            if action.type_id != ActionType.SAMPLE_CREATION:
-                action_type = actions.get_action_type(action.type_id)
-                if action_type.fed_id != ActionType.SAMPLE_CREATION:
-                    raise ValidationError('object must be sample', path)
-        else:
-            if action.type_id != ActionType.SAMPLE_CREATION:
-                raise ValidationError('object must be sample', path)
+        if action.type is None:
+            raise ValidationError('object must be sample', path)
+        if action.type_id != ActionType.SAMPLE_CREATION and action.type.fed_id != ActionType.SAMPLE_CREATION:
+            raise ValidationError('object must be sample', path)
 
 
 def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
@@ -560,14 +556,10 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
         if measurement.action_id is None:
             raise ValidationError('object must be measurement', path)
         action = actions.get_action(measurement.action_id)
-        if action.component is not None and action.type_id is not None:
-            if action.type_id != ActionType.MEASUREMENT:
-                action_type = actions.get_action_type(action.type_id)
-                if action_type.fed_id != ActionType.MEASUREMENT:
-                    raise ValidationError('object must be measurement', path)
-        else:
-            if action.type_id != ActionType.MEASUREMENT:
-                raise ValidationError('object must be measurement', path)
+        if action.type is None:
+            raise ValidationError('object must be measurement', path)
+        if action.type_id != ActionType.MEASUREMENT and action.type.fed_id != ActionType.MEASUREMENT:
+            raise ValidationError('object must be measurement', path)
 
 
 def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
@@ -653,7 +645,9 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 if object.action_id is None:
                     raise ValidationError('object has no action type', path)
                 action = actions.get_action(object.action_id)
-                if action.type is None or (action.type_id not in valid_action_type_ids and not (action.type.fed_id is not None and action.type.fed_id < 0 and action.type.fed_id in valid_action_type_ids)):
+                if action.type is None:
+                    raise ValidationError('object has no action type', path)
+                if action.type_id not in valid_action_type_ids and (action.type.fed_id is None or action.type.fed_id >= 0 or action.type.fed_id not in valid_action_type_ids):
                     raise ValidationError('object has wrong action type', path)
 
 
