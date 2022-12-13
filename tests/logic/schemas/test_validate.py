@@ -3,6 +3,7 @@
 
 """
 import datetime
+
 import pytest
 
 import sampledb
@@ -1144,6 +1145,68 @@ def test_validate_sample_invalid_object_id():
         validate(instance, schema)
 
 
+def test_validate_sample_with_federated_action_type():
+    user = sampledb.logic.users.create_user('User', 'example@example.com', sampledb.models.UserType.PERSON)
+    component = sampledb.logic.components.add_component(
+        uuid='c52c42c3-1b6d-44a9-a2c7-88d99c4c9677'
+    )
+    action_type = sampledb.logic.actions.create_action_type(
+        admin_only=False,
+        show_on_frontpage=False,
+        show_in_navbar=False,
+        enable_labels=False,
+        enable_files=False,
+        enable_locations=False,
+        enable_publications=False,
+        enable_comments=False,
+        enable_activity_log=False,
+        enable_related_objects=False,
+        enable_project_link=False,
+        disable_create_objects=False,
+        is_template=False,
+        fed_id=1,
+        component_id=component.id
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=action_type.id,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    schema = {
+        'title': 'Example',
+        'type': 'sample'
+    }
+    instance = {
+        '_type': 'sample',
+        'object_id': object.id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    mutable_action_type = sampledb.models.ActionType.query.filter_by(id=action_type.id).first()
+    mutable_action_type.fed_id = -1
+    sampledb.db.session.add(mutable_action_type)
+    sampledb.db.session.commit()
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    mutable_action_type = sampledb.models.ActionType.query.filter_by(id=action_type.id).first()
+    mutable_action_type.fed_id = sampledb.models.ActionType.SAMPLE_CREATION
+    sampledb.db.session.add(mutable_action_type)
+    sampledb.db.session.commit()
+    validate(instance, schema)
+
+
 def test_validate_measurement():
     from sampledb.models.users import User, UserType
     from sampledb.models.actions import Action
@@ -1344,6 +1407,68 @@ def test_validate_measurement_invalid_object_id():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_measurement_with_federated_action_type():
+    user = sampledb.logic.users.create_user('User', 'example@example.com', sampledb.models.UserType.PERSON)
+    component = sampledb.logic.components.add_component(
+        uuid='c52c42c3-1b6d-44a9-a2c7-88d99c4c9677'
+    )
+    action_type = sampledb.logic.actions.create_action_type(
+        admin_only=False,
+        show_on_frontpage=False,
+        show_in_navbar=False,
+        enable_labels=False,
+        enable_files=False,
+        enable_locations=False,
+        enable_publications=False,
+        enable_comments=False,
+        enable_activity_log=False,
+        enable_related_objects=False,
+        enable_project_link=False,
+        disable_create_objects=False,
+        is_template=False,
+        fed_id=1,
+        component_id=component.id
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=action_type.id,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    schema = {
+        'title': 'Example',
+        'type': 'measurement'
+    }
+    instance = {
+        '_type': 'measurement',
+        'object_id': object.id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    mutable_action_type = sampledb.models.ActionType.query.filter_by(id=action_type.id).first()
+    mutable_action_type.fed_id = -1
+    sampledb.db.session.add(mutable_action_type)
+    sampledb.db.session.commit()
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    mutable_action_type = sampledb.models.ActionType.query.filter_by(id=action_type.id).first()
+    mutable_action_type.fed_id = sampledb.models.ActionType.MEASUREMENT
+    sampledb.db.session.add(mutable_action_type)
+    sampledb.db.session.commit()
+    validate(instance, schema)
 
 
 def test_validate_object_reference():
@@ -1632,6 +1757,69 @@ def test_validate_object_reference_wrong_action():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_object_reference_with_federated_action_type():
+    user = sampledb.logic.users.create_user('User', 'example@example.com', sampledb.models.UserType.PERSON)
+    component = sampledb.logic.components.add_component(
+        uuid='c52c42c3-1b6d-44a9-a2c7-88d99c4c9677'
+    )
+    action_type = sampledb.logic.actions.create_action_type(
+        admin_only=False,
+        show_on_frontpage=False,
+        show_in_navbar=False,
+        enable_labels=False,
+        enable_files=False,
+        enable_locations=False,
+        enable_publications=False,
+        enable_comments=False,
+        enable_activity_log=False,
+        enable_related_objects=False,
+        enable_project_link=False,
+        disable_create_objects=False,
+        is_template=False,
+        fed_id=1,
+        component_id=component.id
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=action_type.id,
+        schema={
+            "title": "Measurement Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Measurement Name",
+                    "type": "text"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'action_type_id': sampledb.models.ActionType.SIMULATION
+    }
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object.id
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    mutable_action_type = sampledb.models.ActionType.query.filter_by(id=action_type.id).first()
+    mutable_action_type.fed_id = -1
+    sampledb.db.session.add(mutable_action_type)
+    sampledb.db.session.commit()
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+    mutable_action_type = sampledb.models.ActionType.query.filter_by(id=action_type.id).first()
+    mutable_action_type.fed_id = sampledb.models.ActionType.SIMULATION
+    sampledb.db.session.add(mutable_action_type)
+    sampledb.db.session.commit()
+    validate(instance, schema)
 
 
 def test_validate_tags():
