@@ -31,7 +31,7 @@ def toggle_favorite_action():
         flask.flash(_('An error occurred while editing your favorite actions. Please try again.'), 'error')
     return flask.redirect(flask.url_for(
         '.actions',
-        sample_id=flask.request.args.get('sample_id', None),
+        object_id=flask.request.args.getlist('object_id'),
         t=flask.request.args.get('t', None)
     ))
 
