@@ -4,11 +4,10 @@ import pytest
 
 import sampledb.models
 import sampledb.logic
-from sampledb import db
 from sampledb.logic import errors
 from sampledb.logic.components import add_component
 from sampledb.logic.users import create_user_alias, get_user_alias, get_user_aliases_for_user, update_user_alias, \
-    get_user_aliases_for_component
+    get_user_aliases_for_component, delete_user_alias
 from sampledb.models import User, UserType, UserFederationAlias
 
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
@@ -224,7 +223,12 @@ def test_create_user_alias(component, user):
         create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, True)
 
 
-def test_get_user_alias(component, user):
+def test_get_user_alias(component, user, flask_server):
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    user_alias = get_user_alias(user.id, component.id)
+    assert user_alias.is_default
+
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = False
     with pytest.raises(errors.UserAliasDoesNotExistError):
         get_user_alias(user.id, component.id)
     with pytest.raises(errors.UserDoesNotExistError):
@@ -245,7 +249,7 @@ def test_get_user_alias(component, user):
     assert alias.role == created_alias.role
 
 
-def test_get_user_aliases_for_user():
+def test_get_user_aliases_for_user(flask_server):
     component1 = add_component(address=None, uuid=UUID_1, name='Example component 1', description='')
     component2 = add_component(address=None, uuid=UUID_2, name='Example component 2', description='')
     user1 = sampledb.models.User(name="Basic User 1", email="example1@example.com", type=sampledb.models.UserType.PERSON)
@@ -254,6 +258,16 @@ def test_get_user_aliases_for_user():
     user2 = sampledb.models.User(name="Basic User 2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user2)
     sampledb.db.session.commit()
+
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    user_aliases = get_user_aliases_for_user(user1.id)
+    assert {component1.id, component2.id} == {alias.component_id for alias in user_aliases}
+    assert all(alias.is_default for alias in user_aliases)
+
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = False
+    user_aliases = get_user_aliases_for_user(user1.id)
+    assert not user_aliases
+
     alias_user1_component1 = create_user_alias(user1.id, component1.id, 'B. User 1', False, None, False, None, False, None, False, None, False)
     alias_user1_component2 = create_user_alias(user1.id, component2.id, None, False, None, False, None, False, None, False, None, False)
     alias_user2_component1 = create_user_alias(user2.id, component1.id, 'B. User 2', False, None, False, None, False, None, False, None, False)
@@ -270,7 +284,15 @@ def test_get_user_aliases_for_user():
         get_user_aliases_for_user(user2.id + 1)
 
 
-def test_update_user_alias(component, user):
+def test_update_user_alias(component, user, flask_server):
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    assert get_user_alias(user.id, component.id).is_default
+    update_user_alias(user.id, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
+    assert not get_user_alias(user.id, component.id).is_default
+    delete_user_alias(user.id, component.id)
+    assert get_user_alias(user.id, component.id).is_default
+
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = False
     with pytest.raises(errors.UserAliasDoesNotExistError):
         update_user_alias(user.id, component.id, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
     create_user_alias(user.id, component.id, 'Testuser', False, 'test@example.com', False, None, False, None, False, None, False)
@@ -292,7 +314,7 @@ def test_update_user_alias(component, user):
         update_user_alias(user.id, component.id + 1, 'User', False, 'contact@example.com', False, None, False, 'Company ltd.', False, 'Scientist', False)
 
 
-def test_get_user_aliases_for_component():
+def test_get_user_aliases_for_component(flask_server):
     component1 = add_component(address=None, uuid=UUID_1, name='Example component 1', description='')
     component2 = add_component(address=None, uuid=UUID_2, name='Example component 2', description='')
     user1 = sampledb.models.User(name="Basic User 1", email="example1@example.com", type=sampledb.models.UserType.PERSON)
@@ -301,6 +323,16 @@ def test_get_user_aliases_for_component():
     user2 = sampledb.models.User(name="Basic User 2", email="example2@example.com", type=sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user2)
     sampledb.db.session.commit()
+
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    user_aliases = get_user_aliases_for_component(component1.id)
+    assert {user1.id, user2.id} == {alias.user_id for alias in user_aliases}
+    assert all(alias.is_default for alias in user_aliases)
+
+    flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = False
+    user_aliases = get_user_aliases_for_component(component1.id)
+    assert not user_aliases
+
     ts1 = datetime.datetime.utcnow()
     alias_user1_component1 = create_user_alias(user1.id, component1.id, 'B. User 1', False, None, False, None, False, None, False, None, False)
     alias_user1_component2 = create_user_alias(user1.id, component2.id, None, False, None, False, None, False, None, False, None, False)

@@ -324,6 +324,7 @@ def user_alias():
 
     aliases_by_component = {
         alias.component_id: {
+            'is_default': alias.is_default,
             'name': alias.name if alias.name is not None else '',
             'email': alias.email if alias.email is not None else '',
             'orcid': alias.orcid if alias.orcid is not None else '',
