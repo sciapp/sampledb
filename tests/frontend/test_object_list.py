@@ -140,6 +140,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert query_params['creation_info'] == ['user']
     assert query_params['last_edit_info'] == ['date']
     assert query_params['action_info'] == ['action']
+    assert 'other_databases_info' not in query_params
     assert 'display_properties' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
@@ -155,6 +156,7 @@ def test_object_list_filters_options(flask_server, driver, user):
         "creation_info": ["user"],
         "last_edit_info": ["date"],
         "action_info": ["action"],
+        "other_databases_info": False,
         "display_properties": [],
     }
 
@@ -193,4 +195,5 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert 'creation_info' not in query_params
     assert 'last_edit_info' not in query_params
     assert 'action_info' not in query_params
+    assert 'other_databases_info' not in query_params
     assert 'display_properties' not in query_params
