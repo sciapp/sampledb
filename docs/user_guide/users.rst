@@ -93,3 +93,6 @@ A user alias allows to set name, affiliation, and role for each database individ
 Also, it can be allowed or forbidden to share the email address and ORCID iD.
 
 If a user does not create an alias for a database, no personal information will be shared with that database.
+
+.. note::
+    Administrators can enable that the information from user profiles will be shared by default.

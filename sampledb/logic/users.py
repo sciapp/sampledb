@@ -12,7 +12,7 @@ import flask
 import flask_login
 from flask_babel import gettext
 
-from .components import get_component, Component
+from .components import get_component, get_components, Component
 from .. import db
 from . import errors, settings
 from .. models import users, UserType
@@ -186,12 +186,14 @@ class UserFederationAlias:
     use_real_role: bool
     extra_fields: typing.Dict[str, typing.Any]
     last_modified: datetime.datetime
+    is_default: bool
 
     @classmethod
     def from_database(cls, alias: users.UserFederationAlias) -> 'UserFederationAlias':
         if any([alias.use_real_name, alias.use_real_email, alias.use_real_orcid, alias.use_real_affiliation, alias.use_real_role]):
             user = get_user(alias.user_id)
             return UserFederationAlias(
+                is_default=False,
                 user_id=alias.user_id,
                 component_id=alias.component_id,
                 name=user.name if alias.use_real_name else alias.name,
@@ -209,6 +211,7 @@ class UserFederationAlias:
             )
         else:
             return UserFederationAlias(
+                is_default=False,
                 user_id=alias.user_id,
                 component_id=alias.component_id,
                 name=alias.name,
@@ -224,6 +227,27 @@ class UserFederationAlias:
                 extra_fields=copy.deepcopy(alias.extra_fields),
                 last_modified=alias.last_modified
             )
+
+    @classmethod
+    def from_user_profile(cls, user_id: int, component_id: int) -> 'UserFederationAlias':
+        user = get_user(user_id)
+        return UserFederationAlias(
+            is_default=True,
+            user_id=user_id,
+            component_id=component_id,
+            name=user.name,
+            use_real_name=True,
+            email=user.email,
+            use_real_email=True,
+            orcid=user.orcid,
+            use_real_orcid=True,
+            affiliation=user.affiliation,
+            use_real_affiliation=True,
+            role=user.role,
+            use_real_role=True,
+            extra_fields=copy.deepcopy(user.extra_fields),
+            last_modified=user.last_modified
+        )
 
 
 def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:
@@ -512,6 +536,8 @@ def get_user_alias(user_id: int, component_id: int) -> UserFederationAlias:
     if alias is None:
         get_user(user_id)
         get_component(component_id)
+        if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+            return UserFederationAlias.from_user_profile(user_id, component_id)
         raise errors.UserAliasDoesNotExistError()
     return UserFederationAlias.from_database(alias)
 
@@ -526,6 +552,17 @@ def get_user_aliases_for_user(user_id: int) -> typing.List[UserFederationAlias]:
     """
     get_user(user_id)
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id).all()
+    if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+        return [
+            UserFederationAlias.from_database(a) for a in alias
+        ] + [
+            UserFederationAlias.from_user_profile(user_id, component.id)
+            for component in get_components()
+            if not any(
+                component.id == a.component_id
+                for a in alias
+            )
+        ]
     return [UserFederationAlias.from_database(a) for a in alias]
 
 
@@ -556,6 +593,17 @@ def get_user_aliases_for_component(component_id: int, modified_since: typing.Opt
                 )
             )
         ).all()
+    if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+        return [
+            UserFederationAlias.from_database(a) for a in alias
+        ] + [
+            UserFederationAlias.from_user_profile(user.id, component_id)
+            for user in get_users()
+            if not any(
+                user.id == a.user_id
+                for a in alias
+            ) and (modified_since is None or user.last_modified >= modified_since)
+        ]
     return [UserFederationAlias.from_database(a) for a in alias]
 
 
@@ -631,6 +679,10 @@ def update_user_alias(
     """
     Update a users' alias for a component.
 
+    If a user does not have an alias for this component yet, but default
+    aliases are enabled, a new non-default alias will be created with the
+    given settings without raising a UserAliasDoesNotExistError exception.
+
     :param user_id: the ID of an existing user
     :param component_id:  the ID of an existing component
     :param name: the alias name
@@ -651,6 +703,22 @@ def update_user_alias(
     if alias is None:
         get_user(user_id)
         get_component(component_id)
+        if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+            create_user_alias(
+                user_id=user_id,
+                component_id=component_id,
+                name=name,
+                use_real_name=use_real_name,
+                email=email,
+                use_real_email=use_real_email,
+                orcid=orcid,
+                use_real_orcid=use_real_orcid,
+                affiliation=affiliation,
+                use_real_affiliation=use_real_affiliation,
+                role=role,
+                use_real_role=use_real_role
+            )
+            return
         raise errors.UserAliasDoesNotExistError()
     if use_real_name:
         name = None

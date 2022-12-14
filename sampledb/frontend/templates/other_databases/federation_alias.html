@@ -4,7 +4,13 @@
 
 {% block content %}
 <h1>{{ _('User Alias Settings') }}</h1>
-<p class="help-block">{{ _('When an object is shared by %(service_name)s with other databases, by default no information about you except for your user ID will be shared. You can define a user alias for each database and control what information may be shared.', service_name=service_name) }}</p>
+<p class="help-block">
+{% if config['ENABLE_DEFAULT_USER_ALIASES'] %}
+  {{ _('When an object is shared by %(service_name)s with other databases, %(service_name)s is configured to share the information from your user profile by default. You can define a user alias for each database and control what information should be shared instead.', service_name=service_name) }}
+{% else %}
+  {{ _('When an object is shared by %(service_name)s with other databases, by default no information about you except for your user ID will be shared. You can define a user alias for each database and control what information may be shared.', service_name=service_name) }}
+{% endif %}
+</p>
 {% if aliases %}
   <div>
     <table class="table">
@@ -28,7 +34,7 @@
                 <form method="post" action="{{ url_for('.user_alias') }}">
                   {{ delete_alias_form.hidden_tag() }}
                   <input type="hidden" name="{{ delete_alias_form.component.name }}" value="{{ alias['component_id'] }}" />
-                  <button type="submit" class="btn btn-danger" aria-label="{{ _('Delete') }}" style="min-width: 100%" name="delete">{{ _('Delete') }}</button>
+                  <button type="submit" class="btn btn-danger" aria-label="{{ _('Delete') }}" style="min-width: 100%" name="delete" {% if alias.is_default %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('%(service_name)s is configured to share user information automatically.', service_name=config['SERVICE_NAME']) }}"{% endif %}>{{ _('Delete') }}</button>
                 </form>
               </div>
               {% endif %}
