@@ -204,10 +204,10 @@
     <div class="form-group">
       <label for="input-copy-from-add" class="col-sm-4 control-label">{{ _('Copy from') }}</label>
       <div class="col-sm-8 div-copy-from">
-        <select class="selectpicker" id="input-copy-from-add" data-width="100%">
-          <option value=-1 selected>{{ _('user profile') }}</option>
+        <select class="selectpicker" id="input-copy-from-add" data-width="100%" data-hide-disabled="true">
+          <option value="-1" selected>{{ _('user profile') }}</option>
           {% for alias in aliases %}
-          <option value={{ alias['component_id'] }}>{{ component_names[alias['component_id']] }}</option>
+          <option value="{{ alias['component_id'] }}">{{ component_names[alias['component_id']] }}</option>
           {% endfor %}
         </select><button type="button" class="btn btn-default" onclick="copyAliasFromInput('-add');" aria-label="{{ _('Copy') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy') }}</span></button>
       </div>
@@ -304,10 +304,10 @@
               <div class="row">
                 <label for="input-copy-from-edit" class="col-sm-4 control-label">{{ _('Copy from') }}</label>
                 <div class="col-sm-8 div-copy-from">
-                  <select class="selectpicker" id="input-copy-from-edit" data-width="100%">
-                    <option value=-1 selected>{{ _('user profile') }}</option>
+                  <select class="selectpicker" id="input-copy-from-edit" data-width="100%" data-hide-disabled="true">
+                    <option value="-1" selected>{{ _('user profile') }}</option>
                     {% for alias in aliases %}
-                    <option value={{ alias['component_id'] }}>{{ component_names[alias['component_id']] }}</option>
+                    <option value="{{ alias['component_id'] }}">{{ component_names[alias['component_id']] }}</option>
                     {% endfor %}
                   </select><button type="button" class="btn btn-default" onclick="copyAliasFromInput('-edit');" aria-label="{{ _('Copy') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy') }}</span></button>
                 </div>
