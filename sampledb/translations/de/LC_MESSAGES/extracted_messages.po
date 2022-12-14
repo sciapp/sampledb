@@ -1039,6 +1039,12 @@ msgstr ""
 "Sie müssen ein Mitglied dieser Projektgruppe sein, um ihre Objekte "
 "anzeigen zu können."
 
+msgid "Unable to parse database ID."
+msgstr "Datenbank-ID konnte nicht geparst werden."
+
+msgid "Invalid database ID."
+msgstr "Ungültige Datenbank-ID."
+
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
 
@@ -4234,6 +4240,9 @@ msgstr "mit %(permissions)s-Berechtigungen für die einfache Gruppe:"
 msgid "with %(permissions)s permissions for project group:"
 msgstr "mit %(permissions)s-Berechtigungen für die Projektgruppe:"
 
+msgid "from other database:"
+msgstr "aus anderer Datenbank:"
+
 msgid "Options"
 msgstr "Einstellungen"
 
@@ -4305,6 +4314,12 @@ msgstr "Nach Publikation filtern"
 
 msgid "All publications"
 msgstr "Alle Publikationen"
+
+msgid "Filter by Other Database"
+msgstr "Nach Anderer Datenbank filtern"
+
+msgid "All databases"
+msgstr "Alle Datenbanken"
 
 msgid "Created"
 msgstr "Erstellt"

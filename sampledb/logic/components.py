@@ -10,7 +10,7 @@ from flask_babel import _
 import flask
 
 from .. import db
-from ..models import components
+from ..models import components, objects
 from . import errors
 
 # component names are limited to this (semi-arbitrary) length
@@ -232,3 +232,28 @@ def update_component(component_id: int, name: typing.Optional[str] = None, addre
     component.description = description
     db.session.add(component)
     db.session.commit()
+
+
+def get_object_ids_for_component_id(
+        component_id: int
+) -> typing.Set[int]:
+    """
+    Get the set of object IDs for all objects imported from a given component.
+
+    :param component_id: the ID of an existing component
+    :return: the set of object IDs
+    :raise errors.ComponentDoesNotExistError: when no component with the given
+        component ID exists
+    """
+    object_ids = db.session.query(  # type: ignore
+        objects.Objects._current_table.c.object_id
+    ).filter(
+        objects.Objects._current_table.c.component_id == component_id
+    ).all()
+    if not object_ids:
+        # ensure component exists
+        get_component(component_id)
+    return {
+        row[0]
+        for row in object_ids
+    }

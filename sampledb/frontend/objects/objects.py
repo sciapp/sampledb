@@ -49,6 +49,7 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'location',
     'doi',
     'project',
+    'component_id',
 )
 
 OBJECT_LIST_OPTION_PARAMETERS = (
@@ -147,7 +148,9 @@ def objects():
         filter_group_permissions = None
         filter_project_id = None
         filter_project_permissions = None
+        filter_component_id = None
         all_publications = []
+        all_components = []
     else:
         pagination_enabled = True
 
@@ -183,6 +186,7 @@ def objects():
                 filter_group_permissions,
                 filter_project_id,
                 filter_project_permissions,
+                filter_component_id,
             ) = _parse_object_list_filters(
                 params=flask.request.args,
                 valid_location_ids=valid_location_ids,
@@ -237,6 +241,13 @@ def objects():
                 'grant': Permissions.GRANT
             }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
 
+            filter_component_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_component_id', None)
+            if filter_component_id:
+                try:
+                    filter_component_id = int(filter_component_id)
+                except ValueError:
+                    filter_component_id = None
+
             filter_related_user_id = None
             filter_group_id = None
             filter_group_permissions = None
@@ -263,6 +274,7 @@ def objects():
             name_only = False
 
         all_publications = logic.publications.get_publications_for_user(flask_login.current_user.id)
+        all_components = logic.components.get_components()
 
         if flask.request.args.get('limit', '') == 'all':
             pagination_limit = None
@@ -390,6 +402,10 @@ def objects():
             object_ids_for_doi = None
         else:
             object_ids_for_doi = set(logic.publications.get_object_ids_linked_to_doi(filter_doi))
+        if filter_component_id is None:
+            object_ids_for_component_id = None
+        else:
+            object_ids_for_component_id = logic.components.get_object_ids_for_component_id(filter_component_id)
 
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
@@ -410,6 +426,11 @@ def objects():
                     object_ids = object_ids_for_doi
                 else:
                     object_ids = object_ids.intersection(object_ids_for_doi)
+            if object_ids_for_component_id is not None:
+                if object_ids is None:
+                    object_ids = object_ids_for_component_id
+                else:
+                    object_ids = object_ids.intersection(object_ids_for_component_id)
 
             if object_ids is not None:
                 pagination_enabled = False
@@ -641,6 +662,13 @@ def objects():
     else:
         filter_doi_info = None
 
+    if filter_component_id:
+        filter_other_database_info = {
+            'component': get_component(component_id=filter_component_id)
+        }
+    else:
+        filter_other_database_info = None
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -679,7 +707,10 @@ def objects():
         filter_action_type_ids=filter_action_type_ids,
         all_locations=all_locations,
         filter_location_ids=filter_location_ids,
+        filter_other_database_info=filter_other_database_info,
+        filter_component_id=filter_component_id,
         all_publications=all_publications,
+        all_components=all_components,
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         build_modified_url=_build_modified_url,
@@ -808,7 +839,9 @@ def _parse_object_list_filters(
     typing.Optional[Permissions],
     typing.Optional[int],
     typing.Optional[Permissions],
+    typing.Optional[int]
 ]:
+    FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     success, filter_location_ids = _parse_filter_id_params(
         params=params,
         param_aliases=['location_ids', 'location'],
@@ -819,7 +852,7 @@ def _parse_object_list_filters(
         invalid_id_error=_('Invalid location ID.')
     )
     if not success:
-        return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        return FALLBACK_RESULT
 
     success, filter_action_ids = _parse_filter_id_params(
         params=params,
@@ -831,7 +864,7 @@ def _parse_object_list_filters(
         invalid_id_error=_('Invalid action ID.')
     )
     if not success:
-        return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        return FALLBACK_RESULT
 
     success, filter_action_type_ids = _parse_filter_id_params(
         params=params,
@@ -847,7 +880,7 @@ def _parse_object_list_filters(
         invalid_id_error=_('Invalid action type ID.')
     )
     if not success:
-        return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+        return FALLBACK_RESULT
 
     if 'related_user' in params:
         try:
@@ -855,10 +888,10 @@ def _parse_object_list_filters(
             get_user(filter_related_user_id)
         except ValueError:
             flask.flash(_('Unable to parse related user ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         except UserDoesNotExistError:
             flask.flash(_('Invalid related user ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
     else:
         filter_related_user_id = None
 
@@ -884,10 +917,10 @@ def _parse_object_list_filters(
             get_user(filter_user_id)
         except ValueError:
             flask.flash(_('Unable to parse user ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         except UserDoesNotExistError:
             flask.flash(_('Invalid user ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         else:
             filter_user_permissions = {
                 'read': Permissions.READ,
@@ -904,14 +937,14 @@ def _parse_object_list_filters(
             group_member_ids = logic.groups.get_group_member_ids(filter_group_id)
         except ValueError:
             flask.flash(_('Unable to parse group ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         except logic.errors.GroupDoesNotExistError:
             flask.flash(_('Invalid group ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         else:
             if flask_login.current_user.id not in group_member_ids:
                 flask.flash(_('You need to be a member of this group to list its objects.'), 'error')
-                return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+                return FALLBACK_RESULT
             filter_group_permissions = {
                 'read': Permissions.READ,
                 'write': Permissions.WRITE,
@@ -927,10 +960,10 @@ def _parse_object_list_filters(
             get_project(filter_project_id)
         except ValueError:
             flask.flash(_('Unable to parse project ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         except logic.errors.ProjectDoesNotExistError:
             flask.flash(_('Invalid project ID.'), 'error')
-            return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+            return FALLBACK_RESULT
         else:
             if Permissions.READ not in get_user_project_permissions(
                     project_id=filter_project_id,
@@ -938,7 +971,7 @@ def _parse_object_list_filters(
                     include_groups=True
             ):
                 flask.flash(_('You need to be a member of this project group to list its objects.'), 'error')
-                return False, None, None, None, None, None, None, None, None, None, None, None, None, None
+                return FALLBACK_RESULT
             filter_project_permissions = {
                 'read': Permissions.READ,
                 'write': Permissions.WRITE,
@@ -947,6 +980,19 @@ def _parse_object_list_filters(
     else:
         filter_project_id = None
         filter_project_permissions = None
+
+    if params.get('component_id'):
+        try:
+            filter_component_id = int(params.get('component_id'))
+            get_component(filter_component_id)
+        except ValueError:
+            flask.flash(_('Unable to parse database ID.'), 'error')
+            return FALLBACK_RESULT
+        except logic.errors.ComponentDoesNotExistError:
+            flask.flash(_('Invalid database ID.'), 'error')
+            return FALLBACK_RESULT
+    else:
+        filter_component_id = None
 
     return (
         True,
@@ -963,6 +1009,7 @@ def _parse_object_list_filters(
         filter_group_permissions,
         filter_project_id,
         filter_project_permissions,
+        filter_component_id,
     )
 
 
@@ -1067,6 +1114,7 @@ def save_object_list_defaults():
             filter_group_permissions,
             filter_project_id,
             filter_project_permissions,
+            filter_component_id,
         ) = _parse_object_list_filters(
             params=flask.request.form,
             valid_location_ids=[
@@ -1096,6 +1144,7 @@ def save_object_list_defaults():
                     'filter_all_users_permissions': None if filter_all_users_permissions is None else filter_all_users_permissions.name.lower(),
                     'filter_user_id': filter_user_id,
                     'filter_user_permissions': None if filter_user_permissions is None else filter_user_permissions.name.lower(),
+                    'filter_component_id': filter_component_id
                 }
             }
         )
