@@ -1136,11 +1136,40 @@
     {% endif %}
   {% endif %}
 
-  {% if component %}
-    <h2>{{ _('Other Databases') }}</h2>
-    <div class="federation-information">
-      {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
-    </div>
+  {% if not is_archived %}
+    {% if component %}
+      <h2>{{ _('Other Databases') }}</h2>
+      <div class="federation-information">
+        {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
+      </div>
+    {% else %}
+    {% set shares = get_shares_for_object(object.object_id) %}
+      {% if shares %}
+        <h2>{{ _('Other Databases') }}</h2>
+        <div class="federation-information">
+          {{ _('This object is being shared with users from the following databases:') }}
+          <ul>
+            {% for share in shares %}
+              <li>
+                {% if share.component %}
+                  <a href="{{ url_for('.component', component_id=share.component.id) }}">{{ share.component.get_name() }}</a>
+                {% else %}
+                  {{ _('Unknown Database') }}
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+          {% if user_may_grant %}
+            <div class="text-right" style="min-width:15em; margin-bottom: 20px;">
+              <a href="{{ url_for('.object_permissions', object_id=object_id, _anchor='other-databases') }}" class="btn btn-primary">
+                <i class="fa fa-lock" aria-hidden="true"></i>
+                {{ _('Edit Permissions') }}
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endif %}
   {% endif %}
 
   {% if not is_archived and related_objects_tree and action is not none and action.type.enable_related_objects %}

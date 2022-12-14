@@ -5106,6 +5106,12 @@ msgstr ""
 "%(fed_version_id)s in der Datenbank <a "
 "href=\"%(component_url)s\">%(component_name)s</a> erstellt"
 
+msgid "This object is being shared with users from the following databases:"
+msgstr "Dieses Objekt wird mit Nutzern der folgenden Datenbanken geteilt:"
+
+msgid "Unknown Database"
+msgstr "Unbekannte Datenbank"
+
 msgid "Related Objects"
 msgstr "Zugehörige Objekte"
 
