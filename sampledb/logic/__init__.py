@@ -49,6 +49,7 @@ from . import schemas
 from . import scicat_export
 from . import security_tokens
 from . import settings
+from . import shares
 from . import tags
 from . import units
 from . import users
@@ -111,6 +112,7 @@ __all__ = [
     'scicat_export',
     'security_tokens',
     'settings',
+    'shares',
     'tags',
     'units',
     'users',

@@ -28,6 +28,7 @@ from ...logic.locations import get_location, get_object_ids_at_location
 from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component
+from ...logic.shares import get_shares_for_object
 from ..utils import get_location_name, get_search_paths
 from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -54,6 +55,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
     'object_list_options',
     'creation_info',
     'last_edit_info',
+    'other_databases_info',
     'action_info',
     'display_properties',
 )
@@ -520,7 +522,7 @@ def objects():
             display_property_titles[property_name] = property_title
 
     if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
-        creation_info, last_edit_info, action_info = _parse_object_list_options(flask.request.args)
+        creation_info, last_edit_info, action_info, other_databases_info = _parse_object_list_options(flask.request.args)
     else:
         creation_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('creation_info', ['user', 'date'])
         last_edit_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('last_edit_info', ['user', 'date'])
@@ -528,6 +530,9 @@ def objects():
             action_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('action_info', ['instrument', 'action'])
         else:
             action_info = []
+        other_databases_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('other_databases_info', False)
+    if not flask.current_app.config['FEDERATION_UUID']:
+        other_databases_info = False
 
     object_name_plural = _('Objects')
 
@@ -654,6 +659,7 @@ def objects():
         creation_info=creation_info,
         last_edit_info=last_edit_info,
         action_info=action_info,
+        other_databases_info=other_databases_info,
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
@@ -684,7 +690,8 @@ def objects():
         pagination_enabled=pagination_enabled,
         num_objects_found=num_objects_found,
         get_user=get_user,
-        get_component=get_component
+        get_component=get_component,
+        get_shares_for_object=get_shares_for_object,
     )
 
 
@@ -965,6 +972,7 @@ def _parse_object_list_options(
     typing.List[str],
     typing.List[str],
     typing.List[str],
+    bool
 ]:
     creation_info = set()
     for creation_info_str in params.getlist('creation_info'):
@@ -986,7 +994,9 @@ def _parse_object_list_options(
         if action_info_str in {'instrument', 'action'}:
             action_info.add(action_info_str)
     action_info = list(action_info)
-    return creation_info, last_edit_info, action_info
+
+    other_databases_info = 'other_databases_info' in params
+    return creation_info, last_edit_info, action_info, other_databases_info
 
 
 def _parse_display_properties(
@@ -1095,6 +1105,7 @@ def save_object_list_defaults():
             creation_info,
             last_edit_info,
             action_info,
+            other_databases_info,
         ) = _parse_object_list_options(
             params=flask.request.form
         )
@@ -1108,6 +1119,7 @@ def save_object_list_defaults():
                     'creation_info': creation_info,
                     'last_edit_info': last_edit_info,
                     'action_info': action_info,
+                    'other_databases_info': other_databases_info,
                     'display_properties': display_properties
                 }
             }

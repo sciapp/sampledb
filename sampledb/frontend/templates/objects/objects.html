@@ -218,7 +218,7 @@
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
         {% for key in request.args %}
-          {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info'] %}
+          {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info', 'other_databases_info'] %}
             {% for value in request.args.getlist(key) %}
               <input type="hidden" name="{{ key }}" value="{{ value }}" />
             {% endfor %}
@@ -271,6 +271,18 @@
                 </label>
               </div>
             </div>
+            {% if config['FEDERATION_UUID'] %}
+            <div class="form-group">
+              <label class="control-label">
+                {{ _('Show Other Database information') }}
+              </label>
+              <div>
+                <label style="font-weight: normal">
+                  <input type="checkbox" {% if other_databases_info %}checked="checked"{% endif %} name="other_databases_info" value="other_databases_info" /> {{ _('Show Other Databases') }}
+                </label>
+              </div>
+            </div>
+            {% endif %}
             <div class="form-group">
               <label class="control-label">
                 {{ _('Show Action information') }}
@@ -430,6 +442,9 @@
       {% if last_edit_info %}
         <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
       {% endif %}
+      {% if other_databases_info %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Other Databases') }}</th>
+      {% endif %}
       {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Instrument') }}</th>
       {% endif %}
@@ -480,6 +495,29 @@
       <td>
         {{ user_reference(object.modified_by) }}
       </td>
+      {% endif %}
+      {% if other_databases_info %}
+        <td>
+        {% set shares = get_shares_for_object(object.object_id) %}
+        {% set components = [] %}
+        {% if object.component is not none %}
+          {{ components.append(object.component) or '' }}
+          <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared by %(component_name)s', component_name=object.component.get_name()) }}">
+            <i class="fa fa-arrow-left"></i>&nbsp;<a href="{{ url_for('.component', component_id=object.component_id) }}">{{ object.component.get_name() }}</a>
+          </span>
+        {% endif %}
+        {% for share in shares %}
+          {% if share.component is not none %}
+            {{ components.append(share.component) or '' }}
+            <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared with %(component_name)s', component_name=share.component.get_name()) }}">
+              <i class="fa fa-arrow-right"></i>&nbsp;<a href="{{ url_for('.component', component_id=share.component_id) }}">{{ share.component.get_name() }}</a>
+            </span>
+          {% endif %}
+        {% endfor %}
+        {% if not components %}
+          &mdash;
+        {% endif %}
+        </td>
       {% endif %}
       {% if object.action is not none %}
         {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}

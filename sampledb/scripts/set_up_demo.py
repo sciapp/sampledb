@@ -891,4 +891,10 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, multi_measurement_action.id, name="multi measurement_action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(multi_measurement_action.id, sampledb.models.Permissions.READ)
 
+        sampledb.logic.shares.add_object_share(
+            object_id=measurement.id,
+            component_id=component.id,
+            policy={}
+        )
+
     print("Success: set up demo data", flush=True)
