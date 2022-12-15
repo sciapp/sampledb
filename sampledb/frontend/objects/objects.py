@@ -447,6 +447,14 @@ def objects():
                 num_objects_found = 0
             else:
                 num_objects_found_list = []
+                # do not actually filter by permissions for an administrator
+                # with GRANT permissions for all objects
+                if filter_user_id == flask_login.current_user.id and flask_login.current_user.has_admin_permissions:
+                    actual_filter_user_id = None
+                    actual_filter_user_permissions = None
+                else:
+                    actual_filter_user_id = filter_user_id
+                    actual_filter_user_permissions = filter_user_permissions
                 objects = get_objects_with_permissions(
                     user_id=flask_login.current_user.id,
                     permissions=Permissions.READ,
@@ -456,8 +464,8 @@ def objects():
                     offset=pagination_offset,
                     action_ids=filter_action_ids,
                     action_type_ids=filter_action_type_ids,
-                    other_user_id=filter_user_id,
-                    other_user_permissions=filter_user_permissions,
+                    other_user_id=actual_filter_user_id,
+                    other_user_permissions=actual_filter_user_permissions,
                     project_id=filter_project_id,
                     project_permissions=filter_project_permissions,
                     group_id=filter_group_id,
