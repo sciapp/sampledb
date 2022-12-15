@@ -307,3 +307,32 @@ def test_update_last_sync_timestamp():
     component.update_last_sync_timestamp(last_sync_timestamp=timestamp)
     component = logic.components.get_component(component.id)
     assert component.last_sync_timestamp == timestamp
+
+
+def test_get_object_ids_for_component_id():
+    component = add_component(
+        address='https://example.com',
+        uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71',
+        name='Example Component',
+        description=''
+    )
+    assert not logic.components.get_object_ids_for_component_id(component.id)
+    with pytest.raises(logic.errors.ComponentDoesNotExistError):
+        logic.components.get_object_ids_for_component_id(component.id + 1)
+    action = logic.actions.create_action(
+        action_type_id=models.ActionType.SAMPLE_CREATION,
+        schema=None,
+        fed_id=1,
+        component_id=component.id
+    )
+    object = logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=action.id,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=None
+    )
+    assert logic.components.get_object_ids_for_component_id(component.id) == {object.id}
