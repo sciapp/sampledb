@@ -9,6 +9,7 @@ from uuid import uuid4
 from bs4 import BeautifulSoup
 
 from sampledb.logic.components import add_component, get_components
+from sampledb.logic.component_authentication import add_own_token_authentication
 from sampledb import models, db
 
 
@@ -141,8 +142,16 @@ def test_get_component_admin(flask_server, admin, component):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('div', id='editComponentModal') is not None
     assert document.find('button', string='Edit Database') is not None
-    assert document.find('button', form='syncComponentForm') is not None
     assert document.find('div', id='apiTokenDiv') is not None
     assert document.find('div', id='createApiTokenModal') is not None
     assert document.find('div', id='createOwnApiTokenModal') is not None
+    assert document.find('form', id='syncComponentForm') is None
+    add_own_token_authentication(
+        component_id=component.id,
+        token='.' * 64,
+        description=''
+    )
+    r = session.get(flask_server.base_url + 'other-databases/' + str(component.id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('form', id='syncComponentForm') is not None

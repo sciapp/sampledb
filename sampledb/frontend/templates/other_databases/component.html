@@ -17,12 +17,41 @@
   <p><strong>{{ _('Address') }}: </strong>{% if component.address is not none %}<a href="{{ component.address }}">{{ component.address }}</a>{% else %}&mdash;{% endif %}</p>
   <p><strong>{{ _('UUID') }}:</strong> <span class="text-monospace">{{ component.uuid }}</span></p>
   <p>{{ component.description }}</p>
-  {% if current_user.is_admin %}
+  {% if current_user.is_admin and not current_user.is_readonly %}
     {% if edit_component_form %}
       <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editComponentModal">{{ _('Edit Database') }}</button>
     {% endif %}
     {% if sync_component_form %}
-      <button form="syncComponentForm" type="submit" class="btn btn-primary" name="sync" value="sync" {% if component.address is none or not own_api_tokens %} data-toggle="tooltip" data-placement="top" title="{% if component.address %}{{ _('Add import token to sync') }}{% elif own_api_tokens %}{{ _('Set address to sync') }}{% else %}{{ _('Set address and import token to sync') }}{% endif %}" disabled{% endif %}><i class="fa fa-refresh"></i></button>
+      <button class="btn btn-primary" {% if component.address is none or not own_api_tokens %} data-toggle="tooltip" data-placement="top" title="{% if component.address %}{{ _('Add import token to import updates') }}{% elif own_api_tokens %}{{ _('Set address to import updates') }}{% else %}{{ _('Set address and import token to import updates') }}{% endif %}" disabled="disabled"{% else %} data-toggle="modal" data-target="#syncModal"{% endif %}>{{ _('Import Updates') }}</button>
+      {% if component.address is not none and own_api_tokens %}
+        <div class="modal fade" id="syncModal" tabindex="-1" role="dialog" aria-labelledby="syncModalLabel">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="syncModalLabel">{{ _('Import Updates') }}</h4>
+              </div>
+              <form method="post" action="{{ url_for('.component', component_id=component.id) }}" class="form-horizontal" id="syncComponentForm">
+                {{ sync_component_form.csrf_token() }}
+                <div class="modal-body">
+                  <span class="help-block">
+                    {{ _('When an object is shared with another database, the information will be sent immediately. However if this approach fails, e.g. because the database is temporarily unreachable, administrators can import updates from the database instead.') }}
+                  </span>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="{{ sync_component_form.ignore_last_sync_time.name }}"/> {{ _('Request updates from before the last import') }} <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="{{ _('Regularly, the other database will only send updates that occurred after the last import. If this checkbox is checked, all available information will be requested instead. This may take significantly longer than a regular update.') }}"></i>
+                    </label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal" style="min-width:7em;">{{ _('Close') }}</button>
+                  <button type="submit" name="sync" value="sync" class="btn btn-primary" style="min-width:7em;">{{ _('Import Updates') }}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endif %}
     {% endif %}
     <div id="apiTokenDiv">
     <h3>{{ _('Authentication Tokens') }}</h3>
@@ -222,11 +251,6 @@
         </div>
       </div>
     </div>
-    {% if sync_component_form and component.address is not none %}
-    <form method="post" action="{{ url_for('.component', component_id=component.id) }}" class="form-horizontal" id="syncComponentForm">
-      {{ sync_component_form.csrf_token() }}
-    </form>
-    {% endif %}
   {% endif %}
   <h4>{{ _('User Alias') }}</h4>
   {% if alias %}
