@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.10.3\n"
+"Generated-By: Babel 2.11.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -4252,6 +4252,9 @@ msgstr "mit %(permissions)s-Berechtigungen für die einfache Gruppe:"
 msgid "with %(permissions)s permissions for project group:"
 msgstr "mit %(permissions)s-Berechtigungen für die Projektgruppe:"
 
+msgid "from other databases"
+msgstr "aus anderen Datenbanken"
+
 msgid "from other database:"
 msgstr "aus anderer Datenbank:"
 
@@ -4332,6 +4335,9 @@ msgstr "Nach Anderer Datenbank filtern"
 
 msgid "All databases"
 msgstr "Alle Datenbanken"
+
+msgid "All other databases"
+msgstr "Alle anderen Datenbanken"
 
 msgid "Assign Location"
 msgstr "Ort zuweisen"

@@ -374,8 +374,12 @@
       {% endif %}
       {% if filter_other_database_info %}
         <li>
+        {% if filter_other_database_info.any %}
+          {{ _('from other databases') }}
+        {% else %}
           {{ _('from other database:') }}
           <a href="{{ url_for('.component', component_id=filter_other_database_info.component.id) }}">{{ filter_other_database_info.component.get_name() }}</a>
+        {% endif %}
         </li>
       {% endif %}
       </ul>
@@ -590,6 +594,7 @@
               </label>
               <select class="selectpicker form-control" name="component_id" id="filter_component_id" data-width="100%" data-none-selected-text="{{ _('All databases') }}" data-live-search="on">
                 <option value="">{{ _('All databases') }}</option>
+                <option value="any" {% if filter_component_id == "any" %}selected="selected"{% endif %}>{{ _('All other databases') }}</option>
                 {% for component in all_components %}
                   <option value="{{ component.id }}" {% if filter_component_id and component.id == filter_component_id %}selected="selected"{% endif %}>{{ component.get_name() }}</option>
                 {% endfor %}

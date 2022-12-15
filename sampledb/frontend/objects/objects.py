@@ -246,7 +246,7 @@ def objects():
             }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
 
             filter_component_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_component_id', None)
-            if filter_component_id:
+            if filter_component_id and filter_component_id != 'any':
                 try:
                     filter_component_id = int(filter_component_id)
                 except ValueError:
@@ -408,6 +408,8 @@ def objects():
             object_ids_for_doi = set(logic.publications.get_object_ids_linked_to_doi(filter_doi))
         if filter_component_id is None:
             object_ids_for_component_id = None
+        elif filter_component_id == 'any':
+            object_ids_for_component_id = logic.components.get_object_ids_for_components()
         else:
             object_ids_for_component_id = logic.components.get_object_ids_for_component_id(filter_component_id)
 
@@ -666,8 +668,14 @@ def objects():
     else:
         filter_doi_info = None
 
-    if filter_component_id:
+    if filter_component_id == 'any':
         filter_other_database_info = {
+            'any': True,
+            'component': None
+        }
+    elif filter_component_id:
+        filter_other_database_info = {
+            'any': False,
             'component': get_component(component_id=filter_component_id)
         }
     else:
@@ -874,7 +882,7 @@ def _parse_object_list_filters(
     typing.Optional[Permissions],
     typing.Optional[int],
     typing.Optional[Permissions],
-    typing.Optional[int]
+    typing.Optional[typing.Union[typing.Literal['any'], int]]
 ]:
     FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     success, filter_location_ids = _parse_filter_id_params(
@@ -1017,15 +1025,18 @@ def _parse_object_list_filters(
         filter_project_permissions = None
 
     if params.get('component_id'):
-        try:
-            filter_component_id = int(params.get('component_id'))
-            check_component_exists(filter_component_id)
-        except ValueError:
-            flask.flash(_('Unable to parse database ID.'), 'error')
-            return FALLBACK_RESULT
-        except logic.errors.ComponentDoesNotExistError:
-            flask.flash(_('Invalid database ID.'), 'error')
-            return FALLBACK_RESULT
+        if params.get('component_id') == 'any':
+            filter_component_id = 'any'
+        else:
+            try:
+                filter_component_id = int(params.get('component_id'))
+                check_component_exists(filter_component_id)
+            except ValueError:
+                flask.flash(_('Unable to parse database ID.'), 'error')
+                return FALLBACK_RESULT
+            except logic.errors.ComponentDoesNotExistError:
+                flask.flash(_('Invalid database ID.'), 'error')
+                return FALLBACK_RESULT
     else:
         filter_component_id = None
 
