@@ -61,6 +61,8 @@ def component(component_id):
         show_edit_form = True
         if edit_component_form.validate_on_submit():
             check_current_user_is_not_readonly()
+            if not flask_login.current_user.is_admin:
+                return flask.abort(403)
             name = edit_component_form.name.data
             address = edit_component_form.address.data
             if address == '':
@@ -97,10 +99,13 @@ def component(component_id):
         else:
             edit_component_form.name.data = component.name
         edit_component_form.description.data = component.description
-    if 'sync' in flask.request.form:
+    if 'sync' in flask.request.form and sync_component_form.validate_on_submit():
         check_current_user_is_not_readonly()
+        if not flask_login.current_user.is_admin:
+            return flask.abort(403)
+        ignore_last_sync_time = sync_component_form.ignore_last_sync_time.data
         try:
-            import_updates(component)
+            import_updates(component, ignore_last_sync_time=ignore_last_sync_time)
             flask.flash(_('Successfully imported data changes.'), 'success')
         except errors.MissingComponentAddressError:
             flask.flash(_('Missing database address.'), 'error')
@@ -119,6 +124,8 @@ def component(component_id):
         return flask.redirect(flask.url_for('.component', component_id=component_id))
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
         check_current_user_is_not_readonly()
+        if not flask_login.current_user.is_admin:
+            return flask.abort(403)
         authentication_method_id = authentication_method_form.id.data
         if authentication_method_form.validate_on_submit():
             try:
@@ -131,6 +138,8 @@ def component(component_id):
                 flask.flash(_('Failed to remove the authentication method.'), 'error')
     if 'removeOwn' in flask.request.form and flask.request.form['removeOwn'] == 'RemoveOwn':
         check_current_user_is_not_readonly()
+        if not flask_login.current_user.is_admin:
+            return flask.abort(403)
         authentication_method_id = authentication_method_form.id.data
         if authentication_method_form.validate_on_submit():
             try:
@@ -143,6 +152,8 @@ def component(component_id):
                 flask.flash(_('Failed to remove the authentication method.'), 'error')
     if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
         check_current_user_is_not_readonly()
+        if not flask_login.current_user.is_admin:
+            return flask.abort(403)
         created_api_token = secrets.token_hex(32)
         description = create_api_token_form.description.data
         try:
@@ -152,6 +163,8 @@ def component(component_id):
         api_tokens = ComponentAuthentication.query.filter(ComponentAuthentication.component_id == component_id, ComponentAuthentication.type == ComponentAuthenticationType.TOKEN).all()
     if 'add_own_api_token' in flask.request.form and add_own_api_token_form.validate_on_submit():
         check_current_user_is_not_readonly()
+        if not flask_login.current_user.is_admin:
+            return flask.abort(403)
         description = add_own_api_token_form.description.data
         try:
             add_own_token_authentication(component_id, add_own_api_token_form.token.data, description)

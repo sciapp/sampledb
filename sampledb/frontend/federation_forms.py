@@ -40,7 +40,7 @@ class EditComponentForm(FlaskForm):
 
 
 class SyncComponentForm(FlaskForm):
-    pass
+    ignore_last_sync_time = BooleanField(default=False)
 
 
 class EditAliasForm(FlaskForm):

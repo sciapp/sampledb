@@ -46,7 +46,9 @@ def post(
 def get(
         endpoint: str,
         component: Component,
-        headers: typing.Optional[typing.Dict[str, str]] = None
+        headers: typing.Optional[typing.Dict[str, str]] = None,
+        *,
+        ignore_last_sync_time: bool = False
 ) -> typing.Dict[str, typing.Any]:
     if component.address is None:
         raise errors.MissingComponentAddressError()
@@ -58,7 +60,7 @@ def get(
         headers['Authorization'] = 'Bearer ' + auth.login['token']
 
     parameters = {}
-    if component.last_sync_timestamp is not None:
+    if component.last_sync_timestamp is not None and not ignore_last_sync_time:
         parameters['last_sync_timestamp'] = component.last_sync_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
     req = requests.get(component.address.rstrip('/') + endpoint, headers=headers, params=parameters)
     if req.status_code == 401:
@@ -100,14 +102,16 @@ def _validate_header(
 
 
 def import_updates(
-        component: Component
+        component: Component,
+        *,
+        ignore_last_sync_time: bool = False
 ) -> None:
     if flask.current_app.config['FEDERATION_UUID'] is None:
         raise errors.ComponentNotConfiguredForFederationError()
     timestamp = datetime.utcnow()
     users = None
     try:
-        users = get('/federation/v1/shares/users/', component)
+        users = get('/federation/v1/shares/users/', component, ignore_last_sync_time=ignore_last_sync_time)
     except errors.InvalidJSONError:
         raise errors.InvalidDataExportError('Received an invalid JSON string.')
     except errors.RequestServerError:
@@ -117,7 +121,7 @@ def import_updates(
     if users:
         update_users(component, users)
     try:
-        updates = get('/federation/v1/shares/objects/', component)
+        updates = get('/federation/v1/shares/objects/', component, ignore_last_sync_time=ignore_last_sync_time)
     except errors.InvalidJSONError:
         raise errors.InvalidDataExportError('Received an invalid JSON string.')
     if updates:
