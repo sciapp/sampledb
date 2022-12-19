@@ -470,6 +470,37 @@ def get_actions(
     ]
 
 
+def check_action_exists(
+        action_id: int
+) -> None:
+    """
+    Check whether an action with the given action ID exists.
+
+    :param action_id: the ID of an existing action
+    :raise errors.ActionDoesNotExistError: when no action with the given
+        action ID exists
+    """
+    if not db.session.query(db.exists().where(models.Action.id == action_id)).scalar():  # type: ignore
+        raise errors.ActionDoesNotExistError()
+
+
+def get_action_owner_id(
+        action_id: int
+) -> typing.Optional[int]:
+    """
+    Get the owner of an action with a given ID.
+
+    :param action_id: the ID of an existing action
+    :return: the ID of the action's owner, or None
+    :raise errors.ActionDoesNotExistError: when no action with the given
+        action ID exists
+    """
+    row_or_none: typing.Optional[typing.Tuple[int]] = db.session.query(models.Action.user_id).filter(models.Action.id == action_id).first()  # type: ignore
+    if row_or_none is None:
+        raise errors.ActionDoesNotExistError()
+    return row_or_none[0]
+
+
 def get_mutable_action(
         action_id: int,
         component_id: typing.Optional[int] = None
