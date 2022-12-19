@@ -35,7 +35,7 @@ class Instrument(db.Model):  # type: ignore
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
-    translations = db.relationship('InstrumentTranslation')
+    translations = db.relationship('InstrumentTranslation', lazy='selectin')
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
     location = db.relationship('Location')
 
