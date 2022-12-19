@@ -210,11 +210,11 @@ def get_user_language(user: typing.Optional[User]) -> Language:
 
     language = user.language_cache[0]
     if language is None:
-        auto_lc = settings.get_user_settings(user.id)['AUTO_LC']
+        auto_lc = settings.get_user_setting(user.id, 'AUTO_LC')
         if auto_lc:
             language_code = locale.guess_request_locale()
         else:
-            language_code = settings.get_user_settings(user.id)['LOCALE']
+            language_code = settings.get_user_setting(user.id, 'LOCALE')
         try:
             language = get_language_by_lang_code(language_code)
         except errors.LanguageDoesNotExistError:

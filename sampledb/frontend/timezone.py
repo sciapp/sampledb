@@ -30,7 +30,7 @@ class TimezoneForm(flask_wtf.FlaskForm):
 @frontend.route('/set-timezone', methods=["POST"])
 @flask_login.login_required
 def set_timezone():
-    if not settings.get_user_settings(flask_login.current_user.id)['AUTO_TZ']:
+    if not settings.get_user_setting(flask_login.current_user.id, 'AUTO_TZ'):
         return '', 200
     form = TimezoneForm()
     if form.validate_on_submit():

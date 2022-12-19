@@ -66,6 +66,32 @@ def get_user_settings(
     return verified_data
 
 
+def get_user_setting(
+        user_id: typing.Optional[int],
+        setting_name: str
+) -> typing.Any:
+    """
+    Get a specific setting for a user.
+
+    This function will return the default value for the setting, if the user's
+    settings do not include it.
+
+    :param user_id: the ID of an existing user, or None
+    :param setting_name: the name of a setting
+    :return: the settings data
+    :raise errors.UserDoesNotExistError: if the user does not exist
+    """
+    default_value = copy.deepcopy(DEFAULT_SETTINGS.get(setting_name))
+    if user_id is None:
+        return default_value
+    # ensure the user exists
+    users.get_user(user_id)
+    row: typing.Optional[typing.Tuple[typing.Any]] = db.session.query(Settings.data[setting_name]).filter(Settings.user_id == user_id).first()  # type: ignore
+    if row is not None and _verify_setting(setting_name, row[0]):
+        return row[0]
+    return default_value
+
+
 def set_user_settings(user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     """
     Set new settings for a user.

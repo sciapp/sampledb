@@ -11,7 +11,7 @@ from .. import frontend
 from ... import logic
 from ...logic.actions import get_action_type, get_action
 from ...logic.object_permissions import Permissions, get_user_object_permissions
-from ...logic.settings import get_user_settings
+from ...logic.settings import get_user_setting
 from ...logic.objects import get_object, get_object_versions, get_current_object_version_id
 from ...logic.languages import get_language_by_lang_code, get_languages_in_object_data, get_language, Language
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
@@ -65,8 +65,8 @@ def object_version(object_id, version_id):
     return flask.render_template(
         'objects/view/base.html',
         template_mode="view",
-        show_object_type_and_id_on_object_page_text=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
-        show_object_title=get_user_settings(flask_login.current_user.id)["SHOW_OBJECT_TITLE"],
+        show_object_type_and_id_on_object_page_text=get_user_setting(flask_login.current_user.id, "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"),
+        show_object_title=get_user_setting(flask_login.current_user.id, "SHOW_OBJECT_TITLE"),
         languages=languages,
         metadata_language=metadata_language,
         ENGLISH=english,

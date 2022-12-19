@@ -104,7 +104,7 @@ def instruments():
         return flask.abort(404)
     all_instruments = get_instruments()
     instruments = []
-    user_has_admin_permissions = flask_login.current_user.is_admin and get_user_settings(flask_login.current_user.id)["USE_ADMIN_PERMISSIONS"]
+    user_has_admin_permissions = flask_login.current_user.has_admin_permissions
     for instrument in all_instruments:
         if instrument.is_hidden and not user_has_admin_permissions and flask_login.current_user not in instrument.responsible_users:
             continue

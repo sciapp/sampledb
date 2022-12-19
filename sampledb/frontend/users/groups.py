@@ -355,7 +355,7 @@ def group(group_id):
         group_categories = None
 
     group_invitations = None
-    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_setting(flask_login.current_user.id, 'SHOW_INVITATION_LOG')
     if user_is_member or flask_login.current_user.is_admin:
         group_invitations = logic.groups.get_group_invitations(
             group_id=group_id,
