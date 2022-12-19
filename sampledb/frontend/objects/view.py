@@ -29,6 +29,7 @@ from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.files import FileLogEntryType
 from ...logic.components import get_component
+from ...logic.shares import get_shares_for_object
 from ...logic.notebook_templates import get_notebook_templates
 from ...logic.utils import get_translated_text
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
@@ -404,6 +405,7 @@ def object(object_id):
         "get_project": get_project_if_it_exists,
         "get_action_type": get_action_type,
         "get_component": get_component,
+        "get_shares_for_object": get_shares_for_object,
     })
 
     if mode in {'', 'inline_edit'} and not flask.current_app.config['DISABLE_INLINE_EDIT'] and user_may_edit:

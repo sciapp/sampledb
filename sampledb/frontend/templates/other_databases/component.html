@@ -334,8 +334,8 @@
       </tbody>
     </table>
   {% else %}
-    <p>{{ _('As you have not configured an user alias yet, no personal information about you is shared with %(component_name)s.', component_name=component.name) }}</p>
-    <a class="btn btn-primary" href="{{ url_for('.user_alias', add_alias_component=component.id) }}">{{ _('Create User Alias for %(component_name)s', component_name=component.name) }}</a>
+    <p>{{ _('As you have not configured an user alias yet, no personal information about you is shared with %(component_name)s.', component_name=component.get_name()) }}</p>
+    <a class="btn btn-primary" href="{{ url_for('.user_alias', add_alias_component=component.id) }}">{{ _('Create User Alias for %(component_name)s', component_name=component.get_name()) }}</a>
   {% endif %}
 {% endblock %}
 
