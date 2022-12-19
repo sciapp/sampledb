@@ -194,7 +194,7 @@ Creating a new object
 
     .. sourcecode:: http
 
-        POST /api/v1/objects/1/versions/ HTTP/1.1
+        POST /api/v1/objects/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
         Content-Type: application/json
         Accept: application/json
