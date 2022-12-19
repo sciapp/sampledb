@@ -21,8 +21,8 @@ class ObjectShare:
     object_id: int
     component_id: int
     policy: typing.Dict[str, typing.Any]
-    utc_datetime: typing.Optional[datetime.datetime]
-    component: typing.Optional[Component]
+    utc_datetime: datetime.datetime
+    component: Component
 
     @classmethod
     def from_database(cls, object_share: models.ObjectShare) -> 'ObjectShare':
@@ -31,7 +31,7 @@ class ObjectShare:
             component_id=object_share.component_id,
             policy=object_share.policy,
             utc_datetime=object_share.utc_datetime,
-            component=Component.from_database(object_share.component) if object_share.component is not None else None,
+            component=Component.from_database(object_share.component),
         )
 
 
