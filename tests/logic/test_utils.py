@@ -222,3 +222,19 @@ def test_get_translated_text():
     assert utils.get_translated_text({'en': 'test_en'}, 'de') == 'test_en'
     assert utils.get_translated_text({'de': 'test_de'}, 'en') == 'test_de'
     assert utils.get_translated_text({'de': 'test_de'}) == 'test_de'
+
+
+def test_cache():
+    evaluations_counter = 0
+
+    @utils.cache
+    def f():
+        nonlocal evaluations_counter
+        evaluations_counter += 1
+        return evaluations_counter
+
+    assert f() == 1
+    assert f() == 1
+    utils.clear_cache_functions()
+    assert f() == 2
+    assert f() == 2
