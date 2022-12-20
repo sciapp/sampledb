@@ -261,7 +261,7 @@ def create_instrument_log_entry(
     # ensure that the instrument exists
     instrument = instruments.get_instrument(instrument_id=instrument_id)
     # ensure that the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     categories = []
     for category_id in set(category_ids):
         category = instrument_log_entries.InstrumentLogCategory.query.filter_by(

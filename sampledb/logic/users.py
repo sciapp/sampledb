@@ -15,6 +15,7 @@ from flask_babel import gettext
 from .components import get_component, get_components, Component
 from .. import db
 from . import errors, settings
+from .utils import cache
 from .. models import users, UserType
 
 
@@ -249,6 +250,21 @@ class UserFederationAlias:
         )
 
 
+@cache
+def check_user_exists(
+        user_id: int
+) -> None:
+    """
+    Check whether a user with the given user ID exists.
+
+    :param user_id: the ID of an existing user
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():  # type: ignore
+        raise errors.UserDoesNotExistError()
+
+
 def get_user(user_id: int, component_id: typing.Optional[int] = None) -> User:
     return User.from_database(get_mutable_user(user_id, component_id))
 
@@ -311,7 +327,7 @@ def update_user(
 
     if updating_user_id is not None:
         # ensure the updating user exists
-        get_user(updating_user_id)
+        check_user_exists(updating_user_id)
 
         user.last_modified = datetime.datetime.utcnow()
         user.last_modified_by_id = updating_user_id
@@ -533,7 +549,7 @@ def get_user_alias(user_id: int, component_id: int) -> UserFederationAlias:
     """
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
-        get_user(user_id)
+        check_user_exists(user_id)
         get_component(component_id)
         if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
             return UserFederationAlias.from_user_profile(user_id, component_id)
@@ -549,7 +565,7 @@ def get_user_aliases_for_user(user_id: int) -> typing.List[UserFederationAlias]:
     :return: list of user aliases
     :raise errors.UserDoesNotExistError: when no user with given ID exists
     """
-    get_user(user_id)
+    check_user_exists(user_id)
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id).all()
     if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
         return [
@@ -642,7 +658,7 @@ def create_user_alias(
     """
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is not None:
-        get_user(user_id)
+        check_user_exists(user_id)
         get_component(component_id)
         raise errors.UserAliasAlreadyExistsError()
     if use_real_name:
@@ -700,7 +716,7 @@ def update_user_alias(
     """
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
-        get_user(user_id)
+        check_user_exists(user_id)
         get_component(component_id)
         if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
             create_user_alias(
@@ -756,7 +772,7 @@ def delete_user_alias(user_id: int, component_id: int) -> None:
     """
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
-        get_user(user_id)
+        check_user_exists(user_id)
         get_component(component_id)
         raise errors.UserAliasDoesNotExistError()
     db.session.delete(alias)

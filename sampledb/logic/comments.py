@@ -73,7 +73,7 @@ def create_comment(
     objects.get_object(object_id)
     if user_id is not None:
         # ensure that the user exists
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
     if component_id is not None:
         # ensure that the component can be found
         components.get_component(component_id)

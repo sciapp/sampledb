@@ -30,7 +30,7 @@ object_permissions = ResourcePermissions(
     user_permissions_table=UserObjectPermissions,
     group_permissions_table=GroupObjectPermissions,
     project_permissions_table=ProjectObjectPermissions,
-    check_resource_exists=lambda resource_id: objects.check_object_exists(object_id=resource_id)  # type: ignore
+    check_resource_exists=lambda resource_id: objects.check_object_exists(object_id=resource_id)
 )
 
 

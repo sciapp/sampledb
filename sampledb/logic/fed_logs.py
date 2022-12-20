@@ -13,7 +13,7 @@ from sampledb.logic.files import get_file
 from sampledb.logic.instruments import get_instrument
 from sampledb.logic.locations import get_location, get_object_location_assignment, get_location_type
 from sampledb.logic.objects import get_object
-from sampledb.logic.users import get_user
+from sampledb.logic.users import check_user_exists
 from sampledb.models import fed_logs
 
 
@@ -23,7 +23,7 @@ def _store_new_fed_user_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_user(user_id)
+    check_user_exists(user_id)
     get_component(component_id)
     log_entry = fed_logs.FedUserLogEntry(
         type=type,
@@ -470,7 +470,7 @@ def get_fed_user_log_entries_for_user(user_id: int, component_id: typing.Optiona
     else:
         log_entries = fed_logs.FedUserLogEntry.query.filter_by(user_id=user_id).order_by(db.desc(fed_logs.FedUserLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_user(user_id)
+        check_user_exists(user_id)
         if component_id is not None:
             get_component(component_id)
     return log_entries

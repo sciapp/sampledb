@@ -14,7 +14,7 @@ from . import object_log
 from . import user_log
 from . import object_permissions
 from .objects import get_object
-from .users import get_user
+from .users import check_user_exists
 
 
 @dataclasses.dataclass(frozen=True)
@@ -55,7 +55,7 @@ def link_publication_to_object(
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    get_user(user_id)
+    check_user_exists(user_id)
     get_object(object_id)
     link = models.object_publications.ObjectPublication.query.filter_by(object_id=object_id, doi=doi).first()
     if link is None:

@@ -8,8 +8,9 @@ import typing
 
 from .. import db
 from . import errors, settings, locale
-from .users import User
 from .. import models
+if typing.TYPE_CHECKING:
+    from .users import User
 
 
 @dataclasses.dataclass(frozen=True)
@@ -195,7 +196,7 @@ def get_language_by_lang_code(lang_code: str) -> Language:
     return Language.from_database(language)
 
 
-def get_user_language(user: typing.Optional[User]) -> Language:
+def get_user_language(user: typing.Optional['User']) -> Language:
     """
     Return the language of the current user.
 

@@ -21,7 +21,7 @@ import datetime
 import flask
 
 from .components import get_component
-from .users import get_user
+from .users import check_user_exists
 from ..models.markdown_images import MarkdownImage
 from .. import db
 
@@ -39,7 +39,7 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     :raise errors.UserDoesNotExistError: if no user with the given ID exists
     """
     # ensure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
 
     _remove_expired_images()
 

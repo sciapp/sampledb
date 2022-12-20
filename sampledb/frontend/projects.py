@@ -679,7 +679,7 @@ def update_project_permissions(project_id):
         for user_permissions_data in sorted(permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
             user_id = user_permissions_data['user_id']
             try:
-                logic.users.get_user(user_id)
+                logic.users.check_user_exists(user_id)
             except logic.errors.UserDoesNotExistError:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])

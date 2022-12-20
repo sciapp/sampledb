@@ -22,7 +22,7 @@ from ..groups import get_group
 from ..locations import get_location, get_object_location_assignments
 from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
 from ..projects import get_project
-from ..users import get_user
+from ..users import get_user, check_user_exists
 from .. import errors, fed_logs, languages, markdown_to_html
 from ...models import Permissions, Object
 from ...models.file_log import FileLogEntry, FileLogEntryType
@@ -258,7 +258,7 @@ def parse_object(
             for user_id, permission in users.items():
                 user_id = _get_id(user_id, convert=True)
                 try:
-                    get_user(user_id)
+                    check_user_exists(user_id)
                 except errors.UserDoesNotExistError:
                     continue
                 try:

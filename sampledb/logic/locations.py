@@ -190,7 +190,7 @@ def create_location(
 
     # ensure the user exists
     if user_id is not None:
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
     if parent_location_id is not None:
         # ensure parent location exists
         get_location(parent_location_id)
@@ -269,7 +269,7 @@ def update_location(
 
     # ensure the user exists
     if user_id is not None:
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
     if parent_location_id is not None:
         if location_id == parent_location_id or location_id in _get_location_ancestors(parent_location_id):
             raise errors.CyclicLocationError()
@@ -421,7 +421,7 @@ def assign_location_to_object(
         # ensure the location exists
         get_location(location_id)
     # ensure the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
         object_id=object_id,
         location_id=location_id,
@@ -435,7 +435,7 @@ def assign_location_to_object(
     db.session.add(object_location_assignment)
     db.session.commit()
     if responsible_user_id is not None:
-        users.get_user(responsible_user_id)
+        users.check_user_exists(responsible_user_id)
         if user_id != responsible_user_id:
             create_notification_for_being_assigned_as_responsible_user(object_location_assignment.id)
     object_log.assign_location(user_id, object_id, object_location_assignment.id)
@@ -485,9 +485,9 @@ def create_fed_assignment(
         # ensure the location exists
         get_location(location_id)
     if user_id is not None:
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
     if responsible_user_id is not None:
-        users.get_user(responsible_user_id)
+        users.check_user_exists(responsible_user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
         object_id=object_id,
         location_id=location_id,

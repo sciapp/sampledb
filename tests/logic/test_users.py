@@ -394,3 +394,10 @@ def test_get_user_aliases_for_component_use_real_data():
     assert alias_user1.name == 'User Name'
     assert alias_user1 in user_aliases
     assert len(user_aliases) == 1
+
+
+def test_check_user_exists():
+    user = sampledb.logic.users.create_user(name="User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+    sampledb.logic.users.check_user_exists(user.id)
+    with pytest.raises(errors.UserDoesNotExistError):
+        sampledb.logic.users.check_user_exists(user.id + 1)

@@ -240,7 +240,7 @@ class ResourcePermissions(object):
         """
         self._check_resource_exists(resource_id)
         # ensure that the user can be found
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
 
         if permissions == Permissions.NONE:
             self._user_permissions_table.query.filter_by(user_id=user_id, **{self._resource_id_name: resource_id}).delete()

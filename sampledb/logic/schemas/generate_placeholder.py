@@ -9,7 +9,7 @@ from flask_login import current_user
 
 from ..errors import UndefinedUnitError, SchemaError, UserDoesNotExistError
 from .utils import get_dimensionality_for_units
-from ..users import get_user
+from ..users import check_user_exists
 
 
 def generate_placeholder(
@@ -257,7 +257,7 @@ def _generate_user_placeholder(schema: typing.Dict[str, typing.Any], path: typin
         if user_id is not None:
             try:
                 # ensure the user exists
-                get_user(user_id)
+                check_user_exists(user_id)
             except UserDoesNotExistError:
                 pass
             else:
