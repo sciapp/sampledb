@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-12-15 10:58+0100\n"
+"POT-Creation-Date: 2022-12-19 14:29+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.10.3\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -1045,6 +1045,12 @@ msgstr "Datenbank-ID konnte nicht geparst werden."
 msgid "Invalid database ID."
 msgstr "Ungültige Datenbank-ID."
 
+msgid "Successfully assigned a new location to objects."
+msgstr "Der neue Ort wurde erfolgreich den Objekten zugewiesen."
+
+msgid "Please select a location or a responsible user."
+msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
+
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
 
@@ -1124,9 +1130,6 @@ msgstr "Das Zuweisen importierter Objekte zu Orten wird noch nicht unterstützt.
 
 msgid "Successfully assigned a new location to this object."
 msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
-
-msgid "Please select a location or a responsible user."
-msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
 msgid "Assigning publications to imported objects is not yet supported."
 msgstr ""
@@ -4183,6 +4186,15 @@ msgstr ""
 msgid "Versions"
 msgstr "Versionen"
 
+msgid "You have to select at least one object."
+msgstr "Sie müssen mindestens ein Objekt auswählen."
+
+msgid "You have to select a location or a responsible user."
+msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
+
+msgid "You do not have write permissions for at least one object."
+msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+
 msgid "Error:"
 msgstr "Fehler:"
 
@@ -4321,11 +4333,22 @@ msgstr "Nach Anderer Datenbank filtern"
 msgid "All databases"
 msgstr "Alle Datenbanken"
 
+msgid "Assign Location"
+msgstr "Ort zuweisen"
+
+msgid "Responsible User"
+msgstr "Verantwortlicher Nutzer"
+
 msgid "Created"
 msgstr "Erstellt"
 
 msgid "Last modified"
 msgstr "Zuletzt geändert"
+
+msgid "You need at least write permission to change the location of an object."
+msgstr ""
+"Sie brauchen mindestens Schreib-Berechtigung um den Ort eines Objekts zu "
+"ändern."
 
 #, python-format
 msgid "Shared by %(component_name)s"
@@ -4864,9 +4887,6 @@ msgstr "Objekt QR Code"
 msgid "To view this object in the future, scan this QR code:"
 msgstr "Um dieses Objekt zukünftig anzuzeigen, scannen Sie diesen QR Code:"
 
-msgid "Responsible User"
-msgstr "Verantwortlicher Nutzer"
-
 msgid "Assigning User"
 msgstr "Zuweisender Nutzer"
 
@@ -4881,9 +4901,6 @@ msgstr "Der Nutzer hat die Verantwortungszuweisung noch nicht bestätigt."
 
 msgid "This object has not been assigned to a location yet."
 msgstr "Diesem Objekt wurde noch kein Ort zugewiesen."
-
-msgid "Assign Location"
-msgstr "Ort zuweisen"
 
 msgid "DOI"
 msgstr "DOI"

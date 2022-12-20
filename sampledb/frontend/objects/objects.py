@@ -18,7 +18,7 @@ from ...logic import user_log, object_sorting
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
-from ...logic.users import get_user, get_users_by_name
+from ...logic.users import get_user, get_users, get_users_by_name
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.groups import get_group
@@ -26,11 +26,13 @@ from ...logic.objects import get_object
 from ...logic.projects import get_project, get_user_project_permissions
 from ...logic.locations import get_location, get_object_ids_at_location
 from ...logic.location_permissions import get_locations_with_user_permissions
+from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component
 from ...logic.shares import get_shares_for_object
-from ..utils import get_location_name, get_search_paths
+from ..utils import get_locations_form_data, get_location_name, get_search_paths
 from ...logic.utils import get_translated_text
+from .forms import ObjectLocationAssignmentForm
 from .permissions import get_object_if_current_user_has_read_permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -96,6 +98,8 @@ def objects():
             'plotly_chart',
         )
     )
+
+    edit_location = flask.request.args.get('edit_location', default=False, type=lambda k: k.lower() == 'true')
 
     name_only = True
     implicit_action_type = None
@@ -669,6 +673,31 @@ def objects():
     else:
         filter_other_database_info = None
 
+    if edit_location:
+        location_form = ObjectLocationAssignmentForm()
+        all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
+        location_form.location.all_choices = all_choices
+        location_form.location.choices = choices
+        possible_resposible_users = [('-1', '-')]
+        user_is_fed = {}
+        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+            possible_resposible_users.append((str(user.id), user.get_name()))
+            user_is_fed[str(user.id)] = user.fed_id is not None
+        location_form.responsible_user.choices = possible_resposible_users
+
+        english = get_language(Language.ENGLISH)
+        all_languages = get_languages()
+
+        objects_with_write_permission = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE)]
+        shown_object_ids = [object['object_id'] for object in objects]
+        objects_with_write_permission = list(filter(lambda x: x in shown_object_ids, objects_with_write_permission))
+    else:
+        location_form = None
+        user_is_fed = {}
+        english = None
+        all_languages = []
+        objects_with_write_permission = []
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -723,6 +752,12 @@ def objects():
         get_user=get_user,
         get_component=get_component,
         get_shares_for_object=get_shares_for_object,
+        edit_location=edit_location,
+        location_form=location_form,
+        user_is_fed=user_is_fed,
+        ENGLISH=english,
+        all_languages=all_languages,
+        objects_with_write_permission=objects_with_write_permission,
     )
 
 
@@ -1190,3 +1225,61 @@ def save_object_list_defaults():
             }
         )
         return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
+
+
+@frontend.route("/edit_locations", methods=["POST"])
+def edit_multiple_locations():
+    location_form = ObjectLocationAssignmentForm()
+    selected_object_ids = flask.request.form["selected_objects"]
+    selected_object_ids = list(map(int, selected_object_ids.split(","))) if selected_object_ids else []
+
+    if not selected_object_ids:
+        return flask.abort(400)
+
+    for object_id in selected_object_ids:
+        if logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id) < Permissions.WRITE:
+            return flask.abort(403)
+
+    location_form.location.choices = [('-1', '—')] + [
+        (str(location.id), get_location_name(location, include_id=True))
+        for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+        if location.type is None or location.type.enable_object_assignments
+    ]
+
+    possible_resposible_users = [('-1', '-')]
+    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+        possible_resposible_users.append((str(user.id), user.get_name()))
+    location_form.responsible_user.choices = possible_resposible_users
+
+    if location_form.validate_on_submit():
+        location_id = int(location_form.location.data)
+        if location_id < 0:
+            location_id = None
+        responsible_user_id = int(location_form.responsible_user.data)
+        if responsible_user_id < 0:
+            responsible_user_id = None
+        description = location_form.description.data
+        try:
+            description = json.loads(description)
+        except Exception:
+            description = {}
+        valid_description = {'en': ''}
+        for language_code, description_text in description.items():
+            if not isinstance(language_code, str):
+                continue
+            try:
+                language = get_language_by_lang_code(language_code)
+            except logic.errors.LanguageDoesNotExistError:
+                continue
+            if not language.enabled_for_input:
+                continue
+            valid_description[language_code] = description_text
+        description = valid_description
+        if location_id is not None or responsible_user_id is not None:
+            for object_id in selected_object_ids:
+                logic.locations.assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
+            flask.flash(_('Successfully assigned a new location to objects.'), 'success')
+            return flask.redirect(flask.url_for('.objects', ids=','.join(map(str, selected_object_ids))))
+
+    flask.flash(_('Please select a location or a responsible user.'), 'error')
+    return flask.redirect(flask.url_for('.objects'))
