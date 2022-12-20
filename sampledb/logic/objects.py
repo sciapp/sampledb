@@ -23,6 +23,7 @@ from ..models import Objects, Object, Action, ActionType, Permissions
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
+from .utils import cache
 
 
 def create_object(
@@ -288,6 +289,7 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     tags.update_object_tag_usage(object)
 
 
+@cache
 def check_object_exists(object_id: int) -> None:
     """
     Ensures that an object with the specific ID exists.

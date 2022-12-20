@@ -27,6 +27,7 @@ from .. import db
 from .. import models
 from ..models import SciCatExportType
 from . import errors, instruments, users, schemas, components
+from .utils import cache
 
 
 @dataclasses.dataclass(frozen=True)
@@ -470,6 +471,7 @@ def get_actions(
     ]
 
 
+@cache
 def check_action_exists(
         action_id: int
 ) -> None:
@@ -484,6 +486,7 @@ def check_action_exists(
         raise errors.ActionDoesNotExistError()
 
 
+@cache
 def get_action_owner_id(
         action_id: int
 ) -> typing.Optional[int]:
