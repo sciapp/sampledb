@@ -7,7 +7,7 @@ import pytest
 
 from sampledb.logic import utils, errors
 from sampledb.models import Tag
-from sampledb import db
+from sampledb import db, config
 
 
 def test_parse_url():
@@ -225,6 +225,7 @@ def test_get_translated_text():
 
 
 def test_cache():
+    config.ENABLE_FUNCTION_CACHES = True
     evaluations_counter = 0
 
     @utils.cache
@@ -238,3 +239,16 @@ def test_cache():
     utils.clear_cache_functions()
     assert f() == 2
     assert f() == 2
+
+    config.ENABLE_FUNCTION_CACHES = False
+    evaluations_counter = 0
+
+    @utils.cache
+    def f():
+        nonlocal evaluations_counter
+        evaluations_counter += 1
+        return evaluations_counter
+
+    assert f() == 1
+    assert f() == 2
+

@@ -345,6 +345,11 @@ def cache(function: typing.Callable[..., _T]) -> typing.Callable[..., _T]:
     :param function: the function to decorate
     :return: the decorated function
     """
+    # this decorator will be used before the app is created, so the config
+    # variable has to be used directly instead of via flask.current_app.config
+    from ..config import ENABLE_FUNCTION_CACHES
+    if not ENABLE_FUNCTION_CACHES:
+        return function
     cache_function = functools.cache(function)
     _CACHE_FUNCTIONS.add(cache_function)
     return cache_function
