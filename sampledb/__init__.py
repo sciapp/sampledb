@@ -40,11 +40,11 @@ def set_locale() -> str:
     if not current_user or not current_user.is_authenticated:
         return request_locale
 
-    auto_lc = sampledb.logic.settings.get_user_settings(current_user.id)['AUTO_LC']
+    auto_lc = sampledb.logic.settings.get_user_setting(current_user.id, 'AUTO_LC')
     if auto_lc:
         return request_locale
 
-    stored_locale = sampledb.logic.settings.get_user_settings(current_user.id)['LOCALE']
+    stored_locale = sampledb.logic.settings.get_user_setting(current_user.id, 'LOCALE')
     if stored_locale in sampledb.logic.locale.get_allowed_language_codes():
         return typing.cast(str, stored_locale)
 

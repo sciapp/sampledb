@@ -136,14 +136,13 @@ class User:
         """
         if not self.is_admin:
             return False
-        user_settings = settings.get_user_settings(self.id)
-        return bool(user_settings['USE_ADMIN_PERMISSIONS'])
+        return bool(settings.get_user_setting(self.id, 'USE_ADMIN_PERMISSIONS'))
 
     @property
     def timezone(self) -> typing.Optional[str]:
         if flask.current_app.config['TIMEZONE']:
             return typing.cast(str, flask.current_app.config['TIMEZONE'])
-        return typing.cast(typing.Optional[str], settings.get_user_settings(self.id)['TIMEZONE'])
+        return typing.cast(typing.Optional[str], settings.get_user_setting(self.id, 'TIMEZONE'))
 
 
 class AnonymousUser(flask_login.AnonymousUserMixin):  # type: ignore

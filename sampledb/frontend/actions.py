@@ -30,7 +30,7 @@ from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users, languages
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.schemas.templates import reverse_substitute_templates, enforce_permissions
-from ..logic.settings import get_user_settings
+from ..logic.settings import get_user_setting
 from ..logic.users import get_users, get_user
 from ..logic.groups import get_group
 from ..logic.projects import get_project
@@ -164,7 +164,7 @@ def action(action_id):
             except errors.ActionDoesNotExistError:
                 action_schema = original_schema
                 flask.flash(_('The used template does not exist anymore. Use the JSON editor to edit the existing action.'), 'error')
-                if get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]:
+                if get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR"):
                     flask.abort(400)
         check_current_user_is_not_readonly()
         if not may_edit:
@@ -326,7 +326,7 @@ def show_action_form(
         for action_translation in action_translations
     }
 
-    use_schema_editor = get_user_settings(flask_login.current_user.id)["USE_SCHEMA_EDITOR"]
+    use_schema_editor = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
     if action is not None:
         if action.instrument_id:
             action_form.instrument.choices = [

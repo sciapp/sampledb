@@ -192,7 +192,7 @@ def project(project_id):
         remove_project_group_form = RemoveProjectGroupForm()
 
     project_invitations = None
-    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_setting(flask_login.current_user.id, 'SHOW_INVITATION_LOG')
     if Permissions.GRANT in user_permissions or flask_login.current_user.is_admin:
         project_invitations = logic.projects.get_project_invitations(
             project_id=project_id,

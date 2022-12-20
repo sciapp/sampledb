@@ -313,7 +313,7 @@ def get_user_valid_api_token(api_url: str, user_id: int) -> typing.Optional[str]
     :raise errors.SciCatNotReachableError: if there was an error during
         communication with the SciCat API
     """
-    api_token: typing.Optional[str] = settings.get_user_settings(user_id)['SCICAT_API_TOKEN']
+    api_token: typing.Optional[str] = settings.get_user_setting(user_id, 'SCICAT_API_TOKEN')
     if not api_token:
         # make sure the user even exists
         users.get_user(user_id)

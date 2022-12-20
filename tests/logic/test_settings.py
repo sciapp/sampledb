@@ -80,3 +80,15 @@ def test_set_custom_settings(user):
         "test": False,
         "other": None
     }
+
+
+def test_get_user_settings(user):
+    sampledb.logic.settings.DEFAULT_SETTINGS = {
+        "test": True
+    }
+    assert sampledb.logic.settings.get_user_setting(user.id, "test")
+    sampledb.logic.settings.set_user_settings(user.id, {
+        "test": False
+    })
+    assert not sampledb.logic.settings.get_user_setting(user.id, "test")
+    assert sampledb.logic.settings.get_user_setting(user.id, "other") is None

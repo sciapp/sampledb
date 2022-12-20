@@ -24,7 +24,7 @@ class Instrument(db.Model):  # type: ignore
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name")
+    responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name", lazy='selectin')
     users_can_create_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     users_can_view_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     create_log_entry_default = db.Column(db.Boolean, nullable=False, default=False)
