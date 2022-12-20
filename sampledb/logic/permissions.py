@@ -378,7 +378,8 @@ class ResourcePermissions(object):
             include_projects: bool = False,
             include_admin_permissions: bool = False,
             limit_readonly_users: bool = False,
-            additional_permissions: Permissions = Permissions.NONE
+            additional_permissions: Permissions = Permissions.NONE,
+            max_permissions: Permissions = Permissions.GRANT
     ) -> Permissions:
         """
         Get combined permissions for a specific user for a specific resource.
@@ -397,15 +398,74 @@ class ResourcePermissions(object):
         :param include_admin_permissions: whether admin permissions should be included
         :param limit_readonly_users: whether readonly users should be limited to READ permissions
         :param additional_permissions: additional permissions to assume for this user
+        :param max_permissions: the maximum permissions to return
         :return: the combined permissions for the given user
         """
-        self._check_resource_exists(resource_id)
+        return self.get_permissions_for_user_for_multiple_resources(
+            resource_ids=[resource_id],
+            user_id=user_id,
+            include_all_users=include_all_users,
+            include_anonymous_users=include_anonymous_users,
+            include_groups=include_groups,
+            include_projects=include_projects,
+            include_admin_permissions=include_admin_permissions,
+            limit_readonly_users=limit_readonly_users,
+            additional_permissions={
+                resource_id: additional_permissions
+            },
+            max_permissions=max_permissions
+        )[resource_id]
 
-        permissions = additional_permissions
-        max_permissions = Permissions.GRANT
+    def get_permissions_for_user_for_multiple_resources(
+            self,
+            resource_ids: typing.Sequence[int],
+            user_id: typing.Optional[int],
+            *,
+            include_all_users: bool = False,
+            include_anonymous_users: bool = False,
+            include_groups: bool = False,
+            include_projects: bool = False,
+            include_admin_permissions: bool = False,
+            limit_readonly_users: bool = False,
+            additional_permissions: typing.Optional[typing.Mapping[int, Permissions]] = None,
+            max_permissions: Permissions = Permissions.GRANT
+    ) -> typing.Mapping[int, Permissions]:
+        """
+        Get combined permissions for a specific user for multiple resources.
 
-        if max_permissions not in permissions and include_anonymous_users:
-            permissions = max(permissions, self.get_permissions_for_anonymous_users(resource_id))
+        This does not consider instrument responsible users or other resource
+        type dependent modifications to user permissions. Depending on the
+        given arguments, it will however consider transitive permissions,
+        admin permissions and readonly users.
+
+        :param resource_ids: a list of IDs of existing resources
+        :param user_id: the ID of an existing user
+        :param include_all_users: whether permissions for all users should be included
+        :param include_anonymous_users: whether permissions for anonymous users should be included
+        :param include_groups: whether groups that the users are members of should be included
+        :param include_projects: whether projects that the users are members of should be included
+        :param include_admin_permissions: whether admin permissions should be included
+        :param limit_readonly_users: whether readonly users should be limited to READ permissions
+        :param additional_permissions: additional permissions to assume for this user, or None
+        :param max_permissions: the maximum permissions to return
+        :return: a dict mapping the resource IDs to the combined permissions
+            for the given user
+        """
+        if not resource_ids:
+            return {}
+
+        for resource_id in resource_ids:
+            self._check_resource_exists(resource_id)
+
+        permissions = {
+            resource_id: additional_permissions.get(resource_id, Permissions.NONE) if additional_permissions else Permissions.NONE
+            for resource_id in resource_ids
+        }
+
+        if include_anonymous_users:
+            for resource_id in resource_ids:
+                if max_permissions not in permissions[resource_id]:
+                    permissions[resource_id] = max(permissions[resource_id], self.get_permissions_for_anonymous_users(resource_id))
 
         if user_id is None:
             return permissions
@@ -415,33 +475,50 @@ class ResourcePermissions(object):
 
         # readonly users may never have more than READ permissions
         if user.is_readonly and limit_readonly_users:
-            max_permissions = Permissions.READ
+            max_permissions = min(Permissions.READ, max_permissions)
 
-        if max_permissions not in permissions and include_admin_permissions:
-            # administrators have GRANT permissions if they use admin permissions
-            if user.has_admin_permissions:
-                permissions = max(permissions, Permissions.GRANT)
+        if include_admin_permissions and user.has_admin_permissions:
+            for resource_id in resource_ids:
+                if max_permissions not in permissions[resource_id]:
+                    # administrators have GRANT permissions if they use admin permissions
+                    permissions[resource_id] = max(permissions[resource_id], Permissions.GRANT)
 
-        if max_permissions not in permissions and include_all_users:
-            permissions = max(permissions, self.get_permissions_for_all_users(resource_id))
+        if include_all_users:
+            for resource_id in resource_ids:
+                if max_permissions not in permissions[resource_id]:
+                    permissions[resource_id] = max(permissions[resource_id], self.get_permissions_for_all_users(resource_id))
 
-        if max_permissions not in permissions:
-            user_permissions = self._user_permissions_table.query.filter_by(user_id=user_id, **{self._resource_id_name: resource_id}).first()
-            if user_permissions is not None:
-                permissions = max(permissions, user_permissions.permissions)
+        for resource_id in resource_ids:
+            if max_permissions not in permissions[resource_id]:
+                user_permissions = self._user_permissions_table.query.filter_by(user_id=user_id, **{self._resource_id_name: resource_id}).first()
+                if user_permissions is not None:
+                    permissions[resource_id] = max(permissions[resource_id], user_permissions.permissions)
 
-        if max_permissions not in permissions and include_groups:
-            group_permissions = self.get_permissions_for_groups(resource_id=resource_id)
-            for group in groups.get_user_groups(user_id):
-                permissions = max(permissions, group_permissions.get(group.id, Permissions.NONE))
+        if include_groups:
+            user_groups = groups.get_user_groups(user_id)
+            for resource_id in resource_ids:
+                if max_permissions not in permissions[resource_id]:
+                    group_permissions = self.get_permissions_for_groups(resource_id=resource_id)
+                    for group in user_groups:
+                        permissions[resource_id] = max(permissions[resource_id], group_permissions.get(group.id, Permissions.NONE))
 
-        if max_permissions not in permissions and include_projects:
-            project_permissions = self.get_permissions_for_projects(resource_id=resource_id)
-            for project in projects.get_user_projects(user_id, include_groups=include_groups):
-                max_project_permissions = projects.get_user_project_permissions(project_id=project.id, user_id=user_id, include_groups=include_groups)
-                permissions = max(permissions, min(max_project_permissions, project_permissions.get(project.id, Permissions.NONE)))
+        if include_projects:
+            user_projects = projects.get_user_projects(user_id, include_groups=include_groups)
+            user_project_permissions = {
+                project.id: projects.get_user_project_permissions(project_id=project.id, user_id=user_id, include_groups=include_groups)
+                for project in user_projects
+            }
+            for resource_id in resource_ids:
+                if max_permissions not in permissions[resource_id]:
+                    project_permissions = self.get_permissions_for_projects(resource_id=resource_id)
+                    for project in user_projects:
+                        max_project_permissions = user_project_permissions[project.id]
+                        permissions[resource_id] = max(permissions[resource_id], min(max_project_permissions, project_permissions.get(project.id, Permissions.NONE)))
 
-        return permissions
+        return {
+            resource_id: min(permissions[resource_id], max_permissions)
+            for resource_id in resource_ids
+        }
 
     def copy_permissions(self, source_resource_id: int, target_resource_id: int) -> None:
         self._check_resource_exists(source_resource_id)

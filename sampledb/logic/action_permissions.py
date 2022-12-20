@@ -72,34 +72,67 @@ def get_user_action_permissions(
         include_admin_permissions: bool = True,
         include_instrument_responsible_users: bool = True
 ) -> Permissions:
+    return get_user_permissions_for_multiple_actions(
+        action_ids=[action_id],
+        user_id=user_id,
+        include_groups=include_groups,
+        include_projects=include_projects,
+        include_admin_permissions=include_admin_permissions,
+        include_instrument_responsible_users=include_instrument_responsible_users
+    )[action_id]
+
+
+def get_user_permissions_for_multiple_actions(
+        action_ids: typing.Sequence[int],
+        user_id: typing.Optional[int],
+        *,
+        include_groups: bool = True,
+        include_projects: bool = True,
+        include_admin_permissions: bool = True,
+        include_instrument_responsible_users: bool = True,
+        max_permissions: Permissions = Permissions.GRANT
+) -> typing.Mapping[int, Permissions]:
+    if not action_ids:
+        return {}
+
     if user_id is None:
-        return Permissions.NONE
+        return {
+            action_id: Permissions.NONE
+            for action_id in action_ids
+        }
 
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         include_instrument_responsible_users = False
 
-    additional_permissions = Permissions.NONE
+    additional_permissions = {
+        action_id: Permissions.NONE
+        for action_id in action_ids
+    }
 
-    # users have GRANT permissions for actions they own
-    owner_id = actions.get_action_owner_id(action_id)
-    if owner_id is not None and owner_id == user_id:
-        additional_permissions = Permissions.GRANT
+    for action_id in action_ids:
+        # users have GRANT permissions for actions they own
+        owner_id = actions.get_action_owner_id(action_id)
+        if owner_id is not None and owner_id == user_id:
+            additional_permissions[action_id] = Permissions.GRANT
 
-    if Permissions.GRANT not in additional_permissions and include_instrument_responsible_users:
-        # instrument responsible users have GRANT permissions for actions of their instrument
-        if _is_user_responsible_for_action_instrument(user_id, action_id):
-            additional_permissions = max(additional_permissions, Permissions.GRANT)
+    if include_instrument_responsible_users:
+        for action_id in action_ids:
+            if Permissions.GRANT not in additional_permissions[action_id]:
+                # instrument responsible users have GRANT permissions for actions of their instrument
+                if _is_user_responsible_for_action_instrument(user_id, action_id):
+                    additional_permissions[action_id] = max(additional_permissions[action_id], Permissions.GRANT)
 
     # resource independent permissions
-    return action_permissions.get_permissions_for_user(
-        resource_id=action_id,
+    return action_permissions.get_permissions_for_user_for_multiple_resources(
+        resource_ids=action_ids,
         user_id=user_id,
         include_all_users=True,
         include_groups=include_groups,
         include_projects=include_projects,
         include_admin_permissions=include_admin_permissions,
         limit_readonly_users=True,
-        additional_permissions=additional_permissions
+        additional_permissions=additional_permissions,
+        max_permissions=max_permissions
     )
 
 
@@ -167,8 +200,7 @@ def get_sorted_actions_for_user(
         exists
     """
     user = users.get_user(user_id)
-    visible_actions = []
-    action_permissions = {}
+    possibly_visible_actions = []
     for action in actions.get_actions(
         action_type_id=action_type_id
     ):
@@ -176,10 +208,18 @@ def get_sorted_actions_for_user(
             continue
         if not include_hidden_actions and action.is_hidden and not user.is_admin and owner_id != user_id:
             continue
-        permissions = get_user_action_permissions(user_id=user_id, action_id=action.id)
-        if Permissions.READ in permissions:
+        possibly_visible_actions.append(action)
+    visible_actions = []
+    action_permissions = {}
+    permissions = get_user_permissions_for_multiple_actions(
+        user_id=user_id,
+        action_ids=[action.id for action in possibly_visible_actions],
+        max_permissions=Permissions.READ
+    )
+    for action in possibly_visible_actions:
+        if Permissions.READ in permissions[action.id]:
             visible_actions.append(action)
-            action_permissions[action.id] = permissions
+            action_permissions[action.id] = permissions[action.id]
     user_favorite_action_ids = favorites.get_user_favorite_action_ids(user_id)
     visible_actions.sort(key=lambda action: (
         0 if action.id in user_favorite_action_ids else 1,

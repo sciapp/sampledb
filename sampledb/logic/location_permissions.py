@@ -36,38 +36,61 @@ def get_user_location_permissions(
         include_projects: bool = True,
         include_admin_permissions: bool = True
 ) -> Permissions:
-    additional_permissions = Permissions.NONE
-    if user_id is None:
-        return Permissions.NONE
+    return get_user_permissions_for_multiple_locations(
+        user_id=user_id,
+        location_ids=[location_id],
+        include_groups=include_groups,
+        include_projects=include_projects,
+        include_admin_permissions=include_admin_permissions
+    )[location_id]
 
-    user = users.get_user(user_id)
-    if user.is_readonly:
-        max_permissions = Permissions.READ
-    else:
-        max_permissions = Permissions.GRANT
+
+def get_user_permissions_for_multiple_locations(
+        location_ids: typing.Sequence[int],
+        user_id: typing.Optional[int],
+        *,
+        include_groups: bool = True,
+        include_projects: bool = True,
+        include_admin_permissions: bool = True,
+        max_permissions: Permissions = Permissions.GRANT
+) -> typing.Mapping[int, Permissions]:
+    if not location_ids:
+        return {}
+
+    additional_permissions = {
+        location_id: Permissions.NONE
+        for location_id in location_ids
+    }
+    if user_id is None:
+        return {
+            location_id: Permissions.NONE
+            for location_id in location_ids
+        }
 
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS']:
+        user = users.get_user(user_id)
         # if only admins are allowed to manage locations, only they can have
         # more than READ permissions
         if not (include_admin_permissions and user.has_admin_permissions):
             max_permissions = min(max_permissions, Permissions.READ)
 
-    # apply responsible user permissions
-    if db.session.query(location_user_association_table).filter(location_user_association_table.c.location_id == location_id).filter(location_user_association_table.c.user_id == user_id).first() is not None:  # type: ignore
-        return min(Permissions.GRANT, max_permissions)
+    for location_id in location_ids:
+        # apply responsible user permissions
+        if bool(db.session.query(db.exists().where(location_user_association_table.c.location_id == location_id, location_user_association_table.c.user_id == user_id)).scalar()):  # type: ignore
+            additional_permissions[location_id] = min(Permissions.GRANT, max_permissions)
 
     # resource independent permissions
-    permissions = location_permissions.get_permissions_for_user(
-        resource_id=location_id,
+    return location_permissions.get_permissions_for_user_for_multiple_resources(
+        resource_ids=location_ids,
         user_id=user_id,
         include_all_users=True,
         include_groups=include_groups,
         include_projects=include_projects,
         include_admin_permissions=include_admin_permissions,
-        limit_readonly_users=False,
-        additional_permissions=additional_permissions
+        limit_readonly_users=True,
+        additional_permissions=additional_permissions,
+        max_permissions=max_permissions
     )
-    return min(permissions, max_permissions)
 
 
 def get_location_permissions_for_all_users(location_id: int) -> Permissions:
@@ -112,14 +135,19 @@ def get_locations_with_user_permissions(
     all_locations = locations.get_locations()
     if permissions in Permissions.NONE:
         return all_locations
-    user = users.get_user(user_id)
     if permissions not in Permissions.READ:
+        user = users.get_user(user_id)
         if user.is_readonly:
             return []
         if not user.is_admin and flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS']:
             return []
+    location_permissions = get_user_permissions_for_multiple_locations(
+        location_ids=[location.id for location in all_locations],
+        user_id=user_id,
+        max_permissions=permissions
+    )
     locations_with_user_permissions = []
     for location in all_locations:
-        if permissions in get_user_location_permissions(location.id, user_id):
+        if permissions in location_permissions[location.id]:
             locations_with_user_permissions.append(location)
     return locations_with_user_permissions
