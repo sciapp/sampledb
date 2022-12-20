@@ -409,7 +409,7 @@ def create_action(
         schemas.validate_schema(schema, strict=True)
     if instrument_id is not None:
         # ensure that the instrument can be found
-        instruments.get_instrument(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
     if user_id is not None:
         # ensure that the user can be found
         users.check_user_exists(user_id)
@@ -464,7 +464,7 @@ def get_actions(
             get_action_type(action_type_id=action_type_id)
         if instrument_id is not None:
             # ensure the instrument exists
-            instruments.get_instrument(instrument_id=instrument_id)
+            instruments.check_instrument_exists(instrument_id=instrument_id)
     return [
         Action.from_database(action)
         for action in actions

@@ -152,3 +152,10 @@ def test_get_instrument_fed_exceptions(component):
         instruments.get_instrument(1, component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         instruments.get_instrument(1, component.id + 1)
+
+
+def test_check_instrument_exists():
+    instrument = instruments.create_instrument()
+    instruments.check_instrument_exists(instrument.id)
+    with pytest.raises(errors.InstrumentDoesNotExistError):
+        instruments.check_instrument_exists(instrument.id + 1)

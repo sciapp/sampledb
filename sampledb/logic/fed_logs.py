@@ -10,7 +10,7 @@ from sampledb.logic.actions import get_action, get_action_type
 from sampledb.logic.comments import get_comment
 from sampledb.logic.components import get_component
 from sampledb.logic.files import get_file
-from sampledb.logic.instruments import get_instrument
+from sampledb.logic.instruments import check_instrument_exists
 from sampledb.logic.locations import get_location, get_object_location_assignment, get_location_type
 from sampledb.logic.objects import get_object
 from sampledb.logic.users import check_user_exists
@@ -308,7 +308,7 @@ def _store_new_fed_instrument_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_instrument(instrument_id)
+    check_instrument_exists(instrument_id)
     get_component(component_id)
     log_entry = fed_logs.FedInstrumentLogEntry(
         type=type,
@@ -601,7 +601,7 @@ def get_fed_instrument_log_entries_for_instrument(instrument_id: int, component_
     else:
         log_entries = fed_logs.FedInstrumentLogEntry.query.filter_by(instrument_id=instrument_id).order_by(db.desc(fed_logs.FedInstrumentLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_instrument(instrument_id)
+        check_instrument_exists(instrument_id)
         if component_id is not None:
             get_component(component_id)
     return log_entries

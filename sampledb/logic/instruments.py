@@ -18,6 +18,7 @@ from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
 from . import users, errors, components, locations
+from .utils import cache
 
 
 @dataclasses.dataclass(frozen=True)
@@ -135,6 +136,21 @@ def get_instruments() -> typing.List[Instrument]:
         Instrument.from_database(instrument)
         for instrument in models.Instrument.query.all()
     ]
+
+
+@cache
+def check_instrument_exists(
+        instrument_id: int
+) -> None:
+    """
+    Check whether an instrument with the given instrument ID exists.
+
+    :param instrument_id: the ID of an existing instrument
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the given
+        instrument ID exists
+    """
+    if not db.session.query(db.exists().where(models.Instrument.id == instrument_id)).scalar():  # type: ignore
+        raise errors.InstrumentDoesNotExistError()
 
 
 def get_mutable_instrument(

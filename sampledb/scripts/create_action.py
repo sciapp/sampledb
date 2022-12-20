@@ -12,7 +12,7 @@ import typing
 from .. import create_app
 from ..logic.actions import create_action, get_action_type, get_action_types
 from ..logic.action_translations import set_action_translation
-from ..logic.instruments import get_instrument
+from ..logic.instruments import check_instrument_exists
 from ..logic.languages import Language
 from ..logic.schemas import validate_schema
 from ..logic.errors import InstrumentDoesNotExistError, ValidationError, ActionTypeDoesNotExistError
@@ -61,7 +61,7 @@ def main(arguments: typing.List[str]) -> None:
                 print('Error: instruments are disabled', file=sys.stderr)
                 exit(1)
             try:
-                get_instrument(instrument_id)
+                check_instrument_exists(instrument_id)
             except InstrumentDoesNotExistError:
                 print('Error: no instrument with this id exists', file=sys.stderr)
                 exit(1)

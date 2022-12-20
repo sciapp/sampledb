@@ -169,7 +169,7 @@ def get_instrument_log_categories(instrument_id: int) -> typing.List[InstrumentL
     categories = instrument_log_entries.InstrumentLogCategory.query.filter_by(instrument_id=instrument_id).all()
     if not categories:
         # ensure that the instrument exists
-        instruments.get_instrument(instrument_id=instrument_id)
+        instruments.check_instrument_exists(instrument_id=instrument_id)
         return []
     return [
         InstrumentLogCategory.from_database(category)
@@ -398,7 +398,7 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
     log_entries.sort(key=lambda e: e.versions[0].utc_datetime)
     if not log_entries:
         # ensure that the instrument exists
-        instruments.get_instrument(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
     return [
         InstrumentLogEntry.from_database(log_entry)
         for log_entry in log_entries
