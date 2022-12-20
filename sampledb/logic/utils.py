@@ -2,7 +2,7 @@
 """
 
 """
-
+import functools
 import re
 import typing
 import sys
@@ -329,3 +329,35 @@ def do_numeric_tags_exist() -> bool:
     :return: whether any numeric tags exist
     """
     return Tag.query.filter(Tag.name.op("~")(r'^[0-9\.]+$')).first() is not None
+
+
+_T = typing.TypeVar('_T')
+_CACHE_FUNCTIONS: typing.Set[typing.Callable[..., _T]] = set()
+
+
+def cache(function: typing.Callable[..., _T]) -> typing.Callable[..., _T]:
+    """
+    Decorator for adding caching to functions via functools.cache().
+
+    Functions with this decorator can have their cache cleared via the
+    clear_cache_functions function.
+
+    :param function: the function to decorate
+    :return: the decorated function
+    """
+    # this decorator will be used before the app is created, so the config
+    # variable has to be used directly instead of via flask.current_app.config
+    from ..config import ENABLE_FUNCTION_CACHES
+    if not ENABLE_FUNCTION_CACHES:
+        return function
+    cache_function = functools.cache(function)
+    _CACHE_FUNCTIONS.add(cache_function)
+    return cache_function
+
+
+def clear_cache_functions() -> None:
+    """
+    Clear the cache of all functions decorated with the cache decorator.
+    """
+    for cache_function in _CACHE_FUNCTIONS:
+        cache_function.cache_clear()  # type: ignore

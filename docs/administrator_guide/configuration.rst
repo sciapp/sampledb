@@ -297,5 +297,7 @@ Miscellaneous
      - If set, only administrators will be able to manage group categories (default: True).
    * - SAMPLEDB_DISABLE_INSTRUMENTS
      - If set, features related to instruments will be disabled (default: False).
+   * - SAMPLEDB_ENABLE_FUNCTION_CACHES
+     - If set, some functions with results that cannot change will use caches (default: True).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

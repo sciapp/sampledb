@@ -177,3 +177,8 @@ def driver():
         # wait for driver to start up
         time.sleep(5)
         yield driver
+
+
+@pytest.fixture(autouse=True)
+def clear_cache_functions():
+    sampledb.logic.utils.clear_cache_functions()

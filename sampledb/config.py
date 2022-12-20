@@ -606,6 +606,8 @@ SHOW_LAST_PROFILE_UPDATE = True
 
 DISABLE_INSTRUMENTS = False
 
+ENABLE_FUNCTION_CACHES = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -664,6 +666,7 @@ for config_name in {
     'SHOW_LAST_PROFILE_UPDATE',
     'USE_TYPEAHEAD_FOR_OBJECTS',
     'DISABLE_INSTRUMENTS',
+    'ENABLE_FUNCTION_CACHES',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):
