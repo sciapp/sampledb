@@ -11,7 +11,7 @@ from sampledb.logic.comments import get_comment
 from sampledb.logic.components import get_component
 from sampledb.logic.files import get_file
 from sampledb.logic.instruments import check_instrument_exists
-from sampledb.logic.locations import get_location, get_object_location_assignment, get_location_type
+from sampledb.logic.locations import check_location_exists, get_object_location_assignment, get_location_type
 from sampledb.logic.objects import get_object
 from sampledb.logic.users import check_user_exists
 from sampledb.models import fed_logs
@@ -124,7 +124,7 @@ def _store_new_fed_location_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_location(location_id)
+    check_location_exists(location_id)
     get_component(component_id)
     log_entry = fed_logs.FedLocationLogEntry(
         type=type,
@@ -512,7 +512,7 @@ def get_fed_location_log_entries_for_location(location_id: int, component_id: ty
     else:
         log_entries = fed_logs.FedLocationLogEntry.query.filter_by(location_id=location_id).order_by(db.desc(fed_logs.FedLocationLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_location(location_id)
+        check_location_exists(location_id)
         if component_id is not None:
             get_component(component_id)
     return log_entries

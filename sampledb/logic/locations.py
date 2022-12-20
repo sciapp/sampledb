@@ -193,7 +193,7 @@ def create_location(
         users.check_user_exists(user_id)
     if parent_location_id is not None:
         # ensure parent location exists
-        get_location(parent_location_id)
+        check_location_exists(parent_location_id)
     if component_id is not None:
         # ensure that the component can be found
         components.get_component(component_id)
@@ -286,6 +286,20 @@ def update_location(
     if user_id is not None:
         user_log.update_location(user_id, location.id)
     location_log.update_location(user_id, location.id)
+
+
+def check_location_exists(
+        location_id: int
+) -> None:
+    """
+    Check whether a location with the given location ID exists.
+
+    :param location_id: the ID of an existing location
+    :raise errors.LocationDoesNotExistError: when no location with the given
+        location ID exists
+    """
+    if not db.session.query(db.exists().where(locations.Location.id == location_id)).scalar():  # type: ignore
+        raise errors.LocationDoesNotExistError()
 
 
 def get_location(location_id: int, component_id: typing.Optional[int] = None) -> Location:
@@ -419,7 +433,7 @@ def assign_location_to_object(
     objects.get_object(object_id)
     if location_id is not None:
         # ensure the location exists
-        get_location(location_id)
+        check_location_exists(location_id)
     # ensure the user exists
     users.check_user_exists(user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
@@ -483,7 +497,7 @@ def create_fed_assignment(
     get_component(component_id)
     if location_id is not None:
         # ensure the location exists
-        get_location(location_id)
+        check_location_exists(location_id)
     if user_id is not None:
         users.check_user_exists(user_id)
     if responsible_user_id is not None:
@@ -571,7 +585,7 @@ def any_objects_at_location(location_id: int) -> bool:
         location ID exists
     """
     # ensure the location exists
-    get_location(location_id)
+    check_location_exists(location_id)
     object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(location_id=location_id).all()
     for object_location_assignment in object_location_assignments:
         object_id = object_location_assignment.object_id
@@ -591,7 +605,7 @@ def get_object_ids_at_location(location_id: int) -> typing.Set[int]:
         location ID exists
     """
     # ensure the location exists
-    get_location(location_id)
+    check_location_exists(location_id)
     object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(location_id=location_id).all()
     object_ids = set()
     for object_location_assignment in object_location_assignments:

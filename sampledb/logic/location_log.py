@@ -80,7 +80,7 @@ def get_log_entries_for_location(
                     log_entries[-1]['new_location'] = locations_by_id[new_location_id]
     if not log_entries:
         # ensure the location exists
-        locations.get_location(location_id)
+        locations.check_location_exists(location_id)
     return log_entries
 
 

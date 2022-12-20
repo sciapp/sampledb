@@ -358,7 +358,7 @@ def set_instrument_location(instrument_id: int, location_id: typing.Optional[int
     """
     if location_id is not None:
         # ensure the location exists
-        locations.get_location(location_id)
+        locations.check_location_exists(location_id)
     instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()

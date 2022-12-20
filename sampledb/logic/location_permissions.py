@@ -24,7 +24,7 @@ location_permissions = ResourcePermissions(
     user_permissions_table=UserLocationPermissions,
     group_permissions_table=GroupLocationPermissions,
     project_permissions_table=ProjectLocationPermissions,
-    check_resource_exists=lambda resource_id: locations.get_location(location_id=resource_id)
+    check_resource_exists=lambda resource_id: locations.check_location_exists(location_id=resource_id)
 )
 
 
