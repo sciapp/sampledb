@@ -404,3 +404,12 @@ def test_action_permissions_for_projects(users, user_action):
 
     assert action_permissions.get_action_permissions_for_projects(action_id) == {}
 
+
+def test__is_user_responsible_for_action_instrument(users, instrument, instrument_action, independent_action):
+    assert not action_permissions._is_user_responsible_for_action_instrument(users[0].id, independent_action.id)
+    assert not action_permissions._is_user_responsible_for_action_instrument(users[0].id, instrument_action.id)
+    sampledb.logic.instruments.set_instrument_responsible_users(instrument.id, [users[1].id])
+    assert not action_permissions._is_user_responsible_for_action_instrument(users[0].id, instrument_action.id)
+    sampledb.logic.instruments.set_instrument_responsible_users(instrument.id, [users[0].id])
+    assert action_permissions._is_user_responsible_for_action_instrument(users[0].id, instrument_action.id)
+    assert not action_permissions._is_user_responsible_for_action_instrument(users[0].id, independent_action.id)

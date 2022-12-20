@@ -7,14 +7,14 @@ import typing
 
 import flask
 
-from . import errors
 from . import actions
 from . import favorites
 from . import users
-from . import instruments
 from .permissions import ResourcePermissions
 from .actions import Action
 from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
+from ..models.instruments import instrument_user_association_table
+from .. import db, models
 from .utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -87,7 +87,7 @@ def get_user_action_permissions(
 
     if Permissions.GRANT not in additional_permissions and include_instrument_responsible_users:
         # instrument responsible users have GRANT permissions for actions of their instrument
-        if user_id in _get_action_responsible_user_ids(action_id):
+        if _is_user_responsible_for_action_instrument(user_id, action_id):
             additional_permissions = max(additional_permissions, Permissions.GRANT)
 
     # resource independent permissions
@@ -103,15 +103,17 @@ def get_user_action_permissions(
     )
 
 
-def _get_action_responsible_user_ids(action_id: int) -> typing.List[int]:
-    try:
-        action = actions.get_action(action_id)
-    except errors.ActionDoesNotExistError:
-        return []
-    if action.instrument_id is None:
-        return []
-    instrument = instruments.get_instrument(action.instrument_id)
-    return [user.id for user in instrument.responsible_users]
+def _is_user_responsible_for_action_instrument(
+        user_id: int,
+        action_id: int
+) -> bool:
+    return bool(db.session.query(
+        db.exists().where(
+            models.Action.id == action_id,
+            models.Action.instrument_id == instrument_user_association_table.c.instrument_id,
+            instrument_user_association_table.c.user_id == user_id
+        )
+    ).scalar())  # type: ignore
 
 
 def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
