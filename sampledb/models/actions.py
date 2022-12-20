@@ -59,7 +59,7 @@ class ActionType(db.Model):  # type: ignore
                                              secondaryjoin=id == usable_in_action_types_table.c.usable_in_action_types)
     component = db.relationship('Component')
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
-    translations = db.relationship('ActionTypeTranslation')
+    translations = db.relationship('ActionTypeTranslation', lazy='selectin')
     order_index = db.Column(db.Integer, nullable=True)
 
     def __repr__(self) -> str:
@@ -138,7 +138,7 @@ class Action(db.Model):  # type: ignore
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
-    translations = db.relationship('ActionTranslation')
+    translations = db.relationship('ActionTranslation', lazy='selectin')
     admin_only = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 

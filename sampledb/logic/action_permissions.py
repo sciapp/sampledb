@@ -27,7 +27,7 @@ action_permissions = ResourcePermissions(
     user_permissions_table=UserActionPermissions,
     group_permissions_table=GroupActionPermissions,
     project_permissions_table=ProjectActionPermissions,
-    check_resource_exists=lambda resource_id: actions.get_action(action_id=resource_id)
+    check_resource_exists=lambda resource_id: actions.check_action_exists(action_id=resource_id)
 )
 
 
@@ -81,8 +81,8 @@ def get_user_action_permissions(
     additional_permissions = Permissions.NONE
 
     # users have GRANT permissions for actions they own
-    action = actions.get_action(action_id)
-    if action.user_id == user_id:
+    owner_id = actions.get_action_owner_id(action_id)
+    if owner_id is not None and owner_id == user_id:
         additional_permissions = Permissions.GRANT
 
     if Permissions.GRANT not in additional_permissions and include_instrument_responsible_users:

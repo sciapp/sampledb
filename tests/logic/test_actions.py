@@ -299,3 +299,34 @@ def test_create_user_action():
     assert action.user_id == user.id
     assert len(actions.get_actions()) == 1
     assert action == actions.get_action(action_id=action.id)
+
+
+def test_check_action_exists():
+    action = actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=SCHEMA
+    )
+    actions.check_action_exists(action.id)
+    with pytest.raises(errors.ActionDoesNotExistError):
+        actions.check_action_exists(action.id + 1)
+
+
+def test_get_action_owner_id():
+    user = sampledb.logic.users.create_user(
+        name="User",
+        email="example@example.com",
+        type=sampledb.models.UserType.PERSON
+    )
+    action1 = actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=SCHEMA
+    )
+    action2 = actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=SCHEMA,
+        user_id=user.id
+    )
+    assert actions.get_action_owner_id(action1.id) is None
+    assert actions.get_action_owner_id(action2.id) == user.id
+    with pytest.raises(errors.ActionDoesNotExistError):
+        actions.get_action_owner_id(action2.id + 1)
