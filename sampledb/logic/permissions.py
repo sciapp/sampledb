@@ -73,6 +73,35 @@ class ResourcePermissions(object):
             return Permissions.NONE
         return typing.cast(Permissions, permissions.permissions)
 
+    def _get_user_independent_permissions_for_multiple_resources(
+            self,
+            resource_ids: typing.Sequence[int],
+            table: typing.Any
+    ) -> typing.Mapping[int, Permissions]:
+        """
+        Return the permissions for a list of resources from a user independent table.
+
+        :param resource_ids: the list of IDs of existing resources
+        :param table: the permissions table
+        :return: the user independent permissions
+        """
+        if table is None:
+            return {
+                resource_id: Permissions.NONE
+                for resource_id in resource_ids
+            }
+        independent_permissions = {}
+        resource_id_column = getattr(table, self._resource_id_name)
+        permissions_rows = table.query.filter(resource_id_column.in_(resource_ids)).all()
+        for permissions_row in permissions_rows:
+            resource_id = getattr(permissions_row, self._resource_id_name)
+            independent_permissions[resource_id] = typing.cast(Permissions, permissions_row.permissions)
+        for resource_id in resource_ids:
+            if resource_id not in independent_permissions:
+                self._check_resource_exists(resource_id)
+                independent_permissions[resource_id] = Permissions.NONE
+        return independent_permissions
+
     def _set_user_independent_permissions(
             self,
             resource_id: int,
@@ -114,6 +143,18 @@ class ResourcePermissions(object):
         """
         return self._get_user_independent_permissions(resource_id, self._all_user_permissions_table)
 
+    def get_permissions_for_all_users_for_multiple_resources(
+            self,
+            resource_ids: typing.Sequence[int]
+    ) -> typing.Mapping[int, Permissions]:
+        """
+        Return the permissions all users have for a list of resources.
+
+        :param resource_ids: the list of IDs of existing resources
+        :return: the permissions for all users
+        """
+        return self._get_user_independent_permissions_for_multiple_resources(resource_ids, self._all_user_permissions_table)
+
     def set_permissions_for_all_users(
             self,
             resource_id: int,
@@ -138,6 +179,18 @@ class ResourcePermissions(object):
         :return: the permissions for anonymous users
         """
         return self._get_user_independent_permissions(resource_id, self._anonymous_user_permissions_table)
+
+    def get_permissions_for_anonymous_users_for_multiple_resources(
+            self,
+            resource_ids: typing.Sequence[int]
+    ) -> typing.Mapping[int, Permissions]:
+        """
+        Return the permissions anonymous users have for a list of resources.
+
+        :param resource_ids: the list of IDs of existing resources
+        :return: the permissions for anonymous users
+        """
+        return self._get_user_independent_permissions_for_multiple_resources(resource_ids, self._anonymous_user_permissions_table)
 
     def set_permissions_for_anonymous_users(
             self,
@@ -463,9 +516,15 @@ class ResourcePermissions(object):
         }
 
         if include_anonymous_users:
-            for resource_id in resource_ids:
-                if max_permissions not in permissions[resource_id]:
-                    permissions[resource_id] = max(permissions[resource_id], self.get_permissions_for_anonymous_users(resource_id))
+            anonymous_user_permissions = self.get_permissions_for_anonymous_users_for_multiple_resources(
+                resource_ids=[
+                    resource_id
+                    for resource_id in resource_ids
+                    if max_permissions not in permissions[resource_id]
+                ]
+            )
+            for resource_id in anonymous_user_permissions:
+                permissions[resource_id] = max(permissions[resource_id], anonymous_user_permissions[resource_id])
 
         if user_id is None:
             return permissions
@@ -484,36 +543,78 @@ class ResourcePermissions(object):
                     permissions[resource_id] = max(permissions[resource_id], Permissions.GRANT)
 
         if include_all_users:
-            for resource_id in resource_ids:
-                if max_permissions not in permissions[resource_id]:
-                    permissions[resource_id] = max(permissions[resource_id], self.get_permissions_for_all_users(resource_id))
+            all_user_permissions = self.get_permissions_for_all_users_for_multiple_resources(
+                resource_ids=[
+                    resource_id
+                    for resource_id in resource_ids
+                    if max_permissions not in permissions[resource_id]
+                ]
+            )
+            for resource_id in all_user_permissions:
+                permissions[resource_id] = max(permissions[resource_id], all_user_permissions[resource_id])
 
-        for resource_id in resource_ids:
-            if max_permissions not in permissions[resource_id]:
-                user_permissions = self._user_permissions_table.query.filter_by(user_id=user_id, **{self._resource_id_name: resource_id}).first()
-                if user_permissions is not None:
-                    permissions[resource_id] = max(permissions[resource_id], user_permissions.permissions)
+        non_max_permissions_resource_ids = [
+            resource_id
+            for resource_id in resource_ids
+            if max_permissions not in permissions[resource_id]
+        ]
+        if non_max_permissions_resource_ids:
+            resource_id_column = getattr(self._user_permissions_table, self._resource_id_name)
+            permissions_rows = self._user_permissions_table.query.filter_by(
+                user_id=user_id
+            ).filter(
+                resource_id_column.in_(non_max_permissions_resource_ids)
+            ).all()
+            for permissions_row in permissions_rows:
+                resource_id = getattr(permissions_row, self._resource_id_name)
+                permissions[resource_id] = max(permissions[resource_id], permissions_row.permissions)
 
         if include_groups:
-            user_groups = groups.get_user_groups(user_id)
-            for resource_id in resource_ids:
-                if max_permissions not in permissions[resource_id]:
-                    group_permissions = self.get_permissions_for_groups(resource_id=resource_id)
-                    for group in user_groups:
-                        permissions[resource_id] = max(permissions[resource_id], group_permissions.get(group.id, Permissions.NONE))
+            non_max_permissions_resource_ids = [
+                resource_id
+                for resource_id in resource_ids
+                if max_permissions not in permissions[resource_id]
+            ]
+            if non_max_permissions_resource_ids:
+                group_ids = [
+                    group.id
+                    for group in groups.get_user_groups(user_id)
+                ]
+                if group_ids:
+                    resource_id_column = getattr(self._group_permissions_table, self._resource_id_name)
+                    permissions_rows = self._group_permissions_table.query.filter(
+                        self._group_permissions_table.group_id.in_(group_ids),
+                        resource_id_column.in_(non_max_permissions_resource_ids)
+                    ).all()
+                    for permissions_row in permissions_rows:
+                        resource_id = getattr(permissions_row, self._resource_id_name)
+                        permissions[resource_id] = max(permissions[resource_id], permissions_row.permissions)
 
         if include_projects:
-            user_projects = projects.get_user_projects(user_id, include_groups=include_groups)
-            user_project_permissions = {
-                project.id: projects.get_user_project_permissions(project_id=project.id, user_id=user_id, include_groups=include_groups)
-                for project in user_projects
-            }
-            for resource_id in resource_ids:
-                if max_permissions not in permissions[resource_id]:
-                    project_permissions = self.get_permissions_for_projects(resource_id=resource_id)
-                    for project in user_projects:
-                        max_project_permissions = user_project_permissions[project.id]
-                        permissions[resource_id] = max(permissions[resource_id], min(max_project_permissions, project_permissions.get(project.id, Permissions.NONE)))
+            non_max_permissions_resource_ids = [
+                resource_id
+                for resource_id in resource_ids
+                if max_permissions not in permissions[resource_id]
+            ]
+            if non_max_permissions_resource_ids:
+                project_ids = [
+                    project.id
+                    for project in projects.get_user_projects(user_id, include_groups=include_groups)
+                ]
+                if project_ids:
+                    user_project_permissions = {
+                        project_id: projects.get_user_project_permissions(project_id=project_id, user_id=user_id, include_groups=include_groups)
+                        for project_id in project_ids
+                    }
+                    resource_id_column = getattr(self._project_permissions_table, self._resource_id_name)
+                    permissions_rows = self._project_permissions_table.query.filter(
+                        self._project_permissions_table.project_id.in_(project_ids),
+                        resource_id_column.in_(non_max_permissions_resource_ids)
+                    ).all()
+                    for permissions_row in permissions_rows:
+                        resource_id = getattr(permissions_row, self._resource_id_name)
+                        max_project_permissions = user_project_permissions[permissions_row.project_id]
+                        permissions[resource_id] = max(permissions[resource_id], min(max_project_permissions, permissions_row.permissions))
 
         return {
             resource_id: min(permissions[resource_id], max_permissions)
