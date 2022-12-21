@@ -6,7 +6,7 @@ import typing
 import datetime
 
 from sampledb import db, models
-from sampledb.logic.actions import get_action, get_action_type
+from sampledb.logic.actions import check_action_exists, get_action_type
 from sampledb.logic.comments import get_comment
 from sampledb.logic.components import get_component
 from sampledb.logic.files import get_file
@@ -216,7 +216,7 @@ def _store_new_fed_action_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_action(action_id)
+    check_action_exists(action_id)
     get_component(component_id)
     log_entry = fed_logs.FedActionLogEntry(
         type=type,
@@ -559,7 +559,7 @@ def get_fed_action_log_entries_for_action(action_id: int, component_id: typing.O
     else:
         log_entries = fed_logs.FedActionLogEntry.query.filter_by(action_id=action_id).order_by(db.desc(fed_logs.FedActionLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_action(action_id)
+        check_action_exists(action_id)
         if component_id is not None:
             get_component(component_id)
     return log_entries

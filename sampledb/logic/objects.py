@@ -120,7 +120,7 @@ def insert_fed_object_version(
         user ID exists
     """
     if action_id is not None:
-        actions.get_action(action_id)
+        actions.check_action_exists(action_id)
     if user_id is not None:
         users.check_user_exists(user_id)
     object = Objects.insert_fed_object_version(
@@ -170,7 +170,7 @@ def create_object_batch(
         user ID exists
     """
     objects: typing.List[Object] = []
-    actions.get_action(action_id)
+    actions.check_action_exists(action_id)
     users.check_user_exists(user_id)
     try:
         for data in data_sequence:
