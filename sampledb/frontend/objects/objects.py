@@ -152,7 +152,7 @@ def objects():
         filter_group_permissions = None
         filter_project_id = None
         filter_project_permissions = None
-        filter_component_id = None
+        filter_origin_ids = None
         all_publications = []
         all_components = []
     else:
@@ -190,7 +190,7 @@ def objects():
                 filter_group_permissions,
                 filter_project_id,
                 filter_project_permissions,
-                filter_component_id,
+                filter_origin_ids,
             ) = _parse_object_list_filters(
                 params=flask.request.args,
                 valid_location_ids=valid_location_ids,
@@ -245,12 +245,28 @@ def objects():
                 'grant': Permissions.GRANT
             }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
 
-            filter_component_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_component_id', None)
-            if filter_component_id and filter_component_id != 'any':
+            filter_origin_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_origin_ids', None)
+            if filter_origin_ids:
                 try:
-                    filter_component_id = int(filter_component_id)
-                except ValueError:
-                    filter_component_id = None
+                    # ensure origins are valid
+                    for origin in filter_origin_ids:
+                        origin_type, origin_id = origin
+                        if origin_type == 'local' and origin_id is None:
+                            continue
+                        if origin_type == 'component' and type(origin_id) == int:
+                            continue
+                        filter_origin_ids = None
+                        break
+                    else:
+                        # convert origins back to tuples
+                        filter_origin_ids = [
+                            tuple(origin)
+                            for origin in filter_origin_ids
+                        ]
+                except Exception:
+                    filter_origin_ids = None
+            else:
+                filter_origin_ids = None
 
             filter_related_user_id = None
             filter_group_id = None
@@ -406,12 +422,25 @@ def objects():
             object_ids_for_doi = None
         else:
             object_ids_for_doi = set(logic.publications.get_object_ids_linked_to_doi(filter_doi))
-        if filter_component_id is None:
-            object_ids_for_component_id = None
-        elif filter_component_id == 'any':
-            object_ids_for_component_id = logic.components.get_object_ids_for_components()
+        if filter_origin_ids is None:
+            object_ids_for_origin_ids = None
         else:
-            object_ids_for_component_id = logic.components.get_object_ids_for_component_id(filter_component_id)
+            filter_local_objects = ('local', None) in filter_origin_ids
+            filter_component_ids = {
+                origin_id
+                for origin_type, origin_id in filter_origin_ids
+                if origin_type == 'component'
+            }
+            if filter_local_objects and len(filter_component_ids) == len(all_components):
+                object_ids_for_origin_ids = None
+            elif len(filter_component_ids) == len(all_components):
+                object_ids_for_origin_ids = logic.components.get_object_ids_for_components()
+            else:
+                object_ids_for_origin_ids = set()
+                if filter_local_objects:
+                    object_ids_for_origin_ids = object_ids_for_origin_ids.union(logic.components.get_local_object_ids())
+                for component_id in filter_component_ids:
+                    object_ids_for_origin_ids = object_ids_for_origin_ids.union(logic.components.get_object_ids_for_component_id(component_id))
 
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
@@ -432,11 +461,11 @@ def objects():
                     object_ids = object_ids_for_doi
                 else:
                     object_ids = object_ids.intersection(object_ids_for_doi)
-            if object_ids_for_component_id is not None:
+            if object_ids_for_origin_ids is not None:
                 if object_ids is None:
-                    object_ids = object_ids_for_component_id
+                    object_ids = object_ids_for_origin_ids
                 else:
-                    object_ids = object_ids.intersection(object_ids_for_component_id)
+                    object_ids = object_ids.intersection(object_ids_for_origin_ids)
 
             if object_ids is not None:
                 pagination_enabled = False
@@ -676,18 +705,17 @@ def objects():
     else:
         filter_doi_info = None
 
-    if filter_component_id == 'any':
-        filter_other_database_info = {
-            'any': True,
-            'component': None
-        }
-    elif filter_component_id:
-        filter_other_database_info = {
-            'any': False,
-            'component': get_component(component_id=filter_component_id)
+    if filter_origin_ids:
+        filter_origins_info = {
+            'local': ('local', None) in filter_origin_ids,
+            'components': [
+                get_component(component_id=origin_id)
+                for origin_type, origin_id in filter_origin_ids
+                if origin_type == 'component'
+            ]
         }
     else:
-        filter_other_database_info = None
+        filter_origins_info = None
 
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
@@ -752,8 +780,8 @@ def objects():
         filter_action_type_ids=filter_action_type_ids,
         all_locations=all_locations,
         filter_location_ids=filter_location_ids,
-        filter_other_database_info=filter_other_database_info,
-        filter_component_id=filter_component_id,
+        filter_origins_info=filter_origins_info,
+        filter_origin_ids=filter_origin_ids,
         all_publications=all_publications,
         all_components=all_components,
         filter_doi=filter_doi,
@@ -890,7 +918,7 @@ def _parse_object_list_filters(
     typing.Optional[Permissions],
     typing.Optional[int],
     typing.Optional[Permissions],
-    typing.Optional[typing.Union[typing.Literal['any'], int]]
+    typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]]
 ]:
     FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     success, filter_location_ids = _parse_filter_id_params(
@@ -1032,21 +1060,27 @@ def _parse_object_list_filters(
         filter_project_id = None
         filter_project_permissions = None
 
-    if params.get('component_id'):
-        if params.get('component_id') == 'any':
-            filter_component_id = 'any'
-        else:
-            try:
-                filter_component_id = int(params.get('component_id'))
-                check_component_exists(filter_component_id)
-            except ValueError:
-                flask.flash(_('Unable to parse database ID.'), 'error')
-                return FALLBACK_RESULT
-            except logic.errors.ComponentDoesNotExistError:
-                flask.flash(_('Invalid database ID.'), 'error')
+    if params.getlist('origins'):
+        filter_origin_ids = []
+        for origin_id_str in params.getlist('origins'):
+            if origin_id_str == 'local':
+                filter_origin_ids.append(('local', None))
+            elif origin_id_str.startswith('component_'):
+                try:
+                    component_id = int(origin_id_str.split('_', 1)[1])
+                    check_component_exists(component_id)
+                except ValueError:
+                    flask.flash(_('Unable to parse database ID.'), 'error')
+                    return FALLBACK_RESULT
+                except logic.errors.ComponentDoesNotExistError:
+                    flask.flash(_('Invalid database ID.'), 'error')
+                    return FALLBACK_RESULT
+                filter_origin_ids.append(('component', component_id))
+            else:
+                flask.flash(_('Unable to parse origin ID.'), 'error')
                 return FALLBACK_RESULT
     else:
-        filter_component_id = None
+        filter_origin_ids = None
 
     return (
         True,
@@ -1063,7 +1097,7 @@ def _parse_object_list_filters(
         filter_group_permissions,
         filter_project_id,
         filter_project_permissions,
-        filter_component_id,
+        filter_origin_ids,
     )
 
 
@@ -1168,7 +1202,7 @@ def save_object_list_defaults():
             filter_group_permissions,
             filter_project_id,
             filter_project_permissions,
-            filter_component_id,
+            filter_origin_ids,
         ) = _parse_object_list_filters(
             params=flask.request.form,
             valid_location_ids=[
@@ -1198,7 +1232,7 @@ def save_object_list_defaults():
                     'filter_all_users_permissions': None if filter_all_users_permissions is None else filter_all_users_permissions.name.lower(),
                     'filter_user_id': filter_user_id,
                     'filter_user_permissions': None if filter_user_permissions is None else filter_user_permissions.name.lower(),
-                    'filter_component_id': filter_component_id
+                    'filter_origin_ids': filter_origin_ids
                 }
             }
         )

@@ -290,3 +290,20 @@ def get_object_ids_for_components() -> typing.Set[int]:
         row[0]
         for row in object_ids
     }
+
+
+def get_local_object_ids() -> typing.Set[int]:
+    """
+    Get the set of object IDs for all objects not imported from any component.
+
+    :return: the set of object IDs
+    """
+    object_ids = db.session.query(  # type: ignore
+        objects.Objects._current_table.c.object_id
+    ).filter(
+        objects.Objects._current_table.c.component_id.is_(db.null())
+    ).all()
+    return {
+        row[0]
+        for row in object_ids
+    }
