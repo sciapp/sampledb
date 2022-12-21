@@ -116,11 +116,18 @@ def get_user_permissions_for_multiple_actions(
             additional_permissions[action_id] = Permissions.GRANT
 
     if include_instrument_responsible_users:
-        for action_id in action_ids:
-            if Permissions.GRANT not in additional_permissions[action_id]:
-                # instrument responsible users have GRANT permissions for actions of their instrument
-                if _is_user_responsible_for_action_instrument(user_id, action_id):
-                    additional_permissions[action_id] = max(additional_permissions[action_id], Permissions.GRANT)
+        # instrument responsible users have GRANT permissions for actions of their instrument
+        user_is_instrument_responsible = _is_user_responsible_for_actions_instruments(
+            user_id=user_id,
+            action_ids=[
+                action_id
+                for action_id in action_ids
+                if Permissions.GRANT not in additional_permissions[action_id]
+            ]
+        )
+        for action_id in user_is_instrument_responsible:
+            if user_is_instrument_responsible[action_id]:
+                additional_permissions[action_id] = max(additional_permissions[action_id], Permissions.GRANT)
 
     # resource independent permissions
     return action_permissions.get_permissions_for_user_for_multiple_resources(
@@ -136,17 +143,19 @@ def get_user_permissions_for_multiple_actions(
     )
 
 
-def _is_user_responsible_for_action_instrument(
+def _is_user_responsible_for_actions_instruments(
         user_id: int,
-        action_id: int
-) -> bool:
-    return bool(db.session.query(
-        db.exists().where(
-            models.Action.id == action_id,
-            models.Action.instrument_id == instrument_user_association_table.c.instrument_id,
-            instrument_user_association_table.c.user_id == user_id
-        )
-    ).scalar())  # type: ignore
+        action_ids: typing.Sequence[int]
+) -> typing.Mapping[int, bool]:
+    responsible_action_id_rows = db.session.query(models.Action.id).filter(  # type: ignore
+        models.Action.id.in_(tuple(action_ids)),
+        models.Action.instrument_id == instrument_user_association_table.c.instrument_id,
+        instrument_user_association_table.c.user_id == user_id
+    ).all()
+    return {
+        action_id: (action_id,) in responsible_action_id_rows
+        for action_id in action_ids
+    }
 
 
 def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
