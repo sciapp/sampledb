@@ -203,6 +203,21 @@ def set_action_types_order(index_list: typing.List[int]) -> None:
     db.session.commit()
 
 
+@cache
+def check_action_type_exists(
+        action_type_id: int
+) -> None:
+    """
+    Check whether an action type with the given action type ID exists.
+
+    :param action_type_id: the ID of an existing action type
+    :raise errors.ActionTypeDoesNotExistError: when no action type with the
+        given action type ID exists
+    """
+    if not db.session.query(db.exists().where(models.ActionType.id == action_type_id)).scalar():  # type: ignore
+        raise errors.ActionTypeDoesNotExistError()
+
+
 def get_action_type(action_type_id: int, component_id: typing.Optional[int] = None) -> ActionType:
     """
     Returns the action type with the given action type ID.
@@ -403,7 +418,7 @@ def create_action(
 
     if action_type_id is not None:
         # ensure the action type exists
-        get_action_type(action_type_id)
+        check_action_type_exists(action_type_id)
 
     if schema is not None:
         schemas.validate_schema(schema, strict=True)
@@ -461,7 +476,7 @@ def get_actions(
     if not actions:
         if action_type_id is not None:
             # ensure the action type exists
-            get_action_type(action_type_id=action_type_id)
+            check_action_type_exists(action_type_id=action_type_id)
         if instrument_id is not None:
             # ensure the instrument exists
             instruments.check_instrument_exists(instrument_id=instrument_id)

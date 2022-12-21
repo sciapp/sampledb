@@ -10,7 +10,7 @@ import sys
 import typing
 
 from .. import create_app
-from ..logic.actions import create_action, get_action_type, get_action_types
+from ..logic.actions import create_action, get_action_type, get_action_types, check_action_type_exists
 from ..logic.action_translations import set_action_translation
 from ..logic.instruments import check_instrument_exists
 from ..logic.languages import Language
@@ -43,7 +43,7 @@ def main(arguments: typing.List[str]) -> None:
         }.get(action_type_id_str, None)
     if action_type_id is not None:
         try:
-            get_action_type(action_type_id)
+            check_action_type_exists(action_type_id)
         except ActionTypeDoesNotExistError:
             action_type_id = None
     if action_type_id is None:

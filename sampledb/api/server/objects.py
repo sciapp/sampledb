@@ -10,7 +10,7 @@ import flask
 
 from ..utils import Resource, ResponseData
 from ...api.server.authentication import multi_auth, object_permissions_required
-from ...logic.actions import get_action, get_action_type, check_action_exists
+from ...logic.actions import get_action, check_action_type_exists, check_action_exists
 from ...logic.action_permissions import get_user_action_permissions
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
@@ -203,7 +203,7 @@ class Objects(Resource):
                 }.get(action_type_id_str, None)
             else:
                 try:
-                    get_action_type(action_type_id)
+                    check_action_type_exists(action_type_id)
                 except errors.ActionTypeDoesNotExistError:
                     action_type_id = None
             if action_type_id is None:

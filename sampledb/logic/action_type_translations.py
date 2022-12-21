@@ -118,7 +118,7 @@ def set_action_type_translation(
         language_id=language_id
     ).first()
     if action_type_translation is None:
-        actions.get_action_type(action_type_id)
+        actions.check_action_type_exists(action_type_id)
         languages.get_language(language_id)
         action_type_translation = models.ActionTypeTranslation(
             action_type_id=action_type_id,
