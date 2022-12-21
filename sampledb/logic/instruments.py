@@ -13,7 +13,7 @@ about an instrument may be altered.
 import dataclasses
 import typing
 
-from .components import get_component
+from .components import check_component_exists
 from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
@@ -108,7 +108,7 @@ def create_instrument(
         raise TypeError('Invalid parameter combination.')
 
     if component_id is not None:
-        get_component(component_id)
+        check_component_exists(component_id)
 
     instrument = models.Instrument(
         description_is_markdown=description_is_markdown,
@@ -173,7 +173,7 @@ def get_mutable_instrument(
         instrument = models.Instrument.query.filter_by(fed_id=instrument_id, component_id=component_id).first()
     if instrument is None:
         if component_id is not None:
-            get_component(component_id)
+            check_component_exists(component_id)
         raise errors.InstrumentDoesNotExistError()
     return instrument
 

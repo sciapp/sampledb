@@ -11,7 +11,7 @@ import dataclasses
 import datetime
 import typing
 
-from .components import get_component, Component
+from .components import Component
 from .. import db
 from . import user_log, object_log, location_log, objects, users, errors, languages, components
 from .notifications import create_notification_for_being_assigned_as_responsible_user
@@ -318,7 +318,7 @@ def get_location(location_id: int, component_id: typing.Optional[int] = None) ->
         location = locations.Location.query.filter_by(fed_id=location_id, component_id=component_id).first()
     if location is None:
         if component_id is not None:
-            get_component(component_id)
+            components.check_component_exists(component_id)
         raise errors.LocationDoesNotExistError()
     return Location.from_database(location)
 
@@ -494,7 +494,7 @@ def create_fed_assignment(
 
     objects.get_object(object_id)
     # ensure the component exists
-    get_component(component_id)
+    components.check_component_exists(component_id)
     if location_id is not None:
         # ensure the location exists
         check_location_exists(location_id)
@@ -789,7 +789,7 @@ def get_location_type(
         location_type = locations.LocationType.query.filter_by(fed_id=location_type_id, component_id=component_id).first()
     if location_type is None:
         if component_id is not None:
-            get_component(component_id)
+            components.check_component_exists(component_id)
         raise errors.LocationTypeDoesNotExistError()
     return LocationType.from_database(location_type)
 

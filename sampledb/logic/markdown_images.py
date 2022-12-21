@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 import datetime
 import flask
 
-from .components import get_component
+from .components import check_component_exists
 from .users import check_user_exists
 from ..models.markdown_images import MarkdownImage
 from .. import db
@@ -73,7 +73,7 @@ def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_
     image = MarkdownImage.query.filter_by(file_name=file_name, component_id=component_id).first()
     if image is None:
         if component_id is not None:
-            get_component(component_id)
+            check_component_exists(component_id)
         return None
     if image.user_id != user_id and not image.permanent:
         return None

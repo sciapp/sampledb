@@ -12,6 +12,7 @@ import flask
 from .. import db
 from ..models import components, objects
 from . import errors
+from .utils import cache
 
 # component names are limited to this (semi-arbitrary) length
 MAX_COMPONENT_NAME_LENGTH = 100
@@ -133,6 +134,21 @@ def add_component(
     return Component.from_database(component)
 
 
+@cache
+def check_component_exists(
+        component_id: int
+) -> None:
+    """
+    Check whether a component with the given component ID exists.
+
+    :param component_id: the ID of an existing component
+    :raise errors.ComponentDoesNotExistError: when no component with the given
+        component ID exists
+    """
+    if not db.session.query(db.exists().where(components.Component.id == component_id)).scalar():  # type: ignore
+        raise errors.ComponentDoesNotExistError()
+
+
 def get_component(
         component_id: int
 ) -> Component:
@@ -252,7 +268,7 @@ def get_object_ids_for_component_id(
     ).all()
     if not object_ids:
         # ensure component exists
-        get_component(component_id)
+        check_component_exists(component_id)
     return {
         row[0]
         for row in object_ids

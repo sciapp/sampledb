@@ -231,7 +231,7 @@ def get_action_type(action_type_id: int, component_id: typing.Optional[int] = No
         action_type = models.ActionType.query.filter_by(id=action_type_id).first()
     else:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
         action_type = models.ActionType.query.filter_by(fed_id=action_type_id, component_id=component_id).first()
     if action_type is None:
         raise errors.ActionTypeDoesNotExistError()
@@ -279,7 +279,7 @@ def create_action_type(
 
     if component_id is not None:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
 
     action_type = models.ActionType(
         admin_only=admin_only,
@@ -431,7 +431,7 @@ def create_action(
 
     if component_id is not None:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
 
     action = models.Action(
         action_type_id=action_type_id,
@@ -537,7 +537,7 @@ def get_mutable_action(
         action = models.Action.query.filter_by(id=action_id).first()
     else:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
         action = models.Action.query.filter_by(fed_id=action_id, component_id=component_id).first()
     if action is None:
         raise errors.ActionDoesNotExistError()

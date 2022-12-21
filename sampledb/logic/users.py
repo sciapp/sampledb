@@ -12,7 +12,7 @@ import flask
 import flask_login
 from flask_babel import gettext
 
-from .components import get_component, get_components, Component
+from .components import get_component, get_components, Component, check_component_exists
 from .. import db
 from . import errors, settings
 from .utils import cache
@@ -286,7 +286,7 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
         user = users.User.query.filter_by(fed_id=user_id, component_id=component_id).first()
     if user is None:
         if component_id is not None:
-            get_component(component_id)
+            check_component_exists(component_id)
         raise errors.UserDoesNotExistError()
     return typing.cast(users.User, user)
 
@@ -433,7 +433,7 @@ def create_user(
         raise TypeError('Invalid parameter combination.')
 
     if component_id is not None:
-        get_component(component_id)
+        check_component_exists(component_id)
 
     user = users.User(name=name, email=email, type=type, orcid=orcid, affiliation=affiliation, role=role, extra_fields=extra_fields, fed_id=fed_id, component_id=component_id, last_modified=datetime.datetime.utcnow())
     db.session.add(user)
@@ -550,7 +550,7 @@ def get_user_alias(user_id: int, component_id: int) -> UserFederationAlias:
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
         check_user_exists(user_id)
-        get_component(component_id)
+        check_component_exists(component_id)
         if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
             return UserFederationAlias.from_user_profile(user_id, component_id)
         raise errors.UserAliasDoesNotExistError()
@@ -590,7 +590,7 @@ def get_user_aliases_for_component(component_id: int, modified_since: typing.Opt
     :return: list of user aliases
     :raise errors.ComponentDoesNotExistError: when no component with the given ID exists
     """
-    get_component(component_id)
+    check_component_exists(component_id)
     if modified_since is None:
         alias = users.UserFederationAlias.query.filter_by(component_id=component_id).all()
     else:
@@ -659,7 +659,7 @@ def create_user_alias(
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is not None:
         check_user_exists(user_id)
-        get_component(component_id)
+        check_component_exists(component_id)
         raise errors.UserAliasAlreadyExistsError()
     if use_real_name:
         name = None
@@ -717,7 +717,7 @@ def update_user_alias(
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
         check_user_exists(user_id)
-        get_component(component_id)
+        check_component_exists(component_id)
         if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
             create_user_alias(
                 user_id=user_id,
@@ -773,7 +773,7 @@ def delete_user_alias(user_id: int, component_id: int) -> None:
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
         check_user_exists(user_id)
-        get_component(component_id)
+        check_component_exists(component_id)
         raise errors.UserAliasDoesNotExistError()
     db.session.delete(alias)
     db.session.commit()

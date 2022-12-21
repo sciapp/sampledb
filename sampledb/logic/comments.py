@@ -76,7 +76,7 @@ def create_comment(
         users.check_user_exists(user_id)
     if component_id is not None:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
     comment = models.Comment(
         object_id=object_id,
         user_id=user_id,
@@ -107,7 +107,7 @@ def get_comment(comment_id: int, component_id: typing.Optional[int] = None) -> C
         comment = models.Comment.query.filter_by(id=comment_id).first()
     else:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
         comment = models.Comment.query.filter_by(fed_id=comment_id, component_id=component_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()

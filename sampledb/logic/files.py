@@ -27,7 +27,6 @@ import typing
 import flask
 
 from . import components, errors, object_log, objects, user_log, users
-from .components import get_component
 from .errors import FileDoesNotExistError, FileNameTooLongError, \
     InvalidFileStorageError, TooManyFilesForObjectError
 from .objects import get_object
@@ -420,7 +419,7 @@ def get_mutable_file(
     if db_file is None:
         get_object(object_id)
         if component_id is not None:
-            get_component(component_id)
+            components.check_component_exists(component_id)
         raise errors.FileDoesNotExistError
     return db_file
 
@@ -527,7 +526,7 @@ def _create_db_file(
         users.check_user_exists(user_id)
     if component_id is not None:
         # ensure that the component exists
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
     # calculate the next file id
     previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()  # type: ignore
     if previous_file_id is None:

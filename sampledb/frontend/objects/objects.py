@@ -28,7 +28,7 @@ from ...logic.locations import get_location, get_object_ids_at_location
 from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.errors import UserDoesNotExistError
-from ...logic.components import get_component
+from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
 from ..utils import get_locations_form_data, get_location_name, get_search_paths
 from ...logic.utils import get_translated_text
@@ -1019,7 +1019,7 @@ def _parse_object_list_filters(
     if params.get('component_id'):
         try:
             filter_component_id = int(params.get('component_id'))
-            get_component(filter_component_id)
+            check_component_exists(filter_component_id)
         except ValueError:
             flask.flash(_('Unable to parse database ID.'), 'error')
             return FALLBACK_RESULT
