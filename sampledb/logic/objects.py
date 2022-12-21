@@ -251,7 +251,7 @@ def update_object_version(
         allow_disabled_languages=allow_disabled_languages
     )
     if object is None:
-        get_object(object_id, version_id)
+        check_object_version_exists(object_id, version_id)
         raise errors.ObjectNotFederatedError()
     tags.update_object_tag_usage(object, new_subversion=True)
 
@@ -282,7 +282,7 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     )
     if object is None:
         # ensure the object actually exists
-        get_object(object_id=object_id, version_id=version_id)
+        check_object_version_exists(object_id=object_id, version_id=version_id)
         return
     user_log.restore_object_version(user_id=user_id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
     object_log.restore_object_version(object_id=object_id, user_id=user_id, restored_version_id=version_id, version_id=object.version_id)
@@ -301,6 +301,24 @@ def check_object_exists(object_id: int) -> None:
     """
     if not Objects.is_existing_object(object_id=object_id):
         raise errors.ObjectDoesNotExistError()
+
+
+@cache
+def check_object_version_exists(object_id: int, version_id: int) -> None:
+    """
+    Ensures that an object version with the given IDs exists.
+
+    :param object_id: the ID of the existing object
+    :param version_id: the ID of the existing version for that object
+
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ObjectVersionDoesNotExistError: when no object version
+        with the given object ID and version ID combination exists
+    """
+    if not Objects.is_existing_object_version(object_id=object_id, version_id=version_id):
+        check_object_exists(object_id)
+        raise errors.ObjectVersionDoesNotExistError()
 
 
 def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Object:

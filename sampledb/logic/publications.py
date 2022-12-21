@@ -13,7 +13,7 @@ from . import errors
 from . import object_log
 from . import user_log
 from . import object_permissions
-from .objects import get_object
+from .objects import check_object_exists
 from .users import check_user_exists
 
 
@@ -56,7 +56,7 @@ def link_publication_to_object(
         exists
     """
     check_user_exists(user_id)
-    get_object(object_id)
+    check_object_exists(object_id)
     link = models.object_publications.ObjectPublication.query.filter_by(object_id=object_id, doi=doi).first()
     if link is None:
         link = models.object_publications.ObjectPublication(object_id=object_id, doi=doi)
@@ -77,7 +77,7 @@ def get_publications_for_object(object_id: int) -> typing.Sequence[Publication]:
     :raise errors.ObjectDoesNotExistError: when no object with the given object ID
         exists
     """
-    get_object(object_id)
+    check_object_exists(object_id)
     links = models.object_publications.ObjectPublication.query.filter_by(object_id=object_id).all()
     return [
         Publication.from_database(link)

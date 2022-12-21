@@ -29,7 +29,6 @@ import flask
 from . import components, errors, object_log, objects, user_log, users
 from .errors import FileDoesNotExistError, FileNameTooLongError, \
     InvalidFileStorageError, TooManyFilesForObjectError
-from .objects import get_object
 from .users import get_user
 from .. import db
 from ..models import files
@@ -417,7 +416,7 @@ def get_mutable_file(
     else:
         db_file = files.File.query.filter_by(fed_id=file_id, object_id=object_id, component_id=component_id).first()
     if db_file is None:
-        get_object(object_id)
+        objects.check_object_exists(object_id)
         if component_id is not None:
             components.check_component_exists(component_id)
         raise errors.FileDoesNotExistError
@@ -645,5 +644,5 @@ def get_files_for_object(object_id: int) -> typing.List[File]:
     db_files = files.File.query.filter_by(object_id=object_id).order_by(db.asc(files.File.utc_datetime)).all()
     if not db_files:
         # ensure that the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
     return [File.from_database(db_file) for db_file in db_files]

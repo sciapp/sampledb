@@ -70,7 +70,7 @@ def create_comment(
         raise TypeError('Invalid parameter combination.')
 
     # ensure that the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     if user_id is not None:
         # ensure that the user exists
         users.check_user_exists(user_id)
@@ -156,7 +156,7 @@ def get_comments_for_object(object_id: int) -> typing.List[Comment]:
     comments = models.Comment.query.filter_by(object_id=object_id).order_by(db.asc(models.Comment.utc_datetime)).all()
     if not comments:
         # ensure that the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
     for comment in comments:
         if comment.user_id is None:
             comment.author = None
@@ -183,7 +183,7 @@ def get_comment_for_object(object_id: int, comment_id: int) -> Comment:
     comment = models.Comment.query.filter_by(object_id=object_id, id=comment_id).first()
     if not comment:
         # ensure that the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         raise errors.CommentDoesNotExistError()
     if comment.user_id is None:
         comment.author = None

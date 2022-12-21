@@ -526,7 +526,7 @@ def create_notification_for_having_received_an_objects_permissions_request(user_
         object ID exists
     """
     # ensure the object exists
-    logic.objects.get_object(object_id)
+    logic.objects.check_object_exists(object_id)
     # ensure the requester exists
     logic.users.check_user_exists(requester_id)
     _create_notification(
@@ -573,7 +573,7 @@ def create_notification_for_being_referenced_by_object_metadata(user_id: int, ob
         exists
     """
     # ensure the instrument log entry exists
-    logic.objects.get_object(object_id)
+    logic.objects.check_object_exists(object_id)
     _create_notification(
         type=NotificationType.REFERENCED_BY_OBJECT_METADATA,
         user_id=user_id,

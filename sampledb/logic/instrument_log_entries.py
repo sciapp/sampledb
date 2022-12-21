@@ -489,7 +489,7 @@ def create_instrument_log_object_attachment(
     # ensure that the instrument log entry exists
     log_entry = get_instrument_log_entry(instrument_log_entry_id)
     # ensure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     attachment = instrument_log_entries.InstrumentLogObjectAttachment(
         log_entry_id=log_entry.id,
         object_id=object_id

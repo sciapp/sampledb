@@ -12,7 +12,7 @@ from sampledb.logic.components import check_component_exists
 from sampledb.logic.files import get_file
 from sampledb.logic.instruments import check_instrument_exists
 from sampledb.logic.locations import check_location_exists, get_object_location_assignment, get_location_type
-from sampledb.logic.objects import get_object
+from sampledb.logic.objects import check_object_exists
 from sampledb.logic.users import check_user_exists
 from sampledb.models import fed_logs
 
@@ -69,7 +69,7 @@ def _store_new_fed_object_log_entry(
         component_id: int,
         data: typing.Dict[str, typing.Any]
 ) -> None:
-    get_object(object_id)
+    check_object_exists(object_id)
     check_component_exists(component_id)
     log_entry = fed_logs.FedObjectLogEntry(
         type=type,
@@ -491,7 +491,7 @@ def get_fed_object_log_entries_for_object(object_id: int, component_id: typing.O
     else:
         log_entries = fed_logs.FedObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(fed_logs.FedObjectLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_object(object_id)
+        check_object_exists(object_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -635,7 +635,7 @@ def get_fed_comment_log_entries_for_object(object_id: int, component_id: typing.
     else:
         log_entries = fed_logs.FedCommentLogEntry.query.join(models.Comment).filter(models.Comment.object_id == object_id, models.FedCommentLogEntry.comment_id == models.Comment.id).order_by(db.desc(fed_logs.FedCommentLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_object(object_id)
+        check_object_exists(object_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -669,7 +669,7 @@ def get_fed_file_log_entries_for_object(object_id: int, component_id: typing.Opt
     else:
         log_entries = fed_logs.FedFileLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(fed_logs.FedFileLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_object(object_id)
+        check_object_exists(object_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries
@@ -703,7 +703,7 @@ def get_fed_object_location_assignment_log_entries_for_object(object_id: int, co
     else:
         log_entries = fed_logs.FedObjectLocationAssignmentLogEntry.query.join(models.ObjectLocationAssignment).filter(models.ObjectLocationAssignment.object_id == object_id, models.FedObjectLocationAssignmentLogEntry.object_location_assignment_id == models.ObjectLocationAssignment.id).order_by(db.desc(fed_logs.FedObjectLocationAssignmentLogEntry.utc_datetime)).all()
     if len(log_entries) == 0:
-        get_object(object_id)
+        check_object_exists(object_id)
         if component_id is not None:
             check_component_exists(component_id)
     return log_entries

@@ -430,7 +430,7 @@ def assign_location_to_object(
         description = languages.filter_translations(description)
 
     # ensure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     if location_id is not None:
         # ensure the location exists
         check_location_exists(location_id)
@@ -492,7 +492,7 @@ def create_fed_assignment(
         assert isinstance(description, dict)
         description = languages.filter_translations(description)
 
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     # ensure the component exists
     components.check_component_exists(component_id)
     if location_id is not None:
@@ -529,7 +529,7 @@ def get_object_location_assignments(object_id: int) -> typing.List[ObjectLocatio
         object ID exists
     """
     # ensure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     object_location_assignments = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime).all()
     return [
         ObjectLocationAssignment.from_database(object_location_assignment)
@@ -552,7 +552,7 @@ def get_current_object_location_assignment(object_id: int) -> typing.Optional[Ob
         object ID exists
     """
     # ensure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(object_id=object_id).order_by(locations.ObjectLocationAssignment.utc_datetime.desc()).first()
     if object_location_assignment is None:
         return None

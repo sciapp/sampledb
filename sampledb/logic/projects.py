@@ -1052,7 +1052,7 @@ def link_project_and_object(
         for either the project or the object
     """
     # make sure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     # make sure the project exists
     get_project(project_id)
     # make sure the user exists
@@ -1098,7 +1098,7 @@ def unlink_project_and_object(
     ).first()
     if association is None:
         # make sure the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         # make sure the project exists
         get_project(project_id)
         raise errors.ProjectObjectLinkDoesNotExistsError()
@@ -1122,7 +1122,7 @@ def get_project_linked_to_object(object_id: int) -> typing.Optional[Project]:
     ).first()
     if association is None:
         # make sure the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         return None
 
     return get_project(association.project_id)
