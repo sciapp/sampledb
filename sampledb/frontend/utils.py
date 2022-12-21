@@ -359,7 +359,8 @@ def to_string_if_dict(data) -> str:
 def get_location_name(
         location_or_location_id: typing.Union[int, Location],
         include_id: bool = False,
-        language_code: typing.Optional[str] = None
+        language_code: typing.Optional[str] = None,
+        has_read_permissions: typing.Optional[bool] = None
 ) -> str:
     location: typing.Optional[Location]
     location_id: int
@@ -375,7 +376,10 @@ def get_location_name(
     else:
         return flask_babel.gettext("Unknown Location")
 
-    if location is None or Permissions.READ not in get_user_location_permissions(location_id, flask_login.current_user.id):
+    if location is not None and has_read_permissions is None:
+        has_read_permissions = Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id)
+
+    if location is None or not has_read_permissions:
         # location ID is always included when the location cannot be accessed
         location_name = flask_babel.gettext("Location") + f' #{location_id}'
     else:
@@ -821,13 +825,14 @@ def get_locations_form_data(
         is_full_subtree_hidden = is_full_location_tree_hidden(readable_locations_map, subtree)
         if not flask_login.current_user.is_admin and location.is_hidden and is_full_subtree_hidden:
             continue
+        has_read_permissions = location_id in readable_location_ids
         # skip unreadable locations, but allow processing their child locations
         # in case any of them are readable
-        if location_id in readable_location_ids and (not location.is_hidden or flask_login.current_user.is_admin):
+        if has_read_permissions and (not location.is_hidden or flask_login.current_user.is_admin):
             is_disabled = not filter(location)
             all_choices.append(LocationFormInformation(
                 id=location_id,
-                name=get_location_name(location, include_id=True),
+                name=get_location_name(location, include_id=True, has_read_permissions=has_read_permissions),
                 name_prefix=name_prefix,
                 id_path=tuple(id_path),
                 has_subtree=bool(subtree),
@@ -839,7 +844,7 @@ def get_locations_form_data(
         elif not is_full_subtree_hidden:
             all_choices.append(LocationFormInformation(
                 id=location_id,
-                name=get_location_name(location, include_id=True),
+                name=get_location_name(location, include_id=True, has_read_permissions=has_read_permissions),
                 name_prefix=name_prefix,
                 id_path=tuple(id_path),
                 has_subtree=bool(subtree),
@@ -848,8 +853,8 @@ def get_locations_form_data(
             ))
         else:
             continue
-        name_prefix = f'{name_prefix}{get_location_name(location)} / '
-        for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id]), reverse=True):
+        name_prefix = f'{name_prefix}{get_location_name(location, has_read_permissions=has_read_permissions)} / '
+        for location_id in sorted(subtree, key=lambda location_id: get_location_name(locations_map[location_id], has_read_permissions=location_id in readable_location_ids), reverse=True):
             unvisited_location_ids_prefixes_and_subtrees.insert(0, (location_id, name_prefix, subtree[location_id], id_path + [location_id]))
     return all_choices, choices
 

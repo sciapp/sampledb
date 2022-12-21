@@ -645,7 +645,7 @@ def post_object_location(object_id):
         return flask.abort(403)
     location_form = ObjectLocationAssignmentForm()
     location_form.location.choices = [('-1', '—')] + [
-        (str(location.id), get_location_name(location, include_id=True))
+        (str(location.id), get_location_name(location, include_id=True, has_read_permissions=True))
         for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
         if location.type is None or location.type.enable_object_assignments
     ]
