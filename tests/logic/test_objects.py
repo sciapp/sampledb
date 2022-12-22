@@ -546,3 +546,24 @@ def test_get_current_version_id(object):
 
     with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
         sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id + 1000)
+
+
+def test_check_object_exists(object):
+    sampledb.logic.objects.check_object_exists(object.id)
+    with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
+        sampledb.logic.objects.check_object_exists(object.id + 1)
+
+
+def test_check_object_version_exists(object):
+    sampledb.logic.objects.check_object_version_exists(object.id, 0)
+    with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
+        sampledb.logic.objects.check_object_version_exists(object.id + 1, 0)
+    with pytest.raises(sampledb.logic.errors.ObjectVersionDoesNotExistError):
+        sampledb.logic.objects.check_object_version_exists(object.id, 1)
+    sampledb.logic.objects.update_object(
+        object_id=object.id,
+        data=object.data,
+        user_id=object.user_id
+    )
+    sampledb.logic.objects.check_object_version_exists(object.id, 0)
+    sampledb.logic.objects.check_object_version_exists(object.id, 1)

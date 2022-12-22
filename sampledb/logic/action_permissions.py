@@ -132,7 +132,7 @@ def get_actions_with_permissions(user_id: int, permissions: Permissions, action_
         given action type ID exists
     """
     # ensure that the user can be found
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     if permissions == Permissions.NONE:
         return []
     actions_with_permissions = []

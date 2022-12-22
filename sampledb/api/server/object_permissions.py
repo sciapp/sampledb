@@ -29,7 +29,7 @@ class UserObjectPermissions(Resource):
         ).get(user_id, Permissions.NONE)
         if permissions == Permissions.NONE:
             try:
-                users.get_user(user_id)
+                users.check_user_exists(user_id)
             except errors.UserDoesNotExistError:
                 return {
                     "message": "user {} does not exist".format(user_id)
@@ -39,7 +39,7 @@ class UserObjectPermissions(Resource):
     @object_permissions_required(Permissions.GRANT)
     def put(self, object_id: int, user_id: int) -> ResponseData:
         try:
-            users.get_user(user_id)
+            users.check_user_exists(user_id)
         except errors.UserDoesNotExistError:
             return {
                 "message": "user {} does not exist".format(user_id)

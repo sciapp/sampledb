@@ -53,7 +53,10 @@ def object_permissions_required(
             object_id = kwargs['object_id']
             version_id = kwargs.get('version_id')
             try:
-                logic.objects.get_object(object_id, version_id)
+                if version_id is None:
+                    logic.objects.check_object_exists(object_id)
+                else:
+                    logic.objects.check_object_version_exists(object_id, version_id)
             except logic.errors.ObjectDoesNotExistError:
                 return flask.abort(404)
             except logic.errors.ObjectVersionDoesNotExistError:

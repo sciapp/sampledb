@@ -59,7 +59,7 @@ def get_user_settings(
     if user_id is None:
         return verified_data
     # ensure the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is not None:
         verified_data.update(_verify_settings(settings.data))
@@ -103,7 +103,7 @@ def set_user_settings(user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     :raise errors.UserDoesNotExistError: if the user does not exist
     """
     # ensure the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is None:
         verified_data = {}

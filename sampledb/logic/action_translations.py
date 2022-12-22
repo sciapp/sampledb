@@ -72,7 +72,7 @@ def set_action_translation(
         action_id=action_id
     ).first()
     if action_translation is None:
-        actions.get_action(action_id)
+        actions.check_action_exists(action_id)
         languages.get_language(language_id)
         action_translation = models.ActionTranslation(
             language_id=language_id,

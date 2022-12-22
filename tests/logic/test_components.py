@@ -336,3 +336,10 @@ def test_get_object_ids_for_component_id():
         utc_datetime=None
     )
     assert logic.components.get_object_ids_for_component_id(component.id) == {object.id}
+
+
+def test_check_component_exists():
+    component_id = add_component(address='https://example.com', uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='').id
+    logic.components.check_component_exists(component_id)
+    with pytest.raises(logic.errors.ComponentDoesNotExistError):
+        logic.components.check_component_exists(component_id + 1)

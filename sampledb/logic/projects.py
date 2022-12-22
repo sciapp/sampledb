@@ -24,7 +24,7 @@ import typing
 import flask
 from .. import db
 from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship, Object
-from .users import get_user
+from .users import get_user, check_user_exists
 from .security_tokens import generate_token
 from . import groups
 from . import errors
@@ -143,7 +143,7 @@ def create_project(
         if item[1] == '':
             del description[item[0]]
 
-    get_user(initial_user_id)
+    check_user_exists(initial_user_id)
     project = projects.Project(name=name, description=description)
     db.session.add(project)
     db.session.commit()
@@ -397,7 +397,7 @@ def invite_user_to_project(
     project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    get_user(user_id)
+    check_user_exists(user_id)
     if Permissions.READ in get_user_project_permissions(project_id, user_id):
         raise errors.UserAlreadyMemberOfProjectError()
     invitation = projects.ProjectInvitation(
@@ -447,7 +447,7 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
     project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    get_user(user_id)
+    check_user_exists(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -531,7 +531,7 @@ def remove_user_from_project(project_id: int, user_id: int) -> None:
     project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    get_user(user_id)
+    check_user_exists(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -605,7 +605,7 @@ def update_user_project_permissions(project_id: int, user_id: int, permissions: 
     project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    get_user(user_id)
+    check_user_exists(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -1052,11 +1052,11 @@ def link_project_and_object(
         for either the project or the object
     """
     # make sure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     # make sure the project exists
     get_project(project_id)
     # make sure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
     if projects.ProjectObjectAssociation.query.filter(
             db.or_(
                 projects.ProjectObjectAssociation.project_id == project_id,
@@ -1091,14 +1091,14 @@ def unlink_project_and_object(
         between the project and the object
     """
     # make sure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
     association = projects.ProjectObjectAssociation.query.filter_by(
         project_id=project_id,
         object_id=object_id
     ).first()
     if association is None:
         # make sure the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         # make sure the project exists
         get_project(project_id)
         raise errors.ProjectObjectLinkDoesNotExistsError()
@@ -1122,7 +1122,7 @@ def get_project_linked_to_object(object_id: int) -> typing.Optional[Project]:
     ).first()
     if association is None:
         # make sure the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         return None
 
     return get_project(association.project_id)

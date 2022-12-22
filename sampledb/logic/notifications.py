@@ -53,7 +53,7 @@ def get_notifications(user_id: int, unread_only: bool = False, _additional_filte
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     query = notifications.Notification.query.filter_by(user_id=user_id)
     if unread_only:
         query = query.filter_by(was_read=False)
@@ -98,7 +98,7 @@ def get_num_notifications(user_id: int, unread_only: bool = False) -> int:
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     num_notifications: int
     if unread_only:
         num_notifications = notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
@@ -152,7 +152,7 @@ def _store_notification(type: NotificationType, user_id: int, data: typing.Dict[
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification = notifications.Notification(
         type=type,
         user_id=user_id,
@@ -281,7 +281,7 @@ def set_notification_mode_for_type(type: NotificationType, user_id: int, mode: N
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is None:
         notification_mode_for_type = notifications.NotificationModeForType(type=type, user_id=user_id, mode=mode)
@@ -301,7 +301,7 @@ def set_notification_mode_for_all_types(user_id: int, mode: NotificationMode) ->
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification_mode_for_types = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
     for notification_mode_for_type in notification_mode_for_types:
         db.session.delete(notification_mode_for_type)
@@ -343,7 +343,7 @@ def get_notification_modes(user_id: int) -> typing.Dict[typing.Optional[Notifica
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification_modes = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
     return {
         notification_mode_for_type.type: notification_mode_for_type.mode
@@ -433,7 +433,7 @@ def create_notification_for_being_invited_to_a_group(
     # ensure the group exists
     logic.groups.get_group(group_id)
     # ensure the inviter exists
-    logic.users.get_user(inviter_id)
+    logic.users.check_user_exists(inviter_id)
     _create_notification(
         type=NotificationType.INVITED_TO_GROUP,
         user_id=user_id,
@@ -469,7 +469,7 @@ def create_notification_for_being_invited_to_a_project(
     # ensure the project exists
     logic.projects.get_project(project_id)
     # ensure the inviter exists
-    logic.users.get_user(inviter_id)
+    logic.users.check_user_exists(inviter_id)
     _create_notification(
         type=NotificationType.INVITED_TO_PROJECT,
         user_id=user_id,
@@ -526,9 +526,9 @@ def create_notification_for_having_received_an_objects_permissions_request(user_
         object ID exists
     """
     # ensure the object exists
-    logic.objects.get_object(object_id)
+    logic.objects.check_object_exists(object_id)
     # ensure the requester exists
-    logic.users.get_user(requester_id)
+    logic.users.check_user_exists(requester_id)
     _create_notification(
         type=NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST,
         user_id=user_id,
@@ -573,7 +573,7 @@ def create_notification_for_being_referenced_by_object_metadata(user_id: int, ob
         exists
     """
     # ensure the instrument log entry exists
-    logic.objects.get_object(object_id)
+    logic.objects.check_object_exists(object_id)
     _create_notification(
         type=NotificationType.REFERENCED_BY_OBJECT_METADATA,
         user_id=user_id,

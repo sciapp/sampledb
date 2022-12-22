@@ -18,7 +18,7 @@ from ...logic import user_log, object_sorting
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
-from ...logic.users import get_user, get_users, get_users_by_name
+from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.groups import get_group
@@ -28,7 +28,7 @@ from ...logic.locations import get_location, get_object_ids_at_location
 from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.errors import UserDoesNotExistError
-from ...logic.components import get_component
+from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
 from ..utils import get_locations_form_data, get_location_name, get_search_paths
 from ...logic.utils import get_translated_text
@@ -920,7 +920,7 @@ def _parse_object_list_filters(
     if 'related_user' in params:
         try:
             filter_related_user_id = int(params.get('related_user'))
-            get_user(filter_related_user_id)
+            check_user_exists(filter_related_user_id)
         except ValueError:
             flask.flash(_('Unable to parse related user ID.'), 'error')
             return FALLBACK_RESULT
@@ -949,7 +949,7 @@ def _parse_object_list_filters(
     if 'user' in params:
         try:
             filter_user_id = int(params.get('user'))
-            get_user(filter_user_id)
+            check_user_exists(filter_user_id)
         except ValueError:
             flask.flash(_('Unable to parse user ID.'), 'error')
             return FALLBACK_RESULT
@@ -1019,7 +1019,7 @@ def _parse_object_list_filters(
     if params.get('component_id'):
         try:
             filter_component_id = int(params.get('component_id'))
-            get_component(filter_component_id)
+            check_component_exists(filter_component_id)
         except ValueError:
             flask.flash(_('Unable to parse database ID.'), 'error')
             return FALLBACK_RESULT

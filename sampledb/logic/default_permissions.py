@@ -12,7 +12,7 @@ default_permissions = ResourcePermissions(
     user_permissions_table=DefaultUserPermissions,
     group_permissions_table=DefaultGroupPermissions,
     project_permissions_table=DefaultProjectPermissions,
-    check_resource_exists=lambda resource_id: users.get_user(user_id=resource_id)
+    check_resource_exists=lambda resource_id: users.check_user_exists(user_id=resource_id)  # type: ignore
 )
 
 

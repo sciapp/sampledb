@@ -169,7 +169,7 @@ def get_instrument_log_categories(instrument_id: int) -> typing.List[InstrumentL
     categories = instrument_log_entries.InstrumentLogCategory.query.filter_by(instrument_id=instrument_id).all()
     if not categories:
         # ensure that the instrument exists
-        instruments.get_instrument(instrument_id=instrument_id)
+        instruments.check_instrument_exists(instrument_id=instrument_id)
         return []
     return [
         InstrumentLogCategory.from_database(category)
@@ -261,7 +261,7 @@ def create_instrument_log_entry(
     # ensure that the instrument exists
     instrument = instruments.get_instrument(instrument_id=instrument_id)
     # ensure that the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     categories = []
     for category_id in set(category_ids):
         category = instrument_log_entries.InstrumentLogCategory.query.filter_by(
@@ -398,7 +398,7 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
     log_entries.sort(key=lambda e: e.versions[0].utc_datetime)
     if not log_entries:
         # ensure that the instrument exists
-        instruments.get_instrument(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
     return [
         InstrumentLogEntry.from_database(log_entry)
         for log_entry in log_entries
@@ -489,7 +489,7 @@ def create_instrument_log_object_attachment(
     # ensure that the instrument log entry exists
     log_entry = get_instrument_log_entry(instrument_log_entry_id)
     # ensure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     attachment = instrument_log_entries.InstrumentLogObjectAttachment(
         log_entry_id=log_entry.id,
         object_id=object_id

@@ -9,7 +9,7 @@ import sys
 import typing
 
 from .. import create_app
-from ..logic.instruments import get_instrument
+from ..logic.instruments import check_instrument_exists
 from ..logic.instrument_translations import set_instrument_translation
 from ..logic.errors import InstrumentDoesNotExistError
 from ..logic.languages import Language
@@ -31,7 +31,7 @@ def main(arguments: typing.List[str]) -> None:
             print('Error: instruments are disabled', file=sys.stderr)
             exit(1)
         try:
-            get_instrument(instrument_id)
+            check_instrument_exists(instrument_id)
         except InstrumentDoesNotExistError:
             print('Error: no instrument with this id exists', file=sys.stderr)
             exit(1)

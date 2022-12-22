@@ -10,7 +10,7 @@ import typing
 
 from .. import create_app
 from ..logic.instruments import get_instrument, add_instrument_responsible_user, remove_instrument_responsible_user
-from ..logic.users import get_user
+from ..logic.users import check_user_exists
 from ..logic.errors import UserDoesNotExistError, InstrumentDoesNotExistError
 
 
@@ -43,7 +43,7 @@ def main(arguments: typing.List[str]) -> None:
             exit(1)
         for user_id in instrument_responsible_user_ids:
             try:
-                get_user(user_id)
+                check_user_exists(user_id)
             except UserDoesNotExistError:
                 print('Error: no user with the id #{} exists'.format(user_id), file=sys.stderr)
                 exit(1)

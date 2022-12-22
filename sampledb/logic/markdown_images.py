@@ -20,8 +20,8 @@ from bs4 import BeautifulSoup
 import datetime
 import flask
 
-from .components import get_component
-from .users import get_user
+from .components import check_component_exists
+from .users import check_user_exists
 from ..models.markdown_images import MarkdownImage
 from .. import db
 
@@ -39,7 +39,7 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     :raise errors.UserDoesNotExistError: if no user with the given ID exists
     """
     # ensure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
 
     _remove_expired_images()
 
@@ -73,7 +73,7 @@ def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_
     image = MarkdownImage.query.filter_by(file_name=file_name, component_id=component_id).first()
     if image is None:
         if component_id is not None:
-            get_component(component_id)
+            check_component_exists(component_id)
         return None
     if image.user_id != user_id and not image.permanent:
         return None

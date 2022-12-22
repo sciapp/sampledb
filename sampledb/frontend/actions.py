@@ -100,7 +100,7 @@ def actions():
             flask.flash(_('Invalid user ID.'), 'error')
     if user_id is not None:
         try:
-            users.get_user(user_id)
+            users.check_user_exists(user_id)
         except errors.UserDoesNotExistError:
             user_id = None
             flask.flash(_('Invalid user ID.'), 'error')

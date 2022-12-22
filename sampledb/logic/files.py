@@ -27,10 +27,8 @@ import typing
 import flask
 
 from . import components, errors, object_log, objects, user_log, users
-from .components import get_component
 from .errors import FileDoesNotExistError, FileNameTooLongError, \
     InvalidFileStorageError, TooManyFilesForObjectError
-from .objects import get_object
 from .users import get_user
 from .. import db
 from ..models import files
@@ -418,9 +416,9 @@ def get_mutable_file(
     else:
         db_file = files.File.query.filter_by(fed_id=file_id, object_id=object_id, component_id=component_id).first()
     if db_file is None:
-        get_object(object_id)
+        objects.check_object_exists(object_id)
         if component_id is not None:
-            get_component(component_id)
+            components.check_component_exists(component_id)
         raise errors.FileDoesNotExistError
     return db_file
 
@@ -524,10 +522,10 @@ def _create_db_file(
     object = objects.get_object(object_id)
     if user_id is not None:
         # ensure that the user exists
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
     if component_id is not None:
         # ensure that the component exists
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
     # calculate the next file id
     previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()  # type: ignore
     if previous_file_id is None:
@@ -646,5 +644,5 @@ def get_files_for_object(object_id: int) -> typing.List[File]:
     db_files = files.File.query.filter_by(object_id=object_id).order_by(db.asc(files.File.utc_datetime)).all()
     if not db_files:
         # ensure that the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
     return [File.from_database(db_file) for db_file in db_files]

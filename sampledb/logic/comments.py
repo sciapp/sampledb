@@ -70,13 +70,13 @@ def create_comment(
         raise TypeError('Invalid parameter combination.')
 
     # ensure that the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     if user_id is not None:
         # ensure that the user exists
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
     if component_id is not None:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
     comment = models.Comment(
         object_id=object_id,
         user_id=user_id,
@@ -107,7 +107,7 @@ def get_comment(comment_id: int, component_id: typing.Optional[int] = None) -> C
         comment = models.Comment.query.filter_by(id=comment_id).first()
     else:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
         comment = models.Comment.query.filter_by(fed_id=comment_id, component_id=component_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()
@@ -156,7 +156,7 @@ def get_comments_for_object(object_id: int) -> typing.List[Comment]:
     comments = models.Comment.query.filter_by(object_id=object_id).order_by(db.asc(models.Comment.utc_datetime)).all()
     if not comments:
         # ensure that the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
     for comment in comments:
         if comment.user_id is None:
             comment.author = None
@@ -183,7 +183,7 @@ def get_comment_for_object(object_id: int, comment_id: int) -> Comment:
     comment = models.Comment.query.filter_by(object_id=object_id, id=comment_id).first()
     if not comment:
         # ensure that the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         raise errors.CommentDoesNotExistError()
     if comment.user_id is None:
         comment.author = None

@@ -330,3 +330,12 @@ def test_get_action_owner_id():
     assert actions.get_action_owner_id(action2.id) == user.id
     with pytest.raises(errors.ActionDoesNotExistError):
         actions.get_action_owner_id(action2.id + 1)
+
+
+def test_check_action_type_exists():
+    action_type = actions.create_action_type(
+        False, True, True, True, True, True, True, True, True, True, True, False, False
+    )
+    actions.check_action_type_exists(action_type.id)
+    with pytest.raises(errors.ActionTypeDoesNotExistError):
+        actions.check_action_type_exists(action_type.id + 1)

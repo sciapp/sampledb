@@ -11,7 +11,6 @@ import flask
 import flask_login
 
 from . import errors
-from .languages import get_user_language
 from .. import db
 from .background_tasks.send_mail import post_send_mail_task
 from .security_tokens import generate_token
@@ -148,6 +147,8 @@ def get_translated_text(
     :param default: a text to return if the input text is None or empty
     :return: the translation
     """
+    # late import to avoid circular imports
+    from .languages import get_user_language
     if isinstance(text, str):
         return text
 

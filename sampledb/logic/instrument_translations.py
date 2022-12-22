@@ -71,7 +71,7 @@ def set_instrument_translation(
         instrument_id=instrument_id
     ).first()
     if instrument_translation is None:
-        instruments.get_instrument(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
         languages.get_language(language_id)
         instrument_translation = models.InstrumentTranslation(
             language_id=language_id,

@@ -22,7 +22,7 @@ import flask
 
 from .. import db
 from ..models import groups
-from .users import get_user, get_mutable_user
+from .users import check_user_exists, get_mutable_user
 from .security_tokens import generate_token
 from .notifications import create_notification_for_being_invited_to_a_group
 from ..logic.languages import get_language_by_lang_code, Language
@@ -298,7 +298,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
         user ID already is a member of this group
     """
     # ensure the inviter exists
-    get_user(inviter_id)
+    check_user_exists(inviter_id)
     group = groups.Group.query.filter_by(id=group_id).first()
     if group is None:
         raise errors.GroupDoesNotExistError()

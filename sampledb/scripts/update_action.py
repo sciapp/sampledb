@@ -10,7 +10,7 @@ import sys
 import typing
 
 from .. import create_app
-from ..logic.actions import get_action
+from ..logic.actions import check_action_exists
 from ..logic.action_translations import set_action_translation
 from ..logic.schemas import validate_schema
 from ..logic.errors import ActionDoesNotExistError, ValidationError
@@ -31,7 +31,7 @@ def main(arguments: typing.List[str]) -> None:
     app = create_app()
     with app.app_context():
         try:
-            get_action(action_id)
+            check_action_exists(action_id)
         except ActionDoesNotExistError:
             print('Error: no action with this id exists', file=sys.stderr)
             exit(1)

@@ -86,6 +86,7 @@ def test_edit_action_using_template(flask_server, user: User):
     mutable_template_action = sampledb.models.Action.query.filter_by(id=template_action.id).first()
     sampledb.db.session.delete(mutable_template_action)
     sampledb.db.session.commit()
+    sampledb.logic.utils.clear_cache_functions()
 
     r = session.get(flask_server.base_url + f'actions/{action.id}?mode=edit')
     assert r.status_code == 400

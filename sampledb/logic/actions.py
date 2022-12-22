@@ -203,6 +203,21 @@ def set_action_types_order(index_list: typing.List[int]) -> None:
     db.session.commit()
 
 
+@cache
+def check_action_type_exists(
+        action_type_id: int
+) -> None:
+    """
+    Check whether an action type with the given action type ID exists.
+
+    :param action_type_id: the ID of an existing action type
+    :raise errors.ActionTypeDoesNotExistError: when no action type with the
+        given action type ID exists
+    """
+    if not db.session.query(db.exists().where(models.ActionType.id == action_type_id)).scalar():  # type: ignore
+        raise errors.ActionTypeDoesNotExistError()
+
+
 def get_action_type(action_type_id: int, component_id: typing.Optional[int] = None) -> ActionType:
     """
     Returns the action type with the given action type ID.
@@ -216,7 +231,7 @@ def get_action_type(action_type_id: int, component_id: typing.Optional[int] = No
         action_type = models.ActionType.query.filter_by(id=action_type_id).first()
     else:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
         action_type = models.ActionType.query.filter_by(fed_id=action_type_id, component_id=component_id).first()
     if action_type is None:
         raise errors.ActionTypeDoesNotExistError()
@@ -264,7 +279,7 @@ def create_action_type(
 
     if component_id is not None:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
 
     action_type = models.ActionType(
         admin_only=admin_only,
@@ -403,20 +418,20 @@ def create_action(
 
     if action_type_id is not None:
         # ensure the action type exists
-        get_action_type(action_type_id)
+        check_action_type_exists(action_type_id)
 
     if schema is not None:
         schemas.validate_schema(schema, strict=True)
     if instrument_id is not None:
         # ensure that the instrument can be found
-        instruments.get_instrument(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
     if user_id is not None:
         # ensure that the user can be found
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
 
     if component_id is not None:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
 
     action = models.Action(
         action_type_id=action_type_id,
@@ -461,10 +476,10 @@ def get_actions(
     if not actions:
         if action_type_id is not None:
             # ensure the action type exists
-            get_action_type(action_type_id=action_type_id)
+            check_action_type_exists(action_type_id=action_type_id)
         if instrument_id is not None:
             # ensure the instrument exists
-            instruments.get_instrument(instrument_id=instrument_id)
+            instruments.check_instrument_exists(instrument_id=instrument_id)
     return [
         Action.from_database(action)
         for action in actions
@@ -522,7 +537,7 @@ def get_mutable_action(
         action = models.Action.query.filter_by(id=action_id).first()
     else:
         # ensure that the component can be found
-        components.get_component(component_id)
+        components.check_component_exists(component_id)
         action = models.Action.query.filter_by(fed_id=action_id, component_id=component_id).first()
     if action is None:
         raise errors.ActionDoesNotExistError()

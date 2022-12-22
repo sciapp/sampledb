@@ -684,6 +684,39 @@ class VersionedJSONSerializableObjectTables(object):
         ).fetchone() is not None
 
     @_use_transaction
+    def is_existing_object_version(
+            self,
+            object_id: int,
+            version_id: int,
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> bool:
+        """
+        Return whether an object version with the given ID exists.
+
+        :param object_id: the ID of a possibly existing object
+        :param version_id: the version ID to check
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: whether the object version exists
+        """
+        assert connection is not None  # ensured by decorator
+        current_version_id = connection.execute(
+            db.select(self._current_table.c.version_id).where(
+                self._current_table.c.object_id == object_id,
+                self._current_table.c.version_id >= version_id
+            )
+        ).fetchone()
+        if current_version_id is None:
+            return False
+        if current_version_id[0] == version_id:
+            return True
+        return connection.execute(
+            db.select(self._previous_table.c.version_id).where(
+                self._previous_table.c.object_id == object_id,
+                self._previous_table.c.version_id == version_id
+            )
+        ).fetchone() is not None
+
+    @_use_transaction
     def get_current_object(
             self,
             object_id: int,

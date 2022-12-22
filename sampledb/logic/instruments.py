@@ -13,11 +13,12 @@ about an instrument may be altered.
 import dataclasses
 import typing
 
-from .components import get_component
+from .components import check_component_exists
 from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
 from . import users, errors, components, locations
+from .utils import cache
 
 
 @dataclasses.dataclass(frozen=True)
@@ -107,7 +108,7 @@ def create_instrument(
         raise TypeError('Invalid parameter combination.')
 
     if component_id is not None:
-        get_component(component_id)
+        check_component_exists(component_id)
 
     instrument = models.Instrument(
         description_is_markdown=description_is_markdown,
@@ -137,6 +138,21 @@ def get_instruments() -> typing.List[Instrument]:
     ]
 
 
+@cache
+def check_instrument_exists(
+        instrument_id: int
+) -> None:
+    """
+    Check whether an instrument with the given instrument ID exists.
+
+    :param instrument_id: the ID of an existing instrument
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the given
+        instrument ID exists
+    """
+    if not db.session.query(db.exists().where(models.Instrument.id == instrument_id)).scalar():  # type: ignore
+        raise errors.InstrumentDoesNotExistError()
+
+
 def get_mutable_instrument(
         instrument_id: int,
         component_id: typing.Optional[int] = None
@@ -157,7 +173,7 @@ def get_mutable_instrument(
         instrument = models.Instrument.query.filter_by(fed_id=instrument_id, component_id=component_id).first()
     if instrument is None:
         if component_id is not None:
-            get_component(component_id)
+            check_component_exists(component_id)
         raise errors.InstrumentDoesNotExistError()
     return instrument
 
@@ -313,7 +329,7 @@ def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.L
         exists
     """
     # ensure that the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     instrument_id_query = db.session.query(
         instrument_user_association_table.c.instrument_id
     ).filter(instrument_user_association_table.c.user_id == user_id)  # type: ignore
@@ -342,7 +358,7 @@ def set_instrument_location(instrument_id: int, location_id: typing.Optional[int
     """
     if location_id is not None:
         # ensure the location exists
-        locations.get_location(location_id)
+        locations.check_location_exists(location_id)
     instrument = models.Instrument.query.filter_by(id=instrument_id).first()
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()

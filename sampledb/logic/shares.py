@@ -6,8 +6,8 @@ import dataclasses
 import datetime
 import typing
 
-from .objects import get_object
-from .components import get_component, Component
+from .objects import get_object, check_object_exists
+from .components import check_component_exists, Component
 from . import errors, fed_logs
 from ..models import Object
 from .. import db, models
@@ -56,7 +56,7 @@ def get_shares_for_component(component_id: int) -> typing.List[ObjectShare]:
     """
     shares = models.ObjectShare.query.filter_by(component_id=component_id).all()
     if len(shares) == 0:
-        get_component(component_id)
+        check_component_exists(component_id)
     return [
         ObjectShare.from_database(object_share)
         for object_share in shares
@@ -66,7 +66,7 @@ def get_shares_for_component(component_id: int) -> typing.List[ObjectShare]:
 def get_shares_for_object(object_id: int) -> typing.List[ObjectShare]:
     shares = models.ObjectShare.query.filter_by(object_id=object_id).all()
     if len(shares) == 0:
-        get_object(object_id)
+        check_object_exists(object_id)
     return [
         ObjectShare.from_database(object_share)
         for object_share in shares
@@ -77,7 +77,7 @@ def get_object_if_shared(object_id: int, component_id: int) -> Object:
     obj = get_object(object_id)
     share = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).all()
     if len(share) == 0:
-        get_component(component_id)
+        check_component_exists(component_id)
         raise errors.ObjectNotSharedError()
     return obj
 
@@ -85,8 +85,8 @@ def get_object_if_shared(object_id: int, component_id: int) -> Object:
 def _get_mutable_share(object_id: int, component_id: int) -> models.ObjectShare:
     share: typing.Optional[models.ObjectShare] = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).first()
     if share is None:
-        get_object(object_id)
-        get_component(component_id)
+        check_object_exists(object_id)
+        check_component_exists(component_id)
         raise errors.ShareDoesNotExistError()
     return share
 
@@ -101,8 +101,8 @@ def add_object_share(
         component_id: int,
         policy: typing.Dict[str, typing.Any]
 ) -> ObjectShare:
-    get_object(object_id)
-    get_component(component_id)
+    check_object_exists(object_id)
+    check_component_exists(component_id)
     share = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).first()
     if share is not None:
         raise errors.ShareAlreadyExistsError()

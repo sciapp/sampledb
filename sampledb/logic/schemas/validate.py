@@ -590,7 +590,7 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         pass  # TODO
     else:
         try:
-            users.get_user(user_id=instance['user_id'])
+            users.check_user_exists(user_id=instance['user_id'])
         except UserDoesNotExistError:
             raise ValidationError('user does not exist', path)
 

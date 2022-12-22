@@ -92,7 +92,7 @@ def reverse_substitute_templates(schema: typing.Dict[str, typing.Any]) -> None:
     if schema.get('type') == 'object':
         if 'template' in schema:
             # ensure the action exists
-            actions.get_action(schema['template'])
+            actions.check_action_exists(schema['template'])
             for key in list(schema.keys()):
                 if key in ['title', 'type', 'template', 'may_copy', 'conditions']:
                     continue

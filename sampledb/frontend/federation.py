@@ -15,7 +15,7 @@ from .federation_forms import AddComponentForm, EditComponentForm, SyncComponent
 from ..logic import errors
 from .utils import check_current_user_is_not_readonly
 from ..logic.component_authentication import remove_component_authentication_method, add_token_authentication, remove_own_component_authentication_method, add_own_token_authentication
-from ..logic.components import get_component, update_component, add_component, get_components
+from ..logic.components import get_component, update_component, add_component, get_components, check_component_exists
 from ..logic.federation.update import import_updates
 from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, \
     get_user_alias
@@ -250,7 +250,7 @@ def user_alias():
     addable_components = [comp for comp in components if comp.id not in added_components]
     try:
         add_alias_component = int(flask.request.args.get('add_alias_component'))
-        get_component(add_alias_component)
+        check_component_exists(add_alias_component)
     except ValueError:
         add_alias_component = None
     except TypeError:
