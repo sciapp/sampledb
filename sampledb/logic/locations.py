@@ -559,6 +559,36 @@ def get_current_object_location_assignment(object_id: int) -> typing.Optional[Ob
     return ObjectLocationAssignment.from_database(object_location_assignment)
 
 
+def get_current_object_location_assignments(
+        object_ids: typing.Sequence[int]
+) -> typing.Mapping[int, typing.Optional[ObjectLocationAssignment]]:
+    """
+    Get the current location assignments for a list of objects.
+
+    :param object_ids: a list of IDs of existing objects
+    :return: a dict mapping object IDs to the object location assignments
+    :raise errors.ObjectDoesNotExistError: when no object with one of the
+        given object IDs exists
+    """
+
+    assignment_rows = locations.ObjectLocationAssignment.query.distinct(
+        locations.ObjectLocationAssignment.object_id
+    ).filter(
+        locations.ObjectLocationAssignment.object_id.in_(object_ids)
+    ).order_by(
+        locations.ObjectLocationAssignment.object_id, locations.ObjectLocationAssignment.utc_datetime.desc()
+    ).all()
+
+    object_location_assignments: typing.Dict[int, typing.Optional[ObjectLocationAssignment]] = {}
+    for assignment_row in assignment_rows:
+        object_location_assignments[assignment_row.object_id] = ObjectLocationAssignment.from_database(assignment_row)
+    for object_id in object_ids:
+        if object_id not in object_location_assignments:
+            objects.check_object_exists(object_id)
+            object_location_assignments[object_id] = None
+    return object_location_assignments
+
+
 def get_object_location_assignment(object_location_assignment_id: int) -> locations.ObjectLocationAssignment:
     """
     Get an object location assignment with a given ID.
