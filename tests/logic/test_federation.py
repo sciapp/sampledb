@@ -1192,6 +1192,7 @@ def test_import_simple_object_no_schema(component):
     del object_data['versions'][0]['schema']
     start_datetime = datetime.datetime.utcnow()
     object = parse_import_object(object_data, component)
+    del object_data['versions'][0]['data']
     _check_object(object_data, component)
 
     assert len(get_objects()) == 1
