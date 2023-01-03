@@ -293,7 +293,7 @@
 
   {% if objects or not search_notes %}
     <h1>{{ object_name_plural }}</h1>
-    {% if filter_action_type_infos or filter_action_infos or filter_location_infos or filter_related_user_info or filter_user_permissions_info or filter_all_users_permissions or filter_anonymous_permissions or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info or filter_other_database_info %}
+    {% if filter_action_type_infos or filter_action_infos or filter_location_infos or filter_related_user_info or filter_user_permissions_info or filter_all_users_permissions or filter_anonymous_permissions or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info or filter_origins_info %}
       <ul>
       {% if filter_action_type_infos %}
         <li>
@@ -372,10 +372,25 @@
           <a href="{{ filter_project_permissions_info.url }}">{{ filter_project_permissions_info.name }}</a>
         </li>
       {% endif %}
-      {% if filter_other_database_info %}
+      {% if filter_origins_info %}
         <li>
-          {{ _('from other database:') }}
-          <a href="{{ url_for('.component', component_id=filter_other_database_info.component.id) }}">{{ filter_other_database_info.component.get_name() }}</a>
+        {% if filter_origins_info.local and not filter_origins_info.components %}
+          {{ _('from this database') }}
+        {% else %}
+          {% if filter_origins_info.local %}
+            {{ _('from this database and from') }}
+          {% else %}
+            {{ _('from') }}
+          {% endif %}
+          {% for component in filter_origins_info.components -%}
+            {% if loop.last and not loop.first %}
+              {{ _('and') }}
+            {%- elif not loop.first -%}
+              ,
+            {% endif %}
+            <a href="{{ url_for('.component', component_id=component.id) }}">{{ component.get_name() }}</a>
+          {%- endfor %}
+        {% endif %}
         </li>
       {% endif %}
       </ul>
@@ -494,7 +509,7 @@
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
         {% for key in request.args %}
-          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'all_users_permissions', 'anonymous_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi', 'component_id'] %}
+          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'all_users_permissions', 'anonymous_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi', 'origins'] %}
             {% for value in request.args.getlist(key) %}
               <input type="hidden" name="{{ key }}" value="{{ value }}" />
             {% endfor %}
@@ -585,14 +600,16 @@
             </div>
             {% if all_components %}
             <div class="form-group">
-              <label class="control-label" for="filter_component_id">
-                {{ _('Filter by Other Database') }}
+              <label class="control-label" for="filter_origin_ids">
+                {{ _('Filter by Origin') }}
               </label>
-              <select class="selectpicker form-control" name="component_id" id="filter_component_id" data-width="100%" data-none-selected-text="{{ _('All databases') }}" data-live-search="on">
-                <option value="">{{ _('All databases') }}</option>
+              <select class="selectpicker form-control" name="origins" id="filter_origin_ids" multiple="multiple" data-width="100%" data-none-selected-text="{{ _('All origins') }}" data-live-search="on">
+                <option value="local" {% if filter_origin_ids and ('local', none) in filter_origin_ids %}selected="selected"{% endif %}>{{ config["SERVICE_NAME"] }}</option>
+                <optgroup label="{{ _('Other Databases') }}">
                 {% for component in all_components %}
-                  <option value="{{ component.id }}" {% if filter_component_id and component.id == filter_component_id %}selected="selected"{% endif %}>{{ component.get_name() }}</option>
+                  <option value="component_{{ component.id }}" {% if filter_origin_ids and ('component', component.id) in filter_origin_ids %}selected="selected"{% endif %}>{{ component.get_name() }}</option>
                 {% endfor %}
+                </optgroup>
               </select>
             </div>
             {% endif %}

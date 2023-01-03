@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.10.3\n"
+"Generated-By: Babel 2.11.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -1044,6 +1044,9 @@ msgstr "Datenbank-ID konnte nicht geparst werden."
 
 msgid "Invalid database ID."
 msgstr "Ungültige Datenbank-ID."
+
+msgid "Unable to parse origin ID."
+msgstr "Quell-ID konnte nicht geparst werden."
 
 msgid "Successfully assigned a new location to objects."
 msgstr "Der neue Ort wurde erfolgreich den Objekten zugewiesen."
@@ -4252,8 +4255,17 @@ msgstr "mit %(permissions)s-Berechtigungen für die einfache Gruppe:"
 msgid "with %(permissions)s permissions for project group:"
 msgstr "mit %(permissions)s-Berechtigungen für die Projektgruppe:"
 
-msgid "from other database:"
-msgstr "aus anderer Datenbank:"
+msgid "from this database"
+msgstr "aus dieser Datenbank"
+
+msgid "from this database and from"
+msgstr "aus dieser Datenbank und aus"
+
+msgid "from"
+msgstr "aus"
+
+msgid "and"
+msgstr "und"
 
 msgid "Options"
 msgstr "Einstellungen"
@@ -4327,11 +4339,11 @@ msgstr "Nach Publikation filtern"
 msgid "All publications"
 msgstr "Alle Publikationen"
 
-msgid "Filter by Other Database"
-msgstr "Nach Anderer Datenbank filtern"
+msgid "Filter by Origin"
+msgstr "Nach Quelle filtern"
 
-msgid "All databases"
-msgstr "Alle Datenbanken"
+msgid "All origins"
+msgstr "Alle Quellen"
 
 msgid "Assign Location"
 msgstr "Ort zuweisen"
@@ -5414,9 +5426,6 @@ msgstr ""
 
 msgid "This project group is a part of"
 msgstr "Diese Projektgruppe ist Teil von"
-
-msgid "and"
-msgstr "und"
 
 msgid "Child Project Groups"
 msgstr "Kind-Projektgruppen"

@@ -64,7 +64,7 @@ def test_object_list_filters_settings(flask_server, driver, user):
         'filter_action_type_ids': None,
         'filter_action_ids': None,
         'filter_doi': None,
-        'filter_component_id': None,
+        'filter_origin_ids': None,
         'filter_anonymous_permissions': None,
         'filter_all_users_permissions': None,
         'filter_user_id': user.id,

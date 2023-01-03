@@ -343,3 +343,84 @@ def test_check_component_exists():
     logic.components.check_component_exists(component_id)
     with pytest.raises(logic.errors.ComponentDoesNotExistError):
         logic.components.check_component_exists(component_id + 1)
+
+
+def test_get_object_ids_for_components():
+    component = add_component(
+        address='https://example.com',
+        uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71',
+        name='Example Component',
+        description=''
+    )
+    assert not logic.components.get_object_ids_for_components()
+    action = logic.actions.create_action(
+        action_type_id=models.ActionType.SAMPLE_CREATION,
+        schema=None,
+        fed_id=1,
+        component_id=component.id
+    )
+    object = logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=action.id,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=None
+    )
+    assert logic.components.get_object_ids_for_components() == {object.id}
+
+
+def test_get_local_object_ids():
+    component = add_component(
+        address='https://example.com',
+        uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71',
+        name='Example Component',
+        description=''
+    )
+    assert not logic.components.get_local_object_ids()
+    action = logic.actions.create_action(
+        action_type_id=models.ActionType.SAMPLE_CREATION,
+        schema=None,
+        fed_id=1,
+        component_id=component.id
+    )
+    object = logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=action.id,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=None
+    )
+    assert not logic.components.get_local_object_ids()
+    user = logic.users.create_user(
+        name='Test',
+        email='example@example.com',
+        type=models.UserType.PERSON
+    )
+    object = logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': 'Test'
+            }
+        },
+        schema={
+            'title': 'Test',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        },
+        user_id=user.id
+    )
+    assert logic.components.get_local_object_ids() == {object.id}
