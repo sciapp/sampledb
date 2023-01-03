@@ -229,21 +229,25 @@ def _store_new_fed_action_log_entry(
     db.session.commit()
 
 
-def import_action(action_id: int, component_id: int) -> None:
+def import_action(action_id: int, component_id: int, import_notes: typing.List[str]) -> None:
     _store_new_fed_action_log_entry(
         type=models.FedActionLogEntryType.IMPORT_ACTION,
         action_id=action_id,
         component_id=component_id,
-        data={}
+        data={
+            'import_notes': import_notes
+        }
     )
 
 
-def update_action(action_id: int, component_id: int) -> None:
+def update_action(action_id: int, component_id: int, import_notes: typing.List[str]) -> None:
     _store_new_fed_action_log_entry(
         type=models.FedActionLogEntryType.UPDATE_ACTION,
         action_id=action_id,
         component_id=component_id,
-        data={}
+        data={
+            'import_notes': import_notes
+        }
     )
 
 

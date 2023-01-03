@@ -555,13 +555,13 @@ def test_create_ref_location_missing_data(location, component):
 def test_import_action(action, component):
     start_time = datetime.datetime.utcnow()
     assert len(models.FedActionLogEntry.query.all()) == 0
-    fed_logs.import_action(action.id, component.id)
+    fed_logs.import_action(action.id, component.id, [])
     log_entries = models.FedActionLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedActionLogEntryType.IMPORT_ACTION
     assert log_entries[0].action_id == action.id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {}
+    assert log_entries[0].data == {'import_notes': []}
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
 
@@ -569,22 +569,22 @@ def test_import_action(action, component):
 def test_import_action_missing_data(action, component):
     assert len(models.FedActionLogEntry.query.all()) == 0
     with pytest.raises(errors.ActionDoesNotExistError):
-        fed_logs.import_action(action.id + 1, component.id)
+        fed_logs.import_action(action.id + 1, component.id, [])
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.import_action(action.id, component.id + 1)
+        fed_logs.import_action(action.id, component.id + 1, [])
     assert len(models.FedActionLogEntry.query.all()) == 0
 
 
 def test_update_action(action, component):
     start_time = datetime.datetime.utcnow()
     assert len(models.FedActionLogEntry.query.all()) == 0
-    fed_logs.update_action(action.id, component.id)
+    fed_logs.update_action(action.id, component.id, [])
     log_entries = models.FedActionLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedActionLogEntryType.UPDATE_ACTION
     assert log_entries[0].action_id == action.id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {}
+    assert log_entries[0].data == {'import_notes': []}
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
 
@@ -592,9 +592,9 @@ def test_update_action(action, component):
 def test_update_action_missing_data(action, component):
     assert len(models.FedActionLogEntry.query.all()) == 0
     with pytest.raises(errors.ActionDoesNotExistError):
-        fed_logs.update_action(action.id + 1, component.id)
+        fed_logs.update_action(action.id + 1, component.id, [])
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.update_action(action.id, component.id + 1)
+        fed_logs.update_action(action.id, component.id + 1, [])
     assert len(models.FedActionLogEntry.query.all()) == 0
 
 
