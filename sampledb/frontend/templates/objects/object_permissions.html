@@ -343,39 +343,36 @@
           </div>
           <label class="control-label">{{ _('Permissions') }}</label>
           <div class="well">
-            <label class="control-label">{{ _('Users') }}</label>
-            <div class="well">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th scope="col" class="text-center"></th>
-                    <th scope="col" style="width: 40%">{{ _('User') }}</th>
-                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-                  </tr>
-                </thead>
-                <tbody id="edit_policy_users_tbody">
-                </tbody>
-              </table>
-              <div class="row">
-                <div class="form-group col-md-7">
-                  <div class="input-group">
-                    <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true"></select>
-                    <span class="input-group-btn">
-                      <button onclick="editPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
-                    </span>
-                  </div>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th scope="col" class="text-center"></th>
+                  <th scope="col" style="width: 40%">{{ _('User') }}</th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                </tr>
+              </thead>
+              <tbody id="edit_policy_users_tbody">
+              </tbody>
+            </table>
+            <div class="row">
+              <div class="form-group col-md-7">
+                <div class="input-group">
+                  <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true"></select>
+                  <span class="input-group-btn">
+                    <button onclick="editPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
+                  </span>
                 </div>
-                <div class="form-group col-md-5">
-                  <div class="input-group">
-                    <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User-ID') }}">
-                    <span class="input-group-btn">
-                      <button onclick="editPolicyAddUserText();" type="button" class="btn btn-success" name="edit_share_user_input_btn">{{ _('Add') }}</button>
-                    </span>
-                  </div>
-                  <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
+              </div>
+              <div class="form-group col-md-5">
+                <div class="input-group">
+                  <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User-ID') }}">
+                  <span class="input-group-btn">
+                    <button onclick="editPolicyAddUserText();" type="button" class="btn btn-success" name="edit_share_user_input_btn">{{ _('Add') }}</button>
+                  </span>
                 </div>
+                <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
               </div>
             </div>
           </div>
@@ -456,40 +453,37 @@
           </div>
           <label class="control-label">{{ _('Permissions') }}</label>
           <div class="well">
-            <label class="control-label">{{ _('Users') }}</label>
-            <div class="well">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th scope="col" class="text-center"></th>
-                    <th scope="col" style="width: 40%">{{ _('User') }}</th>
-                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-                    <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
-                  </tr>
-                </thead>
-                <tbody id="new_policy_users_tbody">
-                </tbody>
-              </table>
-              <div class="row">
-                <div class="form-group col-md-7">
-                  <div class="input-group">
-                    <select class="selectpicker" id="add_share_user_picker" data-live-search="true">
-                    </select>
-                    <span class="input-group-btn">
-                      <button onclick="newPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
-                    </span>
-                  </div>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th scope="col" class="text-center"></th>
+                  <th scope="col" style="width: 40%">{{ _('User') }}</th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to view objects and their properties, files and comments.') }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                  <th scope="col" class="text-center"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Permission to grant permissions to other users. Includes Write permissions.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+                </tr>
+              </thead>
+              <tbody id="new_policy_users_tbody">
+              </tbody>
+            </table>
+            <div class="row">
+              <div class="form-group col-md-7">
+                <div class="input-group">
+                  <select class="selectpicker" id="add_share_user_picker" data-live-search="true">
+                  </select>
+                  <span class="input-group-btn">
+                    <button onclick="newPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
+                  </span>
                 </div>
-                <div class="form-group col-md-5">
-                  <div class="input-group">
-                    <input type="text" class="form-control" id="add_share_user_text" placeholder="{{ _('User-ID') }}">
-                    <span class="input-group-btn">
-                      <button onclick="newPolicyAddUserText();" type="button" class="btn btn-success" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
-                    </span>
-                  </div>
-                  <span id="add_share_user_text_help_block" style="display: none;" class="help-block"></span>
+              </div>
+              <div class="form-group col-md-5">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="add_share_user_text" placeholder="{{ _('User-ID') }}">
+                  <span class="input-group-btn">
+                    <button onclick="newPolicyAddUserText();" type="button" class="btn btn-success" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
+                  </span>
                 </div>
+                <span id="add_share_user_text_help_block" style="display: none;" class="help-block"></span>
               </div>
             </div>
           </div>
