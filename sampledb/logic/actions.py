@@ -386,6 +386,7 @@ def create_action(
         component_id: typing.Optional[int] = None,
         admin_only: bool = False,
         disable_create_objects: bool = False,
+        strict_schema_validation: bool = True,
 ) -> Action:
     """
     Creates a new action with the given type and schema. If
@@ -404,6 +405,7 @@ def create_action(
     :param component_id: the ID of the exporting component
     :param admin_only: whether only admins may use the action to create objects
     :param disable_create_objects: whether the action may not be used to create objects
+    :param strict_schema_validation: whether schema validation should use strict mode
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -421,7 +423,7 @@ def create_action(
         check_action_type_exists(action_type_id)
 
     if schema is not None:
-        schemas.validate_schema(schema, strict=True)
+        schemas.validate_schema(schema, strict=strict_schema_validation)
     if instrument_id is not None:
         # ensure that the instrument can be found
         instruments.check_instrument_exists(instrument_id)

@@ -210,7 +210,7 @@ def parse_object(
             _parse_schema(schema)
             try:
                 if schema is not None:
-                    validate_schema(schema, strict=True)
+                    validate_schema(schema, strict=False)
                     if data is not None:
                         validate(data, schema, allow_disabled_languages=True, strict=False)
             except errors.ValidationError as e:

@@ -82,7 +82,7 @@ def parse_action(
     if schema is not None:
         _parse_schema(schema)
         try:
-            validate_schema(schema, strict=True)
+            validate_schema(schema, strict=False)
         except errors.ValidationError as e:
             schema = None
             import_notes.append(f'Invalid schema in action #{fed_id} @ {uuid} ({e})')
@@ -206,6 +206,7 @@ def import_action(
             short_description_is_markdown=action_data['short_description_is_markdown'],
             admin_only=action_data.get('admin_only', False),
             disable_create_objects=action_data.get('disable_create_objects', False),
+            strict_schema_validation=False,
         )
         fed_logs.import_action(action.id, component.id, action_data.get('import_notes', []))
 
