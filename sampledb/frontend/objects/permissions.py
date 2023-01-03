@@ -283,7 +283,7 @@ def update_object_permissions(object_id):
                 if value not in allowed_permissions:
                     flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
                 policy['permissions']['users'][user_id] = value
-        add_object_share(object_id, component_id, policy)
+        add_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
         try:
             update_poke_component(component)
         except logic.errors.MissingComponentAddressError:
@@ -320,7 +320,7 @@ def update_object_permissions(object_id):
                     flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
                     return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
                 policy['permissions']['users'][user_id] = value
-        update_object_share(object_id, component_id, policy)
+        update_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
         try:
             update_poke_component(component)
         except logic.errors.MissingComponentAddressError:

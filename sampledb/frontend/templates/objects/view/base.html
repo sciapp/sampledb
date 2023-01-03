@@ -1138,15 +1138,17 @@
 
   {% if not is_archived %}
     {% if component %}
+      {% set shares = [] %}
+    {% else %}
+      {% set shares = get_shares_for_object(object.object_id) %}
+    {% endif %}
+    {% if component or shares or fed_object_log_entries %}
       <h2>{{ _('Other Databases') }}</h2>
       <div class="federation-information">
-        {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
-      </div>
-    {% else %}
-    {% set shares = get_shares_for_object(object.object_id) %}
-      {% if shares %}
-        <h2>{{ _('Other Databases') }}</h2>
-        <div class="federation-information">
+        {% if component %}
+          {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>.', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
+        {% endif %}
+        {% if shares %}
           {{ _('This object is being shared with users from the following databases:') }}
           <ul>
             {% for share in shares %}
@@ -1167,8 +1169,78 @@
               </a>
             </div>
           {% endif %}
-        </div>
-      {% endif %}
+        {% endif %}
+        {% if fed_object_log_entries %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col" style="white-space: nowrap; width: 1%;">{{ _('Datetime') }}</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log_entry in fed_object_log_entries %}
+                <tr>
+                  <td style="white-space: nowrap">
+                    <span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span>
+                  </td>
+                  <td>
+                    {% if log_entry.type == FedObjectLogEntryType.IMPORT_OBJECT %}
+                      {% if log_entry.data.import_notes %}
+                        {{ _('The object was imported with the following notes:') }}
+                        <ul>
+                          {% for note in log_entry.data.import_notes %}
+                            <li>{{ note }}</li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        {{ _('The object was imported.') }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT %}
+                      {% if log_entry.data.import_notes %}
+                        {{ _('The object was updated with the following notes:') }}
+                        <ul>
+                          {% for note in log_entry.data.import_notes %}
+                            <li>{{ note }}</li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        {{ _('The object was updated.') }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.ADD_POLICY %}
+                      {% if log_entry.user_id %}
+                        {% set user_ref = user_reference(log_entry.user_id) %}
+                      {% else %}
+                        {% set user_ref = _('An unknown user') %}
+                      {% endif %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry_component %}
+                         {{ _('%(user_ref)s has shared the object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                      {% else %}
+                        {{ _('%(user_ref)s has shared the object with an unknown database.', user_ref=user_ref) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT_POLICY %}
+                      {% if log_entry.user_id %}
+                        {% set user_ref = user_reference(log_entry.user_id) %}
+                      {% else %}
+                        {% set user_ref = _('An unknown user') %}
+                      {% endif %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry_component %}
+                         {{ _('%(user_ref)s has updated the settings for sharing this object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                      {% else %}
+                        {{ _('%(user_ref)s has updated the settings for sharing this object with an unknown database.', user_ref=user_ref) }}
+                      {% endif %}
+                    {% else %}
+                      {{ _('Unknown event') }}
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
     {% endif %}
   {% endif %}
 

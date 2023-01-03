@@ -72,6 +72,8 @@ class FedObjectLogEntry(db.Model):  # type: ignore
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user = db.relationship('User')
 
     def __init__(
             self,
@@ -79,7 +81,8 @@ class FedObjectLogEntry(db.Model):  # type: ignore
             object_id: int,
             component_id: int,
             data: typing.Dict[str, typing.Any],
-            utc_datetime: typing.Optional[datetime.datetime] = None
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            user_id: typing.Optional[int] = None
     ) -> None:
         self.type = type
         self.object_id = object_id
@@ -88,6 +91,7 @@ class FedObjectLogEntry(db.Model):  # type: ignore
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
+        self.user_id = user_id
 
     def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, object_id={1.object_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

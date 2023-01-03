@@ -99,7 +99,8 @@ def get_share(object_id: int, component_id: int) -> ObjectShare:
 def add_object_share(
         object_id: int,
         component_id: int,
-        policy: typing.Dict[str, typing.Any]
+        policy: typing.Dict[str, typing.Any],
+        user_id: typing.Optional[int] = None
 ) -> ObjectShare:
     check_object_exists(object_id)
     check_component_exists(component_id)
@@ -109,19 +110,20 @@ def add_object_share(
     share = models.ObjectShare(object_id=object_id, component_id=component_id, policy=policy)
     db.session.add(share)
     db.session.commit()
-    fed_logs.share_object(object_id, component_id)
+    fed_logs.share_object(object_id, component_id, user_id=user_id)
     return ObjectShare.from_database(share)
 
 
 def update_object_share(
         object_id: int,
         component_id: int,
-        policy: typing.Dict[str, typing.Any]
+        policy: typing.Dict[str, typing.Any],
+        user_id: typing.Optional[int] = None
 ) -> ObjectShare:
     share = _get_mutable_share(object_id, component_id)
     if share.policy != policy:
         share.policy = policy
         db.session.add(share)
         db.session.commit()
-        fed_logs.update_object_policy(object_id, component_id)
+        fed_logs.update_object_policy(object_id, component_id, user_id=user_id)
     return ObjectShare.from_database(share)

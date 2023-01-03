@@ -67,7 +67,8 @@ def _store_new_fed_object_log_entry(
         type: models.FedObjectLogEntryType,
         object_id: int,
         component_id: int,
-        data: typing.Dict[str, typing.Any]
+        data: typing.Dict[str, typing.Any],
+        user_id: typing.Optional[int] = None
 ) -> None:
     check_object_exists(object_id)
     check_component_exists(component_id)
@@ -75,6 +76,7 @@ def _store_new_fed_object_log_entry(
         type=type,
         object_id=object_id,
         component_id=component_id,
+        user_id=user_id,
         data=data,
         utc_datetime=datetime.datetime.utcnow()
     )
@@ -87,6 +89,7 @@ def import_object(object_id: int, component_id: int, import_notes: typing.List[s
         type=models.FedObjectLogEntryType.IMPORT_OBJECT,
         object_id=object_id,
         component_id=component_id,
+        user_id=None,
         data={
             'import_notes': import_notes
         }
@@ -98,26 +101,29 @@ def update_object(object_id: int, component_id: int, import_notes: typing.List[s
         type=models.FedObjectLogEntryType.UPDATE_OBJECT,
         object_id=object_id,
         component_id=component_id,
+        user_id=None,
         data={
             'import_notes': import_notes
         }
     )
 
 
-def share_object(object_id: int, component_id: int) -> None:
+def share_object(object_id: int, component_id: int, user_id: typing.Optional[int]) -> None:
     _store_new_fed_object_log_entry(
         type=models.FedObjectLogEntryType.ADD_POLICY,
         object_id=object_id,
         component_id=component_id,
+        user_id=user_id,
         data={}
     )
 
 
-def update_object_policy(object_id: int, component_id: int) -> None:
+def update_object_policy(object_id: int, component_id: int, user_id: typing.Optional[int]) -> None:
     _store_new_fed_object_log_entry(
         type=models.FedObjectLogEntryType.UPDATE_OBJECT_POLICY,
         object_id=object_id,
         component_id=component_id,
+        user_id=user_id,
         data={}
     )
 

@@ -899,7 +899,20 @@ This example shows how Markdown can be used for instrument Notes.
                 'permissions': {
                     'users': {}
                 }
-            }
+            },
+            user_id=basic_user.id
+        )
+        sampledb.logic.shares.update_object_share(
+            object_id=measurement.id,
+            component_id=component.id,
+            policy={
+                'access': {},
+                'permissions': {
+                    'users': {},
+                    'groups': {}
+                }
+            },
+            user_id=basic_user.id
         )
 
     print("Success: set up demo data", flush=True)
