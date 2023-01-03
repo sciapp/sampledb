@@ -1185,34 +1185,40 @@
                     <span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span>
                   </td>
                   <td>
+                    {% if log_entry.user_id %}
+                      {% set user_ref = user_reference(log_entry.user_id) %}
+                    {% else %}
+                      {% set user_ref = _('An unknown user') %}
+                    {% endif %}
                     {% if log_entry.type == FedObjectLogEntryType.IMPORT_OBJECT %}
+                      {% if not log_entry.user_id %}
+                        {% set user_ref = _('an unknown user') %}
+                      {% endif %}
                       {% if log_entry.data.import_notes %}
-                        {{ _('The object was imported with the following notes:') }}
+                        {{ _('The object shared by %(user_ref)s was imported with the following notes:', user_ref=user_ref) }}
                         <ul>
                           {% for note in log_entry.data.import_notes %}
                             <li>{{ note }}</li>
                           {% endfor %}
                         </ul>
                       {% else %}
-                        {{ _('The object was imported.') }}
+                        {{ _('The object shared by %(user_ref)s was imported.', user_ref=user_ref) }}
                       {% endif %}
                     {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT %}
+                      {% if not log_entry.user_id %}
+                        {% set user_ref = _('an unknown user') %}
+                      {% endif %}
                       {% if log_entry.data.import_notes %}
-                        {{ _('The object was updated with the following notes:') }}
+                        {{ _('A new version of the object shared by %(user_ref)s was imported with the following notes:', user_ref=user_ref) }}
                         <ul>
                           {% for note in log_entry.data.import_notes %}
                             <li>{{ note }}</li>
                           {% endfor %}
                         </ul>
                       {% else %}
-                        {{ _('The object was updated.') }}
+                        {{ _('A new version of the object shared by %(user_ref)s was imported.', user_ref=user_ref) }}
                       {% endif %}
                     {% elif log_entry.type == FedObjectLogEntryType.ADD_POLICY %}
-                      {% if log_entry.user_id %}
-                        {% set user_ref = user_reference(log_entry.user_id) %}
-                      {% else %}
-                        {% set user_ref = _('An unknown user') %}
-                      {% endif %}
                       {% set log_entry_component = get_component(log_entry.component_id) %}
                       {% if log_entry_component %}
                          {{ _('%(user_ref)s has shared the object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
@@ -1220,11 +1226,6 @@
                         {{ _('%(user_ref)s has shared the object with an unknown database.', user_ref=user_ref) }}
                       {% endif %}
                     {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT_POLICY %}
-                      {% if log_entry.user_id %}
-                        {% set user_ref = user_reference(log_entry.user_id) %}
-                      {% else %}
-                        {% set user_ref = _('An unknown user') %}
-                      {% endif %}
                       {% set log_entry_component = get_component(log_entry.component_id) %}
                       {% if log_entry_component %}
                          {{ _('%(user_ref)s has updated the settings for sharing this object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}

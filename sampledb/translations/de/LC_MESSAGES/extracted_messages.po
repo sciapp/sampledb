@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-01-03 12:53+0100\n"
+"POT-Creation-Date: 2023-01-04 13:02+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5177,17 +5177,30 @@ msgstr "Dieses Objekt wird mit Nutzern der folgenden Datenbanken geteilt:"
 msgid "Unknown Database"
 msgstr "Unbekannte Datenbank"
 
-msgid "The object was imported with the following notes:"
-msgstr "Das Objekt wurde mit den folgenden Hinweisen importiert:"
+msgid "an unknown user"
+msgstr "einem unbekannten Nutzer"
 
-msgid "The object was imported."
-msgstr "Das Objekt wurde importiert."
+#, python-format
+msgid "The object shared by %(user_ref)s was imported with the following notes:"
+msgstr ""
+"Das von %(user_ref)s geteilte Objekt wurde mit den folgenden Hinweisen "
+"importiert:"
 
-msgid "The object was updated with the following notes:"
-msgstr "Das Objekt wurde mit den folgenden Hinweisen aktualisiert:"
+#, python-format
+msgid "The object shared by %(user_ref)s was imported."
+msgstr "Das von %(user_ref)s geteilte Objekte wurde importiert."
 
-msgid "The object was updated."
-msgstr "Das Objekt wurde aktualisiert."
+#, python-format
+msgid ""
+"A new version of the object shared by %(user_ref)s was imported with the "
+"following notes:"
+msgstr ""
+"Eine von %(user_ref)s geteilte neue Version des Objekts wurde mit den "
+"folgenden Hinweisen importiert:"
+
+#, python-format
+msgid "A new version of the object shared by %(user_ref)s was imported."
+msgstr "Eine von %(user_ref)s geteilte neue Version des Objekts wurde importiert."
 
 #, python-format
 msgid ""

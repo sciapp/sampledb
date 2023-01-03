@@ -23,6 +23,7 @@ class ObjectShare:
     policy: typing.Dict[str, typing.Any]
     utc_datetime: datetime.datetime
     component: Component
+    user_id: typing.Optional[int]
 
     @classmethod
     def from_database(cls, object_share: models.ObjectShare) -> 'ObjectShare':
@@ -32,6 +33,7 @@ class ObjectShare:
             policy=object_share.policy,
             utc_datetime=object_share.utc_datetime,
             component=Component.from_database(object_share.component),
+            user_id=object_share.user_id
         )
 
 
@@ -107,7 +109,7 @@ def add_object_share(
     share = models.ObjectShare.query.filter_by(object_id=object_id, component_id=component_id).first()
     if share is not None:
         raise errors.ShareAlreadyExistsError()
-    share = models.ObjectShare(object_id=object_id, component_id=component_id, policy=policy)
+    share = models.ObjectShare(object_id=object_id, component_id=component_id, policy=policy, user_id=user_id)
     db.session.add(share)
     db.session.commit()
     fed_logs.share_object(object_id, component_id, user_id=user_id)
@@ -123,6 +125,7 @@ def update_object_share(
     share = _get_mutable_share(object_id, component_id)
     if share.policy != policy:
         share.policy = policy
+        share.user_id = user_id
         db.session.add(share)
         db.session.commit()
         fed_logs.update_object_policy(object_id, component_id, user_id=user_id)

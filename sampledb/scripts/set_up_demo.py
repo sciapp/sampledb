@@ -766,6 +766,10 @@ This example shows how Markdown can be used for instrument Notes.
                 'access': {'data': True, 'files': True, 'action': True, 'comments': True, 'user_ids': True, 'user_data': True, 'object_location_assignments': True},
                 'permissions': {'users': {basic_user.id: 'read'}, 'groups': {group_id: 'read'}, 'projects': {project_id: 'read'}}
             },
+            'sharing_user': {
+                'user_id': 1,
+                'component_uuid': UUID
+            },
             'comments': [
                 {
                     'comment_id': 1,
