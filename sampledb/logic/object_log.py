@@ -6,7 +6,6 @@
 import datetime
 import typing
 
-from . import objects
 from . import object_permissions
 from . import users
 from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions
@@ -19,36 +18,51 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
     object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
     processed_object_log_entries = []
     users_by_id: typing.Dict[typing.Optional[int], typing.Optional[users.User]] = {None: None}
+    referenced_object_ids = {}
+    referenced_object_type_by_log_entry_type = {
+        ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT: 'measurement',
+        ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION: 'sample',
+        ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA: 'object'
+    }
     for object_log_entry in object_log_entries:
-        use_object_entry = False
-        using_object_type = ''
-        if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
-            use_object_entry = True
-            using_object_type = 'measurement'
-        elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
-            use_object_entry = True
-            using_object_type = 'sample'
-        elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA:
-            use_object_entry = True
-            using_object_type = 'object'
-        if use_object_entry:
+        using_object_type = referenced_object_type_by_log_entry_type.get(object_log_entry.type)
+        if using_object_type is not None:
             using_object_id = using_object_type + '_id'
             object_id = object_log_entry.data.get(using_object_id)
             if object_id is None:
                 # object ID was not set or has already been cleared
                 pass
-            elif Permissions.READ not in object_permissions.get_user_object_permissions(object_id=object_id, user_id=user_id):
-                # Clear the using object ID, the user may only know that the
-                # object was used for some other object, but not for which
-                object_log_entry.data[using_object_id] = None
             else:
-                object = objects.get_object(object_id=object_id)
-                object_log_entry.data[using_object_type] = object
-
+                referenced_object_ids[object_log_entry.id] = object_id
         if object_log_entry.user_id not in users_by_id:
             users_by_id[object_log_entry.user_id] = users.get_user(object_log_entry.user_id)
         object_log_entry.user = users_by_id[object_log_entry.user_id]
+        # remove the modified log entry from the session to avoid an
+        # accidental commit of these changes
+        db.session.expunge(object_log_entry)
         processed_object_log_entries.append(object_log_entry)
+    if referenced_object_ids:
+        referenced_objects = object_permissions.get_objects_with_permissions(
+            user_id=user_id,
+            permissions=Permissions.READ,
+            object_ids=list(set(referenced_object_ids.values()))
+        )
+        referenced_objects_by_id = {
+            object.id: object
+            for object in referenced_objects
+        }
+        for object_log_entry in processed_object_log_entries:
+            if object_log_entry.id in referenced_object_ids:
+                using_object_type = referenced_object_type_by_log_entry_type[object_log_entry.type]
+                using_object_id = using_object_type + '_id'
+                referenced_object_id = referenced_object_ids[object_log_entry.id]
+                if referenced_object_id in referenced_objects_by_id:
+                    referenced_object = referenced_objects_by_id[referenced_object_id]
+                    object_log_entry.data[using_object_type] = referenced_object
+                else:
+                    # Clear the using object ID, the user may only know that the
+                    # object was used for some other object, but not for which
+                    object_log_entry.data[using_object_id] = None
     return processed_object_log_entries
 
 
