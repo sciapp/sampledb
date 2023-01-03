@@ -366,24 +366,32 @@
               <tbody id="edit_policy_users_tbody">
               </tbody>
             </table>
-            <div class="row">
-              <div class="form-group col-md-7">
-                <div class="input-group">
-                  <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true"></select>
-                  <span class="input-group-btn">
-                    <button onclick="editPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
-                  </span>
-                </div>
+            <h4>{{ _('Add User') }}</h4>
+            <div class="form-group">
+              <label>
+                {{ _('Select User') }} <span  data-toggle="tooltip" data-placement="bottom" title="{{ _('If a user is missing from this list, please enter their ID below.') }}"><i class="fa fa-question-circle"></i></span>
+              </label>
+              <div class="input-group">
+                <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true" data-width="100%"></select>
+                <span class="input-group-btn">
+                  <button onclick="editPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
+                </span>
               </div>
-              <div class="form-group col-md-5">
-                <div class="input-group">
-                  <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User-ID') }}">
-                  <span class="input-group-btn">
-                    <button onclick="editPolicyAddUserText();" type="button" class="btn btn-success" name="edit_share_user_input_btn">{{ _('Add') }}</button>
-                  </span>
-                </div>
-                <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
+            </div>
+            <div style="margin-bottom: 5px; margin-top: -10px;" class="text-muted">
+              {{ _('or') }}
+            </div>
+            <div class="form-group">
+              <label>
+                {{ _('Enter User ID') }} <span  data-toggle="tooltip" data-placement="bottom" title="{{ _('To find the user ID, check the user profile in the other database.') }}"><i class="fa fa-question-circle"></i></span>
+              </label>
+              <div class="input-group">
+                <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User ID') }}" style="width: 100%">
+                <span class="input-group-btn">
+                  <button onclick="editPolicyAddUserText();" type="button" class="btn btn-success" name="edit_share_user_input_btn">{{ _('Add') }}</button>
+                </span>
               </div>
+              <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
             </div>
           </div>
         </div>
@@ -476,25 +484,33 @@
               <tbody id="new_policy_users_tbody">
               </tbody>
             </table>
-            <div class="row">
-              <div class="form-group col-md-7">
-                <div class="input-group">
-                  <select class="selectpicker" id="add_share_user_picker" data-live-search="true">
-                  </select>
-                  <span class="input-group-btn">
-                    <button onclick="newPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
-                  </span>
-                </div>
+            <h4>{{ _('Add User') }}</h4>
+            <div class="form-group">
+              <label>
+                {{ _('Select User') }} <span  data-toggle="tooltip" data-placement="bottom" title="{{ _('If a user is missing from this list, please enter their ID below.') }}"><i class="fa fa-question-circle"></i></span>
+              </label>
+              <div class="input-group">
+                <select class="selectpicker" id="add_share_user_picker" data-live-search="true" data-width="100%">
+                </select>
+                <span class="input-group-btn">
+                  <button onclick="newPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
+                </span>
               </div>
-              <div class="form-group col-md-5">
-                <div class="input-group">
-                  <input type="text" class="form-control" id="add_share_user_text" placeholder="{{ _('User-ID') }}">
-                  <span class="input-group-btn">
-                    <button onclick="newPolicyAddUserText();" type="button" class="btn btn-success" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
-                  </span>
-                </div>
-                <span id="add_share_user_text_help_block" style="display: none;" class="help-block"></span>
+            </div>
+            <div style="margin-bottom: 5px; margin-top: -10px;" class="text-muted">
+              {{ _('or') }}
+            </div>
+            <div class="form-group">
+              <label>
+                {{ _('Enter User ID') }} <span  data-toggle="tooltip" data-placement="bottom" title="{{ _('To find the user ID, check the user profile in the other database.') }}"><i class="fa fa-question-circle"></i></span>
+              </label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="add_share_user_text" placeholder="{{ _('User ID') }}">
+                <span class="input-group-btn">
+                  <button onclick="newPolicyAddUserText();" type="button" class="btn btn-success" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
+                </span>
               </div>
+              <span id="add_share_user_text_help_block" style="display: none;" class="help-block"></span>
             </div>
           </div>
         </div>
