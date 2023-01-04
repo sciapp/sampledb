@@ -91,7 +91,7 @@ check-migrations:
     # create backup for comparison
     - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
     # ensure both backups yield identical backups
-    - diff --context postgres_without_upgrade.sql postgres_with_upgrade_from_master.sql
+    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_master.sql
     # re-create database to ensure it is entirely empty
     - dropdb -h postgres -U postgres postgres
     - createdb -h postgres -U postgres postgres
@@ -109,7 +109,7 @@ check-migrations:
     # create backup for comparison
     - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
     # ensure both backups yield identical backups
-    - diff --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
+    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
 
 check-translations:
   stage: test
@@ -134,7 +134,7 @@ check-translations:
     - sed '1,19d' extracted_messages_current_de.po > extracted_messages_current_de_without_header.po
     - sed '1,19d' extracted_messages_generated_de.po > extracted_messages_generated_de_without_header.po
     # compare current and generated messages to ensure there are no changes missing in the current messages
-    - diff extracted_messages_current_de_without_header.po extracted_messages_generated_de_without_header.po
+    - diff --color=always extracted_messages_current_de_without_header.po extracted_messages_generated_de_without_header.po
 
 documentation:
   stage: test
