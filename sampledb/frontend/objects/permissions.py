@@ -273,16 +273,40 @@ def update_object_permissions(object_id):
             'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
         }
         allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+        policy_permissions_are_valid = False
         for attr_name, value in flask.request.form.items():
-            if attr_name[:len('permissions_add_policy_user_')] == 'permissions_add_policy_user_':
+            if attr_name.startswith('permissions_add_policy_user_'):
                 user_id = attr_name[len('permissions_add_policy_user_'):]
                 try:
                     user_id = int(user_id)
                 except ValueError:
-                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+                    break
                 if value not in allowed_permissions:
-                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+                    break
                 policy['permissions']['users'][user_id] = value
+            if attr_name.startswith('permissions_add_policy_group_'):
+                basic_group_id = attr_name[len('permissions_add_policy_group_'):]
+                try:
+                    basic_group_id = int(basic_group_id)
+                except ValueError:
+                    break
+                if value not in allowed_permissions:
+                    break
+                policy['permissions']['groups'][basic_group_id] = value
+            if attr_name.startswith('permissions_add_policy_project_'):
+                project_group_id = attr_name[len('permissions_add_policy_project_'):]
+                try:
+                    project_group_id = int(project_group_id)
+                except ValueError:
+                    break
+                if value not in allowed_permissions:
+                    break
+                policy['permissions']['projects'][project_group_id] = value
+        else:
+            policy_permissions_are_valid = True
+        if not policy_permissions_are_valid:
+            flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
         add_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
         try:
             update_poke_component(component)
@@ -308,18 +332,40 @@ def update_object_permissions(object_id):
             'permissions': {'users': {}, 'groups': {}, 'projects': {}, 'all_users': 'none'}
         }
         allowed_permissions = [Permissions.READ.name.lower(), Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+        policy_permissions_are_valid = False
         for attr_name, value in flask.request.form.items():
-            if attr_name[:len('permissions_edit_policy_user_')] == 'permissions_edit_policy_user_':
+            if attr_name.startswith('permissions_edit_policy_user_'):
                 user_id = attr_name[len('permissions_edit_policy_user_'):]
                 try:
                     user_id = int(user_id)
                 except ValueError:
-                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
-                    return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
+                    break
                 if value not in allowed_permissions:
-                    flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
-                    return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
+                    break
                 policy['permissions']['users'][user_id] = value
+            if attr_name.startswith('permissions_edit_policy_group_'):
+                basic_group_id = attr_name[len('permissions_edit_policy_group_'):]
+                try:
+                    basic_group_id = int(basic_group_id)
+                except ValueError:
+                    break
+                if value not in allowed_permissions:
+                    break
+                policy['permissions']['groups'][basic_group_id] = value
+            if attr_name.startswith('permissions_edit_policy_project_'):
+                project_group_id = attr_name[len('permissions_edit_policy_project_'):]
+                try:
+                    project_group_id = int(project_group_id)
+                except ValueError:
+                    break
+                if value not in allowed_permissions:
+                    break
+                policy['permissions']['projects'][project_group_id] = value
+        else:
+            policy_permissions_are_valid = True
+        if not policy_permissions_are_valid:
+            flask.flash(_("A problem occurred while changing the object permissions. Please try again."), 'error')
+            return flask.redirect(flask.url_for('.object_permissions', object_id=object_id))
         update_object_share(object_id, component_id, policy, user_id=flask_login.current_user.id)
         try:
             update_poke_component(component)

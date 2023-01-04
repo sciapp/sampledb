@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-01-04 13:02+0100\n"
+"POT-Creation-Date: 2023-01-05 13:38+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4125,8 +4125,14 @@ msgstr "Der Export ist mit folgender Meldung fehlgeschlagen: %(error_message)s"
 msgid "Object Permissions"
 msgstr "Objektberechtigungen"
 
-msgid "Not a valid user-ID. Expected a positive integer."
-msgstr "Keine gültige Nutzer-ID. Positive Ganzzahl erwartet."
+msgid "Not a valid ID. Expected a positive integer."
+msgstr "Keine gültige ID. Positive Ganzzahl erwartet."
+
+msgid "Project Group has already been added."
+msgstr "Projektgruppe wurde bereits hinzugefügt."
+
+msgid "Basic Group has already been added."
+msgstr "Einfache Gruppe wurde bereits hinzugefügt."
 
 msgid "User has already been added."
 msgstr "Nutzer wurde bereits hinzugefügt."
@@ -4155,6 +4161,9 @@ msgstr "Kommentare"
 msgid "Currently limited to sharing links."
 msgstr "Aktuell beschränkt auf das Teilen von Links."
 
+msgid "Special Groups"
+msgstr "Sondergruppen"
+
 msgid "Read"
 msgstr "Lesen"
 
@@ -4163,6 +4172,9 @@ msgstr "Schreiben"
 
 msgid "Grant"
 msgstr "Rechtevergabe"
+
+msgid "Administrators"
+msgstr "Administratoren"
 
 msgid "Add User"
 msgstr "Nutzer hinzufügen"
@@ -4196,6 +4208,24 @@ msgstr ""
 "allerdings können <strong>SCHREIB</strong>-Berechtigungen es Nutzern "
 "zukünftig erlauben, das Objekt zu editieren oder Kommentare oder Dateien "
 "hinzuzufügen."
+
+msgid "Add Basic Group"
+msgstr "Einfache Gruppe hinzufügen"
+
+msgid "Enter Basic Group ID"
+msgstr "Einfache-Gruppen-ID eingeben"
+
+msgid "Basic Group ID"
+msgstr "Einfache-Gruppen-ID"
+
+msgid "Add Project Group"
+msgstr "Projektgruppe hinzufügen"
+
+msgid "Enter Project Group ID"
+msgstr "Projektgruppen-ID eingeben"
+
+msgid "Project Group ID"
+msgstr "Projektgruppen-ID"
 
 msgid "Add database"
 msgstr "Datenbank hinzufügen"
@@ -5480,12 +5510,6 @@ msgstr "Datei"
 msgid "None"
 msgstr "Keine"
 
-msgid "Special Groups"
-msgstr "Sondergruppen"
-
-msgid "Administrators"
-msgstr "Administratoren"
-
 msgid "Anonymous Users"
 msgstr "Anonyme Nutzer"
 
@@ -5494,12 +5518,6 @@ msgstr "Alle angemeldeten Nutzer"
 
 msgid "Unnamed Basic Group"
 msgstr "Unbenannte einfache Gruppe"
-
-msgid "Add Basic Group"
-msgstr "Einfache Gruppe hinzufügen"
-
-msgid "Add Project Group"
-msgstr "Projektgruppe hinzufügen"
 
 #, python-format
 msgid ""
