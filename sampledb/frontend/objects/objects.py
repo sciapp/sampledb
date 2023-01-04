@@ -61,6 +61,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
     'other_databases_info',
     'action_info',
     'display_properties',
+    'location_info',
 )
 
 
@@ -586,7 +587,7 @@ def objects():
             display_property_titles[property_name] = property_title
 
     if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
-        creation_info, last_edit_info, action_info, other_databases_info = _parse_object_list_options(flask.request.args)
+        creation_info, last_edit_info, action_info, other_databases_info, location_info = _parse_object_list_options(flask.request.args)
     else:
         creation_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('creation_info', ['user', 'date'])
         last_edit_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('last_edit_info', ['user', 'date'])
@@ -595,8 +596,28 @@ def objects():
         else:
             action_info = []
         other_databases_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('other_databases_info', False)
+        if not edit_location:
+            location_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('location_info', [])
+        else:
+            location_info = ['location', 'responsible_user']
     if not flask.current_app.config['FEDERATION_UUID']:
         other_databases_info = False
+
+    if location_info:
+        object_location_assignments = logic.locations.get_current_object_location_assignments(
+            [
+                object['object_id']
+                for object in objects
+            ]
+        )
+        for object in objects:
+            object_location_assignment = object_location_assignments.get(object['object_id'])
+            if object_location_assignment is None:
+                object['location_id'] = None
+                object['responsible_user_id'] = None
+            else:
+                object['location_id'] = object_location_assignment.location_id
+                object['responsible_user_id'] = object_location_assignment.responsible_user_id
 
     object_name_plural = _('Objects')
 
@@ -732,9 +753,8 @@ def objects():
         english = get_language(Language.ENGLISH)
         all_languages = get_languages()
 
-        objects_with_write_permission = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE)]
         shown_object_ids = [object['object_id'] for object in objects]
-        objects_with_write_permission = list(filter(lambda x: x in shown_object_ids, objects_with_write_permission))
+        objects_with_write_permission = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
     else:
         location_form = None
         user_is_fed = {}
@@ -761,6 +781,7 @@ def objects():
         last_edit_info=last_edit_info,
         action_info=action_info,
         other_databases_info=other_databases_info,
+        location_info=location_info,
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
@@ -794,6 +815,7 @@ def objects():
         pagination_enabled=pagination_enabled,
         num_objects_found=num_objects_found,
         get_user=get_user,
+        get_location=get_location,
         get_component=get_component,
         get_shares_for_object=get_shares_for_object,
         edit_location=edit_location,
@@ -1107,7 +1129,8 @@ def _parse_object_list_options(
     typing.List[str],
     typing.List[str],
     typing.List[str],
-    bool
+    bool,
+    typing.List[str],
 ]:
     creation_info = set()
     for creation_info_str in params.getlist('creation_info'):
@@ -1130,8 +1153,15 @@ def _parse_object_list_options(
             action_info.add(action_info_str)
     action_info = list(action_info)
 
+    location_info = set()
+    for location_info_str in params.getlist('location_info'):
+        location_info_str = location_info_str.strip().lower()
+        if location_info_str in {'location', 'responsible_user'}:
+            location_info.add(location_info_str)
+    location_info = list(location_info)
+
     other_databases_info = 'other_databases_info' in params
-    return creation_info, last_edit_info, action_info, other_databases_info
+    return creation_info, last_edit_info, action_info, other_databases_info, location_info
 
 
 def _parse_display_properties(
@@ -1243,6 +1273,7 @@ def save_object_list_defaults():
             last_edit_info,
             action_info,
             other_databases_info,
+            location_info,
         ) = _parse_object_list_options(
             params=flask.request.form
         )
@@ -1257,6 +1288,7 @@ def save_object_list_defaults():
                     'last_edit_info': last_edit_info,
                     'action_info': action_info,
                     'other_databases_info': other_databases_info,
+                    'location_info': location_info,
                     'display_properties': display_properties
                 }
             }

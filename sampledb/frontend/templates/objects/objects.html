@@ -405,7 +405,7 @@
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
         {% for key in request.args %}
-          {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info', 'other_databases_info'] %}
+          {% if key not in ['object_list_options', 'display_properties', 'creation_info', 'last_edit_info', 'action_info', 'other_databases_info', 'location_info'] %}
             {% for value in request.args.getlist(key) %}
               <input type="hidden" name="{{ key }}" value="{{ value }}" />
             {% endfor %}
@@ -484,6 +484,21 @@
               <div>
               <label style="font-weight: normal">
                 <input type="checkbox" {% if 'action' in action_info %}checked="checked"{% endif %} name="action_info" value="action" /> {{ _('Show Action') }}
+              </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label">
+                {{ _('Show Location and Responsibility information') }}
+              </label>
+              <div>
+                <label style="font-weight: normal">
+                  <input type="checkbox" {% if 'location' in location_info %}checked="checked"{% endif %} name="location_info" value="location" /> {{ _('Show Location') }}
+                </label>
+              </div>
+              <div>
+              <label style="font-weight: normal">
+                <input type="checkbox" {% if 'responsible_user' in location_info %}checked="checked"{% endif %} name="location_info" value="responsible_user" /> {{ _('Show Responsible User') }}
               </label>
               </div>
             </div>
@@ -727,6 +742,12 @@
       {% if 'action' in action_info %}
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Action') }}</th>
       {% endif %}
+      {% if 'location' in location_info %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Location') }}</th>
+      {% endif %}
+      {% if 'responsible_user' in location_info %}
+        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Responsible User') }}</th>
+      {% endif %}
       {% for property_name in display_properties %}
         <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
       {% endfor %}
@@ -816,6 +837,29 @@
           {{ import_information_symbol(object.action) }}
         </td>
         {% endif %}
+      {% endif %}
+      {% if 'location' in location_info %}
+        <td>
+          {% if object.location_id is none %}
+            &mdash;
+          {% else %}
+            {% with location = get_location(object.location_id) %}
+              <a href="{{ url_for('frontend.location', location_id=location.id) }}">
+                {{ location | get_location_name(True) }}
+              </a>
+              {{ import_information_symbol(location) }}
+            {% endwith %}
+          {% endif %}
+        </td>
+      {% endif %}
+      {% if 'responsible_user' in location_info %}
+        <td>
+          {% if object.responsible_user_id is none %}
+            &mdash;
+          {% else %}
+            {{ user_reference(object.responsible_user_id) }}
+          {% endif %}
+        </td>
       {% endif %}
       {% for property_name in display_properties %}
         {% if object.display_properties[property_name] is not none %}

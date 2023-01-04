@@ -751,3 +751,40 @@ def test_get_descendent_location_ids():
     assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1][4][6]) == set()
     assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[1][4][7]) == set()
     assert sampledb.logic.locations.get_descendent_location_ids(locations_tree[2][8]) == set()
+
+
+def test_get_current_object_location_assignments(user: User, object: Object):
+    with pytest.raises(errors.ObjectDoesNotExistError):
+        locations.get_current_object_location_assignments([object.id + 1])
+    object1 = object
+    object2 = objects.create_object(user_id=user.id, action_id=object.action_id, data=object.data)
+    assert locations.get_current_object_location_assignments([object1.id, object2.id]) == {
+        object1.id: None,
+        object2.id: None
+    }
+    sampledb.logic.locations.assign_location_to_object(object1.id, None, user.id, user.id, None)
+    object1_assignment = sampledb.logic.locations.get_current_object_location_assignment(object1.id)
+    assert locations.get_current_object_location_assignments([object1.id, object2.id]) == {
+        object1.id: object1_assignment,
+        object2.id: None
+    }
+    sampledb.logic.locations.assign_location_to_object(object1.id, None, user.id, user.id, None)
+    assert locations.get_current_object_location_assignments([object1.id, object2.id]) != {
+        object1.id: object1_assignment,
+        object2.id: None
+    }
+    object1_assignment = sampledb.logic.locations.get_current_object_location_assignment(object1.id)
+    assert locations.get_current_object_location_assignments([object1.id, object2.id]) == {
+        object1.id: object1_assignment,
+        object2.id: None
+    }
+    sampledb.logic.locations.assign_location_to_object(object2.id, None, user.id, user.id, None)
+    assert locations.get_current_object_location_assignments([object1.id, object2.id]) != {
+        object1.id: object1_assignment,
+        object2.id: None
+    }
+    object2_assignment = sampledb.logic.locations.get_current_object_location_assignment(object2.id)
+    assert locations.get_current_object_location_assignments([object1.id, object2.id]) == {
+        object1.id: object1_assignment,
+        object2.id: object2_assignment
+    }

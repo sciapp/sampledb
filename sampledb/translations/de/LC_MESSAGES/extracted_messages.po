@@ -4330,6 +4330,15 @@ msgstr "Instrument anzeigen"
 msgid "Show Action"
 msgstr "Aktion anzeigen"
 
+msgid "Show Location and Responsibility information"
+msgstr "Zeige Informationen zu Ort und Verantwortlichkeit"
+
+msgid "Show Location"
+msgstr "Ort anzeigen"
+
+msgid "Show Responsible User"
+msgstr "Verantwortlichen Nutzer anzeigen"
+
 msgid "Filters"
 msgstr "Filter"
 
