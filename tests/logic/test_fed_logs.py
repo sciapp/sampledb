@@ -394,7 +394,7 @@ def test_create_ref_user_missing_data(user, component):
 def test_import_object(object, component):
     start_time = datetime.datetime.utcnow()
     assert len(models.FedObjectLogEntry.query.all()) == 0
-    fed_logs.import_object(object.id, component.id, [])
+    fed_logs.import_object(object.id, component.id, [], None)
     log_entries = models.FedObjectLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedObjectLogEntryType.IMPORT_OBJECT
@@ -408,16 +408,16 @@ def test_import_object(object, component):
 def test_import_object_missing_data(object, component):
     assert len(models.FedObjectLogEntry.query.all()) == 0
     with pytest.raises(errors.ObjectDoesNotExistError):
-        fed_logs.import_object(object.id + 1, component.id, [])
+        fed_logs.import_object(object.id + 1, component.id, [], None)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.import_object(object.id, component.id + 1, [])
+        fed_logs.import_object(object.id, component.id + 1, [], None)
     assert len(models.FedObjectLogEntry.query.all()) == 0
 
 
 def test_update_object(object, component):
     start_time = datetime.datetime.utcnow()
     assert len(models.FedObjectLogEntry.query.all()) == 0
-    fed_logs.update_object(object.id, component.id, [])
+    fed_logs.update_object(object.id, component.id, [], None)
     log_entries = models.FedObjectLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedObjectLogEntryType.UPDATE_OBJECT
@@ -431,9 +431,9 @@ def test_update_object(object, component):
 def test_update_object_missing_data(object, component):
     assert len(models.FedObjectLogEntry.query.all()) == 0
     with pytest.raises(errors.ObjectDoesNotExistError):
-        fed_logs.update_object(object.id + 1, component.id, [])
+        fed_logs.update_object(object.id + 1, component.id, [], None)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.update_object(object.id, component.id + 1, [])
+        fed_logs.update_object(object.id, component.id + 1, [], None)
     assert len(models.FedObjectLogEntry.query.all()) == 0
 
 

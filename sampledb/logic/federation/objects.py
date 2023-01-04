@@ -53,6 +53,7 @@ class ObjectData(typing.TypedDict):
     files: typing.List[FileData]
     object_location_assignments: typing.List[ObjectLocationAssignmentData]
     permissions: ObjectPermissionsData
+    sharing_user: typing.Optional[UserRef]
 
 
 class SharedFileHideData(typing.TypedDict):
@@ -107,6 +108,7 @@ class SharedObjectData(typing.TypedDict):
     files: typing.List[SharedFileData]
     object_location_assignments: typing.List[SharedObjectLocationAssignmentData]
     policy: typing.Dict[str, typing.Any]
+    sharing_user: typing.Optional[UserRef]
 
 
 def import_object(
@@ -124,6 +126,7 @@ def import_object(
             object = None
 
         user_id = _get_or_create_user_id(version['user'])
+        sharing_user_id = _get_or_create_user_id(object_data.get('sharing_user'))
 
         if object is None:
             object = insert_fed_object_version(
@@ -138,7 +141,7 @@ def import_object(
                 allow_disabled_languages=True
             )
             if object:
-                fed_logs.import_object(object.id, component.id, version.get('import_notes', []))
+                fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id)
         elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
             object = update_object_version(
                 object_id=object.object_id,
@@ -150,7 +153,7 @@ def import_object(
                 utc_datetime=version['utc_datetime'],
                 allow_disabled_languages=True
             )
-            fed_logs.update_object(object.id, component.id, version.get('import_notes', []))
+            fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id)
     if object is None:
         object = get_fed_object(
             fed_object_id=object_data['fed_object_id'],
@@ -239,7 +242,8 @@ def parse_object(
             groups={},
             projects={},
             all_users=Permissions.NONE
-        )
+        ),
+        sharing_user=_parse_user_ref(_get_dict(object_data.get('sharing_user')))
     )
 
     comments = _get_list(object_data.get('comments'))
@@ -318,7 +322,9 @@ def shared_object_preprocessor(
         object_id: int,
         policy: typing.Dict[str, typing.Any],
         refs: typing.List[typing.Tuple[str, int]],
-        markdown_images: typing.Dict[str, str]
+        markdown_images: typing.Dict[str, str],
+        *,
+        sharing_user_id: typing.Optional[int] = None
 ) -> SharedObjectData:
     result = SharedObjectData(
         object_id=object_id,
@@ -328,8 +334,23 @@ def shared_object_preprocessor(
         comments=[],
         object_location_assignments=[],
         files=[],
-        policy=policy
+        policy=policy,
+        sharing_user=None
     )
+    if sharing_user_id is not None:
+        if ('users', sharing_user_id) not in refs:
+            refs.append(('users', sharing_user_id))
+        sharing_user = get_user(sharing_user_id)
+        if sharing_user.fed_id is not None and sharing_user.component is not None:
+            result['sharing_user'] = {
+                'user_id': sharing_user.fed_id,
+                'component_uuid': sharing_user.component.uuid
+            }
+        else:
+            result['sharing_user'] = {
+                'user_id': sharing_user.id,
+                'component_uuid': flask.current_app.config['FEDERATION_UUID']
+            }
     object = get_object(object_id)
     object_versions = get_object_versions(object_id)
     if 'access' in policy:

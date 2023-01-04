@@ -84,26 +84,26 @@ def _store_new_fed_object_log_entry(
     db.session.commit()
 
 
-def import_object(object_id: int, component_id: int, import_notes: typing.List[str]) -> None:
+def import_object(object_id: int, component_id: int, import_notes: typing.List[str], user_id: typing.Optional[int]) -> None:
     _store_new_fed_object_log_entry(
         type=models.FedObjectLogEntryType.IMPORT_OBJECT,
         object_id=object_id,
         component_id=component_id,
-        user_id=None,
+        user_id=user_id,
         data={
             'import_notes': import_notes
         }
     )
 
 
-def update_object(object_id: int, component_id: int, import_notes: typing.List[str]) -> None:
+def update_object(object_id: int, component_id: int, import_notes: typing.List[str], user_id: typing.Optional[int]) -> None:
     _store_new_fed_object_log_entry(
         type=models.FedObjectLogEntryType.UPDATE_OBJECT,
         object_id=object_id,
         component_id=component_id,
-        user_id=None,
+        user_id=user_id,
         data={
-            'import_notes': import_notes
+            'import_notes': import_notes,
         }
     )
 

@@ -111,7 +111,7 @@ class Objects(Resource):
         }
 
         for share in shares:
-            obj = shared_object_preprocessor(share.object_id, share.policy, refs, markdown_images)
+            obj = shared_object_preprocessor(share.object_id, share.policy, refs, markdown_images, sharing_user_id=share.user_id)
             result_lists['objects'].append(obj)
 
         while len(refs) > 0:
