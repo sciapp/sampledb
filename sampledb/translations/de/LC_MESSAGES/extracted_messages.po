@@ -5165,17 +5165,57 @@ msgstr ""
 msgid ""
 "This object version was created as object #%(fed_object_id)s, version "
 "%(fed_version_id)s in database <a "
-"href=\"%(component_url)s\">%(component_name)s</a>"
+"href=\"%(component_url)s\">%(component_name)s</a>."
 msgstr ""
 "Diese Objektversion wurde als Objekt #%(fed_object_id)s, Version "
 "%(fed_version_id)s in der Datenbank <a "
-"href=\"%(component_url)s\">%(component_name)s</a> erstellt"
+"href=\"%(component_url)s\">%(component_name)s</a> erstellt."
 
 msgid "This object is being shared with users from the following databases:"
 msgstr "Dieses Objekt wird mit Nutzern der folgenden Datenbanken geteilt:"
 
 msgid "Unknown Database"
 msgstr "Unbekannte Datenbank"
+
+msgid "The object was imported with the following notes:"
+msgstr "Das Objekt wurde mit den folgenden Hinweisen importiert:"
+
+msgid "The object was imported."
+msgstr "Das Objekt wurde importiert."
+
+msgid "The object was updated with the following notes:"
+msgstr "Das Objekt wurde mit den folgenden Hinweisen aktualisiert:"
+
+msgid "The object was updated."
+msgstr "Das Objekt wurde aktualisiert."
+
+#, python-format
+msgid ""
+"%(user_ref)s has shared the object with <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt mit <a "
+"href=\"%(component_url)s\">%(component_name)s</a> geteilt."
+
+#, python-format
+msgid "%(user_ref)s has shared the object with an unknown database."
+msgstr "%(user_ref)s hat das Objekt mit einer unbekannten Datenbank geteilt."
+
+#, python-format
+msgid ""
+"%(user_ref)s has updated the settings for sharing this object with <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat die Einstellungen zum Teilen des Objekts mit <a "
+"href=\"%(component_url)s\">%(component_name)s</a> aktualisiert."
+
+#, python-format
+msgid ""
+"%(user_ref)s has updated the settings for sharing this object with an "
+"unknown database."
+msgstr ""
+"%(user_ref)s hat die Einstellungen zum Teilen des Objekts mit einer "
+"unbekannten Datenbank aktualisiert."
 
 msgid "Related Objects"
 msgstr "Zugehörige Objekte"

@@ -19,6 +19,7 @@ from ...logic import object_log, comments, errors
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
+from ...logic.fed_logs import get_fed_object_log_entries_for_object
 from ...logic.users import get_user, get_users
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
@@ -383,6 +384,15 @@ def object(object_id):
     template_kwargs.update({
         "object_log_entries": object_log_entries,
         "ObjectLogEntryType": ObjectLogEntryType,
+    })
+
+    # fed log
+    fed_object_log_entries = get_fed_object_log_entries_for_object(
+        object_id=object_id
+    )
+    template_kwargs.update({
+        "fed_object_log_entries": fed_object_log_entries,
+        "FedObjectLogEntryType": models.FedObjectLogEntryType,
     })
 
     # related objects tree
