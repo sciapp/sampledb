@@ -516,6 +516,9 @@ def objects():
             advanced_search_had_error = True
 
     cached_actions = {None: None}
+    if all_actions:
+        for action in all_actions:
+            cached_actions[action.id] = action
     cached_users = {None: None}
 
     for i, obj in enumerate(objects):
