@@ -36,7 +36,7 @@ class ActionData(typing.TypedDict):
     fed_id: int
     component_uuid: str
     action_type: ActionTypeRef
-    schema: typing.Dict[str, typing.Any]
+    schema: typing.Optional[typing.Dict[str, typing.Any]]
     instrument: typing.Optional[InstrumentRef]
     user: typing.Optional[UserRef]
     description_is_markdown: bool
@@ -45,6 +45,7 @@ class ActionData(typing.TypedDict):
     translations: typing.List[ActionTranslationData]
     admin_only: bool
     disable_create_objects: bool
+    import_notes: typing.List[str]
 
 
 class SharedActionTranslationData(typing.TypedDict):
@@ -71,18 +72,20 @@ class SharedActionData(typing.TypedDict):
 def parse_action(
         action_data: typing.Dict[str, typing.Any]
 ) -> ActionData:
-    schema = _get_dict(action_data.get('schema'))
-    _parse_schema(schema)
+    import_notes = []
     fed_id = _get_id(action_data.get('action_id'))
     uuid = _get_uuid(action_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
         raise errors.InvalidDataExportError('Invalid update for local action {}'.format(fed_id))
+    schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(action_data.get('schema'))
     if schema is not None:
+        _parse_schema(schema)
         try:
-            validate_schema(schema, strict=True)
+            validate_schema(schema, strict=False)
         except errors.ValidationError as e:
-            raise errors.InvalidDataExportError('Invalid schema in action #{} @ {} ({})'.format(fed_id, uuid, e))
+            schema = None
+            import_notes.append(f'Invalid schema in action #{fed_id} @ {uuid} ({e})')
 
     result = ActionData(
         fed_id=fed_id,
@@ -96,7 +99,8 @@ def parse_action(
         short_description_is_markdown=_get_bool(action_data.get('short_description_is_markdown'), default=False),
         translations=[],
         admin_only=_get_bool(action_data.get('admin_only'), default=False),
-        disable_create_objects=_get_bool(action_data.get('disable_create_objects'), default=False)
+        disable_create_objects=_get_bool(action_data.get('disable_create_objects'), default=False),
+        import_notes=import_notes
     )
 
     allowed_language_ids = [language.id for language in get_languages(only_enabled_for_input=False)]
@@ -155,7 +159,10 @@ def import_action(
     instrument_id = _get_or_create_instrument_id(action_data['instrument'])
     user_id = _get_or_create_user_id(action_data['user'])
 
-    schema = _import_schema(action_data['schema'])
+    if action_data['schema'] is not None:
+        schema = _import_schema(action_data['schema'])
+    else:
+        schema = None
 
     try:
         mutable_action = get_mutable_action(action_data['fed_id'], component_id)
@@ -166,7 +173,8 @@ def import_action(
             'instrument',
             'user',
             'schema',
-            'translations'
+            'translations',
+            'import_notes'
         }
         if any(
                 value != getattr(mutable_action, key)
@@ -183,7 +191,7 @@ def import_action(
             mutable_action.admin_only = action_data['admin_only']
             mutable_action.disable_create_objects = action_data['disable_create_objects']
             db.session.commit()
-            fed_logs.update_action(mutable_action.id, component.id)
+            fed_logs.update_action(mutable_action.id, component.id, action_data.get('import_notes', []))
         action = Action.from_database(mutable_action)
     except errors.ActionDoesNotExistError:
         action = create_action(
@@ -198,8 +206,9 @@ def import_action(
             short_description_is_markdown=action_data['short_description_is_markdown'],
             admin_only=action_data.get('admin_only', False),
             disable_create_objects=action_data.get('disable_create_objects', False),
+            strict_schema_validation=False,
         )
-        fed_logs.import_action(action.id, component.id)
+        fed_logs.import_action(action.id, component.id, action_data.get('import_notes', []))
 
     for action_translation in action_data['translations']:
         set_action_translation(

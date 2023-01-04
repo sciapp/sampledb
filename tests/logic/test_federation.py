@@ -1192,6 +1192,7 @@ def test_import_simple_object_no_schema(component):
     del object_data['versions'][0]['schema']
     start_datetime = datetime.datetime.utcnow()
     object = parse_import_object(object_data, component)
+    del object_data['versions'][0]['data']
     _check_object(object_data, component)
 
     assert len(get_objects()) == 1
@@ -1683,7 +1684,12 @@ def test_parse_action_invalid_data():
     _invalid_reference_test(ACTION_DATA, 'instrument', 'instrument_id', parse_action)
     _invalid_reference_test(ACTION_DATA, 'user', 'user_id', parse_action)
     _invalid_dict_test(ACTION_DATA, 'schema', parse_action)
-    _invalid_schema_test(ACTION_DATA, 'schema', parse_action)
+
+    def check_schema_not_none(action_data):
+        parsed_action_data = parse_action(action_data)
+        if parsed_action_data['schema'] is None:
+            raise errors.InvalidDataExportError()
+    _invalid_schema_test(ACTION_DATA, 'schema', check_schema_not_none)
     _invalid_bool_test(ACTION_DATA, 'description_is_markdown', parse_action)
     _invalid_bool_test(ACTION_DATA, 'is_hidden', parse_action)
     _invalid_bool_test(ACTION_DATA, 'short_description_is_markdown', parse_action)

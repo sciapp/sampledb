@@ -34,6 +34,7 @@ class ObjectVersionData(typing.TypedDict):
     data: typing.Optional[typing.Dict[str, typing.Any]]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
     utc_datetime: typing.Optional[datetime]
+    import_notes: typing.List[str]
 
 
 class ObjectPermissionsData(typing.TypedDict):
@@ -137,7 +138,7 @@ def import_object(
                 allow_disabled_languages=True
             )
             if object:
-                fed_logs.import_object(object.id, component.id)
+                fed_logs.import_object(object.id, component.id, version.get('import_notes', []))
         elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
             object = update_object_version(
                 object_id=object.object_id,
@@ -149,7 +150,7 @@ def import_object(
                 utc_datetime=version['utc_datetime'],
                 allow_disabled_languages=True
             )
-            fed_logs.update_object(object.id, component.id)
+            fed_logs.update_object(object.id, component.id, version.get('import_notes', []))
     if object is None:
         object = get_fed_object(
             fed_object_id=object_data['fed_object_id'],
@@ -197,25 +198,32 @@ def parse_object(
     versions = _get_list(object_data.get('versions'), mandatory=True)
     parsed_versions = []
     for version in versions:
+        import_notes = []
         fed_version_id = _get_id(version.get('version_id'), mandatory=True, min=0)
-        data = _get_dict(version.get('data'))
-        if data is not None:
+        data: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(version.get('data'))
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(version.get('schema'))
+        if schema is None or schema is None:
+            data = None
+            schema = None
+        else:
             parse_entry(data, component)
-        schema = _get_dict(version.get('schema'))
-        _parse_schema(schema)
-        try:
-            if schema is not None:
-                validate_schema(schema, strict=True)
-                if data is not None:
-                    validate(data, schema, allow_disabled_languages=True, strict=False)
-        except errors.ValidationError:
-            raise errors.InvalidDataExportError('Invalid data or schema in version {} of object #{} @ {}'.format(fed_version_id, fed_object_id, component.uuid))
+            _parse_schema(schema)
+            try:
+                if schema is not None:
+                    validate_schema(schema, strict=False)
+                    if data is not None:
+                        validate(data, schema, allow_disabled_languages=True, strict=False)
+            except errors.ValidationError as e:
+                schema = None
+                data = None
+                import_notes.append(f'Invalid data or schema in version {fed_version_id} of object #{fed_object_id} @ {component.uuid} ({e})')
         parsed_versions.append(ObjectVersionData(
             fed_version_id=fed_version_id,
             data=data,
             schema=schema,
             user=_parse_user_ref(_get_dict(version.get('user'))),
             utc_datetime=_get_utc_datetime(version.get('utc_datetime'), default=None),
+            import_notes=import_notes
         ))
 
     result = ObjectData(
