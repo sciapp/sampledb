@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-12-19 14:29+0100\n"
+"POT-Creation-Date: 2023-01-03 12:53+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4164,8 +4164,38 @@ msgstr "Schreiben"
 msgid "Grant"
 msgstr "Rechtevergabe"
 
-msgid "User-ID"
+msgid "Add User"
+msgstr "Nutzer hinzufügen"
+
+msgid "Select User"
+msgstr "Nutzer auswählen"
+
+msgid "If a user is missing from this list, please enter their ID below."
+msgstr ""
+"Falls ein Nutzer in dieser Liste fehlt, geben Sie bitte dessen ID unten "
+"ein."
+
+msgid "or"
+msgstr "oder"
+
+msgid "Enter User ID"
+msgstr "Nutzer-ID eingeben"
+
+msgid "To find the user ID, check the user profile in the other database."
+msgstr "Die ID eines Nutzers finden Sie in dessen Profil in der anderen Datenbank."
+
+msgid "User ID"
 msgstr "Nutzer-ID"
+
+msgid ""
+"Objects from other databases are currently read-only, but "
+"<strong>WRITE</strong> permissions may allow users to edit the object or "
+"add comments or files to it in the future."
+msgstr ""
+"Objekte aus anderen Datenbanken erlauben aktuell nur lesenden Zugriff, "
+"allerdings können <strong>SCHREIB</strong>-Berechtigungen es Nutzern "
+"zukünftig erlauben, das Objekt zu editieren oder Kommentare oder Dateien "
+"hinzuzufügen."
 
 msgid "Add database"
 msgstr "Datenbank hinzufügen"
@@ -4209,9 +4239,6 @@ msgstr "für den Aktionstyp:"
 
 msgid "for action types:"
 msgstr "für die Aktionstypen:"
-
-msgid "or"
-msgstr "oder"
 
 msgid "for action:"
 msgstr "für die Aktion:"
@@ -5405,9 +5432,6 @@ msgstr "Alle angemeldeten Nutzer"
 
 msgid "Unnamed Basic Group"
 msgstr "Unbenannte einfache Gruppe"
-
-msgid "Add User"
-msgstr "Nutzer hinzufügen"
 
 msgid "Add Basic Group"
 msgstr "Einfache Gruppe hinzufügen"

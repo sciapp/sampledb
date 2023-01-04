@@ -1268,3 +1268,8 @@ code {
     line-height: 1;
     padding: 2px 0;
 }
+
+.input-group > .input-group-btn.bootstrap-select:first-child > button {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
