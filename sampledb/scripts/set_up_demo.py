@@ -912,8 +912,9 @@ This example shows how Markdown can be used for instrument Notes.
             policy={
                 'access': {},
                 'permissions': {
-                    'users': {},
-                    'groups': {}
+                    'users': {1: 'read'},
+                    'groups': {2: 'write'},
+                    'projects': {3: 'grant'}
                 }
             },
             user_id=basic_user.id
