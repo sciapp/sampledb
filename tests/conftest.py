@@ -108,11 +108,9 @@ def flask_server(worker_id):
 
     app = create_app()
     # empty the database first, to ensure all tests rebuild it before use
-    if worker_id != 'master':
-        sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
-    else:
-        sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=False)
+    _create_empty_database_copy(app)
     yield from create_flask_server(app)
+    _drop_empty_database_copy()
 
 
 def create_app():
@@ -139,11 +137,11 @@ def app(flask_server):
     app = flask_server.app
     # reset config and database before each test
     app.config = copy.deepcopy(flask_server.initial_config)
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
-    sampledb.setup_database(app)
+    _restore_empty_database_copy()
 
     # enable german language for input by default during testing
     with app.app_context():
+        sampledb.db.engine.dispose()
         german = sampledb.logic.languages.get_language_by_lang_code('de')
         sampledb.logic.languages.update_language(
             language_id=german.id,
@@ -182,3 +180,49 @@ def driver():
 @pytest.fixture(autouse=True)
 def clear_cache_functions():
     sampledb.logic.utils.clear_cache_functions()
+
+
+def _create_empty_database_copy(app):
+    database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
+
+    # setup empty database
+    sampledb.utils.empty_database(engine, only_delete=False)
+    sampledb.setup_database(app)
+
+    # create a copy (with the suffix _copy) to restore later
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text('COMMIT'))
+        for statement in [
+            f'SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = \'{database_name}\' AND pid <> pg_backend_pid();',
+            f'DROP DATABASE IF EXISTS {database_name}_copy',
+            f'CREATE DATABASE {database_name}_copy WITH TEMPLATE {database_name}',
+        ]:
+            connection.execute(sqlalchemy.text(statement))
+
+
+def _restore_empty_database_copy():
+    database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI + '_copy')
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text('COMMIT'))
+        for statement in [
+            f'SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = \'{database_name}\' AND pid <> pg_backend_pid();',
+            f"DROP DATABASE {database_name}",
+            f'CREATE DATABASE {database_name} WITH TEMPLATE {database_name}_copy',
+        ]:
+            connection.execute(sqlalchemy.text(statement))
+            connection.execute(sqlalchemy.text('COMMIT'))
+    engine.dispose(close=True)
+
+
+def _drop_empty_database_copy():
+    database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text('COMMIT'))
+        for statement in [
+            f'DROP DATABASE IF EXISTS {database_name}_copy',
+        ]:
+            connection.execute(sqlalchemy.text(statement))
+            connection.execute(sqlalchemy.text('COMMIT'))
