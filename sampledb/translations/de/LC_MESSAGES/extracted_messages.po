@@ -5188,7 +5188,7 @@ msgstr ""
 
 #, python-format
 msgid "The object shared by %(user_ref)s was imported."
-msgstr "Das von %(user_ref)s geteilte Objekte wurde importiert."
+msgstr "Das von %(user_ref)s geteilte Objekt wurde importiert."
 
 #, python-format
 msgid ""

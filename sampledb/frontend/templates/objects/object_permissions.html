@@ -267,7 +267,7 @@
 {% endblock %}
 
 {% block content %}
-  <h1>{{ _('Object') }} #{{ object.object_id }}: {{ object.data.name.text | get_translated_text }}</h1>
+  <h1>{{ _('Object') }} #{{ object.object_id }}{% if object.data %}: {{ object.data.name.text | get_translated_text(default="—") }}{% endif %}</h1>
   <h2>{{ _('Permissions') }}</h2>
   {% set user_may_edit = (permissions_form is not none) %}
   {% set form_url = url_for('.update_object_permissions', object_id=object.object_id) %}
