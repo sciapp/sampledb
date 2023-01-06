@@ -11,7 +11,7 @@ variables:
 
 test:
   stage: test
-  image: python:3.10-slim-bullseye
+  image: python:3.11-slim-bullseye
   services:
     - name: postgres:12
       alias: postgres-test
@@ -68,7 +68,7 @@ analyze:
 
 .template-check-migrations:
   stage: test
-  image: python:3.10-slim-bullseye
+  image: python:3.11-slim-bullseye
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -175,7 +175,7 @@ check-migrations-postgres-13:
 
 check-translations:
   stage: test
-  image: python:3.10-slim-bullseye
+  image: python:3.11-slim-bullseye
   script:
     - apt-get update
     # set up Python 3
@@ -200,7 +200,7 @@ check-translations:
 
 documentation:
   stage: test
-  image: python:3.10-slim-bullseye
+  image: python:3.11-slim-bullseye
   services:
     - name: postgres:12
       alias: postgres-documentation
