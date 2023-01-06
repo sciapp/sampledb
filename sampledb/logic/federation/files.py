@@ -9,6 +9,7 @@ from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from ..files import get_mutable_file, create_fed_file, hide_file, File
 from ..components import Component
 from .. import errors, fed_logs
+from ..utils import parse_url
 from ...models import Object
 from ... import db
 
@@ -37,6 +38,32 @@ def parse_file(
         raise errors.InvalidDataExportError('Invalid update for local data')
     fed_id = _get_id(file_data.get('file_id'), min=0)
     data = _get_dict(file_data.get('data'))
+
+    if data:
+        storage = _get_str(data.get('storage'), mandatory=True)
+        _get_str(data.get('original_file_name'))
+        if storage == 'url':
+            for key in data.keys():
+                if key not in {'url', 'storage'}:
+                    raise errors.InvalidDataExportError('Invalid data entry key \'{}\' for file #{} @ {}'.format(key, fed_id, uuid))
+            url = _get_str(data.get('url'))
+            if url:
+                try:
+                    parse_url(url)
+                except errors.InvalidURLError:
+                    raise errors.InvalidDataExportError('Invalid URL \'{}\' for file #{} @ {}'.format(url, fed_id, uuid))
+                except errors.URLTooLongError:
+                    raise errors.InvalidDataExportError('URL \'{}\' is too long for file #{} @ {}'.format(url, fed_id, uuid))
+                except errors.InvalidIPAddressError:
+                    raise errors.InvalidDataExportError('Invalid IP-address in URL \'{}\' for file #{} @ {}'.format(url, fed_id, uuid))
+                except errors.InvalidPortNumberError:
+                    raise errors.InvalidDataExportError('Invalid port number in URL \'{}\' for file #{} @ {}'.format(url, fed_id, uuid))
+        elif storage == 'federation':
+            for key in data.keys():
+                if key not in {'original_file_name', 'storage'}:
+                    raise errors.InvalidDataExportError('Invalid data entry key \'{}\' for file #{} @ {}'.format(key, fed_id, uuid))
+        else:
+            raise errors.InvalidDataExportError('Invalid storage type \'{}\' for file #{} @ {}'.format(storage, fed_id, uuid))
 
     hidden_data = _get_dict(file_data.get('hidden'), default=None)
     if data is None and hidden_data is None:

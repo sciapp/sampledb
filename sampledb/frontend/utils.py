@@ -111,7 +111,7 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
 
 @jinja_filter()
 def has_preview(file):
-    if file.storage not in {'local', 'database'}:
+    if file.storage not in {'local', 'database', 'federation'}:
         return False
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
@@ -125,6 +125,7 @@ def file_name_is_image(file_name):
 
 @jinja_filter()
 def is_image(file):
+    # federation files are not recognized as images to prevent loading their thumbnails from other database
     if file.storage not in {'local', 'database'}:
         return False
     return file_name_is_image(file.original_file_name)

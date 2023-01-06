@@ -283,13 +283,18 @@
               <td>
                 <span class="pull-right" style="display:flex;">
                   <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="{{ _('View information') }}"><i class="fa fa-info"></i></button>
-                  {% if file.storage == 'local' or file.storage == 'database' %}
-                  {% if file | has_preview %}
+                  {% with file_component = get_component_or_none(file.component_id) %}
+                  {% if file.storage == 'local' or file.storage == 'database' or file.storage == 'federation' %}
+                  {% if file | has_preview and (file.storage != 'federation' or (file_component and file_component.address and file_component.import_token_available)) %}
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('View preview') }}"><i class="fa fa-search"></i></a>
                   {% else %}
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i class="fa fa-search"></i></a>
                   {% endif %}
-                  <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download file') }}"><i class="fa fa-download"></i></a>
+                  {% if file.storage != 'federation' or (file_component and file_component.address and file_component.import_token_available) %}
+                  <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{%- if file.storage == 'federation' -%}{{ _('Download file from other database') }}{%- else -%}{{ _('Download file') }}{%- endif -%}"><i class="fa {% if file.storage == 'federation' -%}fa-cloud-download{%- else -%}fa-download{%- endif -%}"></i></a>
+                  {% else %}
+                  <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top"><i class="fa fa-download"></i></a>
+                  {% endif %}
                   {% elif file.storage == 'url' %}
                   <span data-placement="top" data-trigger="manual" title="Copied successfully"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
                     {% if file.data['url'].split(':')[0].lower() in ['http', 'https'] %}
@@ -298,6 +303,7 @@
                       <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
                     {% endif %}
                   {% endif %}
+                  {% endwith %}
                 </span>
               </td>
             </tr>

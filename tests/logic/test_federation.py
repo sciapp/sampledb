@@ -2718,7 +2718,40 @@ def test_parse_file_invalid_data(simple_object, component):
 
     file_data = deepcopy(FILE_DATA)
     del file_data['utc_datetime']
+    with pytest.raises(errors.InvalidDataExportError):
+        parse_import_file(file_data, simple_object, component)
 
+    file_data = deepcopy(FILE_DATA)
+    file_data['data']['invalid_content'] = 'asd'
+    with pytest.raises(errors.InvalidDataExportError):
+        parse_import_file(file_data, simple_object, component)
+
+    file_data = deepcopy(FILE_DATA)
+    file_data['data']['url'] = 'invalid_url'
+    with pytest.raises(errors.InvalidDataExportError):
+        parse_import_file(file_data, simple_object, component)
+
+    file_data = deepcopy(FILE_DATA)
+    file_data['data']['original_file_name'] = 'filename.txt'  # combination url, origin_file_name
+    with pytest.raises(errors.InvalidDataExportError):
+        parse_import_file(file_data, simple_object, component)
+
+    file_data = deepcopy(FILE_DATA)
+    file_data['data']['storage'] = 'database'  # database not yet allowed, only federation and url
+    with pytest.raises(errors.InvalidDataExportError):
+        parse_import_file(file_data, simple_object, component)
+
+    file_data = deepcopy(FILE_DATA)
+    file_data['data']['storage'] = 'federation'
+    file_data['data']['original_file_name'] = 'test.txt'
+    file_data['data']['url'] = 'https://example.com/file'
+    with pytest.raises(errors.InvalidDataExportError):
+        parse_import_file(file_data, simple_object, component)
+
+    file_data = deepcopy(FILE_DATA)
+    file_data['data']['storage'] = 'federation'
+    file_data['data']['original_file_name'] = 12
+    del file_data['data']['url']
     with pytest.raises(errors.InvalidDataExportError):
         parse_import_file(file_data, simple_object, component)
 

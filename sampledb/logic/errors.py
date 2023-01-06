@@ -45,6 +45,10 @@ class InvalidFileStorageError(Exception):
     pass
 
 
+class FederationFileNotAvailableError(Exception):
+    pass
+
+
 class GroupDoesNotExistError(Exception):
     pass
 
@@ -146,6 +150,10 @@ class UnauthorizedRequestError(Exception):
 
 
 class RequestServerError(Exception):
+    pass
+
+
+class RequestError(Exception):
     pass
 
 

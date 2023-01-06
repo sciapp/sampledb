@@ -48,9 +48,9 @@ def _assert_all_routes_are_handled(flask_server, handled_routes, arguments):
                             combination[key] = value
                 for combination in argument_combinations:
                     url = flask.url_for(rule.endpoint, **combination)
-                assert url.startswith('http://localhost/')
-                url = url[len('http://localhost/'):]
-                all_routes.add(url)
+                    assert url.startswith('http://localhost/')
+                    url = url[len('http://localhost/'):]
+                    all_routes.add(url)
     # ensure there are no unhandled routes
     unhandled_routes = all_routes - set(handled_routes)
     assert len(unhandled_routes) == 0
@@ -316,6 +316,8 @@ def test_status_codes(flask_server, user):
         'favicon.ico': 200,
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
+        f'federation/v1/shares/objects/{object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
+        f'federation/v1/shares/objects/{other_object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         'groups/': 200,
         f'groups/{group_id}': 200,
         'group_categories/': 200,

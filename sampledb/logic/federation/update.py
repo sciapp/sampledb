@@ -4,6 +4,7 @@ Logic module handling communication with other components in a SampleDB federati
 """
 import typing
 from datetime import datetime
+import io
 
 import requests
 import flask
@@ -43,6 +44,31 @@ def post(
     requests.post(component.address.rstrip('/') + endpoint, data=payload, headers=headers)
 
 
+def get_binary(
+    endpoint: str,
+    component: Component,
+    headers: typing.Optional[typing.Dict[str, str]] = None
+) -> typing.BinaryIO:
+    if component.address is None:
+        raise errors.MissingComponentAddressError()
+    if headers is None:
+        headers = {}
+    auth = get_own_authentication(component.id, ComponentAuthenticationType.TOKEN)
+
+    if auth:
+        headers['Authorization'] = 'Bearer ' + auth.login['token']
+
+    req = requests.get(component.address.rstrip('/') + endpoint, headers=headers)
+    if req.status_code == 401:
+        # 401 Unauthorized
+        raise errors.UnauthorizedRequestError()
+    if req.status_code in [500, 501, 502, 503, 504]:
+        raise errors.RequestServerError()
+    if req.status_code != 200:
+        raise errors.RequestError()
+    return io.BytesIO(req.content)
+
+
 def get(
         endpoint: str,
         component: Component,
@@ -68,6 +94,8 @@ def get(
         raise errors.UnauthorizedRequestError()
     if req.status_code in [500, 501, 502, 503, 504]:
         raise errors.RequestServerError()
+    if req.status_code != 200:
+        raise errors.RequestError()
     try:
         return req.json()  # type: ignore
     except ValueError:
