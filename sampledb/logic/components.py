@@ -10,7 +10,7 @@ from flask_babel import _
 import flask
 
 from .. import db
-from ..models import components, objects
+from ..models import components, objects, component_authentication
 from . import errors
 from .utils import cache
 
@@ -30,10 +30,14 @@ class Component:
     address: typing.Optional[str]
     description: typing.Optional[str]
     last_sync_timestamp: typing.Optional[datetime.datetime]
+    import_token_available: bool
 
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
-        return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp)
+        import_token_available = False
+        if db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar():  # type: ignore
+            import_token_available = True
+        return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp, import_token_available=import_token_available)
 
     def get_name(self) -> str:
         if self.name is None:
