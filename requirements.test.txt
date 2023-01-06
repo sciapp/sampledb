@@ -1,0 +1,8 @@
+chromedriver-binary-auto
+coverage
+pypdf
+pytest
+pytest-cov
+pytest-xdist
+requests-mock
+selenium
