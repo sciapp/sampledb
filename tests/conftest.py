@@ -35,6 +35,9 @@ import sampledb
 import sampledb.utils
 import sampledb.config
 
+# use the minimum number of rounds for bcrypt to speed up tests
+sampledb.logic.authentication.NUM_BCYRPT_ROUNDS = 4
+
 sampledb.config.MAIL_SUPPRESS_SEND = True
 sampledb.config.TEMPLATES_AUTO_RELOAD = True
 
