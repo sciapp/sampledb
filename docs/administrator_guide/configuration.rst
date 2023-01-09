@@ -78,8 +78,8 @@ Customization
      - The name of the service
    * - SAMPLEDB_SERVICE_DESCRIPTION
      - A short description of the service
-   * - SAMPLEDB_SERVICE_IMPRINT
-     - The URL to use for the imprint link
+   * - SAMPLEDB_SERVICE_LEGAL_NOTICE or SAMPLEDB_SERVICE_IMPRINT
+     - The URL to use for the legal notice link
    * - SAMPLEDB_SERVICE_PRIVACY_POLICY
      - The URL to use for the privacy policy link
    * - SAMPLEDB_SERVICE_ACCESSIBILITY

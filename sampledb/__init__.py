@@ -109,7 +109,7 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         signout_form=sampledb.frontend.users_forms.SignoutForm,
         service_name=app.config['SERVICE_NAME'],
         service_description=app.config['SERVICE_DESCRIPTION'],
-        service_imprint=app.config['SERVICE_IMPRINT'],
+        service_legal_notice=app.config['SERVICE_LEGAL_NOTICE'],
         service_privacy_policy=app.config['SERVICE_PRIVACY_POLICY'],
         service_accessibility=app.config['SERVICE_ACCESSIBILITY'],
         ldap_name=app.config['LDAP_NAME'],
