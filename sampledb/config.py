@@ -494,6 +494,7 @@ SERVICE_DESCRIPTION = {
     'de': SERVICE_NAME + ' ist eine Datenbank für Proben- und Messungsmetadaten entwickelt am PGI und JCNS.'
 }
 SERVICE_IMPRINT = None
+SERVICE_LEGAL_NOTICE = None
 SERVICE_PRIVACY_POLICY = None
 SERVICE_ACCESSIBILITY = None
 SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
@@ -610,6 +611,10 @@ ENABLE_FUNCTION_CACHES = True
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
+
+if SERVICE_IMPRINT and not SERVICE_LEGAL_NOTICE:
+    # Support SERVICE_IMPRINT for downwards compatibility
+    SERVICE_LEGAL_NOTICE = SERVICE_IMPRINT
 
 # convert INVITATION_TIME_LIMIT in case it was set as a string
 try:
