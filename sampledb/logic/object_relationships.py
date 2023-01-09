@@ -37,29 +37,29 @@ def get_related_object_ids(
     :param user_id: the ID of an existing user (optional)
     :return: lists of previous object IDs, measurement IDs and sample IDs
     """
-    referenced_object_ids: typing.List[typing.Tuple[int, typing.Optional[str]]] = []
-    referencing_object_ids: typing.List[typing.Tuple[int, typing.Optional[int]]] = []
+    referenced_object_ids: typing.Set[typing.Tuple[int, typing.Optional[str]]] = set()
+    referencing_object_ids: typing.Set[typing.Tuple[int, typing.Optional[int]]] = set()
     if include_referenced_objects:
         object = get_object(object_id)
         for referenced_object_id, previously_referenced_object_id, schema_type in find_object_references(object, include_fed_references=True):
             if referenced_object_id is not None:
-                referenced_object_ids.append(referenced_object_id)
+                referenced_object_ids.add(referenced_object_id)
     if include_referencing_objects:
         object_log_entries = get_object_log_entries(object_id, user_id)
         for object_log_entry in object_log_entries:
             if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
                 measurement_id = object_log_entry.data.get('measurement_id')
                 if measurement_id is not None:
-                    referencing_object_ids.append((measurement_id, None))
+                    referencing_object_ids.add((measurement_id, None))
             if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
                 sample_id = object_log_entry.data.get('sample_id')
                 if sample_id is not None:
-                    referencing_object_ids.append((sample_id, None))
+                    referencing_object_ids.add((sample_id, None))
             if object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA:
                 referencing_object_id = object_log_entry.data.get('object_id')
                 if referencing_object_id is not None:
-                    referencing_object_ids.append((referencing_object_id, None))
-    return referencing_object_ids, referenced_object_ids
+                    referencing_object_ids.add((referencing_object_id, None))
+    return list(referencing_object_ids), list(referenced_object_ids)
 
 
 def build_related_objects_tree(

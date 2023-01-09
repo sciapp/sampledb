@@ -4,7 +4,7 @@ RESTful API for SampleDB
 """
 
 from flask import Blueprint
-from .objects import Object, Objects, ObjectVersion, ObjectVersions
+from .objects import Object, Objects, ObjectVersion, ObjectVersions, RelatedObjects
 from .actions import Action, Actions
 from .action_types import ActionType, ActionTypes
 from .comments import ObjectComment, ObjectComments
@@ -20,6 +20,7 @@ api.add_url_rule('/api/v1/objects/', endpoint='objects', view_func=Objects.as_vi
 api.add_url_rule('/api/v1/objects/<int:object_id>', endpoint='object', view_func=Object.as_view('object'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/versions/', endpoint='object_versions', view_func=ObjectVersions.as_view('object_versions'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/versions/<int:version_id>', endpoint='object_version', view_func=ObjectVersion.as_view('object_version'))
+api.add_url_rule('/api/v1/objects/<int:object_id>/related_objects', endpoint='related_objects', view_func=RelatedObjects.as_view('related_objects'))
 api.add_url_rule('/api/v1/actions/', endpoint='actions', view_func=Actions.as_view('actions'))
 api.add_url_rule('/api/v1/actions/<int:action_id>', endpoint='action', view_func=Action.as_view('action'))
 api.add_url_rule('/api/v1/action_types/', endpoint='action_types', view_func=ActionTypes.as_view('action_types'))
