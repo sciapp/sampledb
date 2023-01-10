@@ -318,21 +318,25 @@ def custom_format_quantity(
         return custom_format_number(data.get('magnitude_in_base_units', 0), schema.get('display_digits', None))
     narrow_non_breaking_space = '\u202f'
     magnitude = data.get('magnitude_in_base_units', 0)
-    display_digits = schema.get("display_digits", None)
-    if display_digits:
-        magnitude = round(magnitude, display_digits)
-    if data.get('units') == 'h':
+    if data.get('units') in {'h', 'min'}:
+        decimal = 0
+        magnitude_str = str(magnitude)
+        if '.' in magnitude_str:
+            # string manipulation to prevent ugly float-arithmetics
+            integral_str, decimal_str = magnitude_str.split('.', maxsplit=1)
+            magnitude = int(integral_str)
+            decimal = float(f'0.{decimal_str}')
         seconds = magnitude % 60
         magnitude -= seconds
-        minutes = int(magnitude // 60) % 60
-        magnitude -= minutes * 60
-        hours = int(magnitude // 3600)
-        return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits"), 2)}{narrow_non_breaking_space}h'
-    if data.get('units') == 'min':
-        seconds = magnitude % 60
-        magnitude -= seconds
-        minutes = int(magnitude // 60)
-        return f'{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits", None), 2)}{narrow_non_breaking_space}min'
+        seconds += decimal
+        if data.get('units') == 'h':
+            minutes = int(magnitude // 60) % 60
+            magnitude -= minutes * 60
+            hours = int(magnitude // 3600)
+            return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits"), 2)}{narrow_non_breaking_space}h'
+        if data.get('units') == 'min':
+            minutes = int(magnitude // 60)
+            return f'{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits", None), 2)}{narrow_non_breaking_space}min'
     quantity = Quantity.from_json(data)
     return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 
