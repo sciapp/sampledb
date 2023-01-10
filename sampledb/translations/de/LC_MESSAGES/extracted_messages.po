@@ -2285,8 +2285,8 @@ msgstr ""
 "Ihren Spam-Ordner und <a href=\"mailto:%(contact_email)s?subject=Account "
 "Recovery for %(email)s\">kontaktieren Sie einen Administator</a>."
 
-msgid "Account Creation"
-msgstr "Nutzerkonto Erstellen"
+msgid "Create Account"
+msgstr "Nutzerkonto erstellen"
 
 msgid "Please enter the necessary information to create an account."
 msgstr ""
@@ -2295,9 +2295,6 @@ msgstr ""
 
 msgid "Retype Password"
 msgstr "Passwort wiederholen"
-
-msgid "Create Account"
-msgstr "Nutzerkonto erstellen"
 
 msgid "Forgot your password?"
 msgstr "Passwort vergessen?"
