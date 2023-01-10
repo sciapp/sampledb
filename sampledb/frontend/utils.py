@@ -306,6 +306,34 @@ def custom_format_number(
             )
 
 
+@jinja_filter('format_time')
+def format_time(
+    magnitude_in_base_units: float,
+    units: str,
+    display_digits: typing.Optional[int] = None
+):
+    if units not in {'min', 'h'}:
+        raise errors.MismatchedUnitError()
+    decimal = 0
+    magnitude_str = str(magnitude_in_base_units)
+    if '.' in magnitude_str:
+        # string manipulation to prevent ugly float-arithmetics
+        integral_str, decimal_str = magnitude_str.split('.', maxsplit=1)
+        magnitude_in_base_units = int(integral_str)
+        decimal = float(f'0.{decimal_str}')
+    seconds = magnitude_in_base_units % 60
+    magnitude_in_base_units -= seconds
+    seconds += decimal
+    if units == 'h':
+        minutes = int(magnitude_in_base_units // 60) % 60
+        magnitude_in_base_units -= minutes * 60
+        hours = int(magnitude_in_base_units // 3600)
+        return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, display_digits, 2)}'
+    if units == 'min':
+        minutes = int(magnitude_in_base_units // 60)
+        return f'{minutes:02d}:{custom_format_number(seconds, display_digits, 2)}'
+
+
 @jinja_filter('format_quantity')
 def custom_format_quantity(
         data: typing.Optional[typing.Dict[str, typing.Any]],
@@ -319,24 +347,7 @@ def custom_format_quantity(
     narrow_non_breaking_space = '\u202f'
     magnitude = data.get('magnitude_in_base_units', 0)
     if data.get('units') in {'h', 'min'}:
-        decimal = 0
-        magnitude_str = str(magnitude)
-        if '.' in magnitude_str:
-            # string manipulation to prevent ugly float-arithmetics
-            integral_str, decimal_str = magnitude_str.split('.', maxsplit=1)
-            magnitude = int(integral_str)
-            decimal = float(f'0.{decimal_str}')
-        seconds = magnitude % 60
-        magnitude -= seconds
-        seconds += decimal
-        if data.get('units') == 'h':
-            minutes = int(magnitude // 60) % 60
-            magnitude -= minutes * 60
-            hours = int(magnitude // 3600)
-            return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits"), 2)}{narrow_non_breaking_space}h'
-        if data.get('units') == 'min':
-            minutes = int(magnitude // 60)
-            return f'{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits", None), 2)}{narrow_non_breaking_space}min'
+        return f'{format_time(magnitude, data.get("units"), schema.get("display_digits"))}{narrow_non_breaking_space}{data.get("units")}'
     quantity = Quantity.from_json(data)
     return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 

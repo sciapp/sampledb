@@ -101,6 +101,10 @@ class UndefinedUnitError(Exception):
     pass
 
 
+class MismatchedUnitError(Exception):
+    pass
+
+
 class ProjectAlreadyExistsError(Exception):
     pass
 
