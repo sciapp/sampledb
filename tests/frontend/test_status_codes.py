@@ -433,6 +433,7 @@ def test_status_codes(flask_server, user):
     excluded_routes = [
         f'users/{user_id}/autologin',
         'users/me/loginstatus',
+        'api/v1/errors/400',
     ]
 
     handled_routes = list(expected_status_codes.keys()) + excluded_routes
@@ -462,4 +463,5 @@ def test_status_codes(flask_server, user):
         'file_name': markdown_image_file_name,
         'token': token,
         'task_id': task_id,
+        'error_code': 400,
     })
