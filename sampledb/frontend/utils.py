@@ -229,12 +229,17 @@ def custom_format_date(date, format='%Y-%m-%d'):
 
 
 @jinja_filter('babel_format_number')
-def custom_format_number(number: typing.Union[str, int, float], display_digits: typing.Optional[int] = None) -> str:
+def custom_format_number(
+    number: typing.Union[str, int, float],
+    display_digits: typing.Optional[int] = None,
+    integral_digits: typing.Optional[int] = None
+) -> str:
     """
     Return the formatted number.
 
     :param number: either an int or a float, or a string representation of either
     :param display_digits: number of decimals to use, or None
+    :param integral_digits: minimal number of digits in the integral part, or None
     :return: the formatted number
     """
     try:
@@ -261,7 +266,10 @@ def custom_format_number(number: typing.Union[str, int, float], display_digits: 
     # for very small or very large absolute numbers, the exponential format should be used
     use_exponential_format = not -5 < exponent < 6
 
-    format = None
+    if integral_digits is not None:
+        positive_format = '0' * integral_digits
+    else:
+        positive_format = '0'
     if display_digits is not None:
         if use_exponential_format:
             display_digits += exponent
@@ -271,18 +279,20 @@ def custom_format_number(number: typing.Union[str, int, float], display_digits: 
         if display_digits > 27:
             display_digits = 27
 
-        positive_format = '0.' + '0' * display_digits
-        if use_exponential_format:
-            # including E will enable exponential format, 0 means the exponent should be shown even if 0
-            positive_format += 'E0'
-        negative_format = '-' + positive_format
-        format = positive_format + ';' + negative_format
+        positive_format = positive_format + '.' + '0' * display_digits
+    else:
+        positive_format = positive_format + '.###'
+    if use_exponential_format:
+        # including E will enable exponential format, 0 means the exponent should be shown even if 0
+        positive_format += 'E0'
+    negative_format = '-' + positive_format
+    f = positive_format + ';' + negative_format
 
     if use_exponential_format:
         return numbers.format_scientific(
             number,
             locale=locale,
-            format=format,
+            format=f,
             decimal_quantization=False
         )
     else:
@@ -291,9 +301,8 @@ def custom_format_number(number: typing.Union[str, int, float], display_digits: 
             return numbers.format_decimal(
                 numbers.decimal.Decimal(number),
                 locale=locale,
-                format=format,
-                decimal_quantization=False,
-                group_separator=False
+                format=f,
+                decimal_quantization=False
             )
 
 
@@ -318,12 +327,12 @@ def custom_format_quantity(
         minutes = int(magnitude // 60) % 60
         magnitude -= minutes * 60
         hours = int(magnitude // 3600)
-        return f'{hours:02d}:{minutes:02d}:{seconds:02g}{narrow_non_breaking_space}h'
+        return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits"), 2)}{narrow_non_breaking_space}h'
     if data.get('units') == 'min':
         seconds = magnitude % 60
         magnitude -= seconds
         minutes = int(magnitude // 60)
-        return f'{minutes:02d}:{seconds:02g}{narrow_non_breaking_space}min'
+        return f'{minutes:02d}:{custom_format_number(seconds, schema.get("display_digits", None), 2)}{narrow_non_breaking_space}min'
     quantity = Quantity.from_json(data)
     return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 
