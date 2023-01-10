@@ -131,7 +131,7 @@ def test_registration_with_token_available(flask_server):
     r = session.get(url, params=data)
     assert r.status_code == 200
 
-    assert 'Account Creation' in r.content.decode('utf-8')
+    assert 'Create Account' in r.content.decode('utf-8')
 
 
 def test_registration(flask_server):

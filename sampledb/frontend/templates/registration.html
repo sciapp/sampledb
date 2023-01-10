@@ -1,10 +1,10 @@
 <!-- extend from base layout -->
 {% extends "base.html" %}
 
-{% block title %}{{ _('Account Creation') }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Create Account') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1 class="text-center">{{ _('Account Creation') }}</h1>
+  <h1 class="text-center">{{ _('Create Account') }}</h1>
   <p class="text-center text-muted">{{ _('Please enter the necessary information to create an account.') }}</p>
   <form class="form-horizontal" method="post" id="form-register">
     {{ registration_form.csrf_token() }}
