@@ -281,6 +281,60 @@ Updating an object / Creating a new object version
     :statuscode 404: the object does not exist
 
 
+Getting related object IDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/related_objects
+
+    Gets object IDs related to an object (`object_id`).
+
+    If an object ID refers to an object from `another database <federation>`_
+    that does not exist in this instance of SampleDB, the `component_uuid`
+    property contains the UUID of the source component. Otherwise, even if the
+    object is originally from another database, `component_uuid` will be null.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/related_objects HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "referenced_objects": [
+                {
+                    "object_id:" 2,
+                    "component_uuid": null
+                },
+                {
+                    "object_id:" 1,
+                    "component_uuid": "273e5cb7-6831-46f9-a774-1fe73c11977d"
+                }
+            ],
+            "referencing_objects": [
+                {
+                    "object_id:" 3,
+                    "component_uuid": null
+                }
+            ]
+        }
+
+    :>json array referenced_objects: the IDs of objects referenced by the metadata for this object
+    :>json array referencing_objects: the IDs of objects referencing this object in their metadata
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
 Object Permissions
 ------------------
 

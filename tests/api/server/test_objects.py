@@ -79,6 +79,11 @@ def other_action():
                 'name': {
                     'title': 'Object Name',
                     'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'object_reference',
+                    'action_type_id': -99
                 }
             },
             'required': ['name']
@@ -935,3 +940,54 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
         'action_type': 'other'
     })
     assert r.status_code == 400
+
+
+def test_get_related_object_ids(flask_server, auth, user, action, other_action):
+    r = requests.get(flask_server.base_url + 'api/v1/objects/0/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 404
+    sample_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    sample = sampledb.logic.objects.create_object(action_id=action.id, data=sample_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + f'api/v1/objects/{sample.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [],
+        'referencing_objects': []
+    }
+    measurement_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'sample': {
+            '_type': 'object_reference',
+            'object_id': sample.object_id
+        }
+    }
+    measurement = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + f'api/v1/objects/{sample.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [],
+        'referencing_objects': [
+            {
+                'object_id': measurement.object_id,
+                'component_uuid': None
+            }
+        ]
+    }
+    r = requests.get(flask_server.base_url + f'api/v1/objects/{measurement.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [
+            {
+                'object_id': sample.object_id,
+                'component_uuid': None
+            }
+        ],
+        'referencing_objects': []
+    }

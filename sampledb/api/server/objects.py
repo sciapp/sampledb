@@ -15,6 +15,7 @@ from ...logic.action_permissions import get_user_action_permissions
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
+from ...logic.object_relationships import get_related_object_ids
 from ...logic import errors, users
 from ... import models
 from ...models import Permissions
@@ -382,3 +383,30 @@ class Objects(Resource):
             _external=True
         )
         return flask.redirect(object_version_url, code=201)
+
+
+class RelatedObjects(Resource):
+    @object_permissions_required(Permissions.READ)
+    def get(self, object_id: int) -> ResponseData:
+        referencing_object_ids, referenced_object_ids = get_related_object_ids(
+            object_id=object_id,
+            include_referencing_objects=True,
+            include_referenced_objects=True,
+            user_id=flask.g.user.id
+        )
+        return {
+            "referencing_objects": [
+                {
+                    "object_id": object_id,
+                    "component_uuid": component_uuid
+                }
+                for object_id, component_uuid in referencing_object_ids
+            ],
+            "referenced_objects": [
+                {
+                    "object_id": object_id,
+                    "component_uuid": component_uuid
+                }
+                for object_id, component_uuid in referenced_object_ids
+            ]
+        }
