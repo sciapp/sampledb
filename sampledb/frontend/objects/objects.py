@@ -655,6 +655,10 @@ def objects():
                 'fed_id': action.fed_id,
                 'component_name': action.component.get_name() if action.component is not None else None
             })
+            if action.user:
+                filter_action_infos[-1]['user'] = action.user
+            if action.instrument:
+                filter_action_infos[-1]['instrument'] = action.instrument
 
     filter_location_infos = []
     if filter_location_ids:

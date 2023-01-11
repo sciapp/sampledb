@@ -315,6 +315,11 @@
             {{ _('for actions:') }}
           {% endif %}
           {% for action_info in filter_action_infos %}
+            {% if action_info.instrument %}
+              <a href="{{ url_for('.instrument', instrument_id=action_info.instrument.id) }}">{{ action_info.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a> —{% endif %}
+            {% if action_info.user %}
+              {{ user_reference(action_info.user) }} /
+            {% endif %}
             <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
@@ -588,7 +593,11 @@
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on">
                 {% for action in all_actions %}
-                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</option>
+                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>
+                    {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
+                    {% if action.user %}{{ action.user.get_name() }} / {% endif %}
+                    {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
+                  </option>
                 {% endfor %}
               </select>
             </div>
