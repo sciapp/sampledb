@@ -15,6 +15,7 @@ from .. import frontend
 from ... import logic
 from ... import models
 from ...logic import user_log, object_sorting
+from ...logic.instruments import get_instruments, get_instrument
 from ...logic.actions import get_action, get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
@@ -30,7 +31,7 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
-from ..utils import get_locations_form_data, get_location_name, get_search_paths
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for
 from ...logic.utils import get_translated_text
 from .forms import ObjectLocationAssignmentForm
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -43,6 +44,7 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     't',
     'action_ids',
     'action',
+    'instrument_ids',
     'user',
     'user_permissions',
     'all_users_permissions',
@@ -77,6 +79,7 @@ def objects():
         display_properties = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('display_properties', [])
         display_property_titles = {}
 
+    all_instruments = get_instruments()
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
@@ -139,6 +142,8 @@ def objects():
         show_filters = False
         all_actions = []
         filter_action_ids = []
+        all_instruments = []
+        filter_instrument_ids = []
         all_action_types = []
         filter_action_type_ids = []
         all_locations = []
@@ -174,6 +179,10 @@ def objects():
             action.id
             for action in all_actions
         ]
+        valid_instrument_ids = [
+            instrument.id
+            for instrument in all_instruments
+        ]
 
         if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_FILTER_PARAMETERS):
             (
@@ -181,6 +190,7 @@ def objects():
                 filter_location_ids,
                 filter_action_type_ids,
                 filter_action_ids,
+                filter_instrument_ids,
                 filter_related_user_id,
                 filter_doi,
                 filter_anonymous_permissions,
@@ -196,7 +206,8 @@ def objects():
                 params=flask.request.args,
                 valid_location_ids=valid_location_ids,
                 valid_action_type_ids=valid_action_type_ids,
-                valid_action_ids=valid_action_ids
+                valid_action_ids=valid_action_ids,
+                valid_instrument_ids=valid_instrument_ids
             )
             if not success:
                 return flask.abort(400)
@@ -226,6 +237,15 @@ def objects():
                     action_id
                     for action_id in filter_action_ids
                     if action_id in valid_action_ids
+                ]
+
+            filter_instrument_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_instrument_ids')
+            if filter_instrument_ids is not None:
+                # remove action IDs which may have become invalid
+                filter_instrument_ids = [
+                    instrument_id
+                    for instrument_id in filter_instrument_ids
+                    if instrument_id in valid_instrument_ids
                 ]
 
             filter_doi = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_doi')
@@ -485,6 +505,14 @@ def objects():
                 else:
                     actual_filter_user_id = filter_user_id
                     actual_filter_user_permissions = filter_user_permissions
+                if not filter_instrument_ids:
+                    actual_filter_action_ids = filter_action_ids
+                else:
+                    actual_filter_action_ids = []
+                    for action in all_actions:
+                        if not filter_action_ids or action.id in filter_action_ids:
+                            if action.instrument_id in filter_instrument_ids:
+                                actual_filter_action_ids.append(action.id)
                 objects = get_objects_with_permissions(
                     user_id=flask_login.current_user.id,
                     permissions=Permissions.READ,
@@ -492,7 +520,7 @@ def objects():
                     sorting_func=sorting_function,
                     limit=pagination_limit,
                     offset=pagination_offset,
-                    action_ids=filter_action_ids,
+                    action_ids=actual_filter_action_ids,
                     action_type_ids=filter_action_type_ids,
                     other_user_id=actual_filter_user_id,
                     other_user_permissions=actual_filter_user_permissions,
@@ -659,6 +687,30 @@ def objects():
                 filter_action_infos[-1]['user'] = action.user
             if action.instrument:
                 filter_action_infos[-1]['instrument'] = action.instrument
+            if action.component and action.component.address:
+                component_address = action.component.address
+                if not component_address.endswith('/'):
+                    component_address = component_address + '/'
+                filter_action_infos[-1]['fed_url'] = component_address + relative_url_for('.action',
+                                                                                          action_id=action.fed_id)
+
+    filter_instrument_infos = []
+    if filter_instrument_ids:
+        for instrument_id in filter_instrument_ids:
+            instrument = get_instrument(instrument_id)
+            instrument_name = get_translated_text(instrument.name, default=_('Unnamed Instrument'))
+            instrument_name += f' (#{instrument_id})'
+            filter_instrument_infos.append({
+                'name': instrument_name,
+                'url': flask.url_for('.instrument', instrument_id=instrument_id),
+                'fed_id': instrument.fed_id,
+                'component_name': instrument.component.get_name() if instrument.component is not None else None
+            })
+            if instrument.component and instrument.component.address:
+                component_address = instrument.component.address
+                if not component_address.endswith('/'):
+                    component_address = component_address + '/'
+                filter_instrument_infos[-1]['fed_url'] = component_address + relative_url_for('.instrument', instrument_id=instrument.fed_id)
 
     filter_location_infos = []
     if filter_location_ids:
@@ -792,6 +844,7 @@ def objects():
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
+        filter_instrument_infos=filter_instrument_infos,
         filter_location_infos=filter_location_infos,
         filter_related_user_info=filter_related_user_info,
         filter_user_permissions_info=filter_user_permissions_info,
@@ -804,6 +857,8 @@ def objects():
         show_filters=show_filters,
         all_actions=all_actions,
         filter_action_ids=filter_action_ids,
+        all_instruments=all_instruments,
+        filter_instrument_ids=filter_instrument_ids,
         all_action_types=all_action_types,
         filter_action_type_ids=filter_action_type_ids,
         all_locations=all_locations,
@@ -931,9 +986,11 @@ def _parse_object_list_filters(
         params: werkzeug.datastructures.ImmutableMultiDict,
         valid_location_ids: typing.List[int],
         valid_action_type_ids: typing.List[int],
-        valid_action_ids: typing.List[int]
+        valid_action_ids: typing.List[int],
+        valid_instrument_ids: typing.List[int]
 ) -> typing.Tuple[
     bool,
+    typing.Optional[typing.List[int]],
     typing.Optional[typing.List[int]],
     typing.Optional[typing.List[int]],
     typing.Optional[typing.List[int]],
@@ -949,7 +1006,7 @@ def _parse_object_list_filters(
     typing.Optional[Permissions],
     typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]]
 ]:
-    FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None
+    FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     success, filter_location_ids = _parse_filter_id_params(
         params=params,
         param_aliases=['location_ids', 'location'],
@@ -970,6 +1027,18 @@ def _parse_object_list_filters(
         multi_params_error=_('Only one of action_ids and action may be set.'),
         parse_error=_('Unable to parse action IDs.'),
         invalid_id_error=_('Invalid action ID.')
+    )
+    if not success:
+        return FALLBACK_RESULT
+
+    success, filter_instrument_ids = _parse_filter_id_params(
+        params=params,
+        param_aliases=['instrument_ids'],
+        valid_ids=valid_instrument_ids,
+        id_map={},
+        multi_params_error='',
+        parse_error=_('Unable to parse instrument IDs.'),
+        invalid_id_error=_('Invalid instrument ID.')
     )
     if not success:
         return FALLBACK_RESULT
@@ -1116,6 +1185,7 @@ def _parse_object_list_filters(
         filter_location_ids,
         filter_action_type_ids,
         filter_action_ids,
+        filter_instrument_ids,
         filter_related_user_id,
         filter_doi,
         filter_anonymous_permissions,
@@ -1224,11 +1294,13 @@ def save_object_list_defaults():
         all_actions = get_sorted_actions_for_user(
             user_id=flask_login.current_user.id
         )
+        all_instruments = get_instruments()
         (
             success,
             filter_location_ids,
             filter_action_type_ids,
             filter_action_ids,
+            filter_instrument_ids,
             filter_related_user_id,
             filter_doi,
             filter_anonymous_permissions,
@@ -1253,6 +1325,10 @@ def save_object_list_defaults():
             valid_action_ids=[
                 action.id
                 for action in all_actions
+            ],
+            valid_instrument_ids=[
+                instrument.id
+                for instrument in all_instruments
             ]
         )
         if not success:
@@ -1264,6 +1340,7 @@ def save_object_list_defaults():
                     'filter_location_ids': filter_location_ids,
                     'filter_action_type_ids': filter_action_type_ids,
                     'filter_action_ids': filter_action_ids,
+                    'filter_instrument_ids': filter_instrument_ids,
                     'filter_doi': filter_doi,
                     'filter_anonymous_permissions': None if filter_anonymous_permissions is None else filter_anonymous_permissions.name.lower(),
                     'filter_all_users_permissions': None if filter_all_users_permissions is None else filter_all_users_permissions.name.lower(),

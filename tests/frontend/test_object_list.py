@@ -63,6 +63,7 @@ def test_object_list_filters_settings(flask_server, driver, user):
         'filter_location_ids': None,
         'filter_action_type_ids': None,
         'filter_action_ids': None,
+        'filter_instrument_ids': None,
         'filter_doi': None,
         'filter_origin_ids': None,
         'filter_anonymous_permissions': None,
