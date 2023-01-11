@@ -5,7 +5,9 @@
 
 import datetime
 import functools
+import re
 
+import babel
 from flask_babel import _
 from babel.numbers import parse_number, parse_decimal
 from flask_login import current_user
@@ -257,19 +259,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
             return None
         else:
             raise ValueError(_('Please enter a magnitude.'))
-    try:
-        if isinstance(magnitude, str):
-            user_locale = languages.get_user_language(current_user).lang_code
-            try:
-                magnitude = parse_number(magnitude, locale=user_locale)
-            except ValueError:
-                try:
-                    magnitude = parse_decimal(magnitude, locale=user_locale)
-                except ValueError:
-                    raise ValueError(_('Unable to parse magnitude.'))
-        magnitude = float(magnitude)
-    except ValueError:
-        raise ValueError(_('The magnitude must be a number.'))
+
     if id_prefix + '__units' in form_data:
         units = form_data[id_prefix + '__units'][0]
         try:
@@ -280,13 +270,62 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         units = '1'
         pint_units = ureg.Unit('1')
     dimensionality = str(pint_units.dimensionality)
-    magnitude_in_base_units = ureg.Quantity(magnitude, pint_units).to_base_units().magnitude
-    data = {
-        '_type': 'quantity',
-        'magnitude_in_base_units': magnitude_in_base_units,
-        'dimensionality': dimensionality,
-        'units': units
-    }
+    user_locale = languages.get_user_language(current_user).lang_code
+    if units in ['min', 'h'] and ':' in magnitude:
+        if units == 'min':
+            match = re.match(re.compile(
+                r'^(?P<minutes>[0-9]+):'
+                r'(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?)$'
+            ), magnitude)
+        else:
+            match = re.match(re.compile(
+                r'^(?P<hours>([0-9]+)):'
+                r'(?P<minutes>[0-5][0-9])'
+                r'(:(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?))?$'
+            ), magnitude)
+        if match is None:
+            raise ValueError(_('Unable to parse time.'))
+
+        match_dict = match.groupdict()
+        try:
+            if 'hours' in match_dict.keys():
+                hours = parse_number(match_dict['hours'], locale=user_locale)
+            else:
+                hours = 0
+            minutes = parse_number(match_dict['minutes'], locale=user_locale)
+            if match_dict['seconds']:
+                seconds = parse_decimal(match_dict['seconds'], locale=user_locale)
+            else:
+                seconds = 0
+        except ValueError:
+            raise ValueError(_('Unable to parse time.'))
+        magnitude_in_base_units = float(hours * 3600 + minutes * 60 + seconds)
+        data = {
+            '_type': 'quantity',
+            'magnitude_in_base_units': magnitude_in_base_units,
+            'dimensionality': dimensionality,
+            'units': units
+        }
+    else:
+        try:
+            if isinstance(magnitude, str):
+                try:
+                    magnitude = parse_number(magnitude, locale=user_locale)
+                except ValueError:
+                    try:
+                        magnitude = parse_decimal(magnitude, locale=user_locale)
+                    except ValueError:
+                        raise ValueError(_('Unable to parse magnitude.'))
+            magnitude = float(magnitude)
+        except ValueError:
+            raise ValueError(_('The magnitude must be a number.'))
+        magnitude_in_base_units = ureg.Quantity(magnitude, pint_units).to_base_units().magnitude
+        data = {
+            '_type': 'quantity',
+            'magnitude_in_base_units': magnitude_in_base_units,
+            'dimensionality': dimensionality,
+            'units': units
+        }
     schemas.validate(data, schema, strict=True)
     return data
 

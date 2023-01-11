@@ -44,6 +44,7 @@ Currently in development.
 - Allow assigning a location to an instrument
 - Added API route to get related objects
 - Allow disabling instrument features
+- Added support for ``hh:mm:ss`` time notation for hours and minutes quantities
 
 Version 0.20
 ------------
