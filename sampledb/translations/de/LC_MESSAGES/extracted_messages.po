@@ -1005,6 +1005,12 @@ msgstr "Aktions-IDs konnten nicht geparst werden."
 msgid "Invalid action ID."
 msgstr "Ungültige Aktions-ID"
 
+msgid "Unable to parse instrument IDs."
+msgstr "Instrument-ID konnte nicht geparst werden."
+
+msgid "Invalid instrument ID."
+msgstr "Ungültige Instrument-ID"
+
 msgid "Only one of action_type_ids and t may be set."
 msgstr "action_type_ids und t dürfen nicht beide gesetzt sein."
 
@@ -4276,6 +4282,12 @@ msgstr "für die Aktion:"
 msgid "for actions:"
 msgstr "für die Aktionen:"
 
+msgid "for instrument:"
+msgstr "für das Instrument:"
+
+msgid "for instruments:"
+msgstr "für die Instrumente:"
+
 msgid "for location:"
 msgstr "für den Ort:"
 
@@ -4392,6 +4404,12 @@ msgstr "Nach Aktion filtern"
 
 msgid "All actions"
 msgstr "Alle Aktionen"
+
+msgid "Filter by Instrument"
+msgstr "Nach Instrument filtern"
+
+msgid "All instruments"
+msgstr "Alle Instrumente"
 
 msgid "Filter by Location"
 msgstr "Nach Ort filtern"

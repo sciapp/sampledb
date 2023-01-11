@@ -259,7 +259,7 @@
           {% if search_tree[1].input_text %}
             <span style="margin:5px; ">{{ search_tree[1].input_text }}</span>
           {% else %}
-            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[1], depth=depth+1) }}</span>
+            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[1], depth=depth + 1) }}</span>
           {% endif %}
         </span>
       {% elif search_tree | length  == 3 %}
@@ -267,13 +267,13 @@
           {% if search_tree[0].input_text %}
             <span style="margin:5px; ">{{ search_tree[0].input_text }}</span>
           {% else %}
-            <div style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[0], depth=depth+1) }}</div>
+            <div style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[0], depth=depth + 1) }}</div>
           {% endif %}
           <span style="margin:5px; font-weight: 800; ">{{ search_tree[1].operator }}</span>
           {% if search_tree[2].input_text %}
             <span style="margin:5px; ">{{ search_tree[2].input_text }}</span>
           {% else %}
-            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[2], depth=depth+1) }}</span>
+            <span style="margin:5px; border:1px solid rgba(0, 64, 128, 0.5); border-radius:8px;">{{ render_search_tree(search_tree[2], depth=depth + 1) }}</span>
           {% endif %}
         </span>
       {% endif %}
@@ -293,7 +293,7 @@
 
   {% if objects or not search_notes %}
     <h1>{{ object_name_plural }}</h1>
-    {% if filter_action_type_infos or filter_action_infos or filter_location_infos or filter_related_user_info or filter_user_permissions_info or filter_all_users_permissions or filter_anonymous_permissions or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info or filter_origins_info %}
+    {% if filter_action_type_infos or filter_action_infos or filter_instrument_infos or filter_location_infos or filter_related_user_info or filter_user_permissions_info or filter_all_users_permissions or filter_anonymous_permissions or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info or filter_origins_info %}
       <ul>
       {% if filter_action_type_infos %}
         <li>
@@ -320,7 +320,19 @@
             {% if action_info.user %}
               {{ user_reference(action_info.user) }} /
             {% endif %}
-            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} {{ _('or') }} {% endif %}
+            <a href="{{ action_info.url }}">{{ action_info.name }}</a>{% if action_info.component_name %}&nbsp;{% if action_info.fed_url %}<a href="{{ action_info.fed_url }}">{% endif %}<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ action_info.fed_id }} @ {{ action_info.component_name }}"></i>{% if action_info.fed_url %}</a>{% endif %}{% endif %}{% if loop.index + 1 < filter_action_infos | length %},{% elif loop.index + 1 == filter_action_infos | length %} {{ _('or') }} {% endif %}
+          {% endfor %}
+        </li>
+      {% endif %}
+      {% if filter_instrument_infos %}
+        <li>
+          {% if filter_instrument_infos | length == 1 %}
+            {{ _('for instrument:') }}
+          {% else %}
+            {{ _('for instruments:') }}
+          {% endif %}
+          {% for instrument_info in filter_instrument_infos %}
+            <a href="{{ instrument_info.url }}">{{ instrument_info.name }}</a>{% if instrument_info.component_name %}&nbsp;{% if instrument_info.fed_url %}<a href="{{ instrument_info.fed_url }}">{% endif %}<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ instrument_info.fed_id }} @ {{ instrument_info.component_name }}"></i>{% if instrument_info.fed_url %}</a>{% endif %}{% endif %}{% if loop.index + 1 < filter_instrument_infos | length %},{% elif loop.index + 1 == filter_instrument_infos | length %} {{ _('or') }} {% endif %}
           {% endfor %}
         </li>
       {% endif %}
@@ -529,7 +541,7 @@
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
         {% for key in request.args %}
-          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'user', 'user_permissions', 'all_users_permissions', 'anonymous_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi', 'origins'] %}
+          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'instrument_ids', 'user', 'user_permissions', 'all_users_permissions', 'anonymous_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi', 'origins'] %}
             {% for value in request.args.getlist(key) %}
               <input type="hidden" name="{{ key }}" value="{{ value }}" />
             {% endfor %}
@@ -597,6 +609,18 @@
                     {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
                     {% if action.user %}{{ action.user.get_name() }} / {% endif %}
                     {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="filter_instrument_ids">
+                {{ _('Filter by Instrument') }}
+              </label>
+              <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on">
+                {% for instrument in all_instruments %}
+                  <option {% if instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %}>
+                    {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}  (#{{ instrument.id }})
                   </option>
                 {% endfor %}
               </select>
