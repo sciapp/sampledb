@@ -1723,6 +1723,7 @@
         $('input[name^=data_export_object_]').prop("checked", false);
         $('input.data_export_object').prop("checked", false);
         $('input.data_export_object_{{ object_id }}').prop("checked", true);
+      {% endif %}
         function updateDataExportLink() {
           var format = ".pdf";
           var selected_format_option = $('#select-export-format > option:selected');
@@ -1785,7 +1786,6 @@
           updateDataExportLink();
         });
         updateDataExportLink();
-      {% endif %}
 
       {% if show_download_service and not is_archived and action is not none and action.type is not none and action.type.enable_files and files %}
         $('#button-modal-files-select-all').on('click', function () {
