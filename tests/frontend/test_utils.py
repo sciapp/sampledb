@@ -310,6 +310,11 @@ def test_custom_format_quantity_time():
     data['magnitude'] = 5
     assert utils.custom_format_quantity(data, schema) == '05:00:00\u202fh'
 
+    data['units'] = 'h'
+    data['magnitude_in_base_units'] = ((30 * 60) + 15) * 60 + 30.0000000001
+    data['magnitude'] = 30 + 15 / 60 + 30.0000000001 / 3600
+    assert utils.custom_format_quantity(data, schema) == '30:15:30.0000000001\u202fh'
+
     data['units'] = 'min'
     data['magnitude_in_base_units'] = 12.5 * 60 + 0.00123
     data['magnitude'] = 12.5 + 0.00123 / 60

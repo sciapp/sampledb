@@ -232,7 +232,8 @@ def custom_format_date(date, format='%Y-%m-%d'):
 def custom_format_number(
     number: typing.Union[str, int, float],
     display_digits: typing.Optional[int] = None,
-    integral_digits: typing.Optional[int] = None
+    integral_digits: typing.Optional[int] = None,
+    disable_scientific_format: bool = False
 ) -> str:
     """
     Return the formatted number.
@@ -240,6 +241,7 @@ def custom_format_number(
     :param number: either an int or a float, or a string representation of either
     :param display_digits: number of decimals to use, or None
     :param integral_digits: minimal number of digits in the integral part, or None
+    :param disable_scientific_format: disables output in scientific format
     :return: the formatted number
     """
     try:
@@ -258,13 +260,17 @@ def custom_format_number(
         number = round(number, display_digits)
 
     locale = get_locale()
-    if number == 0:
-        exponent = 0
-    else:
-        exponent = int(floor(log10(abs(number))))
+    if not disable_scientific_format:
+        if number == 0:
+            exponent = 0
+        else:
+            exponent = int(floor(log10(abs(number))))
 
-    # for very small or very large absolute numbers, the exponential format should be used
-    use_exponential_format = not -5 < exponent < 6
+        # for very small or very large absolute numbers, the exponential format should be used
+        use_exponential_format = not -5 < exponent < 6
+    else:
+        exponent = 0
+        use_exponential_format = False
 
     if integral_digits is not None:
         positive_format = '0' * integral_digits
@@ -328,10 +334,10 @@ def format_time(
         minutes = int(magnitude_in_base_units // 60) % 60
         magnitude_in_base_units -= minutes * 60
         hours = int(magnitude_in_base_units // 3600)
-        return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, display_digits, 2)}'
+        return f'{hours:02d}:{minutes:02d}:{custom_format_number(seconds, display_digits, 2, True)}'
     if units == 'min':
         minutes = int(magnitude_in_base_units // 60)
-        return f'{minutes:02d}:{custom_format_number(seconds, display_digits, 2)}'
+        return f'{minutes:02d}:{custom_format_number(seconds, display_digits, 2, True)}'
 
 
 @jinja_filter('format_quantity')
