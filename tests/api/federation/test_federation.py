@@ -254,3 +254,81 @@ def test_file_resource_errors(flask_server, simple_object, user, component_token
     r = requests.get(flask_server.base_url + 'federation/v1/shares/objects/{}/files/{}'.format(database_file.object_id, database_file.id), headers=headers)
     assert r.status_code == 403
     assert r.json() == {"message": "files linked to object {} are not shared".format(database_file.object_id)}
+
+
+def test_import_status(flask_server, component_token, simple_object, user):
+    component, token = component_token
+    shares.add_object_share(simple_object.id, component.id, {'access': {'objects': True}}, user.id)
+
+    import_status_data = {
+        'success': True,
+        'notes': [],
+        'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+        'object_id': 42
+    }
+    headers = {'Authorization': 'Bearer  {}'.format(token)}
+
+    r = requests.put(
+        flask_server.base_url + f'federation/v1/shares/objects/{simple_object.id}/import_status',
+        headers=headers
+    )
+    assert r.status_code == 400
+    assert shares.get_share(simple_object.id, component.id).import_status is None
+
+    r = requests.put(
+        flask_server.base_url + f'federation/v1/shares/objects/{simple_object.id}/import_status',
+        headers=headers,
+        json={}
+    )
+    assert r.status_code == 400
+    assert shares.get_share(simple_object.id, component.id).import_status is None
+
+    r = requests.put(
+        flask_server.base_url + f'federation/v1/shares/objects/{simple_object.id}/import_status',
+        headers=headers,
+        json=import_status_data
+    )
+    assert r.status_code == 204
+    assert shares.get_share(simple_object.id, component.id).import_status == import_status_data
+    last_fed_log_entry = logic.fed_logs.get_fed_object_log_entries_for_object(object_id=simple_object.id, component_id=component.id)[0]
+    assert last_fed_log_entry.type == models.FedObjectLogEntryType.REMOTE_IMPORT_OBJECT
+    assert last_fed_log_entry.data['import_status'] == import_status_data
+
+    import_status_data['success'] = False
+    import_status_data['notes'] = ['Error']
+    r = requests.put(
+        flask_server.base_url + f'federation/v1/shares/objects/{simple_object.id}/import_status',
+        headers=headers,
+        json=import_status_data
+    )
+    assert r.status_code == 400
+    assert shares.get_share(simple_object.id, component.id).import_status != import_status_data
+    last_fed_log_entry = logic.fed_logs.get_fed_object_log_entries_for_object(object_id=simple_object.id, component_id=component.id)[0]
+    assert last_fed_log_entry.type == models.FedObjectLogEntryType.REMOTE_IMPORT_OBJECT
+    assert last_fed_log_entry.data['import_status'] != import_status_data
+
+    import_status_data['object_id'] = None
+    r = requests.put(
+        flask_server.base_url + f'federation/v1/shares/objects/{simple_object.id}/import_status',
+        headers=headers,
+        json=import_status_data
+    )
+    assert r.status_code == 204
+    assert shares.get_share(simple_object.id, component.id).import_status == import_status_data
+    last_fed_log_entry = logic.fed_logs.get_fed_object_log_entries_for_object(object_id=simple_object.id, component_id=component.id)[0]
+    assert last_fed_log_entry.type == models.FedObjectLogEntryType.REMOTE_IMPORT_OBJECT
+    assert last_fed_log_entry.data['import_status'] == import_status_data
+    notifications = logic.notifications.get_notifications(user_id=user.id, unread_only=True)
+    assert len(notifications) == 1
+    assert notifications[0].type == models.NotificationType.REMOTE_OBJECT_IMPORT_FAILED
+    assert notifications[0].data == {
+        'object_id': simple_object.id,
+        'component_id': component.id
+    }
+
+    r = requests.put(
+        flask_server.base_url + f'federation/v1/shares/objects/{simple_object.id + 1}/import_status',
+        headers=headers,
+        json=import_status_data
+    )
+    assert r.status_code == 404

@@ -1,0 +1,6 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+  {% set component = get_component(data['component_id']) %}
+  <p>The import of <a href="{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}" style="color:#337ab7;">object #{{ data['object_id'] }}</a> into {% if component %}<a href="{{ url_for('frontend.component', component_id=data['component_id'], _external=True) }}" style="color:#337ab7;">{{ component.get_name() }}</a>{% else %}another database{% endif %} has failed.</p>
+{% endblock %}

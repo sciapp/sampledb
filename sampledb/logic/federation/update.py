@@ -27,12 +27,13 @@ PROTOCOL_VERSION_MAJOR = 0
 PROTOCOL_VERSION_MINOR = 1
 
 
-def post(
+def _send_request(
+        method: typing.Union[typing.Literal['get'], typing.Literal['post'], typing.Literal['put']],
         endpoint: str,
         component: Component,
-        payload: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        headers: typing.Optional[typing.Dict[str, str]] = None
-) -> None:
+        headers: typing.Optional[typing.Dict[str, str]] = None,
+        **kwargs: typing.Any
+) -> requests.Response:
     if component.address is None:
         raise errors.MissingComponentAddressError()
     if headers is None:
@@ -41,7 +42,37 @@ def post(
 
     if auth:
         headers['Authorization'] = 'Bearer ' + auth.login['token']
-    requests.post(component.address.rstrip('/') + endpoint, data=payload, headers=headers)
+
+    url = component.address.rstrip('/') + endpoint
+
+    method_callable = {
+        'get': requests.get,
+        'post': requests.post,
+        'put': requests.put,
+    }[method]
+    return method_callable(  # type: ignore
+        url,
+        headers=headers,
+        **kwargs
+    )
+
+
+def post(
+        endpoint: str,
+        component: Component,
+        payload: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        headers: typing.Optional[typing.Dict[str, str]] = None
+) -> None:
+    _send_request('post', endpoint, component, headers, data=payload)
+
+
+def put(
+        endpoint: str,
+        component: Component,
+        headers: typing.Optional[typing.Dict[str, str]] = None,
+        **kwargs: typing.Any
+) -> None:
+    _send_request('put', endpoint, component, headers, **kwargs)
 
 
 def get_binary(
@@ -49,24 +80,15 @@ def get_binary(
     component: Component,
     headers: typing.Optional[typing.Dict[str, str]] = None
 ) -> typing.BinaryIO:
-    if component.address is None:
-        raise errors.MissingComponentAddressError()
-    if headers is None:
-        headers = {}
-    auth = get_own_authentication(component.id, ComponentAuthenticationType.TOKEN)
-
-    if auth:
-        headers['Authorization'] = 'Bearer ' + auth.login['token']
-
-    req = requests.get(component.address.rstrip('/') + endpoint, headers=headers)
-    if req.status_code == 401:
+    response = _send_request('get', endpoint, component, headers)
+    if response.status_code == 401:
         # 401 Unauthorized
         raise errors.UnauthorizedRequestError()
-    if req.status_code in [500, 501, 502, 503, 504]:
+    if response.status_code in [500, 501, 502, 503, 504]:
         raise errors.RequestServerError()
-    if req.status_code != 200:
+    if response.status_code != 200:
         raise errors.RequestError()
-    return io.BytesIO(req.content)
+    return io.BytesIO(response.content)
 
 
 def get(
@@ -248,5 +270,29 @@ def update_shares(
         if key in locations:
             locations.pop(key)
 
+    import_status_by_object_id = {}
     for object_data in objects:
-        import_object(object_data, component)
+        import_status: typing.Dict[str, typing.Any] = {}
+        import_object(object_data, component, import_status=import_status)
+        import_status_by_object_id[object_data['fed_object_id']] = import_status
+
+    if component.address:
+        for object_id, import_status in import_status_by_object_id.items():
+            if import_status:
+                send_object_share_import_status(
+                    object_id=object_id,
+                    component=component,
+                    import_status=import_status
+                )
+
+
+def send_object_share_import_status(
+        object_id: int,
+        component: Component,
+        import_status: typing.Dict[str, typing.Any]
+) -> None:
+    put(
+        endpoint=f'/federation/v1/shares/objects/{object_id}/import_status',
+        component=component,
+        json=import_status
+    )

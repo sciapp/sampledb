@@ -1823,6 +1823,41 @@ msgstr ""
 msgid "An unknown object responsibility assignment has been declined."
 msgstr "Eine unbekannte Verantwortungszuweisung wurde abgelehnt."
 
+#, python-format
+msgid ""
+"Importing <a href=\"%(object_url)s\">object #%(object_id)s</a> into <a "
+"href=\"%(component_url)s\">%(component_name)s</a> has failed."
+msgstr ""
+"Das Importieren von <a href=\"%(object_url)s\">Objekt #%(object_id)s</a> "
+"in <a href=\"%(component_url)s\">%(component_name)s</a> ist "
+"fehlgeschlagen."
+
+#, python-format
+msgid ""
+"Importing <a href=\"%(object_url)s\">object #%(object_id)s</a> into "
+"another database has failed."
+msgstr ""
+"Das Importieren von <a href=\"%(object_url)s\">Objekt #%(object_id)s</a> "
+"in eine andere Datenbank ist fehlgeschlagen."
+
+#, python-format
+msgid ""
+"<a href=\"%(object_url)s\">Object #%(object_id)s</a> has been imported "
+"into <a href=\"%(component_url)s\">%(component_name)s</a> with the "
+"following notes:"
+msgstr ""
+"<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> wurde mit den "
+"folgenden Hinweisen in <a "
+"href=\"%(component_url)s\">%(component_name)s</a> importiert:"
+
+#, python-format
+msgid ""
+"<a href=\"%(object_url)s\">Object #%(object_id)s</a> has been imported "
+"into another database with the following notes:"
+msgstr ""
+"<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> wurde mit den "
+"folgenden Hinweisen in eine andere Datenbank importiert:"
+
 msgid "Unknown notification type."
 msgstr "Unbekannter Benachrichtigungstyp."
 
@@ -1985,6 +2020,12 @@ msgstr "Eine Änderung in einem Instrument-Log-Eintrag erhalten"
 
 msgid "Being referenced in object metadata"
 msgstr "In den Metadaten eines Objekts referenziert werden"
+
+msgid "Failure of importing an object into another database"
+msgstr "Fehlschlag des Imports eines Objekts in eine andere Datenbank"
+
+msgid "Receiving notes after importing an object into another database"
+msgstr "Hinweise beim Import eines Objekts in eine andere Datenbank erhalten"
 
 msgid "Default Permissions"
 msgstr "Standardberechtigungen"
@@ -5234,8 +5275,21 @@ msgstr ""
 msgid "This object is being shared with users from the following databases:"
 msgstr "Dieses Objekt wird mit Nutzern der folgenden Datenbanken geteilt:"
 
-msgid "Unknown Database"
-msgstr "Unbekannte Datenbank"
+#, python-format
+msgid "(imported as object <a href=\"%(remote_object_url)s\">#%(object_id)s</a>)"
+msgstr ""
+"(importiert als <a href=\"%(remote_object_url)s\">Objekt "
+"#%(object_id)s</a>)"
+
+#, python-format
+msgid "(imported as object #%(object_id)s)"
+msgstr "(importiert als Objekt #%(object_id)s)"
+
+msgid "(imported)"
+msgstr "(importiert)"
+
+msgid "(not imported)"
+msgstr "(nicht importiert)"
 
 msgid "an unknown user"
 msgstr "einem unbekannten Nutzer"
@@ -5289,6 +5343,43 @@ msgid ""
 msgstr ""
 "%(user_ref)s hat die Einstellungen zum Teilen des Objekts mit einer "
 "unbekannten Datenbank aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> has imported the "
+"object."
+msgstr ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> hat das Objekt "
+"importiert."
+
+msgid "An unknown database has imported the object."
+msgstr "Eine unbekannte Datenbank hat das Objekt importiert."
+
+#, python-format
+msgid ""
+"The object was created as <a href=\"%(remote_object_url)s\">object "
+"#%(remote_object_id)s</a>."
+msgstr ""
+"Das Objekt wurde als <a href=\"%(remote_object_url)s\">Objekt "
+"#%(remote_object_id)s</a> erstellt."
+
+#, python-format
+msgid "The object was created as object #%(remote_object_id)s."
+msgstr "Das Objekt wurde als Objekt #%(remote_object_id)s erstellt."
+
+#, python-format
+msgid ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> has failed to import"
+" the object."
+msgstr ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> konnte das Objekt "
+"nicht erfolgreich importieren."
+
+msgid "An unknown database has failed to import the object."
+msgstr "Eine unbekannte Datenbank konnte das Objekt nicht erfolgreich importieren."
+
+msgid "The other database returned the following notes:"
+msgstr "Die andere Datenbank hat die folgenden Hinweise zurückgegeben:"
 
 msgid "Related Objects"
 msgstr "Zugehörige Objekte"

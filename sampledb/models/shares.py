@@ -22,6 +22,7 @@ class ObjectShare(db.Model):  # type: ignore
     component = db.relationship('Component')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     user = db.relationship('User')
+    import_status = db.Column(postgresql.JSONB)
 
     def __init__(
             self,

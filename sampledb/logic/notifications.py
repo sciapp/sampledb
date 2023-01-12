@@ -192,7 +192,8 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         get_project=logic.projects.get_project,
         get_instrument=logic.instruments.get_instrument,
         get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry,
-        get_object_location_assignment=logic.locations.get_object_location_assignment
+        get_object_location_assignment=logic.locations.get_object_location_assignment,
+        get_component=logic.components.get_component
     )
     text = flask.render_template(
         template_path + '.txt',
@@ -204,7 +205,8 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         get_project=logic.projects.get_project,
         get_instrument=logic.instruments.get_instrument,
         get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry,
-        get_object_location_assignment=logic.locations.get_object_location_assignment
+        get_object_location_assignment=logic.locations.get_object_location_assignment,
+        get_component=logic.components.get_component
     )
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
@@ -631,5 +633,68 @@ def create_notification_for_a_declined_responsibility_assignment(
         user_id=user_id,
         data={
             'object_location_assignment_id': object_location_assignment_id,
+        }
+    )
+
+
+def create_notification_for_a_failed_remote_object_import(
+        user_id: int,
+        object_id: int,
+        component_id: int
+) -> None:
+    """
+    Create a notification of type REMOTE_OBJECT_IMPORT_FAILED.
+
+    :param user_id: the ID of an existing user
+    :param object_id: the ID of an existing object
+    :param component_id: the ID of an existing component
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with the
+        given component ID exists
+    """
+    # ensure the object exists
+    logic.objects.check_object_exists(object_id)
+    # ensure the component exists
+    logic.components.check_component_exists(component_id)
+    _create_notification(
+        type=NotificationType.REMOTE_OBJECT_IMPORT_FAILED,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'component_id': component_id
+        }
+    )
+
+
+def create_notification_for_a_remote_object_import_with_notes(
+        user_id: int,
+        object_id: int,
+        component_id: int,
+        import_notes: typing.List[str]
+) -> None:
+    """
+    Create a notification of type REMOTE_OBJECT_IMPORT_NOTES.
+
+    :param user_id: the ID of an existing user
+    :param object_id: the ID of an existing object
+    :param component_id: the ID of an existing component
+    :param import_notes: the import notes from importing the object
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with the
+        given component ID exists
+    """
+    # ensure the object exists
+    logic.objects.check_object_exists(object_id)
+    # ensure the component exists
+    logic.components.check_component_exists(component_id)
+    _create_notification(
+        type=NotificationType.REMOTE_OBJECT_IMPORT_NOTES,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'component_id': component_id,
+            'import_notes': import_notes
         }
     )

@@ -917,7 +917,37 @@ This example shows how Markdown can be used for instrument Notes.
                     'projects': {3: 'grant'}
                 }
             },
-            user_id=basic_user.id
+            user_id=instrument_responsible_user.id
+        )
+        sampledb.logic.shares.set_object_share_import_status(
+            object_id=measurement.id,
+            component_id=component.id,
+            import_status={
+                'success': False,
+                'notes': ['Demo import error'],
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                'object_id': None
+            }
+        )
+        sampledb.logic.shares.set_object_share_import_status(
+            object_id=measurement.id,
+            component_id=component.id,
+            import_status={
+                'success': True,
+                'notes': ['Demo import note'],
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                'object_id': 14
+            }
+        )
+        sampledb.logic.shares.set_object_share_import_status(
+            object_id=measurement.id,
+            component_id=component.id,
+            import_status={
+                'success': True,
+                'notes': [],
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                'object_id': 14
+            }
         )
 
     print("Success: set up demo data", flush=True)
