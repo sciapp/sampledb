@@ -15,14 +15,14 @@
             <div class="{% if id_prefix+'_magnitude' in errors %}has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}">
                 <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
                        placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
-                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
+                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"
                        {% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units | babel_format_number }}"{% endif %}>
             </div>
         {% else %}
             <div class="input-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}">
                 <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
                        placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
-                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] | babel_format_number }}"
+                       {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"
                        {% elif data is not none %}value="{% if (data | to_datatype).units in ('min', 'h') %}{{ data.magnitude_in_base_units | format_time((data | to_datatype).units, schema.get('display_digits')) }}{% else %}{{ (data | to_datatype).magnitude | babel_format_number }}{% endif %}"{% endif %}>
               {% if schema['units'] is string or schema['units'] | length == 1 %}
                 {% set unit = schema["units"] if schema["units"] is string else schema["units"][0] %}
