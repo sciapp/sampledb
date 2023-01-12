@@ -8,6 +8,7 @@ from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict
 from .action_types import _parse_action_type_ref, _get_or_create_action_type_id, ActionTypeRef
 from .instruments import _parse_instrument_ref, _get_or_create_instrument_id, InstrumentRef
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
+from ..action_permissions import set_action_permissions_for_all_users
 from ..actions import get_action, get_mutable_action, create_action, Action
 from ..action_translations import set_action_translation, get_action_translations_for_action
 from ..languages import get_languages, get_language, get_language_by_lang_code, get_language_codes
@@ -18,6 +19,7 @@ from ..users import get_user
 from ..schemas.validate_schema import validate_schema
 from .. import errors, fed_logs, markdown_to_html
 from ... import db
+from ...models import Permissions
 
 
 class ActionRef(typing.TypedDict):
@@ -98,8 +100,8 @@ def parse_action(
         is_hidden=_get_bool(action_data.get('is_hidden'), default=False),
         short_description_is_markdown=_get_bool(action_data.get('short_description_is_markdown'), default=False),
         translations=[],
-        admin_only=_get_bool(action_data.get('admin_only'), default=False),
-        disable_create_objects=_get_bool(action_data.get('disable_create_objects'), default=False),
+        admin_only=_get_bool(action_data.get('admin_only'), default=True),
+        disable_create_objects=_get_bool(action_data.get('disable_create_objects'), default=True),
         import_notes=import_notes
     )
 
@@ -174,7 +176,8 @@ def import_action(
             'user',
             'schema',
             'translations',
-            'import_notes'
+            'import_notes',
+            'disable_create_objects'
         }
         if any(
                 value != getattr(mutable_action, key)
@@ -189,7 +192,6 @@ def import_action(
             mutable_action.is_hidden = action_data['is_hidden']
             mutable_action.short_description_is_markdown = action_data['short_description_is_markdown']
             mutable_action.admin_only = action_data['admin_only']
-            mutable_action.disable_create_objects = action_data['disable_create_objects']
             db.session.commit()
             fed_logs.update_action(mutable_action.id, component.id, action_data.get('import_notes', []))
         action = Action.from_database(mutable_action)
@@ -204,11 +206,12 @@ def import_action(
             description_is_markdown=action_data['description_is_markdown'],
             is_hidden=action_data['is_hidden'],
             short_description_is_markdown=action_data['short_description_is_markdown'],
-            admin_only=action_data.get('admin_only', False),
-            disable_create_objects=action_data.get('disable_create_objects', False),
+            admin_only=action_data.get('admin_only', True),
+            disable_create_objects=True,
             strict_schema_validation=False,
         )
         fed_logs.import_action(action.id, component.id, action_data.get('import_notes', []))
+        set_action_permissions_for_all_users(action.id, Permissions.READ)
 
     for action_translation in action_data['translations']:
         set_action_translation(

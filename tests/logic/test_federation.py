@@ -534,7 +534,11 @@ def _check_action(action_data):
     assert action.description_is_markdown == action_data.get('description_is_markdown')
     assert action.short_description_is_markdown == action_data.get('short_description_is_markdown')
     assert action.schema == action_data.get('schema')
-    assert action.is_hidden == action_data.get('is_hidden')
+    assert action.admin_only == action_data.get('admin_only', True)
+    assert action.is_hidden == action_data.get('is_hidden', False)
+
+    # imported actions are disabled by default
+    assert action.disable_create_objects == True
 
     if action_data.get('action_type') is not None:
         action_type_component = get_component_by_uuid(action_data['action_type'].get('component_uuid'))
