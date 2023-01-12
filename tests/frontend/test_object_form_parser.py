@@ -2,13 +2,36 @@
 """
 
 """
+import typing
+
 import pytest
 
 import sampledb
 from sampledb.frontend.objects import object_form_parser
 
 
-def test_parse_time_input():
+@pytest.fixture
+def mock_current_user():
+    current_user_backup = sampledb.frontend.objects.object_form_parser.current_user
+
+    class MockUser:
+        def __init__(self):
+            self.language_cache: typing.List[typing.Optional[sampledb.logic.languages.Language]] = [None]
+            self.is_authenticated = True
+
+        def set_language_by_lang_code(self, lang_code):
+            language = sampledb.logic.languages.get_language_by_lang_code(lang_code)
+            self.language_cache[0] = language
+
+    mock_user = MockUser()
+    # use english by default to avoid settings lookups
+    mock_user.set_language_by_lang_code('en')
+    sampledb.frontend.objects.object_form_parser.current_user = mock_user
+    yield mock_user
+    sampledb.frontend.objects.object_form_parser.current_user = current_user_backup
+
+
+def test_parse_time_input(mock_current_user):
     schema = {
         'type': 'quantity',
         'title': 'Duration',
@@ -124,13 +147,7 @@ def test_parse_time_input():
     assert object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors) is None
     assert len(errors) == 2  # two errors, for magnitude and units
 
-    bup = sampledb.frontend.objects.object_form_parser.current_user
-    class MockUser:
-        def __init__(self, language = None):
-            self.language_cache = [language]
-            self.is_authenticated = True
-    german = sampledb.logic.languages.get_language_by_lang_code('de')
-    sampledb.frontend.objects.object_form_parser.current_user = MockUser(german)
+    mock_current_user.set_language_by_lang_code('de')
 
     form_data['object__duration__magnitude'][0] = '10:05:17.321'  # locale de_DE expects , as decimal point
     form_data['object__duration__units'][0] = 'h'
@@ -144,4 +161,51 @@ def test_parse_time_input():
     assert data['units'] == 'h'
     assert data['dimensionality'] == '[time]'
 
-    sampledb.frontend.objects.object_form_parser.current_user = bup
+
+@pytest.mark.parametrize("lang_code,decimal_separator,group_separator", [('en', '.', ','), ('de', ',', '.')])
+def test_parse_quantity_input(mock_current_user, lang_code, decimal_separator, group_separator):
+    id_prefix = 'object__quantity'
+    schema = {
+        'type': 'quantity',
+        'title': 'Quantity',
+        'units': ['m', 'ft']
+    }
+    form_data = {
+        id_prefix + '__units': ['m']
+    }
+
+    mock_current_user.set_language_by_lang_code(lang_code)
+
+    # valid input using decimal separator
+    errors = {}
+    form_data[id_prefix + '__magnitude'] = [f'1{decimal_separator}1']
+    data = object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors)
+    assert not errors
+    assert data['magnitude'] == 1.1
+    assert data['magnitude_in_base_units'] == 1.1
+
+    # invalid input using group separator
+    errors = {}
+    form_data[id_prefix + '__magnitude'] = [f'1{group_separator}1']
+    data = object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors)
+    assert errors
+    assert data is None
+
+    # invalid input using group separator and very large numbers
+    # (causes InvalidOperation error during parsing instead of ValueError)
+    errors = {}
+    form_data[id_prefix + '__magnitude'] = [f'100000000000000000000000000000000000000000000000{group_separator}1']
+    data = object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors)
+    assert errors
+    assert data is None
+
+    # valid converted input
+    form_data = {
+        id_prefix + '__units': ['ft']
+    }
+    errors = {}
+    form_data[id_prefix + '__magnitude'] = [f'1{decimal_separator}1']
+    data = object_form_parser.parse_quantity_form_data(form_data, schema, id_prefix, errors)
+    assert not errors
+    assert data['magnitude'] == 1.1
+    assert data['magnitude_in_base_units'] == 0.33528
