@@ -5295,26 +5295,34 @@ msgid "an unknown user"
 msgstr "einem unbekannten Nutzer"
 
 #, python-format
-msgid "The object shared by %(user_ref)s was imported with the following notes:"
+msgid ""
+"Version #%(version_id)s of the object shared by %(user_ref)s was imported"
+" with the following notes:"
 msgstr ""
-"Das von %(user_ref)s geteilte Objekt wurde mit den folgenden Hinweisen "
-"importiert:"
+"Version #%(version_id)s des von %(user_ref)s geteilten Objekts wurde mit "
+"den folgenden Hinweisen importiert:"
 
 #, python-format
-msgid "The object shared by %(user_ref)s was imported."
-msgstr "Das von %(user_ref)s geteilte Objekt wurde importiert."
+msgid "Version #%(version_id)s of the object shared by %(user_ref)s was imported."
+msgstr ""
+"Version #%(version_id)s des von %(user_ref)s geteilten Objekts wurde "
+"importiert."
 
 #, python-format
 msgid ""
-"A new version of the object shared by %(user_ref)s was imported with the "
-"following notes:"
+"A new version (#%(version_id)s) of the object shared by %(user_ref)s was "
+"imported with the following notes:"
 msgstr ""
-"Eine von %(user_ref)s geteilte neue Version des Objekts wurde mit den "
-"folgenden Hinweisen importiert:"
+"Eine von %(user_ref)s geteilte neue Version (#%(version_id)s) des Objekts"
+" wurde mit den folgenden Hinweisen importiert:"
 
 #, python-format
-msgid "A new version of the object shared by %(user_ref)s was imported."
-msgstr "Eine von %(user_ref)s geteilte neue Version des Objekts wurde importiert."
+msgid ""
+"A new version (#%(version_id)s) of the object shared by %(user_ref)s was "
+"imported."
+msgstr ""
+"Eine von %(user_ref)s geteilte neue Version (#%(version_id)s) des Objekts"
+" wurde importiert."
 
 #, python-format
 msgid ""

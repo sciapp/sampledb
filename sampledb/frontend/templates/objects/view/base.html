@@ -1209,29 +1209,39 @@
                       {% if not log_entry.user_id %}
                         {% set user_ref = _('an unknown user') %}
                       {% endif %}
+                      {% if 'version_id' in log_entry.data %}
+                        {% set version_id = log_entry.data.version_id %}
+                      {% else %}
+                        {% set version_id = '?' %}
+                      {% endif %}
                       {% if log_entry.data.import_notes %}
-                        {{ _('The object shared by %(user_ref)s was imported with the following notes:', user_ref=user_ref) }}
+                        {{ _('Version #%(version_id)s of the object shared by %(user_ref)s was imported with the following notes:', version_id=version_id, user_ref=user_ref) }}
                         <ul>
                           {% for note in log_entry.data.import_notes %}
                             <li>{{ note }}</li>
                           {% endfor %}
                         </ul>
                       {% else %}
-                        {{ _('The object shared by %(user_ref)s was imported.', user_ref=user_ref) }}
+                        {{ _('Version #%(version_id)s of the object shared by %(user_ref)s was imported.', version_id=version_id, user_ref=user_ref) }}
                       {% endif %}
                     {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT %}
                       {% if not log_entry.user_id %}
                         {% set user_ref = _('an unknown user') %}
                       {% endif %}
+                      {% if 'version_id' in log_entry.data %}
+                        {% set version_id = log_entry.data.version_id %}
+                      {% else %}
+                        {% set version_id = '?' %}
+                      {% endif %}
                       {% if log_entry.data.import_notes %}
-                        {{ _('A new version of the object shared by %(user_ref)s was imported with the following notes:', user_ref=user_ref) }}
+                        {{ _('A new version (#%(version_id)s) of the object shared by %(user_ref)s was imported with the following notes:', version_id=log_entry.data.version_id, user_ref=user_ref) }}
                         <ul>
                           {% for note in log_entry.data.import_notes %}
                             <li>{{ note }}</li>
                           {% endfor %}
                         </ul>
                       {% else %}
-                        {{ _('A new version of the object shared by %(user_ref)s was imported.', user_ref=user_ref) }}
+                        {{ _('A new version (#%(version_id)s) of the object shared by %(user_ref)s was imported.', version_id=log_entry.data.version_id, user_ref=user_ref) }}
                       {% endif %}
                     {% elif log_entry.type == FedObjectLogEntryType.ADD_POLICY %}
                       {% set log_entry_component = get_component(log_entry.component_id) %}

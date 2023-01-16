@@ -145,7 +145,7 @@ def import_object(
                 allow_disabled_languages=True
             )
             if object:
-                fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id)
+                fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
                 did_perform_import = True
         elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
             object = update_object_version(
@@ -158,7 +158,7 @@ def import_object(
                 utc_datetime=version['utc_datetime'],
                 allow_disabled_languages=True
             )
-            fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id)
+            fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
             did_perform_import = True
         all_import_notes.extend(version.get('import_notes', []))
     if object is None:
