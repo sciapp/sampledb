@@ -3,14 +3,18 @@
 
 """
 
+import decimal
 import os
 import typing
 import pint
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
-ureg = pint.UnitRegistry()
+ureg = pint.UnitRegistry(non_int_type=decimal.Decimal)
 ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
+
+int_ureg = pint.UnitRegistry()
+int_ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
 
 
 def prettify_units(units: typing.Union[str, pint.Unit]) -> str:

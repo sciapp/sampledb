@@ -4,18 +4,19 @@
 """
 
 import datetime
+import decimal
 import functools
 import re
 
 import babel
 from flask_babel import _
-from babel.numbers import parse_number, parse_decimal
+from babel.numbers import parse_decimal
 from flask_login import current_user
 import pint
 import pytz
 
 from ...logic import schemas, languages
-from ...logic.units import ureg
+from ...logic.units import ureg, int_ureg
 from ...logic.errors import ValidationError
 from ...logic.schemas.generate_placeholder import generate_placeholder
 
@@ -269,7 +270,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
     else:
         units = '1'
         pint_units = ureg.Unit('1')
-    dimensionality = str(pint_units.dimensionality)
+    dimensionality = str(int_ureg.Unit(pint_units).dimensionality)
     user_locale = languages.get_user_language(current_user).lang_code
     if units in ['min', 'h'] and ':' in magnitude:
         if units == 'min':
@@ -289,12 +290,12 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         match_dict = match.groupdict()
         try:
             if 'hours' in match_dict.keys():
-                hours = parse_number(match_dict['hours'], locale=user_locale)
+                hours = int(match_dict['hours'])
             else:
                 hours = 0
-            minutes = parse_number(match_dict['minutes'], locale=user_locale)
+            minutes = int(match_dict['minutes'])
             if match_dict['seconds']:
-                seconds = parse_decimal(match_dict['seconds'], locale=user_locale)
+                seconds = parse_decimal(match_dict['seconds'], locale=user_locale, strict=True)
             else:
                 seconds = 0
         except ValueError:
@@ -308,21 +309,26 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         }
     else:
         try:
+            if isinstance(magnitude, str) and re.fullmatch('[-]?[0-9]+', magnitude):
+                try:
+                    magnitude = int(magnitude)
+                except ValueError:
+                    pass
             if isinstance(magnitude, str):
                 try:
-                    magnitude = parse_number(magnitude, locale=user_locale)
-                except ValueError:
-                    try:
-                        magnitude = parse_decimal(magnitude, locale=user_locale)
-                    except ValueError:
-                        raise ValueError(_('Unable to parse magnitude.'))
-            magnitude = float(magnitude)
+                    magnitude = parse_decimal(magnitude, locale=user_locale, strict=True)
+                except Exception:
+                    pass
+            if isinstance(magnitude, str):
+                raise ValueError(_('Unable to parse magnitude.'))
+            magnitude = decimal.Decimal(magnitude)
         except ValueError:
             raise ValueError(_('The magnitude must be a number.'))
         magnitude_in_base_units = ureg.Quantity(magnitude, pint_units).to_base_units().magnitude
         data = {
             '_type': 'quantity',
-            'magnitude_in_base_units': magnitude_in_base_units,
+            'magnitude_in_base_units': float(magnitude_in_base_units),
+            'magnitude': float(magnitude),
             'dimensionality': dimensionality,
             'units': units
         }

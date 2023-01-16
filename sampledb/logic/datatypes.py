@@ -17,11 +17,13 @@ setting JSONEncoder.STRICT = True, but the verification will greatly reduce the 
 """
 
 import datetime
+import decimal
 import json
-import pint
 import typing
 
-from .units import ureg
+import pint
+
+from .units import ureg, int_ureg
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -182,11 +184,11 @@ class Quantity(object):
             units: typing.Optional[str],
             already_in_base_units: bool = False
     ) -> None:
-        self.magnitude = float(magnitude)
         if units is None:
             self.units = None
             self.pint_units = ureg.Unit('1')
-            self.magnitude_in_base_units = self.magnitude
+            self.magnitude = float(magnitude)
+            self.magnitude_in_base_units = float(magnitude)
         else:
             if isinstance(units, ureg.Unit):
                 self.pint_units = units
@@ -198,12 +200,17 @@ class Quantity(object):
                 except (pint.errors.UndefinedUnitError, AttributeError):
                     raise ValueError("Invalid units '{}'".format(self.units))
             if already_in_base_units is False:
-                self.magnitude_in_base_units = ureg.Quantity(self.magnitude, self.pint_units).to_base_units().magnitude
+                self.magnitude = magnitude
+                self.magnitude_in_base_units = ureg.Quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
             else:
-                self.magnitude_in_base_units = self.magnitude
-                pint_base_units = ureg.Quantity(1, self.pint_units).to_base_units().units
-                self.magnitude = ureg.Quantity(self.magnitude_in_base_units, pint_base_units).to(self.pint_units).magnitude
-        self.dimensionality = self.pint_units.dimensionality
+                self.magnitude_in_base_units = magnitude
+                _, pint_base_units = ureg.get_base_units(self.pint_units)
+                self.magnitude = ureg.Quantity(decimal.Decimal(magnitude), pint_base_units).to(self.pint_units).magnitude
+            self.magnitude = float(self.magnitude)
+            self.magnitude_in_base_units = float(self.magnitude_in_base_units)
+        # use integer unit registry to ensure compatible dimensionalities
+        # e.g. [length] ** 2 instead of [length] * 2.000
+        self.dimensionality = str(int_ureg.Unit(self.pint_units).dimensionality)
 
     def __repr__(self) -> str:
         return '<{0}(magnitude={1.magnitude}, units="{1.units}")>'.format(type(self).__name__, self)
@@ -211,7 +218,7 @@ class Quantity(object):
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
             return False
-        return bool(ureg.Quantity(self.magnitude, self.pint_units) == ureg.Quantity(other.magnitude, other.pint_units))
+        return self.dimensionality == other.dimensionality and self.magnitude_in_base_units == other.magnitude_in_base_units
 
     def to_json(self) -> typing.Dict[str, typing.Any]:
         return {
