@@ -18,7 +18,7 @@ def verify_token(
         token: str,
         salt: str,
         secret_key: str,
-        expiration: int = MAX_AGE
+        expiration: typing.Optional[int] = MAX_AGE
 ) -> typing.Optional[typing.Any]:
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key)
     try:
