@@ -878,11 +878,12 @@ def new_object():
         ]
 
         allowed_types = ["object_reference"]
-        if all(models.ActionType.MEASUREMENT in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
-            allowed_types.append("measurement")
+        if all(passed_object_action.type for passed_object_action in passed_object_actions):
+            if all(models.ActionType.MEASUREMENT in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
+                allowed_types.append("measurement")
 
-        if all(models.ActionType.SAMPLE_CREATION in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
-            allowed_types.append("sample")
+            if all(models.ActionType.SAMPLE_CREATION in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
+                allowed_types.append("sample")
 
         def is_property_schema_compatible(property_schema, allowed_types, passed_object_actions):
             property_type = property_schema.get('type', '')
@@ -914,7 +915,12 @@ def new_object():
 
         passed_object_property_names = []
 
-        if len(possible_properties) == 1:
+        if len(possible_properties) == 0:
+            flask.flash(_('The selected object cannot be used in this action.')
+                        if len(passed_object_ids) == 1
+                        else _('The selected objects cannot be used in this action.'), 'error')
+
+        elif len(possible_properties) == 1:
             passed_object_property_names.extend(possible_properties)
         elif len(possible_properties) > 1:
             if fields_selected:
