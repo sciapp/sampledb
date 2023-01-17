@@ -347,8 +347,9 @@ def get_users(
     """
     Returns all users.
 
-    :param exclude_hidden: whether or not to exclude hidden users
+    :param exclude_hidden: whether to exclude hidden users
     :param order_by: Column to order the users by, or None
+    :param exclude_fed: whether imported users should be included
     :return: the list of users
     """
     user_query = users.User.query
@@ -419,13 +420,18 @@ def create_user(
     """
     Create a new user.
 
-    This function cannot create a user as an administrator. To set whether or
-    not a user is an administrator, use the set_administrator script or
-    set_user_administrator function.
+    This function cannot create a user as an administrator. To set whether a user is
+    an administrator, use the set_administrator script or set_user_administrator function.
 
     :param name: the user's name
     :param email: the user's email address
     :param type: the user's type
+    :param orcid: the user's ORCID iD
+    :param affiliation: the user's affiliation
+    :param role: the user's role
+    :param extra_fields: a dict describing the values for defined extra fields
+    :param fed_id: the ID of the related user at the exporting component
+    :param component_id: the ID of the exporting component
     :return: the newly created user
     """
 

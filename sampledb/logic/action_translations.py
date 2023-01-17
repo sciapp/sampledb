@@ -101,7 +101,7 @@ def get_action_translations_for_action(
     translation will be returned.
 
     :param action_id: the ID of an existing action
-    :param use_fallback: whether or not a fallback translation may be returned
+    :param use_fallback: whether a fallback translation may be returned
     :return: a list with all action translations
     """
     action_translations = models.ActionTranslation.query.filter_by(action_id=action_id).order_by(models.ActionTranslation.language_id).all()
@@ -136,7 +136,7 @@ def get_action_translation_for_action_in_language(
 
     :param action_id: the ID of an existing action
     :param language_id: the ID of an existing language
-    :param use_fallback: whether or not a fallback translation may be built
+    :param use_fallback: a fallback translation may be built
     :return: the requested action translation
     :raise errors.ActionTranslationDoesNotExistError: when the action
         translation does not exist and use_fallback was False

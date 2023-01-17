@@ -561,6 +561,7 @@ class VersionedJSONSerializableObjectTables(object):
         :param utc_datetime: the datetime (in UTC) when the object was updated
         :param utc_datetime_subversion: the datetime (in UTC) when the object update has been applied (optional, defaults to utcnow())
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :param allow_disabled_languages: whether using disabled languages should be allowed in this update
         :return: the updated object as object_type or None, if the object does not exist
         """
         assert connection is not None  # ensured by decorator
@@ -872,10 +873,15 @@ class VersionedJSONSerializableObjectTables(object):
         Queries and returns all objects matching a given filter.
 
         :param filter_func: a lambda that may return an SQLAlchemy filter when given a table
+        :param action_table: a SQLAlchemy table object containing the actions to filter by (see action_filter)
         :param action_filter: a SQLAlchemy comparator, used to query only objects created by specific actions
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param table: a custom SQLAlchemy table-like object to use as base for the query (optional)
         :param parameters: query parameters for the custom select statement (optional)
+        :param sorting_func: a sorting function to use (see logic.object_sorting)
+        :param limit: limits the number of returned objects, if set
+        :param offset: an offset to apply to the query
+        :param num_objects_found: a list used to return the number of objects found in, using the 0-th element
         :return: a list of objects as object_type
         """
         assert connection is not None  # ensured by decorator

@@ -110,8 +110,9 @@ def update_language(
     :param lang_code: the language code
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
-    :param enabled_for_input: whether or not the language is enabled for input
-    :param enabled_for_user_interface: whether or not the language is enabled
+    :param datetime_format_moment_output: format for moment output
+    :param enabled_for_input: whether the language is enabled for input
+    :param enabled_for_user_interface: whether the language is enabled
         for the user interface
     :return: the language
     :raise errors.LanguageAlreadyExistsError: when the language code already

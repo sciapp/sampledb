@@ -59,8 +59,8 @@ def get_property_paths_for_schema(
 
     :param schema: the schema to generate the dict for
     :param valid_property_types: a list of property types, or None
-    :path: the path to this subschema, or None
-    :path_depth_limit: how deep paths may be, or None
+    :param path: the path to this subschema, or None
+    :param path_depth_limit: how deep paths may be, or None
     :return: the generated dict
     """
     if path is None:

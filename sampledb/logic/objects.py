@@ -416,6 +416,7 @@ def get_objects(
         given the object table's data column
     :param action_filter: a SQLAlchemy comparator, used to query only objects
         created by specific actions
+    :param kwargs: additional parameters to be passed to Objects.get_current_objects
     :return: a list of all objects or those matching the given filters
     """
     if action_filter is None:
@@ -499,8 +500,8 @@ def find_object_references(
     Searches for references to other objects.
 
     :param object: the updated (or newly created) object
-    :param find_previous_referenced_object_ids: whether or not to find
-        previous referenced object ids
+    :param find_previous_referenced_object_ids: whether to find previous referenced object ids
+    :param include_fed_references: whether references on other components should be included
     """
     referenced_object_ids = []
     referenced_object_id: typing.Union[int, typing.Tuple[int, typing.Optional[str]]]

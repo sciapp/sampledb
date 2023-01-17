@@ -220,9 +220,11 @@ def check_action_type_exists(
 
 def get_action_type(action_type_id: int, component_id: typing.Optional[int] = None) -> ActionType:
     """
-    Returns the action type with the given action type ID.
+    Returns the action type with the given action type ID or composite federation ID.
 
-    :param action_type_id: the ID of an existing action type
+    :param action_type_id: the ID of an existing action type or ID on other component
+        if composite federation ID is used
+    :param component_id: optional component ID, if the composite federation ID is used
     :return: the action type
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -270,7 +272,13 @@ def create_action_type(
     :param enable_comments: whether comments should be enabled for actions of this type
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
-    :param enable_project_link: objects created with actions of this type can be linked to a project group
+    :param enable_project_link: whether objects created with actions of this type can be linked to a project group
+    :param disable_create_objects: whether the creation of objects with this action type is enabled
+    :param is_template: whether this action type can be embedded as a template in actions of other types
+    :param usable_in_action_type_ids: sequence of all action types for which objects created with this action type
+        should have a "Use in" button
+    :param fed_id: action type ID on other database, if action type is imported
+    :param component_id: component ID of the component this action type is imported from
     :param scicat_export_type: the SciCat type to use during export, or None
     :return: the created action type
     """
@@ -342,6 +350,10 @@ def update_action_type(
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
     :param enable_project_link: objects created with actions of this type can be linked to a project group
+    :param disable_create_objects: whether the creation of objects with this action type is enabled
+    :param is_template: whether this action type can be embedded as a template in actions of other types
+    :param usable_in_action_type_ids: sequence of all action types for which objects created with this action type
+        should have a "Use in" button
     :param scicat_export_type: the SciCat type to use during export, or None
     :return: the created action type
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
@@ -398,7 +410,7 @@ def create_action(
     :param instrument_id: None or the ID of an existing instrument
     :param user_id: None or the ID of an existing user
     :param description_is_markdown: whether the description contains Markdown
-    :param is_hidden: None or whether or not the action should be hidden
+    :param is_hidden: None or whether the action should be hidden
     :param short_description_is_markdown: whether the short description
         contains Markdown
     :param fed_id: the ID of the related action at the exporting component

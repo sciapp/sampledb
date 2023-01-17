@@ -81,6 +81,7 @@ def build_related_objects_tree(
     samples.
 
     :param object_id: the ID of an existing object
+    :param component_uuid: the component UUID if the object resides on another component (optional)
     :param user_id: the ID of an existing user (optional)
     :param path: the path leading to this object (internal)
     :param visited_paths: all previously visited paths (internal)

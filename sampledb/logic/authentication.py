@@ -80,6 +80,7 @@ def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirme
 
     :param user_id: the ID of an existing user
     :param ldap_uid: the LDAP uid to use during authentication
+    :param password: the LDAP password
     :param confirmed: whether the authentication method has been confirmed already
     """
     ldap_uid = ldap_uid.lower().strip()

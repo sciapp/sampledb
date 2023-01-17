@@ -91,16 +91,18 @@ def create_instrument(
     Creates a new instrument.
 
     :param description_is_markdown: whether the description contains Markdown
-    :param users_can_create_log_entries: whether or not users can create log
+    :param users_can_create_log_entries: whether users can create log
         entries for this instrument
-    :param users_can_view_log_entries: whether or not users can view the log
+    :param users_can_view_log_entries: whether users can view the log
         entries for this instrument
     :param notes_is_markdown: whether the notes contain Markdown
-    :param create_log_entry_default: the default for whether or not a log
+    :param create_log_entry_default: the default for whether a log
         entry should be created during object creation by instrument scientists
-    :param is_hidden: whether or not this instrument is hidden
+    :param is_hidden: whether this instrument is hidden
     :param short_description_is_markdown: whether the short description
         contains Markdown
+    :param fed_id: the ID of the related instrument at the exporting component
+    :param component_id: the ID of the exporting component
     :return: the new instrument
     """
 
