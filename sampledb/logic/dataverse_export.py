@@ -147,7 +147,7 @@ def _convert_metadata_to_process(
             if units == '1':
                 # dimensionless quantities with a factor of 1 do not need units
                 units = ''
-            magnitude = f"{datatypes.Quantity.from_json(value).magnitude:g}"
+            magnitude = f"{float(datatypes.Quantity.from_json(value).magnitude):g}"
         elif value['_type'] == 'text':
             text_value = _translations_to_str(datatypes.Text.from_json(value).text) or ''
         elif value['_type'] == 'bool':

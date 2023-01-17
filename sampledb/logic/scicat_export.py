@@ -117,7 +117,7 @@ def _convert_metadata(
             return typing.cast(typing.Union[float, int], data['magnitude_in_base_units'])
         quantity = Quantity.from_json(data)
         return {
-            'value': str(round(quantity.magnitude, 13)),
+            'value': str(float(round(quantity.magnitude, 13))),
             'unit': quantity.units
         }
 
