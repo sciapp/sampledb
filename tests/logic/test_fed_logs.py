@@ -394,13 +394,13 @@ def test_create_ref_user_missing_data(user, component):
 def test_import_object(object, component):
     start_time = datetime.datetime.utcnow()
     assert len(models.FedObjectLogEntry.query.all()) == 0
-    fed_logs.import_object(object.id, component.id, [], None)
+    fed_logs.import_object(object.id, component.id, [], None, 1)
     log_entries = models.FedObjectLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedObjectLogEntryType.IMPORT_OBJECT
     assert log_entries[0].object_id == object.id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {'import_notes': []}
+    assert log_entries[0].data == {'import_notes': [], 'version_id': 1}
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
 
@@ -408,22 +408,22 @@ def test_import_object(object, component):
 def test_import_object_missing_data(object, component):
     assert len(models.FedObjectLogEntry.query.all()) == 0
     with pytest.raises(errors.ObjectDoesNotExistError):
-        fed_logs.import_object(object.id + 1, component.id, [], None)
+        fed_logs.import_object(object.id + 1, component.id, [], None, 1)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.import_object(object.id, component.id + 1, [], None)
+        fed_logs.import_object(object.id, component.id + 1, [], None, 1)
     assert len(models.FedObjectLogEntry.query.all()) == 0
 
 
 def test_update_object(object, component):
     start_time = datetime.datetime.utcnow()
     assert len(models.FedObjectLogEntry.query.all()) == 0
-    fed_logs.update_object(object.id, component.id, [], None)
+    fed_logs.update_object(object.id, component.id, [], None, 1)
     log_entries = models.FedObjectLogEntry.query.all()
     assert len(log_entries) == 1
     assert log_entries[0].type == models.FedObjectLogEntryType.UPDATE_OBJECT
     assert log_entries[0].object_id == object.id
     assert log_entries[0].component_id == component.id
-    assert log_entries[0].data == {'import_notes': []}
+    assert log_entries[0].data == {'import_notes': [], 'version_id': 1}
     assert log_entries[0].utc_datetime >= start_time
     assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
 
@@ -431,9 +431,9 @@ def test_update_object(object, component):
 def test_update_object_missing_data(object, component):
     assert len(models.FedObjectLogEntry.query.all()) == 0
     with pytest.raises(errors.ObjectDoesNotExistError):
-        fed_logs.update_object(object.id + 1, component.id, [], None)
+        fed_logs.update_object(object.id + 1, component.id, [], None, 1)
     with pytest.raises(errors.ComponentDoesNotExistError):
-        fed_logs.update_object(object.id, component.id + 1, [], None)
+        fed_logs.update_object(object.id, component.id + 1, [], None, 1)
     assert len(models.FedObjectLogEntry.query.all()) == 0
 
 
