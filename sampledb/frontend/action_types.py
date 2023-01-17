@@ -210,9 +210,8 @@ def show_action_type_form(type_id):
                         flask.flash(_('Please fill out the form.'), 'error')
                         return show_action_type_form(type_id)
 
-                    language_id = int(translation['language_id'])
+                    int(translation['language_id'])
                     name = translation['name'].strip()
-                    description = translation['description'].strip()
                     object_name = translation['object_name'].strip()
                     object_name_plural = translation['object_name_plural'].strip()
                     view_text = translation['view_text'].strip()
@@ -255,7 +254,6 @@ def show_action_type_form(type_id):
                 )
 
                 for translation in translation_data:
-
                     language_id = int(translation['language_id'])
                     name = translation['name'].strip()
                     description = translation['description'].strip()
