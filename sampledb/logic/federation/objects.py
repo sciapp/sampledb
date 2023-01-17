@@ -113,10 +113,14 @@ class SharedObjectData(typing.TypedDict):
 
 def import_object(
         object_data: ObjectData,
-        component: Component
+        component: Component,
+        *,
+        import_status: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> Object:
     action_id = _get_or_create_action_id(object_data['action'])
     object = None
+    all_import_notes = []
+    did_perform_import = False
     for version in object_data['versions']:
         try:
             object = get_fed_object(object_data['fed_object_id'], component.id, version['fed_version_id'])
@@ -142,6 +146,7 @@ def import_object(
             )
             if object:
                 fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id)
+                did_perform_import = True
         elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
             object = update_object_version(
                 object_id=object.object_id,
@@ -154,6 +159,8 @@ def import_object(
                 allow_disabled_languages=True
             )
             fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id)
+            did_perform_import = True
+        all_import_notes.extend(version.get('import_notes', []))
     if object is None:
         object = get_fed_object(
             fed_object_id=object_data['fed_object_id'],
@@ -189,6 +196,12 @@ def import_object(
     permission = object_data['permissions']['all_users']
     if permission not in current_permissions_for_all_users:
         set_object_permissions_for_all_users(object.object_id, permission)
+
+    if import_status is not None and did_perform_import:
+        import_status['success'] = True
+        import_status['notes'] = all_import_notes
+        import_status['object_id'] = object.object_id
+        import_status['utc_datetime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     return object
 

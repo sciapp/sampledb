@@ -15,7 +15,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments
+from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments, components
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -128,6 +128,7 @@ def notifications(user_id):
         get_project=_safe_get_project,
         get_instrument=_safe_get_instrument,
         get_instrument_log_entry=_safe_get_instrument_log_entry,
+        get_component=components.get_component,
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
         get_object_location_assignment=_safe_get_object_location_assignment,

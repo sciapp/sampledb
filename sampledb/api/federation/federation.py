@@ -11,7 +11,7 @@ import flask
 from ..utils import Resource, ResponseData
 from ...logic import errors
 from ...logic.components import Component
-from ...logic.shares import get_shares_for_component, get_share, ObjectShare
+from ...logic.shares import get_shares_for_component, get_share, ObjectShare, set_object_share_import_status, parse_object_share_import_status
 from ...logic.federation.action_types import shared_action_type_preprocessor
 from ...logic.federation.actions import shared_action_preprocessor
 from ...logic.federation.instruments import shared_instrument_preprocessor
@@ -85,6 +85,38 @@ class UpdateHook(Resource):
         except ConnectionError:
             pass
         return None
+
+
+class ImportStatus(Resource):
+    @http_token_auth.login_required
+    def put(self, object_id: int) -> ResponseData:
+        component_id = flask.g.component.id
+        try:
+            get_share(object_id, component_id)
+        except errors.ObjectDoesNotExistError:
+            return {
+                "message": "object {} does not exist".format(object_id)
+            }, 404
+        except errors.ShareDoesNotExistError:
+            return {
+                "message": "object {} is not shared".format(object_id)
+            }, 403
+        import_status = flask.request.json
+        if not import_status:
+            return {
+                "message": "missing import status"
+            }, 400
+        parsed_import_status = parse_object_share_import_status(import_status)
+        if parsed_import_status is None:
+            return {
+                "message": "invalid import status"
+            }, 400
+        set_object_share_import_status(
+            object_id=object_id,
+            component_id=component_id,
+            import_status=dict(parsed_import_status)
+        )
+        return '', 204
 
 
 class Objects(Resource):

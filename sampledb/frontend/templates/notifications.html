@@ -111,6 +111,25 @@
                 {% else %}
                   {{ _('An unknown object responsibility assignment has been declined.') }}
                 {% endif %}
+              {% elif notification.type == NotificationType.REMOTE_OBJECT_IMPORT_FAILED %}
+                {% set component = get_component(notification.data.component_id) %}
+                {% if component %}
+                  {{ _('Importing <a href="%(object_url)s">object #%(object_id)s</a> into <a href="%(component_url)s">%(component_name)s</a> has failed.', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id, component_name=component.get_name(), component_url=url_for('.component', component_id=component.id)) }}
+                {% else %}
+                  {{ _('Importing <a href="%(object_url)s">object #%(object_id)s</a> into another database has failed.', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id) }}
+                {% endif %}
+              {% elif notification.type == NotificationType.REMOTE_OBJECT_IMPORT_NOTES %}
+                {% set component = get_component(notification.data.component_id) %}
+                {% if component %}
+                  {{ _('<a href="%(object_url)s">Object #%(object_id)s</a> has been imported into <a href="%(component_url)s">%(component_name)s</a> with the following notes:', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id, component_name=component.get_name(), component_url=url_for('.component', component_id=component.id)) }}
+                {% else %}
+                  {{ _('<a href="%(object_url)s">Object #%(object_id)s</a> has been imported into another database with the following notes:', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id) }}
+                {% endif %}
+                <ul>
+                {% for note in notification.data.import_notes %}
+                  <li>{{ note }}</li>
+                {% endfor %}
+                </ul>
               {% else %}
                 {{ _('Unknown notification type.') }}
               {% endif %}

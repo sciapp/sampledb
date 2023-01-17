@@ -128,6 +128,18 @@ def update_object_policy(object_id: int, component_id: int, user_id: typing.Opti
     )
 
 
+def remote_import_object(object_id: int, component_id: int, import_status: typing.Dict[str, typing.Any]) -> None:
+    _store_new_fed_object_log_entry(
+        type=models.FedObjectLogEntryType.REMOTE_IMPORT_OBJECT,
+        object_id=object_id,
+        component_id=component_id,
+        user_id=None,
+        data={
+            'import_status': import_status
+        }
+    )
+
+
 def _store_new_fed_location_log_entry(
         type: models.FedLocationLogEntryType,
         location_id: int,

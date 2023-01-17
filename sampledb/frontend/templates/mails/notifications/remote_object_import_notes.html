@@ -1,0 +1,11 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+  {% set component = get_component(data['component_id']) %}
+  <p><a href="{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}" style="color:#337ab7;">Object #{{ data['object_id'] }}</a> has been imported into {% if component %}<a href="{{ url_for('frontend.component', component_id=data['component_id'], _external=True) }}" style="color:#337ab7;">{{ component.get_name() }}</a>{% else %}another database{% endif %} with the following notes:</p>
+  <ul>
+  {% for note in data.import_notes %}
+    <li>{{ note }}</li>
+  {% endfor %}
+  </ul>
+{% endblock %}

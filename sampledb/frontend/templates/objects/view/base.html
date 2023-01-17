@@ -1149,7 +1149,7 @@
       {% set shares = get_shares_for_object(object.object_id) %}
     {% endif %}
     {% if component or shares or fed_object_log_entries %}
-      <h2>{{ _('Other Databases') }}</h2>
+      <h2 id="other_databases">{{ _('Other Databases') }}</h2>
       <div class="federation-information">
         {% if component %}
           {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>.', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
@@ -1159,10 +1159,19 @@
           <ul>
             {% for share in shares %}
               <li>
-                {% if share.component %}
-                  <a href="{{ url_for('.component', component_id=share.component.id) }}">{{ share.component.get_name() }}</a>
+                <a href="{{ url_for('.component', component_id=share.component.id) }}">{{ share.component.get_name() }}</a>
+                {% if share.import_status.success %}
+                  {% if share.import_status.object_id %}
+                    {% if share.component.address %}
+                      {{ _('(imported as object <a href="%(remote_object_url)s">#%(object_id)s</a>)', remote_object_url=share.component.address + relative_url_for('.object', object_id=share.import_status.object_id), object_id=share.import_status.object_id) }}
+                    {% else %}
+                      {{ _('(imported as object #%(object_id)s)', object_id=share.import_status.object_id) }}
+                    {% endif %}
+                  {% else %}
+                    {{ _('(imported)') }}
+                  {% endif %}
                 {% else %}
-                  {{ _('Unknown Database') }}
+                  {{ _('(not imported)') }}
                 {% endif %}
               </li>
             {% endfor %}
@@ -1237,6 +1246,36 @@
                          {{ _('%(user_ref)s has updated the settings for sharing this object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
                       {% else %}
                         {{ _('%(user_ref)s has updated the settings for sharing this object with an unknown database.', user_ref=user_ref) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.REMOTE_IMPORT_OBJECT %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry.data.import_status.success %}
+                        {% if log_entry_component %}
+                           {{ _('<a href="%(component_url)s">%(component_name)s</a> has imported the object.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                        {% else %}
+                          {{ _('An unknown database has imported the object.', user_ref=user_ref) }}
+                        {% endif %}
+                        {% if log_entry.data.import_status.object_id %}
+                          {% if log_entry_component.address %}
+                            {{ _('The object was created as <a href="%(remote_object_url)s">object #%(remote_object_id)s</a>.', remote_object_url=log_entry_component.address + relative_url_for('.object', object_id=log_entry.data.import_status.object_id), remote_object_id=log_entry.data.import_status.object_id) }}
+                          {% else %}
+                            {{ _('The object was created as object #%(remote_object_id)s.', remote_object_id=log_entry.data.import_status.object_id) }}
+                          {% endif %}
+                        {% endif %}
+                      {% else %}
+                        {% if log_entry_component %}
+                           {{ _('<a href="%(component_url)s">%(component_name)s</a> has failed to import the object.', component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                        {% else %}
+                          {{ _('An unknown database has failed to import the object.') }}
+                        {% endif %}
+                      {% endif %}
+                      {% if log_entry.data.import_status.notes %}
+                        {{ _('The other database returned the following notes:') }}
+                        <ul>
+                          {% for note in log_entry.data.import_status.notes %}
+                            <li>{{ note }}</li>
+                          {% endfor %}
+                        </ul>
                       {% endif %}
                     {% else %}
                       {{ _('Unknown event') }}

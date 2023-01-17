@@ -9,6 +9,7 @@ import datetime
 import flask
 import pytest
 
+import sampledb.logic.components
 from sampledb import logic, db
 from sampledb.logic import errors, actions, instruments, object_permissions
 from sampledb.logic.action_translations import get_action_translations_for_action, set_action_translation, get_action_translation_for_action_in_language
@@ -3657,7 +3658,60 @@ def test_update_shares(component, users, groups, projects):
         'action_types': [action_type1, action_type2]
     }
 
+    sampledb.logic.components.update_component(
+        component_id=component.id,
+        name=component.name,
+        address='https://example.org/',
+        description=component.description
+    )
+    component = sampledb.logic.components.get_component(component.id)
+    request_data = []
+
+    def mock_put(*args, **kwargs):
+        request_data.append((args, kwargs))
+
+    backup_put = sampledb.logic.federation.update.put
+    sampledb.logic.federation.update.put = mock_put
+
     update_shares(component, updates)
+    for args, kwargs in request_data:
+        if 'json' in kwargs:
+            assert sampledb.logic.shares.parse_object_share_import_status(kwargs['json']) is not None
+        if 'json' in kwargs and 'utc_datetime' in kwargs['json']:
+            utc_datetime_str = kwargs['json']['utc_datetime']
+            datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S')
+            kwargs['json']['utc_datetime'] = None
+    assert request_data == [
+        ((), {
+            'endpoint': '/federation/v1/shares/objects/1/import_status',
+            'component': component,
+            'json': {
+                'notes': [],
+                'object_id': 1,
+                'success': True,
+                'utc_datetime': None
+            }
+        }),
+        ((), {
+            'endpoint': '/federation/v1/shares/objects/2/import_status',
+            'component': component,
+            'json': {
+                'notes': [],
+                'object_id': 2,
+                'success': True,
+                'utc_datetime': None
+            }
+        })
+    ]
+
+    sampledb.logic.federation.update.put = backup_put
+    sampledb.logic.components.update_component(
+        component_id=component.id,
+        name=component.name,
+        address=None,
+        description=component.description
+    )
+    component = sampledb.logic.components.get_component(component.id)
 
     local_object2 = get_fed_object(2, component.id)
     _check_object(object1_0, component)
@@ -4056,3 +4110,16 @@ def test_import_action_unknown_language(component):
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
     assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+
+
+def test_import_object_import_status(component):
+    object_data = deepcopy(OBJECT_DATA)
+    start_datetime = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+    object_data = logic.federation.objects.parse_object(object_data, component)
+    import_status = {}
+    object = logic.federation.objects.import_object(object_data, component, import_status=import_status)
+    assert import_status['success']
+    assert not import_status['notes']
+    assert import_status['object_id'] == object.id
+    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') >= start_datetime
+    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.utcnow()
