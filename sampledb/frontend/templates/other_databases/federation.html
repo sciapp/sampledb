@@ -10,7 +10,15 @@
   {% endif %}
   <h1>{{ _('Other Databases') }}</h1>
   <p class="text-muted">{{ _('%(service_name)s can share information with other SampleDB instances. To determine which personal data is shared with other databases, you can <a href="%(alias_url)s">create an alias</a>.', service_name=service_name, alias_url=url_for('.user_alias')) }}</p>
-  <p><label>{{ _('UUID of %(service_name)s: ', service_name=service_name) }}</label> <span id="local-uuid">{{ config['FEDERATION_UUID'] }}</span></p>
+  <p>
+    <label>{{ _('UUID of %(service_name)s: ', service_name=service_name) }}</label>
+    <span id="local-uuid">{{ config['FEDERATION_UUID'] }}</span>
+    <span data-placement="top" data-trigger="manual" title="" data-original-title="{{ _('Copied successfully') }}">
+      <span data-uuid="{{ config['FEDERATION_UUID'] }}" class="btn btn-link copy-uuid" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{ _('Copy UUID') }}">
+        <i class="fa fa-clipboard"></i>
+      </span>
+    </span>
+  </p>
   {% if current_user.is_admin %}
   <p>
     <button type="button" class="btn btn-default" data-toggle="modal" data-target="#addComponentModal">{{ _('Add Database') }}</button>
@@ -75,14 +83,29 @@
 
 {% block scripts %}
   {{ super() }}
-  {% if show_add_form %}
   <script>
+    {% if show_add_form %}
     $(document).ready(function() {
       var add_modal = $('#addComponentModal');
       add_modal.removeClass('fade');
       add_modal.modal('show');
       add_modal.addClass('fade');
     });
+    {% endif %}
+    {% if config['FEDERATION_UUID'] is not none %}
+    $('span.copy-uuid').on('click', function () {
+      var button = $(this);
+      navigator.clipboard.writeText(button.attr('data-uuid')).then(
+        () => {
+          var wrapper = button.parent();
+          button.tooltip('hide');
+          wrapper.tooltip('show');
+          setTimeout(function () {
+            wrapper.tooltip('hide');
+          }, 500);
+        }
+      );
+    });
+    {% endif %}
   </script>
-  {% endif %}
 {% endblock %}
