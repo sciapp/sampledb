@@ -209,7 +209,7 @@ def add_authentication_method(user_id: int, login: str, password: str, authentic
     :param login: the name, email or LDAP uid to use
     :param password: the password
     :param authentication_type: the type of authentication
-    :return: whether or not the authentication method was added
+    :return: whether the authentication method was added
     :raise errors.AuthenticationMethodAlreadyExists: if the authentication method exists already
     :raise errors.AuthenticationMethodWrong: if the authentication method was used in a wrong way
     :raise errors.LdapAccountAlreadyExist: if a user with this LDAP account already exists
@@ -236,7 +236,6 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     Remove an authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
-    :return:
     """
     authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
     if authentication_method is None:
@@ -335,7 +334,6 @@ def activate_two_factor_authentication_method(
     """
     Activate a two factor authentication method and deactivate all others.
 
-    :rtype: object
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
     """

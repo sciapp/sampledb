@@ -75,8 +75,8 @@ def main(arguments: typing.List[str]) -> None:
         projects.create_subproject_relationship(parent_project_id=project_id, child_project_id=project_id2,
                                                 child_can_add_users_to_parent=True)
 
-        projects.create_project({"en": "A-Example", "de": "A-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
-        projects.create_project({"en": "C-Example", "de": "C-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
+        projects.create_project({"en": "A-Example", "de": "A-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id)
+        projects.create_project({"en": "C-Example", "de": "C-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id)
         project_id5 = projects.create_project({"en": "B-Example", "de": "B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
         project_id6 = projects.create_project({"en": "2-B-Example", "de": "2-B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
         project_id7 = projects.create_project({"en": "1-B-Example", "de": "1-B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id

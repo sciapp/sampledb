@@ -2,7 +2,7 @@ import typing
 
 from .. import actions
 from ... import logic
-from ..errors import ActionDoesNotExistError, InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
+from ..errors import InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
 from ...models import ActionType, Permissions
 
 # keys and properties that only can be used in root objects
@@ -69,10 +69,7 @@ def substitute_templates(
         for key in {'properties', 'required', 'propertyOrder'}:
             if key in schema:
                 del schema[key]
-        try:
-            template_action = actions.get_action(schema['template'])
-        except ActionDoesNotExistError:
-            raise
+        template_action = actions.get_action(schema['template'])
         if template_action.schema is None or template_action.type is None or not (template_action.type.is_template or template_action.type.fed_id == ActionType.TEMPLATE):
             raise InvalidTemplateIDError()
         template_schema = template_action.schema

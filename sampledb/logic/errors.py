@@ -184,8 +184,7 @@ class SchemaError(Exception):
 
 
 class ValidationError(SchemaError):
-    def __init__(self, message: str, path: typing.List[str]) -> None:
-        super(ValidationError, self).__init__(message, path)
+    pass
 
 
 class ValidationMultiError(ValidationError):

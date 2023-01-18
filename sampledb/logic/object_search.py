@@ -1612,7 +1612,7 @@ def wrap_filter_func(
     """
     search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]] = []
 
-    def wrapped_filter_func(
+    def wrapped_filter_func(  # pylint: disable=dangerous-default-value
             *args: typing.Any,
             search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]] = search_notes,
             filter_func_impl: typing.Any = filter_func,

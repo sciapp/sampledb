@@ -56,7 +56,7 @@ analyze:
     - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
     # install requirements to allow pylint to import them
     - python3 -m pip install -r requirements.txt
-    - python3 -m pylint --score no --disable=R,C,W,E1101,E0213 --enable=W9015 --load-plugins=pylint.extensions.docparams sampledb/
+    - python3 -m pylint --score no --disable=R,C,W0212,W0238,W0511,W1202,W1514,W0603,W0612,W0613,W0621,W0622,W0703,W0707,W9006,E1101,E0213  --load-plugins=pylint.extensions.docparams sampledb/
 
 check-migrations:
   stage: test

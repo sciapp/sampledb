@@ -26,6 +26,8 @@ from ...models import ComponentAuthenticationType
 PROTOCOL_VERSION_MAJOR = 0
 PROTOCOL_VERSION_MINOR = 1
 
+FEDERATION_TIMEOUT = 60
+
 
 def _send_request(
         method: typing.Union[typing.Literal['get'], typing.Literal['post'], typing.Literal['put']],
@@ -53,6 +55,7 @@ def _send_request(
     return method_callable(  # type: ignore
         url,
         headers=headers,
+        timeout=FEDERATION_TIMEOUT,
         **kwargs
     )
 
@@ -110,7 +113,12 @@ def get(
     parameters = {}
     if component.last_sync_timestamp is not None and not ignore_last_sync_time:
         parameters['last_sync_timestamp'] = component.last_sync_timestamp.strftime('%Y-%m-%d %H:%M:%S.%f')
-    req = requests.get(component.address.rstrip('/') + endpoint, headers=headers, params=parameters)
+    req = requests.get(
+        component.address.rstrip('/') + endpoint,
+        headers=headers,
+        params=parameters,
+        timeout=FEDERATION_TIMEOUT
+    )
     if req.status_code == 401:
         # 401 Unauthorized
         raise errors.UnauthorizedRequestError()

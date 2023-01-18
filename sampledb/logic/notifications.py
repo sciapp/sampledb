@@ -41,13 +41,13 @@ class Notification:
         )
 
 
-def get_notifications(user_id: int, unread_only: bool = False, _additional_filters: typing.Sequence[typing.Any] = ()) -> typing.List[Notification]:
+def get_notifications(user_id: int, unread_only: bool = False, additional_filters: typing.Sequence[typing.Any] = ()) -> typing.List[Notification]:
     """
     Get all (unread) notifications for a given user.
 
     :param user_id: the ID of an existing user
     :param unread_only: whether only unread notifications should be returned
-    :param _additional_filters: additional filters for the notification query
+    :param additional_filters: additional filters for the notification query
     :return: a list of (unread) notifications
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
@@ -57,7 +57,7 @@ def get_notifications(user_id: int, unread_only: bool = False, _additional_filte
     query = notifications.Notification.query.filter_by(user_id=user_id)
     if unread_only:
         query = query.filter_by(was_read=False)
-    for additional_filter in _additional_filters:
+    for additional_filter in additional_filters:
         query = additional_filter(query)
     query = query.order_by(notifications.Notification.utc_datetime.desc())
     db_notifications = query.all()
@@ -81,7 +81,7 @@ def get_notifications_by_type(user_id: int, notification_type: NotificationType,
     return get_notifications(
         user_id=user_id,
         unread_only=unread_only,
-        _additional_filters=[
+        additional_filters=[
             lambda query, notification_type=notification_type: query.filter_by(type=notification_type)
         ]
     )

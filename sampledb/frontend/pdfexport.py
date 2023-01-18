@@ -25,13 +25,13 @@ from .objects.objects import get_object_if_current_user_has_read_permissions
 from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
 
-SECTIONS = {
+SECTIONS = frozenset({
     'activity_log',
     'locations',
     'publications',
     'files',
     'comments'
-}
+})
 
 
 def create_pdfexport(

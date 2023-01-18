@@ -114,7 +114,6 @@ def update_language(
     :param enabled_for_input: whether the language is enabled for input
     :param enabled_for_user_interface: whether the language is enabled
         for the user interface
-    :return: the language
     :raise errors.LanguageAlreadyExistsError: when the language code already
         exists for a different language or the current language code matches
         a supported locale language code
