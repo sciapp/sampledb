@@ -29,6 +29,7 @@
         {% else %}
           <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger disabled" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
         {% endif %}
+        <div class="clearfix" style="padding-bottom:0.75em"></div>
         {% include "objects/forms/form_any.html" %}
         </div>
     {% endfor %}
