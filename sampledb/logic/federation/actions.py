@@ -432,6 +432,8 @@ def schema_entry_preprocessor(
                         component_uuid=flask.current_app.config['FEDERATION_UUID']
                     )
             schema_properties = schema.get('properties')
-            if type(schema_properties) is list:
+            if schema_properties is not None:
                 for property in schema_properties:
                     schema_entry_preprocessor(schema['properties'][property], refs)
+        if schema.get('type') == 'array':
+            schema_entry_preprocessor(schema['items'], refs)
