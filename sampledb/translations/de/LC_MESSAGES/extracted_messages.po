@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-01-18 11:56+0100\n"
+"POT-Creation-Date: 2023-01-18 12:33+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2999,6 +2999,9 @@ msgstr "Das Erzeugen von Objekten mit dieser Aktion ist deaktiviert"
 
 msgid "Schema"
 msgstr "Schema"
+
+msgid "Invalid JSON input, can not use graphical editor"
+msgstr "Ungültige JSON-Eingabe, grafischer Editor kann nicht verwendet werden"
 
 msgid "Use Graphical Editor"
 msgstr "Grafischen Editor verwenden"
