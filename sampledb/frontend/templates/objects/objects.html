@@ -37,6 +37,40 @@
 
 
     $(document).ready(function() {
+      let filter_origin_ids_picker = $('#filter_origin_ids');
+      let filter_action_type_ids_picker = $('#filter_action_type_ids');
+      let filter_action_ids_picker = $('#filter_action_ids');
+      let filter_instrument_picker = $('#filter_instrument_ids');
+      filter_origin_ids_picker.on('changed.bs.select', function() {
+        let selected_sources = filter_origin_ids_picker.val();
+        if (selected_sources.length === 0) {
+          // enable all options
+          filter_action_type_ids_picker.find('option').prop('disabled', false);
+          filter_action_ids_picker.find('option').prop('disabled', false);
+          filter_instrument_picker.find('option').prop('disabled', false);
+        } else {
+          // disable all options
+          filter_action_type_ids_picker.find('option').prop('disabled', true);
+          filter_action_ids_picker.find('option').prop('disabled', true);
+          filter_instrument_picker.find('option').prop('disabled', true);
+          // enable local default action types as they might be aliases for other action types
+          filter_action_type_ids_picker.find('option[data-source="local"][value^="-"]').prop('disabled', false);
+          // enable options for the selected sources
+          for (const source of selected_sources) {
+            filter_action_type_ids_picker.find('option[data-source="' + source + '"]').prop('disabled', false);
+            filter_action_ids_picker.find('option[data-source="' + source + '"]').prop('disabled', false);
+            filter_instrument_picker.find('option[data-source="' + source + '"]').prop('disabled', false);
+          }
+        }
+        // refresh to update enabled/disabled options
+        filter_action_type_ids_picker.selectpicker('refresh');
+        filter_action_ids_picker.selectpicker('refresh');
+        filter_instrument_picker.selectpicker('refresh');
+        // render to update selected options
+        filter_action_type_ids_picker.selectpicker('render');
+        filter_action_ids_picker.selectpicker('render');
+        filter_instrument_picker.selectpicker('render');
+      });
       $(plotly_charts).each(function(index, element) {
         Plotly.newPlot(element[0], element[1]);
       });
@@ -593,9 +627,9 @@
               <label class="control-label" for="filter_action_type_ids">
                 {{ _('Filter by Action Type') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="action_type_ids" id="filter_action_type_ids" data-width="100%" data-none-selected-text="{{ _('All action types') }}">
+              <select class="selectpicker form-control" multiple="multiple" name="action_type_ids" id="filter_action_type_ids" data-width="100%" data-none-selected-text="{{ _('All action types') }}" data-hide-disabled="true">
                 {% for action_type in all_action_types %}
-                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %}>{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</option>
+                  <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" {% if filter_action_type_ids and action_type.id in filter_action_type_ids %}selected="selected"{% endif %} data-source="{% if action_type.component_id is none %}local{% else %}component_{{ action_type.component_id }}{% endif %}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -603,9 +637,9 @@
               <label class="control-label" for="filter_action_ids">
                 {{ _('Filter by Action') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on">
+              <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">>
                 {% for action in all_actions %}
-                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %}>
+                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %} data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
                     {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
                     {% if action.user %}{{ action.user.get_name() }} / {% endif %}
                     {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
@@ -617,9 +651,9 @@
               <label class="control-label" for="filter_instrument_ids">
                 {{ _('Filter by Instrument') }}
               </label>
-              <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on">
+              <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on" data-hide-disabled="true">>
                 {% for instrument in all_instruments %}
-                  <option {% if instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %}>
+                  <option {% if instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %} data-source="{% if instrument.component_id is none %}local{% else %}component_{{ instrument.component_id }}{% endif %}">
                     {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}  (#{{ instrument.id }})
                   </option>
                 {% endfor %}
