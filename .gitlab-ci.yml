@@ -54,7 +54,9 @@ analyze:
     - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
     - python3 -m pyflakes sampledb
     - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
-    - python -m pylint sampledb --disable=R,C,W,E --enable=W9015 --load-plugins=pylint.extensions.docparams
+    # install requirements to allow pylint to import them
+    - python3 -m pip install -r requirements.txt
+    - python3 -m pylint --score no --disable=R,C,W,E1101,E0213 --enable=W9015 --load-plugins=pylint.extensions.docparams sampledb/
 
 check-migrations:
   stage: test

@@ -282,7 +282,7 @@ def objects():
                         # convert origins back to tuples
                         filter_origin_ids = [
                             tuple(origin)
-                            for origin in filter_origin_ids
+                            for origin in filter_origin_ids  # pylint: disable=not-an-iterable
                         ]
                 except Exception:
                     filter_origin_ids = None

@@ -1515,7 +1515,7 @@ def generate_filter_func(
                     return False
                 return filter_func, None, use_advanced_search
             if isinstance(tree, list) and not tree:
-                def filter_func(
+                def filter_func(  # pylint: disable=function-redefined
                         data: typing.Any,
                         search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                         start: int = 0,
@@ -1528,7 +1528,7 @@ def generate_filter_func(
             if isinstance(tree, object_search_parser.Literal):
                 if isinstance(tree, object_search_parser.Boolean):
                     if tree.value.value:
-                        def filter_func(
+                        def filter_func(  # pylint: disable=function-redefined
                                 data: typing.Any,
                                 search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                                 start: int = 0,
@@ -1539,7 +1539,7 @@ def generate_filter_func(
                             return True
                         return filter_func, tree, use_advanced_search
                     else:
-                        def filter_func(
+                        def filter_func(  # pylint: disable=function-redefined
                                 data: typing.Any,
                                 search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                                 start: int = 0,
@@ -1554,7 +1554,7 @@ def generate_filter_func(
                 elif isinstance(tree, object_search_parser.Tag):
                     pass
                 else:
-                    def filter_func(
+                    def filter_func(  # pylint: disable=function-redefined
                             data: typing.Any,
                             search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                             start: int = 0,
@@ -1565,7 +1565,7 @@ def generate_filter_func(
                         return False
                     return filter_func, None, use_advanced_search
 
-            def filter_func(
+            def filter_func(  # pylint: disable=function-redefined
                     data: typing.Any,
                     search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                     tree: typing.Any = tree

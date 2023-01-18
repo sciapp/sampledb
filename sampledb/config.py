@@ -679,10 +679,10 @@ for config_name in {
 
 # remove trailing slashes from SciCat urls
 if isinstance(SCICAT_API_URL, str) and SCICAT_API_URL.endswith('/'):
-    SCICAT_API_URL = SCICAT_API_URL[:-1]
+    SCICAT_API_URL = SCICAT_API_URL[:-1]  # pylint: disable=unsubscriptable-object
 if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
-    SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]
+    SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]  # pylint: disable=unsubscriptable-object
 
 # remove trailing slashes from Download Service url
 if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
-    DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]
+    DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]  # pylint: disable=unsubscriptable-object
