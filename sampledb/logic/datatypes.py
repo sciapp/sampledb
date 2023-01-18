@@ -230,7 +230,6 @@ class Quantity(object):
 
     @classmethod
     def from_json(cls, obj: typing.Dict[str, typing.Any]) -> 'Quantity':
-        magnitude_in_base_units = obj['magnitude_in_base_units']
         units = obj['units']
         if units is None:
             pint_units = ureg.Unit('1')
@@ -244,8 +243,9 @@ class Quantity(object):
             magnitude = obj['magnitude']
         else:
             # convert magnitude back from base unit to desired unit
+            magnitude_in_base_units = obj['magnitude_in_base_units']
             pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
-            magnitude = ureg.Quantity(magnitude_in_base_units, pint_base_units).to(pint_units).magnitude
+            magnitude = ureg.Quantity(decimal.Decimal(magnitude_in_base_units), pint_base_units).to(pint_units).magnitude
         quantity = cls(magnitude, units)
         if pint_units.dimensionless:
             assert obj['dimensionality'] == 'dimensionless'
