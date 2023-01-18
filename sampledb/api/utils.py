@@ -1,7 +1,9 @@
 from functools import wraps
 import json
+import traceback
 import typing
 
+import cherrypy
 import flask
 from flask.views import MethodView
 import werkzeug
@@ -62,7 +64,8 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
                     )
         except werkzeug.exceptions.HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            cherrypy.log(''.join(traceback.format_exception(e)))
             response = _make_json_response(
                 obj={'message': 'Internal Server Error'},
                 status=500
