@@ -3,6 +3,7 @@
 
 """
 import base64
+import copy
 import typing
 from copy import deepcopy
 import datetime
@@ -19,7 +20,7 @@ from sampledb.logic.comments import get_comment, create_comment, get_comments_fo
 from sampledb.logic.components import get_component_by_uuid, add_component, get_component, Component
 from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_location_type_log_entries_for_location_type, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
 from sampledb.logic.federation.action_types import parse_action_type, shared_action_type_preprocessor, parse_import_action_type
-from sampledb.logic.federation.actions import parse_action, shared_action_preprocessor, parse_import_action
+from sampledb.logic.federation.actions import parse_action, shared_action_preprocessor, parse_import_action, schema_entry_preprocessor
 from sampledb.logic.federation.comments import parse_import_comment
 from sampledb.logic.federation.files import parse_import_file
 from sampledb.logic.federation.instruments import parse_instrument, shared_instrument_preprocessor,  parse_import_instrument
@@ -4123,3 +4124,110 @@ def test_import_object_import_status(component):
     assert import_status['object_id'] == object.id
     assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') >= start_datetime
     assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.utcnow()
+
+
+def test_schema_entry_preprocessor(action):
+    schema = {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            }
+        },
+        'required': ['name']
+    }
+    preprocessed_schema = copy.deepcopy(schema)
+    refs = []
+    schema_entry_preprocessor(preprocessed_schema, refs)
+    assert refs == []
+    assert preprocessed_schema == schema
+
+    schema = {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'included_template_action': {
+                'title': 'Included Template action',
+                'type': 'object',
+                'template': action.id
+            }
+        },
+        'required': ['name']
+    }
+    preprocessed_schema = copy.deepcopy(schema)
+    refs = []
+    schema_entry_preprocessor(preprocessed_schema, refs)
+    assert refs == [('actions', action.id)]
+    assert preprocessed_schema == {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'included_template_action': {
+                'title': 'Included Template action',
+                'type': 'object',
+                'template': {
+                    'action_id': action.id,
+                    'component_uuid': sampledb.config.FEDERATION_UUID
+                }
+            }
+        },
+        'required': ['name']
+    }
+
+    schema = {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'array_with_template': {
+                'type': 'array',
+                'title': 'Array',
+                'items': {
+                    'title': 'Included Template action',
+                    'type': 'object',
+                    'template': action.id
+                }
+            }
+        },
+        'required': ['name']
+    }
+    preprocessed_schema = copy.deepcopy(schema)
+    refs = []
+    schema_entry_preprocessor(preprocessed_schema, refs)
+    assert refs == [('actions', action.id)]
+    assert preprocessed_schema == {
+        'title': 'Test Schema',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'array_with_template': {
+                'type': 'array',
+                'title': 'Array',
+                'items': {
+                    'title': 'Included Template action',
+                    'type': 'object',
+                    'template': {
+                        'action_id': action.id,
+                        'component_uuid': sampledb.config.FEDERATION_UUID
+                    }
+                }
+            }
+        },
+        'required': ['name']
+    }
