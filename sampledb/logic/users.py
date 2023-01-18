@@ -555,9 +555,9 @@ def get_user_alias(user_id: int, component_id: int) -> UserFederationAlias:
     """
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
-        check_user_exists(user_id)
+        user = get_user(user_id)
         check_component_exists(component_id)
-        if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+        if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES'] and user.type == UserType.PERSON:
             return UserFederationAlias.from_user_profile(user_id, component_id)
         raise errors.UserAliasDoesNotExistError()
     return UserFederationAlias.from_database(alias)
@@ -571,9 +571,9 @@ def get_user_aliases_for_user(user_id: int) -> typing.List[UserFederationAlias]:
     :return: list of user aliases
     :raise errors.UserDoesNotExistError: when no user with given ID exists
     """
-    check_user_exists(user_id)
+    user = get_user(user_id)
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id).all()
-    if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+    if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES'] and user.type == UserType.PERSON:
         return [
             UserFederationAlias.from_database(a) for a in alias
         ] + [
@@ -623,7 +623,7 @@ def get_user_aliases_for_component(component_id: int, modified_since: typing.Opt
             if not any(
                 user.id == a.user_id
                 for a in alias
-            ) and (modified_since is None or user.last_modified >= modified_since)
+            ) and (modified_since is None or user.last_modified >= modified_since) and user.type == UserType.PERSON
         ]
     return [UserFederationAlias.from_database(a) for a in alias]
 
@@ -722,9 +722,9 @@ def update_user_alias(
     """
     alias = users.UserFederationAlias.query.filter_by(user_id=user_id, component_id=component_id).first()
     if alias is None:
-        check_user_exists(user_id)
+        user = get_user(user_id)
         check_component_exists(component_id)
-        if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES']:
+        if flask.current_app.config['ENABLE_DEFAULT_USER_ALIASES'] and user.type == UserType.PERSON:
             create_user_alias(
                 user_id=user_id,
                 component_id=component_id,
