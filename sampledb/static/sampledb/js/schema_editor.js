@@ -8,7 +8,19 @@ function enableSchemaEditor() {
   schema_editor.show();
 
   var schema_text = input_schema.val();
-  var schema = JSON.parse(schema_text);
+  try {
+    var schema = JSON.parse(schema_text);
+  } catch (error) {
+    // Since invalid JSON schemas can only be created and repaired in the texteditor, use it instead
+    var toggle = $('#toggle-schema-editor')
+    toggle.bootstrapToggle('off');
+    var wrapper = toggle.parent().parent();
+    wrapper.tooltip('show');
+    setTimeout(function () {
+      wrapper.tooltip('hide');
+    }, 2000);
+    return disableSchemaEditor();
+  }
   delete schema['displayProperties'];
   if ('propertyOrder' in schema && schema['propertyOrder'].includes('tags')) {
     schema['propertyOrder'].splice(schema['propertyOrder'].indexOf('tags'), 1);
