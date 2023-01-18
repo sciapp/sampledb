@@ -55,10 +55,11 @@ def get_action_type_translations_for_action_type(
         use_fallback: bool = False
 ) -> typing.List[ActionTypeTranslation]:
     """
-    Return the action type with the given action type ID and all translations for this action type.
+    Return all translations for the action type with the given action type ID.
 
     :param action_type_id: the ID of an existing action type
-    :return: the action type
+    :param use_fallback: whether a fallback translation may be returned
+    :return: a list containing all action type translations for the given action type
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     :raise errors.ActionTypeTranslationDoesNotExistError: when no action type translation exists
@@ -147,11 +148,12 @@ def delete_action_type_translation(
         language_id: int
 ) -> None:
     """
-    Deletes the action type translation with the given action type translation ID
+    Deletes the action type translation with the given action type ID and language ID
 
-    :param action_type_translation_id: the ID of an existing action type translation
+    :param action_type_id: the ID of an existing action type
+    :param language_id: the ID of an existing language
     :raise errors.ActionTypeTranslationDoesNotExistError: when no action type translation exist for the given
-        action type ID
+        action type and language ID
     """
     action_type_translation = models.ActionTypeTranslation.query.filter_by(
         action_type_id=action_type_id,

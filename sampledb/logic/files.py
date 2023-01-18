@@ -628,6 +628,7 @@ def hide_file(
     :param file_id: the ID of a file for the object
     :param user_id: the ID of an existing user
     :param reason: the reason for hiding the file
+    :param utc_datetime: the time when the file was hidden or None to select the current time
     :raise errors.FileDoesNotExistError: when no file with the given object ID
         and file ID exists
     """

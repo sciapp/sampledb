@@ -34,19 +34,19 @@ def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
         user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: typing.cast(int, flask_login.current_user.get_id()) if flask_login.current_user else None,
-        on_unauthorized: typing.Callable[[int], None] = lambda object_id: flask.abort(403),
+        on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = lambda object_id: flask.abort(403),
         may_enable_anonymous_users: bool = True
 ) -> typing.Callable[[typing.Any], typing.Any]:
     def decorator(
             func: typing.Callable[[typing.Any], typing.Any],
             user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
-            on_unauthorized: typing.Callable[[int], None] = on_unauthorized
+            on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = on_unauthorized
     ) -> typing.Callable[[typing.Any], typing.Any]:
         @functools.wraps(func)
         def wrapper(
                 *args: typing.Any,
                 user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
-                on_unauthorized: typing.Callable[[int], None] = on_unauthorized,
+                on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = on_unauthorized,
                 **kwargs: typing.Any
         ) -> typing.Any:
             assert 'object_id' in kwargs

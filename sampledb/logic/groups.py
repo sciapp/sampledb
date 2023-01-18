@@ -274,7 +274,7 @@ def get_user_groups(user_id: int) -> typing.List[Group]:
     Returns a list of the group IDs of all groups the user with the given
     user ID is a member of.
 
-    :param group_id: the ID of an existing user
+    :param user_id: the ID of an existing user
     :return: the member ID list
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists

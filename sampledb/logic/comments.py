@@ -59,6 +59,9 @@ def create_comment(
     :param object_id: the ID of an existing object
     :param user_id: the ID of an existing user
     :param content: the text content for the new comment
+    :param utc_datetime: the creation time of the comment or None to select the current time
+    :param fed_id: the ID of the related comment at the exporting component
+    :param component_id: the ID of the exporting component
     :return: the ID of the new comment
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists

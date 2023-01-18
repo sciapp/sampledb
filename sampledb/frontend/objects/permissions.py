@@ -29,7 +29,7 @@ from ...utils import object_permissions_required
 from ..utils import get_user_if_exists, check_current_user_is_not_readonly, get_groups_form_data
 
 
-def on_unauthorized(object_id):
+def on_unauthorized(object_id: int):
     permissions_by_user = get_object_permissions_for_users(object_id)
     has_grant_user = any(
         Permissions.GRANT in permissions

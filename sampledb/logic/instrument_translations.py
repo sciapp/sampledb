@@ -97,6 +97,7 @@ def get_instrument_translations_for_instrument(instrument_id: int, use_fallback:
     Returns all instrument translations for an instrument
 
     :param instrument_id: the ID of an existing instrument
+    :param use_fallback: whether a fallback translation may be returned
     :return: a list of all translations for an instrument
     :raise errors.InstrumentTranslationDoesNotExistError: when there is no translation for the given instrument
     """

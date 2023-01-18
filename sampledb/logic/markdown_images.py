@@ -66,8 +66,9 @@ def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_
 
     If the image is temporary, only the user who uploaded it may access it.
 
-    :param file_name:
-    :param user_id:
+    :param file_name: the file name of the image
+    :param user_id: the user ID of the user accessing the image
+    :param component_id: the component the image has been imported from
     :return: the binary file content or None
     """
     image = MarkdownImage.query.filter_by(file_name=file_name, component_id=component_id).first()

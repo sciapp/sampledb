@@ -38,6 +38,7 @@ def validate_schema(
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
+    :param parent_conditions: conditions defined in parent objects
     :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :param all_language_codes: the set of existing language codes, or None

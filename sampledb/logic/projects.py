@@ -346,8 +346,8 @@ def get_user_projects(
     Returns a list of the project IDs of all projects the user with the given
     user ID is a member of.
 
-    :param project_id: the ID of an existing project
-    :param include_groups: whether or not groups membership should be
+    :param user_id: the ID of an existing user
+    :param include_groups: whether groups membership should be
         considered as well
     :param min_permissions: only return projects for which the user has at
         least this permission level
@@ -668,7 +668,7 @@ def get_group_projects(group_id: int) -> typing.List[Project]:
     Returns a list of the project IDs of all projects the group with the given
     group ID is a member of.
 
-    :param project_id: the ID of an existing project
+    :param group_id: the ID of an existing group
     :return: the member ID list
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists

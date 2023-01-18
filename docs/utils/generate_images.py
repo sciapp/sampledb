@@ -377,7 +377,7 @@ def object_permissions(base_url, driver):
             break
     else:
         assert False
-    y_offset = scroll_to_element(driver, heading)
+    scroll_to_element(driver, heading)
     footer = driver.find_elements(By.TAG_NAME, 'footer')[-1]
     resize_for_screenshot(driver, width, footer.location['y'] - heading.location['y'])
     driver.get_screenshot_as_file('docs/static/img/generated/object_permissions.png')
