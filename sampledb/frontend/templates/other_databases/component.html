@@ -15,7 +15,14 @@
   {% endif %}
   <h3>{{ _('Database') }} #{{ component.id }}: {{ component.get_name() }}</h3>
   <p><strong>{{ _('Address') }}: </strong>{% if component.address is not none %}<a href="{{ component.address }}">{{ component.address }}</a>{% else %}&mdash;{% endif %}</p>
-  <p><strong>{{ _('UUID') }}:</strong> <span class="text-monospace">{{ component.uuid }}</span></p>
+  <p>
+    <strong>{{ _('UUID') }}:</strong> <span class="text-monospace">{{ component.uuid }}</span>
+    <span data-placement="top" data-trigger="manual" title="" data-original-title="{{ _('Copied successfully') }}">
+      <span data-uuid="{{ component.uuid }}" class="btn btn-link copy-uuid" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{ _('Copy UUID') }}">
+        <i class="fa fa-clipboard"></i>
+      </span>
+    </span>
+  </p>
   <p>{{ component.description }}</p>
   {% if current_user.is_admin and not current_user.is_readonly %}
     {% if edit_component_form %}
@@ -376,14 +383,25 @@
   });
   </script>
   {% endif %}
-  {% if create_api_token_form.description.errors %}
-    <script>
+  <script>
+    {% if create_api_token_form.description.errors %}
     $('#createApiTokenModal').modal('show');
-    </script>
-  {% endif %}
-  {% if add_own_api_token_form.description.errors %}
-    <script>
+    {% endif %}
+    {% if add_own_api_token_form.description.errors %}
     $('#createOwnApiTokenModal').modal('show');
-    </script>
-  {% endif %}
+    {% endif %}
+    $('span.copy-uuid').on('click', function () {
+      var button = $(this);
+      navigator.clipboard.writeText(button.attr('data-uuid')).then(
+        () => {
+          var wrapper = button.parent();
+          button.tooltip('hide');
+          wrapper.tooltip('show');
+          setTimeout(function () {
+            wrapper.tooltip('hide');
+          }, 500);
+        }
+      );
+    });
+  </script>
 {% endblock %}

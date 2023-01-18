@@ -296,7 +296,7 @@
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top"><i class="fa fa-download"></i></a>
                   {% endif %}
                   {% elif file.storage == 'url' %}
-                  <span data-placement="top" data-trigger="manual" title="Copied successfully"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
+                  <span data-placement="top" data-trigger="manual" title="{{ _('Copied successfully') }}"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
                     {% if file.data['url'].split(':')[0].lower() in ['http', 'https'] %}
                       <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
                     {% else %}
@@ -1856,39 +1856,20 @@
         });
       {% endif %}
 
-      $('[data-toggle="tooltip"]').tooltip();
-
-    function copyToClipboard(text) {
-    var element = document.createElement('textarea');
-    element.value = text;
-    element.setAttribute('readonly', '');
-    element.style.position = 'absolute';
-    element.style.left = '-9999px';
-    document.body.appendChild(element);
-    var selected = false;
-    if (document.getSelection().rangeCount > 0) {
-    selected = document.getSelection().getRangeAt(0);
-    }
-    element.select();
-    document.execCommand('copy');
-    document.body.removeChild(element);
-    if (selected) {
-    document.getSelection().removeAllRanges();
-    document.getSelection().addRange(selected);
-    }
-    }
-
-    $('span.copy-external-link').on('click', function () {
-    var button = $(this);
-    copyToClipboard(button.attr('data-url'));
-    var wrapper = button.parent();
-    button.tooltip('hide');
-    wrapper.tooltip('show');
-    setTimeout(function () {
-    wrapper.tooltip('hide');
-    }.bind(wrapper), 500);
+      $('span.copy-external-link').on('click', function () {
+        var button = $(this);
+        navigator.clipboard.writeText(button.attr('data-url')).then(
+          () => {
+            var wrapper = button.parent();
+            button.tooltip('hide');
+            wrapper.tooltip('show');
+            setTimeout(function () {
+              wrapper.tooltip('hide');
+            }, 500);
+          }
+        );
+      });
     });
-  });
     {% if not is_archived %}
     {% if action is not none and action.type.enable_labels %}
     function validateLabelsForm() {
