@@ -78,7 +78,7 @@ check-migrations:
     - dropdb -h postgres -U postgres postgres
     - createdb -h postgres -U postgres postgres
     # check out stable version
-    - git remote add upstream https://github.com/sciapp/sampledb.git
+    - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
     - git fetch upstream master
     - git checkout FETCH_HEAD
     # set up database with stable version
