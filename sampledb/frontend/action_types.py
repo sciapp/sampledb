@@ -2,10 +2,10 @@
 """
 
 """
+import json
 
 import flask
 import flask_login
-import json
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField, BooleanField, SelectField, SelectMultipleField
 from wtforms.validators import DataRequired, ValidationError

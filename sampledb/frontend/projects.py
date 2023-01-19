@@ -2,10 +2,10 @@
 """
 
 """
+import json
 
 import flask
 import flask_login
-import json
 from flask_babel import _
 
 from . import frontend

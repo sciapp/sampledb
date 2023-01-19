@@ -2,12 +2,11 @@
 """
 Implementation of LDAP authentication.
 """
+import typing
 
 import ldap3
 import ldap3.core.exceptions
 import flask
-
-import typing
 
 from ..models import Authentication, AuthenticationType, UserType
 from .. import db

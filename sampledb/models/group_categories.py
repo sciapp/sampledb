@@ -1,5 +1,6 @@
-from .. import db
 import sqlalchemy.dialects.postgresql as postgresql
+
+from .. import db
 
 
 basic_group_category_association_table = db.Table(

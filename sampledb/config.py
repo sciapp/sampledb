@@ -12,12 +12,12 @@ import base64
 import io
 import json
 import os
+import sys
+import typing
 
 import pytz
 import pytz.exceptions
 import requests
-import typing
-import sys
 import sqlalchemy
 from PIL import Image
 
@@ -623,13 +623,13 @@ except ValueError:
     pass
 
 # parse values as integers
-for config_name in {
+for config_name in [
     'MAX_CONTENT_LENGTH',
     'MAX_BATCH_SIZE',
     'VALID_TIME_DELTA',
     'DOWNLOAD_SERVICE_TIME_LIMIT',
     'TYPEAHEAD_OBJECT_LIMIT',
-}:
+]:
     value = globals().get(config_name)
     if isinstance(value, str):
         try:
@@ -638,7 +638,7 @@ for config_name in {
             pass
 
 # parse values as json
-for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST'}:
+for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST']:
     value = globals().get(config_name)
     if isinstance(value, str) and value.startswith('{'):
         try:
@@ -647,7 +647,7 @@ for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVIC
             pass
 
 # parse boolean values
-for config_name in {
+for config_name in [
     'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
     'ONLY_ADMINS_CAN_CREATE_GROUPS',
     'ONLY_ADMINS_CAN_DELETE_GROUPS',
@@ -672,7 +672,7 @@ for config_name in {
     'USE_TYPEAHEAD_FOR_OBJECTS',
     'DISABLE_INSTRUMENTS',
     'ENABLE_FUNCTION_CACHES',
-}:
+]:
     value = globals().get(config_name)
     if isinstance(value, str):
         globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}

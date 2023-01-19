@@ -66,7 +66,7 @@ def substitute_templates(
             raise InvalidNumberError()
         if schema['template'] in invalid_template_action_ids:
             raise RecursiveTemplateError()
-        for key in {'properties', 'required', 'propertyOrder'}:
+        for key in ['properties', 'required', 'propertyOrder']:
             if key in schema:
                 del schema[key]
         template_action = actions.get_action(schema['template'])

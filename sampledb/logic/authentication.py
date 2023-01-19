@@ -1,5 +1,6 @@
-import bcrypt
 import typing
+
+import bcrypt
 import flask
 
 from .. import logic, db

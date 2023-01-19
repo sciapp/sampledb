@@ -13,12 +13,12 @@ the Markdown content that it was uploaded for.
 """
 
 import binascii
+import datetime
 import os
 import typing
 
-from bs4 import BeautifulSoup
-import datetime
 import flask
+from bs4 import BeautifulSoup
 
 from .components import check_component_exists
 from .users import check_user_exists

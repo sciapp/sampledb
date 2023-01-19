@@ -2,9 +2,9 @@
 """
 
 """
+import sqlalchemy.dialects.postgresql as postgresql
 
 from .. import db
-import sqlalchemy.dialects.postgresql as postgresql
 
 
 association_table = db.Table(

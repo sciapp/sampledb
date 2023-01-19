@@ -13,11 +13,11 @@ import typing
 
 import sampledb
 from .. import create_app
-from sampledb.models import UserType, ActionType, Language
-from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
-from sampledb.logic.instrument_translations import set_instrument_translation
-from sampledb.logic.action_translations import set_action_translation
-from sampledb.logic.actions import create_action
+from ..models import UserType, ActionType, Language
+from ..logic.instruments import create_instrument, add_instrument_responsible_user
+from ..logic.instrument_translations import set_instrument_translation
+from ..logic.action_translations import set_action_translation
+from ..logic.actions import create_action
 from ..logic import groups, object_permissions, projects, comments, files
 
 

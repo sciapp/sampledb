@@ -5,11 +5,12 @@ import typing
 
 from sqlalchemy import String, and_, or_
 from sqlalchemy.sql.expression import select, true, false, not_
+import sqlalchemy.dialects.postgresql as postgresql
+
 from . import where_filters
 from . import datatypes
 from . import object_search_parser
 from .. import db
-import sqlalchemy.dialects.postgresql as postgresql
 
 
 class Attribute:
@@ -499,7 +500,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -515,7 +516,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -531,7 +532,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -550,7 +551,7 @@ def _(
     if left_operand.dimensionality != right_operand.dimensionality:
         search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
         return outer_filter(true()), None
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None

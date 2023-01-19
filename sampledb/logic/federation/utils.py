@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 import typing
+from uuid import UUID
 
 import flask
-from uuid import UUID
 
 from .. import errors
 

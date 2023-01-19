@@ -862,8 +862,8 @@ def get_locations_form_data(
         ('-1', '')
     ]
     unvisited_location_ids_prefixes_and_subtrees = [
-        (location_id, '', locations_tree[location_id], [location_id])
-        for location_id in locations_tree
+        (location_id, '', location, [location_id])
+        for location_id, location in locations_tree.items()
     ]
     while unvisited_location_ids_prefixes_and_subtrees:
         location_id, name_prefix, subtree, id_path = unvisited_location_ids_prefixes_and_subtrees.pop(0)
