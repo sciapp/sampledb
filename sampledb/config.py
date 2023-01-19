@@ -381,7 +381,9 @@ def check_config(
         test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
-        open(test_file_path, 'a').close()
+        with open(test_file_path, 'a'):
+            # open the file to check that it exists
+            pass
     except Exception:
         print(
             ansi_color(
@@ -444,7 +446,7 @@ def check_config(
         )
 
     if not can_run:
-        exit(1)
+        sys.exit(1)
 
     return internal_config
 

@@ -17,14 +17,14 @@ from ..config import LDAP_REQUIRED_CONFIG_KEYS
 
 def is_ldap_configured() -> bool:
     """
-    Check whether or not all required LDAP configuration values are set.
+    Check whether all required LDAP configuration values are set.
 
     :return: whether all values are set, False otherwise
     """
-    return all([
+    return all(
         flask.current_app.config[key]
         for key in LDAP_REQUIRED_CONFIG_KEYS
-    ])
+    )
 
 
 def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[str] = ()) -> typing.Optional[typing.Sequence[typing.Any]]:

@@ -177,7 +177,7 @@ class SchemaError(Exception):
     def __init__(self, message: str, path: typing.List[str]) -> None:
         if path:
             message += ' (at ' + ' -> '.join(path) + ')'
-        super(SchemaError, self).__init__(message)
+        super().__init__(message)
         self.path = path
         self.message = message
         self.paths = [path]
@@ -190,7 +190,7 @@ class ValidationError(SchemaError):
 class ValidationMultiError(ValidationError):
     def __init__(self, errors: typing.List[ValidationError]) -> None:
         message = '\n'.join(error.message for error in errors)
-        super(ValidationMultiError, self).__init__(message, [])
+        super().__init__(message, [])
         self.paths = [error.path for error in errors]
 
 

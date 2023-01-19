@@ -1394,6 +1394,7 @@ def save_object_list_defaults():
             }
         )
         return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
+    return flask.abort(400)
 
 
 @frontend.route("/edit_locations", methods=["POST"])

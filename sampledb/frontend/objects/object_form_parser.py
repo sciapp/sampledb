@@ -404,7 +404,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
         item_indices.add(item_index)
     items = []
     if item_indices:
-        num_items = max([i for i in item_indices]) + 1
+        num_items = max(item_indices) + 1
         for i in range(num_items):
             if i not in item_indices:
                 items.append(None)

@@ -6,9 +6,9 @@ from .. import db
 
 @enum.unique
 class BackgroundTaskStatus(enum.Enum):
-    POSTED = 0,
-    CLAIMED = 1,
-    DONE = 2,
+    POSTED = 0
+    CLAIMED = 1
+    DONE = 2
     FAILED = 3
 
     def is_final(self) -> bool:

@@ -144,10 +144,7 @@ def show_action_type_form(type_id):
 
     def validate_string(string):
         try:
-            if 0 < len(string) < 100:
-                return True
-            else:
-                return False
+            return 0 < len(string) < 100
         except Exception:
             return False
 

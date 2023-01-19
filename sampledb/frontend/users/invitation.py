@@ -4,6 +4,7 @@
 """
 
 import datetime
+import http
 
 import flask
 import flask_login
@@ -42,7 +43,7 @@ def invitation():
             invitation_form=invitation_form,
             mail_send_status=None
         )
-    if flask.request.method == "POST":
+    elif flask.request.method == "POST":
         # POST (send invitation)
         has_error = False
         mail_send_status = None
@@ -72,6 +73,8 @@ def invitation():
             has_error=has_error,
             mail_send_status=mail_send_status
         )
+    else:
+        return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)
 
 
 def registration():
@@ -97,7 +100,7 @@ def registration():
     if flask.request.method == "GET":
         # confirmation dialog
         return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
-    if flask.request.method == "POST":
+    elif flask.request.method == "POST":
         # redirect or register user and redirect
         has_error = False
         if registration_form.email.data != email:
@@ -121,3 +124,5 @@ def registration():
             return flask.redirect(flask.url_for('frontend.sign_in'))
         else:
             return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
+    else:
+        return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)

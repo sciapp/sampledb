@@ -4,6 +4,7 @@ Script for listing all instruments in SampleDB.
 
 Usage: python -m sampledb list_instruments
 """
+import sys
 import typing
 
 from .. import create_app
@@ -13,7 +14,7 @@ from ..logic.instruments import get_instruments
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     app = create_app()
     with app.app_context():
         if not app.config['DISABLE_INSTRUMENTS']:

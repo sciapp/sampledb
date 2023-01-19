@@ -1,4 +1,4 @@
-import sqlalchemy.dialects.postgresql as postgresql
+from sqlalchemy.dialects import postgresql
 
 from .. import db
 

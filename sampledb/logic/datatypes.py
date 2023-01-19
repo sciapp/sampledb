@@ -69,7 +69,7 @@ class JSONEncoder(json.JSONEncoder):
             # Create a version of the object without any objects that are instances of the serializable types
             reduced_obj = json.loads(json.dumps(o, cls=_ReducingEncoder))
             assert not _contains_type(reduced_obj)
-        return super(JSONEncoder, self).encode(o)
+        return super().encode(o)
 
     def default(self, o: typing.Any) -> typing.Any:
         for type_name, cls in JSONEncoder.serializable_types.items():
@@ -110,7 +110,7 @@ class JSONEncoder(json.JSONEncoder):
 
 
 @JSONEncoder.serializable_type('datetime')
-class DateTime(object):
+class DateTime:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -150,7 +150,7 @@ class DateTime(object):
 
 
 @JSONEncoder.serializable_type('quantity')
-class Quantity(object):
+class Quantity:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -255,7 +255,7 @@ class Quantity(object):
 
 
 @JSONEncoder.serializable_type('bool')
-class Boolean(object):
+class Boolean:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -290,7 +290,7 @@ class Boolean(object):
 
 
 @JSONEncoder.serializable_type('text')
-class Text(object):
+class Text:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {

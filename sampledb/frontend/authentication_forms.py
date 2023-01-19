@@ -32,7 +32,7 @@ class ChangeUserForm(FlaskForm):
     submit = SubmitField('Change Settings')
 
     def __init_(self, name=None, email=None):
-        super(ChangeUserForm, self).__init__()
+        super().__init__()
 
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":

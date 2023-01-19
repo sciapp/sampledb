@@ -9,7 +9,7 @@ import functools
 import typing
 
 import sqlalchemy as db
-import sqlalchemy.dialects.postgresql as postgresql
+from sqlalchemy.dialects import postgresql
 
 if typing.TYPE_CHECKING:
     from ..logic.components import Component
@@ -96,7 +96,7 @@ class Object:
         return self._component_cache[0]
 
 
-class VersionedJSONSerializableObjectTables(object):
+class VersionedJSONSerializableObjectTables:
     """
     A class for storing JSON-serializable objects without deletes and with versioned updates.
 

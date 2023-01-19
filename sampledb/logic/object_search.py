@@ -5,7 +5,7 @@ import typing
 
 from sqlalchemy import String, and_, or_
 from sqlalchemy.sql.expression import select, true, false, not_
-import sqlalchemy.dialects.postgresql as postgresql
+from sqlalchemy.dialects import postgresql
 
 from . import where_filters
 from . import datatypes
@@ -1292,8 +1292,7 @@ def transform_unary_operation_to_query(
     operator_aliases = {
         '!': 'not'
     }
-    if str_operator in operator_aliases:
-        str_operator = operator_aliases[str_operator]
+    str_operator = operator_aliases.get(str_operator, str_operator)
 
     operand_type: typing.Optional[type]
     if isinstance(operand_query, object_search_parser.Boolean):
@@ -1358,8 +1357,7 @@ def transform_binary_operation_to_query(
         '&&': 'and',
         '=': '=='
     }
-    if str_operator in operator_aliases:
-        str_operator = operator_aliases[str_operator]
+    str_operator = operator_aliases.get(str_operator, str_operator)
 
     left_operand_type: typing.Optional[type]
     if isinstance(left_operand, object_search_parser.Boolean):

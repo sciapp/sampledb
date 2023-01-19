@@ -22,7 +22,7 @@ class Literal:
 
 class Text(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Text) -> None:
-        super(Text, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Text({})>'.format(self.value.text)
@@ -30,7 +30,7 @@ class Text(Literal):
 
 class Tag(Literal):
     def __init__(self, input_text: str, start_position: int, value: str) -> None:
-        super(Tag, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Tag(#{})>'.format(self.value)
@@ -38,7 +38,7 @@ class Tag(Literal):
 
 class Reference(Literal):
     def __init__(self, input_text: str, start_position: int, value: int) -> None:
-        super(Reference, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Reference(#{})>'.format(self.value)
@@ -46,7 +46,7 @@ class Reference(Literal):
 
 class Boolean(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Boolean) -> None:
-        super(Boolean, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Boolean({})>'.format(self.value.value)
@@ -54,7 +54,7 @@ class Boolean(Literal):
 
 class Attribute(Literal):
     def __init__(self, input_text: str, start_position: int, value: typing.List[str]) -> None:
-        super(Attribute, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Attribute({})>'.format(self.value)
@@ -62,7 +62,7 @@ class Attribute(Literal):
 
 class Null(Literal):
     def __init__(self, input_text: str, start_position: int, value: str) -> None:
-        super(Null, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Null({})>'.format(self.value)
@@ -70,7 +70,7 @@ class Null(Literal):
 
 class Quantity(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Quantity) -> None:
-        super(Quantity, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Quantity({})>'.format(self.value)
@@ -78,7 +78,7 @@ class Quantity(Literal):
 
 class Date(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.DateTime) -> None:
-        super(Date, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
         return '<Date({})>'.format(self.value.utc_datetime)
@@ -105,7 +105,7 @@ class Operator:
 
 class ParseError(Exception):
     def __init__(self, message: str, start: int, end: int) -> None:
-        super(ParseError, self).__init__(message)
+        super().__init__(message)
         self.message = message
         self.start = start
         self.end = end

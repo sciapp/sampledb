@@ -14,8 +14,8 @@ from .users import User
 
 @enum.unique
 class DataverseExportStatus(enum.Enum):
-    TASK_CREATED = 0,
-    EXPORT_FINISHED = 1,
+    TASK_CREATED = 0
+    EXPORT_FINISHED = 1
 
 
 class DataverseExport(db.Model):  # type: ignore

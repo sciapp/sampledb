@@ -56,7 +56,7 @@ class EditAliasForm(FlaskForm):
     submit = SubmitField('Change Alias')
 
     def __init_(self, name=None, email=None):
-        super(EditAliasForm, self).__init__()
+        super().__init__()
 
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
@@ -78,7 +78,7 @@ class AddAliasForm(FlaskForm):
     submit = SubmitField('Add Alias')
 
     def __init_(self, name=None, email=None):
-        super(AddAliasForm, self).__init__()
+        super().__init__()
 
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":

@@ -456,10 +456,10 @@ def _get_object_properties(
             # cast as data cannot be a list unless schema type is array
             yield previous_path, schema, typing.cast(typing.Dict[str, typing.Any], data)
 
-    return list([
+    return [
         (path, schema, data)
         for path, schema, data in iter_object_properties([], object.schema, object.data)
-    ])
+    ]
 
 
 @typing.overload
@@ -572,7 +572,7 @@ def _send_user_references_notifications(object: Object, user_id: int) -> None:
     """
 
     for referenced_user_id, previous_referenced_user_id in find_user_references(object):
-        if referenced_user_id != user_id and referenced_user_id != previous_referenced_user_id:
+        if referenced_user_id not in {user_id, previous_referenced_user_id}:
             create_notification_for_being_referenced_by_object_metadata(referenced_user_id, object.object_id)
 
 
