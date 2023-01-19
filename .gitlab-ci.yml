@@ -85,7 +85,7 @@ check-migrations:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # check out current version again
-    - git checkout -
+    - git checkout $CI_COMMIT_SHA
     # upgrade database using migrations
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
@@ -103,7 +103,7 @@ check-migrations:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # check out current version again
-    - git checkout -
+    - git checkout $CI_COMMIT_SHA
     # upgrade database using migrations
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
