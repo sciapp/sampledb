@@ -22,7 +22,7 @@ from ...logic.federation.update import import_updates, PROTOCOL_VERSION_MAJOR, P
 from ...logic.federation.users import shared_user_preprocessor
 from ...api.federation.authentication import http_token_auth
 from ...logic.files import get_file
-from ...logic.users import get_user_aliases_for_component
+from ...logic.users import get_user_aliases_for_component, get_users
 
 preprocessors = {
     'actions': shared_action_preprocessor,
@@ -179,8 +179,20 @@ class Users(Resource):
         component = flask.g.component
 
         result_users = []
+        all_users = get_users()
+        user_by_id = {
+            user.id: user
+            for user in all_users
+        }
         shared_user_aliases = get_user_aliases_for_component(component.id, modified_since=last_sync)
         for alias in shared_user_aliases:
+            user = user_by_id.get(alias.user_id)
+            if user is None:
+                continue
+            if user.component_id is not None:
+                continue
+            if user.is_hidden or not user.is_active:
+                continue
             result_users.append(
                 {
                     'user_id': alias.user_id,

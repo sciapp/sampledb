@@ -224,7 +224,24 @@ def test_create_user_alias(component, user):
 
 
 def test_get_user_alias(component, user, flask_server):
+    mutable_user = User.query.filter_by(id=user.id).first()
+    for user_type in UserType:
+        mutable_user.type = user_type
+        sampledb.db.session.add(mutable_user)
+        sampledb.db.session.commit()
+        with pytest.raises(errors.UserAliasDoesNotExistError):
+            get_user_alias(user.id, component.id)
     flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    for user_type in UserType:
+        if user_type != UserType.PERSON:
+            mutable_user.type = user_type
+            sampledb.db.session.add(mutable_user)
+            sampledb.db.session.commit()
+            with pytest.raises(errors.UserAliasDoesNotExistError):
+                get_user_alias(user.id, component.id)
+    mutable_user.type = UserType.PERSON
+    sampledb.db.session.add(mutable_user)
+    sampledb.db.session.commit()
     user_alias = get_user_alias(user.id, component.id)
     assert user_alias.is_default
 
@@ -259,7 +276,22 @@ def test_get_user_aliases_for_user(flask_server):
     sampledb.db.session.add(user2)
     sampledb.db.session.commit()
 
+    mutable_user = User.query.filter_by(id=user1.id).first()
+    for user_type in UserType:
+        mutable_user.type = user_type
+        sampledb.db.session.add(mutable_user)
+        sampledb.db.session.commit()
+        assert not get_user_aliases_for_user(user1.id)
     flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    for user_type in UserType:
+        if user_type != UserType.PERSON:
+            mutable_user.type = user_type
+            sampledb.db.session.add(mutable_user)
+            sampledb.db.session.commit()
+            assert not get_user_aliases_for_user(user1.id)
+    mutable_user.type = UserType.PERSON
+    sampledb.db.session.add(mutable_user)
+    sampledb.db.session.commit()
     user_aliases = get_user_aliases_for_user(user1.id)
     assert {component1.id, component2.id} == {alias.component_id for alias in user_aliases}
     assert all(alias.is_default for alias in user_aliases)
@@ -324,7 +356,22 @@ def test_get_user_aliases_for_component(flask_server):
     sampledb.db.session.add(user2)
     sampledb.db.session.commit()
 
+    mutable_user = User.query.filter_by(id=user1.id).first()
+    for user_type in UserType:
+        mutable_user.type = user_type
+        sampledb.db.session.add(mutable_user)
+        sampledb.db.session.commit()
+        assert not get_user_aliases_for_component(component1.id)
     flask_server.app.config['ENABLE_DEFAULT_USER_ALIASES'] = True
+    for user_type in UserType:
+        if user_type != UserType.PERSON:
+            mutable_user.type = user_type
+            sampledb.db.session.add(mutable_user)
+            sampledb.db.session.commit()
+            assert len(get_user_aliases_for_component(component1.id)) == 1
+    mutable_user.type = UserType.PERSON
+    sampledb.db.session.add(mutable_user)
+    sampledb.db.session.commit()
     user_aliases = get_user_aliases_for_component(component1.id)
     assert {user1.id, user2.id} == {alias.user_id for alias in user_aliases}
     assert all(alias.is_default for alias in user_aliases)

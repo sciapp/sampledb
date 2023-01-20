@@ -185,6 +185,18 @@ def test_get_users(flask_server):
     }
     assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
 
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/users/', headers=headers)
+    assert r.status_code == 200
+    result = r.json()
+    assert result['users'] == [alias_data_1, alias_data_2, alias_data_3]
+
+    sampledb.logic.users.set_user_hidden(alias_data_1['user_id'], True)
+    sampledb.logic.users.set_user_active(alias_data_2['user_id'], False)
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/users/', headers=headers)
+    assert r.status_code == 200
+    result = r.json()
+    assert result['users'] == [alias_data_3]
+
 
 def test_file_resource_database(flask_server, simple_object, user, component_token):
     component, token = component_token
