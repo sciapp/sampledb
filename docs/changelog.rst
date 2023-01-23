@@ -4,7 +4,7 @@ Changelog
 Version 0.21
 ------------
 
-Currently in development.
+Released on January 23rd, 2023.
 
 - Improved user interface
 - Add basic federation feature
