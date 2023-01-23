@@ -114,3 +114,9 @@ class ObjectEditShareAccessForm(FlaskForm):
     files = BooleanField()
     comments = BooleanField()
     object_location_assignments = BooleanField()
+
+
+class UseInActionForm(FlaskForm):
+    action_type_id = HiddenField()
+    action_id = HiddenField()
+    objects = HiddenField(validators=[InputRequired()])

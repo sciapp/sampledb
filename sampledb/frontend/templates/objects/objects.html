@@ -19,7 +19,7 @@
     </script>
   {% endif %}
   <script type="text/javascript">
-    const object_ids_write_permission = {{ objects_with_write_permission | tojson }};
+    const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }}
     let selected_object_ids = [];
 
     $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover' });
@@ -90,6 +90,8 @@
         }
       });
 
+      checkSubmittable();
+
       $("#object-location").selectpicker('val', '-1');
       $("#object-responsible-user").selectpicker('val', '-1');
 
@@ -101,39 +103,43 @@
     });
 
     function checkAllAvailableSelected() {
-      return object_ids_write_permission.every(id => selected_object_ids.includes(id));
+      return objects_allowed_to_select.every(id => selected_object_ids.includes(id));
     }
 
     function checkSomeAvailableSelected() {
-      return object_ids_write_permission.some(id => selected_object_ids.includes(id));
+      return objects_allowed_to_select.some(id => selected_object_ids.includes(id));
     }
 
     function isSelectionValid() {
-        return selected_object_ids.every(id => object_ids_write_permission.includes(id));
+        return selected_object_ids.every(id => objects_allowed_to_select.includes(id));
     }
 
     function checkSubmittable() {
+      let submit_tooltip = $("#multiselect-submit-tooltip");
+      let submit_button = $('#multiselect-submit');
+      let has_invalid_ids = selected_object_ids.some(id => !objects_allowed_to_select.includes(id));
+      if(selected_object_ids.length === 0) {
+        submit_tooltip.attr("data-original-title", "{{ _('You have to select at least one object.') }}").tooltip("setContent").tooltip("enable");
+        submit_button.prop('disabled', true)
+        return false;
+      } else if(has_invalid_ids) {
+        submit_tooltip.attr("data-original-title", "{{ _('You do not have write permissions for at least one object.') }}").tooltip("setContent").tooltip('enable');
+        submit_button.prop('disabled', true);
+        return false;
+      }
+
+      {% if edit_location %}
         resp = $('.selectpicker#object-responsible-user').val();
         locat = $('.selectpicker#object-location').val();
-        let submit_tooltip = $("#location-form-submit-tooltip");
-        let submit_button = $('#location-form-submit').prop('disabled', true);
-        let invalid_ids = selected_object_ids.some(id => !object_ids_write_permission.includes(id));
-        if(selected_object_ids.length === 0) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select at least one object.') }}").tooltip("setContent").tooltip('enable');
-            submit_button.prop('disabled', true);
-            return false;
-        } else if (resp === '-1' && locat === '-1') {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select a location or a responsible user.') }}").tooltip("setContent").tooltip('enable');
-            submit_button.prop('disabled', true);
-            return false;
-        } else if(invalid_ids) {
-            submit_tooltip.attr("data-original-title", "{{ _('You do not have write permissions for at least one object.') }}").tooltip("setContent").tooltip('enable');
-            submit_button.prop('disabled', true);
-            return false;
+        if (resp === '-1' && locat === '-1') {
+          submit_tooltip.attr("data-original-title", "{{ _('You have to select a location or a responsible user.') }}").tooltip("setContent").tooltip('enable');
+          submit_button.prop('disabled', true);
+          return false;
         }
-        submit_tooltip.tooltip('disable');
-        submit_button.prop('disabled', false);
-        return true;
+      {% endif %}
+      submit_tooltip.tooltip('disable');
+      submit_button.prop('disabled', false);
+      return true;
     }
 
     function handleObjectSelection(cb) {
@@ -162,7 +168,7 @@
       checkboxSelectOverall.on('change', function(e) {
         let checked = $(this).prop('checked');
         checkboxSelectChilds.each(function(i, element) {
-          if(object_ids_write_permission.includes(Number($(element).prop('value')))) {
+          if(objects_allowed_to_select.includes(Number($(element).prop('value')))) {
             $(element).prop('checked', checked);
             handleObjectSelection(element);
           }
@@ -177,6 +183,10 @@
 
       $('form#assign-location-form').on('submit', function() {
         $('#selected_objects-input').val(selected_object_ids.join(','));
+      });
+
+      $('form#create-object-form').on('submit', function() {
+        $("form#create-object-form input#object-selection").val(selected_object_ids.join(','));
       });
 
       $("#object-location").on("change", () => checkSubmittable());
@@ -712,12 +722,23 @@
     {{ _('Search') }}
   </a>
 
-  {% if not edit_location %}
-    <a href="{{ build_modified_url(edit_location=True) }}" class="btn btn-primary" style="margin-bottom: 10px">
-      <i class="fa fa-map-marker" aria-hidden="true"></i> {{ _('Assign Location') }}
-    </a>
-  {% else %}
+  {% if not edit_location and not create_from_objects %}
+    <div class="btn-group" style="margin-bottom: 8px;">
+      <button class="btn btn-default dropdown-toggle" type="button" id="multiselect-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{ _('Multiple Objects') }}&hellip; <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="multiselect-dropdown">
+        <li><a href="{{ build_modified_url(edit_location=True) }}" class="dropdown-item"> <i class="fa fa-map-marker" aria-hidden="true"></i> {{ _('Assign Location') }}</a></li>
+        {% if available_action_types|length > 0 %}
+          <h6 class="dropdown-header"> {{ _('Use in Action') }} </h6>
+          {% for action_type in available_action_types %}
+            <li><a href="{{ build_modified_url(create_from_objects=True, use_in_action_type=action_type.id) }}" class="dropdown-item"> <i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(action_type_name)s', action_type_name=action_type.name|get_translated_text(default=_('Unnamed Action Type'))) }} </a></li>
+          {% endfor %}
+        {% endif %}
+      </ul>
+    </div>
 
+  {% elif edit_location and not create_from_objects %}
   {% set allowed_language_ids = [] %}
   {% for language in all_languages %}
     {% if language.enabled_for_input %}
@@ -727,6 +748,7 @@
 
   <form id="assign-location-form" method="post" action="{{ url_for('.edit_multiple_locations') }}">
     {{ location_form.csrf_token }}
+    <span class="text-muted">{{ _('Select objects for which you want to change the location.') }}</span>
     <div class="modal-body">
         <div class="form-group">
             <label for="object-location" class="control-label">{{ _('Location') }}</label>
@@ -742,7 +764,7 @@
             <label for="object-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
             <select class="selectpicker form-control" id="object-responsible-user" name="{{ location_form.responsible_user.name }}" data-live-search="true">
                 {% for user_id, username in location_form.responsible_user.choices %}
-                <option {% if user_is_fed[user_id] %} data-icon="fa fa-share-alt"{% endif %} value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %} selected="selected" {% endif %}>{% if user_id == '-1' %}&mdash;{% else %} {{ username }} {% endif %}</option>
+                  <option {% if user_is_fed[user_id] %} data-icon="fa fa-share-alt"{% endif %} value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %} selected="selected" {% endif %}>{% if user_id == '-1' %}&mdash;{% else %} {{ username }} {% endif %}</option>
                 {% endfor %}
             </select>
         </div>
@@ -772,10 +794,53 @@
         <input hidden="hidden" type="text" value="" id="selected_objects-input" name="selected_objects" />
         <div class="text-right">
           <a type="button" class="btn btn-default" data-dismiss="modal" href="{{ build_modified_url(blocked_parameters=['edit_location']) }}">{{ _('Cancel') }} </a>
-          <span class="d-inline-block" id="location-form-submit-tooltip" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
-            <button type="submit" id="location-form-submit" class="btn btn-primary" disabled><i class="fa fa-map-marker fa-fw"></i> {{ _('Assign Location') }} </button>
+          <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
+            <button type="submit" id="multiselect-submit" class="btn btn-primary" disabled><i class="fa fa-map-marker fa-fw"></i> {{ _('Assign Location') }} </button>
           </span>
         </div>
+    </div>
+  </form>
+  {% elif create_from_objects and not edit_location %}
+  <form id="create-object-form" method="post" action="{{ url_for('.multiselect_action') }}">
+    {{ use_in_action_form.csrf_token }}
+    <input type="hidden" id="action-type-id-selection" name="{{ use_in_action_form.action_type_id.name }}" value="{{ use_in_action_type.id }}" />
+    <input type="hidden" id="action-id-selection" name="{{ use_in_action_form.action_id.name }}" value="" />
+    <input type="hidden" id="object-selection" name="{{ use_in_action_form.objects.name }}" value="" />
+    <span class="text-muted">{{ _('Select objects that can be used in %(action_type_name)s Actions.', action_type_name=use_in_action_type.name|get_translated_text) }}</span>
+    <div class="text-left">
+      <a type="button" class="btn btn-default" href="{{ build_modified_url(blocked_parameters=['use_in_action_type', 'create_from_objects']) }}"> {{ _('Cancel') }} </a>
+      {% if favorite_actions|length > 0 %}
+        <div class="btn-group" style="display: inline-block; margin-top: 2px" id="multiselect-submit-tooltip" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
+          <button class="btn btn-primary dropdown-toggle" id="multiselect-submit" type="button" id="dropdown-use-selection" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
+            {{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text(default=_('Unnamed Action Type'))) }} <span class="caret"> </span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right multiselect-actions" aria-labelledby="dropdown-use-selection">
+            <li style="padding: 3px 20px;"><strong>{{ _('Favorites') }}:</strong></li>
+            {% for action in favorite_actions %}
+              {% if not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not current_user.is_admin) %}
+                <li><button onclick="$('#action-id-selection').val('{{ action.id }}')" type="submit" class="btn btn-link" style="margin-bottom: 5px;">
+                    <i class="fa fa-bar-chart fa-fw"></i>
+                    {% if action.user_id is not none %}
+                      {% set action_owner = get_user(action.user_id) %}
+                      {{ action_owner.get_name() }} /
+                    {% endif %}
+                    {% if action.instrument is not none %}
+                      {{ action.instrument.name | get_translated_text }}
+                      &mdash;
+                    {% endif %}
+                    {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
+                  </button></li>
+              {% endif %}
+            {% endfor %}
+            <li role="seperator" class="divider"></li>
+            <li><button type="submit" class="btn btn-link" onclick="$('#action-type-id-selection').val('{{ use_in_action_type.id }}')">{{ _('See other %(action_type_name)s Actions...', action_type_name=use_in_action_type.name|get_translated_text) }}</a></li>
+          </div>
+        </div>
+      {% else %}
+        <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
+          <button type="submit" class="btn btn-primary" id="multiselect-submit" onclick="$('#action-type-id-selection').val('{{ use_in_action_type.id }}')" disabled>{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
+        </span>
+      {% endif %}
     </div>
   </form>
   {% endif %}
@@ -787,7 +852,7 @@
   <table class="table" id="table-objects">
   <thead>
     <tr>
-      {% if edit_location %}
+      {% if edit_location or create_from_objects %}
         <th scope="col" rowspan="2">
           <input id="checkbox-select-overall" type="checkbox" value="state" />
         </th>
@@ -839,8 +904,8 @@
   <tbody>
   {% for object in objects %}
     <tr>
-      {% if edit_location %}
-      <td><input type="checkbox" name="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" onclick="handleObjectSelection(this)" {% if object.object_id not in objects_with_write_permission %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{{ _('You need at least write permission to change the location of an object.') }}" {% endif %}/> </td>
+      {% if edit_location or create_from_objects %}
+      <td><input type="checkbox" name="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" onclick="handleObjectSelection(this)" {% if (edit_location or create_from_objects) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{% if edit_location %} {{ _('You need at least write permission to change the location of an object.') }} {% elif create_from_objects %} {{ _('The object cannot be used in a %(action_type_name)s Action.', action_type_name=use_in_action_type.name|get_translated_text) }} {% endif %}" {% endif %}/> </td>
       {% endif %}
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>

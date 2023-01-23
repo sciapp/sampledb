@@ -33,7 +33,7 @@ from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
 from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for
 from ...logic.utils import get_translated_text
-from .forms import ObjectLocationAssignmentForm
+from .forms import ObjectLocationAssignmentForm, UseInActionForm
 from .permissions import get_object_if_current_user_has_read_permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -104,6 +104,8 @@ def objects():
     )
 
     edit_location = flask.request.args.get('edit_location', default=False, type=lambda k: k.lower() == 'true')
+    create_from_objects = flask.request.args.get('create_from_objects', default=False, type=lambda k: k.lower() == 'true')
+    use_in_action_type_id = flask.request.args.get('use_in_action_type', default=None, type=int)
 
     name_only = True
     implicit_action_type = None
@@ -797,6 +799,15 @@ def objects():
     else:
         filter_origins_info = None
 
+    location_form = None
+    use_in_action_form = None
+    user_is_fed = {}
+    english = None
+    all_languages = []
+    objects_allowed_to_select = []
+    available_action_types = []
+    favorite_actions = []
+    use_in_action_type = None
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
         all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
@@ -813,13 +824,54 @@ def objects():
         all_languages = get_languages()
 
         shown_object_ids = [object['object_id'] for object in objects]
-        objects_with_write_permission = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
+        objects_allowed_to_select = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
+    elif create_from_objects and use_in_action_type_id:
+        use_in_action_form = UseInActionForm()
+        use_in_action_type = logic.actions.get_action_type(use_in_action_type_id)
+
+        if use_in_action_type_id == models.ActionType.MEASUREMENT and logic.actions.is_usable_in_action_types_table_empty():
+            if not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
+                for object in objects:
+                    if object['action'] and object['action'].type_id == models.ActionType.SAMPLE_CREATION:
+                        objects_allowed_to_select.append(object['object_id'])
+
+        else:
+            for object in objects:
+                if object['action'] is None or object['action'].type is None:
+                    continue
+
+                if use_in_action_type in object['action'].type.usable_in_action_types:
+                    objects_allowed_to_select.append(object['object_id'])
+
+        all_favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+
+        actions = all_actions
+        if not actions:
+            actions = logic.actions.get_actions(action_type_id=use_in_action_type_id)
+
+        for action in actions:
+            if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action.id not in favorite_actions:
+                favorite_actions.append(action)
+
     else:
-        location_form = None
-        user_is_fed = {}
-        english = None
-        all_languages = []
-        objects_with_write_permission = []
+        create_from_objects = None
+        if logic.actions.is_usable_in_action_types_table_empty():
+            if not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
+                for object in objects:
+                    if object['action'] and object['action'].type_id == models.ActionType.SAMPLE_CREATION:
+                        available_action_types.append(logic.actions.get_action_type(models.ActionType.MEASUREMENT))
+                        break
+
+        else:
+            tried_object_action_types = {None}
+            for object in objects:
+                object_action = object['action']
+
+                if object_action and object_action.type_id not in tried_object_action_types:
+                    for action_type in object_action.type.usable_in_action_types:
+                        if action_type not in available_action_types:
+                            available_action_types.append(action_type)
+                    tried_object_action_types.add(object_action.type_id)
 
     return flask.render_template(
         'objects/objects.html',
@@ -885,7 +937,12 @@ def objects():
         user_is_fed=user_is_fed,
         ENGLISH=english,
         all_languages=all_languages,
-        objects_with_write_permission=objects_with_write_permission,
+        create_from_objects=create_from_objects,
+        objects_allowed_to_select=objects_allowed_to_select,
+        available_action_types=available_action_types,
+        use_in_action_type=use_in_action_type,
+        favorite_actions=favorite_actions,
+        use_in_action_form=use_in_action_form
     )
 
 
@@ -1452,3 +1509,18 @@ def edit_multiple_locations():
 
     flask.flash(_('Please select a location or a responsible user.'), 'error')
     return flask.redirect(flask.url_for('.objects'))
+
+
+@frontend.route("/multiselect_action", methods=["POST"])
+def multiselect_action():
+    use_in_action_form = UseInActionForm()
+
+    try:
+        object_ids = list(map(int, use_in_action_form.objects.data.split(',')))
+    except ValueError:
+        object_ids = []
+
+    if use_in_action_form.action_id.data:
+        return flask.redirect(flask.url_for('.new_object', action_id=use_in_action_form.action_id.data, object_id=object_ids))
+
+    return flask.redirect(flask.url_for('.actions', t=use_in_action_form.action_type_id.data, object_id=object_ids))
