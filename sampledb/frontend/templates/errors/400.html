@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Bad Request — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Bad Request') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-<h1>400 &mdash; Bad Request</h1>
+<h1>400 &mdash; {{ _('Bad Request') }}</h1>
+<p>{{ _('An error occurred while handling this request. Please try again later and if the issue persists, please <a href="mailto:%(contact_email)s?subject=%(service_name)s">contact an administrator</a>.', service_name=service_name, contact_email=contact_email) }}</p>
 {% endblock %}

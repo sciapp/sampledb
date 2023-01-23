@@ -1,39 +1,48 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _("Action") }} #{{ action.id }}: {{ title }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _("Action") }} #{{ action.id }}: {{ action.name | get_translated_text }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-
   <h1>
     {{ _("Action") }} #{{ action.id }}:
-    {% if action.user is not none %}
-    <a href="{{ url_for('.user_profile', user_id=action.user.id) }}" title="{{ action.user.name }}">{{ action.user.name }}</a> /
+    {% if action.user_id is not none %}
+      {% set action_owner = get_user(action.user_id) %}
+    <a href="{{ url_for('.user_profile', user_id=action.user_id) }}" title="{{ action_owner.get_name() }}">{{ action_owner.get_name() }}</a>
+      {{ import_information_symbol(action_owner) }} /
     {% endif %}
-    {% if action.instrument is not none %}
-      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ single_translation.instrument_translation.name }}">{{ single_translation.instrument_translation.name }}</a> &mdash;
+    {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
+      <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
+      {{ import_information_symbol(action.instrument) }} &mdash;
     {% endif %}
-    {{ single_translation.name }}
+    {{ action.name | get_translated_text }}
+    {{ import_information_symbol(action) }}
   </h1>
   {% if action.user_id is not none %}
-    <p class="text-muted">{% if is_public %}<i class="fa fa-unlock" aria-hidden="true"></i>{% else %}<i class="fa fa-lock" aria-hidden="true"></i>{% endif %} {% if not is_public %} {{ _("This custom action is not public. ") }} {% else %}  {{ _("This custom action is public. ") }} {% endif %}</p>
+    <p class="text-muted"><i class="fa {% if is_public %}fa-unlock{% else %}fa-lock{% endif %} fa-fw" aria-hidden="true"></i> {% if not is_public %} {{ _("This custom action is not public.") }} {% else %}  {{ _("This custom action is public.") }} {% endif %}</p>
   {% endif %}
   {% if action.is_hidden %}
-    <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
+    <p class="text-muted"><i class="fa fa-eye-slash fa-fw" aria-hidden="true"></i> {{_("This action has been hidden from action lists.") }}</p>
+  {% endif %}
+  {% if action.disable_create_objects %}
+    <p class="text-muted"><i class="fa fa-ban fa-fw" aria-hidden="true"></i> {{_("Creating objects with this action has been disabled.") }}</p>
+  {% elif action.admin_only %}
+    <p class="text-muted"><i class="fa fa-ban fa-fw" aria-hidden="true"></i> {{_("Only administrators can create objects with this action.") }}</p>
   {% endif %}
 
-  {% if single_translation.description %}
+  {% if action.description | get_translated_text %}
     <div class="action-user-content">
-      {% if action.description_is_markdown %}{{ single_translation.description | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ single_translation.description }}</p>{% endif %}
+      {% if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
-
+  {% if not config['DISABLE_INSTRUMENTS'] %}
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
-  {% if not action.type.disable_create_objects %}
-  <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ single_translation.action_type_translation.view_text }}</a>
-  {% if not current_user.is_readonly %}
-    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ single_translation.action_type_translation.perform_text}}</a>
+  {% endif %}
+  {% if action.type_id is none or not action.type.disable_create_objects %}
+  <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
+  {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
+    <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) if action.type_id else _('Create Object') }}</a>
   {% endif %}
   {% endif %}
   {% if not current_user.is_readonly %}
@@ -43,7 +52,7 @@
     {% if may_grant %}
       <a href="{{ url_for('.action_permissions', action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Edit the permissions for this action.') }}">{{ _('Edit Permissions') }}</a>
     {% endif %}
-    {% if not action.type.admin_only or current_user.is_admin %}
+    {% if action.type_id is not none and action.schema is not none and (not action.type.admin_only or current_user.is_admin) %}
       <a href="{{ url_for('.new_action', previous_action_id=action.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _("Create a new custom action based on the settings for this action.") }} ">{{ _("Use as Template") }}</a>
     {% endif %}
   {% endif %}
@@ -52,5 +61,5 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
 {% endblock %}

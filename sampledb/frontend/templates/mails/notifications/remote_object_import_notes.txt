@@ -1,0 +1,11 @@
+{% extends "mails/notifications/base.txt" %}
+
+
+{% block message %}
+{% set component = get_component(data['component_id']) %}
+Object #{{ data['object_id'] }} has been imported into {% if component %}{{ component.get_name() }}{% else %}another database{% endif %} with the following notes:
+{% for note in data.import_notes %}
+- {{ note }}
+{% endfor %}
+{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}
+{% endblock %}

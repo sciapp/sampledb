@@ -17,8 +17,8 @@ def test_get_property_paths_for_schema():
             }
         }
     }) == {
-        (): 'object',
-        ('name',): 'text'
+        (): {'type': 'object', 'title': None},
+        ('name',): {'type': 'text', 'title': 'name'}
     }
     assert get_property_paths_for_schema({
         'type': 'object',
@@ -45,12 +45,12 @@ def test_get_property_paths_for_schema():
             }
         }
     }) == {
-        (): 'object',
-        ('name',): 'text',
-        ('list',): 'array',
-        ('list', None): 'object',
-        ('list', None, 'name'): 'text',
-        ('list', None, 'value'): 'quantity',
+        (): {'type': 'object', 'title': None},
+        ('name',): {'type': 'text', 'title': 'name'},
+        ('list',): {'type': 'array', 'title': None},
+        ('list', None): {'type': 'object', 'title': None},
+        ('list', None, 'name'): {'type': 'text', 'title': 'name'},
+        ('list', None, 'value'): {'type': 'quantity', 'title': 'value'},
     }
     assert get_property_paths_for_schema(
         {
@@ -66,7 +66,7 @@ def test_get_property_paths_for_schema():
                         'type': 'object',
                         'properties': {
                             'name': {
-                                'title': 'name',
+                                'title': 'name2',
                                 'type': 'text'
                             },
                             'value': {
@@ -80,6 +80,6 @@ def test_get_property_paths_for_schema():
         },
         valid_property_types={'text'}
     ) == {
-        ('name',): 'text',
-        ('list', None, 'name'): 'text',
+        ('name',): {'type': 'text', 'title': 'name'},
+        ('list', None, 'name'): {'type': 'text', 'title': 'name2'}
     }

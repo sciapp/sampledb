@@ -9,6 +9,8 @@ Users can be members of any number of basic groups, leave the basic groups they 
 
 As all users in a basic group are equal, basic groups may be best suited for those who want to freely share objects with their colleagues without fine-grained permissions. For a more detailed or hierarchical approach, see :ref:`projects`.
 
+Basic groups can be part of multiple :ref:`group_categories`, which help finding the group in the group list.
+
 .. note::
     Administrators can disable creation of basic groups by regular users.
 

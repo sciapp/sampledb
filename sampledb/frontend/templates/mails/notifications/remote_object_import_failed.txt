@@ -1,0 +1,8 @@
+{% extends "mails/notifications/base.txt" %}
+
+
+{% block message %}
+{% set component = get_component(data['component_id']) %}
+The import of object #{{ data['object_id'] }} into {% if component %}{{ component.get_name() }}{% else %}another database{% endif %} has failed:
+{{ url_for('frontend.object', object_id=data['object_id'], _external=True) }}
+{% endblock %}

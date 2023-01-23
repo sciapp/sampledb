@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .. import db
 from .files import File
@@ -19,9 +20,10 @@ class FileLogEntryType(enum.Enum):
     EDIT_DESCRIPTION = 2
     HIDE_FILE = 3
     UNHIDE_FILE = 4
+    EDIT_URL = 5
 
 
-class FileLogEntry(db.Model):
+class FileLogEntry(db.Model):  # type: ignore
     __tablename__ = 'file_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -31,11 +33,20 @@ class FileLogEntry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
-    user = db.relationship('User')
 
-    __table_args__ = (db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]), {})
+    __table_args__ = (
+        db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]),
+    )
 
-    def __init__(self, object_id, file_id, user_id, type, data, utc_datetime=None):
+    def __init__(
+            self,
+            object_id: int,
+            file_id: int,
+            user_id: int,
+            type: FileLogEntryType,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.object_id = object_id
         self.file_id = file_id
         self.user_id = user_id
@@ -45,5 +56,5 @@ class FileLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, file_id={1.file_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

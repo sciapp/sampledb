@@ -12,6 +12,9 @@ import base64
 import io
 import json
 import os
+
+import pytz
+import pytz.exceptions
 import requests
 import typing
 import sys
@@ -39,13 +42,44 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
 }
 
 
-def use_environment_configuration(env_prefix):
+def use_environment_configuration(env_prefix: str) -> None:
     """
     Uses configuration data from environment variables with a given prefix by setting the config modules variables.
     """
     config = load_environment_configuration(env_prefix)
     for name, value in config.items():
         globals()[name] = value
+
+
+def is_download_service_whitelist_valid() -> bool:
+    # check if paths and user ids from DOWNLOAD_SERVICE_WHITELIST are valid
+    for path, user_ids in DOWNLOAD_SERVICE_WHITELIST.items():
+        norm_path = os.path.normpath(os.path.join(os.path.sep, path))
+        if norm_path != path:
+            print(
+                ansi_color(
+                    'DOWNLOAD_SERVICE_WHITELIST: Please use a normalized '
+                    'paths.'
+                    '\n',
+                    color=33
+                ),
+                file=sys.stderr
+            )
+            return False
+
+        for user_id in user_ids:
+            if type(user_id) is not int:
+                print(
+                    ansi_color(
+                        'DOWNLOAD_SERVICE_WHITELIST: Please use a number for '
+                        'the user IDs.'
+                        '\n',
+                        color=33
+                    ),
+                    file=sys.stderr
+                )
+                return False
+    return True
 
 
 def check_config(
@@ -68,14 +102,14 @@ def check_config(
     show_config_info = False
     can_run = True
 
-    internal_config = {}
+    internal_config: typing.Dict[str, typing.Any] = {}
 
     missing_config_keys = REQUIRED_CONFIG_KEYS - defined_config_keys
 
     if missing_config_keys:
         print(
             ansi_color(
-                'Missing required configuration values:\n -' +
+                'Missing required configuration values:\n - ' +
                 '\n - '.join(missing_config_keys) +
                 '\n',
                 color=31
@@ -106,10 +140,58 @@ def check_config(
         )
         show_config_info = True
 
+    if config.get('USE_TYPEAHEAD_FOR_OBJECTS') and not config.get('LOAD_OBJECTS_IN_BACKGROUND'):
+        print(
+            ansi_color(
+                'Typeahead can only be used for objects when loading in '
+                'background is enabled, so USE_TYPEAHEAD_FOR_OBJECTS can '
+                'only be true if LOAD_OBJECTS_IN_BACKGROUND is also true.\n',
+                color=31
+            ),
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+        can_run = False
+
     if 'DATAVERSE_URL' not in defined_config_keys:
         print(
             'Dataverse export will be disabled, because the configuration '
             'value DATAVERSE_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    if 'SCICAT_API_URL' not in defined_config_keys:
+        print(
+            'SciCat export will be disabled, because the configuration '
+            'value SCICAT_API_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+    elif 'SCICAT_FRONTEND_URL' not in defined_config_keys:
+        print(
+            'SciCat export will be disabled, because the configuration '
+            'value SCICAT_FRONTEND_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    if 'DOWNLOAD_SERVICE_URL' not in defined_config_keys:
+        print(
+            'Download service will be disabled, because the configuration '
+            'value DOWNLOAD_SERVICE_URL is missing.\n'
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+    elif 'DOWNLOAD_SERVICE_SECRET' not in defined_config_keys:
+        print(
+            'Download service will be disabled, because the configuration '
+            'value DOWNLOAD_SERVICE_SECRET is missing.\n'
             '\n',
             file=sys.stderr
         )
@@ -156,17 +238,18 @@ def check_config(
             )
         elif can_run:
             engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'])
-            user_table_exists = bool(engine.execute(
-                "SELECT * "
-                "FROM information_schema.columns "
-                "WHERE table_name = 'users'"
-            ).fetchall())
-            if user_table_exists:
-                users_exist = bool(engine.execute(
-                    "SELECT * FROM users"
-                ).fetchall())
-            else:
-                users_exist = False
+            with engine.begin() as connection:
+                user_table_exists = bool(connection.execute(sqlalchemy.text(
+                    "SELECT * "
+                    "FROM information_schema.columns "
+                    "WHERE table_name = 'users'"
+                )).fetchall())
+                if user_table_exists:
+                    users_exist = bool(connection.execute(sqlalchemy.text(
+                        "SELECT * FROM users"
+                    )).fetchall())
+                else:
+                    users_exist = False
             if users_exist:
                 print(
                     'ADMIN_PASSWORD is set, but there already are users in '
@@ -279,6 +362,20 @@ def check_config(
                     file=sys.stderr
                 )
 
+    if config['TIMEZONE']:
+        try:
+            pytz.timezone(config['TIMEZONE'])
+        except pytz.exceptions.UnknownTimeZoneError:
+            print(
+                ansi_color(
+                    'Unknown time zone.\n',
+                    color=31
+                ),
+                file=sys.stderr
+            )
+            can_run = False
+            show_config_info = True
+
     try:
         os.makedirs(config['FILE_STORAGE_PATH'], exist_ok=True)
         test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
@@ -334,6 +431,10 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not is_download_service_whitelist_valid():
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -359,6 +460,10 @@ CSRF_ENABLED = True
 # see: http://flask.pocoo.org/docs/1.0/config/#SECRET_KEY
 # automatically generated default, but should be replaced using environment variable SAMPLEDB_SECRET_KEY
 SECRET_KEY = generate_secret_key(num_bits=256)
+
+# sameSite attribute for cookies
+# see: https://flask.palletsprojects.com/en/2.2.x/security/#set-cookie-options
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 # whether or not SQLAlchemy should track modifications
 # see: http://flask-sqlalchemy.pocoo.org/2.3/config/
@@ -389,7 +494,9 @@ SERVICE_DESCRIPTION = {
     'de': SERVICE_NAME + ' ist eine Datenbank für Proben- und Messungsmetadaten entwickelt am PGI und JCNS.'
 }
 SERVICE_IMPRINT = None
+SERVICE_LEGAL_NOTICE = None
 SERVICE_PRIVACY_POLICY = None
+SERVICE_ACCESSIBILITY = None
 SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
 
 # location for storing files
@@ -406,6 +513,7 @@ MIME_TYPES = {
     '.txt': 'text/plain',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
+    '.gif': 'image/gif',
     '.pdf': 'application/pdf'
 }
 
@@ -419,6 +527,17 @@ DATAVERSE_NAME = 'Dataverse'
 DATAVERSE_URL = None
 DATAVERSE_ROOT_IDS = ':root'
 
+# Scicat settings
+SCICAT_NAME = 'SciCat'
+SCICAT_API_URL = None
+SCICAT_FRONTEND_URL = None
+SCICAT_EXTRA_PID_PREFIX = ''
+
+DOWNLOAD_SERVICE_URL = None
+DOWNLOAD_SERVICE_SECRET = None
+DOWNLOAD_SERVICE_WHITELIST: typing.Dict[str, typing.List[int]] = {}
+DOWNLOAD_SERVICE_TIME_LIMIT = 24 * 60 * 60
+
 # PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
@@ -430,24 +549,32 @@ WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
 # invitation link time limit
 INVITATION_TIME_LIMIT = 7 * 24 * 60 * 60
 
+# Flask-MonitoringDashboard settings
+ENABLE_MONITORINGDASHBOARD = False
+MONITORINGDASHBOARD_DATABASE = 'sqlite:///flask_monitoringdashboard.db'
+
 # other settings
 ONLY_ADMINS_CAN_MANAGE_LOCATIONS = False
 ONLY_ADMINS_CAN_CREATE_GROUPS = False
 ONLY_ADMINS_CAN_DELETE_GROUPS = False
 ONLY_ADMINS_CAN_CREATE_PROJECTS = False
+ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES = True
 
 DISABLE_USE_IN_MEASUREMENT = False
 
 DISABLE_SUBPROJECTS = False
 
-LOAD_OBJECTS_IN_BACKGROUND = False
+LOAD_OBJECTS_IN_BACKGROUND = True
+
+USE_TYPEAHEAD_FOR_OBJECTS = False
+TYPEAHEAD_OBJECT_LIMIT = None
 
 ENFORCE_SPLIT_NAMES = False
 
 BUILD_TRANSLATIONS = True
 PYBABEL_PATH = 'pybabel'
 
-EXTRA_USER_FIELDS = {}
+EXTRA_USER_FIELDS: typing.Dict[str, typing.Dict[str, typing.Dict[str, str]]] = {}
 
 SHOW_PREVIEW_WARNING = False
 
@@ -455,12 +582,39 @@ DISABLE_INLINE_EDIT = False
 
 SHOW_OBJECT_TITLE = False
 
+FULL_WIDTH_OBJECTS_TABLE = True
+
 HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
 
 MAX_BATCH_SIZE = 100
 
+FEDERATION_UUID = None
+ALLOW_HTTP = False
+VALID_TIME_DELTA = 300
+ENABLE_DEFAULT_USER_ALIASES = False
+
+ENABLE_BACKGROUND_TASKS = False
+
+TIMEZONE = None
+
+ENABLE_ANONYMOUS_USERS = False
+
+ENABLE_NUMERIC_TAGS = None
+
+SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS = True
+
+SHOW_LAST_PROFILE_UPDATE = True
+
+DISABLE_INSTRUMENTS = False
+
+ENABLE_FUNCTION_CACHES = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
+
+if SERVICE_IMPRINT and not SERVICE_LEGAL_NOTICE:
+    # Support SERVICE_IMPRINT for downwards compatibility
+    SERVICE_LEGAL_NOTICE = SERVICE_IMPRINT
 
 # convert INVITATION_TIME_LIMIT in case it was set as a string
 try:
@@ -469,7 +623,13 @@ except ValueError:
     pass
 
 # parse values as integers
-for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE'}:
+for config_name in {
+    'MAX_CONTENT_LENGTH',
+    'MAX_BATCH_SIZE',
+    'VALID_TIME_DELTA',
+    'DOWNLOAD_SERVICE_TIME_LIMIT',
+    'TYPEAHEAD_OBJECT_LIMIT',
+}:
     value = globals().get(config_name)
     if isinstance(value, str):
         try:
@@ -478,7 +638,7 @@ for config_name in {'MAX_CONTENT_LENGTH', 'MAX_BATCH_SIZE'}:
             pass
 
 # parse values as json
-for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS'}:
+for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST'}:
     value = globals().get(config_name)
     if isinstance(value, str) and value.startswith('{'):
         try:
@@ -492,6 +652,7 @@ for config_name in {
     'ONLY_ADMINS_CAN_CREATE_GROUPS',
     'ONLY_ADMINS_CAN_DELETE_GROUPS',
     'ONLY_ADMINS_CAN_CREATE_PROJECTS',
+    'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
     'DISABLE_USE_IN_MEASUREMENT',
     'DISABLE_SUBPROJECTS',
     'LOAD_OBJECTS_IN_BACKGROUND',
@@ -499,9 +660,29 @@ for config_name in {
     'BUILD_TRANSLATIONS',
     'SHOW_PREVIEW_WARNING',
     'SHOW_OBJECT_TITLE',
+    'FULL_WIDTH_OBJECTS_TABLE',
     'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
     'DISABLE_INLINE_EDIT',
+    'ENABLE_BACKGROUND_TASKS',
+    'ENABLE_MONITORINGDASHBOARD',
+    'ENABLE_ANONYMOUS_USERS',
+    'ENABLE_NUMERIC_TAGS',
+    'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
+    'SHOW_LAST_PROFILE_UPDATE',
+    'USE_TYPEAHEAD_FOR_OBJECTS',
+    'DISABLE_INSTRUMENTS',
+    'ENABLE_FUNCTION_CACHES',
 }:
     value = globals().get(config_name)
     if isinstance(value, str):
         globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
+
+# remove trailing slashes from SciCat urls
+if isinstance(SCICAT_API_URL, str) and SCICAT_API_URL.endswith('/'):
+    SCICAT_API_URL = SCICAT_API_URL[:-1]
+if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
+    SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]
+
+# remove trailing slashes from Download Service url
+if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
+    DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]

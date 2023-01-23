@@ -13,16 +13,22 @@ the functions in this module should be called from within a Flask app context.
 
 
 import typing
-from ..models import Objects, Object, Action, ActionType
+import datetime
+import flask
+
+import sqlalchemy.exc
+
+from .components import get_component_by_uuid
+from ..models import Objects, Object, Action, ActionType, Permissions
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
-import sqlalchemy.exc
+from .utils import cache
 
 
 def create_object(
         action_id: int,
-        data: dict,
+        data: typing.Dict[str, typing.Any],
         user_id: int,
         previous_object_id: typing.Optional[int] = None,
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
@@ -53,11 +59,16 @@ def create_object(
         user ID exists
     """
     action = actions.get_action(action_id)
-    if action.type.disable_create_objects:
+    if action.type is not None and action.type.disable_create_objects:
         raise CreatingObjectsDisabledError()
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     try:
-        object = Objects.create_object(data=data, schema=schema, user_id=user_id, action_id=action_id)
+        object = Objects.create_object(
+            data=data,
+            schema=schema,
+            user_id=user_id,
+            action_id=action_id
+        )
     except sqlalchemy.exc.IntegrityError:
         raise
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
@@ -66,20 +77,71 @@ def create_object(
     _send_user_references_notifications(object, user_id)
     if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
-        object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
+        object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
     elif permissions_for_group_id is not None:
-        object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, object_permissions.Permissions.GRANT)
+        object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, Permissions.GRANT)
     elif permissions_for_project_id is not None:
-        object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, object_permissions.Permissions.GRANT)
+        object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
     else:
         object_permissions.set_initial_permissions(object)
     tags.update_object_tag_usage(object)
     return object
 
 
+def insert_fed_object_version(
+        fed_object_id: int,
+        fed_version_id: int,
+        component_id: int,
+        action_id: typing.Optional[int],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        user_id: typing.Optional[int],
+        utc_datetime: typing.Optional[datetime.datetime],
+        allow_disabled_languages: bool = False
+) -> typing.Optional[Object]:
+    """
+    Inserts an imported object version into local object versions.
+
+    :param fed_object_id: the federated object ID
+    :param fed_version_id: the federated version ID
+    :param component_id: the ID of the component
+    :param action_id: the ID of an existing action, optional
+    :param schema: the object schema used for validation. If schema is None
+        the action schema is used, optional
+    :param data: the object's data, which must fit to the action's schema, optional
+    :param user_id: the ID of the user who created the object, optional
+    :param utc_datetime: the creation datetime of the version to insert
+    :param allow_disabled_languages: whether disabled languages may be allowed
+        in data
+    :return: the created object
+    :raise errors.ActionDoesNotExistError: when no action with the given
+        action ID exists
+    :raise errors.UserDoesNotExistError: when no user with the given
+        user ID exists
+    """
+    if action_id is not None:
+        actions.check_action_exists(action_id)
+    if user_id is not None:
+        users.check_user_exists(user_id)
+    object = Objects.insert_fed_object_version(
+        data=data,
+        schema=schema,
+        user_id=user_id,
+        action_id=action_id,
+        utc_datetime=utc_datetime,
+        fed_object_id=fed_object_id,
+        fed_version_id=fed_version_id,
+        component_id=component_id,
+        allow_disabled_languages=allow_disabled_languages
+    )
+    if object is not None:
+        tags.update_object_tag_usage(object)
+    return object
+
+
 def create_object_batch(
         action_id: int,
-        data_sequence: typing.Sequence[dict],
+        data_sequence: typing.Sequence[typing.Dict[str, typing.Any]],
         user_id: int,
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
@@ -107,9 +169,9 @@ def create_object_batch(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    objects = []
-    actions.get_action(action_id)
-    users.get_user(user_id)
+    objects: typing.List[Object] = []
+    actions.check_action_exists(action_id)
+    users.check_user_exists(user_id)
     try:
         for data in data_sequence:
             try:
@@ -128,18 +190,23 @@ def create_object_batch(
                 _send_user_references_notifications(object, user_id)
                 if copy_permissions_object_id is not None:
                     object_permissions.copy_permissions(object.id, copy_permissions_object_id)
-                    object_permissions.set_user_object_permissions(object.id, user_id, object_permissions.Permissions.GRANT)
+                    object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
                 elif permissions_for_group_id is not None:
-                    object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, object_permissions.Permissions.GRANT)
+                    object_permissions.set_group_object_permissions(object.id, permissions_for_group_id, Permissions.GRANT)
                 elif permissions_for_project_id is not None:
-                    object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, object_permissions.Permissions.GRANT)
+                    object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
                 else:
                     object_permissions.set_initial_permissions(object)
                 tags.update_object_tag_usage(object)
     return objects
 
 
-def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optional[typing.Dict[str, typing.Any]] = None) -> None:
+def update_object(
+        object_id: int,
+        data: typing.Dict[str, typing.Any],
+        user_id: int,
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = None
+) -> None:
     """
     Updates the object to a new version. This function also handles logging
     and object references.
@@ -163,6 +230,34 @@ def update_object(object_id: int, data: dict, user_id: int, schema: typing.Optio
     tags.update_object_tag_usage(object)
 
 
+def update_object_version(
+        object_id: int,
+        version_id: int,
+        action_id: typing.Optional[int],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        user_id: typing.Optional[int],
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        allow_disabled_languages: bool = False
+) -> Object:
+    object = Objects.update_object_version(
+        object_id=object_id,
+        version_id=version_id,
+        action_id=action_id,
+        schema=schema,
+        data=data,
+        user_id=user_id,
+        utc_datetime=utc_datetime,
+        allow_disabled_languages=allow_disabled_languages
+    )
+    if object is None:
+        check_object_version_exists(object_id, version_id)
+        raise errors.ObjectNotFederatedError()
+    tags.update_object_tag_usage(object, new_subversion=True)
+
+    return object
+
+
 def restore_object_version(object_id: int, version_id: int, user_id: int) -> None:
     """
     Reverts the changes made to an object and restores a specific version of
@@ -180,16 +275,50 @@ def restore_object_version(object_id: int, version_id: int, user_id: int) -> Non
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = get_object(object_id=object_id, version_id=version_id)
-    object = Objects.update_object(
+    object = Objects.restore_object_version(
         object_id=object_id,
-        data=object.data,
-        schema=object.schema,
+        version_id=version_id,
         user_id=user_id
     )
+    if object is None:
+        # ensure the object actually exists
+        check_object_version_exists(object_id=object_id, version_id=version_id)
+        return
     user_log.restore_object_version(user_id=user_id, object_id=object_id, restored_version_id=version_id, version_id=object.version_id)
     object_log.restore_object_version(object_id=object_id, user_id=user_id, restored_version_id=version_id, version_id=object.version_id)
     tags.update_object_tag_usage(object)
+
+
+@cache
+def check_object_exists(object_id: int) -> None:
+    """
+    Ensures that an object with the specific ID exists.
+
+    :param object_id: the ID of the existing object
+
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    """
+    if not Objects.is_existing_object(object_id=object_id):
+        raise errors.ObjectDoesNotExistError()
+
+
+@cache
+def check_object_version_exists(object_id: int, version_id: int) -> None:
+    """
+    Ensures that an object version with the given IDs exists.
+
+    :param object_id: the ID of the existing object
+    :param version_id: the ID of the existing version for that object
+
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ObjectVersionDoesNotExistError: when no object version
+        with the given object ID and version ID combination exists
+    """
+    if not Objects.is_existing_object_version(object_id=object_id, version_id=version_id):
+        check_object_exists(object_id)
+        raise errors.ObjectVersionDoesNotExistError()
 
 
 def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Object:
@@ -206,13 +335,53 @@ def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Objec
         version ID
     """
     if version_id is None:
-        object = Objects.get_current_object(object_id=object_id)
+        object = Objects.get_current_object(
+            object_id=object_id
+        )
         if object is None:
             raise errors.ObjectDoesNotExistError()
     else:
-        object = Objects.get_object_version(object_id=object_id, version_id=version_id)
+        object = Objects.get_object_version(
+            object_id=object_id,
+            version_id=version_id
+        )
         if object is None:
             if Objects.get_current_object(object_id=object_id) is None:
+                raise errors.ObjectDoesNotExistError()
+            else:
+                raise errors.ObjectVersionDoesNotExistError()
+    return object
+
+
+def get_fed_object(fed_object_id: int, component_id: int, fed_version_id: typing.Optional[int] = None) -> Object:
+    """
+    Returns either the current or a specific version of the federated object.
+
+    :param fed_object_id: the federated ID of the existing object
+    :param component_id: the ID of the existing component
+    :param fed_version_id: the ID of the object's existing version
+    :return: the object with the given object and version IDs
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ObjectVersionDoesNotExistError: when an object with the
+        given object ID exists, but does not have a version with the given
+        version ID
+    """
+    if fed_version_id is None:
+        object = Objects.get_current_fed_object(
+            fed_object_id=fed_object_id,
+            component_id=component_id
+        )
+        if object is None:
+            raise errors.ObjectDoesNotExistError()
+    else:
+        object = Objects.get_fed_object_version(
+            component_id=component_id,
+            fed_object_id=fed_object_id,
+            fed_version_id=fed_version_id
+        )
+        if object is None:
+            if Objects.get_current_fed_object(fed_object_id=fed_object_id, component_id=component_id) is None:
                 raise errors.ObjectDoesNotExistError()
             else:
                 raise errors.ObjectVersionDoesNotExistError()
@@ -234,7 +403,11 @@ def get_object_versions(object_id: int) -> typing.List[Object]:
     return object_versions
 
 
-def get_objects(filter_func=lambda data: True, action_filter=None, **kwargs) -> typing.List[Object]:
+def get_objects(
+        filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
+        action_filter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        **kwargs: typing.Any
+) -> typing.List[Object]:
     """
     Returns all objects, optionally after filtering the objects by their data
     or by their actions' information.
@@ -243,16 +416,24 @@ def get_objects(filter_func=lambda data: True, action_filter=None, **kwargs) -> 
         given the object table's data column
     :param action_filter: a SQLAlchemy comparator, used to query only objects
         created by specific actions
+    :param kwargs: additional parameters to be passed to Objects.get_current_objects
     :return: a list of all objects or those matching the given filters
     """
     if action_filter is None:
         action_table = None
     else:
         action_table = Action.__table__
-    return Objects.get_current_objects(filter_func=filter_func, action_table=action_table, action_filter=action_filter, **kwargs)
+    return Objects.get_current_objects(
+        filter_func=filter_func,
+        action_table=action_table,
+        action_filter=action_filter,
+        **kwargs
+    )
 
 
-def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.List[str], dict, dict]]:
+def _get_object_properties(
+        object: Object
+) -> typing.List[typing.Tuple[typing.List[typing.Union[str, int]], typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]]:
     """
     Returns a list of all properties of an object, as 3-tuples consisting of
     the path to the property, its schema and the actual data.
@@ -260,7 +441,16 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
     :param object: the object
     :return: a list of one 3-tuples for reach of the object's properties
     """
-    def iter_object_properties(previous_path, schema, data):
+    if object.data is None or object.schema is None:
+        return []
+
+    def iter_object_properties(
+            previous_path: typing.List[typing.Union[str, int]],
+            schema: typing.Dict[str, typing.Any],
+            data: typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]
+    ) -> typing.Iterator[typing.Tuple[typing.List[typing.Union[str, int]], typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]]:
+        if schema is None or data is None:
+            return
         if schema['type'] == 'object':
             for property_name in schema['properties']:
                 if property_name in data:
@@ -271,37 +461,87 @@ def _get_object_properties(object: Object) -> typing.List[typing.Tuple[typing.Li
                 for property in iter_object_properties(previous_path + [index], schema['items'], item):
                     yield property
         else:
-            yield previous_path, schema, data
-    return list(iter_object_properties([], object.schema, object.data))
+            # cast as data cannot be a list unless schema type is array
+            yield previous_path, schema, typing.cast(typing.Dict[str, typing.Any], data)
+
+    return list([
+        (path, schema, data)
+        for path, schema, data in iter_object_properties([], object.schema, object.data)
+    ])
+
+
+@typing.overload
+def find_object_references(
+        object: Object,
+        find_previous_referenced_object_ids: bool = True,
+        *,
+        include_fed_references: typing.Literal[True]
+) -> typing.Sequence[typing.Tuple[typing.Tuple[int, typing.Optional[str]], typing.Optional[int], str]]:
+    ...
+
+
+@typing.overload
+def find_object_references(
+        object: Object,
+        find_previous_referenced_object_ids: bool = True,
+        *,
+        include_fed_references: typing.Literal[False] = False
+) -> typing.Sequence[typing.Tuple[int, typing.Optional[int], str]]:
+    ...
 
 
 def find_object_references(
         object: Object,
-        find_previous_referenced_object_ids: bool = True
-) -> typing.List[typing.Tuple[int, typing.Optional[int], str]]:
+        find_previous_referenced_object_ids: bool = True,
+        *,
+        include_fed_references: bool = False
+) -> typing.Sequence[typing.Tuple[typing.Union[int, typing.Tuple[int, typing.Optional[str]]], typing.Optional[int], str]]:
     """
     Searches for references to other objects.
 
     :param object: the updated (or newly created) object
-    :param find_previous_referenced_object_ids: whether or not to find
-        previous referenced object ids
+    :param find_previous_referenced_object_ids: whether to find previous referenced object ids
+    :param include_fed_references: whether references on other components should be included
     """
     referenced_object_ids = []
+    referenced_object_id: typing.Union[int, typing.Tuple[int, typing.Optional[str]]]
     for path, schema, data in _get_object_properties(object):
-        if schema['type'] in ('sample', 'measurement', 'object_reference') and data is not None and data['object_id'] is not None:
-            referenced_object_id = data['object_id']
-            previous_referenced_object_id = None
-            if find_previous_referenced_object_ids and object.version_id > 0:
-                previous_object_version = get_object(object.object_id, object.version_id - 1)
-                previous_data = previous_object_version.data
+        if schema['type'] in ('sample', 'measurement', 'object_reference') and data and data.get('object_id'):
+            if 'component_uuid' in data and data['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
                 try:
-                    for path_element in path:
-                        previous_data = previous_data[path_element]
-                except (KeyError, IndexError):
-                    pass
+                    component = get_component_by_uuid(data['component_uuid'])
+                    if include_fed_references:
+                        referenced_object_id = (get_fed_object(data['object_id'], component.id).object_id, None)
+                    else:
+                        referenced_object_id = get_fed_object(data['object_id'], component.id).object_id
+                except errors.ComponentDoesNotExistError:
+                    if include_fed_references:
+                        referenced_object_id = (data['object_id'], data['component_uuid'])
+                    else:
+                        continue
+                except errors.ObjectDoesNotExistError:
+                    if include_fed_references:
+                        referenced_object_id = (data['object_id'], data['component_uuid'])
+                    else:
+                        continue
+                previous_referenced_object_id = None
+            else:
+                if include_fed_references:
+                    referenced_object_id = (data['object_id'], None)
                 else:
-                    if previous_data is not None and 'object_id' in previous_data and previous_data['object_id'] is not None:
-                        previous_referenced_object_id = previous_data['object_id']
+                    referenced_object_id = data['object_id']
+                previous_referenced_object_id = None
+                if find_previous_referenced_object_ids and object.version_id > 0:
+                    previous_object_version = get_object(object.object_id, object.version_id - 1)
+                    previous_data = previous_object_version.data
+                    try:
+                        for path_element in path:
+                            previous_data = previous_data[path_element]  # type: ignore
+                    except (KeyError, IndexError):
+                        pass
+                    else:
+                        if previous_data is not None and 'object_id' in previous_data and previous_data['object_id'] is not None:
+                            previous_referenced_object_id = previous_data['object_id']
             referenced_object_ids.append((referenced_object_id, previous_referenced_object_id, schema['type']))
     return referenced_object_ids
 
@@ -317,7 +557,10 @@ def _update_object_references(object: Object, user_id: int) -> None:
     :param object: the updated (or newly created) object
     :param user_id: the user who caused the object update or creation
     """
-    action_type_id = actions.get_action(object.action_id).type_id
+    if object.action_id is None:
+        action_type_id = None
+    else:
+        action_type_id = actions.get_action(object.action_id).type_id
     for referenced_object_id, previous_referenced_object_id, schema_type in find_object_references(object):
         if referenced_object_id != previous_referenced_object_id:
             if action_type_id == ActionType.MEASUREMENT and schema_type == 'sample':
@@ -359,7 +602,7 @@ def find_user_references(object: Object, find_previous_referenced_user_ids: bool
                 previous_data = previous_object_version.data
                 try:
                     for path_element in path:
-                        previous_data = previous_data[path_element]
+                        previous_data = previous_data[path_element]  # type: ignore
                 except (KeyError, IndexError):
                     pass
                 else:
@@ -367,3 +610,17 @@ def find_user_references(object: Object, find_previous_referenced_user_ids: bool
                         previous_referenced_user_id = previous_data['user_id']
             referenced_user_ids.append((referenced_user_id, previous_referenced_user_id))
     return referenced_user_ids
+
+
+def get_current_object_version_id(object_id: int) -> int:
+    """
+    Get the ID of the current version of an object.
+
+    :param object_id: the ID of an existing object
+    :return: the object's current version ID
+    :raises errors.ObjectDoesNotExistError: if the object does not exist
+    """
+    version_id = Objects.get_current_object_version_id(object_id)
+    if version_id is None:
+        raise errors.ObjectDoesNotExistError()
+    return version_id

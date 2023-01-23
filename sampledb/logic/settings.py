@@ -18,19 +18,23 @@ import typing
 
 from .. import db
 from ..models import Settings
-from .users import get_user
+from . import users
 
 
-DEFAULT_SETTINGS = {
+DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "OBJECTS_PER_PAGE": 25,
     "USE_SCHEMA_EDITOR": True,
     "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE": None,
     "SHOW_OBJECT_TITLE": None,
+    "FULL_WIDTH_OBJECTS_TABLE": None,
     "USE_ADMIN_PERMISSIONS": False,
     "SHOW_INVITATION_LOG": False,
     "INSTRUMENT_LOG_ORDER_ASCENDING": True,
     "INSTRUMENT_LOG_ORDER_ATTRIBUTE": "datetime",
     "DATAVERSE_API_TOKEN": "",
+    "SCICAT_API_TOKEN": "",
+    "DEFAULT_OBJECT_LIST_FILTERS": {},
+    "DEFAULT_OBJECT_LIST_OPTIONS": {},
     "AUTO_LC": True,
     "TIMEZONE": "UTC",
     "AUTO_TZ": True,
@@ -38,24 +42,54 @@ DEFAULT_SETTINGS = {
 }
 
 
-def get_user_settings(user_id: int) -> typing.Dict[str, typing.Any]:
+def get_user_settings(
+        user_id: typing.Optional[int]
+) -> typing.Dict[str, typing.Any]:
     """
     Get the settings for a user.
 
     This function will amend the user's settings with the default settings,
     so that code can rely on settings being available.
 
-    :param user_id: the ID of an existing user
+    :param user_id: the ID of an existing user, or None
     :return: the settings data
     :raise errors.UserDoesNotExistError: if the user does not exist
     """
-    # ensure the user exists
-    get_user(user_id)
     verified_data = copy.deepcopy(DEFAULT_SETTINGS)
+    if user_id is None:
+        return verified_data
+    # ensure the user exists
+    users.check_user_exists(user_id)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is not None:
         verified_data.update(_verify_settings(settings.data))
     return verified_data
+
+
+def get_user_setting(
+        user_id: typing.Optional[int],
+        setting_name: str
+) -> typing.Any:
+    """
+    Get a specific setting for a user.
+
+    This function will return the default value for the setting, if the user's
+    settings do not include it.
+
+    :param user_id: the ID of an existing user, or None
+    :param setting_name: the name of a setting
+    :return: the settings data
+    :raise errors.UserDoesNotExistError: if the user does not exist
+    """
+    default_value = copy.deepcopy(DEFAULT_SETTINGS.get(setting_name))
+    if user_id is None:
+        return default_value
+    # ensure the user exists
+    users.get_user(user_id)
+    row: typing.Optional[typing.Tuple[typing.Any]] = db.session.query(Settings.data[setting_name]).filter(Settings.user_id == user_id).first()  # type: ignore
+    if row is not None and _verify_setting(setting_name, row[0]):
+        return row[0]
+    return default_value
 
 
 def set_user_settings(user_id: int, data: typing.Dict[str, typing.Any]) -> None:
@@ -69,7 +103,7 @@ def set_user_settings(user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     :raise errors.UserDoesNotExistError: if the user does not exist
     """
     # ensure the user exists
-    get_user(user_id)
+    users.check_user_exists(user_id)
     settings = Settings.query.filter_by(user_id=user_id).first()
     if settings is None:
         verified_data = {}
@@ -99,7 +133,7 @@ def _verify_setting(key: str, value: typing.Any) -> bool:
             return key in {'OBJECTS_PER_PAGE'}
         return isinstance(value, type(default_value))
     # custom data type verification can be included here
-    if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE'}:
+    if key in {'SHOW_OBJECT_TITLE', 'SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'FULL_WIDTH_OBJECTS_TABLE'}:
         return value is None or isinstance(value, bool)
     return False
 

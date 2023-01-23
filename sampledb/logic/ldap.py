@@ -9,7 +9,7 @@ import flask
 
 import typing
 
-from ..models import Authentication, AuthenticationType
+from ..models import Authentication, AuthenticationType, UserType
 from .. import db
 from . import errors
 from . import users
@@ -37,7 +37,7 @@ def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[
     password = flask.current_app.config['LDAP_PASSWORD']
     server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
     try:
-        connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+        connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS)
         object_def = ldap3.ObjectDef(object_def, connection)
         reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(user_ldap_uid))
         reader.search(attributes)
@@ -129,6 +129,6 @@ def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
         return users.create_user(
             name=name,
             email=email,
-            type=users.UserType.PERSON
+            type=UserType.PERSON
         )
     return users.get_user(authentication_methods[0].user_id)

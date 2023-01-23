@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Database') }} #{{ component.id }}: {{ component.get_name() }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block content %}
+  {% if config['FEDERATION_UUID'] is none %}
+    <div class="alert alert-danger" role="alert">
+      {{ _('This database has not been configured to exchange data with other databases.') }}
+    </div>
+  {% endif %}
+  <h3>{{ _('Database') }} #{{ component.id }}: {{ component.get_name() }}</h3>
+  <p><strong>{{ _('Address') }}: </strong>{% if component.address is not none %}<a href="{{ component.address }}">{{ component.address }}</a>{% else %}&mdash;{% endif %}</p>
+  <p>
+    <strong>{{ _('UUID') }}:</strong> <span class="text-monospace">{{ component.uuid }}</span>
+    <span data-placement="top" data-trigger="manual" title="" data-original-title="{{ _('Copied successfully') }}">
+      <span data-uuid="{{ component.uuid }}" class="btn btn-link copy-uuid" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{ _('Copy UUID') }}">
+        <i class="fa fa-clipboard"></i>
+      </span>
+    </span>
+  </p>
+  <p>{{ component.description }}</p>
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    {% if edit_component_form %}
+      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editComponentModal">{{ _('Edit Database') }}</button>
+    {% endif %}
+    {% if sync_component_form %}
+      <button class="btn btn-primary" {% if component.address is none or not own_api_tokens %} data-toggle="tooltip" data-placement="top" title="{% if component.address %}{{ _('Add import token to import updates') }}{% elif own_api_tokens %}{{ _('Set address to import updates') }}{% else %}{{ _('Set address and import token to import updates') }}{% endif %}" disabled="disabled"{% else %} data-toggle="modal" data-target="#syncModal"{% endif %}>{{ _('Import Updates') }}</button>
+      {% if component.address is not none and own_api_tokens %}
+        <div class="modal fade" id="syncModal" tabindex="-1" role="dialog" aria-labelledby="syncModalLabel">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="syncModalLabel">{{ _('Import Updates') }}</h4>
+              </div>
+              <form method="post" action="{{ url_for('.component', component_id=component.id) }}" class="form-horizontal" id="syncComponentForm">
+                {{ sync_component_form.csrf_token() }}
+                <div class="modal-body">
+                  <span class="help-block">
+                    {{ _('When an object is shared with another database, the information will be sent immediately. However if this approach fails, e.g. because the database is temporarily unreachable, administrators can import updates from the database instead.') }}
+                  </span>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="{{ sync_component_form.ignore_last_sync_time.name }}"/> {{ _('Request updates from before the last import') }} <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="{{ _('Regularly, the other database will only send updates that occurred after the last import. If this checkbox is checked, all available information will be requested instead. This may take significantly longer than a regular update.') }}"></i>
+                    </label>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal" style="min-width:7em;">{{ _('Close') }}</button>
+                  <button type="submit" name="sync" value="sync" class="btn btn-primary" style="min-width:7em;">{{ _('Import Updates') }}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+    <div id="apiTokenDiv">
+    <h3>{{ _('Authentication Tokens') }}</h3>
+      <h4>{{ _('Export') }}</h4>
+      <p>{{ _('Tokens used by %(component_name)s to authenticate when requesting data from this database.', component_name=component.get_name()) }}</p>
+      <div>
+        <table class="table">
+          {% if api_tokens %}
+             <thead>
+               <tr>
+                 <th>{{ _('Description') }}</th>
+                 <th></th>
+               </tr>
+             </thead>
+             <tbody>
+               {% for authentication in api_tokens %}
+               <tr>
+                 <td>{{ authentication.login['description'] }}</td>
+                 <td class="text-right">
+                   <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.component', component_id=component.id) }}">
+                     {{ authentication_method_form.csrf_token() }}
+                     <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
+                     <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+                   </form>
+                 </td>
+               </tr>
+               {% endfor %}
+             </tbody>
+          {% endif %}
+           <tfoot>
+             <tr>
+               <td></td>
+               <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#createApiTokenModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+             </tr>
+           </tfoot>
+        </table>
+      </div>
+      <h4>{{ _('Import') }}</h4>
+      <p>{{ _('Tokens used by this database to authenticate when requesting data from %(component_name)s.', component_name=component.get_name()) }}</p>
+      <div>
+        <table class="table">
+          {% if own_api_tokens %}
+            <thead>
+              <tr>
+                <th>{{ _('Description') }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for authentication in own_api_tokens %}
+              <tr>
+                <td>{{ authentication.login['description'] }}</td>
+                <td class="text-right">
+                  <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.component', component_id=component.id) }}">
+                    {{ authentication_method_form.csrf_token() }}
+                    <input class="form-control" type="hidden" name="{{own_authentication_method_form.id.name}}" value={{authentication.id}}>
+                    <button type="submit" class="btn btn-danger" name="removeOwn" value="RemoveOwn"><i class="fa fa-times" aria-hidden="true"></i></button>
+                  </form>
+                </td>
+               </tr>
+               {% endfor %}
+            </tbody>
+          {% endif %}
+          <tfoot>
+            <tr>
+              <td></td>
+              <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#createOwnApiTokenModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% if created_api_token %}
+    <div class="modal fade" id="viewApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="viewApiTokenModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="viewApiTokenModalLabel">{{ _('New authentication token') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div id="api-token">
+              <div class="input-group">
+                <input type="text" readonly="readonly" class="disabled form-control" value="{{ created_api_token }}"/>
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
+                </span>
+              </div>
+              <span class="help-block" id="api-token-copy-notes"></span>
+            </div>
+            <span class="help-block">{{ _('Make sure you save it &mdash; you won\'t be able to access it again.') }}</span>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="width:7em;">{{ _('Close') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if edit_component_form %}
+    <div class="modal fade" id="editComponentModal" tabindex="-1" role="dialog" aria-labelledby="editComponentModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="editComponentModalLabel">{{ _('Edit Database') }}</h4>
+          </div>
+          <form method="post" action="{{ url_for('.component', component_id=component.id) }}" class="form-horizontal">
+            {{ edit_component_form.csrf_token() }}
+            <div class="modal-body">
+              <div class="form-group {% if edit_component_form.address.errors %}has-error{% endif %}">
+                <label for="editComponentName" class="col-sm-2 control-label">{{ _('Address') }}</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="editComponentAddress" name="{{ edit_component_form.address.name }}" placeholder="{{ _('Address') }}" value="{{ edit_component_form.address.data }}">
+                  {% for error_message in edit_component_form.address.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+                </div>
+              </div>
+              <div class="form-group {% if edit_component_form.name.errors %}has-error{% endif %}">
+                <label for="editComponentName" class="col-sm-2 control-label">{{ _('Name') }}</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="editComponentName" name="{{ edit_component_form.name.name }}" placeholder="{{ _('Name') }}" value="{{ edit_component_form.name.data }}">
+                  {% for error_message in edit_component_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="editComponentDescription" class="col-sm-2 control-label">{{ _('Description') }}</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="editComponentDescription" name="{{ edit_component_form.description.name }}" placeholder="{{ _('Description') }}">{{ edit_component_form.description.data }}</textarea>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+              <button type="submit" class="btn btn-primary" name="edit" value="edit">{{ _('Save Changes') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="modal fade" id="createApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="createApiTokenModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form class="form-horizontal" id="form-add-api-token" method="post" name="form-add-api-token" action="{{ url_for('.component', component_id=component.id) }}">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="createApiTokenModalLabel">{{ _('Create authentication token') }}</h4>
+          </div>
+          <div class="modal-body">
+            {{ create_api_token_form.csrf_token() }}
+            <div class="form-group{% if create_api_token_form.description.errors %} has-error{% endif %}">
+              <label for="input-description" class="col-sm-4 control-label">{{ _('Description') }}</label>
+              <div class="col-sm-8">
+                <input class="form-control" type="text" id="input-description" name="description"  placeholder="{{ _('Description') }}" {% if create_api_token_form.description.data %}value="{{ create_api_token_form.description.data }}"{% endif %}>
+                {% if create_api_token_form.description.errors %} <span class='help-block'>{{ _('Please enter a description for the authentication token.') }}</span> {%endif%}
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="width:7em;">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="create_api_token" value="create_api_token" style="width:7em;">{{ _('Create') }}</button>
+          </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="createOwnApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="createOwnApiTokenModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form class="form-horizontal" id="form-add-own-api-token" method="post" name="form-add-own-api-token" action="{{ url_for('.component', component_id=component.id) }}">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="createOwnApiTokenModalLabel">{{ _('Add own authentication token') }}</h4>
+          </div>
+          <div class="modal-body">
+            {{ add_own_api_token_form.csrf_token() }}
+            <div class="form-group{% if add_own_api_token_form.token.errors %} has-error{% endif %}">
+              <label for="input-token" class="col-sm-4 control-label">{{ _('Token') }}</label>
+              <div class="col-sm-8">
+                <input class="form-control" type="text" id="input-token" name="token"  placeholder="{{ _('Token') }}" {% if add_own_api_token_form.token.data %}value="{{ add_own_api_token_form.token.data }}"{% endif %}>
+                {% if add_own_api_token_form.token.errors %} <span class='help-block'>{{ _('Please enter the authentication token.') }}</span> {%endif%}
+              </div>
+            </div>
+            <div class="form-group{% if add_own_api_token_form.description.errors %} has-error{% endif %}">
+              <label for="input-description-own" class="col-sm-4 control-label">{{ _('Description') }}</label>
+              <div class="col-sm-8">
+                <input class="form-control" type="text" id="input-description-own" name="description"  placeholder="{{ _('Description') }}" {% if add_own_api_token_form.description.data %}value="{{ add_own_api_token_form.description.data }}"{% endif %}>
+                {% if add_own_api_token_form.description.errors %} <span class='help-block'>{{ _('Please enter a description for the authentication token.') }}</span> {%endif%}
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="width:7em;">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="add_own_api_token" value="add_own_api_token" style="width:7em;">{{ _('Add') }}</button>
+          </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+  <h4>{{ _('User Alias') }}</h4>
+  {% if alias %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col" colspan="2">{{ _('User Alias shared with %(component_name)s', component_name=component.get_name()) }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th class="text-right fit">{{ _('Name') }}</th>
+          <td>
+            {% if alias.name is none %}
+              &mdash;
+            {% else %}
+              {{ alias.name }}
+            {% endif %}
+            {% if alias['use_real_name'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('E-Mail') }}</th>
+          <td>
+            {% if alias.email is none %}
+              &mdash;
+            {% else %}
+              {{ alias.email }}
+            {% endif %}
+            {% if alias['use_real_email'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">ORCID iD</th>
+          <td>
+            {% if alias.orcid is none %}
+              &mdash;
+              {% if alias['use_real_orcid'] %}
+                <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+              {% endif %}
+            {% else %}
+              <div itemscope itemtype="https://schema.org/Person"><a itemprop="sameAs" content="https://orcid.org/{{ alias.orcid }}" href="https://orcid.org/{{ alias.orcid }}" target="orcid.widget" rel="me noopener noreferrer" style="vertical-align:top;"><img src="{{ fingerprinted_static('sampledb/img/orcid_16x16.png') }}" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">https://orcid.org/{{ alias.orcid }}</a>
+                {% if alias['use_real_orcid'] %}
+                <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+              {% endif %}
+              </div>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('Affiliation') }}</th>
+          <td>
+            {% if alias.affiliation is none %}
+              &mdash;
+            {% else %}
+              {{ alias.affiliation }}
+            {% endif %}
+            {% if alias['use_real_affiliation'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th class="text-right fit">{{ _('Role') }}</th>
+          <td>
+            {% if alias.role is none %}
+              &mdash;
+            {% else %}
+              {{ alias.role }}
+            {% endif %}
+            {% if alias['use_real_role'] %}
+              <span class="text-muted">{{ _('(Taken from profile)') }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr><td></td><td><a class="btn btn-primary" href="{{ url_for('.user_alias') }}">{{ _('User Alias Settings') }}</a></td></tr>
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ _('As you have not configured an user alias yet, no personal information about you is shared with %(component_name)s.', component_name=component.get_name()) }}</p>
+    <a class="btn btn-primary" href="{{ url_for('.user_alias', add_alias_component=component.id) }}">{{ _('Create User Alias for %(component_name)s', component_name=component.get_name()) }}</a>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  {% if show_edit_form %}
+  <script>
+    $(document).ready(function() {
+      var edit_modal = $('#editComponentModal');
+      edit_modal.removeClass('fade');
+      edit_modal.modal('show');
+      edit_modal.addClass('fade');
+    });
+  </script>
+  {% endif %}
+
+  {% if created_api_token %}
+  <script>
+  $('#viewApiTokenModal').modal('show');
+  $('#api-token button').bind('click', function() {
+    var input = document.querySelector('#api-token input');
+    input.setSelectionRange(0, input.value.length + 1);
+    $(input).focus();
+    try {
+      var success = document.execCommand('copy');
+      if (success) {
+        $('#api-token-copy-notes').text("{{ _('Copied!') }}");
+        $('#api-token').removeClass('has-error').addClass('has-success');
+      } else {
+        $('#api-token-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
+        $('#api-token').removeClass('has-success').addClass('has-error');
+      }
+    } catch (err) {
+        $('#api-token-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
+        $('#api-token').removeClass('has-success').addClass('has-error');
+    }
+  });
+  </script>
+  {% endif %}
+  <script>
+    {% if create_api_token_form.description.errors %}
+    $('#createApiTokenModal').modal('show');
+    {% endif %}
+    {% if add_own_api_token_form.description.errors %}
+    $('#createOwnApiTokenModal').modal('show');
+    {% endif %}
+    $('span.copy-uuid').on('click', function () {
+      var button = $(this);
+      navigator.clipboard.writeText(button.attr('data-uuid')).then(
+        () => {
+          var wrapper = button.parent();
+          button.tooltip('hide');
+          wrapper.tooltip('show');
+          setTimeout(function () {
+            wrapper.tooltip('hide');
+          }, 500);
+        }
+      );
+    });
+  </script>
+{% endblock %}

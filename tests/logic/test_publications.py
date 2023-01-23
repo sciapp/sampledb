@@ -93,3 +93,81 @@ def test_link_publications_to_objects(user, action):
 
     assert sampledb.logic.publications.get_object_ids_linked_to_doi('10.1000/valid') == [object.id]
     assert not sampledb.logic.publications.get_object_ids_linked_to_doi('10.1001/valid')
+
+
+def test_get_publications_for_user(user, action):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    object2 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    object3 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    object4 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    sampledb.logic.publications.link_publication_to_object(
+        user_id=user.id,
+        object_id=object1.id,
+        doi='10.1000/valid',
+        title='Title A',
+        object_name='Object A'
+    )
+    sampledb.logic.publications.link_publication_to_object(
+        user_id=user.id,
+        object_id=object1.id,
+        doi='10.1001/valid',
+        title=None,
+        object_name=None
+    )
+    sampledb.logic.publications.link_publication_to_object(
+        user_id=user.id,
+        object_id=object2.id,
+        doi='10.1001/valid',
+        title='Title B',
+        object_name='Object B'
+    )
+
+    assert sampledb.logic.publications.get_publications_for_user(user_id=user.id) == [
+        ('10.1000/valid', 'Title A'),
+        ('10.1001/valid', 'Title B')
+    ]
+
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object2.id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.NONE)
+
+    assert sampledb.logic.publications.get_publications_for_user(user_id=user.id) == [
+        ('10.1000/valid', 'Title A'),
+        ('10.1001/valid', None)
+    ]
+
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object1.id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.NONE)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object2.id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
+
+    assert sampledb.logic.publications.get_publications_for_user(user_id=user.id) == [
+        ('10.1001/valid', 'Title B')
+    ]
+
+    sampledb.logic.publications.link_publication_to_object(
+        user_id=user.id,
+        object_id=object3.id,
+        doi='10.1001/valid',
+        title='Title C',
+        object_name='Object C'
+    )
+
+    assert sampledb.logic.publications.get_publications_for_user(user_id=user.id) == [
+        ('10.1001/valid', 'Title B')
+    ]
+
+    sampledb.logic.publications.link_publication_to_object(
+        user_id=user.id,
+        object_id=object4.id,
+        doi='10.1001/valid',
+        title='Title C',
+        object_name='Object D'
+    )
+
+    assert sampledb.logic.publications.get_publications_for_user(user_id=user.id) == [
+        ('10.1001/valid', 'Title C')
+    ]

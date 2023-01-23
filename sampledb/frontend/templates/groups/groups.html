@@ -2,6 +2,32 @@
 
 {% block title %}{{ _('Basic Groups') }} — {{ service_name }}{% endblock %}
 
+{% macro show_group_category_tree(group_category_tree) %}
+  <ul class="groups_list">
+  {% for category in group_categories %}
+    {% if category.id in group_category_tree['child_categories'] %}
+      {% if group_category_tree['child_categories'][category.id]['contains_basic_groups'] %}
+        <li class="groups_list_category">
+          <input type="checkbox" id="groups_list_category_{{ category.id }}_expand"/>
+          <label for="groups_list_category_{{ category.id }}_expand" class="groups_list_category_label">
+            <i class="fa"></i>
+            {{ group_categories_by_id[category.id].name | get_translated_text(default=_('Unnamed Category')) }}
+          </label>
+          {{ show_group_category_tree(group_category_tree['child_categories'][category.id]) }}
+        </li>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  {% for group in groups %}
+    {% if group.id in group_category_tree['basic_group_ids'] %}
+      <li>
+        <a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a>{% if group_membership_by_id[group.id] %} <span class="label label-default">{{ _('Member') }}</span>{% endif %}
+      </li>
+    {% endif %}
+  {% endfor %}
+  </ul>
+{% endmacro %}
+
 {% block content %}
   {% set allowed_language_ids = [] %}
   {% for language in languages %}
@@ -10,16 +36,17 @@
 
   <h1>{{ _('Basic Groups') }}</h1>
   <p class="text-muted">{{ _('A basic group consists of equal users which share the object permissions granted to it.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/groups.html">{{ _('Read more.')}}</a></p>
-  {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_GROUPS']) %}
+  {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_GROUPS'] or not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES']) %}
   <p>
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">{{ _('Create Basic Group') }}</button>
+    {% if current_user.is_admin or not config['ONLY_ADMINS_CAN_CREATE_GROUPS'] %}
+      <button type="button" class="btn btn-default" data-toggle="modal" data-target="#createGroupModal">{{ _('Create Basic Group') }}</button>
+    {% endif %}
+    {% if current_user.is_admin or not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] %}
+      <a href="{{ url_for('.group_categories') }}" class="btn btn-default">{{ _('Manage Group Categories') }}</a>
+    {% endif %}
   </p>
   {% endif %}
-  <ul id="groups_list">
-    {% for group in groups %}
-    <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a>{% if group.is_member %} <span class="label label-default">{{ _('Member') }}</span>{% endif %}</li>
-    {% endfor %}
-  </ul>
+  {{ show_group_category_tree(group_category_tree) }}
   {% if not current_user.is_readonly %}
   <div class="modal fade" id="createGroupModal" tabindex="-1" role="dialog" aria-labelledby="createGroupModalLabel">
     <div class="modal-dialog" role="document">
@@ -48,7 +75,7 @@
             </div>
         </div>
 
-        <form method="post" action="{{ request.url }}">
+        <form method="post">
           {{ create_group_form.csrf_token() }}
           <div class="modal-body">
 
@@ -93,6 +120,21 @@
                 {% endif %}
               </div>
           </div>
+          {% if group_categories %}
+          <div class="form-group">
+            <label for="select-categories" class="control-label">{{ _("Categories") }}</label>
+            <select class="selectpicker form-control" multiple="multiple" id="select-categories" name="{{ create_group_form.categories.name }}" data-none-selected-text="{{ _('No category selected') }}">
+              {% for category in group_categories %}
+                <option value="{{ category.id }}">
+                  {%- for category_name in group_category_names[category.id] -%}
+                    {%- if not loop.first %} / {% endif -%}
+                    {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+                  {%- endfor -%}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
           <input type="hidden" id="input-translations" name="{{ create_group_form.translations.name }}" value="">
 
           </div>
@@ -109,15 +151,15 @@
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script>
   window.translations = [];
   window.languages = [

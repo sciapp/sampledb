@@ -12,11 +12,13 @@ User Guide
     user_guide/users.rst
     user_guide/groups.rst
     user_guide/projects.rst
+    user_guide/group_categories.rst
     user_guide/instruments.rst
     user_guide/actions.rst
     user_guide/schemas.rst
     user_guide/objects.rst
     user_guide/search.rst
+    user_guide/locations.rst
     user_guide/export.rst
     user_guide/citations.rst
 
@@ -39,7 +41,11 @@ Administrator Guide
     administrator_guide/administration_scripts.rst
     administrator_guide/jupyterhub_support.rst
     administrator_guide/dataverse_export.rst
+    administrator_guide/scicat_export.rst
     administrator_guide/languages.rst
+    administrator_guide/federation.rst
+    administrator_guide/monitoring_dashboard.rst
+    administrator_guide/deprecated_features.rst
 
 Developer Guide
 ---------------

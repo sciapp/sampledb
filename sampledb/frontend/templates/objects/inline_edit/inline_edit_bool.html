@@ -2,24 +2,12 @@
     {# Label #}
     <div class="col-md-3" style="padding-right: 0px">
             <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
-                {% if data is not none and "value" in data %}
-                    {% if data.value %}
-                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}"
-                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
-                    {% else %}
-                        <a href="{{ url_for('.objects', q=search_query_attribute + ' == False', advanced='on') }}"
-                           class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
-                    {% endif %}
-                {% else %}
-                    <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}"
-                       class="search-helper"><i
-                            class="fa fa-search" aria-hidden="true"></i></a></label>
-                {% endif %}
+              {% include "objects/search_link.html" %}
             </label>
     </div>
     {# View #}
     <div class="view-switch col-md-9" style="padding-left: 15px">
-        <div class="container alert-upload-container">
+        <div class="alert-upload-container">
             {% if data is not none and "value" in data and not (data.value is none) %}
                 {% if data.value %}
                     <i class="fa fa-check"></i>

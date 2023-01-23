@@ -17,8 +17,9 @@ from ... import db
 from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
-from ..objects_forms import ObjectPermissionsForm, ObjectUserPermissionsForm, ObjectGroupPermissionsForm, ObjectProjectPermissionsForm
+from ..permission_forms import handle_permission_forms, set_up_permissions_forms
 from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm
+from ..utils import get_groups_form_data
 
 from ... import logic
 from ...logic import user_log
@@ -26,14 +27,13 @@ from ...logic.authentication import add_authentication_method, remove_authentica
 from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
-from ...logic.object_permissions import Permissions, get_default_permissions_for_users, set_default_permissions_for_user, get_default_permissions_for_groups, set_default_permissions_for_group, get_default_permissions_for_projects, set_default_permissions_for_project, default_is_public, set_default_public
-from ...logic.projects import get_user_projects, get_project
-from ...logic.groups import get_user_groups, get_group
-from ...logic.errors import GroupDoesNotExistError, UserDoesNotExistError, ProjectDoesNotExistError
+from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
+from ...logic.projects import get_project
+from ...logic.groups import get_group
 from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
-from ...models import Authentication, AuthenticationType
+from ...models import Authentication, AuthenticationType, Permissions
 
 
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])
@@ -125,10 +125,6 @@ def change_preferences(user, user_id):
     created_api_token = None
     create_api_token_form = CreateAPITokenForm()
 
-    add_user_permissions_form = ObjectUserPermissionsForm()
-    add_group_permissions_form = ObjectGroupPermissionsForm()
-    add_project_permissions_form = ObjectProjectPermissionsForm()
-
     notification_mode_form = NotificationModeForm()
 
     other_settings_form = OtherSettingsForm()
@@ -140,30 +136,35 @@ def change_preferences(user, user_id):
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
     group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
     project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
-    public_permissions = Permissions.READ if default_is_public(creator_id=flask_login.current_user.id) else Permissions.NONE
-    user_permission_form_data = []
-    for user_id, permissions in user_permissions.items():
-        if user_id is None:
-            continue
-        user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
-    group_permission_form_data = []
-    for group_id, permissions in group_permissions.items():
-        if group_id is None:
-            continue
-        group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-    project_permission_form_data = []
-    for project_id, permissions in project_permissions.items():
-        if project_id is None:
-            continue
-        project_permission_form_data.append({'project_id': project_id, 'permissions': permissions.name.lower()})
-    default_permissions_form = ObjectPermissionsForm(public_permissions=public_permissions.name.lower(), user_permissions=user_permission_form_data, group_permissions=group_permission_form_data, project_permissions=project_permission_form_data)
+    all_user_permissions = get_default_permissions_for_all_users(creator_id=flask_login.current_user.id)
+    anonymous_user_permissions = get_default_permissions_for_anonymous_users(creator_id=flask_login.current_user.id)
 
-    users = get_users(exclude_hidden=True)
+    (
+        add_user_permissions_form,
+        add_group_permissions_form,
+        add_project_permissions_form,
+        default_permissions_form
+    ) = set_up_permissions_forms(
+        resource_permissions=logic.default_permissions.default_permissions,
+        resource_id=flask_login.current_user.id,
+        existing_all_user_permissions=all_user_permissions,
+        existing_anonymous_user_permissions=anonymous_user_permissions,
+        existing_user_permissions=user_permissions,
+        existing_group_permissions=group_permissions,
+        existing_project_permissions=project_permissions
+    )
+
+    users = get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True)
     users = [user for user in users if user.id not in user_permissions]
-    groups = get_user_groups(flask_login.current_user.id)
-    groups = [group for group in groups if group.id not in group_permissions]
-    projects = get_user_projects(flask_login.current_user.id)
-    projects = [project for project in projects if project.id not in project_permissions]
+    users.sort(key=lambda user: user.id)
+
+    show_groups_form, groups_treepicker_info = get_groups_form_data(
+        basic_group_filter=lambda group: group.id not in group_permissions
+    )
+
+    show_projects_form, projects_treepicker_info = get_groups_form_data(
+        project_group_filter=lambda group: group.id not in project_permissions
+    )
 
     if 'change' not in flask.request.form:
         if change_user_form.name.data is None or change_user_form.name.data == "":
@@ -205,14 +206,16 @@ def change_preferences(user, user_id):
                     your_locale=your_locale,
                     get_user=get_user,
                     users=users,
-                    groups=groups,
                     get_group=get_group,
-                    projects=projects,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
+                    show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
-                    public_permissions=public_permissions,
+                    all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
@@ -237,20 +240,24 @@ def change_preferences(user, user_id):
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
             if change_user_form.name.data != user.name:
-                u = user
-                u.name = str(change_user_form.name.data)
-                db.session.add(u)
-                db.session.commit()
+                logic.users.update_user(
+                    user.id,
+                    updating_user_id=user.id,
+                    name=str(change_user_form.name.data)
+                )
                 user_log.edit_user_preferences(user_id=user_id)
                 flask.flash(_("Successfully updated your user name."), 'success')
             if change_user_form.email.data != user.email:
                 # send confirm link
-                send_email_confirmation_email(
+                mail_send_status = send_email_confirmation_email(
                     email=change_user_form.email.data,
                     user_id=user.id,
                     salt='edit_profile'
-                )
-                flask.flash(_("Please see your email to confirm this change."), 'success')
+                )[0]
+                if mail_send_status == mail_send_status.FAILED:
+                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+                else:
+                    flask.flash(_("Please see your email to confirm this change."), 'success')
             if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation or change_user_form.role.data != user.role:
                 if change_user_form.orcid.data and change_user_form.orcid.data.strip():
                     orcid = change_user_form.orcid.data.strip()
@@ -266,18 +273,22 @@ def change_preferences(user, user_id):
                     role = None
                 extra_fields = {}
                 for extra_field_id in flask.current_app.config['EXTRA_USER_FIELDS']:
-                    extra_fields[extra_field_id] = flask.request.form.get('extra_field_' + str(extra_field_id)) or None
+                    extra_field_value = flask.request.form.get('extra_field_' + str(extra_field_id))
+                    if extra_field_value:
+                        extra_fields[extra_field_id] = extra_field_value
                 change_orcid = (user.orcid != orcid and (orcid is not None or user.orcid is not None))
                 change_affiliation = (user.affiliation != affiliation and (affiliation is not None or user.affiliation is not None))
                 change_role = (user.role != role and (role is not None or user.role is not None))
                 change_extra_fields = user.extra_fields != extra_fields
                 if change_orcid or change_affiliation or change_role or change_extra_fields:
-                    user.orcid = orcid
-                    user.affiliation = affiliation
-                    user.role = role
-                    user.extra_fields = extra_fields
-                    db.session.add(user)
-                    db.session.commit()
+                    logic.users.update_user(
+                        user.id,
+                        updating_user_id=user.id,
+                        orcid=orcid,
+                        affiliation=affiliation,
+                        role=role,
+                        extra_fields=extra_fields
+                    )
                     user_log.edit_user_preferences(user_id=user_id)
                     flask.flash(_("Successfully updated your user information."), 'success')
 
@@ -310,14 +321,16 @@ def change_preferences(user, user_id):
                     your_locale=your_locale,
                     get_user=get_user,
                     users=users,
-                    groups=groups,
                     get_group=get_group,
-                    projects=projects,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
+                    show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
-                    public_permissions=public_permissions,
+                    all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
@@ -369,14 +382,16 @@ def change_preferences(user, user_id):
                     your_locale=your_locale,
                     get_user=get_user,
                     users=users,
-                    groups=groups,
                     get_group=get_group,
-                    projects=projects,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
+                    show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
                     get_project=get_project,
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
-                    public_permissions=public_permissions,
+                    all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
@@ -419,14 +434,16 @@ def change_preferences(user, user_id):
                 your_locale=your_locale,
                 get_user=get_user,
                 users=users,
-                groups=groups,
                 get_group=get_group,
-                projects=projects,
+                show_groups_form=show_groups_form,
+                groups_treepicker_info=groups_treepicker_info,
+                show_projects_form=show_projects_form,
+                projects_treepicker_info=projects_treepicker_info,
                 get_project=get_project,
                 EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                 user_permissions=user_permissions,
                 group_permissions=group_permissions,
-                public_permissions=public_permissions,
+                all_user_permissions=all_user_permissions,
                 authentication_method_form=authentication_method_form,
                 authentication_form=authentication_form,
                 create_api_token_form=create_api_token_form,
@@ -438,59 +455,14 @@ def change_preferences(user, user_id):
                 has_active_method=any(method.active for method in two_factor_authentication_methods),
                 api_tokens=api_tokens
             )
-    if 'edit_user_permissions' in flask.request.form and default_permissions_form.validate_on_submit():
-        set_default_public(creator_id=flask_login.current_user.id, is_public=(default_permissions_form.public_permissions.data == 'read'))
-        for user_permissions_data in default_permissions_form.user_permissions.data:
-            user_id = user_permissions_data['user_id']
-            try:
-                get_user(user_id)
-            except UserDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(user_permissions_data['permissions'])
-            set_default_permissions_for_user(creator_id=flask_login.current_user.id, user_id=user_id, permissions=permissions)
-        for group_permissions_data in default_permissions_form.group_permissions.data:
-            group_id = group_permissions_data['group_id']
-            try:
-                get_group(group_id)
-            except GroupDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(group_permissions_data['permissions'])
-            set_default_permissions_for_group(creator_id=flask_login.current_user.id, group_id=group_id, permissions=permissions)
-        for project_permissions_data in default_permissions_form.project_permissions.data:
-            project_id = project_permissions_data['project_id']
-            try:
-                get_project(project_id)
-            except ProjectDoesNotExistError:
-                continue
-            permissions = Permissions.from_name(project_permissions_data['permissions'])
-            set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    if 'add_user_permissions' in flask.request.form and add_user_permissions_form.validate_on_submit():
-        user_id = add_user_permissions_form.user_id.data
-        permissions = Permissions.from_name(add_user_permissions_form.permissions.data)
-        default_user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert user_id not in default_user_permissions
-        set_default_permissions_for_user(creator_id=flask_login.current_user.id, user_id=user_id, permissions=permissions)
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    if 'add_group_permissions' in flask.request.form and add_group_permissions_form.validate_on_submit():
-        group_id = add_group_permissions_form.group_id.data
-        permissions = Permissions.from_name(add_group_permissions_form.permissions.data)
-        default_group_permissions = get_default_permissions_for_groups(creator_id=flask_login.current_user.id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert group_id not in default_group_permissions
-        set_default_permissions_for_group(creator_id=flask_login.current_user.id, group_id=group_id, permissions=permissions)
-        flask.flash(_("Successfully updated default permissions."), 'success')
-        return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    if 'add_project_permissions' in flask.request.form and add_project_permissions_form.validate_on_submit():
-        project_id = add_project_permissions_form.project_id.data
-        permissions = Permissions.from_name(add_project_permissions_form.permissions.data)
-        default_project_permissions = get_default_permissions_for_projects(creator_id=flask_login.current_user.id)
-        assert permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT]
-        assert project_id not in default_project_permissions
-        set_default_permissions_for_project(creator_id=flask_login.current_user.id, project_id=project_id, permissions=permissions)
+    if handle_permission_forms(
+        default_permissions,
+        flask_login.current_user.id,
+        add_user_permissions_form,
+        add_group_permissions_form,
+        add_project_permissions_form,
+        default_permissions_form
+    ):
         flask.flash(_("Successfully updated default permissions."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
@@ -523,12 +495,13 @@ def change_preferences(user, user_id):
         elif select_locale in logic.locale.get_allowed_language_codes():
             set_user_settings(flask_login.current_user.id, {'LOCALE': select_locale, 'AUTO_LC': False})
 
-        if select_timezone == 'auto_tz':
-            set_user_settings(flask_login.current_user.id, {'AUTO_TZ': True})
-        elif select_timezone in all_timezones:
-            set_user_settings(flask_login.current_user.id, {'AUTO_TZ': False, 'TIMEZONE': select_timezone})
-        else:
-            flask.flash("Invalid timezone", 'error')
+        if not flask.current_app.config['TIMEZONE']:
+            if select_timezone == 'auto_tz':
+                set_user_settings(flask_login.current_user.id, {'AUTO_TZ': True})
+            elif select_timezone in all_timezones:
+                set_user_settings(flask_login.current_user.id, {'AUTO_TZ': False, 'TIMEZONE': select_timezone})
+            else:
+                flask.flash("Invalid timezone", 'error')
 
         objects_per_page = flask.request.form.get('input-objects-per-page', '')
         if objects_per_page == 'all':
@@ -556,6 +529,15 @@ def change_preferences(user, user_id):
         else:
             show_object_title = None
         modified_settings['SHOW_OBJECT_TITLE'] = show_object_title
+
+        full_width_objects_table_text = flask.request.form.get('input-full-width-objects-table', 'default')
+        if full_width_objects_table_text == 'yes':
+            full_width_objects_table = True
+        elif full_width_objects_table_text == 'no':
+            full_width_objects_table = False
+        else:
+            full_width_objects_table = None
+        modified_settings['FULL_WIDTH_OBJECTS_TABLE'] = full_width_objects_table
 
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
@@ -588,15 +570,17 @@ def change_preferences(user, user_id):
         Permissions=Permissions,
         users=users,
         get_user=get_user,
-        groups=groups,
         get_group=get_group,
-        projects=projects,
+        show_groups_form=show_groups_form,
+        groups_treepicker_info=groups_treepicker_info,
+        show_projects_form=show_projects_form,
+        projects_treepicker_info=projects_treepicker_info,
         get_project=get_project,
         EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
         user_permissions=user_permissions,
         group_permissions=group_permissions,
         project_permissions=project_permissions,
-        public_permissions=public_permissions,
+        all_user_permissions=all_user_permissions,
         authentication_method_form=authentication_method_form,
         authentication_form=authentication_form,
         create_api_token_form=create_api_token_form,
@@ -632,9 +616,11 @@ def confirm_email():
         else:
             return flask.abort(400)
         if salt == 'edit_profile':
-            user = get_user(user_id)
-            user.email = email
-            db.session.add(user)
+            logic.users.update_user(
+                user_id,
+                updating_user_id=user_id,
+                email=email
+            )
         elif salt == 'add_login':
             auth = Authentication.query.filter(Authentication.user_id == user_id,
                                                Authentication.login['login'].astext == email).first()
@@ -660,9 +646,15 @@ def email_for_resetting_password():
             if '@' not in email:
                 has_error = True
             else:
-                send_recovery_email(email)
-                return flask.render_template('recovery_email_send.html',
-                                             email=email, has_error=has_error)
+                mail_send_status = send_recovery_email(email)[0]
+                if mail_send_status == mail_send_status.FAILED:
+                    flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+                else:
+                    return flask.render_template(
+                        'recovery_email_send.html',
+                        email=email,
+                        has_error=has_error
+                    )
         return flask.render_template('reset_password_by_email.html',
                                      request_password_reset_form=request_password_reset_form,
                                      has_error=has_error)

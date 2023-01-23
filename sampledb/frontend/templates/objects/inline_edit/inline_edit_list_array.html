@@ -6,6 +6,7 @@
             <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
         </label>
     </div>
+    <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
     {# Content #}
     {% set is_required = False %}
     {% set minItems = schema.get('minItems', 0) %}
@@ -14,6 +15,11 @@
         {% set numItems = (data | length) %}
     {% else %}
         {% set numItems = 0 %}
+    {% endif %}
+    {% if search_query_attribute %}
+        {% set base_search_query_attribute = search_query_attribute %}
+    {% else %}
+        {% set base_search_query_attribute = "" %}
     {% endif %}
     {% set itemName = (schema['items'].title | get_translated_text) %}
     <div class="col-md-9 array-style-list">
@@ -27,6 +33,7 @@
                     {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
                     {% set data = item %}
                     {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+                    {% set hidden = False %}
                     <li>{% include "objects/inline_edit/inline_edit_any.html" %}</li>
                 {% endfor %}
             </ul>

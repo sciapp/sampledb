@@ -6,13 +6,26 @@ with minimum permissions.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 7
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
+    # Skip migration by condition
+    table_exists = db.session.execute(db.text("""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_name = 'public_objects'
+    """)).fetchall()
+    if not table_exists:
+        # the view as defined below depends on the removed public_objects table
+        # see migration 97: replace_user_object_permissions_by_all_view.py
+        return False
+
     # Perform migration
-    db.engine.execute("""
+    db.session.execute(db.text("""
     CREATE OR REPLACE VIEW user_object_permissions_by_all
     AS
         SELECT
@@ -62,5 +75,5 @@ def run(db):
         FROM user_group_memberships AS user_group_memberships
         JOIN group_project_permissions ON group_project_permissions.group_id = user_group_memberships.group_id
         JOIN project_object_permissions AS project_object_permissions ON group_project_permissions.project_id = project_object_permissions.project_id
-    """)
+    """))
     return True

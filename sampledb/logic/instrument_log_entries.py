@@ -11,7 +11,7 @@ Files can be attached to these log entries, e.g. to supply the instrument scient
 with control files or photographs of an experiment setup.
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
 
@@ -22,27 +22,15 @@ from ..models import instrument_log_entries
 from ..models.instrument_log_entries import InstrumentLogCategoryTheme
 
 
-class InstrumentLogEntry(
-    collections.namedtuple(
-        'InstrumentLogEntry',
-        ['id', 'instrument_id', 'user_id', 'versions']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogEntry:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogEntry.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            instrument_id: int,
-            user_id: int,
-            versions: typing.Tuple['InstrumentLogEntryVersion'] = ()
-    ):
-        self = super(InstrumentLogEntry, cls).__new__(
-            cls, id, instrument_id, user_id, versions
-        )
-        return self
+    id: int
+    instrument_id: int
+    user_id: int
+    versions: typing.Sequence['InstrumentLogEntryVersion'] = ()
 
     @classmethod
     def from_database(cls, instrument_log_entry: instrument_log_entries.InstrumentLogEntry) -> 'InstrumentLogEntry':
@@ -57,7 +45,7 @@ class InstrumentLogEntry(
         )
 
     @property
-    def author(self):
+    def author(self) -> users.User:
         return users.get_user(self.user_id)
 
     @property
@@ -69,30 +57,18 @@ class InstrumentLogEntry(
         return get_instrument_log_object_attachments(self.id)
 
 
-class InstrumentLogEntryVersion(
-    collections.namedtuple(
-        'InstrumentLogEntryVersion',
-        ['log_entry_id', 'version_id', 'content', 'utc_datetime', 'categories', 'content_is_markdown', 'event_utc_datetime']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogEntryVersion:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogEntryVersion.
     """
-
-    def __new__(
-            cls,
-            log_entry_id: int,
-            version_id: int,
-            content: str,
-            utc_datetime: datetime.datetime,
-            categories: typing.List['InstrumentLogCategory'],
-            content_is_markdown: bool = False,
-            event_utc_datetime: typing.Optional[datetime.datetime] = None
-    ):
-        self = super(InstrumentLogEntryVersion, cls).__new__(
-            cls, log_entry_id, version_id, content, utc_datetime, categories, content_is_markdown, event_utc_datetime
-        )
-        return self
+    log_entry_id: int
+    version_id: int
+    content: str
+    utc_datetime: datetime.datetime
+    categories: typing.List['InstrumentLogCategory']
+    content_is_markdown: bool = False
+    event_utc_datetime: typing.Optional[datetime.datetime] = None
 
     @classmethod
     def from_database(cls, instrument_log_entry_version: instrument_log_entries.InstrumentLogEntryVersion) -> 'InstrumentLogEntryVersion':
@@ -103,35 +79,23 @@ class InstrumentLogEntryVersion(
             utc_datetime=instrument_log_entry_version.utc_datetime,
             categories=[
                 InstrumentLogCategory.from_database(category)
-                for category in sorted(instrument_log_entry_version.categories, key=lambda category: category.theme.value)
+                for category in sorted(instrument_log_entry_version.categories, key=lambda category: typing.cast(int, category.theme.value))
             ],
             content_is_markdown=instrument_log_entry_version.content_is_markdown,
             event_utc_datetime=instrument_log_entry_version.event_utc_datetime
         )
 
 
-class InstrumentLogFileAttachment(
-    collections.namedtuple(
-        'InstrumentLogFileAttachment',
-        ['id', 'log_entry_id', 'file_name', 'content', 'is_hidden']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogFileAttachment:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogFileAttachment.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            log_entry_id: int,
-            file_name: str,
-            content: bytes,
-            is_hidden: bool = False
-    ):
-        self = super(InstrumentLogFileAttachment, cls).__new__(
-            cls, id, log_entry_id, file_name, content, is_hidden
-        )
-        return self
+    id: int
+    log_entry_id: int
+    file_name: str
+    content: bytes
+    is_hidden: bool = False
 
     @classmethod
     def from_database(
@@ -147,27 +111,15 @@ class InstrumentLogFileAttachment(
         )
 
 
-class InstrumentLogObjectAttachment(
-    collections.namedtuple(
-        'InstrumentLogObjectAttachment',
-        ['id', 'log_entry_id', 'object_id', 'is_hidden']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogObjectAttachment:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogObjectAttachment.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            log_entry_id: int,
-            object_id: int,
-            is_hidden: bool = False
-    ):
-        self = super(InstrumentLogObjectAttachment, cls).__new__(
-            cls, id, log_entry_id, object_id, is_hidden
-        )
-        return self
+    id: int
+    log_entry_id: int
+    object_id: int
+    is_hidden: bool = False
 
     @classmethod
     def from_database(
@@ -182,27 +134,15 @@ class InstrumentLogObjectAttachment(
         )
 
 
-class InstrumentLogCategory(
-    collections.namedtuple(
-        'InstrumentLogCategory',
-        ['id', 'instrument_id', 'title', 'theme']
-    )
-):
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogCategory:
     """
     This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogCategory.
     """
-
-    def __new__(
-            cls,
-            id: int,
-            instrument_id: int,
-            title: str,
-            theme: instrument_log_entries.InstrumentLogCategoryTheme
-    ):
-        self = super(InstrumentLogCategory, cls).__new__(
-            cls, id, instrument_id, title, theme
-        )
-        return self
+    id: int
+    instrument_id: int
+    title: str
+    theme: instrument_log_entries.InstrumentLogCategoryTheme
 
     @classmethod
     def from_database(
@@ -229,7 +169,7 @@ def get_instrument_log_categories(instrument_id: int) -> typing.List[InstrumentL
     categories = instrument_log_entries.InstrumentLogCategory.query.filter_by(instrument_id=instrument_id).all()
     if not categories:
         # ensure that the instrument exists
-        instruments.get_instrument(instrument_id=instrument_id)
+        instruments.check_instrument_exists(instrument_id=instrument_id)
         return []
     return [
         InstrumentLogCategory.from_database(category)
@@ -321,7 +261,7 @@ def create_instrument_log_entry(
     # ensure that the instrument exists
     instrument = instruments.get_instrument(instrument_id=instrument_id)
     # ensure that the user exists
-    users.get_user(user_id)
+    users.check_user_exists(user_id)
     categories = []
     for category_id in set(category_ids):
         category = instrument_log_entries.InstrumentLogCategory.query.filter_by(
@@ -458,7 +398,7 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
     log_entries.sort(key=lambda e: e.versions[0].utc_datetime)
     if not log_entries:
         # ensure that the instrument exists
-        instruments.get_instrument(instrument_id)
+        instruments.check_instrument_exists(instrument_id)
     return [
         InstrumentLogEntry.from_database(log_entry)
         for log_entry in log_entries
@@ -549,7 +489,7 @@ def create_instrument_log_object_attachment(
     # ensure that the instrument log entry exists
     log_entry = get_instrument_log_entry(instrument_log_entry_id)
     # ensure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     attachment = instrument_log_entries.InstrumentLogObjectAttachment(
         log_entry_id=log_entry.id,
         object_id=object_id

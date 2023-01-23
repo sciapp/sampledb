@@ -26,12 +26,8 @@ def test_update_instrument(capsys):
     assert len(instruments.get_instruments()) == 1
     instrument = instruments.get_instruments()[0]
     assert len(instrument.responsible_users) == 0
-    instrument = instrument_translations.get_instrument_with_translation_in_language(
-        instrument_id=instrument.id,
-        language_id=languages.Language.ENGLISH
-    )
-    assert instrument.translation.name == name
-    assert instrument.translation.description == ''
+    assert instrument.name['en'] == name
+    assert 'en' not in instrument.description
 
 
 def test_update_instrument_missing_arguments(capsys):
@@ -53,12 +49,8 @@ def test_update_instrument_missing_arguments(capsys):
 
     assert len(instruments.get_instruments()) == 1
     instrument = instruments.get_instruments()[0]
-    instrument = instrument_translations.get_instrument_with_translation_in_language(
-        instrument_id=instrument.id,
-        language_id=languages.Language.ENGLISH
-    )
-    assert instrument.translation.name == name
-    assert instrument.translation.description == 'Example Instrument Description'
+    assert instrument.name['en'] == name
+    assert instrument.description['en'] == 'Example Instrument Description'
 
 
 def test_update_missing_instrument(capsys):
@@ -92,9 +84,5 @@ def test_update_instrument_invalid_instrument_id(capsys):
 
     assert len(instruments.get_instruments()) == 1
     instrument = instruments.get_instruments()[0]
-    instrument = instrument_translations.get_instrument_with_translation_in_language(
-        instrument_id=instrument.id,
-        language_id=languages.Language.ENGLISH
-    )
-    assert instrument.translation.name == name
-    assert instrument.translation.description == 'Example Instrument Description'
+    assert instrument.name['en'] == name
+    assert instrument.description['en'] == 'Example Instrument Description'

@@ -16,11 +16,16 @@
       {% set tmp_style = schema['style'] %}
       {% set schema = schema['items'] %}
       {% set z = schema.update({'parent_style': tmp_style}) %}
+      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set data = item %}
       {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
+      {% set hidden = False %}
       <li>{% include "objects/view/any.html" %}</li>
     {% endfor %}
     </ul>
+    {% if data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> _('Note:') {{ data.export_edit_note }}</p>
+    {% endif %}
   {% else %}
     &mdash;
   {% endif %}

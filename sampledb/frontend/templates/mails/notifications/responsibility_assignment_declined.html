@@ -1,0 +1,6 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+  {% set object_location_assignment = get_object_location_assignment(data['object_location_assignment_id']) %}
+  <p><a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id, _external=True) }}" style="color:#337ab7;">{{ get_user(object_location_assignment.responsible_user_id).name }}</a> has declined reponsibility for <a href="{{ url_for('frontend.object', object_id=object_location_assignment.object_id, _external=True) }}" style="color:#337ab7;">object #{{ object_location_assignment.object_id }}.</a></p>
+{% endblock %}

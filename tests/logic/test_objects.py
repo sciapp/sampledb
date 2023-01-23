@@ -7,11 +7,14 @@ import datetime
 
 import pytest
 import sqlalchemy.dialects.postgresql as postgresql
+from flask_babel import _
 
 import sampledb
 import sampledb.logic
 import sampledb.models
 from sampledb import db
+from sampledb.logic.components import add_component
+from sampledb.logic.objects import create_object, insert_fed_object_version
 from sampledb.models import User, UserType
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -50,6 +53,41 @@ def action():
         }
     )
     return action
+
+
+@pytest.fixture
+def object(user, action):
+    object = create_object(user_id=user.id, action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
+    return object
+
+
+@pytest.fixture
+def empty_fed_object(component):
+    object = insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=0,
+        component_id=component.id,
+        action_id=None,
+        user_id=None,
+        data=None,
+        schema=None,
+        utc_datetime=None
+    )
+
+    return object
+
+
+UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+
+@pytest.fixture
+def component():
+    component = add_component(address=None, uuid=UUID_1, name='Example component', description='')
+    return component
 
 
 def test_create_object(user, action) -> None:
@@ -424,3 +462,108 @@ def test_measurement_referencing_sample(flask_server, user) -> None:
     assert len(object_log_entries) == 4
     object_log_entries = sampledb.logic.object_log.get_object_log_entries(object_id=sample.id, user_id=user.id)
     assert len(object_log_entries) == 3
+
+
+def test_update_object_version(user, action, user2, component) -> None:
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object1 = sampledb.logic.objects.insert_fed_object_version(fed_object_id=1, fed_version_id=0, component_id=component.id, action_id=action.id, data=data, user_id=user.id, schema=None, utc_datetime=None)
+    assert [object1] == sampledb.logic.objects.get_objects()
+    assert object1 == sampledb.logic.objects.get_object(object1.object_id)
+    data['name']['text'] = 'Modified Example'
+    sampledb.logic.objects.update_object(object1.object_id, data=data, user_id=user2.id)
+
+    data['name']['text'] = 'Modified Version 0'
+    sampledb.logic.objects.update_object_version(object1.object_id, object1.version_id, data=data, action_id=None, user_id=None, utc_datetime=None)
+    object2 = sampledb.logic.objects.get_object(object1.object_id, object1.version_id)
+    assert object2.data == data
+    assert object2.action_id is None
+    assert object2.user_id is None
+    assert object2.utc_datetime is None
+
+
+def test_insert_old_fed_object_version(user, action, component):
+    data1 = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    object1 = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=action.id,
+        data=data1,
+        user_id=user.id,
+        schema=None,
+        utc_datetime=None
+    )
+    assert [object1] == sampledb.logic.objects.get_objects()
+    assert object1 == sampledb.logic.objects.get_object(object1.object_id)
+    data2 = {
+        'name': {
+            '_type': 'text',
+            'text': 'Previous Version'
+        }
+    }
+    object2 = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=0,
+        component_id=component.id,
+        action_id=action.id,
+        data=data2,
+        user_id=user.id,
+        schema=None,
+        utc_datetime=None
+    )
+    assert object1 == sampledb.logic.objects.get_object(object1.object_id)
+    versions = sampledb.logic.objects.get_object_versions(object1.id)
+    assert len(versions) == 2
+    assert object2 == versions[0]
+    assert object1 == versions[1]
+
+
+def test_name_property(empty_fed_object, object):
+    assert object.name == object.data['name']['text']
+    assert empty_fed_object.name == ''
+
+
+def test_get_current_version_id(object):
+    assert sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id) == object.version_id
+
+    sampledb.logic.objects.update_object(
+        object_id=object.object_id,
+        data=object.data,
+        user_id=object.user_id,
+        schema=object.schema,
+    )
+    assert sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id) == object.version_id + 1
+
+    with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
+        sampledb.logic.objects.get_current_object_version_id(object_id=object.object_id + 1000)
+
+
+def test_check_object_exists(object):
+    sampledb.logic.objects.check_object_exists(object.id)
+    with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
+        sampledb.logic.objects.check_object_exists(object.id + 1)
+
+
+def test_check_object_version_exists(object):
+    sampledb.logic.objects.check_object_version_exists(object.id, 0)
+    with pytest.raises(sampledb.logic.errors.ObjectDoesNotExistError):
+        sampledb.logic.objects.check_object_version_exists(object.id + 1, 0)
+    with pytest.raises(sampledb.logic.errors.ObjectVersionDoesNotExistError):
+        sampledb.logic.objects.check_object_version_exists(object.id, 1)
+    sampledb.logic.objects.update_object(
+        object_id=object.id,
+        data=object.data,
+        user_id=object.user_id
+    )
+    sampledb.logic.objects.check_object_version_exists(object.id, 0)
+    sampledb.logic.objects.check_object_version_exists(object.id, 1)

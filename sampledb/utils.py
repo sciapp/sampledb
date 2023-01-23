@@ -19,7 +19,7 @@ from .models import Permissions, migrations
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def ansi_color(text: str, color: int):
+def ansi_color(text: str, color: int) -> str:
     """
     Add ANSI color codes to text.
 
@@ -33,24 +33,43 @@ def ansi_color(text: str, color: int):
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
-        user_id_callable: typing.Callable[[], int] = lambda: flask_login.current_user.id,
-        on_unauthorized: typing.Callable[[int], None] = lambda object_id: flask.abort(403)
-):
-    def decorator(func, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized):
-        @auth_extension.login_required
+        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: typing.cast(int, flask_login.current_user.get_id()) if flask_login.current_user else None,
+        on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = lambda object_id: flask.abort(403),
+        may_enable_anonymous_users: bool = True
+) -> typing.Callable[[typing.Any], typing.Any]:
+    def decorator(
+            func: typing.Callable[[typing.Any], typing.Any],
+            user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
+            on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = on_unauthorized
+    ) -> typing.Callable[[typing.Any], typing.Any]:
         @functools.wraps(func)
-        def wrapper(*args, user_id_callable=user_id_callable, on_unauthorized=on_unauthorized, **kwargs):
+        def wrapper(
+                *args: typing.Any,
+                user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
+                on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = on_unauthorized,
+                **kwargs: typing.Any
+        ) -> typing.Any:
             assert 'object_id' in kwargs
             object_id = kwargs['object_id']
             version_id = kwargs.get('version_id')
             try:
-                logic.objects.get_object(object_id, version_id)
+                if version_id is None:
+                    logic.objects.check_object_exists(object_id)
+                else:
+                    logic.objects.check_object_version_exists(object_id, version_id)
             except logic.errors.ObjectDoesNotExistError:
                 return flask.abort(404)
             except logic.errors.ObjectVersionDoesNotExistError:
                 return flask.abort(404)
-            if not (logic.object_permissions.object_is_public(object_id) and required_object_permissions in Permissions.READ):
-                user_id = user_id_callable()
+            user_id = user_id_callable()
+            if user_id is None:
+                if may_enable_anonymous_users and flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+                    anonymous_permissions = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+                else:
+                    anonymous_permissions = Permissions.NONE
+                if required_object_permissions not in anonymous_permissions:
+                    return auth_extension.login_required(lambda: on_unauthorized(object_id))()
+            elif required_object_permissions not in logic.object_permissions.get_object_permissions_for_all_users(object_id):
                 user = logic.users.get_user(user_id)
                 if user.is_readonly and required_object_permissions not in Permissions.READ:
                     return on_unauthorized(object_id)
@@ -58,11 +77,13 @@ def object_permissions_required(
                 if required_object_permissions not in user_object_permissions:
                     return on_unauthorized(object_id)
             return func(*args, **kwargs)
+        if not may_enable_anonymous_users:
+            wrapper = auth_extension.login_required(wrapper)
         return wrapper
     return decorator
 
 
-def load_environment_configuration(env_prefix):
+def load_environment_configuration(env_prefix: str) -> typing.Dict[str, typing.Any]:
     """
     Loads configuration data from environment variables with a given prefix.
     If the prefixed environment variable B64_JSON_ENV exists, its content
@@ -84,7 +105,7 @@ def load_environment_configuration(env_prefix):
     return config
 
 
-def generate_secret_key(num_bits):
+def generate_secret_key(num_bits: int) -> str:
     """
     Generates a secure, random key for the application.
 
@@ -97,19 +118,25 @@ def generate_secret_key(num_bits):
     return base64_key
 
 
-def empty_database(engine, recreate=False, only_delete=True):
-    metadata = sqlalchemy.MetaData(bind=engine)
-    # delete views, as SQLAlchemy cannot reflect them
-    engine.execute("DROP VIEW IF EXISTS user_object_permissions_by_all")
+def empty_database(
+        engine: sqlalchemy.engine.Engine,
+        recreate: bool = False,
+        only_delete: bool = True
+) -> None:
+    metadata = sqlalchemy.MetaData()
+    with engine.begin() as connection:
+        # delete views, as SQLAlchemy cannot reflect them
+        connection.execute(db.text("DROP VIEW IF EXISTS user_object_permissions_by_all"))
     # delete tables, etc
-    metadata.reflect()
+    metadata.reflect(bind=engine)
     if only_delete:
-        for table in reversed(metadata.sorted_tables):
-            engine.execute(table.delete())
-        # migration_index needs to be dropped so migration #0 will run
-        engine.execute("DROP TABLE IF EXISTS migration_index")
+        with engine.begin() as connection:
+            for table in reversed(metadata.sorted_tables):
+                connection.execute(table.delete())
+            # migration_index needs to be dropped so migration #0 will run
+            connection.execute(db.text("DROP TABLE IF EXISTS migration_index"))
     else:
-        metadata.drop_all()
+        metadata.drop_all(bind=engine)
     if recreate:
         # recreate the tables
         db.metadata.create_all(bind=engine)

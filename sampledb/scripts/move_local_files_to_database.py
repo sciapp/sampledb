@@ -6,11 +6,12 @@ unchanged. The file directory will not be changed by this script.
 
 Usage: python -m sampledb move_local_files_to_database
 """
+import typing
 
 from sampledb import db, models, logic, create_app
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if arguments:
         print(__doc__)
         exit(1)
@@ -31,8 +32,8 @@ def main(arguments):
                     db.session.add(file)
                     db.session.commit()
                     num_moved_files += 1
-                except Exception:
-                    print(f"Error: Failed to move file #{file.id} for object #{file.object_id}")
+                except Exception as e:
+                    print(f"Error: Failed to move file #{file.id} for object #{file.object_id}", str(e))
     if num_moved_files > 0:
         print(f"Success: Moved {num_moved_files} of {num_local_files} files with local storage.")
     elif num_local_files == 0:

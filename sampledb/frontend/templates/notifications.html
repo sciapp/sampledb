@@ -38,11 +38,18 @@
       <tbody>
         {% for notification in notifications %}
           <tr {% if not notification.was_read %}class="unread-notification"{% endif %}>
-            <td>{{ notification.utc_datetime | babel_format_date }}</td>
+            <td class="nowrap">
+              {{ notification.utc_datetime | babel_format_date }}
+            </td>
             <td>
               {% if notification.type == NotificationType.ASSIGNED_AS_RESPONSIBLE_USER %}
                 {{ _('<a href="%(assigner_url)s">%(assigner_name)s</a> assigned you as responsible user for <a href="%(object_url)s">object #%(object_id)s</a>.', assigner_url=url_for('.user_profile', user_id=notification.data['assigner_id']), assigner_name=get_user(notification.data['assigner_id']).name, object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
-                {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed(notification.data['object_location_assignment_id']) %}<a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">{{ _('Confirm') }}</a>{% endif %}
+                {% if 'confirmation_url' in notification.data and not object_location_assignment_is_confirmed_or_declined(notification.data['object_location_assignment_id']) %}
+                  <a class="btn btn-xs btn-primary" href="{{ notification.data['confirmation_url'] }}">{{ _('Confirm') }}</a>
+                  {% if 'declination_url' in notification.data %}
+                  <a class="btn btn-xs btn-danger" href="{{ notification.data['declination_url'] }}">{{ _('Decline') }}</a>
+                  {% endif %}
+                {% endif %}
               {% elif notification.type == NotificationType.OTHER %}
                 {{ notification.data['message'] }}
               {% elif notification.type == NotificationType.INVITED_TO_GROUP %}
@@ -91,12 +98,38 @@
                 {% endif %}
               {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_CREATED %}
                 {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> has created a new <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument_with_translation_in_language(instrument_log_entry.instrument_id, get_user_language(current_user).id).translation.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> has created a new <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument(instrument_log_entry.instrument_id).name | get_translated_text(default=_('Unnamed Instrument'))) }}
               {% elif notification.type == NotificationType.REFERENCED_BY_OBJECT_METADATA %}
                 {{ _('You were referenced in the metadata for <a href="%(object_url)s">object #%(object_id)s</a>.', object_url=url_for('.object', object_id=notification.data['object_id']), object_id=notification.data['object_id']) }}
               {% elif notification.type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED %}
                 {% set instrument_log_entry = get_instrument_log_entry(notification.data['instrument_log_entry_id']) %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> has edited a <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument_with_translation_in_language(instrument_log_entry.instrument_id, get_user_language(current_user).id).translation.name) }}
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> has edited a <a href="%(log_entry_url)s">log entry</a> for the instrument <a href="%(instrument_url)s">%(instrument_name)s</a>.', user_url=url_for('.user_profile', user_id=instrument_log_entry.user_id), user_name=get_user(instrument_log_entry.user_id).name, log_entry_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id, _anchor='log_entry-{}'.format(instrument_log_entry.id)), instrument_url=url_for('.instrument', instrument_id=instrument_log_entry.instrument_id), instrument_name=get_instrument(instrument_log_entry.instrument_id).name | get_translated_text(default=_('Unnamed Instrument'))) }}
+              {% elif notification.type == NotificationType.RESPONSIBILITY_ASSIGNMENT_DECLINED %}
+                {% set object_location_assignment = get_object_location_assignment(notification.data['object_location_assignment_id']) %}
+                {% if object_location_assignment %}
+                  {{ _('<a href="%(user_url)s">%(user_name)s</a> has declined responsibility for <a href="%(object_url)s">object #%(object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), user_name=get_user(object_location_assignment.responsible_user_id).name, object_url=url_for('.object', object_id=object_location_assignment.object_id), object_id=object_location_assignment.object_id) }}
+                {% else %}
+                  {{ _('An unknown object responsibility assignment has been declined.') }}
+                {% endif %}
+              {% elif notification.type == NotificationType.REMOTE_OBJECT_IMPORT_FAILED %}
+                {% set component = get_component(notification.data.component_id) %}
+                {% if component %}
+                  {{ _('Importing <a href="%(object_url)s">object #%(object_id)s</a> into <a href="%(component_url)s">%(component_name)s</a> has failed.', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id, component_name=component.get_name(), component_url=url_for('.component', component_id=component.id)) }}
+                {% else %}
+                  {{ _('Importing <a href="%(object_url)s">object #%(object_id)s</a> into another database has failed.', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id) }}
+                {% endif %}
+              {% elif notification.type == NotificationType.REMOTE_OBJECT_IMPORT_NOTES %}
+                {% set component = get_component(notification.data.component_id) %}
+                {% if component %}
+                  {{ _('<a href="%(object_url)s">Object #%(object_id)s</a> has been imported into <a href="%(component_url)s">%(component_name)s</a> with the following notes:', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id, component_name=component.get_name(), component_url=url_for('.component', component_id=component.id)) }}
+                {% else %}
+                  {{ _('<a href="%(object_url)s">Object #%(object_id)s</a> has been imported into another database with the following notes:', object_url=url_for('.object', object_id=notification.data.object_id, _anchor='other_databases'), object_id=notification.data.object_id) }}
+                {% endif %}
+                <ul>
+                {% for note in notification.data.import_notes %}
+                  <li>{{ note }}</li>
+                {% endfor %}
+                </ul>
               {% else %}
                 {{ _('Unknown notification type.') }}
               {% endif %}

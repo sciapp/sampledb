@@ -4,16 +4,22 @@ import flask
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, User
+from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod
 from . import errors, api_log
 
 
+# number of rounds for generating new salts for hashing passwords with crypt
+# 12 is the default in the Python bcrypt module, this variable allows
+# overriding this in tests
+NUM_BCYRPT_ROUNDS = 12
+
+
 def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return str(bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=NUM_BCYRPT_ROUNDS)).decode('utf-8'))
 
 
 def _validate_password_hash(password: str, password_hash: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
+    return bool(bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8')))
 
 
 def _validate_password_authentication(authentication_method: Authentication, password: str) -> bool:
@@ -74,6 +80,7 @@ def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirme
 
     :param user_id: the ID of an existing user
     :param ldap_uid: the LDAP uid to use during authentication
+    :param password: the LDAP password
     :param confirmed: whether the authentication method has been confirmed already
     """
     ldap_uid = ldap_uid.lower().strip()
@@ -120,7 +127,7 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     db.session.commit()
 
 
-def login(login: str, password: str) -> typing.Optional[User]:
+def login(login: str, password: str) -> typing.Optional[logic.users.User]:
     """
     Authenticate a user and create an LDAP based user if necessary.
 
@@ -147,10 +154,10 @@ def login(login: str, password: str) -> typing.Optional[User]:
             continue
         if authentication_method.type == AuthenticationType.LDAP and is_ldap_configured():
             if validate_user(login, password):
-                return authentication_method.user
+                return logic.users.User.from_database(authentication_method.user)
         elif authentication_method.type in {AuthenticationType.EMAIL, AuthenticationType.OTHER}:
             if _validate_password_authentication(authentication_method, password):
-                return authentication_method.user
+                return logic.users.User.from_database(authentication_method.user)
 
     # no matching authentication method in db
     if not authentication_methods and '@' not in login and is_ldap_configured():
@@ -170,7 +177,7 @@ def login(login: str, password: str) -> typing.Optional[User]:
     return None
 
 
-def login_via_api_token(api_token: str) -> typing.Optional[User]:
+def login_via_api_token(api_token: str) -> typing.Optional[logic.users.User]:
     """
     Authenticate a user using an API token.
 
@@ -189,8 +196,8 @@ def login_via_api_token(api_token: str) -> typing.Optional[User]:
         if not authentication_method.confirmed:
             continue
         if _validate_password_authentication(authentication_method, password):
-            api_log.create_log_entry(authentication_method.id, getattr(api_log.HTTPMethod, flask.request.method, api_log.HTTPMethod.OTHER), flask.request.path)
-            return authentication_method.user
+            api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
+            return logic.users.User.from_database(authentication_method.user)
     return None
 
 
@@ -307,7 +314,7 @@ def get_two_factor_authentication_methods(
     :param user_id: the ID of an existing user
     :return: a list containing all methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()  # type: ignore
 
 
 def get_active_two_factor_authentication_method(
@@ -319,7 +326,7 @@ def get_active_two_factor_authentication_method(
     :param user_id: the ID of an existing user
     :return: the active method
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()  # type: ignore
 
 
 def activate_two_factor_authentication_method(

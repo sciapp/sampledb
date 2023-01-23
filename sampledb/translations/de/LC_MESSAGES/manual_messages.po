@@ -4,6 +4,9 @@ msgstr ".zip-Archiv"
 msgid ".tar.gz Archive"
 msgstr ".tar.gz-Archiv"
 
+msgid ".eln File"
+msgstr ".eln-Datei"
+
 msgid "read permissions"
 msgstr "Lese-Berechtigungen"
 
@@ -27,3 +30,9 @@ msgstr "Gelb"
 
 msgid "Red"
 msgstr "Rot"
+
+msgid "API Token is not valid."
+msgstr "API Token ist nicht gültig."
+
+msgid "The Dataverse does not have the required metadata blocks."
+msgstr "Das Dataverse hat nicht die erforderlichen Metadatenblöcke."

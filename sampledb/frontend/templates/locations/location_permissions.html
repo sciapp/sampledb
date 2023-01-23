@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Location Permissions') }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+  <h2>{{ _('Location Permissions') }}</h2>
+  {% if config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] %}
+    <div class="alert alert-info">
+        <p><strong>{{ _('Note:') }}</strong> {{ _('Only administrators can manage locations.') }}</p>
+    </div>
+  {% endif %}
+  {% if user_may_edit or not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] %}
+  {% set form_url = url_for('.location_permissions', location_id=location.id) %}
+  {% set permissions_form = form %}
+  {% set fixed_user_permissions = {}  %}
+  {% set show_administrators = True %}
+  {% set show_instrument_scientists = False %}
+  {% if location.type.enable_responsible_users or location.responsible_users %}
+    {% set show_responsible_users = True %}
+  {% endif %}
+  {% set show_all_users = True %}
+  {% set read_permissions_description = _('Permission to view location information.') %}
+  {% set write_permissions_description = _('Permission to edit locations and create sub-locations for them. Includes Read permissions.') %}
+  {% set grant_permissions_description = _('Permission to grant permissions to other users. Includes Write permissions.') %}
+  {% set possible_all_user_permissions = [Permissions.NONE, Permissions.READ, Permissions.WRITE] %}
+  {% include "permissions/permissions.html" %}
+  {% if user_may_edit %}
+    <div class="container">
+     <a href="{{ url_for('.location', location_id=location.id) }}" class="btn btn-default col-md-offset-9 col-md-3" style="margin-top: 1em; margin-bottom: 1em;">{{ _('Cancel') }}</a>
+    </div>
+  {% endif %}
+  {% endif %}
+{% endblock %}

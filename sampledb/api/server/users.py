@@ -2,17 +2,18 @@
 """
 RESTful API for SampleDB
 """
+import typing
 
 import flask
-from flask_restful import Resource
 
 from .authentication import multi_auth
+from ..utils import Resource, ResponseData
 from ...logic import errors, users
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def user_to_json(user: users.User):
+def user_to_json(user: users.User) -> typing.Dict[str, typing.Any]:
     user_json = {
         'user_id': user.id,
         'name': user.name,
@@ -27,7 +28,7 @@ def user_to_json(user: users.User):
 
 class User(Resource):
     @multi_auth.login_required
-    def get(self, user_id: int):
+    def get(self, user_id: int) -> ResponseData:
         try:
             user = users.get_user(user_id=user_id)
         except errors.UserDoesNotExistError:
@@ -39,11 +40,11 @@ class User(Resource):
 
 class CurrentUser(Resource):
     @multi_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         return user_to_json(flask.g.user)
 
 
 class Users(Resource):
     @multi_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         return [user_to_json(user) for user in users.get_users()]

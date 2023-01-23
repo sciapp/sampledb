@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{{ action_type.translation.object_name }} #{{ object_id }}: {% endif %}{{ data['name']['text'] | get_translated_text }} — {{ service_name }}{% endblock %}
+{% block title %}{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}{% if name %}: {% endif %}{% endif %}{{ name | get_translated_text(default='—') }} — {{ service_name }}{% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -8,40 +8,75 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-treeview.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
+
+{% set id_prefix = "object_" %}
 
 {% block content %}
 
   {% if is_archived %}
   <div class="alert alert-info alert-dismissible" role="alert">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-    <strong>{{ _('Note') }}:</strong> {{ _('This is an archived version of the object information. For the current information, <a href="%(latest_version_url)s">click here</a>.', latest_version_url=url_for('frontend.object', object_id=object_id))}}
+    <strong>{{ _('Note') }}:</strong>
+    {% if version_id == current_version_id %}
+      {{ _('This page contains an archived version of the current object information.') }}
+    {% else %}
+      {{ _('This page contains an archived version of previous object information.') }}
+    {% endif %}
+    {{ _('For always up-to-date information, <a href="%(latest_version_url)s">click here</a>.', latest_version_url=url_for('frontend.object', object_id=object_id)) }}
   </div>
   {% endif %}
 
   <script>
   window.plotly_charts = [];
   </script>
-  <h1>{% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{{ action_type.translation.object_name }} #{{ object_id }}: {% endif %}{{ data.name.text | get_translated_text }}</h1>
-
+  <h1>
+    {% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}{% if name %}: {% endif %}{% endif %}{{ name | get_translated_text(default='—') }}
+    {{ import_information_symbol(object) }}
+  </h1>
   <h2>{{ _('Information') }}</h2>
+  {% if not config['DISABLE_INSTRUMENTS'] %}
   <div class="row" style="padding-right:0.75em">
     <label class="col-md-3" style="text-align: right">{{ _('Instrument') }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-    <div class="col-md-9">{% if instrument is not none %}<a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.translation.name }}</a>{% else %}&mdash;{% endif %}</div>
+    <div class="col-md-9">
+      {% if instrument is not none %}
+        <a href="{{ url_for('frontend.instrument', instrument_id=instrument.id) }}">{{ instrument.name | get_translated_text }}</a>
+        {{ import_information_symbol(instrument) }}
+      {% else %}&mdash;{% endif %}
+    </div>
   </div>
+  {% endif %}
   <div class="row" style="padding-right:0.75em">
-    <label class="col-md-3" style="text-align: right">{{ _('Action') }} <a href="{{ url_for('.objects', action=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a></label>
-    <div class="col-md-9"><a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.translation.name }}</a></div>
+    <label class="col-md-3" style="text-align: right">{{ _('Action') }}
+      {% if action is not none %}
+        <a href="{{ url_for('.objects', action_ids=action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
+      {% endif %}
+    </label>
+    <div class="col-md-9">
+      {% if action is not none %}
+        <a href="{{ url_for('frontend.action', action_id=action.id) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+        {{ import_information_symbol(action) }}
+      {% else %}&mdash;{% endif %}
+    </div>
   </div>
-    {% block includes %}
-        {# counter for plotly_chart_plots #}
-        {% set plot_counter = namespace(value=0) %}
-        {% include "objects/view/any.html" %}
-    {% endblock %}
-    <div class="object-button-bar">
+  {% block includes %}
+      {# counter for plotly_chart_plots #}
+      {% set plot_counter = namespace(value=0) %}
+      {% if data is not none and schema is not none %}
+          {% include "objects/view/any.html" %}
+      {% endif %}
+  {% endblock %}
+  {% if data is none or schema is none %}
+    <div class="row" style="padding-right:0.75em">
+      <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+      <div class="col-md-9">
+        <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+      </div>
+    </div>
+  {% endif %}
+  <div class="object-button-bar">
     {% if languages | length > 1 %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _("View object information in a different language.") }}">
@@ -74,49 +109,53 @@
           <a href="{{ url_for('.object_permissions', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Modify who can read the information for this object, write it or grant permissions to other users.') }}"><i class="fa fa-lock" aria-hidden="true"></i> {{ _('Edit Permissions') }}</a>
         </div>
       {% endif %}
-      {% if project %}
+      {% if project and current_user.is_authenticated%}
         <div class="form-group">
-          <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.translation.object_name) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
+          <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.object_name | get_translated_text(default=_('Object'))) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
       {% endif %}
-      {% if user_may_use_as_template and not action.type.disable_create_objects %}
+      {% if user_may_use_as_template and action.type_id is not none and not action.type.disable_create_objects %}
         <div class="form-group">
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
       {% endif %}
-      {% if action.type.id == action.type.SAMPLE_CREATION and not config['DISABLE_USE_IN_MEASUREMENT'] %}
-        <div class="form-group">
-          <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new measurement using this sample.') }}">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(measurement_type_name)s', measurement_type_name=get_action_type_with_translation_in_language(action.type.MEASUREMENT, get_user_language(current_user).id).translation.name) }} <span class="caret"></span></button>
-            <ul class="dropdown-menu dropdown-menu-right">
-              <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
-              {% if favorite_measurement_actions %}
-              {% for action in favorite_measurement_actions %}
-              <li>
-                <a href="{{ url_for('.new_object', action_id=action.id, sample_id=object_id) }}">
-                {% if action.user is not none %}
-                  {{ action.user.name }} /
+      {% if action is not none and usable_in_action_types and not current_user.is_readonly and current_user.is_authenticated %}
+        {% for usable_in_action_type in usable_in_action_types %}
+          <div class="form-group">
+            <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new %(new_object_name_singular)s using this %(current_object_name_singular)s.', new_object_name_singular=usable_in_action_type.object_name|get_translated_text, current_object_name_singular=action.type.object_name|get_translated_text) }}">
+              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bar-chart" aria-hidden="true"></i> {{ _('Use in %(action_type_name)s', action_type_name=usable_in_action_type.name | get_translated_text(default=_('Unnamed Action Type'))) }} <span class="caret"></span></button>
+              <ul class="dropdown-menu dropdown-menu-right">
+                <li><strong style="padding: 3px 20px">{{ _('Favorites') }}:</strong></li>
+                {% if favorite_actions_by_action_type_id %}
+                  {% for action in favorite_actions_by_action_type_id[usable_in_action_type.id] %}
+                  {% if not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not current_user.is_admin) %}
+                  <li>
+                    <a href="{{ url_for('.new_object', action_id=action.id, object_id=object_id) }}">
+                    {% if action.user_id is not none %}
+                      {% set action_owner = get_user(action.user_id) %}
+                      {{ action_owner.get_name() }} /
+                    {% endif %}
+                    {% if action.instrument is not none %}
+                      {{ action.instrument.name | get_translated_text  }}
+                      &mdash;
+                    {% endif %}
+                      {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
+                    </a>
+                  </li>
+                  {% endif %}
+                  {% endfor %}
+                {% else %}
+                <li><span style="padding: 3px 20px">&mdash;</span></li>
                 {% endif %}
-                {% if action.instrument is not none %}
-                  {% set temp = namespace(instrument=get_instrument_with_translation_in_language(action.instrument_id, get_user_language(current_user).id)) %}
-                  {{ temp.instrument.translation.name }}
-                  &mdash;
-                {% endif %}
-                  {{ action.translation.name }}
-                </a>
-              </li>
-              {% endfor %}
-              {% else %}
-              <li><span style="padding: 3px 20px">&mdash;</span></li>
-              {% endif %}
-              <li role="separator" class="divider"></li>
-              <li><a href="{{ url_for('.actions', t='measurements', sample_id=object_id) }}">{{ _('See other %(measurement_type_name)s Actions...', measurement_type_name=measurement_type_name) }}</a></li>
-            </ul>
+                <li role="separator" class="divider"></li>
+                <li><a href="{{ url_for('.actions', t=usable_in_action_type.id, object_id=object_id, can_create_objects='') }}">{{ _('See other %(action_type_name)s Actions...', action_type_name=usable_in_action_type.name|get_translated_text(default="Unnamed Action Type")) }}</a></li>
+              </ul>
+            </div>
           </div>
-        </div>
+        {% endfor %}
       {% endif %}
     {% endif %}
-    {% if action.type.enable_labels %}
+    {% if action is not none and action.type.enable_labels %}
       <div class="form-group">
         <button type="button" class="btn btn-primary" id="button-show-object-label-modal" data-toggle="tooltip" data-placement="top" title="{{ _('Generate a PDF containing labels for this object.') }}"><i class="fa fa-tag" aria-hidden="true"></i> {{ _('Generate Labels') }}</button>
       </div>
@@ -127,16 +166,37 @@
     <div class="form-group">
       <div data-toggle="tooltip" data-placement="top" title="{{ _('Export object information to an archive or PDF file.') }}"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dataExportModal"><i class="fa fa-file-text-o" aria-hidden="true"></i> {{ _('Export Data') }}</button></div>
     </div>
+    {% if show_scicat_export %}
+    <div class="form-group">
+      <a href="{{ url_for('.scicat_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information to %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}">
+        <img src="{{ fingerprinted_static("sampledb/img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
+      </a>
+    </div>
+    {% elif scicat_url %}
+      <div class="form-group">
+        <a href="{{ scicat_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View object information on %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}">
+          <img src="{{ fingerprinted_static("sampledb/img/scicat-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/> {{ _('View on %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}
+        </a>
+      </div>
+    {% endif %}
     {% if show_dataverse_export %}
       <div class="form-group">
-        <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
-          <img src="{{ url_for("static", filename="img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
-        </a>
+        {% if dataverse_export_task_created %}
+          <div class="d-inline-block" tabindex="0" data-toggle="tooltip" data-placement="top" title="{{ _('The object is currently being exported.') }}">
+            <a href="#" class="btn btn-primary disabled" aria-disabled="true">
+              <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+            </a>
+          </div>
+        {% else %}
+          <a href="{{ url_for('.dataverse_export', object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Export object information and files to %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
+            <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('Export to %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+          </a>
+        {% endif %}
       </div>
     {% elif dataverse_url %}
       <div class="form-group">
         <a href="{{ dataverse_url }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View object information on %(dataverse_name)s.', dataverse_name=config['DATAVERSE_NAME']) }}">
-          <img src="{{ url_for("static", filename="img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('View on %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
+          <img src="{{ fingerprinted_static("sampledb/img/dataverse-40.png") }}" style="height:1.3em; margin-top:-0.2em;" alt=""/>{{ _('View on %(dataverse_name)s', dataverse_name=config['DATAVERSE_NAME']) }}
         </a>
       </div>
     {% endif %}
@@ -144,7 +204,7 @@
       <div class="form-group">
         <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _('Create a Jupyter Notebook in %(jupyterhub_name)s to analyze this object.', jupyterhub_name=jupyterhub_name) }}">
           <button class="btn btn-primary dropdown-toggle" type="button" id="notebookDropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <img src="{{ url_for("static", filename="img/jupyter-40.png") }}" style="height:1.3em; margin-top:-0.2em; margin-right: -0.2em;" alt=""/> {{ _('Create Notebook') }} <span class="caret"></span>
+            <img src="{{ fingerprinted_static("sampledb/img/jupyter-40.png") }}" style="height:1.3em; margin-top:-0.2em; margin-right: -0.2em;" alt=""/> {{ _('Create Notebook') }} <span class="caret"></span>
           </button>
           <ul class="dropdown-menu" aria-labelledby="notebookDropdownMenuButton">
             {% for notebook_template in notebook_templates %}
@@ -160,7 +220,7 @@
       </div>
     {% endif %}
   {% endif %}
-    {% if restore_form is not none %}
+    {% if restore_form is not none and not component %}
     <div class="form-group">
       <form class="text-center" action="{{ url_for('.restore_object_version', object_id=object_id, version_id=version_id) }}" method="post">
         {{ restore_form.csrf_token() }}
@@ -171,7 +231,7 @@
   </div>
 
   {% if not is_archived %}
-    {% if action.type.enable_files %}
+    {% if action is not none and action.type.enable_files %}
       <h2>{{ _('Files') }}</h2>
       {% if files %}
       <table class="table" id="file_table">
@@ -189,7 +249,14 @@
               " style="display: none">
                 <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
               </button>
-              <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download files as zip archive')}}"><i class="fa fa-download"></i></a>
+              <div class="form-group" style="display: inline-flex">
+                {% if show_download_service %}
+                  <iframe id="download_frame" style="display:none"></iframe>
+                  <div data-toggle="tooltip" data-placement="top" title="{{ _('Download files as zip archive') }}"><a class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="modal" data-target="#dataFilesDownloadModal"><i class="fa fa-download"></i></a></div>
+                {% else %}
+                  <a href="{{ url_for('.object_files', object_id=object_id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download files as zip archive')}}"><i class="fa fa-download"></i></a>
+                {% endif %}
+              </div>
             </th>
           </tr>
         </thead>
@@ -216,17 +283,27 @@
               <td>
                 <span class="pull-right" style="display:flex;">
                   <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="{{ _('View information') }}"><i class="fa fa-info"></i></button>
-                  {% if file.storage == 'local' or file.storage == 'database' %}
-                  {% if file | has_preview %}
+                  {% with file_component = get_component_or_none(file.component_id) %}
+                  {% if file.storage == 'local' or file.storage == 'database' or file.storage == 'federation' %}
+                  {% if file | has_preview and (file.storage != 'federation' or (file_component and file_component.address and file_component.import_token_available)) %}
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('View preview') }}"><i class="fa fa-search"></i></a>
                   {% else %}
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden"><i class="fa fa-search"></i></a>
                   {% endif %}
-                  <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Download file') }}"><i class="fa fa-download"></i></a>
-                  {% elif file.storage == 'url' %}
-                  <span data-placement="top" data-trigger="manual" title="Copied successfully"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
-                  <a href="{{ file.data['url'] }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                  {% if file.storage != 'federation' or (file_component and file_component.address and file_component.import_token_available) %}
+                  <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{%- if file.storage == 'federation' -%}{{ _('Download file from other database') }}{%- else -%}{{ _('Download file') }}{%- endif -%}"><i class="fa {% if file.storage == 'federation' -%}fa-cloud-download{%- else -%}fa-download{%- endif -%}"></i></a>
+                  {% else %}
+                  <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top"><i class="fa fa-download"></i></a>
                   {% endif %}
+                  {% elif file.storage == 'url' %}
+                  <span data-placement="top" data-trigger="manual" title="{{ _('Copied successfully') }}"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
+                    {% if file.data['url'].split(':')[0].lower() in ['http', 'https'] %}
+                      <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                    {% else %}
+                      <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                    {% endif %}
+                  {% endif %}
+                  {% endwith %}
                 </span>
               </td>
             </tr>
@@ -245,7 +322,7 @@
         </tbody>
       </table>
       {% else %}
-        <p>{{ _('There are no files for this %(object_type)s.', object_type=action_type.translation.object_name.lower()) }}</p>
+        <p>{{ _('There are no files for this %(object_type)s.', object_type=action_type.object_name | get_translated_text(default=_('Object'))) }}</p>
       {% endif %}
 
       {% for file in files %}
@@ -297,27 +374,38 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Uploaded by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
                   </div>
                   {% elif file.storage == 'url' %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('URL') }}:</label></div>
-                    <div class="col-sm-9">{{ file.data.url }}</div>
+                    <div class="col-sm-9">
+                      <span class="file-info-view-mode">{{ file.url }}</span><span class="file-info-edit-mode"><input type="text" name="{{ file_information_form.url.name }}" class="input-file-info-url has-error" style="width:100%" value="{{ file.url }}"></span>
+                      <div class="help-block file-url-error" id="file-url-error-{{ file.id }}"><span class="text-danger"></span></div>
+                    </div>
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Linked by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
                   </div>
                   {% else %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Posted by') }}:</label></div>
-                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.name }}</a></div>
+                    <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
                   </div>
                   {% endif %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Description') }}:</label></div>
                     <div class="col-sm-9"><span class="file-info-view-mode">{% if file.description %}<pre style="font-family: inherit">{{ file.description }}</pre>{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><textarea name="{{ file_information_form.description.name }}" class="input-file-info-description" style="width:100%;resize: vertical;">{% if file.description %}{{ file.description }}{% endif %}</textarea></span></div>
                   </div>
+                  {% if file.fed_id is not none %}
+                  <div class="row">
+                    <div class="col-sm-3 text-right"><label>{{ _('Other Databases') }}:</label></div>
+                    {% with file_component = get_component(file.component_id) %}
+                    <div class="col-sm-9">{{ _('This file was created as file #%(fed_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_id=file.fed_id, component_url=url_for('.component', component_id=file.component_id), component_name=file_component.get_name()) }}</div>
+                    {% endwith %}
+                  </div>
+                  {% endif %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('History') }}:</label></div>
                     <div class="col-sm-9"><a role="button" data-toggle="collapse" href="#fileInfoModalCollapse-{{ file.id }}" aria-expanded="false" aria-controls="fileInfoModalCollapse-{{ file.id }}">{{ _('Show/Hide') }}</a></div>
@@ -332,19 +420,24 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td>{{ file.utc_datetime | babel_format_datetime }}</td>
-                          <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.name) }}</td>
+                          <td><span data-utc-datetime="{{ file.utc_datetime | generic_format_datetime }}">{{ file.utc_datetime | babel_format_datetime }}</span></td>
+                          <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.get_name()) }}</td>
                         </tr>
                         {% for log_entry in file.log_entries %}
                           {% if log_entry.type == FileLogEntryType.EDIT_TITLE %}
                             <tr>
-                              <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
-                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.name) }}<br />{{ log_entry.data['title'] }}</td>
+                              <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }}<br />{{ log_entry.data['title'] }}</td>
+                            </tr>
+                          {% elif log_entry.type == FileLogEntryType.EDIT_URL %}
+                            <tr>
+                              <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the URL to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['url'] }}</pre></td>
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
                             <tr>
-                              <td>{{ log_entry.utc_datetime | babel_format_datetime }}</td>
-                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.name) }} <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
+                              <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+                              <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
                             </tr>
                           {% else %}
                             <tr>{{ log_entry.type }}</tr>
@@ -419,7 +512,7 @@
                       </li>
                     </ul>
                   </div>
-                  <button type="submit" class="btn btn-primary disabled" style="width:11em;" id="button-upload-files"><i class="fa fa-upload fa-fw"></i> {{ _('Upload') }}</button>
+                  <button type="submit" class="btn btn-primary disabled" style="width:11em;" id="button-upload-files" disabled="disabled"><i class="fa fa-upload fa-fw"></i> {{ _('Upload') }}</button>
                 </span>
               </div>
             </form>
@@ -443,7 +536,7 @@
 
         <h5 id="anchor-post-link">{{ _('Post Link')}}</h5>
         <div class="form-group" style="padding-right:0.75em">
-          <form class="form {% if external_link_invalid %}has-error{% endif %}" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}">
+          <form class="form {% if external_link_error in external_link_errors %}has-error{% endif %}" method="post" action="{{ url_for('.post_object_files', object_id=object_id) }}">
             {{ external_link_form.csrf_token }}
             <div class="input-group">
               <span class="input-group-addon"><i class="fa fa-link"></i></span>
@@ -452,8 +545,8 @@
                 <button type="submit" class="btn btn-primary" style="width:11em;"><i class="fa fa-link fa-fw"></i> {{ _('Submit') }}</button>
               </span>
             </div>
-            {% if external_link_invalid %}
-              <div class="help-block">{{ _('Please enter a valid URL.')}}</div>
+            {% if external_link_error in external_link_errors %}
+              <div class="help-block">{{ external_link_errors[external_link_error] }}</div>
             {% endif %}
           </form>
         </div>
@@ -461,7 +554,7 @@
     {% endif %}
   {% endif %}
 
-  {% if action.type.enable_labels %}
+  {% if action is not none and action.type.enable_labels %}
     <div class="modal fade" id="objectLabelModal" tabindex="-1" role="dialog" aria-labelledby="objectLabelModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -474,7 +567,7 @@
             <div class="radio">
               <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" onchange="updateLabelsForm()"/>{{ _('Mixed label formats')}}</label>
             </div>
-            <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>', contact_email=config['CONTACT_EMAIL']) }}.</span>
+            <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>.', contact_email=config['CONTACT_EMAIL']) }}.</span>
             <div class="form-group">
               <label for="input-label-mixed-paper-format" class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
               <div class="col-sm-8">
@@ -603,7 +696,7 @@
     </div>
   {% endif %}
 
-  {% if not is_archived and action.type.enable_locations %}
+  {% if not is_archived and action is not none and action.type.enable_locations %}
     <h2 id="locations">{{ _("Locations") }}</h2>
     {% set allowed_language_ids = [] %}
     {% for language in all_languages %}
@@ -621,23 +714,45 @@
       <tbody>
       {% for object_location_assignment in object_location_assignments | reverse %}
         <tr>
-          <td>{{ object_location_assignment.utc_datetime | babel_format_datetime}}</td>
-          <td>{% if object_location_assignment.location_id is not none %}<a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">{{ get_location(object_location_assignment.location_id).name | get_translated_text }} (#{{ object_location_assignment.location_id }})</a>{% else %}&mdash;{% endif %}</td>
+          <td><span data-utc-datetime="{{ object_location_assignment.utc_datetime | generic_format_datetime }}">{{ object_location_assignment.utc_datetime | babel_format_datetime }}</span></td>
+          <td>
+            {% if object_location_assignment.location_id is not none %}
+              {% with location = get_location(object_location_assignment.location_id) %}
+                <a href="{{ url_for('frontend.location', location_id=object_location_assignment.location_id) }}">
+                  {{ location | get_location_name(True) }}
+                </a>
+                {{ import_information_symbol(location) }}
+              {% endwith %}
+            {% else %}&mdash;{% endif %}
+          </td>
           <td>
             {% if object_location_assignment.responsible_user_id is not none %}
-            <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ get_user(object_location_assignment.responsible_user_id).name }}</a>
-              {% if object_location_assignment.confirmed %}
-                <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.') }}">&check;</span>
-              {% elif object_location_assignment.responsible_user_id == current_user.id %}
-                <a class="btn btn-xs btn-primary" href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">{{ _('Confirm') }}</a>
-              {% else %}
-                <span class="label label-warning label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has not confirmed this responsibility assignment yet.') }}">?</span>
-              {% endif %}
+              {% with user = get_user(object_location_assignment.responsible_user_id) %}
+                <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.responsible_user_id) }}">{{ user.get_name() }}</a>
+                {{ import_information_symbol(user) }}
+                {% if object_location_assignment.confirmed %}
+                  <span class="label label-primary label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has confirmed this responsibility assignment.')}}">&check;</span>
+                {% elif object_location_assignment.declined %}
+                  <span class="label label-danger label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has declined this responsibility assignment.')}}">&cross;</span>
+                {% elif object_location_assignment.responsible_user_id == current_user.id %}
+                  <a class="btn btn-xs btn-primary" href="{{ build_object_location_assignment_confirmation_url(object_location_assignment.id) }}">{{ _('Confirm') }}</a>
+                  <a class="btn btn-xs btn-danger" href="{{ build_object_location_assignment_declination_url(object_location_assignment.id) }}">{{ _('Decline') }}</a>
+                {% else %}
+                  <span class="label label-warning label-responsibility-assigment" data-toggle="tooltip" data-placement="top" title="{{ _('The user has not confirmed this responsibility assignment yet.') }}">?</span>
+                {% endif %}
+              {% endwith %}
             {% else %}
               &mdash;
             {% endif %}
           </td>
-          <td><a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">{{ get_user(object_location_assignment.user_id).name }}</a></td>
+          {% with user = get_user(object_location_assignment.user_id) %}
+            <td>
+              <a href="{{ url_for('frontend.user_profile', user_id=object_location_assignment.user_id) }}">
+                {{ user.get_name() }}
+              </a>
+              {{ import_information_symbol(user) }}
+            </td>
+          {% endwith %}
           <td><pre class="location-description">{{ object_location_assignment.description | get_translated_text or ('&mdash;' | safe) }}</pre></td>
         </tr>
       {% endfor %}
@@ -652,17 +767,19 @@
        <span class="help-block" style="color: red" id="object_location-help-block"></span>
         <div class="form-group {% if location_form.location.name in location_form.errors %}has-error{% endif %}">
           <label for="input-location" class="control-label">{{ _("Location") }}</label>
-          <select class="selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
-            {% for location_id, location_name in location_form.location.choices %}
-            <option value="{{ location_id }}" {% if location_form.location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name }}{% endif %}</option>
+          <select class="treepicker selectpicker form-control" id="input-location" name="{{ location_form.location.name }}" data-live-search="true">
+            {% for location_info in location_form.location.all_choices %}
+            <option {% if location_info.is_fed %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_info.id }}" {% if location_form.location.data == (location_info.id_string) %}selected="selected"{% endif %} {% if location_info.is_disabled %}disabled="disabled"{% endif %} data-content="<span class='{% if location_info.has_subtree %}option-group-{{ location_info.id }}-header{% endif %} closed {% for id in location_info.id_path[:-1] %}option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left:{{ 1.5 * (location_info.id_path | length - 1) }}em'>{% if location_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'>{{ location_info.name_prefix }}</span>{{ location_info.name }}</span>">
+              {{ location_info.full_name }}
+            </option>
             {% endfor %}
           </select>
         </div>
         <div class="form-group {% if location_form.responsible_user.name in location_form.errors %}has-error{% endif %}">
           <label for="input-responsible-user" class="control-label">{{ _('Responsible User') }}</label>
           <select class="selectpicker form-control" id="input-responsible-user" name="{{ location_form.responsible_user.name }}" data-live-search="true">
-            {% for user_id, user_name in location_form.responsible_user.choices %}
-            <option value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{% if user_id == '-1' %}&mdash;{% else %}{{ user_name }}{% endif %}</option>
+            {% for user_id, user in location_form.responsible_user.choices %}
+            <option {% if user_is_fed[user_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ user_id }}" {% if location_form.responsible_user.data == user_id %}selected="selected"{% endif %}>{{ user_reference(user, text=true, nolink=true) }}</option>
             {% endfor %}
           </select>
         </div>
@@ -696,7 +813,7 @@
     {% endif %}
   {% endif %}
 
-  {% if not is_archived and action.type.enable_publications %}
+  {% if not is_archived and action is not none and action.type.enable_publications %}
     <h2 id="publications">{{ _('Publications') }}</h2>
     {% if object_publications %}
       <table class="table">
@@ -753,13 +870,21 @@
   {% endif %}
 
   {% if not is_archived %}
-    {% if action.type.enable_comments %}
+    {% if action is not none and action.type.enable_comments %}
       <h2>{{ _('Comments') }}</h2>
       {% if comments %}
         {% for comment in comments %}
           <div class="well" id="comment-{{ comment.id }}">
             <pre class="comment">{{ comment.content }}</pre>
-            <div class="text-right">&mdash; <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.name }}</a>, {{ comment.utc_datetime | babel_format_datetime }}</div>
+            <div class="text-right">
+              &mdash;
+              {% if comment.author is none %}
+                <span class="text-muted fst-italic">{{ _('Unknown User') }}</span>
+              {% else %}
+                <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.get_name() }}</a>
+                {{ import_information_symbol(comment.author) }}
+              {% endif %}, <span data-utc-datetime="{{ comment.utc_datetime | generic_format_datetime }}">{{ comment.utc_datetime | babel_format_datetime }}</span>
+            </div>
           </div>
         {% endfor %}
       {% else %}
@@ -779,7 +904,7 @@
     {% endif %}
   {% endif %}
 
-  {% if not is_archived and action.type.enable_activity_log %}
+  {% if not is_archived and action is not none and action.type.enable_activity_log %}
     {% if object_log_entries %}
       <h2>{{ _('Activity Log')}}</h2>
       <table class="table" id="activity_log">
@@ -793,6 +918,8 @@
                 <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> {{ _('Measurements') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> {{ _('Comments') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> {{ _('Files') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;locations&quot;);' /> {{ _('Locations') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;references&quot;);' /> {{ _('References') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> {{ _('Other') }}</label>
                 <script>
                   window.update_activity_log_filter_states();
@@ -806,13 +933,13 @@
         <tbody>
         {% for object_log_entry in object_log_entries %}
           <tr data-activity-log-type="{{ object_log_entry.type.name.lower() }}">
-            <td style="white-space: nowrap;width: 1%;">{{ object_log_entry.utc_datetime | babel_format_datetime }}</td>
+            <td style="white-space: nowrap;width: 1%;"><span data-utc-datetime="{{ object_log_entry.utc_datetime | generic_format_datetime }}">{{ object_log_entry.utc_datetime | babel_format_datetime }}</span></td>
             {% if object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT %}
               <td>
               {% if 'previous_object_id' in object_log_entry.data %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
+                {{ _('%(user_ref)s created the object using data from <a href="%(previous_object_url)s">object #%(previous_object_id)s</a>.', user_ref=user_reference(object_log_entry.user), previous_object_url=url_for('.object', object_id=object_log_entry.data['previous_object_id']), previous_object_id=object_log_entry.data['previous_object_id']) }}
               {% else %}
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s created the object.', user_ref=user_reference(object_log_entry.user)) }}
               {% endif %}
               </td>
               <td class="text-right">
@@ -820,14 +947,14 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.CREATE_BATCH %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> created the object as part of a <a href="%(batch_url)s">batch</a>.', user_url=object_log_entry.user.id, user_name=object_log_entry.user.name, batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
+                {{ _('%(user_ref)s created the object as part of a <a href="%(batch_url)s">batch</a>.', user_ref=user_reference(object_log_entry.user), batch_url=url_for('.objects', ids=(object_log_entry.data['object_ids'] | tojson)[1:-1])) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object_version', object_id=object_id, version_id=0) }}">{{ _('View') }}</a>
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> edited the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s edited the object.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
@@ -836,7 +963,7 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
+                {{ _('%(user_ref)s restored object <a href="%(version_url)s">version #%(version_id)s</a>.', user_ref=user_reference(object_log_entry.user), version_url=url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['restored_version_id']), version_id=object_log_entry.data['restored_version_id']) }}
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
@@ -846,14 +973,14 @@
             {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT %}
               {% if object_log_entry.data['measurement_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].data.name.text | get_translated_text) }}
+                {{ _('%(user_ref)s used the object in <a href="%(measurement_url)s">%(measurement_name)s (#%(measurement_id)s)</a>.', user_ref=user_reference(object_log_entry.user), measurement_url=url_for('.object', object_id=object_log_entry.data['measurement_id']), measurement_id=object_log_entry.data['measurement_id'], measurement_name=object_log_entry.data['measurement'].name | get_translated_text) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['measurement_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object in a measurement.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s used the object in a measurement.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
@@ -861,24 +988,24 @@
             {% elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION %}
               {% if object_log_entry.data['sample_id'] %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].data.name.text | get_translated_text) }}
+                {{ _('%(user_ref)s used the object to create <a href="%(sample_url)s">%(sample_name)s (#%(sample_id)s)</a>.', user_ref=user_reference(object_log_entry.user), sample_url=url_for('.object', object_id=object_log_entry.data['sample_id']), sample_id=object_log_entry.data['sample_id'], sample_name=object_log_entry.data['sample'].name | get_translated_text) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['sample_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> used the object to create a sample.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s used the object to create a sample.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
               {% endif %}
             {% elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a comment for this object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s posted a comment for this object.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
-              {% if action.type.enable_comments %}
+              {% if action is not none and action.type.enable_comments %}
                 {% if 'comment_id' in object_log_entry.data %}
                   <a href="#comment-{{ object_log_entry.data['comment_id'] }}">{{ _('View') }}</a>
                 {% endif %}
@@ -889,25 +1016,25 @@
                 {% for file in files %}
                   {% if file.id == object_log_entry.data['file_id'] %}
                     {% if file.storage == 'local' or file.storage == 'database' %}
-                      {% if action.type.enable_files %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
+                      {% if action is not none and action.type.enable_files %}
+                        {{ _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
                       {% else %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> uploaded %(file_name)s.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_name=file.original_file_name) }}
+                        {{ _('%(user_ref)s uploaded %(file_name)s.', user_ref=user_reference(object_log_entry.user), file_name=file.original_file_name) }}
                       {% endif %}
                     {% elif file.storage == 'url' %}
-                      {{ _('<a href="%(user_url)s">%(user_name)s</a> linked <a href="%(link_url)s">%(link_url)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, link_url=file.data.url) }}
+                      {{ _('%(user_ref)s linked <a href="%(link_url)s">%(link_url)s</a>.', user_ref=user_reference(object_log_entry.user), link_url=file.url) }}
                     {% else %}
-                      {% if action.type.enable_files %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
+                      {% if action is not none and action.type.enable_files %}
+                        {{ _('%(user_ref)s posted <a href="%(file_url)s">file #%(file_id)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_id=object_log_entry.data['file_id']) }}
                       {% else %}
-                        {{ _('<a href="%(user_url)s">%(user_name)s</a> posted a file.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                        {{ _('%(user_ref)s posted a file.', user_ref=user_reference(object_log_entry.user)) }}
                       {% endif %}
                     {% endif %}
                   {% endif %}
                 {% endfor %}
               </td>
               <td class="text-right">
-              {% if action.type.enable_files %}
+              {% if action is not none and action.type.enable_files %}
                 {% if 'file_id' in object_log_entry.data %}
                   <a href="#file-{{ object_log_entry.data['file_id'] }}">{{ _('View') }}</a>
                 {% endif %}
@@ -917,46 +1044,46 @@
               {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
               {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                  {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
               {% elif object_location_assignment.location is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=get_location(object_location_assignment.location_id).name | get_translated_text) }}
+                {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) }}
               </td>
               {% elif object_location_assignment.responsible_user_id is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
+                {{ _('%(user_ref)s assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
               {% endif %}
               <td class="text-right">
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
+                {{ _('%(user_ref)s linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_ref=user_reference(object_log_entry.user), url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) }}
               </td>
               <td class="text-right">
-              {% if action.type.enable_publications %}
+              {% if action is not none and action.type.enable_publications %}
                 <a href="#publications">{{ _('View') }}</a>
               {% endif %}
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA %}
               {% if object_log_entry.data['object_id'] %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].data['name']['text'] | get_translated_text, object_id=object_log_entry.data['object_id']) }}
+                {{ _('%(user_ref)s referenced the object in the metadata of <a href="%(object_url)s">%(object_name)s (#%(object_id)s)</a>.', user_ref=user_reference(object_log_entry.user), object_url=url_for('.object', object_id=object_log_entry.data['object_id']), object_name=object_log_entry.data['object'].name | get_translated_text, object_id=object_log_entry.data['object_id']) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.object', object_id=object_log_entry.data['object_id']) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> referenced the object in the metadata of another object.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                  {{ _('%(user_ref)s referenced the object in the metadata of another object.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
               {% endif %}
             {% elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> exported this object to a Dataverse.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s exported this object to a Dataverse.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               {% if object_log_entry.data.get('dataverse_url') %}
@@ -967,14 +1094,14 @@
               {% with project = get_project(object_log_entry.data.project_id) %}
               {% if project is not none %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                {{ _('%(user_ref)s linked this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_ref=user_reference(object_log_entry.user), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
               </td>
               <td class="text-right">
                 <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
               </td>
               {% else %}
               <td>
-                {{ _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                {{ _('%(user_ref)s linked this object to a project group.', user_ref=user_reference(object_log_entry.user)) }}
               </td>
               <td class="text-right">
               </td>
@@ -983,7 +1110,7 @@
             {% elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT %}
               {% if object_log_entry.data.project_deleted %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                  {{ _('%(user_ref)s deleted the project group this object was linked to.', user_ref=user_reference(object_log_entry.user)) }}
                 </td>
                 <td class="text-right">
                 </td>
@@ -991,14 +1118,14 @@
                 {% with project = get_project(object_log_entry.data.project_id) %}
                 {% if project is not none %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name, project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
+                  {{ _('%(user_ref)s removed the link of this object to <a href="%(project_url)s">%(project_name)s (#%(project_id)s)</a>.', user_ref=user_reference(object_log_entry.user), project_url=url_for('.project', project_id=project.id), project_name=project.name | get_translated_text, project_id=project.id) }}
                 </td>
                 <td class="text-right">
                   <a href="{{ url_for('.project', project_id=project.id) }}">{{ _('View') }}</a>
                 </td>
                 {% else %}
                 <td>
-                  {{ _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to a project group.', user_url=url_for('.user_profile', user_id=object_log_entry.user.id), user_name=object_log_entry.user.name) }}
+                  {{ _('%(user_ref)s removed the link of this object to a project group.', user_ref=user_reference(object_log_entry.user)) }}
                 </td>
                 <td class="text-right">
                 </td>
@@ -1015,16 +1142,174 @@
     {% endif %}
   {% endif %}
 
-  {% if related_objects_tree %}
-    {% if not is_archived and action.type.enable_related_objects %}
-      <h2>{{ _('Related Objects') }}</h2>
-
-      <div class="related-objects">
-        {% set in_export_data_model = False %}
-        {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+  {% if not is_archived %}
+    {% if component %}
+      {% set shares = [] %}
+    {% else %}
+      {% set shares = get_shares_for_object(object.object_id) %}
+    {% endif %}
+    {% if component or shares or fed_object_log_entries %}
+      <h2 id="other_databases">{{ _('Other Databases') }}</h2>
+      <div class="federation-information">
+        {% if component %}
+          {{ _('This object version was created as object #%(fed_object_id)s, version %(fed_version_id)s in database <a href="%(component_url)s">%(component_name)s</a>.', fed_object_id=fed_object_id, fed_version_id=fed_version_id, component_url=url_for('.component', component_id=component.id), component_name=component.get_name()) }}
+        {% endif %}
+        {% if shares %}
+          {{ _('This object is being shared with users from the following databases:') }}
+          <ul>
+            {% for share in shares %}
+              <li>
+                <a href="{{ url_for('.component', component_id=share.component.id) }}">{{ share.component.get_name() }}</a>
+                {% if share.import_status.success %}
+                  {% if share.import_status.object_id %}
+                    {% if share.component.address %}
+                      {{ _('(imported as object <a href="%(remote_object_url)s">#%(object_id)s</a>)', remote_object_url=share.component.address + relative_url_for('.object', object_id=share.import_status.object_id), object_id=share.import_status.object_id) }}
+                    {% else %}
+                      {{ _('(imported as object #%(object_id)s)', object_id=share.import_status.object_id) }}
+                    {% endif %}
+                  {% else %}
+                    {{ _('(imported)') }}
+                  {% endif %}
+                {% else %}
+                  {{ _('(not imported)') }}
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+          {% if user_may_grant %}
+            <div class="text-right" style="min-width:15em; margin-bottom: 20px;">
+              <a href="{{ url_for('.object_permissions', object_id=object_id, _anchor='other-databases') }}" class="btn btn-primary">
+                <i class="fa fa-lock" aria-hidden="true"></i>
+                {{ _('Edit Permissions') }}
+              </a>
+            </div>
+          {% endif %}
+        {% endif %}
+        {% if fed_object_log_entries %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col" style="white-space: nowrap; width: 1%;">{{ _('Datetime') }}</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log_entry in fed_object_log_entries %}
+                <tr>
+                  <td style="white-space: nowrap">
+                    <span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span>
+                  </td>
+                  <td>
+                    {% if log_entry.user_id %}
+                      {% set user_ref = user_reference(log_entry.user_id) %}
+                    {% else %}
+                      {% set user_ref = _('An unknown user') %}
+                    {% endif %}
+                    {% if log_entry.type == FedObjectLogEntryType.IMPORT_OBJECT %}
+                      {% if not log_entry.user_id %}
+                        {% set user_ref = _('an unknown user') %}
+                      {% endif %}
+                      {% if 'version_id' in log_entry.data %}
+                        {% set version_id = log_entry.data.version_id %}
+                      {% else %}
+                        {% set version_id = '?' %}
+                      {% endif %}
+                      {% if log_entry.data.import_notes %}
+                        {{ _('Version #%(version_id)s of the object shared by %(user_ref)s was imported with the following notes:', version_id=version_id, user_ref=user_ref) }}
+                        <ul>
+                          {% for note in log_entry.data.import_notes %}
+                            <li>{{ note }}</li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        {{ _('Version #%(version_id)s of the object shared by %(user_ref)s was imported.', version_id=version_id, user_ref=user_ref) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT %}
+                      {% if not log_entry.user_id %}
+                        {% set user_ref = _('an unknown user') %}
+                      {% endif %}
+                      {% if 'version_id' in log_entry.data %}
+                        {% set version_id = log_entry.data.version_id %}
+                      {% else %}
+                        {% set version_id = '?' %}
+                      {% endif %}
+                      {% if log_entry.data.import_notes %}
+                        {{ _('A new version (#%(version_id)s) of the object shared by %(user_ref)s was imported with the following notes:', version_id=log_entry.data.version_id, user_ref=user_ref) }}
+                        <ul>
+                          {% for note in log_entry.data.import_notes %}
+                            <li>{{ note }}</li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        {{ _('A new version (#%(version_id)s) of the object shared by %(user_ref)s was imported.', version_id=log_entry.data.version_id, user_ref=user_ref) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.ADD_POLICY %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry_component %}
+                         {{ _('%(user_ref)s has shared the object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                      {% else %}
+                        {{ _('%(user_ref)s has shared the object with an unknown database.', user_ref=user_ref) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.UPDATE_OBJECT_POLICY %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry_component %}
+                         {{ _('%(user_ref)s has updated the settings for sharing this object with <a href="%(component_url)s">%(component_name)s</a>.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                      {% else %}
+                        {{ _('%(user_ref)s has updated the settings for sharing this object with an unknown database.', user_ref=user_ref) }}
+                      {% endif %}
+                    {% elif log_entry.type == FedObjectLogEntryType.REMOTE_IMPORT_OBJECT %}
+                      {% set log_entry_component = get_component(log_entry.component_id) %}
+                      {% if log_entry.data.import_status.success %}
+                        {% if log_entry_component %}
+                           {{ _('<a href="%(component_url)s">%(component_name)s</a> has imported the object.', user_ref=user_ref, component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                        {% else %}
+                          {{ _('An unknown database has imported the object.', user_ref=user_ref) }}
+                        {% endif %}
+                        {% if log_entry.data.import_status.object_id %}
+                          {% if log_entry_component.address %}
+                            {{ _('The object was created as <a href="%(remote_object_url)s">object #%(remote_object_id)s</a>.', remote_object_url=log_entry_component.address + relative_url_for('.object', object_id=log_entry.data.import_status.object_id), remote_object_id=log_entry.data.import_status.object_id) }}
+                          {% else %}
+                            {{ _('The object was created as object #%(remote_object_id)s.', remote_object_id=log_entry.data.import_status.object_id) }}
+                          {% endif %}
+                        {% endif %}
+                      {% else %}
+                        {% if log_entry_component %}
+                           {{ _('<a href="%(component_url)s">%(component_name)s</a> has failed to import the object.', component_url=url_for('.component', component_id=log_entry.component_id), component_name=log_entry_component.get_name()) }}
+                        {% else %}
+                          {{ _('An unknown database has failed to import the object.') }}
+                        {% endif %}
+                      {% endif %}
+                      {% if log_entry.data.import_status.notes %}
+                        {{ _('The other database returned the following notes:') }}
+                        <ul>
+                          {% for note in log_entry.data.import_status.notes %}
+                            <li>{{ note }}</li>
+                          {% endfor %}
+                        </ul>
+                      {% endif %}
+                    {% else %}
+                      {{ _('Unknown event') }}
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
       </div>
     {% endif %}
+  {% endif %}
 
+  {% if not is_archived and related_objects_tree and action is not none and action.type.enable_related_objects %}
+    <h2>{{ _('Related Objects') }}</h2>
+
+    <div class="related-objects">
+      {% set in_export_data_model = False %}
+      {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+    </div>
+  {% endif %}
+
+  {% if not is_archived %}
     <div class="modal fade" id="dataExportModal" tabindex="-1" role="dialog" aria-labelledby="dataExportModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -1045,19 +1330,19 @@
             <div class="form-group" id="pdf–export-sections">
               <div>{{ _('PDF Export Sections') }}</div>
               <label><input type="checkbox" checked="checked" disabled="disabled" class="disabled"> {{ _('Information') }}</label>
-              {% if action.type.enable_activity_log %}
+              {% if action is not none and action.type.enable_activity_log %}
               <label><input type="checkbox" checked="checked" name="activity_log"> {{ _('Activity Log') }}</label>
               {% endif %}
-              {% if action.type.enable_locations %}
+              {% if action is not none and action.type.enable_locations %}
               <label><input type="checkbox" checked="checked" name="locations"> {{ _('Locations') }}</label>
               {% endif %}
-              {% if action.type.enable_publications %}
+              {% if action is not none and action.type.enable_publications %}
               <label><input type="checkbox" checked="checked" name="publications"> {{ _('Publications') }}</label>
               {% endif %}
-              {% if action.type.enable_files %}
+              {% if action is not none and action.type.enable_files %}
               <label><input type="checkbox" checked="checked" name="files"> {{ _('Files') }}</label>
               {% endif %}
-              {% if action.type.enable_comments %}
+              {% if action is not none and action.type.enable_comments %}
               <label><input type="checkbox" checked="checked" name="comments"> {{ _('Comments') }}</label>
               {% endif %}
               <div style="text-align: left">
@@ -1074,7 +1359,7 @@
               </div>
             </div>
 
-            {% if action.type.enable_related_objects %}
+            {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             <div class="related-objects">
               <div>{{ _('Objects') }}</div>
               {% set in_export_data_model = True %}
@@ -1083,7 +1368,7 @@
             {% endif %}
           </div>
           <div class="modal-footer">
-            {% if action.type.enable_related_objects %}
+            {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">{{ _('Select All') }}</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">{{ _('Deselect All') }}</button>
             {% endif %}
@@ -1094,24 +1379,58 @@
       </div>
     </div>
   {% endif %}
+
+    {% if show_download_service and not is_archived and action is not none and action.type is not none and action.type.enable_files and files %}
+    <div class="modal fade" id="dataFilesDownloadModal" tabindex="-1" role="dialog" aria-labelledby="dataFilesDownloadModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="dataFilesDownloadModalLabel">{{ _('Export Data') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group" id="modal-file-sections">
+              <table style="width: 100%">
+                <tbody>
+                  {% for file in files %}
+                    {% if not (file.is_hidden or file.storage in ['local', 'url']) %}
+                      <tr>
+                        <td><label>{{ file.title }}</label></td>
+                        <td><label><input type="checkbox" id="data_download_service_checked_{{ file.id }}" name="data_download_service_checked_{{ file.id }}" data-object-id="{{ file.id }}"></label></td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" id="button-modal-files-select-all">{{ _('Select All') }}</button>
+            <button type="button" class="btn btn-default" id="button-modal-files-deselect-all">{{ _('Deselect All') }}</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <a class="btn btn-primary" id="button-modal-files-download-zip">{{ _('Export Data')}}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-treeview.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/js.cookie.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/plotly-latest.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
-    <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>
+    <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
     <script type="text/javascript">
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
   <script type="text/javascript">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
@@ -1127,7 +1446,6 @@
     {% endfor %}
   ]
     $(function () {
-
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
         $('#input-object_location-translations').val(translation_json);
@@ -1211,7 +1529,7 @@
         e.preventDefault();
         $(this).tab('show');
       });
-      {% if (not is_archived) and user_may_comment and action.type.enable_comments %}
+      {% if (not is_archived) and user_may_comment and action is not none and action.type.enable_comments %}
         var comment_form = $('#new-comment-form');
         var comment_textarea = comment_form.find('textarea');
         comment_textarea.on('input change propertychange', function () {
@@ -1229,13 +1547,32 @@
       $(function () {
         $('[data-toggle="popover"]').popover()
       });
-      {% if object_log_entries and action.type.enable_activity_log %}
+      {% if object_log_entries and action is not none and action.type.enable_activity_log %}
+        {% set filter_type_list = {
+            "versions": [ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH, ObjectLogEntryType.EDIT_OBJECT, ObjectLogEntryType.RESTORE_OBJECT_VERSION],
+            "measurements": [ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT],
+            "comments": [ObjectLogEntryType.POST_COMMENT],
+            "files": [ObjectLogEntryType.UPLOAD_FILE],
+            "locations": [ObjectLogEntryType.ASSIGN_LOCATION],
+            "references": [ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA, ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT, ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION],
+           }
+        %}
+        {% set handled_entry_types = [] %}
         var activity_log_filter_type_list = {
-          "versions": ['{{ ObjectLogEntryType.CREATE_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.CREATE_BATCH.name.lower() }}', '{{ ObjectLogEntryType.EDIT_OBJECT.name.lower() }}', '{{ ObjectLogEntryType.RESTORE_OBJECT_VERSION.name.lower() }}'],
-          "measurements": ['{{ ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT.name.lower() }}'],
-          "comments": ['{{ ObjectLogEntryType.POST_COMMENT.name.lower() }}'],
-          "files": ['{{ ObjectLogEntryType.UPLOAD_FILE.name.lower() }}'],
-          "other": ['{{ ObjectLogEntryType.OTHER.name.lower() }}', '{{ ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION.name.lower() }}']
+          {% for filter_label, entry_types in filter_type_list.items() %}
+              "{{ filter_label }}": [
+                  {% for entry_type in entry_types %}
+                      '{{ entry_type.name.lower() }}',{{ handled_entry_types.append(entry_type) or '' }}
+                  {% endfor %}
+              ],
+          {% endfor %}
+          "other": [
+            {% for entry_type in ObjectLogEntryType %}
+                {% if entry_type not in handled_entry_types %}
+                    '{{ entry_type.name.lower() }}',
+                {% endif %}
+            {% endfor %}
+          ]
         };
         window.activity_log_toggle = function (should_show, category) {
           var type_list = activity_log_filter_type_list[category];
@@ -1250,24 +1587,33 @@
           });
           $('#activity_log_counter').html('' + activity_log.find('tr:visible').length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
           window.activity_log_toggle.current_state[category] = should_show;
-          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', window.activity_log_toggle.current_state);
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(window.activity_log_toggle.current_state), {sameSite: 'Lax'});
         };
         window.activity_log_toggle.current_state = {};
-        var activity_log_filter_state = Cookies.getJSON('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE');
+        let activity_log_filter_state;
+        try {
+          activity_log_filter_state = JSON.parse(Cookies.get('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE'));
+        } catch(e) {
+            // ignore invalid cookies
+        }
         if (activity_log_filter_state === undefined) {
           activity_log_filter_state = {
             "versions": true,
             "measurements": true,
             "comments": true,
             "files": true,
+            "locations": true,
+            "references": true,
             "other": true
           };
-          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', activity_log_filter_state);
+          Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(activity_log_filter_state), {sameSite: 'Lax'});
         }
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
         window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
         window.activity_log_toggle(activity_log_filter_state['files'], "files");
+        window.activity_log_toggle(activity_log_filter_state['locations'], "locations");
+        window.activity_log_toggle(activity_log_filter_state['references'], "references");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
         window.update_activity_log_filter_states = function () {
           if (window.activity_log_toggle.current_state['versions']) {
@@ -1282,13 +1628,19 @@
           if (window.activity_log_toggle.current_state['files']) {
             $('#activity_log_filter_files').attr('checked', 'checked');
           }
+          if (window.activity_log_toggle.current_state['locations']) {
+            $('#activity_log_filter_locations').attr('checked', 'checked');
+          }
+          if (window.activity_log_toggle.current_state['references']) {
+            $('#activity_log_filter_references').attr('checked', 'checked');
+          }
           if (window.activity_log_toggle.current_state['other']) {
             $('#activity_log_filter_other').attr('checked', 'checked');
           }
         };
       {% endif %}
       {% if not is_archived %}
-        {% if action.type.enable_files %}
+        {% if action is not none and action.type.enable_files %}
           window.file_table_toggle = function (should_show, category) {
             var file_table = $('#file_table').find('> tbody');
             var file_table_rows = file_table.find('tr[data-file-type=' + category + ']');
@@ -1299,16 +1651,21 @@
             }
             $('#file_table_counter').html('' + file_table.find('tr:visible').length + '&thinsp;/&thinsp;' + file_table.find('tr').length);
             window.file_table_toggle.current_state[category] = should_show;
-            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', window.file_table_toggle.current_state);
+            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', JSON.stringify(window.file_table_toggle.current_state), {sameSite: 'Lax'});
           };
           window.file_table_toggle.current_state = {};
-          var file_table_filter_state = Cookies.getJSON('SAMPLEDB_FILE_TABLE_FILTER_STATE');
+          let file_table_filter_state;
+          try {
+            file_table_filter_state = JSON.parse(Cookies.get('SAMPLEDB_FILE_TABLE_FILTER_STATE'));
+          }catch (e) {
+            // ignore invalid cookies
+          }
           if (file_table_filter_state === undefined) {
             file_table_filter_state = {
               "notebooks": true,
               "other": true
             };
-            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', file_table_filter_state);
+            Cookies.set('SAMPLEDB_FILE_TABLE_FILTER_STATE', JSON.stringify(file_table_filter_state), {sameSite: 'Lax'});
           }
           window.file_table_toggle(file_table_filter_state['notebooks'], "notebooks");
           window.file_table_toggle(file_table_filter_state['other'], "other");
@@ -1330,17 +1687,21 @@
         $('#button-show-object-label-modal').click(function () {
           $('#objectLabelModal').modal('show');
         });
-        {% if action.type.enable_files %}
+        {% if action is not none and action.type.enable_files %}
           function changeHandler() {
             var files = $('#input-file-upload').get(0).files;
             if (files.length === 0) {
               $('#input-file-text').val("");
+              $('#button-upload-files').addClass('disabled');
+              $('#button-upload-files').prop('disabled', true);
             } else if (files.length === 1) {
               $('#input-file-text').val(files[0].name);
               $('#button-upload-files').removeClass('disabled');
+              $('#button-upload-files').prop('disabled', false);
             } else {
               $('#input-file-text').val(files.length + " {{ _('files selected') }}");
               $('#button-upload-files').removeClass('disabled');
+              $('#button-upload-files').prop('disabled', false);
             }
             $('#input-file-names-hidden').val("");
             $('#input-file-source-hidden').val("local");
@@ -1362,7 +1723,7 @@
         {% endif %}
       {% endif %}
 
-      {% if action.type.enable_files %}
+      {% if action is not none and action.type.enable_files %}
         $('.button-file-info').on('click', function () {
           var file_id = $(this).attr('data-file_id');
           $('#fileInfoModal-' + file_id).modal('show');
@@ -1370,11 +1731,9 @@
         $('.file-info-hide').hide();
         $('.file-info-edit-mode').hide();
         $('.file-info-view-mode').show();
+        $('.file-url-error').hide();
         $('.button-file-info-edit').on('click', function () {
-          $('.input-file-info-title').each(function () {
-            $(this).attr('data-value', $(this).attr('value'));
-          });
-          $('.input-file-info-description').each(function () {
+          $('.input-file-info-title', '.input-file-info-url', '.input-file-info-description').each(function () {
             $(this).attr('data-value', $(this).val());
           });
           $('.file-info-edit-mode').show();
@@ -1383,10 +1742,8 @@
         $('.button-file-info-cancel').on('click', function () {
           $('.file-info-edit-mode').hide();
           $('.file-info-view-mode').show();
-          $('.input-file-info-title').each(function () {
-            $(this).val($(this).attr('data-value'));
-          });
-          $('.input-file-info-description').each(function () {
+          $('.file-url-error').hide();
+          $('.input-file-info-title', '.input-file-info-url', '.input-file-info-description').each(function () {
             $(this).val($(this).attr('data-value'));
           });
         });
@@ -1402,11 +1759,20 @@
           $('.file-info-hide').hide();
           $('.file-info-main').show();
         });
+        {% if edit_external_link_file and edit_external_link_file is not none and edit_external_link_file | int(-1) != -1 and edit_external_link_error in external_link_errors %}
+          var file_id = {{ edit_external_link_file | int }};
+          $('.file-info-edit-mode').show();
+          $('.file-info-view-mode').hide();
+          $('#fileInfoModal-' + file_id).modal('show');
+          $('#file-url-error-' + file_id + ' > span:first-of-type').text('{{ external_link_errors[edit_external_link_error] }}');
+          $('#file-url-error-' + file_id).show();
+        {% endif %}
       {% endif %}
       {% if related_objects_tree %}
         $('input[name^=data_export_object_]').prop("checked", false);
         $('input.data_export_object').prop("checked", false);
         $('input.data_export_object_{{ object_id }}').prop("checked", true);
+      {% endif %}
         function updateDataExportLink() {
           var format = ".pdf";
           var selected_format_option = $('#select-export-format > option:selected');
@@ -1427,7 +1793,7 @@
           });
           var pdf_export_language = $('#pdf–export-sections select[name="language"]').selectpicker('val');
           var object_ids_to_export = [];
-          {% if action.type.enable_related_objects %}
+          {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             $('input[name^=data_export_object_]').each(function () {
               if ($(this).prop('checked')) {
                 object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
@@ -1469,42 +1835,43 @@
           updateDataExportLink();
         });
         updateDataExportLink();
+
+      {% if show_download_service and not is_archived and action is not none and action.type is not none and action.type.enable_files and files %}
+        $('#button-modal-files-select-all').on('click', function () {
+          $('input[name^=data_download_service_checked_]').prop("checked", true);
+        });
+        $('#button-modal-files-deselect-all').on('click', function () {
+          $('input[name^=data_download_service_checked_]').prop("checked", false);
+        });
+        $('#button-modal-files-download-zip').on('click', function () {
+          let file_ids = [];
+          $('input[name^=data_download_service_checked_]').each(function() {
+            if ($(this).prop('checked')) {
+              file_ids.push(parseInt($(this).attr('data-object-id')));
+            }
+          });
+          let params = '?file_ids=' + file_ids.join('&file_ids=')
+          let ifrm = document.getElementById('download_frame');
+          ifrm.src = '{{ url_for('.download_service', object_id=object_id) }}' + params;
+        });
       {% endif %}
-      $('[data-toggle="tooltip"]').tooltip();
-    });
 
-    function copyToClipboard(text) {
-    var element = document.createElement('textarea');
-    element.value = text;
-    element.setAttribute('readonly', '');
-    element.style.position = 'absolute';
-    element.style.left = '-9999px';
-    document.body.appendChild(element);
-    var selected = false;
-    if (document.getSelection().rangeCount > 0) {
-    selected = document.getSelection().getRangeAt(0);
-    }
-    element.select();
-    document.execCommand('copy');
-    document.body.removeChild(element);
-    if (selected) {
-    document.getSelection().removeAllRanges();
-    document.getSelection().addRange(selected);
-    }
-    }
-
-    $('span.copy-external-link').on('click', function () {
-    var button = $(this);
-    copyToClipboard(button.attr('data-url'));
-    var wrapper = button.parent();
-    button.tooltip('hide');
-    wrapper.tooltip('show');
-    setTimeout(function () {
-    wrapper.tooltip('hide');
-    }.bind(wrapper), 500);
+      $('span.copy-external-link').on('click', function () {
+        var button = $(this);
+        navigator.clipboard.writeText(button.attr('data-url')).then(
+          () => {
+            var wrapper = button.parent();
+            button.tooltip('hide');
+            wrapper.tooltip('show');
+            setTimeout(function () {
+              wrapper.tooltip('hide');
+            }, 500);
+          }
+        );
+      });
     });
     {% if not is_archived %}
-    {% if action.type.enable_labels %}
+    {% if action is not none and action.type.enable_labels %}
     function validateLabelsForm() {
       const PAGE_SIZES = {
         {% for paper_format in PAGE_SIZES %}
@@ -1624,6 +1991,18 @@
     updateLabelsForm();
     {% endif %}
   {% endif %}
+
+    function toggleShowMore(prefix) {
+      let properties = $('.show-more-' + prefix);
+      let btn = $('#show-more-' + prefix + '-btn');
+      if (properties.hasClass('hidden')) {
+        properties.addClass('show').removeClass('hidden');
+        btn.text('{{ _("Show less") }}');
+      } else {
+        properties.addClass('hidden').removeClass('show');
+        btn.text('{{ _("Show more") }}');
+      }
+    }
 
     $( document ).ready(function() {
       $(plotly_charts).each(function(index, element) {

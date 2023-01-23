@@ -126,7 +126,7 @@ This attribute is a boolean that sets whether or not the data for the given obje
 properties
 ^^^^^^^^^^
 
-This JSON object maps names to the subschemas for other properties. The names may consist of lowercase characters, digits and underscores, but must not begin or end with an underscore. These names are, for example, used for the advanced search.
+This JSON object maps names to the subschemas for other properties. The names may consist of latin characters (a-z and A-Z), digits (0-9) and underscores, but must begin with a character and must not end with an underscore. These names are, for example, used for the advanced search.
 
 .. code-block:: json
     :caption: The properties attribute from the example above.
@@ -209,6 +209,16 @@ notebookTemplates
 A JSON array containing information about Jupyter notebook templates. For more information, see :ref:`jupyterhub_support`.
 
 .. note:: This attribute may only be set for the root object.
+
+conditions
+^^^^^^^^^^
+
+This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
+
+show_more
+^^^^^^^^^
+
+This attribute is a string array describing which properties to hide in the object view until a "show more"-button is pressed.
 
 Arrays
 ``````
@@ -304,9 +314,14 @@ If the ``default`` attribute is not set, this number can be used to set how many
 style
 ^^^^^
 
-This attribute is a string indicating how the array should be displayed. By default, the items will be shown one after another, but sometimes a different behavior may be desired. If the items are objects, using the ``table`` style may be useful to create a table with the items as rows and their properties in the columns. Alternatively, if the items should be in the columns and their properties should be in the rows, the ``horizontal_table`` style can be used. If the items are neither objects nor arrays, the ``list`` style may be useful to create a simple list.
+This attribute is a string indicating how the array should be displayed. By default, the items will be shown one after another, but sometimes a different behavior may be desired. If the items are objects, using the ``table`` style may be useful to create a table with the items as rows and their properties in the columns. For top-level tables with many columns, the ``full_width_table`` style can be used to let the table be as wide as the browser window permits. Alternatively, if the items should be in the columns and their properties should be in the rows, the ``horizontal_table`` style can be used. If the items are neither objects nor arrays, the ``list`` style may be useful to create a simple list.
 
 .. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
+
+conditions
+^^^^^^^^^^
+
+This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
 
 Texts
 `````
@@ -558,14 +573,29 @@ A note to display below the field when creating or editing an object using this 
 default
 ^^^^^^^
 
-The default value for this property as a number. This should be the value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters.
+The default value for this property as a number. This should be the value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters. If there are multiple units, the first one will be used for the default.
 
 units
 ^^^^^
 
-A JSON string containing the units for this property, e.g. ``nm`` or ``degC``.
+A JSON array of strings or a single string containing the units for this property, e.g. ``"nm"``,  ``"degC"`` or ``["cm", "mm"]``.
 
 .. note:: These units will be parsed using the `pint Python Package <https://pint.readthedocs.io/en/latest/index.html>`_ with additional `units defined by SampleDB <https://github.com/sciapp/sampledb/blob/develop/sampledb/logic/unit_definitions.txt>`_.
+
+display_digits
+^^^^^^^^^^^^^^
+
+This attribute is the number of decimal places to be shown when displaying the magnitude, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitude will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
+
+min_magnitude
+^^^^^^^^^^^^^
+
+The minimum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the minimum to 10nm, you need to set ``min_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
+
+max_magnitude
+^^^^^^^^^^^^^
+
+The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
 
 Datetimes
 `````````
@@ -890,7 +920,7 @@ Properties of this type are a special case of object reference, limited to refer
     }
 
 Schema Templates
-```````````````
+````````````````
 
 Schema Templates offer a way to easily reuse action schemas.
 
@@ -1177,3 +1207,53 @@ To denote that a certain condition must not be met, the ``not`` condition type c
     }
 
 .. note:: If you need a new type of conditions, please `open an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_ to let us know.
+
+.. _recipes:
+
+Recipes
+-------
+
+Recipes allow setting default value sets that can be applied while editing or creating an object.
+They can be added to an object, including subobjects and objects in arrays, as a list of recipe objects.
+Each recipe has to be given a name by setting the ``name``. Default values are described in the ``property_values`` section (see code box below).
+
+Currently, only recipe values for parameters of the types ``text``, ``quantity``, ``bool``, and ``datetime`` are supported.
+By setting a value to ``null`` the associated input is cleared.
+As ``bool`` inputs do not support a ``null`` value you might use ``false`` to uncheck the checkbox instead.
+
+.. code-block:: javascript
+    :caption: An action schema containing a recipe
+
+    {
+      "title": "Recipe",
+      "type": "object",
+      "recipes": [
+        {
+          "name": {
+            "en": "Recipe 1",
+            "de": "Rezept 1"
+          },
+          "property_values": {
+            "text": {
+              "text": {
+                "en": "English Text",
+                "de": "Deutscher Text"
+              },
+              "_type": "text"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "text"
+        },
+        "text": {
+          "title": "Text",
+          "type": "text",
+          "languages": ["de", "en"]
+        }
+      },
+      "required": ["name"]
+    }

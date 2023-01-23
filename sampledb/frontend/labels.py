@@ -27,7 +27,7 @@ VERTICAL_LABEL_MARGIN = 10
 
 def _generate_ghs_image_uris():
     ghs_image_uris = []
-    GHS_IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'img')
+    GHS_IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'sampledb', 'img')
     for i in range(0, 10):
         ghs_image = Image.open(os.path.join(GHS_IMAGE_DIR, 'ghs0{}.png'.format(i))).convert('RGBA')
         ghs_background_image = Image.new('RGBA', ghs_image.size, (255, 255, 255, 255))

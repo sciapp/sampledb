@@ -5,23 +5,25 @@ Add the disable_create_objects column to the action_types table.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 68
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Add column to action_type table
-    client_column_names = db.session.execute("""
+    client_column_names = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'action_types'
-    """).fetchall()
+    """)).fetchall()
     if ('disable_create_objects',) in client_column_names:
         return False
 
     # Perform migration
-    db.session.execute("""
+    db.session.execute(db.text("""
         ALTER TABLE action_types
         ADD disable_create_objects boolean NOT NULL DEFAULT(FALSE)
-    """)
+    """))
     return True

@@ -1,0 +1,45 @@
+{% macro _federation_information_symbol(obj, text=false, nolink=false) %}
+  {% if obj.component.address is not none and not nolink %}
+    <a href="{{ get_federation_url(obj) }}">
+  {% endif %}
+  {% if text %}
+    (#{{ obj.fed_id }} @ {{ obj.component.get_name() }})
+  {% else %}
+    <i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ obj.fed_id }} @ {{ obj.component.get_name() }}"></i>
+  {% endif %}
+  {% if obj.component.address is not none and not nolink %}
+    </a>
+  {% endif %}
+{% endmacro %}
+
+{% macro import_information_symbol(object, text=false, nolink=false) %}
+  {%- if object.fed_id is not none -%}
+    {{ _federation_information_symbol(object, text=text, nolink=nolink) }}
+  {%- endif -%}
+{% endmacro %}
+
+{% macro user_reference(user_id_or_user, text=false, nolink=false, external=false) %}
+  {% if user_id_or_user is number %}
+    {% set user_or_none = get_user_or_none(user_id_or_user) %}
+  {% else %}
+    {% set user_or_none = user_id_or_user %}
+  {% endif %}
+  {% if user_or_none is not none and not nolink %}
+    <a href="{{ url_for('frontend.user_profile', user_id=user_or_none.id, _external=external) }}">
+  {%- endif -%}
+  {%- if user_or_none is none -%}
+    {%- if user_id_or_user is none -%}
+      &mdash;
+    {%- else -%}
+      {{ _('Unknown User') }} (#{{ user_id }})
+    {%- endif -%}
+  {%- else -%}
+    {{ user_or_none.get_name(include_ref=text) }}
+  {%- endif -%}
+  {%- if user_or_none is not none and not nolink -%}
+    </a>
+  {%- endif -%}
+  {%- if user_or_none is not none and not text -%}
+    {{ import_information_symbol(user_or_none, nolink=nolink) }}
+  {%- endif -%}
+{% endmacro %}

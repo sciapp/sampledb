@@ -3,17 +3,30 @@
 Logic module for management of languages
 """
 
-import collections
+import dataclasses
 import typing
 
 from .. import db
 from . import errors, settings, locale
 from .. import models
+if typing.TYPE_CHECKING:
+    from .users import User
 
 
-class Language(collections.namedtuple(
-    'Language', ['id', 'lang_code', 'names', 'datetime_format_datetime', 'datetime_format_moment', 'enabled_for_input', 'enabled_for_user_interface']
-)):
+@dataclasses.dataclass(frozen=True)
+class Language:
+    """
+    This class provides an immutable wrapper around models.languages.Language.
+    """
+    id: int
+    lang_code: str
+    names: typing.Dict[str, str]
+    datetime_format_datetime: str
+    datetime_format_moment: str
+    datetime_format_moment_output: str
+    enabled_for_input: bool
+    enabled_for_user_interface: bool
+
     ENGLISH = models.Language.ENGLISH
     GERMAN = models.Language.GERMAN
 
@@ -25,6 +38,7 @@ class Language(collections.namedtuple(
             names=language.names,
             datetime_format_datetime=language.datetime_format_datetime,
             datetime_format_moment=language.datetime_format_moment,
+            datetime_format_moment_output=language.datetime_format_moment_output,
             enabled_for_input=language.enabled_for_input,
             enabled_for_user_interface=language.enabled_for_user_interface
         )
@@ -35,6 +49,7 @@ def create_language(
         lang_code: str,
         datetime_format_datetime: str,
         datetime_format_moment: str,
+        datetime_format_moment_output: str,
         enabled_for_input: bool,
         enabled_for_user_interface: bool
 ) -> Language:
@@ -45,6 +60,7 @@ def create_language(
     :param lang_code: the language code
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
+    :param datetime_format_moment_output: output format for moment
     :param enabled_for_input: whether or not the language is enabled for input
     :param enabled_for_user_interface: whether or not the language is enabled
         for the user interface
@@ -67,6 +83,7 @@ def create_language(
         lang_code=lang_code,
         datetime_format_datetime=datetime_format_datetime,
         datetime_format_moment=datetime_format_moment,
+        datetime_format_moment_output=datetime_format_moment_output,
         enabled_for_input=enabled_for_input,
         enabled_for_user_interface=enabled_for_user_interface
     )
@@ -81,6 +98,7 @@ def update_language(
         lang_code: str,
         datetime_format_datetime: str,
         datetime_format_moment: str,
+        datetime_format_moment_output: str,
         enabled_for_input: bool,
         enabled_for_user_interface: bool
 ) -> None:
@@ -92,8 +110,9 @@ def update_language(
     :param lang_code: the language code
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
-    :param enabled_for_input: whether or not the language is enabled for input
-    :param enabled_for_user_interface: whether or not the language is enabled
+    :param datetime_format_moment_output: format for moment output
+    :param enabled_for_input: whether the language is enabled for input
+    :param enabled_for_user_interface: whether the language is enabled
         for the user interface
     :return: the language
     :raise errors.LanguageAlreadyExistsError: when the language code already
@@ -107,7 +126,7 @@ def update_language(
     }
     all_language_codes.add(lang_code)
 
-    language = models.Language.query.get(language_id)
+    language = models.Language.query.filter_by(id=language_id).first()
     if language.lang_code != lang_code:
         if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
             raise errors.LanguageAlreadyExistsError()
@@ -122,6 +141,7 @@ def update_language(
     language.lang_code = lang_code
     language.datetime_format_datetime = datetime_format_datetime
     language.datetime_format_moment = datetime_format_moment
+    language.datetime_format_moment_output = datetime_format_moment_output
     language.enabled_for_input = enabled_for_input
     language.enabled_for_user_interface = enabled_for_user_interface
     db.session.add(language)
@@ -156,7 +176,7 @@ def get_language(language_id: int) -> Language:
     :return: the language
     :raise errors.LanguageDoesNotExistError: when no language with the given language ID exists
     """
-    language = models.Language.query.get(language_id)
+    language = models.Language.query.filter_by(id=language_id).first()
     if language is None:
         raise errors.LanguageDoesNotExistError()
     return Language.from_database(language)
@@ -177,7 +197,7 @@ def get_language_by_lang_code(lang_code: str) -> Language:
     return Language.from_database(language)
 
 
-def get_user_language(user) -> Language:
+def get_user_language(user: typing.Optional['User']) -> Language:
     """
     Return the language of the current user.
 
@@ -190,23 +210,23 @@ def get_user_language(user) -> Language:
         except errors.LanguageDoesNotExistError:
             return get_language(models.Language.ENGLISH)
 
-    language = getattr(user, 'language', None)
+    language = user.language_cache[0]
     if language is None:
-        auto_lc = settings.get_user_settings(user.id)['AUTO_LC']
+        auto_lc = settings.get_user_setting(user.id, 'AUTO_LC')
         if auto_lc:
             language_code = locale.guess_request_locale()
         else:
-            language_code = settings.get_user_settings(user.id)['LOCALE']
+            language_code = settings.get_user_setting(user.id, 'LOCALE')
         try:
             language = get_language_by_lang_code(language_code)
         except errors.LanguageDoesNotExistError:
             language = get_language(models.Language.ENGLISH)
-        user.language = language
+        user.language_cache[0] = language
     return language
 
 
 def get_languages_in_object_data(
-        data: typing.Union[str, dict]
+        data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]
 ) -> typing.Set[str]:
     language_codes = set()
 
@@ -223,3 +243,46 @@ def get_languages_in_object_data(
             language_codes.update(get_languages_in_object_data(item_data))
 
     return language_codes
+
+
+def filter_translations(
+        translations: typing.Dict[str, str]
+) -> typing.Dict[str, str]:
+    allowed_language_codes = {
+        language.lang_code
+        for language in get_languages(only_enabled_for_input=True)
+    }
+
+    filtered_translations = {}
+    for language_code, translation in translations.items():
+        if language_code not in allowed_language_codes:
+            raise errors.LanguageDoesNotExistError()
+        if translation:
+            filtered_translations[language_code] = translation
+
+    return filtered_translations
+
+
+def get_language_codes(
+        only_enabled_for_input: bool = False,
+        only_enabled_for_user_interface: bool = False
+) -> typing.Set[str]:
+    """
+    Return a set of known language codes.
+
+    :param only_enabled_for_input: only return codes for languages enabled
+        for input
+    :param only_enabled_for_user_interface: only return codes for languages
+        enabled for the user interface
+    :return: the set of language codes
+    """
+    query = models.Language.query
+    if only_enabled_for_input:
+        query = query.filter_by(enabled_for_input=True)
+    if only_enabled_for_user_interface:
+        query = query.filter_by(enabled_for_user_interface=True)
+    language_code_tuples = query.with_entities(models.Language.lang_code).all()
+    return {
+        language_code_tuple[0]
+        for language_code_tuple in language_code_tuples
+    }

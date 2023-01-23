@@ -7,28 +7,52 @@ import flask
 import flask_login
 import json
 from flask_wtf import FlaskForm
-from wtforms.fields import StringField, BooleanField
-from wtforms.validators import DataRequired
+from wtforms.fields import StringField, BooleanField, SelectField, SelectMultipleField
+from wtforms.validators import DataRequired, ValidationError
 from flask_babel import _
 
 from . import frontend
 from .. import logic
-from .utils import check_current_user_is_not_readonly
+from .utils import check_current_user_is_not_readonly, get_translated_text
+from ..logic.actions import SciCatExportType
+from ..logic.components import get_component_or_none
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+class ActionTypesSortingForm(FlaskForm):
+    encoded_order = StringField("Order-String", [DataRequired()])
+
+    def validate_encoded_order(form, field):
+        valid_action_type_ids = [action_type.id for action_type in logic.actions.get_action_types()]
+
+        try:
+            split_string = field.data.split(",")
+            sorted_action_type_ids = list(map(int, split_string))
+            for action_type_id in sorted_action_type_ids:
+                if action_type_id not in valid_action_type_ids:
+                    raise ValidationError(f"{action_type_id} is not a valid id")
+        except ValueError:
+            raise ValidationError("Invalid IDs.")
+
+        field.data = sorted_action_type_ids
 
 
-@frontend.route('/action_types/')
+@frontend.route('/action_types/', methods=['GET', 'POST'])
 @flask_login.login_required
 def action_types():
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
-    user_language_id = logic.languages.get_user_language(flask_login.current_user).id
-    action_types_with_translations = logic.action_type_translations.get_action_types_with_translations_in_language(user_language_id)
+    sorting_form = ActionTypesSortingForm()
+
+    if sorting_form.validate_on_submit():
+        check_current_user_is_not_readonly()
+
+        logic.actions.set_action_types_order(sorting_form.encoded_order.data)
+
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=action_types_with_translations,
+        action_types=logic.actions.get_action_types(),
+        sorting_form=sorting_form
     )
 
 
@@ -37,16 +61,20 @@ def action_types():
 def action_type(type_id):
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
-    if flask.request.args.get('mode') == 'edit':
-        return show_action_type_form(type_id)
 
     try:
-        action_type = logic.action_type_translations.get_action_type_with_translation_in_language(
-            action_type_id=type_id,
-            language_id=logic.languages.get_user_language(flask_login.current_user).id
+        action_type = logic.actions.get_action_type(
+            action_type_id=type_id
         )
     except logic.errors.ActionTypeDoesNotExistError:
         return flask.abort(404)
+
+    if flask.request.args.get('mode') == 'edit':
+        if action_type.fed_id is not None:
+            flask.flash(_('Editing imported action types is not yet supported.'), 'error')
+            return flask.abort(403)
+        else:
+            return show_action_type_form(type_id)
 
     try:
         translations = logic.action_type_translations.get_action_type_translations_for_action_type(action_type.id)
@@ -57,6 +85,7 @@ def action_type(type_id):
         'action_types/action_type.html',
         action_type=action_type,
         translations=translations,
+        component=get_component_or_none(action_type.component_id)
     )
 
 
@@ -84,6 +113,24 @@ class ActionTypeForm(FlaskForm):
     enable_project_link = BooleanField()
     disable_create_objects = BooleanField()
     is_template = BooleanField()
+    select_usable_in_action_types = SelectMultipleField(coerce=int)
+    scicat_export_type = SelectField(choices=[
+        ('none', '—'),
+        (SciCatExportType.SAMPLE.name.lower(), _('Sample')),
+        (SciCatExportType.RAW_DATASET.name.lower(), _('Raw Dataset')),
+        (SciCatExportType.DERIVED_DATASET.name.lower(), _('Derived Dataset')),
+    ])
+
+    def set_select_usable_in_action_types_attributes(self):
+        self.select_usable_in_action_types.choices = [
+            (action_type.id, get_translated_text(action_type.name, default=_('Unnamed Action Type')))
+            for action_type in logic.actions.get_action_types()
+            if not action_type.disable_create_objects
+        ]
+
+        self.select_usable_in_action_types.shared_action_types = [action_type.id
+                                                                  for action_type in logic.actions.get_action_types()
+                                                                  if action_type.component_id is not None]
 
 
 def show_action_type_form(type_id):
@@ -91,12 +138,13 @@ def show_action_type_form(type_id):
     action_type_translations = []
     action_type_language_ids = []
     action_type_form = ActionTypeForm()
+    action_type_form.set_select_usable_in_action_types_attributes()
 
     english = logic.languages.get_language(logic.languages.Language.ENGLISH)
 
     def validate_string(string):
         try:
-            if len(string) > 0 and len(string) < 100:
+            if 0 < len(string) < 100:
                 return True
             else:
                 return False
@@ -134,7 +182,12 @@ def show_action_type_form(type_id):
             action_type_form.enable_related_objects.data = action_type.enable_related_objects
             action_type_form.enable_project_link.data = action_type.enable_project_link
             action_type_form.disable_create_objects.data = action_type.disable_create_objects
+            action_type_form.select_usable_in_action_types.data = [element.id for element in action_type.usable_in_action_types]
             action_type_form.is_template.data = action_type.is_template
+            if action_type.scicat_export_type is None:
+                action_type_form.scicat_export_type.data = 'none'
+            else:
+                action_type_form.scicat_export_type.data = action_type.scicat_export_type.name.lower()
 
     if action_type_form.validate_on_submit():
         if type_id is None:
@@ -157,9 +210,8 @@ def show_action_type_form(type_id):
                         flask.flash(_('Please fill out the form.'), 'error')
                         return show_action_type_form(type_id)
 
-                    language_id = int(translation['language_id'])
+                    int(translation['language_id'])
                     name = translation['name'].strip()
-                    description = translation['description'].strip()
                     object_name = translation['object_name'].strip()
                     object_name_plural = translation['object_name_plural'].strip()
                     view_text = translation['view_text'].strip()
@@ -189,11 +241,19 @@ def show_action_type_form(type_id):
                     enable_related_objects=action_type_form.enable_related_objects.data,
                     enable_project_link=action_type_form.enable_project_link.data,
                     disable_create_objects=action_type_form.disable_create_objects.data,
-                    is_template=action_type_form.is_template.data
+                    is_template=action_type_form.is_template.data,
+                    usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,
+                    scicat_export_type={
+                        type.name.lower(): type
+                        for type in [
+                            SciCatExportType.SAMPLE,
+                            SciCatExportType.RAW_DATASET,
+                            SciCatExportType.DERIVED_DATASET
+                        ]
+                    }.get(action_type_form.scicat_export_type.data)
                 )
 
                 for translation in translation_data:
-
                     language_id = int(translation['language_id'])
                     name = translation['name'].strip()
                     description = translation['description'].strip()
@@ -214,6 +274,7 @@ def show_action_type_form(type_id):
                     )
 
         else:
+
             action_type = logic.actions.update_action_type(
                 action_type_id=type_id,
                 admin_only=action_type_form.admin_only.data,
@@ -228,7 +289,13 @@ def show_action_type_form(type_id):
                 enable_related_objects=action_type_form.enable_related_objects.data,
                 enable_project_link=action_type_form.enable_project_link.data,
                 disable_create_objects=action_type_form.disable_create_objects.data,
-                is_template=action_type_form.is_template.data
+                is_template=action_type_form.is_template.data,
+                usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,
+                scicat_export_type={
+                    'sample': SciCatExportType.SAMPLE,
+                    'raw_dataset': SciCatExportType.RAW_DATASET,
+                    'derived_dataset': SciCatExportType.DERIVED_DATASET
+                }.get(action_type_form.scicat_export_type.data)
             )
 
             try:

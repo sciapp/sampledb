@@ -102,19 +102,19 @@ The activity log shows a timeline of the object's life cycle, containing events 
 
     Activity Log
 
-.. _locations:
+.. _location_assignments:
 
-Location
---------
+Location Log
+------------
 
 To indicate where a sample is stored, a location and/or a responsible user can be assigned to it. When a user is assigned responsibility for an object, they can confirm this either on the object's page or using the :ref:`Notification <notifications>` they received for the assignment.
 
 The location log shows where an object has been stored and when it was moved.
 
-.. figure:: ../static/img/generated/locations.png
-    :alt: Location
+.. figure:: ../static/img/generated/location_assignments.png
+    :alt: Location Log
 
-    Location
+    Location Log
 
 .. _permissions:
 
@@ -140,6 +140,16 @@ To modify the permissions of an object, any user with **Grant** permissions can 
 
 Although administrators are shown to have **Grant** permissions for all objects, this only reflects their access to the database mentioned above. At this time, administrators do not automatically have **Grant** permissions for all objects.
 
+.. _federation_share:
+
+Sharing with other databases
+````````````````````````````
+
+Objects can be shared with other databases after an administrator configured the connection (see: :ref:`Managing other databases <federation_managing_databases>`).
+Access permissions can be granted to users of other databases individually by user id or imported user information, if available.
+Permissions to access data, referenced users, action, comments, locations, and files can be set individually.
+This allows sharing an object without data to use it by reference or without user information to protect data privacy rights.
+
 .. _default_permissions:
 
 Default Permissions
@@ -160,6 +170,8 @@ Data Export
 Users can export object information to a PDF file, e.g. for printing or offline usage. Note that the exported object information will not be fully complete, e.g. only files of some formats will be included in the PDF and only the current metadata version will be shown.
 
 Alternatively, users can export object information as an archive, which contains the full object information as a JSON file and all files uploaded for the object.
+
+Users can also export the object information as an [.eln file](https://github.com/TheELNConsortium/TheELNFileFormat).
 
 Along with the current object, related objects can be exported along with it, e.g. a sample can be exported together with all measurements performed with it.
 

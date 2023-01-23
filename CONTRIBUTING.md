@@ -11,11 +11,34 @@ SampleDB is open source and we hope that ideas and improvements from different f
 
 ## Setting up a Development Installation
 
+### Using virtualenv
+
 - To work on SampleDB you will need a PostgreSQL database. On Linux, your distribution will likely have a package for this and on macOS, you can use [Postgres.app](https://postgresapp.com/).
 - Set up a virtual environment using `python3 -m venv env` and activate it using `source env/bin/activate`
 - Install the requirements, using `pip install -r requirements.txt`
 - Set [configuration environment variables](https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/configuration.html). At the very least you will need to set a mail server and sender, e.g. by using `export SAMPLEDB_MAIL_SERVER=mail.example.com`, `export SAMPLEDB_MAIL_SENDER=sampledb@example.com` and `export SAMPLEDB_CONTACT_EMAIL=sampledb@example.com`. Depending on how you set up your database, you may have to set the `SAMPLEDB_SQLALCHEMY_DATABASE_URI`.
 - Start an instance using demo data from the `set_up_demo` script, using `python demo.py`. This way, you will have some example instruments, actions, objects and users. If you try to access a route that requires a user account, you will automatically be signed in.
+
+### Using docker with docker-compose
+
+If you're using a docker-compose workflow, simply add a volume line to mount the `sampledb` folder in the container:
+
+~~~yaml
+volumes:
+  - ./files:/home/sampledb/files
+  # only for dev
+  - ./sampledb:/home/sampledb/sampledb
+~~~
+
+Also uncomment the `FLASK_DEBUG=1` environment variable in the compose file.
+
+If you want to populate the database with fake data, you can use the `set_up_demo` script on an empty database:
+
+~~~bash
+alias sdb="docker exec -it sampledb sampledb"
+sdb set_up_demo
+~~~
+
 
 ## Translating SampleDB
 

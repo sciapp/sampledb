@@ -3,8 +3,11 @@
 
 """
 
+import datetime
 import os
 import json
+from copy import deepcopy
+
 import requests
 import pytest
 import itsdangerous
@@ -14,9 +17,12 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 
-
 SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas'))
 OBJECTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'objects'))
+UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
+UUID_2 = '1e59c517-bd11-4390-aeb4-971f20b06612'
+REFERENCES_SCHEMA = {'title': 'Table and List', 'type': 'object', 'properties': {'name': {'title': 'Object Name', 'type': 'text'}, 'user1': {'title': 'User 1', 'type': 'user'}, 'object1': {'title': 'Object 1', 'type': 'object_reference'}, 'user2': {'title': 'User 2', 'type': 'user'}, 'object2': {'title': 'Object 2', 'type': 'object_reference'}, 'user3': {'title': 'User 3', 'type': 'user'}, 'object3': {'title': 'Object 3', 'type': 'object_reference'}, 'user4': {'title': 'User 4', 'type': 'user'}, 'object4': {'title': 'Object 4', 'type': 'object_reference'}, 'userlist': {'title': 'User List', 'type': 'array', 'style': 'list', 'items': {'title': 'User', 'type': 'user'}}, 'objectlist': {'title': 'Object List', 'type': 'array', 'style': 'list', 'items': {'title': 'Object', 'type': 'object_reference'}}, 'usertable': {'title': 'User Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'User Row', 'items': {'title': 'User', 'type': 'user'}}}, 'objecttable': {'title': 'Object Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'Object Row', 'items': {'title': 'Object', 'type': 'object_reference'}}}}, 'propertyOrder': ['name', 'user1', 'object1', 'user2', 'object2', 'user3', 'object3', 'user4', 'object4', 'userlist', 'objectlist', 'usertable', 'objecttable'], 'required': ['name']}
+REFERENCES_DATA_FRAME = {'name': {'text': {'en': 'Test Object'}, '_type': 'text'}, 'user1': {'_type': 'user'}, 'user2': {'_type': 'user'}, 'user3': {'_type': 'user'}, 'user4': {'_type': 'user'}, 'object1': {'_type': 'object_reference'}, 'object2': {'_type': 'object_reference'}, 'object3': {'_type': 'object_reference'}, 'object4': {'_type': 'object_reference'}, 'userlist': [{'_type': 'user'}, {'_type': 'user'}, {'_type': 'user'}, {'_type': 'user'}], 'objectlist': [{'_type': 'object_reference'}, {'_type': 'object_reference'}, {'_type': 'object_reference'}, {'_type': 'object_reference'}], 'usertable': [[{'_type': 'user', 'user_id': 6}, {'_type': 'user', 'user_id': 3, 'component_uuid': '7c3db1e8-15ba-4d86-885f-792e054d9c73'}], [{'_type': 'user', 'user_id': 5}, {'_type': 'user', 'user_id': 3, 'component_uuid': '208363a4-941b-4071-b6f1-f7803bcbe923'}]], 'objecttable': [[{'_type': 'object_reference'}, {'_type': 'object_reference'}], [{'_type': 'object_reference'}, {'_type': 'object_reference'}]]}
 
 
 @pytest.fixture
@@ -28,6 +34,53 @@ def user(flask_server):
         # force attribute refresh
         assert user.id is not None
     return user
+
+
+@pytest.fixture
+def simple_action():
+    action = sampledb.models.actions.Action(
+        action_type_id=sampledb.models.actions.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        },
+        instrument_id=None
+    )
+    sampledb.db.session.add(action)
+    sampledb.db.session.commit()
+    # force attribute refresh
+    assert action.id is not None
+    return action
+
+
+@pytest.fixture
+def simple_object(user, simple_action):
+    object = sampledb.logic.objects.create_object(user_id=user.id, action_id=simple_action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
+    return object
+
+
+@pytest.fixture
+def component():
+    component = sampledb.logic.components.add_component(
+        uuid=UUID_1,
+        name='Component',
+        address='https://example.com',
+        description='Component description'
+    )
+
+    return component
 
 
 def test_get_objects(flask_server, user):
@@ -67,6 +120,10 @@ def test_get_objects_by_action_id(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action1.id,
+        permissions=sampledb.models.Permissions.READ
+    )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
         action_id=action1.id,
@@ -76,6 +133,10 @@ def test_get_objects_by_action_id(flask_server, user):
     action2 = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action2.id,
+        permissions=sampledb.models.Permissions.READ
     )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
@@ -197,6 +258,10 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action1.id,
+        permissions=sampledb.models.Permissions.READ
+    )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
         action_id=action1.id,
@@ -206,6 +271,10 @@ def test_get_objects_by_action_id_and_type(flask_server, user):
     action2 = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
         schema=schema
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action2.id,
+        permissions=sampledb.models.Permissions.READ
     )
     sampledb.logic.action_translations.set_action_translation(
         language_id=sampledb.logic.languages.Language.ENGLISH,
@@ -283,7 +352,7 @@ def test_objects_referencable(flask_server, user):
         action_type_id=sampledb.models.ActionType.MEASUREMENT,
         schema=schema
     )
-    names = ['Example1', 'Example2', 'Example42']
+    names = ['Example1', 'Example2', '<b>Example42</b>']
     objects = [
         sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}},
@@ -309,17 +378,22 @@ def test_objects_referencable(flask_server, user):
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[1].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.WRITE)
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[2].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.GRANT)
 
+    component = sampledb.logic.components.add_component(address=None, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='')
+    fed_object = sampledb.logic.objects.insert_fed_object_version(1, 0, component.id, None, schema, {'name': {'_type': 'text', 'text': 'Fed Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}}, None, None)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
+
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/referencable')
     assert r.status_code == 200
     data = json.loads(r.content)
-    assert len(data['referencable_objects']) == 4
+    assert len(data['referencable_objects']) == 5
     assert data['referencable_objects'] == [
-        {'action_id': action2_id, 'id': other_object.object_id, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b']},
-        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})', 'tags': []},
-        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'tags': []},
-        {'action_id': action1_id, 'id': objects[0].object_id, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'tags': []}
+        {'action_id': None, 'id': fed_object.object_id, 'is_fed': True, 'max_permission': 1, 'text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'unescaped_text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'tags': ['a', 'b']},
+        {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b']},
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'unescaped_text': f'Example1 (#{objects[0].object_id})', 'tags': []}
     ]
 
     session = requests.session()
@@ -329,8 +403,8 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 2
     assert data['referencable_objects'] == [
-        {'action_id': action1_id, 'id': objects[2].object_id, 'max_permission': 3, 'text': f'Example42 (#{objects[2].object_id})', 'tags': []},
-        {'action_id': action1_id, 'id': objects[1].object_id, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'tags': []}
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': []},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': []}
     ]
 
 
@@ -436,7 +510,7 @@ def test_request_object_permissions_with_enough_permissions(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.post(flask_server.base_url + 'objects/{}/permissions/request'.format(object.object_id), allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'] == flask_server.base_url + 'objects/{}'.format(object.object_id)
+    assert r.headers['Location'] == '/objects/{}'.format(object.object_id)
     notifications = sampledb.logic.notifications.get_notifications(user.id, unread_only=True)
     for notification in notifications:
         assert notification.type != sampledb.logic.notifications.NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST
@@ -806,7 +880,7 @@ def test_new_object(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -850,7 +924,7 @@ def test_new_object_batch(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -875,7 +949,7 @@ def test_new_object_batch_invalid_number(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -903,7 +977,7 @@ def test_new_object_batch_float_number(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -925,7 +999,7 @@ def test_new_object_batch_invalid_float_number(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -947,7 +1021,7 @@ def test_new_object_batch_number_exceeds_max(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -969,7 +1043,7 @@ def test_new_object_batch_number_below_one(flask_server, user):
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
@@ -1114,7 +1188,7 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1124,9 +1198,10 @@ def test_update_object_permissions(flask_server, user):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
-        'public_permissions': 'read',
+        'all_user_permissions': 'read',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'grant',
@@ -1142,7 +1217,7 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
         user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
@@ -1156,11 +1231,12 @@ def test_update_object_permissions(flask_server, user):
         }
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
-        'public_permissions': 'none',
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
-        'user_permissions-0-user_id': '42',
+        'user_permissions-0-user_id': str(user.id + 1000),
         'user_permissions-0-permissions': 'read',
     }
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
@@ -1169,12 +1245,13 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
-        'public_permissions': 'none',
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'read',
@@ -1185,7 +1262,7 @@ def test_update_object_permissions(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.READ
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     r = session.post(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id), data=form_data)
     assert r.status_code == 403
@@ -1222,7 +1299,7 @@ def test_object_permissions_add_user(flask_server, user):
     assert current_permissions == {
         user.id: sampledb.logic.object_permissions.Permissions.GRANT
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1256,7 +1333,7 @@ def test_object_permissions_add_user(flask_server, user):
         user.id: sampledb.logic.object_permissions.Permissions.GRANT,
         user2.id: sampledb.logic.object_permissions.Permissions.WRITE
     }
-    assert not sampledb.logic.object_permissions.object_is_public(object.object_id)
+    assert sampledb.models.Permissions.READ not in sampledb.logic.object_permissions.get_object_permissions_for_all_users(object.object_id)
     with flask_server.app.app_context():
         user_log_entries = sampledb.logic.user_log.get_user_log_entries(user.id)
         user_log_entries.sort(key=lambda log_entry: log_entry.utc_datetime)
@@ -1396,7 +1473,7 @@ def test_create_object_similar_property_names(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     assert len(sampledb.logic.objects.get_objects()) == 0
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -1408,7 +1485,7 @@ def test_create_object_similar_property_names(flask_server, user):
     form_data = {'action_submit': 'action_submit'}
 
     for input_field in input_fields:
-        if input_field['name'].startswith('object'):
+        if input_field['name'].startswith('object') and not input_field['name'].endswith('__text_languages'):
             value = 'Test'
             if 'name_2' in input_field['name']:
                 value = 'Test-2'
@@ -1485,7 +1562,7 @@ def test_edit_object_similar_property_names(flask_server, user):
     form_data = {'action_submit': 'action_submit'}
 
     for input_field in input_fields:
-        if input_field['name'].startswith('object'):
+        if input_field['name'].startswith('object') and not input_field['name'].endswith('__text_languages'):
             value = 'Test'
             if 'name_2' in input_field['name']:
                 value = 'Test-2'
@@ -1537,7 +1614,7 @@ def test_copy_object(flask_server, user):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     name = 'Example1'
     object = sampledb.logic.objects.create_object(
             data={'name': {'_type': 'text', 'text': name}, 'name2': {'_type': 'text', 'text': name}},
@@ -1773,4 +1850,322 @@ def test_new_object_with_instrument_log_entry(flask_server, user):
         assert log_entry.object_attachments[0].object_id == object.id
 
 
+def test_object_federation_references(flask_server, user, simple_object, component):
+    fed_user = sampledb.logic.users.create_user(fed_id=35, component_id=component.id, name='Example User', email=None, type=sampledb.models.UserType.FEDERATION_USER)
+    fed_data = deepcopy(simple_object.data)
+    fed_data['name']['text'] = 'Imported'
+    fed_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=42,
+        fed_version_id=0,
+        component_id=component.id,
+        action_id=None,
+        user_id=fed_user.id,
+        data=fed_data,
+        schema=simple_object.schema,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
+    data = deepcopy(REFERENCES_DATA_FRAME)
+    data['user1']['user_id'] = fed_user.id    # imported user
+    data['user2']['user_id'] = 12        # unknown user, unknown component
+    data['user2']['component_uuid'] = UUID_2
+    data['user3']['user_id'] = user.id      # local user
+    data['user4']['user_id'] = fed_user.fed_id + 1  # unknown user, known component
+    data['user4']['component_uuid'] = component.uuid
+
+    data['object1']['object_id'] = fed_object.object_id  # imported object
+    data['object2']['object_id'] = 6  # unknown object, unknown component
+    data['object2']['component_uuid'] = UUID_2
+    data['object3']['object_id'] = simple_object.object_id  # local object
+    data['object4']['object_id'] = fed_object.fed_object_id + 1  # unknown object, known component
+    data['object4']['component_uuid'] = component.uuid
+
+    data['userlist'][0]['user_id'] = fed_user.id  # imported user
+    data['userlist'][1]['user_id'] = 12  # unknown user, unknown component
+    data['userlist'][1]['component_uuid'] = UUID_2
+    data['userlist'][2]['user_id'] = user.id  # local user
+    data['userlist'][3]['user_id'] = fed_user.fed_id + 1  # unknown user, known component
+    data['userlist'][3]['component_uuid'] = component.uuid
+
+    data['objectlist'][0]['object_id'] = fed_object.object_id  # imported object
+    data['objectlist'][1]['object_id'] = 6  # unknown object, unknown component
+    data['objectlist'][1]['component_uuid'] = UUID_2
+    data['objectlist'][2]['object_id'] = simple_object.object_id  # local object
+    data['objectlist'][3]['object_id'] = fed_object.fed_object_id + 1  # unknown object, known component
+    data['objectlist'][3]['component_uuid'] = component.uuid
+
+    data['usertable'][0][0]['user_id'] = fed_user.id  # imported user
+    data['usertable'][0][1]['user_id'] = 12  # unknown user, unknown component
+    data['usertable'][0][1]['component_uuid'] = UUID_2
+    data['usertable'][1][0]['user_id'] = user.id  # local user
+    data['usertable'][1][1]['user_id'] = fed_user.fed_id + 1  # unknown user, known component
+    data['usertable'][1][1]['component_uuid'] = component.uuid
+
+    data['objecttable'][0][0]['object_id'] = fed_object.object_id  # imported object
+    data['objecttable'][0][1]['object_id'] = 6  # unknown object, unknown component
+    data['objecttable'][0][1]['component_uuid'] = UUID_2
+    data['objecttable'][1][0]['object_id'] = simple_object.object_id  # local object
+    data['objecttable'][1][1]['object_id'] = fed_object.fed_object_id + 1  # unknown object, known component
+    data['objecttable'][1][1]['component_uuid'] = component.uuid
+
+    object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=3,
+        fed_version_id=0,
+        component_id=component.id,
+        action_id=None,
+        user_id=fed_user.id,
+        data=data,
+        schema=REFERENCES_SCHEMA,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
+    session = requests.session()
+    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    r = session.get(flask_server.base_url + 'objects/' + str(object.object_id))
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+
+    # headline
+    h1_fed_link = document.find('h1').find('a')
+    h1_fed_symbol = h1_fed_link.find('i')
+    assert h1_fed_link['href'] == component.address + '/objects/' + str(object.fed_object_id)
+    assert 'fa' in h1_fed_symbol['class']
+    assert 'fa-share-alt' in h1_fed_symbol['class']
+    assert h1_fed_symbol['data-toggle'] == 'tooltip'
+    assert h1_fed_symbol['title'] == '#' + str(object.fed_object_id) + ' @ ' + component.name
+
+    # object name
+    rows = document.find_all('div', class_='row')
+    assert rows[2].find('div').getText().strip() == object.name['en']
+
+    # imported user
+    assert rows[3].find('div').getText().strip() == fed_user.name + ' (#' + str(fed_user.id) + ')'
+    links = rows[3].find('div').find_all('a')
+    assert len(links) == 2
+    assert links[0].getText().strip() == fed_user.name + ' (#' + str(fed_user.id) + ')'
+    assert links[0]['href'] == '/users/' + str(fed_user.id)
+    assert links[1]['href'] == component.address + '/users/' + str(fed_user.fed_id)
+    assert links[1].find('i')['data-toggle'] == 'tooltip'
+    assert links[1].find('i')['title'] == '#' + str(fed_user.fed_id) + ' @ ' + component.name
+    assert 'fa' in links[1].find('i')['class']
+    assert 'fa-share-alt' in links[1].find('i')['class']
+
+    # imported object
+    assert rows[4].find('div').getText().strip() == fed_object.name + ' (#' + str(fed_object.object_id) + ')'
+    links = rows[4].find('div').find_all('a')
+    assert len(links) == 2
+    assert links[0].getText().strip() == fed_object.name + ' (#' + str(fed_object.object_id) + ')'
+    assert links[0]['href'] == '/objects/' + str(fed_object.object_id)
+    assert links[1]['href'] == component.address + '/objects/' + str(fed_object.fed_object_id)
+    assert links[1].find('i')['data-toggle'] == 'tooltip'
+    assert links[1].find('i')['title'] == '#' + str(fed_object.fed_object_id) + ' @ ' + component.name
+    assert 'fa' in links[1].find('i')['class']
+    assert 'fa-share-alt' in links[1].find('i')['class']
+
+    # unknown user, unknown DB
+    assert rows[5].find('div').getText().strip() == '#12 @ Unknown database (' + UUID_2[:8] + ')'
+    assert len(rows[5].find('div').find_all('a')) == 0
+    assert rows[5].find('div').find('i')['data-toggle'] == 'tooltip'
+    assert rows[5].find('div').find('i')['title'] == '#12 @ Unknown database (' + UUID_2[:8] + ')'
+    assert 'fa' in rows[5].find('div').find('i')['class']
+    assert 'fa-share-alt' in rows[5].find('div').find('i')['class']
+
+    # unknown object, unknown DB
+    assert rows[6].find('div').getText().strip() == '#6 @ Unknown database (' + UUID_2[:8] + ')'
+    assert len(rows[6].find('div').find_all('a')) == 0
+    assert rows[6].find('div').find('i')['data-toggle'] == 'tooltip'
+    assert rows[6].find('div').find('i')['title'] == '#6 @ Unknown database (' + UUID_2[:8] + ')'
+    assert 'fa' in rows[6].find('div').find('i')['class']
+    assert 'fa-share-alt' in rows[6].find('div').find('i')['class']
+
+    # local user
+    assert rows[7].find('div').getText().strip() == user.name + ' (#' + str(user.id) + ')'
+    links = rows[7].find('div').find_all('a')
+    assert len(links) == 1
+    assert links[0].getText().strip() == user.name + ' (#' + str(user.id) + ')'
+    assert links[0]['href'] == '/users/' + str(user.id)
+
+    # local object
+    assert rows[8].find('div').getText().strip() == simple_object.name + ' (#' + str(simple_object.object_id) + ')'
+    links = rows[8].find('div').find_all('a')
+    assert len(links) == 1
+    assert links[0].getText().strip() == simple_object.name + ' (#' + str(simple_object.object_id) + ')'
+    assert links[0]['href'] == '/objects/' + str(simple_object.object_id)
+
+    # unknown user, known DB
+    assert rows[9].find('div').getText().strip() == '#' + str(fed_user.fed_id + 1) + ' @ ' + component.get_name()
+    links = rows[9].find('div').find_all('a')
+    assert len(links) == 1
+    assert links[0]['href'] == component.address + '/users/' + str(fed_user.fed_id + 1)
+    assert links[0].find('i')['data-toggle'] == 'tooltip'
+    assert links[0].find('i')['title'] == '#' + str(fed_user.fed_id + 1) + ' @ ' + component.name
+    assert 'fa' in links[0].find('i')['class']
+    assert 'fa-share-alt' in links[0].find('i')['class']
+
+    # unknown object, known DB
+    assert rows[10].find('div').getText().strip() == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.get_name()
+    links = rows[10].find('div').find_all('a')
+    assert len(links) == 1
+    assert links[0]['href'] == component.address + '/objects/' + str(fed_object.fed_object_id + 1)
+    assert links[0].find('i')['data-toggle'] == 'tooltip'
+    assert links[0].find('i')['title'] == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.name
+    assert 'fa' in links[0].find('i')['class']
+    assert 'fa-share-alt' in links[0].find('i')['class']
+
+    li = rows[11].find('ul').find_all('li')
+
+    # imported user
+    assert li[0].getText().strip() == fed_user.name + ' (#' + str(fed_user.id) + ')'
+    links = li[0].find_all('a')
+    assert len(links) == 2
+    assert links[0].getText().strip() == fed_user.name + ' (#' + str(fed_user.id) + ')'
+    assert links[0]['href'] == '/users/' + str(fed_user.id)
+    assert links[1]['href'] == component.address + '/users/' + str(fed_user.fed_id)
+    assert links[1].find('i')['data-toggle'] == 'tooltip'
+    assert links[1].find('i')['title'] == '#' + str(fed_user.fed_id) + ' @ ' + component.name
+    assert 'fa' in links[1].find('i')['class']
+    assert 'fa-share-alt' in links[1].find('i')['class']
+
+    # unknown user, unknown DB
+    assert li[1].getText().strip() == '#12 @ Unknown database (' + UUID_2[:8] + ')'
+    assert len(li[1].find_all('a')) == 0
+    assert li[1].find('i')['data-toggle'] == 'tooltip'
+    assert li[1].find('i')['title'] == '#12 @ Unknown database (' + UUID_2[:8] + ')'
+    assert 'fa' in li[1].find('i')['class']
+    assert 'fa-share-alt' in li[1].find('i')['class']
+
+    # local user
+    assert li[2].getText().strip() == user.name + ' (#' + str(user.id) + ')'
+    links = li[2].find_all('a')
+    assert len(links) == 1
+    assert links[0].getText().strip() == user.name + ' (#' + str(user.id) + ')'
+    assert links[0]['href'] == '/users/' + str(user.id)
+
+    # unknown user, known DB
+    assert li[3].getText().strip() == '#' + str(fed_user.fed_id + 1) + ' @ ' + component.get_name()
+    links = li[3].find_all('a')
+    assert len(links) == 1
+    assert links[0]['href'] == component.address + '/users/' + str(fed_user.fed_id + 1)
+    assert links[0].find('i')['data-toggle'] == 'tooltip'
+    assert links[0].find('i')['title'] == '#' + str(fed_user.fed_id + 1) + ' @ ' + component.name
+    assert 'fa' in links[0].find('i')['class']
+    assert 'fa-share-alt' in links[0].find('i')['class']
+
+    li = rows[12].find('ul').find_all('li')
+
+    # imported object
+    assert li[0].getText().strip() == fed_object.name + ' (#' + str(fed_object.object_id) + ')'
+    links = li[0].find_all('a')
+    assert len(links) == 2
+    assert links[0].getText().strip() == fed_object.name + ' (#' + str(fed_object.object_id) + ')'
+    assert links[0]['href'] == '/objects/' + str(fed_object.object_id)
+    assert links[1]['href'] == component.address + '/objects/' + str(fed_object.fed_object_id)
+    assert links[1].find('i')['data-toggle'] == 'tooltip'
+    assert links[1].find('i')['title'] == '#' + str(fed_object.fed_object_id) + ' @ ' + component.name
+    assert 'fa' in links[1].find('i')['class']
+    assert 'fa-share-alt' in links[1].find('i')['class']
+
+    # unknown object, unknown DB
+    assert li[1].getText().strip() == '#6 @ Unknown database (' + UUID_2[:8] + ')'  # Object
+    assert len(li[1].find_all('a')) == 0
+    assert li[1].find('i')['data-toggle'] == 'tooltip'
+    assert li[1].find('i')['title'] == '#6 @ Unknown database (' + UUID_2[:8] + ')'
+    assert 'fa' in li[1].find('i')['class']
+    assert 'fa-share-alt' in li[1].find('i')['class']
+
+    # local object
+    assert li[2].getText().strip() == simple_object.name + ' (#' + str(simple_object.object_id) + ')'
+    links = li[2].find_all('a')
+    assert len(links) == 1
+    assert links[0].getText().strip() == simple_object.name + ' (#' + str(simple_object.object_id) + ')'
+    assert links[0]['href'] == '/objects/' + str(simple_object.object_id)
+
+    # unknown object, known DB
+    assert li[3].getText().strip() == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.get_name()
+    links = li[3].find_all('a')
+    assert len(links) == 1
+    assert links[0]['href'] == component.address + '/objects/' + str(fed_object.fed_object_id + 1)
+    assert links[0].find('i')['data-toggle'] == 'tooltip'
+    assert links[0].find('i')['title'] == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.name
+    assert 'fa' in links[0].find('i')['class']
+    assert 'fa-share-alt' in links[0].find('i')['class']
+
+    tables = document.find_all('table', class_='table')
+    td = tables[0].find_all('td')
+
+    # imported user
+    assert td[0].getText().strip() == fed_user.name + ' (#' + str(fed_user.id) + ')'
+    links = td[0].find_all('a')
+    assert len(links) == 2
+    assert links[0].getText().strip() == fed_user.name + ' (#' + str(fed_user.id) + ')'
+    assert links[0]['href'] == '/users/' + str(fed_user.id)
+    assert links[1]['href'] == component.address + '/users/' + str(fed_user.fed_id)
+    assert links[1].find('i')['data-toggle'] == 'tooltip'
+    assert links[1].find('i')['title'] == '#' + str(fed_user.fed_id) + ' @ ' + component.name
+    assert 'fa' in links[1].find('i')['class']
+    assert 'fa-share-alt' in links[1].find('i')['class']
+
+    # unknown user, unknown DB
+    assert td[1].getText().strip() == '#12 @ Unknown database (' + UUID_2[:8] + ')'
+    assert len(td[1].find_all('a')) == 0
+    assert td[1].find('i')['data-toggle'] == 'tooltip'
+    assert td[1].find('i')['title'] == '#12 @ Unknown database (' + UUID_2[:8] + ')'
+    assert 'fa' in td[1].find('i')['class']
+    assert 'fa-share-alt' in td[1].find('i')['class']
+
+    # local user
+    assert td[2].getText().strip() == user.name + ' (#' + str(user.id) + ')'
+    links = td[2].find_all('a')
+    assert len(links) == 1
+    assert links[0].getText().strip() == user.name + ' (#' + str(user.id) + ')'
+    assert links[0]['href'] == '/users/' + str(user.id)
+
+    # unknown user, known DB
+    assert td[3].getText().strip() == '#' + str(fed_user.fed_id + 1) + ' @ ' + component.get_name()
+    links = td[3].find_all('a')
+    assert len(links) == 1
+    assert links[0]['href'] == component.address + '/users/' + str(fed_user.fed_id + 1)
+    assert links[0].find('i')['data-toggle'] == 'tooltip'
+    assert links[0].find('i')['title'] == '#' + str(fed_user.fed_id + 1) + ' @ ' + component.name
+    assert 'fa' in links[0].find('i')['class']
+    assert 'fa-share-alt' in links[0].find('i')['class']
+
+    td = tables[1].find_all('td')
+
+    # imported object
+    assert td[0].getText().strip() == fed_object.name + ' (#' + str(fed_object.object_id) + ')'
+    links = td[0].find_all('a')
+    assert len(links) == 2
+    assert links[0].getText().strip() == fed_object.name + ' (#' + str(fed_object.object_id) + ')'
+    assert links[0]['href'] == '/objects/' + str(fed_object.object_id)
+    assert links[1]['href'] == component.address + '/objects/' + str(fed_object.fed_object_id)
+    assert links[1].find('i')['data-toggle'] == 'tooltip'
+    assert links[1].find('i')['title'] == '#' + str(fed_object.fed_object_id) + ' @ ' + component.name
+    assert 'fa' in links[1].find('i')['class']
+    assert 'fa-share-alt' in links[1].find('i')['class']
+
+    # unknown object, unknown DB
+    assert td[1].getText().strip() == '#6 @ Unknown database (' + UUID_2[:8] + ')'  # Object
+    assert len(td[1].find_all('a')) == 0
+    assert td[1].find('i')['data-toggle'] == 'tooltip'
+    assert td[1].find('i')['title'] == '#6 @ Unknown database (' + UUID_2[:8] + ')'
+    assert 'fa' in td[1].find('i')['class']
+    assert 'fa-share-alt' in td[1].find('i')['class']
+
+    # local object
+    assert td[2].getText().strip() == simple_object.name + ' (#' + str(simple_object.object_id) + ')'
+    links = td[2].find_all('a')
+    assert len(links) == 1
+    assert links[0].getText().strip() == simple_object.name + ' (#' + str(simple_object.object_id) + ')'
+    assert links[0]['href'] == '/objects/' + str(simple_object.object_id)
+
+    # unknown object, known component
+    assert td[3].getText().strip() == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.get_name()
+    links = td[3].find_all('a')
+    assert len(links) == 1
+    assert links[0]['href'] == component.address + '/objects/' + str(fed_object.fed_object_id + 1)
+    assert links[0].find('i')['data-toggle'] == 'tooltip'
+    assert links[0].find('i')['title'] == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.name
+    assert 'fa' in links[0].find('i')['class']
+    assert 'fa-share-alt' in links[0].find('i')['class']

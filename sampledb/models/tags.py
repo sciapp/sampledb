@@ -6,7 +6,7 @@
 from .. import db
 
 
-class Tag(db.Model):
+class Tag(db.Model):  # type: ignore
     __tablename__ = 'tags'
 
     id = db.Column(db.Integer, primary_key=True)

@@ -5,38 +5,40 @@ Splits action types into action_types and action_type_translations
 
 import os
 
+import flask_sqlalchemy
+
 from ..languages import Language
 
 MIGRATION_INDEX = 53
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute("""
+    column_names = db.session.execute(db.text("""
             SELECT column_name
             FROM information_schema.columns
             WHERE table_name = 'instruments'
-        """).fetchall()
+        """)).fetchall()
     if ('name',) not in column_names:
         return False
 
     # Perform migration
     existing_data = [
         instrument_data
-        for instrument_data in db.session.execute("""
+        for instrument_data in db.session.execute(db.text("""
             SELECT id, name, description, short_description, notes
             FROM instruments
-        """).fetchall()
+        """)).fetchall()
     ]
 
-    db.session.execute("""
+    db.session.execute(db.text("""
             ALTER TABLE instruments
             DROP COLUMN name,
             DROP COLUMN description,
             DROP COLUMN short_description,
             DROP COLUMN notes
-        """)
+        """))
 
     performed_migration = False
     for instrument_id, name, description, short_description, notes in existing_data:
@@ -49,10 +51,10 @@ def run(db):
             'notes': notes
         }
         # Perform migration
-        db.session.execute("""
+        db.session.execute(db.text("""
                       INSERT INTO instrument_translations (instrument_id, language_id, name, description, short_description, notes)
                       VALUES (:instrument_id, :language_id, :name, :description, :short_description, :notes)
-                  """, params=translation)
+                  """), params=translation)
         performed_migration = True
 
     return performed_migration

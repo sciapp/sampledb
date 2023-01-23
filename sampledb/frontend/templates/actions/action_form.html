@@ -4,26 +4,22 @@
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pygments.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
-{% if use_schema_editor %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/schema_editor.css') }}">
-{% endif %}
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('pygments/css/pygments.css') }}">
+<link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/schema_editor.css') }}">
 {% endblock %}
 
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
-  {% if use_schema_editor %}
-  <script src="{{ url_for('static', filename='js/schema_editor.js') }}"></script>
-  {% endif %}
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script>
   // translations of error / help messages used in the static schema_editor.js
   window.schema_editor_translations = {
@@ -147,7 +143,7 @@
     </div>
   {% endif %}
 
-    <form method="post">
+    <form method="post" id="form-action">
         {{ action_form.hidden_tag() }}
         <div class="col-md-12">
 
@@ -289,9 +285,9 @@
       <div class="form-group {% if action_form.type.name in action_form.errors %}has-error{% endif %}">
         <label for="input-type" class="control-label">{{ _("Type") }}</label>
         <select class="selectpicker form-control" id="input-type" name="{{ action_form.type.name }}" {% if not may_change_type %}disabled="disabled"{% endif %}>
-          {% for action_type in action_types_with_translations%}
+          {% for action_type in action_types %}
             {% if not action_type.admin_only or current_user.is_admin or action_form.type.data == action_type.id %}
-          <option value="{{ action_type.id }}" data-is-template="{{ action_type.is_template }}" {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.translation.name}}</option>
+          <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}" data-is-template="{{ action_type.is_template }}" {% if action_form.type.data == action_type.id %}selected="selected"{% endif %}>{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}</option>
             {% endif %}
           {% endfor %}
         </select>
@@ -306,14 +302,18 @@
         {% endif %}
       </div>
 
+      {% if not config['DISABLE_INSTRUMENTS'] %}
       <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}style="display: none"{% endif %}>
         <label for="input-instrument" class="control-label">{{ _('Instrument') }}</label>
         <select class="selectpicker form-control" id="input-instrument" name="{{ action_form.instrument.name }}" {% if not may_change_instrument %}disabled="disabled"{% endif %} data-none-selected-text="{{ _('No instrument selected') }}">
           {% for instrument_id, instrument_name in action_form.instrument.choices %}
-          <option value="{{ instrument_id }}" {% if action_form.instrument.data == instrument_id %}selected="selected"{% endif %}>{% if instrument_id == '-1' %}&mdash;{% else %}{{ instrument_name }}{% endif %}</option>
+          <option {% if instrument_is_fed[instrument_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument_id }}" {% if action_form.instrument.data == instrument_id %}selected="selected"{% endif %}>{% if instrument_id == '-1' %}&mdash;{% else %}{{ instrument_name }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
+      {% else %}
+        <input name="{{ action_form.instrument.name }}" type="hidden" value="-1" {% if not may_change_instrument %}disabled="disabled"{% endif %} />
+      {% endif %}
 
       <div class="checkbox">
         <label for="input-is_hidden" style="font-weight:400">
@@ -321,18 +321,39 @@
         </label>
       </div>
 
+      <div class="radio">
+        <label>
+          <input type="radio" name="{{ action_form.usable_by.name }}" value="with_permissions" {% if action_form.usable_by.data is none or action_form.usable_by.data == 'with_permissions' %}checked="checked"{% endif %}>
+          {{ _('All users with Read permissions can create objects using this action') }}
+        </label>
+      </div>
+      <div class="radio">
+        <label>
+          <input type="radio" name="{{ action_form.usable_by.name }}" value="admins" {% if action_form.usable_by.data == 'admins' %}checked="checked"{% endif %}>
+          {{ _('Only administrators can create objects using this action') }}
+        </label>
+      </div>
+      <div class="radio">
+        <label>
+          <input type="radio" name="{{ action_form.usable_by.name }}" value="nobody" {% if action_form.usable_by.data == 'nobody' %}checked="checked"{% endif %}>
+          {{ _('Creating objects using this action is disabled') }}
+        </label>
+      </div>
+
       <div class="form-group {% if action_form.schema.name in action_form.errors %}has-error{% endif %}">
         <label for="input-schema" class="control-label">{{ _('Schema') }}</label>
-        {% if use_schema_editor %}
-          <script>
-          {% if error_message is not none %}
-            window.schema_editor_error_message = {{ error_message | tojson }};
-          {% else %}
-            window.schema_editor_error_message = null;
-          {% endif %}
-          </script>
-          <div class="schema-editor" id="schema-editor"></div>
+        <label class="pull-right" data-placement="top" data-trigger="manual" title="{{ _('Invalid JSON input, can not use graphical editor') }}">
+          <span class="sr-only">{{ _('Use Graphical Editor') }}</span>
+          <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" {% if use_schema_editor %}checked="checked"{% endif %} />
+        </label>
+        <script>
+        {% if error_message is not none %}
+          window.schema_editor_error_message = {{ error_message | tojson }};
+        {% else %}
+          window.schema_editor_error_message = null;
         {% endif %}
+        </script>
+        <div class="schema-editor" id="schema-editor"></div>
         <textarea class="form-control" rows="{% if schema_json %}{{ schema_json.splitlines() | length }}{% else %}5{% endif %}" id="input-schema" name="{{ action_form.schema.name }}" placeholder="{{ _('Schema') }}">{{ action_form.schema.data or ''}}</textarea>
       </div>
 
@@ -351,7 +372,6 @@
   </form>
 
 
-{% if use_schema_editor %}
   <div id="schema-editor-templates">
     <div class="well schema-editor-root-object">
       <div class="schema-editor-property-settings">
@@ -414,8 +434,8 @@
             <option value="quantity">{{ _('Quantity') }}</option>
             <option value="bool">{{ _('Boolean') }}</option>
             <option value="datetime">{{ _('Datetime') }}</option>
-            <option value="sample">{{ sample_action_type.translation.object_name }}</option>
-            <option value="measurement">{{ measurement_action_type.translation.object_name }}</option>
+            <option value="sample">{{ sample_action_type.object_name | get_translated_text(default=_('Object')) }}</option>
+            <option value="measurement">{{ measurement_action_type.object_name | get_translated_text(default=_('Object')) }}</option>
             <option value="user">{{ _('User') }}</option>
             <option value="object_reference">{{ _('Object Reference') }}</option>
             <option value="plotly_chart">{{ _('Plotly Chart') }}</option>
@@ -537,7 +557,7 @@
           <input type="text" class="form-control schema-editor-quantity-property-placeholder-input" placeholder="{{ _('Placeholder') }}" value="">
         </div>
         <div class="schema-editor-form-group">
-          <label class="control-label schema-editor-quantity-property-units-label">{{ _('Units') }}</label>
+          <label class="control-label schema-editor-quantity-property-units-label" data-toggle="tooltip" data-placement="top" title="{{ _('Unit or a list of units the user can choose from, separated by commas.') }}">{{ _('Units') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
           <input type="text" class="form-control schema-editor-quantity-property-units-input" id="input-schema-name-text-default" placeholder="{{ _('Units') }}" value="">
           <span class="help-block"></span>
         </div>
@@ -555,7 +575,7 @@
             <option value="">&mdash;</option>
             {% for template in get_templates(current_user.id) %}
               {% if current_action is none or current_action.id != template.id %}
-                <option value="{{ template.id }}">{{ template.translation.name }}</option>
+                <option value="{{ template.id }}">{{ template.name | get_translated_text }}</option>
               {% endif %}
             {% endfor %}
           </select>
@@ -574,15 +594,13 @@
         </div>
         <div class="modal-body">
           <p>{{ _('The schema for this action contains advanced features which the graphical schema editor does not support. If you continue, these might be removed from the schema.') }}</p>
-          <p>{{ _('If you wish to edit the schema with the text-based editor, you can enable it in your <a href="%(preference_url)s">preferences</a>.', preference_url=url_for('.user_me_preferences')) }}</p>
         </div>
         <div class="modal-footer">
-          <a class="btn btn-primary" href="{{ url_for('.user_me_preferences') }}">{{ _('Edit Preferences') }}</a>
-          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Use Schema Editor') }}</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Use Graphical Editor') }}</button>
+          <button type="button" class="btn btn-primary" data-dismiss="modal" id="button-use-text-editor">{{ _('Use JSON Editor') }}</button>
         </div>
       </div>
     </div>
   </div>
-{% endif %}
 
 {% endblock %}

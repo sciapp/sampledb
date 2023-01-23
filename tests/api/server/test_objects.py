@@ -63,9 +63,8 @@ def action():
         name="Example Action",
         description="This is an example action"
     )
-    return sampledb.logic.action_translations.get_action_with_translation_in_language(
-        action_id=action.id,
-        language_id=sampledb.logic.action_translations.Language.ENGLISH
+    return sampledb.logic.actions.get_action(
+        action_id=action.id
     )
 
 
@@ -80,6 +79,11 @@ def other_action():
                 'name': {
                     'title': 'Object Name',
                     'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'object_reference',
+                    'action_type_id': -99
                 }
             },
             'required': ['name']
@@ -107,7 +111,10 @@ def test_get_object_version(flask_server, auth, user, action):
         "user_id": user.id,
         "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
-        "data": object.data
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id
     }
     r = requests.get(flask_server.base_url + 'api/v1/objects/1/versions/1', auth=auth)
     assert r.status_code == 404
@@ -128,7 +135,10 @@ def test_get_object_version(flask_server, auth, user, action):
         },
         "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
-        "data": object.data
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id
     }
 
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
@@ -141,10 +151,13 @@ def test_get_object_version(flask_server, auth, user, action):
         "user_id": user.id,
         "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
-        "data": object.data
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id
     }
 
-    sampledb.logic.action_permissions.set_action_public(action_id=object.action_id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(object.action_id, sampledb.models.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?embed_action=1'.format(object.object_id, object.version_id), auth=auth)
     assert r.status_code == 200
     assert json.loads(r.content.decode('utf-8')) == {
@@ -157,15 +170,18 @@ def test_get_object_version(flask_server, auth, user, action):
             'user_id': None,
             'type': 'sample',
             'type_id': sampledb.models.ActionType.SAMPLE_CREATION,
-            'name': action.translation.name,
-            'description': action.translation.description,
+            'name': action.name['en'],
+            'description': action.description['en'],
             'is_hidden': action.is_hidden,
             'schema': action.schema
         },
         "user_id": user.id,
         "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "schema": object.schema,
-        "data": object.data
+        "data": object.data,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id
     }
 
 
@@ -402,6 +418,17 @@ def test_post_object_version(flask_server, auth, user, action):
     assert r.json()['message'] == """validation failed:
  - unexpected keys in schema: {'value'} (at name)"""
 
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}'.format(object.object_id), auth=auth)
+    assert r.status_code == 200
+    object_json = r.json()
+    # remove keys that must not be copied
+    del object_json['user_id']
+    del object_json['utc_datetime']
+    # update version_id
+    object_json['version_id'] += 1
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+
 
 def test_get_objects(flask_server, auth, user, other_user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)
@@ -429,7 +456,10 @@ def test_get_objects(flask_server, auth, user, other_user, action):
             "version_id": object.version_id,
             "action_id": object.action_id,
             "schema": object.schema,
-            "data": object.data
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
         }
     ]
 
@@ -566,7 +596,10 @@ def test_get_objects_with_name_only(flask_server, auth, user):
                     '_type': 'text',
                     'text': 'Example'
                 }
-            }
+            },
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
         }
     ]
 
@@ -793,7 +826,10 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "version_id": object.version_id,
             "action_id": object.action_id,
             "schema": object.schema,
-            "data": object.data
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
@@ -833,7 +869,10 @@ def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, 
             "version_id": object.version_id,
             "action_id": object.action_id,
             "schema": object.schema,
-            "data": object.data
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
@@ -870,7 +909,10 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
             "version_id": object.version_id,
             "action_id": object.action_id,
             "schema": object.schema,
-            "data": object.data
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
@@ -883,7 +925,10 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
             "version_id": object.version_id,
             "action_id": object.action_id,
             "schema": object.schema,
-            "data": object.data
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
         }
     ]
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
@@ -895,3 +940,54 @@ def test_get_objects_by_action_type(flask_server, auth, user, other_user, action
         'action_type': 'other'
     })
     assert r.status_code == 400
+
+
+def test_get_related_object_ids(flask_server, auth, user, action, other_action):
+    r = requests.get(flask_server.base_url + 'api/v1/objects/0/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 404
+    sample_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        }
+    }
+    sample = sampledb.logic.objects.create_object(action_id=action.id, data=sample_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + f'api/v1/objects/{sample.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [],
+        'referencing_objects': []
+    }
+    measurement_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Example'
+        },
+        'sample': {
+            '_type': 'object_reference',
+            'object_id': sample.object_id
+        }
+    }
+    measurement = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
+    r = requests.get(flask_server.base_url + f'api/v1/objects/{sample.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [],
+        'referencing_objects': [
+            {
+                'object_id': measurement.object_id,
+                'component_uuid': None
+            }
+        ]
+    }
+    r = requests.get(flask_server.base_url + f'api/v1/objects/{measurement.object_id}/related_objects', auth=auth, allow_redirects=False)
+    assert r.status_code == 200
+    assert r.json() == {
+        'referenced_objects': [
+            {
+                'object_id': sample.object_id,
+                'component_uuid': None
+            }
+        ],
+        'referencing_objects': []
+    }

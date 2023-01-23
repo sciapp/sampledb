@@ -54,7 +54,7 @@ def test_get_action(flask_server, auth):
         name="Example Action",
         description="This is an example action",
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v1/actions/{}'.format(action.id), auth=auth)
     assert r.status_code == 200
     assert r.json() == {
@@ -106,7 +106,7 @@ def test_get_actions(flask_server, auth, auth_user):
         name="Example Action",
         description="This is an example action",
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     r = requests.get(flask_server.base_url + 'api/v1/actions/', auth=auth)
     assert r.status_code == 200
     assert r.json() == [

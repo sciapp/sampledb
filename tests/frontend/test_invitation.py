@@ -74,7 +74,7 @@ def test_send_invitation(flask_server, user):
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is False
 
     # Get the confirmation url from the mail and open it
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(flask_server.base_url + 'users/invitation')
     r = session.get(confirmation_url)
     assert r.status_code == 200
@@ -131,7 +131,7 @@ def test_registration_with_token_available(flask_server):
     r = session.get(url, params=data)
     assert r.status_code == 200
 
-    assert 'Account Creation' in r.content.decode('utf-8')
+    assert 'Create Account' in r.content.decode('utf-8')
 
 
 def test_registration(flask_server):

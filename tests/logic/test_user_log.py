@@ -67,7 +67,7 @@ def test_get_user_log_entries(user1, user2, action):
     }, user_id=user1.id)
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 4
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 0
-    sampledb.logic.object_permissions.set_object_public(object_id=object.id, is_public=True)
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.READ)
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user1.id)) == 4
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 1
     sampledb.logic.user_log.create_batch(user1.id, [object.id, 21])
@@ -75,7 +75,7 @@ def test_get_user_log_entries(user1, user2, action):
     assert len(sampledb.logic.user_log.get_user_log_entries(user1.id, as_user_id=user2.id)) == 2
 
 
-def test_get_user_related_object_ids(user1, user2):
+def test_get_user_related_object_ids(user1, user2, action):
     assert not sampledb.logic.user_log.get_user_related_object_ids(user1.id)
     assert not sampledb.logic.user_log.get_user_related_object_ids(user2.id)
     sampledb.logic.user_log.create_object(user1.id, 1)
@@ -88,3 +88,28 @@ def test_get_user_related_object_ids(user1, user2):
     sampledb.logic.user_log.create_batch(user2.id, [3, 4])
     assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {1, 2}
     assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == {3, 4}
+
+
+def test_get_user_related_object_ids_with_location_assignments(user1, user2, action):
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == set()
+    assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == set()
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    }, user_id=user1.id)
+    location = sampledb.logic.locations.create_location('test', '', None, user1.id, type_id=sampledb.logic.locations.LocationType.LOCATION)
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {object1.id}
+    assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == set()
+    sampledb.logic.locations.create_notification_for_being_assigned_as_responsible_user = lambda *args, **kwargs: None
+    sampledb.logic.locations.assign_location_to_object(object1.id, location.id, user2.id, user1.id, '')
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {object1.id}
+    # being assigned as responsible can mean that the object is related to the
+    # user, but it is not part of the user's log and does not fit the way that
+    # this function is used so far, as in 'objects with activity by user X'
+    assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == set()
+    sampledb.logic.locations.assign_location_to_object(object1.id, location.id, None, user2.id, '')
+    assert sampledb.logic.user_log.get_user_related_object_ids(user1.id) == {object1.id}
+    assert sampledb.logic.user_log.get_user_related_object_ids(user2.id) == {object1.id}
+

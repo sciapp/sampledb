@@ -4,6 +4,7 @@
 """
 
 import collections
+import dataclasses
 import typing
 
 from .. import db
@@ -11,18 +12,19 @@ from .. import models
 from . import errors
 from . import object_log
 from . import user_log
-from .objects import get_object
-from .users import get_user
+from . import object_permissions
+from .objects import check_object_exists
+from .users import check_user_exists
 
 
-class Publication(collections.namedtuple('Publication', ['doi', 'title', 'object_name'])):
+@dataclasses.dataclass(frozen=True)
+class Publication:
     """
     This class provides an immutable wrapper around models.object_publications.ObjectPublication.
     """
-
-    def __new__(cls, doi: str, title: str, object_name: str):
-        self = super(Publication, cls).__new__(cls, doi, title, object_name)
-        return self
+    doi: str
+    title: str
+    object_name: str
 
     @classmethod
     def from_database(cls, publication: models.object_publications.ObjectPublication) -> 'Publication':
@@ -39,7 +41,7 @@ def link_publication_to_object(
         doi: str,
         title: typing.Optional[str] = None,
         object_name: typing.Optional[str] = None
-):
+) -> None:
     """
     Link a publication to an object.
 
@@ -53,8 +55,8 @@ def link_publication_to_object(
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    get_user(user_id)
-    get_object(object_id)
+    check_user_exists(user_id)
+    check_object_exists(object_id)
     link = models.object_publications.ObjectPublication.query.filter_by(object_id=object_id, doi=doi).first()
     if link is None:
         link = models.object_publications.ObjectPublication(object_id=object_id, doi=doi)
@@ -75,7 +77,7 @@ def get_publications_for_object(object_id: int) -> typing.Sequence[Publication]:
     :raise errors.ObjectDoesNotExistError: when no object with the given object ID
         exists
     """
-    get_object(object_id)
+    check_object_exists(object_id)
     links = models.object_publications.ObjectPublication.query.filter_by(object_id=object_id).all()
     return [
         Publication.from_database(link)
@@ -128,3 +130,45 @@ def simplify_doi(doi: str) -> str:
     if any(c in '<>"' for c in object_id):
         raise errors.InvalidDOIError()
     return doi
+
+
+def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, typing.Optional[str]]]:
+    """
+    Get a list of DOIs and titles for publications linked to objects readable by the given user.
+
+    If multiple titles are used for the same DOI, the most used, non-empty
+    title will be used, with lexicographical sorting as final criteria.
+
+    :param user_id: the ID of an existing user
+    :return: a list containing publication DOIs and titles
+    """
+    readable_objects = object_permissions.get_objects_with_permissions(
+        user_id=user_id,
+        permissions=models.Permissions.READ,
+        name_only=True
+    )
+    readable_object_ids = {
+        object.object_id
+        for object in readable_objects
+    }
+    publication_links = models.object_publications.ObjectPublication.query.filter(
+        models.object_publications.ObjectPublication.object_id.in_(readable_object_ids)
+    ).all()
+    publication_titles: typing.Dict[str, typing.List[str]] = {}
+    for link in publication_links:
+        if link.doi not in publication_titles:
+            publication_titles[link.doi] = []
+        if link.title:
+            publication_titles[link.doi].append(link.title)
+    publications = []
+    for doi in publication_titles:
+        title: typing.Optional[str]
+        if publication_titles[doi]:
+            # sort titles lexicographically, then find most commonly used title
+            publication_titles[doi].sort()
+            title = collections.Counter(publication_titles[doi]).most_common(1)[0][0]
+        else:
+            title = None
+        publications.append((doi, title))
+    publications.sort()
+    return publications

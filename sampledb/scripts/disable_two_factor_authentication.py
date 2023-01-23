@@ -6,11 +6,13 @@ Usage: python -m sampledb disable_two_factor_authentication <user_id>
 """
 
 import sys
+import typing
+
 from .. import create_app
 from ..logic.authentication import get_active_two_factor_authentication_method, deactivate_two_factor_authentication_method
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 1 or not all(arguments):
         print(__doc__)
         exit(1)

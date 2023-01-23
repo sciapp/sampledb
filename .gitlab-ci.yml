@@ -13,7 +13,7 @@ variables:
 
 test:
   stage: test
-  image: ubuntu:20.04
+  image: python:3.10-slim-bullseye
   services:
     - postgres:12
   tags:
@@ -21,7 +21,7 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client libpangocairo-1.0-0 gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext
     - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
@@ -42,19 +42,104 @@ test:
 
 analyze:
   stage: test
-  image: ubuntu:20.04
+  image: python:3.10-slim-bullseye
   script:
     - apt-get update
     # set up Python 3
     - apt-get install -y git python3-pip
     # install static analysis packages
-    - python3 -m pip install pycodestyle pyflakes
-    - python3 -m pycodestyle --ignore=E402,E501,W504 sampledb
+    - python3 -m pip install pycodestyle pyflakes mypy pylint
+    # install library stub files
+    - python3 -m pip install types-babel types-beautifulsoup4 types-bleach types-Flask-SQLAlchemy types-Markdown types-requests types-SQLAlchemy types-ldap3 flask-httpauth-stubs
+    - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
     - python3 -m pyflakes sampledb
+    - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
+    - python -m pylint sampledb --disable=R,C,W,E --enable=W9015 --load-plugins=pylint.extensions.docparams
+
+check-migrations:
+  stage: test
+  image: python:3.10-slim-bullseye
+  services:
+    - postgres:12
+  script:
+    # define environment variables needed for SampleDB demo
+    - export SAMPLEDB_CONTACT_EMAIL=example@example.org
+    - export SAMPLEDB_MAIL_SERVER=example.org
+    - export SAMPLEDB_MAIL_SENDER=example@example.org
+    # set up system dependencies
+    - apt-get update
+    - apt-get install -y git python3-pip libpython3-dev libpangocairo-1.0-0 gettext postgresql-client
+    # set up database without upgrade
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_without_upgrade.sql
+    # re-create database to ensure it is entirely empty
+    - dropdb -h postgres -U postgres postgres
+    - createdb -h postgres -U postgres postgres
+    # check out stable version
+    - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
+    - git fetch upstream master
+    - git checkout FETCH_HEAD
+    # set up database with stable version
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # check out current version again
+    - git checkout $CI_COMMIT_SHA
+    # upgrade database using migrations
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
+    # ensure both backups yield identical backups
+    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_master.sql
+    # re-create database to ensure it is entirely empty
+    - dropdb -h postgres -U postgres postgres
+    - createdb -h postgres -U postgres postgres
+    # check out development version
+    - git fetch upstream develop
+    - git checkout FETCH_HEAD
+    # set up database with development version
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # check out current version again
+    - git checkout $CI_COMMIT_SHA
+    # upgrade database using migrations
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
+    # ensure both backups yield identical backups
+    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
+
+check-translations:
+  stage: test
+  image: python:3.10-slim-bullseye
+  script:
+    - apt-get update
+    # set up Python 3
+    - apt-get install -y git python3-pip
+    # install Flask-Babel
+    - python3 -m pip install  flask-babel
+    # create a copy of the current extracted messages
+    - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_current_de.po
+    # ensure there are no fuzzy translations
+    - grep -zqv fuzzy extracted_messages_current_de.po
+    # ensure there are no empty translations
+    - "grep -zqvP 'msgstr \"\"\\n\\n' extracted_messages_current_de.po"
+    # extract and update messages
+    - pybabel extract --no-location -F babel.cfg -k lazy_gettext -o sampledb/messages.pot sampledb
+    - pybabel update -i sampledb/messages.pot -d sampledb/translations -D extracted_messages
+    - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_generated_de.po
+    # remove lines 1-19 containing the header comment and translation information
+    - sed '1,19d' extracted_messages_current_de.po > extracted_messages_current_de_without_header.po
+    - sed '1,19d' extracted_messages_generated_de.po > extracted_messages_generated_de_without_header.po
+    # compare current and generated messages to ensure there are no changes missing in the current messages
+    - diff --color=always extracted_messages_current_de_without_header.po extracted_messages_generated_de_without_header.po
 
 documentation:
   stage: test
-  image: debian:11
+  image: python:3.10-slim-bullseye
   services:
     - postgres:latest
   tags:
@@ -79,14 +164,16 @@ build:
   tags:
     - privileged-executor
   script:
-  - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-      export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
-      docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$VERSION;
-      docker push $CI_REGISTRY_IMAGE:$VERSION;
-    fi
+    - apk add git
+    - export VERSION=`git describe`
+    - docker build --build-arg SAMPLEDB_VERSION="$VERSION" -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+        export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
+        docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$VERSION;
+        docker push $CI_REGISTRY_IMAGE:$VERSION;
+      fi
 
 pages:
   stage: deploy

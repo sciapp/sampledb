@@ -2,30 +2,32 @@
 """
 Scripts for administrating SampleDB
 
-Usage: python -m sampledb <script> ...
+Usage: python -m sampledb <script> [options]
 """
 
 import sys
+import typing
 
 from .scripts import script_documentation, script_functions
 
 
-available_scripts = list(script_functions.keys())
-available_scripts.sort()
-
-
-def help_and_exit(return_code):
+def help_and_exit(return_code: int) -> None:
+    available_scripts = sorted(script_functions.keys())
     print(
-        __doc__ + '\n'
-        'Available scripts:\n'
-        ' - ' + '\n - '.join(available_scripts) + '\n\n'
-        'To find out how more about a script, use:\n\n'
-        'python -m sampledb help <script>\n'
+        __doc__,
+        'Available scripts:',
+        ' - ' + '\n - '.join(available_scripts),
+        '',
+        'To find out how more about a script, use:',
+        '',
+        'python -m sampledb help <script>',
+        '',
+        sep='\n'
     )
     exit(return_code)
 
 
-def main(argv):
+def main(argv: typing.List[str]) -> None:
     if len(argv) < 2:
         return help_and_exit(1)
     script = argv[1]

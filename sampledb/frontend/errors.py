@@ -7,20 +7,32 @@ import flask
 
 from . import frontend
 from ..logic.errors import UserIsReadonlyError, DataverseNotReachableError
+from ..api.server.errors import is_api_error, handle_api_error
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 @frontend.app_errorhandler(400)
 def bad_request(error):
+    if is_api_error():
+        return handle_api_error(error)
     try:
         return flask.render_template('errors/400.html'), 400
     except Exception:
         return 'Bad Request', 400
 
 
+@frontend.app_errorhandler(401)
+def unauthorized(error):
+    if is_api_error():
+        return handle_api_error(error)
+    raise error
+
+
 @frontend.app_errorhandler(403)
 def forbidden(error):
+    if is_api_error():
+        return handle_api_error(error)
     try:
         return flask.render_template('errors/403.html'), 403
     except Exception:
@@ -29,6 +41,8 @@ def forbidden(error):
 
 @frontend.app_errorhandler(404)
 def file_not_found(error):
+    if is_api_error():
+        return handle_api_error(error)
     try:
         return flask.render_template('errors/404.html'), 404
     except Exception:
@@ -37,6 +51,8 @@ def file_not_found(error):
 
 @frontend.app_errorhandler(500)
 def internal_server_error(error):
+    if is_api_error():
+        return handle_api_error(error)
     try:
         return flask.render_template('errors/500.html'), 500
     except Exception:

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Location Types') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Location Types') }}</h1>
+  <p class="text-muted">{{ _('Location Types represent different kinds of locations, such as rooms or containers.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/locations.html#location-types"> {{ _('Read more.') }}</a></p>
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    <a href="{{ url_for('.new_location_type') }}" class="btn btn-default"> {{ _('Create Location Type') }}</a>
+  {% endif %}
+
+  {% for location_type in location_types %}
+    <h2>
+      <a href="{{ url_for('.location_type', type_id=location_type.id) }}" title="{{ location_type.name | get_translated_text }}">{{ location_type.name | get_translated_text }}</a>
+      {{ import_information_symbol(location_type) }}
+    </h2>
+    {% if current_user.is_admin and not current_user.is_readonly and location_type.fed_id is none %}
+    <p>
+      <a href="{{ url_for('.location_type', type_id=location_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this location type.') }}">{{ _('Edit Location Type') }}</a>
+    </p>
+    {% endif %}
+  {% endfor %}
+{% endblock %}

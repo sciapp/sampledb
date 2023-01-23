@@ -1,6 +1,51 @@
 Changelog
 =========
 
+Version 0.21
+------------
+
+Released on January 23rd, 2023.
+
+- Improved user interface
+- Add basic federation feature
+- Added optional support for background tasks
+- Allow ftp, file, sftp and smb scheme and IPv6 addresses in URLs
+- Improve display of quantities
+- Improve static file caching
+- Added support for a monitoring dashboard (experimental)
+- Added location permission management
+- Enabled asynchronous loading of object lists by default
+- Deprecated setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND`` to false
+- Deprecated local file storage
+- Deprecated numeric tags
+- Added recipes
+- Allow missing datetime entries if not marked as required
+- Fix negated text search
+- Fix search with missing attributes
+- Made the objects table width configurable
+- Allow searching for missing attributes
+- Allow setting minimum and maximum values for quantities
+- Allow setting an instance-wide timezone using ``SAMPLEDB_TIMEZONE``
+- Added array style ``full_width_table``
+- Allow selecting a unit when entering a quantity
+- Allow giving anonymous users READ permissions for objects
+- Added SciCat export
+- Added .eln file export
+- Allow declining object responsibility assignments
+- Implemented location types, location responsible users and a location log
+- Added download service
+- Allow saving object list filters
+- Show last user profile update time
+- Allow administrators to update user profile information
+- Added ``show_more`` option for objects
+- Allow hiding locations as administrator
+- Allow showing objects stored at sub-locations
+- Added group categories
+- Allow assigning a location to an instrument
+- Added API route to get related objects
+- Allow disabling instrument features
+- Added support for ``hh:mm:ss`` time notation for hours and minutes quantities
+
 Version 0.20
 ------------
 

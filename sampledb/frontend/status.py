@@ -18,7 +18,7 @@ def status():
         'flask_status': True
     }
     try:
-        db.engine.execute('select 1').fetchone()
+        db.session.execute(db.text('select 1')).fetchone()
         status_info['postgres_status'] = True
     except Exception:
         status_info['postgres_status'] = False

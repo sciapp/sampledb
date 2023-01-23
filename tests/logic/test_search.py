@@ -62,6 +62,18 @@ def action():
                     'type': 'quantity',
                     'units': 'm'
                 },
+                'object_reference_attr': {
+                    'title': 'Object Reference',
+                    'type': 'object_reference'
+                },
+                'user_reference_attr': {
+                    'title': 'User Reference',
+                    'type': 'user'
+                },
+                'Attribute': {
+                    'title': 'Mixed Case Attribute Name',
+                    'type': 'text'
+                },
                 'array_attr': {
                     'title': 'Array Attribute',
                     'type': 'array',
@@ -1541,6 +1553,12 @@ def test_find_by_quantity_less_than(user, action) -> None:
     assert len(objects) == 0
     assert len(search_notes) == 0
 
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('quantity_attr < 1e-4km', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1
+    assert len(search_notes) == 0
+
 
 def test_find_by_quantity_greater_than(user, action) -> None:
     data = {
@@ -2131,12 +2149,12 @@ def test_find_by_invalid_attribute_name(user, action) -> None:
         }
     }, user_id=user.id)
 
-    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('aåttr', use_advanced_search=True)
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('a..ttr', use_advanced_search=True)
     filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(objects) == 0
     assert len(search_notes) == 1
-    assert search_notes[0] == ('error', "Invalid attribute name", 0, len('aåttr'))
+    assert search_notes[0] == ('error', "Invalid attribute name", 0, len('a..ttr'))
 
 
 def test_find_by_invalid_units(user, action) -> None:
@@ -2502,4 +2520,267 @@ def test_with_name_collision(user) -> None:
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(objects) == 1
     assert objects[0].data == data2
+    assert len(search_notes) == 0
+
+
+def test_find_by_reference(user, action) -> None:
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        },
+        'user_reference_attr': {
+            '_type': 'user',
+            'user_id': user.id
+        }
+    }
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'object_reference_attr': {
+            '_type': 'object_reference',
+            'object_id': object1.id
+        }
+    }
+    object2 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 3'
+        },
+        'object_reference_attr': {
+            '_type': 'object_reference',
+            'object_id': object2.id
+        }
+    }
+    object3 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'object_reference_attr == #{object1.id}', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object2.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('object_reference_attr != #0', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 2 and {object.id for object in objects} == {object2.id, object3.id}
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'user_reference_attr == #{user.id}', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object1.id
+    assert len(search_notes) == 0
+
+
+def test_find_by_case_insensitive_attribute(user, action) -> None:
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        },
+        'Attribute': {
+            '_type': 'text',
+            'text': 'example'
+        }
+    }
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'Attribute == "example"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object.id
+    assert len(search_notes) == 0
+
+
+def test_find_text_mixed_internationalisation(user, action) -> None:
+    object1 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name 1'
+            }
+        },
+        user_id=user.id
+    )
+
+    object2 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Name 1'
+                }
+            }
+        },
+        user_id=user.id
+    )
+
+    object3 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': 'Name 2'
+            }
+        },
+        user_id=user.id
+    )
+
+    object4 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Name 2'
+                }
+            }
+        },
+        user_id=user.id
+    )
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object1.id, object2.id}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'!(name == "Name 1")', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object3.id, object4.id}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'"1" in name', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object1.id, object2.id}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'!("1" in name)', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object3.id, object4.id}
+
+
+def test_find_missing_attribute(user, action) -> None:
+    object1 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Name 1'
+                }
+            },
+            'Attribute': {
+                '_type': 'text',
+                'text': {
+                    'en': 'example'
+                }
+            }
+        },
+        user_id=user.id
+    )
+
+    object2 = sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Name 2'
+                }
+            }
+        },
+        user_id=user.id
+    )
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'Attribute == "example"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object1.id,}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'!(Attribute == "example")', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object2.id,}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'"ex" in Attribute', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object1.id,}
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'!("ex" in Attribute)', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    found_objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    found_object_ids = {
+        object.object_id
+        for object in found_objects
+    }
+    assert found_object_ids == {object2.id,}
+
+
+def test_find_by_missing_attribute(user, action) -> None:
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        },
+        'Attribute': {
+            '_type': 'text',
+            'text': 'example'
+        }
+    }
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        }
+    }
+    object2 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'Attribute == null', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object2.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(f'!(Attribute == null)', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == object1.id
     assert len(search_notes) == 0

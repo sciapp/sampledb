@@ -1,20 +1,45 @@
-{% set object = get_object(related_objects_tree['object_id']) %}
-{% if in_export_data_model %}<span class="data_export_object_wrapper"><input type="checkbox" title="{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree['object_id']) }}" {% if 'referenced_objects' in related_objects_tree %}name="data_export_object_{{ related_objects_tree['object_id'] }}" id="data_export_object_{{ related_objects_tree['object_id'] }}" data-object-id="{{ related_objects_tree['object_id'] }}" {% else %}disabled="disabled"{% endif %} class="data_export_object data_export_object_{{ related_objects_tree['object_id'] }}"><label for="data_export_object_{{ related_objects_tree['object_id'] }}" class="fa fa-fw"><span class="sr-only">{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree['object_id']) }}</span></label></span>{% endif %}
-<a href="{{ url_for('.object', object_id=related_objects_tree['object_id']) }}">{{ object.data['name']['text'] | get_translated_text}} &bullet; #{{ related_objects_tree['object_id'] }}</a>
-
-{% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'])%}
-<ul>
-{% endif %}
-{% if 'referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects'] %}
-  {% for related_objects_tree in related_objects_tree['referenced_objects'] %}
-    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=object.data['name']['text'] | get_translated_text, object_id=object.object_id) }}"></i>{% include "objects/view/related_objects.html" %}</li>
-  {% endfor %}
-{% endif %}
-{% if 'referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'] %}
-  {% for related_objects_tree in related_objects_tree['referencing_objects'] %}
-    <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=object.data['name']['text'] | get_translated_text, object_id=object.object_id) }}"></i>{% include "objects/view/related_objects.html" %}</li>
-  {% endfor %}
-{% endif %}
-{% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects']) %}
-</ul>
+{% if related_objects_tree['component_uuid'] is none %}
+  {% if related_objects_tree['permissions'] and related_objects_tree['permissions'] != 'none' %}
+    {% set object = get_object(related_objects_tree['object_id']) %}
+    {% set object_name = object.name | get_translated_text %}
+  {% else %}
+    {% set object = none %}
+    {% set object_name = '–' %}
+  {% endif %}
+  {% if in_export_data_model %}<span class="data_export_object_wrapper"><input type="checkbox" title="{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree['object_id']) }}" {% if 'referenced_objects' in related_objects_tree %}name="data_export_object_{{ related_objects_tree['object_id'] }}" id="data_export_object_{{ related_objects_tree['object_id'] }}" data-object-id="{{ related_objects_tree['object_id'] }}" {% else %}disabled="disabled"{% endif %} class="data_export_object data_export_object_{{ related_objects_tree['object_id'] }}"><label for="data_export_object_{{ related_objects_tree['object_id'] }}" class="fa fa-fw"><span class="sr-only">{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree['object_id']) }}</span></label></span>{% endif %}
+  <a href="{{ url_for('.object', object_id=related_objects_tree['object_id']) }}">{{ object_name }} &bullet; #{{ related_objects_tree['object_id'] }}</a>
+  {% if object is not none %}
+  {{ import_information_symbol(object) }}
+  {% endif %}
+  {% if related_objects_tree['permissions'] and related_objects_tree['permissions'] != 'none' %}
+  {% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'])%}
+  <ul>
+  {% endif %}
+  {% if 'referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects'] %}
+    {% for related_objects_tree in related_objects_tree['referenced_objects'] %}
+      <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=object_name, object_id=related_objects_tree['object_id']) }}"></i>{% include "objects/view/related_objects.html" %}</li>
+    {% endfor %}
+  {% endif %}
+  {% if 'referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects'] %}
+    {% for related_objects_tree in related_objects_tree['referencing_objects'] %}
+      <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=object_name, object_id=related_objects_tree['object_id']) }}"></i>{% include "objects/view/related_objects.html" %}</li>
+    {% endfor %}
+  {% endif %}
+  {% if ('referenced_objects' in related_objects_tree and related_objects_tree['referenced_objects']) or ('referencing_objects' in related_objects_tree and related_objects_tree['referencing_objects']) %}
+  </ul>
+  {% endif %}
+  {% endif %}
+{% else %}
+  {% if "component_uuid" in related_objects_tree and related_objects_tree.component_uuid is not none and related_objects_tree.component_uuid != config['FEDERATION_UUID'] %}
+    {% set component_uuid = related_objects_tree.component_uuid %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% if component_uuid is not none %}
+    {% set object_ref = FederationObjectRef(fed_id=related_objects_tree['object_id'], component_uuid=related_objects_tree['component_uuid']) %}
+    #{{ related_objects_tree['object_id'] }} @ {{ object_ref.component.get_name() }}
+    {{ import_information_symbol(object_ref) }}
+  {% else %}
+    <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{  related_objects_tree['object_id'] }}</a>
+  {% endif %}
 {% endif %}

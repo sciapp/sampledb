@@ -13,6 +13,12 @@
 {% endif %}
 </div>
 <div style="padding-left:2.5em;">
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
+  {% if data is not none %}
+    {% for item in data %}
+      <input type="hidden" name="{{ id_prefix }}_{{ loop.index0 }}__hidden" value="{{ schema['items']['type'] }}" />
+    {% endfor %}
+  {% endif %}
   {% if schema['items']['type'] == 'object' %}
   <table class="table">
     <thead>
@@ -95,6 +101,11 @@
           </td>
           {% endif %}
         {% endfor %}
+        {% if 'recipes' in schema %}
+          <td colspan="{{ item_property_names | length }}">
+            {% include "objects/forms/form_table_recipe.html" %}
+          </td>
+        {% endif %}
         {% if numItems > minItems %}
           <td><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right">&times;</button></td>
         {% else %}

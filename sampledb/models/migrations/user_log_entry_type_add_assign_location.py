@@ -5,15 +5,17 @@ Add ASSIGN_LOCATION enum value to UserLogEntryType enum.
 
 import os
 
+import flask_sqlalchemy
+
 MIGRATION_INDEX = 3
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    enum_values = db.session.execute("""
+    enum_values = db.session.execute(db.text("""
         SELECT unnest(enum_range(NULL::userlogentrytype))::text;
-    """).fetchall()
+    """)).fetchall()
     if ('ASSIGN_LOCATION',) in enum_values:
         return False
 
@@ -22,10 +24,10 @@ def run(db):
     connection = db.engine.connect()
     connection.detach()
     connection.execution_options(autocommit=False)
-    connection.execute("COMMIT")
-    connection.execute("""
+    connection.execute(db.text("COMMIT"))
+    connection.execute(db.text("""
         ALTER TYPE userlogentrytype
         ADD VALUE 'ASSIGN_LOCATION'
-    """)
+    """))
     connection.close()
     return True

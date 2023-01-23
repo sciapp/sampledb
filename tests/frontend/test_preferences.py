@@ -11,7 +11,7 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 from sampledb.logic.authentication import add_email_authentication
-from sampledb.logic import object_permissions, groups, projects
+from sampledb.logic import object_permissions, default_permissions, groups, projects
 
 
 @pytest.fixture
@@ -75,9 +75,9 @@ def test_user_preferences_change_name(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -115,9 +115,9 @@ def test_user_preferences_change_contactemail(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     user_id = int(url[len(flask_server.base_url + 'users/'):].split('/')[0])
 
@@ -153,7 +153,7 @@ def test_user_preferences_change_contactemail(flask_server, user):
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user_id) == []
 
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(f'{flask_server.base_url}users/{user_id}/preferences')
     r = session.get(confirmation_url)
 
@@ -179,9 +179,9 @@ def test_user_add_ldap_authentication_method_wrong_password(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -209,9 +209,9 @@ def test_user_add_ldap_authentication_method(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -247,9 +247,9 @@ def test_user_add_ldap_authentication_method_case_insensitive(flask_server, user
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -285,9 +285,9 @@ def test_user_add_other_authentication_method_not_allowed(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -338,9 +338,9 @@ def test_user_add_general_authentication_method(flask_server):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -404,9 +404,9 @@ def test_user_add_email_authentication_method(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
@@ -467,7 +467,7 @@ def test_user_add_email_authentication_method(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
     # Get the confirmation url from the mail and open it
-    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[1].split('"')[0]
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     assert confirmation_url.startswith(f'{flask_server.base_url}users/{user.id}/preferences')
     r = session.get(confirmation_url)
     assert r.status_code == 200
@@ -518,9 +518,9 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
@@ -569,9 +569,9 @@ def test_user_remove_authentication_method(flask_server):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
 
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
@@ -593,9 +593,9 @@ def test_user_remove_authentication_method(flask_server):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url =flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 
@@ -634,7 +634,7 @@ def test_user_remove_authentication_method(flask_server):
 
 def test_edit_default_public_permissions(flask_server, user):
     with flask_server.app.app_context():
-        assert not object_permissions.default_is_public(user.id)
+        assert sampledb.models.Permissions.READ not in default_permissions.get_default_permissions_for_all_users(user.id)
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -643,7 +643,7 @@ def test_edit_default_public_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     for hidden_field in default_permissions_form.find_all('input', {'type': 'hidden'}):
@@ -651,14 +651,14 @@ def test_edit_default_public_permissions(flask_server, user):
     for radio_button in default_permissions_form.find_all('input', {'type': 'radio'}):
         if radio_button.has_attr('checked') and not radio_button.has_attr('disabled'):
             data[radio_button['name']] = radio_button['value']
-    assert data['public_permissions'] == 'none'
+    assert data['all_user_permissions'] == 'none'
 
-    data['public_permissions'] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['all_user_permissions'] = 'read'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.default_is_public(user.id)
+        assert sampledb.models.Permissions.READ in default_permissions.get_default_permissions_for_all_users(user.id)
 
 
 def test_edit_default_user_permissions(flask_server, user):
@@ -667,8 +667,8 @@ def test_edit_default_user_permissions(flask_server, user):
         sampledb.db.session.add(new_user)
         sampledb.db.session.commit()
         new_user_id = new_user.id
-        object_permissions.set_default_permissions_for_user(creator_id=user.id, user_id=new_user_id, permissions=object_permissions.Permissions.WRITE)
-        assert object_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.WRITE
+        default_permissions.set_default_permissions_for_user(creator_id=user.id, user_id=new_user_id, permissions=object_permissions.Permissions.WRITE)
+        assert default_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.WRITE
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -677,7 +677,7 @@ def test_edit_default_user_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     user_field_name = None
@@ -693,18 +693,18 @@ def test_edit_default_user_permissions(flask_server, user):
     assert data[user_field_name] == 'write'
 
     data[user_field_name] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.READ
+        assert default_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.READ
 
 
 def test_edit_default_group_permissions(flask_server, user):
     with flask_server.app.app_context():
         group_id = groups.create_group("Example Group", "", user.id).id
-        object_permissions.set_default_permissions_for_group(creator_id=user.id, group_id=group_id, permissions=object_permissions.Permissions.WRITE)
-        assert object_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.WRITE
+        default_permissions.set_default_permissions_for_group(creator_id=user.id, group_id=group_id, permissions=object_permissions.Permissions.WRITE)
+        assert default_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.WRITE
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -713,7 +713,7 @@ def test_edit_default_group_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     group_field_name = None
@@ -729,18 +729,18 @@ def test_edit_default_group_permissions(flask_server, user):
     assert data[group_field_name] == 'write'
 
     data[group_field_name] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.READ
+        assert default_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.READ
 
 
 def test_edit_default_project_permissions(flask_server, user):
     with flask_server.app.app_context():
         project_id = projects.create_project("Example Project", "", user.id).id
-        object_permissions.set_default_permissions_for_project(creator_id=user.id, project_id=project_id, permissions=object_permissions.Permissions.WRITE)
-        assert object_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.WRITE
+        default_permissions.set_default_permissions_for_project(creator_id=user.id, project_id=project_id, permissions=object_permissions.Permissions.WRITE)
+        assert default_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.WRITE
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -749,7 +749,7 @@ def test_edit_default_project_permissions(flask_server, user):
 
     document = BeautifulSoup(r.content, 'html.parser')
 
-    default_permissions_form = document.find(attrs={'name': 'edit_user_permissions', 'value': 'edit_user_permissions'}).find_parent('form')
+    default_permissions_form = document.find(attrs={'name': 'edit_permissions', 'value': 'edit_permissions'}).find_parent('form')
 
     data = {}
     project_field_name = None
@@ -765,11 +765,11 @@ def test_edit_default_project_permissions(flask_server, user):
     assert data[project_field_name] == 'write'
 
     data[project_field_name] = 'read'
-    data['edit_user_permissions'] = 'edit_user_permissions'
+    data['edit_permissions'] = 'edit_permissions'
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.READ
+        assert default_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.READ
 
 
 def test_add_default_user_permissions(flask_server, user):
@@ -798,7 +798,7 @@ def test_add_default_user_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.READ
+        assert default_permissions.get_default_permissions_for_users(creator_id=user.id).get(new_user_id) == object_permissions.Permissions.READ
 
 
 def test_add_default_group_permissions(flask_server, user):
@@ -824,7 +824,7 @@ def test_add_default_group_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.READ
+        assert default_permissions.get_default_permissions_for_groups(creator_id=user.id).get(group_id) == object_permissions.Permissions.READ
 
 
 def test_add_default_project_permissions(flask_server, user):
@@ -850,7 +850,7 @@ def test_add_default_project_permissions(flask_server, user):
     assert session.post(flask_server.base_url + 'users/{}/preferences'.format(user.id), data=data).status_code == 200
 
     with flask_server.app.app_context():
-        assert object_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.READ
+        assert default_permissions.get_default_permissions_for_projects(creator_id=user.id).get(project_id) == object_permissions.Permissions.READ
 
 
 def test_user_preferences_change_password(flask_server, user):
@@ -861,9 +861,9 @@ def test_user_preferences_change_password(flask_server, user):
     url = flask_server.base_url + 'users/me/preferences'
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 302
-    assert r.headers['Location'].startswith(flask_server.base_url + 'users/')
+    assert r.headers['Location'].startswith('/users/')
     assert r.headers['Location'].endswith('/preferences')
-    url = r.headers['Location']
+    url = flask_server.base_url + r.headers['Location'][1:]
     r = session.get(url, allow_redirects=False)
     assert r.status_code == 200
 

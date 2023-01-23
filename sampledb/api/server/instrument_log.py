@@ -5,22 +5,24 @@ RESTful API for SampleDB
 
 import base64
 import json
+import typing
 
 import flask
-from flask_restful import Resource
 
 from .authentication import multi_auth
+from ..utils import Resource, ResponseData
 from ...logic.instruments import get_instrument
-from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment, InstrumentLogEntry, InstrumentLogEntryVersion, InstrumentLogFileAttachment, InstrumentLogObjectAttachment, InstrumentLogCategory
-from ...logic import errors
-from ...logic.object_permissions import get_user_object_permissions, Permissions
+from ...logic.instrument_log_entries import get_instrument_log_entries, get_instrument_log_entry, get_instrument_log_file_attachment, get_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_entry, create_instrument_log_file_attachment, create_instrument_log_object_attachment
+from ...logic import errors, instrument_log_entries
+from ...logic.object_permissions import get_user_object_permissions
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 MAX_FILE_NAME_LENGTH = 256
 
 
-def instrument_log_entry_to_json(log_entry: InstrumentLogEntry):
+def instrument_log_entry_to_json(log_entry: instrument_log_entries.InstrumentLogEntry) -> typing.Dict[str, typing.Any]:
     return {
         'log_entry_id': log_entry.id,
         'author': log_entry.user_id,
@@ -31,7 +33,7 @@ def instrument_log_entry_to_json(log_entry: InstrumentLogEntry):
     }
 
 
-def instrument_log_entry_version_to_json(version: InstrumentLogEntryVersion):
+def instrument_log_entry_version_to_json(version: instrument_log_entries.InstrumentLogEntryVersion) -> typing.Dict[str, typing.Any]:
     return {
         'log_entry_id': version.log_entry_id,
         'version_id': version.version_id,
@@ -44,7 +46,7 @@ def instrument_log_entry_version_to_json(version: InstrumentLogEntryVersion):
     }
 
 
-def file_attachment_to_json(file_attachment: InstrumentLogFileAttachment):
+def file_attachment_to_json(file_attachment: instrument_log_entries.InstrumentLogFileAttachment) -> typing.Dict[str, typing.Any]:
     return {
         'file_attachment_id': file_attachment.id,
         'file_name': file_attachment.file_name if not file_attachment.is_hidden else None,
@@ -53,7 +55,7 @@ def file_attachment_to_json(file_attachment: InstrumentLogFileAttachment):
     }
 
 
-def object_attachment_to_json(object_attachment: InstrumentLogObjectAttachment):
+def object_attachment_to_json(object_attachment: instrument_log_entries.InstrumentLogObjectAttachment) -> typing.Dict[str, typing.Any]:
     return {
         'object_attachment_id': object_attachment.id,
         'object_id': object_attachment.object_id if not object_attachment.is_hidden else None,
@@ -61,7 +63,7 @@ def object_attachment_to_json(object_attachment: InstrumentLogObjectAttachment):
     }
 
 
-def category_to_json(category: InstrumentLogCategory):
+def category_to_json(category: instrument_log_entries.InstrumentLogCategory) -> typing.Dict[str, typing.Any]:
     return {
         'category_id': category.id,
         'title': category.title
@@ -70,7 +72,11 @@ def category_to_json(category: InstrumentLogCategory):
 
 class InstrumentLogEntries(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int):
+    def get(self, instrument_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -85,7 +91,11 @@ class InstrumentLogEntries(Resource):
         return [instrument_log_entry_to_json(log_entry) for log_entry in log_entries]
 
     @multi_auth.login_required
-    def post(self, instrument_id: int):
+    def post(self, instrument_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -236,7 +246,11 @@ class InstrumentLogEntries(Resource):
 
 class InstrumentLogEntry(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int):
+    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -260,7 +274,11 @@ class InstrumentLogEntry(Resource):
 
 class InstrumentLogEntryFileAttachments(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int):
+    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -287,7 +305,11 @@ class InstrumentLogEntryFileAttachments(Resource):
 
 class InstrumentLogEntryFileAttachment(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int, file_attachment_id: int):
+    def get(self, instrument_id: int, log_entry_id: int, file_attachment_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -319,7 +341,11 @@ class InstrumentLogEntryFileAttachment(Resource):
 
 class InstrumentLogEntryObjectAttachments(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int):
+    def get(self, instrument_id: int, log_entry_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -346,7 +372,11 @@ class InstrumentLogEntryObjectAttachments(Resource):
 
 class InstrumentLogEntryObjectAttachment(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int, log_entry_id: int, object_attachment_id: int):
+    def get(self, instrument_id: int, log_entry_id: int, object_attachment_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -378,7 +408,11 @@ class InstrumentLogEntryObjectAttachment(Resource):
 
 class InstrumentLogCategories(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int):
+    def get(self, instrument_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:
@@ -398,7 +432,11 @@ class InstrumentLogCategories(Resource):
 
 class InstrumentLogCategory(Resource):
     @multi_auth.login_required
-    def get(self, instrument_id: int, category_id: int):
+    def get(self, instrument_id: int, category_id: int) -> ResponseData:
+        if flask.current_app.config['DISABLE_INSTRUMENTS']:
+            return {
+                "message": f"instrument {instrument_id} does not exist"
+            }, 404
         try:
             instrument = get_instrument(instrument_id=instrument_id)
         except errors.InstrumentDoesNotExistError:

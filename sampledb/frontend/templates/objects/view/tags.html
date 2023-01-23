@@ -8,5 +8,8 @@
     {% else %}
         &mdash;
     {% endif %}
+    {% if data and data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
+    {% endif %}
   </div>
 </div>

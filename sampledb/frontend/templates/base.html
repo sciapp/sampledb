@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+{% from 'macros.j2' import import_information_symbol, user_reference %}
 <head>
 {% block head %}
   <meta charset="UTF-8">
@@ -8,16 +9,18 @@
   <link rel="shortcut icon" href="{{ url_for('frontend.favicon') }}">
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('frontend.apple_touch_icon') }}">
   {% block stylesheets %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('fontawesome/css/font-awesome.min.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/base.css') }}">
+  <link rel="stylesheet" href="{{ fingerprinted_static('css/custom.css') }}">
   {% endblock %}
   {% block head_scripts %}
-  <script src="{{ url_for('static', filename='js/sampledb-toggle.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}"></script>
   {% endblock %}
   <script type="text/javascript">
     window.application_root_path = '{{ url_for('frontend.index') }}';
+    window.treepicker_expand_all_text = '{{ _('Expand All') }}';
+    window.treepicker_collapse_all_text = '{{ _('Collapse All') }}';
     window.markdown_button_translations = {
         "Bold": "{{ _("Bold") }}",
         "Italic": "{{ _("Italic") }}",
@@ -30,6 +33,15 @@
         "Insert Table": "{{ _("Insert Table") }}",
         "Toggle Preview": "{{ _("Toggle Preview") }}",
     };
+    window.object_picker_select_text = "{{ _('Please select an object.') }}";
+    window.object_picker_clear_text = "{{ _('Clear') }}";
+    window.object_picker_no_results_text_template = '{{ _('No results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_all_results_text_template = '{{ _('PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_some_results_text_template = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_show_all(this, event)">Show all</span> — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_no_results_text_template_no_query = '{{ _('No results') }}';
+    window.object_picker_all_results_text_template_no_query = '{{ _('PLACEHOLDER2 results') }}';
+    window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button" onclick="objectpicker_show_all(this, event)">Show all</span>') }}';
+    window.object_picker_limit = {{ config.get('TYPEAHEAD_OBJECT_LIMIT') | tojson }};
   </script>
 {% endblock %}
 </head>
@@ -37,9 +49,16 @@
 
 {% if current_user.is_authenticated %}
   {% set num_unread_notifications = (current_user | get_num_unread_notifications) %}
+  {% if config['SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS']  %}
+    {% set object_responsibility_assignments = get_unhandled_object_responsibility_assignments(current_user.id) %}
+  {% else %}
+    {% set object_responsibility_assignments = [] %}
+  {% endif %}
 {% else %}
   {% set num_unread_notifications = 0 %}
+  {% set object_responsibility_assignments = [] %}
 {% endif %}
+{% set num_urgent_notifications = object_responsibility_assignments | length %}
 <nav class="navbar navbar-default navbar-static-top">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -50,7 +69,12 @@
         <span class="icon-bar"></span>
       </button>
       <a class="navbar-brand" href="{{ url_for('frontend.index') }}">{{ service_name }}</a>
-      {% if num_unread_notifications > 0 %}<a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a>{% endif %}
+      {% if num_urgent_notifications %}
+        <a class="urgent-notifications-counter"><span class="badge badge-new-notifications" id="urgent-notifications-counter"><i class="fa fa-exclamation" aria-hidden="true"></i> {{ num_urgent_notifications }}</span></a>
+      {% endif %}
+      {% if num_unread_notifications > 0 %}
+        <a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a>
+      {% endif %}
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -88,7 +112,7 @@
                     <label>
                       <input type="radio" name="search-filter-selection" id="button-search-project-id">
                       {% if action_type %}
-                        {{ _('Search %(objects)s from this project group', objects=action_type.translation.object_name_plural) }}
+                        {{ _('Search %(objects)s from this project group', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }}
                       {% else %}
                         {{ _('Search objects from this project group') }}
                       {% endif %}
@@ -102,7 +126,7 @@
                     <label>
                       <input type="radio" name="search-filter-selection" id="button-search-action-id">
                       {% if action_type %}
-                        {{ _('Search %(objects)s from this action', objects=action_type.translation.object_name_plural) }}
+                        {{ _('Search %(objects)s from this action', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }}
                       {% else %}
                         {{ _('Search objects from this action') }}
                       {% endif %}
@@ -115,7 +139,7 @@
                 <a class="button-search-filter">
                   <label>
                     <input type="radio" name="search-filter-selection" id="button-search-action-type">
-                    {{ _('Search all %(objects)s', objects=action_type.translation.object_name_plural)}}
+                    {{ _('Search all %(objects)s', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }} {{ import_information_symbol(action_type, nolink=true) }}
                   </label>
                 </a>
               </li>
@@ -134,13 +158,15 @@
         </div>
       </form>
       <ul class="nav navbar-nav">
+        {% if not config['DISABLE_INSTRUMENTS'] %}
         <li><a href="{{ url_for('frontend.instruments') }}">{{ _('Instruments') }}</a></li>
+        {% endif %}
         <li class="dropdown">
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and not action_type.disable_create_objects %}
-              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+            {% for action_type in get_action_types() %}
+              {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
           </ul>
@@ -148,11 +174,15 @@
         <li class="dropdown">
           <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">{{ _('Objects') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and not action_type.disable_create_objects %}
-              <li><a href="{{ url_for('frontend.objects', t=action_type.id) }}">{{ action_type.translation.object_name_plural }}</a></li>
+            {% for action_type in get_action_types() %}
+              {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              <li><a href="{{ url_for('frontend.objects', action_type_ids=action_type.id) }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
+            <li role="separator" class="divider nav-search-link"></li>
+            <li><a href="{{ url_for('frontend.objects', user=current_user.id, user_permissions='READ') }}">{{ _('Objects with <b>READ</b> permissions') }}</a></li>
+            <li><a href="{{ url_for('frontend.objects', user=current_user.id, user_permissions='WRITE') }}">{{ _('Objects with <b>WRITE</b> permissions') }}</a></li>
+            <li><a href="{{ url_for('frontend.objects', user=current_user.id, user_permissions='GRANT') }}">{{ _('Objects with <b>GRANT</b> permissions') }}</a></li>
             <li role="separator" class="divider nav-search-link"></li>
             <li class="nav-search-link"><a href="{{ url_for('frontend.search') }}">{{ _('Search') }}</a></li>
           </ul>
@@ -165,21 +195,29 @@
             <li><a href="{{ url_for('frontend.projects') }}">{{ _('Project Groups') }}</a></li>
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
+            <li><a href="{{ url_for('frontend.publications') }}">{{ _('Publications') }}</a></li>
+            {% if config['FEDERATION_UUID'] is not none %}
+            <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
+            {% endif %}
             <li role="separator" class="divider template-separator" style="display: none"></li>
-            {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-              {% if action_type.show_in_navbar and action_type.disable_create_objects %}
+            {% for action_type in get_action_types() %}
+              {% if action_type.show_in_navbar and action_type.disable_create_objects and ((not action_type.fed_id) or action_type.fed_id > 0) %}
                 <script type="text/javascript">
                     window.onload = function() {
                         $('.template-separator').css('display', 'block');
                     }
                 </script>
-                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.translation.name }}</a></li>
+                <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}{{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
             {% if current_user.is_admin %}
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.action_types') }}">{{ _('Action Types') }}</a></li>
+              <li><a href="{{ url_for('frontend.location_types') }}">{{ _('Location Types') }}</a></li>
               <li><a href="{{ url_for('frontend.languages') }}">{{ _('Languages') }}</a></li>
+              {% if config['ENABLE_MONITORINGDASHBOARD'] %}
+              <li><a href="{{ url_for('dashboard.index') }}">{{ _('Monitoring Dashboard') }}</a></li>
+              {% endif %}
             {% endif %}
           </ul>
         </li>
@@ -200,7 +238,12 @@
               <li><a href="{{ url_for('frontend.groups', user_id=current_user.id) }}">{{ _('Your Basic Groups') }}</a></li>
               <li><a href="{{ url_for('frontend.projects', user_id=current_user.id) }}">{{ _('Your Project Groups') }}</a></li>
               <li><a href="{{ url_for('frontend.actions', user_id=current_user.id) }}">{{ _('Your Actions') }}</a></li>
+              <li><a href="{{ url_for('frontend.objects', related_user=current_user.id) }}">{{ _('Your Objects') }}</a></li>
               <li role="separator" class="divider"></li>
+            {% if config['FEDERATION_UUID'] is not none %}
+              <li><a href="{{ url_for('frontend.user_alias') }}">{{ _('User Alias Settings') }}</a></li>
+              <li role="separator" class="divider"></li>
+            {% endif %}
               <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>
               <li><a href="{{ url_for('frontend.export', user_id=current_user.id) }}">{{ _('Export Data') }}</a></li>
@@ -209,6 +252,15 @@
             </ul>
           </li>
           {% if num_unread_notifications > 0 %}<li class="nav-item-new-notifications"><a href="{{ url_for('frontend.notifications', user_id=current_user.id) }}"><span class="badge badge-new-notifications"><i class="fa fa-bell" aria-hidden="true"></i> {{ num_unread_notifications }}</span></a></li>{% endif %}
+            {% if num_urgent_notifications %}
+              <li class="nav-item-new-notifications"><a class="urgent-notifications-counter"><span class="badge badge-new-notifications"><i class="fa fa-exclamation" aria-hidden="true"></i> {{ num_urgent_notifications }}</span></a></li>
+            {% endif %}
+            {% if current_user.is_admin %}
+              {% set num_deprecation_warnings = get_num_deprecation_warnings() %}
+              {% if num_deprecation_warnings > 0 %}
+              <li class="nav-item-new-notifications"><a href="{{ url_for('frontend.admin_warnings') }}"><span class="badge badge-deprecation-warnings"><i class="fa fa-warning" aria-hidden="true"></i> {{ num_deprecation_warnings }}</span></a></li>
+              {% endif %}
+            {% endif %}
           {% else %}
           <li><a href="{{ url_for('frontend.sign_in') }}">{{ _('Sign in') }}</a></li>
           {% endif %}
@@ -217,7 +269,8 @@
     </div>
   </div>
 </nav>
-<div id="main" class="container">
+<div id="main">
+  <div class="container">
     <noscript>
         <div class="alert alert-danger" role="alert">
             <strong>{{ _('Warning:') }}</strong> {{ _('This service requires JavaScript. Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> and reload the page.') }}
@@ -253,20 +306,55 @@
         {% endif %}
     {% endblock %}
     {% block content %}{% endblock %}
+  </div>
 </div>
 <footer>
   <div class="container">
-    <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_imprint %} &bullet; <a href="{{ service_imprint }}">{{ _('Imprint') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}</p>
+    <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_legal_notice %} &bullet; <a href="{{ service_legal_notice }}">{{ _('Legal Notice') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}{% if service_accessibility %} &bullet; <a href="{{ service_accessibility }}">{{ _('Accessibility') }}</a>{% endif %}</p>
   </div>
 </footer>
+
+{% if num_urgent_notifications %}
+<div class="modal fade" id="urgentNotificationModal" tabindex="-1" role="dialog" aria-labelledby="urgentNotificationModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="urgentNotificationModalLabel">{{ _("Urgent Notifications") }}</h4>
+      </div>
+      <div class="modal-body">
+      {% for object_responsibility_assignment in object_responsibility_assignments %}
+        {% if loop.index0 %}
+          <hr />
+        {% endif %}
+        <div class="clearfix">
+          <p>
+            {{ _('<a href="%(assigner_url)s">%(assigner_name)s</a> assigned you as responsible user for <a href="%(object_url)s">%(object_name)s</a>.', assigner_url=url_for('.user_profile', user_id=object_responsibility_assignment.user_id), assigner_name=get_user(object_responsibility_assignment.user_id).name, object_url=url_for('.object', object_id=object_responsibility_assignment.object_id), object_name=get_object_name_if_user_has_permissions(object_responsibility_assignment.object_id)) }}
+          </p>
+          <div class="pull-right">
+            <a class="btn btn-default btn-xs" href="{{ url_for('.object', object_id=object_responsibility_assignment.object_id, hide_notifications=1, _anchor='locations') }}">{{ _('View Object') }}</a>
+            <a class="btn btn-primary btn-xs" href="{{ build_object_location_assignment_confirmation_url(object_responsibility_assignment.id) }}">{{ _('Confirm') }}</a>
+            <a class="btn btn-danger btn-xs" href="{{ build_object_location_assignment_declination_url(object_responsibility_assignment.id) }}">{{ _('Decline') }}</a>
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal" id="button-hide-urgent-notifications">{{ _('Remind me in 1 hour') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
  {% block scripts %}
-  <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/moment-timezone.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('jquery/js/jquery.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap/js/bootstrap.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
 
   <script>
-
     $('[data-toggle="tooltip"]').tooltip();
     {% if current_user.is_authenticated %}
       {% with user_settings = get_user_settings() %}
@@ -283,6 +371,17 @@
     {% endif %}
 
     $(function() {
+      // localize datetimes for anonymous users if the timezone has not been set in the config
+      {% if current_user.timezone is none %}
+      $('span[data-utc-datetime]').each(function(_, element) {
+          let utc_datetime_str = $(element).data('utcDatetime');
+          let utc_datetime = moment.utc(utc_datetime_str);
+          let local_datetime = utc_datetime.local();
+          let lang_code = "{{ get_user_language(current_user).lang_code }}";
+          let format = "{{ get_user_language(current_user).datetime_format_moment_output }}";
+          element.innerText = local_datetime.locale(lang_code).format(format);
+      });
+      {% endif %}
 
       $(".navbar-nav > .dropdown").hover(function(){
         var dropdown_menu = $(this).children(".dropdown-menu");
@@ -366,7 +465,37 @@
       $('.show-fullscreen-image-preview').on('click', function (e) {
         $(this).next('.fullscreen-image-preview').css('display', 'flex');
       });
-   });
+
+    {% if num_urgent_notifications %}
+      let urgent_notification_modal = $('#urgentNotificationModal');
+      urgent_notification_modal.on('shown.bs.modal', function () {
+        urgent_notification_modal.focus();
+      });
+      $('.urgent-notifications-counter').on('click', function() {
+        urgent_notification_modal.modal();
+      });
+      urgent_notification_modal.find('#button-hide-urgent-notifications').on('click', function() {
+          Cookies.set('sampledb-hide-urgent-notifications-until', moment().add(1, 'hour').format(), {expires: 1, SameSite: 'Lax'});
+          setTimeout(function() {
+            urgent_notification_modal.modal();
+          }, 60 * 60 * 1000);
+      });
+      let hide_notifications = {% if 'hide_notifications' in request.args %}true{% else %}false{% endif %};
+      let hiding_time = Cookies.get('sampledb-hide-urgent-notifications-until');
+      if (hiding_time) {
+          hiding_time = moment(hiding_time);
+          if (hiding_time && moment().isBefore(hiding_time)) {
+              hide_notifications = true;
+              setTimeout(function() {
+                urgent_notification_modal.modal();
+              }, hiding_time.diff(moment(), 'ms'));
+          }
+      }
+      if (!hide_notifications) {
+        urgent_notification_modal.modal();
+      }
+      {% endif %}
+    });
   </script>
   {% endblock %}
 </body>

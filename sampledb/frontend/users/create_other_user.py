@@ -9,7 +9,7 @@ import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
-from wtforms.validators import Email, Length, InputRequired, ValidationError
+from wtforms.validators import Email, Length, InputRequired, ValidationError, EqualTo
 
 from .. import frontend
 from ...logic import users, authentication
@@ -19,6 +19,7 @@ class CreateOtherUserForm(FlaskForm):
     name = StringField(validators=[InputRequired()])
     email = StringField(validators=[Email()])
     password = PasswordField(validators=[Length(min=3)])
+    password_confirmation = PasswordField(validators=[EqualTo('password', message='Please enter the same password as above.')])
 
     def validate_name(form, field):
         if len(field.data) < 1:

@@ -5,11 +5,17 @@ Implementation of generate_placeholder(schema)
 
 import typing
 
-from ..errors import UndefinedUnitError, SchemaError
+from flask_login import current_user
+
+from ..errors import UndefinedUnitError, SchemaError, UserDoesNotExistError
 from .utils import get_dimensionality_for_units
+from ..users import check_user_exists
 
 
-def generate_placeholder(schema: dict, path: typing.Optional[typing.List[str]] = None) -> typing.Union[dict, list, None]:
+def generate_placeholder(
+        schema: typing.Dict[str, typing.Any],
+        path: typing.Optional[typing.List[str]] = None
+) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     """
     Generates a placeholder object based on an object schema.
 
@@ -36,11 +42,11 @@ def generate_placeholder(schema: dict, path: typing.Optional[typing.List[str]] =
     elif schema['type'] == 'quantity':
         return _generate_quantity_placeholder(schema, path)
     elif schema['type'] == 'sample':
-        return _generate_sample_placeholder(schema, path)
+        return _generate_sample_placeholder(schema, path)  # type: ignore
     elif schema['type'] == 'measurement':
-        return _generate_measurement_placeholder(schema, path)
+        return _generate_measurement_placeholder(schema, path)  # type: ignore
     elif schema['type'] == 'object_reference':
-        return _generate_object_reference_placeholder(schema, path)
+        return _generate_object_reference_placeholder(schema, path)  # type: ignore
     elif schema['type'] == 'tags':
         return _generate_tags_placeholder(schema, path)
     elif schema['type'] == 'hazards':
@@ -53,7 +59,7 @@ def generate_placeholder(schema: dict, path: typing.Optional[typing.List[str]] =
         raise SchemaError('invalid type', path)
 
 
-def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
+def _generate_array_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.List[typing.Any]:
     """
     Generates a placeholder array object based on an object schema.
 
@@ -62,7 +68,7 @@ def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
     :return: the generated object
     """
     if 'default' in schema:
-        return schema['default']
+        return typing.cast(typing.List[typing.Any], schema['default'])
     item_schema = schema['items']
     default_items = schema.get('defaultItems', schema.get('minItems', 0))
     return [
@@ -71,7 +77,7 @@ def _generate_array_placeholder(schema: dict, path: typing.List[str]) -> list:
     ]
 
 
-def _generate_tags_placeholder(schema: dict, path: typing.List[str]) -> dict:
+def _generate_tags_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Dict[str, typing.Any]:
     """
     Generates a placeholder tags object based on an object schema.
 
@@ -90,7 +96,7 @@ def _generate_tags_placeholder(schema: dict, path: typing.List[str]) -> dict:
     }
 
 
-def _generate_hazards_placeholder(schema: dict, path: typing.List[str]) -> dict:
+def _generate_hazards_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Dict[str, typing.Any]:
     """
     Generate a placeholder GHS hazards object based on an object schema.
 
@@ -103,7 +109,7 @@ def _generate_hazards_placeholder(schema: dict, path: typing.List[str]) -> dict:
     }
 
 
-def _generate_object_placeholder(schema: dict, path: typing.List[str]) -> dict:
+def _generate_object_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Dict[str, typing.Any]:
     """
     Generates a placeholder object based on an object schema.
 
@@ -112,7 +118,7 @@ def _generate_object_placeholder(schema: dict, path: typing.List[str]) -> dict:
     :return: the generated object
     """
     if 'default' in schema:
-        return schema['default']
+        return typing.cast(typing.Dict[str, typing.Any], schema['default'])
     properties = schema['properties']
     return {
         property_name: generate_placeholder(property_schema, path + [property_name])
@@ -120,7 +126,7 @@ def _generate_object_placeholder(schema: dict, path: typing.List[str]) -> dict:
     }
 
 
-def _generate_bool_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
+def _generate_bool_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Union[typing.Dict[str, typing.Any], None]:
     """
     Generates a placeholder boolean object based on an object schema.
 
@@ -137,7 +143,7 @@ def _generate_bool_placeholder(schema: dict, path: typing.List[str]) -> typing.U
     }
 
 
-def _generate_text_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
+def _generate_text_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Union[typing.Dict[str, typing.Any], None]:
     """
     Generates a placeholder text object based on an object schema.
 
@@ -154,7 +160,7 @@ def _generate_text_placeholder(schema: dict, path: typing.List[str]) -> typing.U
     }
 
 
-def _generate_datetime_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
+def _generate_datetime_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Union[typing.Dict[str, typing.Any], None]:
     """
     Generates a placeholder datetime object based on an object schema.
 
@@ -171,7 +177,7 @@ def _generate_datetime_placeholder(schema: dict, path: typing.List[str]) -> typi
     }
 
 
-def _generate_quantity_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
+def _generate_quantity_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Union[typing.Dict[str, typing.Any], None]:
     """
     Generates a placeholder quantity object based on an object schema.
 
@@ -183,7 +189,10 @@ def _generate_quantity_placeholder(schema: dict, path: typing.List[str]) -> typi
     if 'default' not in schema:
         return None
     magnitude_in_base_units = schema['default']
-    units = schema['units']
+    if isinstance(schema['units'], str):
+        units = schema['units']
+    else:
+        units = schema['units'][0]
 
     try:
         dimensionality = get_dimensionality_for_units(units)
@@ -197,7 +206,7 @@ def _generate_quantity_placeholder(schema: dict, path: typing.List[str]) -> typi
     }
 
 
-def _generate_sample_placeholder(schema: dict, path: typing.List[str]) -> None:
+def _generate_sample_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Generates a placeholder sample object based on an object schema.
 
@@ -208,7 +217,7 @@ def _generate_sample_placeholder(schema: dict, path: typing.List[str]) -> None:
     return _generate_object_reference_placeholder(schema, path)
 
 
-def _generate_measurement_placeholder(schema: dict, path: typing.List[str]) -> None:
+def _generate_measurement_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Generates a placeholder measurement object based on an object schema.
 
@@ -219,7 +228,7 @@ def _generate_measurement_placeholder(schema: dict, path: typing.List[str]) -> N
     return _generate_object_reference_placeholder(schema, path)
 
 
-def _generate_object_reference_placeholder(schema: dict, path: typing.List[str]) -> None:
+def _generate_object_reference_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
     """
     Generates a placeholder object reference object based on an object schema.
 
@@ -230,18 +239,36 @@ def _generate_object_reference_placeholder(schema: dict, path: typing.List[str])
     return None
 
 
-def _generate_user_placeholder(schema: dict, path: typing.List[str]) -> None:
+def _generate_user_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
     """
     Generates a placeholder user object based on an object schema.
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
-    :return: None, as there can be no default user
+    :return: the generated object or None, if there is no default user
     """
+    if 'default' in schema:
+        if schema['default'] == 'self' and current_user and current_user.is_authenticated:
+            user_id = current_user.id
+        elif type(schema['default']) is int:
+            user_id = schema['default']
+        else:
+            user_id = None
+        if user_id is not None:
+            try:
+                # ensure the user exists
+                check_user_exists(user_id)
+            except UserDoesNotExistError:
+                pass
+            else:
+                return {
+                    '_type': 'user',
+                    'user_id': user_id
+                }
     return None
 
 
-def _generate_plotly_chart_placeholder(schema: dict, path: typing.List[str]) -> typing.Union[dict, None]:
+def _generate_plotly_chart_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Union[typing.Dict[str, typing.Any], None]:
     """
     Generates a placeholder plotly_chart object based on an object schema.
 

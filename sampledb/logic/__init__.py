@@ -9,20 +9,29 @@ from . import action_translations
 from . import action_type_translations
 from . import api_log
 from . import authentication
+from . import background_tasks
 from . import comments
+from . import components
+from . import component_authentication
 from . import datatypes
 from . import dataverse_export
+from . import default_permissions
+from . import eln_export
 from . import errors
 from . import export
 from . import favorites
+from . import federation
+from . import fed_logs
 from . import files
 from . import groups
+from . import group_categories
 from . import instruments
 from . import instrument_log_entries
 from . import languages
 from . import ldap
 from . import locale
 from . import locations
+from . import location_permissions
 from . import markdown_images
 from . import markdown_to_html
 from . import notebook_templates
@@ -37,8 +46,10 @@ from . import projects
 from . import publications
 from . import rdf
 from . import schemas
+from . import scicat_export
 from . import security_tokens
 from . import settings
+from . import shares
 from . import tags
 from . import units
 from . import users
@@ -47,6 +58,8 @@ from . import utils
 from . import where_filters
 
 from ..models.objects import Objects
+from .schemas.validate import validate
+from .schemas.validate_schema import validate_schema
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -58,14 +71,22 @@ __all__ = [
     'action_type_translations',
     'api_log',
     'authentication',
+    'background_tasks',
     'comments',
     'datatypes',
     'dataverse_export',
+    'default_permissions',
+    'eln_export',
     'errors',
     'export',
     'favorites',
+    'components',
+    'component_authentication',
+    'federation',
+    'fed_logs',
     'files',
     'groups',
+    'group_categories',
     'instruments',
     'instrument_translations',
     'instrument_log_entries',
@@ -73,6 +94,7 @@ __all__ = [
     'ldap',
     'locale',
     'locations',
+    'location_permissions',
     'markdown_images',
     'markdown_to_html',
     'notebook_templates',
@@ -86,8 +108,11 @@ __all__ = [
     'projects',
     'publications',
     'rdf',
+    'schemas',
+    'scicat_export',
     'security_tokens',
     'settings',
+    'shares',
     'tags',
     'units',
     'users',
@@ -96,5 +121,5 @@ __all__ = [
     'where_filters',
 ]
 
-Objects._data_validator = schemas.validate
-Objects._schema_validator = schemas.validate_schema
+Objects._data_validator = validate
+Objects._schema_validator = validate_schema

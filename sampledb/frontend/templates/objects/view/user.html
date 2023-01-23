@@ -1,12 +1,11 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}</label>
+  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
+    {% include "objects/search_link.html" %}
+  </label>
   <div class="col-md-9">
-{% if data is not none and "user_id" in data %}
-{% with referenced_user = get_user(data.user_id) %}
-<a href="{{ url_for('frontend.user_profile', user_id=referenced_user.id) }}">{{ referenced_user.name }} (#{{ referenced_user.id }})</a>
-{% endwith %}
-{% else %}
-&mdash;
-{% endif %}
+    {% include "objects/view/user_value.html" %}
+    {% if data and data.export_edit_note %}
+      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
+    {% endif %}
   </div>
 </div>

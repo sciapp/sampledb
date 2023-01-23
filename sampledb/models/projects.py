@@ -4,13 +4,13 @@
 """
 
 from .. import db
-from .object_permissions import Permissions
+from .permissions import Permissions
 from .groups import Group
 from .users import User
 import sqlalchemy.dialects.postgresql as postgresql
 
 
-class Project(db.Model):
+class Project(db.Model):  # type: ignore
     __tablename__ = 'projects'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -18,7 +18,7 @@ class Project(db.Model):
     description = db.Column(postgresql.JSON, nullable=False)
 
 
-class UserProjectPermissions(db.Model):
+class UserProjectPermissions(db.Model):  # type: ignore
     __tablename__ = 'user_project_permissions'
 
     project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), nullable=False)
@@ -27,11 +27,10 @@ class UserProjectPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(project_id, user_id),
-        {},
     )
 
 
-class GroupProjectPermissions(db.Model):
+class GroupProjectPermissions(db.Model):  # type: ignore
     __tablename__ = 'group_project_permissions'
 
     project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), nullable=False)
@@ -40,11 +39,10 @@ class GroupProjectPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(project_id, group_id),
-        {},
     )
 
 
-class SubprojectRelationship(db.Model):
+class SubprojectRelationship(db.Model):  # type: ignore
     __tablename__ = 'subproject_relationship'
 
     parent_project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), nullable=False)
@@ -53,11 +51,10 @@ class SubprojectRelationship(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(parent_project_id, child_project_id),
-        {},
     )
 
 
-class ProjectInvitation(db.Model):
+class ProjectInvitation(db.Model):  # type: ignore
     __tablename__ = 'project_invitations'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -68,7 +65,7 @@ class ProjectInvitation(db.Model):
     accepted = db.Column(db.Boolean, nullable=False, default=False)
 
 
-class ProjectObjectAssociation(db.Model):
+class ProjectObjectAssociation(db.Model):  # type: ignore
     __tablename__ = 'project_object_association'
 
     project_id = db.Column(db.Integer, db.ForeignKey(Project.id, ondelete="CASCADE"), primary_key=True)

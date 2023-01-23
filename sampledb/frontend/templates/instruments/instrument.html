@@ -1,38 +1,47 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('Instrument') }} #{{ instrument.id }}: {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-  <h1>{{ _('Instrument') }} #{{ instrument.id }}: {{ single_instrument_translation.name }}</h1>
+  <h1>
+    {{ _('Instrument') }} #{{ instrument.id }}: {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}
+    {{ import_information_symbol(instrument) }}
+  </h1>
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.')}}</p>
   {% endif %}
-  {% if single_instrument_translation.description %}
+  {% if instrument.description %}
     <div class="instrument-user-content">
-      {% if instrument.description_is_markdown %}{{ single_instrument_translation.description | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ single_instrument_translation.description }}</p>{% endif %}
+      {% if instrument.description_is_markdown %}{{ instrument.description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p>{{ instrument.description | get_translated_text }}</p>{% endif %}
+    </div>
+  {% endif %}
+  {% if instrument.location is not none %}
+    <div>
+      <b>{{ _('Location') }}:</b> <a href="{{ url_for('.location', location_id=instrument.location_id) }}">{{ instrument.location | get_full_location_name(include_id=true) }}</a>
     </div>
   {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
-    {% if current_user.is_admin or current_user in instrument.responsible_users %}
+    {% if (current_user.is_admin or current_user in instrument.responsible_users) and instrument.fed_id is none %}
       <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">{{ _('Edit Instrument') }}</a>
     {% endif %}
   {% endif %}
-  {% if instrument.actions %}
+  {% if instrument_actions %}
   <h2>{{ _('Actions') }}</h2>
-  {% for action in instrument.actions %}
-    {% if not action.is_hidden or current_user.is_admin %}
-      <h3><a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action_translations[action.id].name }}"> {{ action_translations[action.id].name }}</a></h3>
-      {% if action_translations[action.id].short_description %}
+  {% for action in instrument_actions %}
+      <h3>
+        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text }}"> {{ action.name | get_translated_text }}</a>
+        {{ import_information_symbol(action) }}
+      </h3>
+      {% if action.short_description | get_translated_text %}
         <div class="action-user-content">
-          {% if action.short_description_is_markdown %}{{ action_translations[action.id].short_description | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action_translations[action.id].short_description }}</p>{% endif %}
+          {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description | get_translated_text }}</p>{% endif %}
         </div>
       {% endif %}
-      <a href="{{ url_for('.objects', action=action.id) }}" class="btn btn-default">{{ get_action_type_translation_for_action_type_in_language(action.type_id, get_user_language(current_user).id, True).view_text }}</a>
-      {% if not current_user.is_readonly %}
-        <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ get_action_type_translation_for_action_type_in_language(action.type_id, get_user_language(current_user).id, True).perform_text}}</a>
+      <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) }}</a>
+      {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
+        <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
       {% endif %}
-    {% endif %}
   {% endfor %}
   {% endif %}
   {% if is_instrument_responsible_user %}
@@ -43,12 +52,12 @@
     </p>
   {% with ns = namespace() %}
   {% set ns.has_notes = False %}
-  {% for translation in instrument_translations %}
-    {% if translation.notes %}
+  {% for language in languages %}
+    {% if language.lang_code in instrument.notes %}
       {% set ns.has_notes = True %}
       <div class="instrument-user-content">
-      <h2>{{ translation.language.names | get_translated_text }}</h2>
-      {% if instrument.notes_is_markdown %}{{ translation.notes | markdown_to_safe_html(anchor_prefix='instrument-notes') | safe }}{% else %}<p>{{ translation.notes }}</p>{% endif %}
+      <h2>{{ language.names | get_translated_text }}</h2>
+      {% if instrument.notes_is_markdown %}{{ instrument.notes[language.lang_code] | markdown_to_safe_html(anchor_prefix='instrument-notes') | safe }}{% else %}<p>{{ instrument.notes[language.lang_code] }}</p>{% endif %}
       </div>
     {% endif %}
   {% endfor %}
@@ -124,17 +133,17 @@
               <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> {{ _('Uncategorized') }}</label><br />
               <hr />
               <div class='input-group date'>
-                  <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
-                  <span class='input-group-addon'>
-                      <span class='glyphicon glyphicon-calendar'></span>
-                  </span>
+                <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
+                <span class='input-group-addon'>
+                    <span class='glyphicon glyphicon-calendar'></span>
+                </span>
               </div>
               <hr />
               <div class='form-group'>
               <select class='selectpicker' id='input-instrument-log-filter-user' data-width='100%'>
               <option value='' selected='selected'>{{ _('All users') }}</option>
               {% for user in instrument_log_users %}
-                <option value='{{ user.id }}'>{{ user.name }} (#{{ user.id }})</option>
+                <option value='{{ user.id }}'>{{ user.get_name() }}</option>
               {% endfor %}
               </select>
               </div>
@@ -152,7 +161,7 @@
           <div class="well instrument-log-entry {% if log_entry.versions[-1].categories %}instrument-log-entry-{{ log_entry.versions[-1].categories[-1].theme.name.lower() }}{% endif %}" {% if log_entry.versions[-1].categories %}{% for category in log_entry.versions[-1].categories %}data-instrument-log-category-{{ category.id }}="yes" {% endfor %}{% else %}data-instrument-log-category-none="yes"{% endif %} id="log_entry-{{ log_entry.id }}" data-instrument-log-date="{{ (log_entry.versions[-1].event_utc_datetime or log_entry.versions[0].utc_datetime).strftime("%Y-%m") }}" data-instrument-log-datetime="{{ (log_entry.versions[-1].event_utc_datetime or log_entry.versions[0].utc_datetime).isoformat() }}" data-instrument-log-user-id="{{ log_entry.author.id }}" data-instrument-log-user-name="{{ log_entry.author.name }} (#{{ log_entry.author.id }})" style="position: relative">
             <div class="instrument-log-categories">
               {% for category in log_entry.versions[-1].categories %}
-                  <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
+                <span class="instrument-log-category-{{ category.theme.name.lower() }}">{{ category.title }}</span>
               {% endfor %}
             </div>
             {% if log_entry.versions[-1].event_utc_datetime %}
@@ -271,14 +280,14 @@
                     </span>
                   </div>
                 </div>
-                  <label for="input-file-upload-{{ log_entry.id }}">{{ _('Add file attachments') }}</label>
-                 <div class="input-group" id="upload-area-{{ log_entry.id }}">
-                    <span class="input-group-addon"><i class="fa fa-file"></i></span>
-                    <input id="input-file-text-{{ log_entry.id }}" type="text" class="form-control disabled" disabled placeholder="{{ _('No files selected') }}" />
-                    <div class="input-group-btn">
-                      <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>{{ _('Browse...') }}<input id="input-file-upload-{{ log_entry.id }}" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
-                    </div>
+                <label for="input-file-upload-{{ log_entry.id }}">{{ _('Add file attachments') }}</label>
+                <div class="input-group" id="upload-area-{{ log_entry.id }}">
+                  <span class="input-group-addon"><i class="fa fa-file"></i></span>
+                  <input id="input-file-text-{{ log_entry.id }}" type="text" class="form-control disabled" disabled placeholder="{{ _('No files selected') }}" />
+                  <div class="input-group-btn">
+                    <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>{{ _('Browse...') }}<input id="input-file-upload-{{ log_entry.id }}" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
                   </div>
+                </div>
                   {% if instrument_log_entry_form.objects.choices or config["LOAD_OBJECTS_IN_BACKGROUND"] %}
                   <div class="form-group" style="margin: 15px 0" id="wrapper-object-attachments-{{ log_entry.id }}">
                     <label for="select-object-attachments-{{ log_entry.id }}">{{ _('Add object attachments') }}</label>
@@ -457,10 +466,10 @@
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 <style>
 label.instrument-log-show-versions:before {
     content: '{{ _('Show previous versions') }}';
@@ -479,16 +488,15 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/markdown_image_viewer.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-    <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script type="text/javascript">
     window.categoriesShown = {
       {% for category in instrument_log_categories %}
@@ -511,7 +519,8 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
             format: 'YYYY-MM',
             showClear: true,
             showClose: true,
-            maxDate: moment(new Date())
+            maxDate: moment(new Date()),
+            timeZone: "{{ current_user.timezone }}"
           });
           datetimepicker.on('dp.change', function() {
             update_instrument_log_filter_states();
@@ -907,7 +916,8 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           format: '{{ instrument_log_entry_form.event_utc_datetime.format_moment }}',
           showClear: true,
           showClose: true,
-          showTodayButton: true
+          showTodayButton: true,
+          timeZone: "{{ current_user.timezone }}"
         });
         checkbox.on('change', function() {
           var checked = checkbox.prop('checked');

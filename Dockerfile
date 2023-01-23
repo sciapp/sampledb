@@ -1,30 +1,31 @@
-FROM ubuntu:20.04
+FROM python:3.10-slim-bullseye
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
 
 # Install required system packages
+# GCC is required to build python dependencies on ARM architectures
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y curl python3-venv python3-distutils libpangocairo-1.0-0 gettext python3-dev libpython3-dev gcc && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y gcc libpangocairo-1.0-0 gettext
 
 # Switch to non-root user
 RUN useradd -ms /bin/bash sampledb
 USER sampledb
 WORKDIR /home/sampledb
 
-# Set up Python virtual environment
-RUN python3 -m venv --without-pip env && \
-    curl -sLO https://bootstrap.pypa.io/get-pip.py && \
-    env/bin/python get-pip.py && \
-    rm get-pip.py
-
 # Install required Python packages
 COPY requirements.txt requirements.txt
-RUN env/bin/python -m pip install -r requirements.txt
+RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
+
+# Clean up system packages that are no longer required
+USER root
+RUN apt-get remove -y gcc && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+USER sampledb
 
 # Copy sampledb source code
-ADD sampledb sampledb
+COPY --chown=sampledb:sampledb sampledb sampledb
 
 # By default, expect a normal postgres container to be linked
 ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5432/postgres"
@@ -33,10 +34,18 @@ ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5
 ENV SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files
 
 # Set the path for pybabel
-ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/env/bin/pybabel
+ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/.local/bin/pybabel
+
+# Write Docker build arg SAMPLEDB_VERSION to environment to be read by sampledb/version.py.
+ARG SAMPLEDB_VERSION
+ENV SAMPLEDB_VERSION=$SAMPLEDB_VERSION
+
+# Copy the SampleDB helper script
+COPY ./docker-helper.sh /usr/local/bin/sampledb
 
 # The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
-ADD docker-entrypoint.sh docker-entrypoint.sh
+COPY docker-entrypoint.sh docker-entrypoint.sh
+
 USER root
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["run"]

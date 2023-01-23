@@ -4,12 +4,13 @@ Script for sending an announcement notification to all users.
 
 Usage: python -m sampledb send_announcement <text_file_name> <html_file_name>
 """
+import typing
 
 from .. import create_app
 from ..logic.notifications import create_announcement_notification_for_all_users
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 2:
         print(__doc__)
         exit(1)

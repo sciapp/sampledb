@@ -5,39 +5,41 @@ Splits action types into action_types and action_type_translations
 
 import os
 
+import flask_sqlalchemy
+
 from ..languages import Language
 
 MIGRATION_INDEX = 51
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute("""
+    column_names = db.session.execute(db.text("""
             SELECT column_name
             FROM information_schema.columns
             WHERE table_name = 'action_types'
-        """).fetchall()
+        """)).fetchall()
     if ('name', ) not in column_names:
         return False
 
     # Perform migration
     existing_data = [
         action_data
-        for action_data in db.session.execute("""
+        for action_data in db.session.execute(db.text("""
             SELECT id, name, description, object_name, object_name_plural, view_text, perform_text
             FROM action_types
-        """).fetchall()
+        """)).fetchall()
     ]
 
-    db.session.execute("""
+    db.session.execute(db.text("""
             ALTER TABLE action_types
             DROP COLUMN name,
             DROP COLUMN object_name,
             DROP COLUMN object_name_plural,
             DROP COLUMN view_text,
             DROP COLUMN perform_text
-        """)
+        """))
 
     performed_migration = False
     for action_type_id, name, description, object_name, object_name_plural, view_text, perform_text in existing_data:
@@ -52,10 +54,10 @@ def run(db):
             'perform_text': perform_text
         }
         # Perform migration
-        db.session.execute("""
+        db.session.execute(db.text("""
                       INSERT INTO action_type_translations (action_type_id, language_id, name, description, object_name, object_name_plural, view_text, perform_text)
                       VALUES (:action_type_id, :language_id, :name, :description, :object_name, :object_name_plural, :view_text, :perform_text)
-                  """, params=translation)
+                  """), params=translation)
         performed_migration = True
 
     return performed_migration

@@ -3,13 +3,13 @@
 
 """
 
-import re
-
 import flask
 import flask_login
 from flask_wtf import FlaskForm
 from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
 from wtforms.validators import DataRequired, Length, Email, ValidationError
+
+from .utils import validate_orcid
 
 
 class NewUserForm(FlaskForm):
@@ -48,12 +48,9 @@ class ChangeUserForm(FlaskForm):
         orcid = orcid.strip()
         if not orcid:
             return
-        # accept full ORCID iDs
-        orcid_prefix = 'https://orcid.org/'
-        if orcid.startswith(orcid_prefix):
-            orcid = orcid[len(orcid_prefix):]
         # check ORCID iD syntax
-        if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
+        is_valid, orcid = validate_orcid(orcid)
+        if not is_valid:
             raise ValidationError("Please enter a valid ORCID iD.")
         # keep sanitized ORCID iD on success
         field.data = orcid

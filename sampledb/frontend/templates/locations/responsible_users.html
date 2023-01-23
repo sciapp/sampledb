@@ -1,0 +1,19 @@
+{% if location is not none and location.responsible_users %}
+{% set visible_responsible_users = [] %}
+{% for user in location.responsible_users %}
+  {% set user = get_user(user.id) %}
+  {% if not user.is_hidden %}
+    {{ visible_responsible_users.append(user) or '' }}
+  {% endif %}
+{% endfor %}
+{% if visible_responsible_users %}
+<div class="responsible-users">
+  <h3>{{ _("Responsible Users:") }}</h3>
+  <ul>
+  {% for user in visible_responsible_users %}
+    <li>{{ user_reference(user) }}</li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endif %}

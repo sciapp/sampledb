@@ -3,6 +3,7 @@
 
 """
 
+import contextlib
 import getpass
 import copy
 import logging
@@ -10,16 +11,32 @@ import os
 import random
 import threading
 import time
+import warnings
 
+# enable SQLAlchemy 2.0 warnings by setting this before importing sqlalchemy
+# see the handle_warnings fixture below for how these warnings are handled
+os.environ['SQLALCHEMY_WARN_20'] = '1'
+
+# enable Flask debug mode before importing flask
+os.environ['FLASK_DEBUG'] = '1'
+
+import cherrypy
+import chromedriver_binary
 import flask
 import flask_login
 import pytest
 import requests
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
 import sqlalchemy
+import sqlalchemy.exc
 
 import sampledb
 import sampledb.utils
 import sampledb.config
+
+# use the minimum number of rounds for bcrypt to speed up tests
+sampledb.logic.authentication.NUM_BCYRPT_ROUNDS = 4
 
 sampledb.config.MAIL_SUPPRESS_SEND = True
 sampledb.config.TEMPLATES_AUTO_RELOAD = True
@@ -34,23 +51,43 @@ sampledb.config.LDAP_NAME = 'LDAP'
 sampledb.config.TESTING_LDAP_UNKNOWN_LOGIN = 'unknown-login-for-sampledb-tests'
 sampledb.config.TESTING_LDAP_WRONG_PASSWORD = 'wrong-password-for-sampledb-tests'
 
+sampledb.config.FEDERATION_UUID = 'aef05dbb-2763-49d1-964d-71205d8da0bf'
+
 # restore possibly overridden configuration data from environment variables
 sampledb.config.use_environment_configuration(env_prefix='SAMPLEDB_')
+
+
+@pytest.fixture(autouse=True)
+def handle_warnings():
+    with warnings.catch_warnings():
+        # raise SQLAlchemy 2.0 warnings as errors
+        warnings.simplefilter("error", category=sqlalchemy.exc.RemovedIn20Warning)
+        yield None
 
 
 def create_flask_server(app):
     if not getattr(app, 'has_shutdown_route', False):
         @app.route('/shutdown', methods=['POST'])
         def shutdown():
-            func = flask.request.environ.get('werkzeug.server.shutdown')
-            if func is None:
-                raise RuntimeError('Not running with the Werkzeug Server')
-            func()
+            cherrypy.engine.exit()
             return 'Server shutting down...'
         app.has_shutdown_route = True
 
+    def run_server():
+        cherrypy.engine.start()
+        cherrypy.engine.block()
+
+    app.debug = True
     port = random.randint(10000, 20000)
-    server_thread = threading.Thread(target=lambda: app.run(port=port, debug=True, use_reloader=False), daemon=True)
+    cherrypy.tree.graft(app, '/')
+    cherrypy.config.update({
+        'environment': 'test_suite',
+        'server.socket_host': '127.0.0.1',
+        'server.socket_port': port,
+        'server.socket_queue_size': 20,
+        'log.screen': True
+    })
+    server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
     server_thread.app = app
     server_thread.initial_config = copy.deepcopy(server_thread.app.config)
@@ -74,19 +111,16 @@ def flask_server(worker_id):
 
     app = create_app()
     # empty the database first, to ensure all tests rebuild it before use
-    if worker_id != 'master':
-        sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
-    else:
-        sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=False)
+    _create_empty_database_copy(app)
     yield from create_flask_server(app)
+    _drop_empty_database_copy()
 
 
 def create_app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
-    os.environ['FLASK_ENV'] = 'development'
-    os.environ['FLASK_TESTING'] = 'True'
     sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
     sampledb_app = sampledb.create_app()
+    sampledb_app.config['TESTING'] = True
 
     @sampledb_app.route('/users/me/loginstatus')
     def check_login():
@@ -94,8 +128,7 @@ def create_app():
 
     @sampledb_app.route('/users/<int:user_id>/autologin')
     def autologin(user_id):
-        user = sampledb.models.User.query.get(user_id)
-        assert user is not None
+        user = sampledb.logic.users.get_user(user_id)
         flask_login.login_user(user)
         return ''
 
@@ -107,8 +140,22 @@ def app(flask_server):
     app = flask_server.app
     # reset config and database before each test
     app.config = copy.deepcopy(flask_server.initial_config)
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
-    sampledb.setup_database(app)
+    _restore_empty_database_copy()
+
+    # enable german language for input by default during testing
+    with app.app_context():
+        sampledb.db.engine.dispose()
+        german = sampledb.logic.languages.get_language_by_lang_code('de')
+        sampledb.logic.languages.update_language(
+            language_id=german.id,
+            names=german.names,
+            lang_code=german.lang_code,
+            datetime_format_datetime=german.datetime_format_datetime,
+            datetime_format_moment=german.datetime_format_moment,
+            datetime_format_moment_output=german.datetime_format_moment_output,
+            enabled_for_input=True,
+            enabled_for_user_interface=german.enabled_for_user_interface
+        )
     return app
 
 
@@ -117,3 +164,68 @@ def app_context(app):
     with app.app_context():
         # yield to keep the app context active until the test is done
         yield None
+
+
+@pytest.fixture(scope='session')
+def driver():
+    options = Options()
+    options.add_argument("--lang=en-US")
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-dev-shm-usage')
+    with contextlib.closing(Chrome(options=options)) as driver:
+        # wait for driver to start up
+        time.sleep(5)
+        yield driver
+
+
+@pytest.fixture(autouse=True)
+def clear_cache_functions():
+    sampledb.logic.utils.clear_cache_functions()
+
+
+def _create_empty_database_copy(app):
+    database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
+
+    # setup empty database
+    sampledb.utils.empty_database(engine, only_delete=False)
+    sampledb.setup_database(app)
+
+    # create a copy (with the suffix _copy) to restore later
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text('COMMIT'))
+        for statement in [
+            f'SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = \'{database_name}\' AND pid <> pg_backend_pid();',
+            f'DROP DATABASE IF EXISTS {database_name}_copy',
+            f'CREATE DATABASE {database_name}_copy WITH TEMPLATE {database_name}',
+        ]:
+            connection.execute(sqlalchemy.text(statement))
+
+
+def _restore_empty_database_copy():
+    database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI + '_copy')
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text('COMMIT'))
+        for statement in [
+            f'SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = \'{database_name}\' AND pid <> pg_backend_pid();',
+            f"DROP DATABASE {database_name}",
+            f'CREATE DATABASE {database_name} WITH TEMPLATE {database_name}_copy',
+        ]:
+            connection.execute(sqlalchemy.text(statement))
+            connection.execute(sqlalchemy.text('COMMIT'))
+    engine.dispose(close=True)
+
+
+def _drop_empty_database_copy():
+    database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text('COMMIT'))
+        for statement in [
+            f'DROP DATABASE IF EXISTS {database_name}_copy',
+        ]:
+            connection.execute(sqlalchemy.text(statement))
+            connection.execute(sqlalchemy.text('COMMIT'))

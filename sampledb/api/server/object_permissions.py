@@ -4,17 +4,18 @@ RESTful API for SampleDB
 """
 
 import flask
-from flask_restful import Resource
 
-from .authentication import object_permissions_required, Permissions
+from .authentication import object_permissions_required
+from ..utils import Resource, ResponseData
 from ...logic import users, groups, projects, errors, object_permissions
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 class UserObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, user_id: int):
+    def get(self, object_id: int, user_id: int) -> ResponseData:
         include_instrument_responsible_users = 'include_instrument_responsible_users' in flask.request.args
         include_groups = 'include_groups' in flask.request.args
         include_projects = 'include_projects' in flask.request.args
@@ -28,7 +29,7 @@ class UserObjectPermissions(Resource):
         ).get(user_id, Permissions.NONE)
         if permissions == Permissions.NONE:
             try:
-                users.get_user(user_id)
+                users.check_user_exists(user_id)
             except errors.UserDoesNotExistError:
                 return {
                     "message": "user {} does not exist".format(user_id)
@@ -36,9 +37,9 @@ class UserObjectPermissions(Resource):
         return permissions.name.lower()
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int, user_id: int):
+    def put(self, object_id: int, user_id: int) -> ResponseData:
         try:
-            users.get_user(user_id)
+            users.check_user_exists(user_id)
         except errors.UserDoesNotExistError:
             return {
                 "message": "user {} does not exist".format(user_id)
@@ -60,7 +61,7 @@ class UserObjectPermissions(Resource):
 
 class UsersObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         include_instrument_responsible_users = 'include_instrument_responsible_users' in flask.request.args
         include_groups = 'include_groups' in flask.request.args
         include_projects = 'include_projects' in flask.request.args
@@ -80,7 +81,7 @@ class UsersObjectPermissions(Resource):
 
 class GroupObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, group_id: int):
+    def get(self, object_id: int, group_id: int) -> ResponseData:
         include_projects = 'include_projects' in flask.request.args
         permissions = object_permissions.get_object_permissions_for_groups(
             object_id=object_id,
@@ -96,7 +97,7 @@ class GroupObjectPermissions(Resource):
         return permissions.name.lower()
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int, group_id: int):
+    def put(self, object_id: int, group_id: int) -> ResponseData:
         try:
             groups.get_group(group_id)
         except errors.GroupDoesNotExistError:
@@ -120,7 +121,7 @@ class GroupObjectPermissions(Resource):
 
 class GroupsObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         include_projects = 'include_projects' in flask.request.args
         permissions = object_permissions.get_object_permissions_for_groups(
             object_id=object_id,
@@ -134,7 +135,7 @@ class GroupsObjectPermissions(Resource):
 
 class ProjectObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, project_id: int):
+    def get(self, object_id: int, project_id: int) -> ResponseData:
         permissions = object_permissions.get_object_permissions_for_projects(
             object_id=object_id
         ).get(project_id, Permissions.NONE)
@@ -148,7 +149,7 @@ class ProjectObjectPermissions(Resource):
         return permissions.name.lower()
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int, project_id: int):
+    def put(self, object_id: int, project_id: int) -> ResponseData:
         try:
             projects.get_project(project_id)
         except errors.ProjectDoesNotExistError:
@@ -172,7 +173,7 @@ class ProjectObjectPermissions(Resource):
 
 class ProjectsObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         permissions = object_permissions.get_object_permissions_for_projects(
             object_id=object_id,
         )
@@ -184,19 +185,90 @@ class ProjectsObjectPermissions(Resource):
 
 class PublicObjectPermissions(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
-        is_public = object_permissions.object_is_public(
-            object_id=object_id,
+    def get(self, object_id: int) -> ResponseData:
+        is_public = Permissions.READ in object_permissions.get_object_permissions_for_all_users(
+            object_id=object_id
         )
         return is_public, 200
 
     @object_permissions_required(Permissions.GRANT)
-    def put(self, object_id: int):
+    def put(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, bool):
             return {
                 "message": "JSON boolean body required"
             }, 400
         is_public = bool(request_json)
-        object_permissions.set_object_public(object_id, is_public)
+        object_permissions.set_object_permissions_for_all_users(
+            object_id=object_id,
+            permissions=Permissions.READ if is_public else Permissions.NONE
+        )
         return is_public, 200
+
+
+class AuthenticatedUserObjectPermissions(Resource):
+    @object_permissions_required(Permissions.READ)
+    def get(self, object_id: int) -> ResponseData:
+        permissions = object_permissions.get_object_permissions_for_all_users(
+            object_id=object_id
+        )
+        return permissions.name.lower(), 200
+
+    @object_permissions_required(Permissions.GRANT)
+    def put(self, object_id: int) -> ResponseData:
+        request_json = flask.request.get_json(force=True)
+        if not isinstance(request_json, str):
+            return {
+                "message": "JSON string body required"
+            }, 400
+        try:
+            permissions = Permissions.from_name(request_json)
+            if permissions not in {Permissions.NONE, Permissions.READ}:
+                raise ValueError("invalid permissions level")
+        except ValueError:
+            return {
+                "message": 'expected "none" or "read"'
+            }, 400
+        object_permissions.set_object_permissions_for_all_users(
+            object_id=object_id,
+            permissions=permissions
+        )
+        return permissions.name.lower(), 200
+
+
+class AnonymousUserObjectPermissions(Resource):
+    @object_permissions_required(Permissions.READ)
+    def get(self, object_id: int) -> ResponseData:
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return {
+                "message": "anonymous users are disabled"
+            }, 400
+        permissions = object_permissions.get_object_permissions_for_anonymous_users(
+            object_id=object_id
+        )
+        return permissions.name.lower(), 200
+
+    @object_permissions_required(Permissions.GRANT)
+    def put(self, object_id: int) -> ResponseData:
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return {
+                "message": "anonymous users are disabled"
+            }, 400
+        request_json = flask.request.get_json(force=True)
+        if not isinstance(request_json, str):
+            return {
+                "message": "JSON string body required"
+            }, 400
+        try:
+            permissions = Permissions.from_name(request_json)
+            if permissions not in {Permissions.NONE, Permissions.READ}:
+                raise ValueError("invalid permissions level")
+        except ValueError:
+            return {
+                "message": 'expected "none" or "read"'
+            }, 400
+        object_permissions.set_object_permissions_for_anonymous_users(
+            object_id=object_id,
+            permissions=permissions
+        )
+        return permissions.name.lower(), 200

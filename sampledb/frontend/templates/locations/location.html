@@ -1,15 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Location') }} #{{ location.id }}: {{ location.name | get_translated_text }} — {{ service_name }}{% endblock %}
+{% block title %}{{ location.type.location_name_singular | get_translated_text }} #{{ location.id }}: {{ location | get_location_name(False) }} — {{ service_name }}{% endblock %}
 
 {% block content %}
   <h1>
-    {{ _('Location') }} #{{ location.id }}:
-    {% for ancestor_id, ancestor_name in ancestors %}
-      <a href="{{ url_for('.location', location_id=ancestor_id) }}">{{ ancestor_name | get_translated_text }}</a> /
+    {{ location.type.location_name_singular | get_translated_text }} #{{ location.id }}:
+    {% for ancestor in ancestors %}
+      <a href="{{ url_for('.location', location_id=ancestor.id) }}">{{ ancestor | get_location_name(False) }}</a>
+      {{ import_information_symbol(ancestor) }} /
     {% endfor %}
-    {{ location.name | get_translated_text }}
+    {{ location | get_location_name(False) }}
+    {{ import_information_symbol(location) }}
   </h1>
+  {% if location.is_hidden %}
+    <p class="text-muted">
+    {% if locations_tree and not is_full_location_tree_hidden(locations_map, locations_tree) %}
+      <i class="fa fa-eye fa-fw" aria-hidden="true"></i>
+      {{_("This location has been hidden from location lists, but will be shown because it contains other locations that have not been hidden.") }}
+    {% else %}
+      <i class="fa fa-eye-slash fa-fw" aria-hidden="true"></i>
+      {{_("This location has been hidden from location lists.") }}
+    {% endif %}
+    </p>
+  {% endif %}
+  {% include "locations/responsible_users.html" %}
   {% if locations_tree %}
     <h2>{{ _('Sub-Locations') }}</h2>
     <ul>
@@ -19,13 +33,143 @@
     {% endfor %}
     </ul>
   {% endif %}
+  {% if location.description %}
   <pre style="font-family: sans-serif; background-color: transparent; border: 0; padding: 0;">{{ location.description | get_translated_text }}</pre>
+  {% endif %}
+
+  {% if location.component is not none %}
+    <h4>{{ _('Other Databases') }}</h4>
+    {{ _('Created on <a href="%(component_url)s">%(component_name)s</a>', component_url=url_for('.component', component_id=location.component.id), component_name=location.component.get_name()) }}
+  {% endif %}
 
   <div class="button-row">
-  <a href="{{ url_for('.objects', location=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
-  {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] or current_user.is_admin) %}
+  {% if descendent_location_ids %}
+    <div class="btn-group">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 220px">
+        {{ _('View Objects') }} <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a href="{{ url_for('.objects', location_ids=location.id) }}">{{ _('… at this location') }}</a></li>
+        <li><a href="{{ url_for('.objects', location_ids=descendent_location_ids | list) }}">{{ _('… at sub-locations') }}</a></li>
+        <li><a href="{{ url_for('.objects', location_ids=[location.id] + descendent_location_ids | list) }}">{{ _('… at this location and sub-locations') }}</a></li>
+      </ul>
+  </div>
+  {% else %}
+    <a href="{{ url_for('.objects', location_ids=location.id) }}" class="btn btn-default">{{ _('View Objects')}}</a>
+  {% endif %}
+  {% if Permissions.WRITE in permissions %}
+    {% if location.fed_id is none %}
   <a href="{{ url_for('.location', location_id=location.id, mode='edit') }}" class="btn btn-default">{{ _('Edit Location')}}</a>
+    {% endif %}
+    {% if location.type.enable_sub_locations %}
   <a href="{{ url_for('.new_location', parent_location_id=location.id) }}" class="btn btn-default">{{ _('Create Sub-Location')}}</a>
+    {% endif %}
+  {% endif %}
+  {% if Permissions.GRANT in permissions %}
+  <a href="{{ url_for('.location_permissions', location_id=location.id) }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Edit the permissions for this location.') }}">{{ _('Edit Permissions') }}</a>
   {% endif %}
   </div>
+
+  {% if location_log_entries %}
+  <h2>{{ _('Location Log') }}</h2>
+  <table class="table" id="activity_log">
+    <thead>
+      <tr>
+        <th scope="col" style="white-space: nowrap;width: 1%;">{{ _('Datetime') }}</th>
+        <th scope="col"></th>
+        <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for log_entry in location_log_entries %}
+      <tr>
+        <td style="white-space: nowrap;width: 1%;"><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+        {% if log_entry.user %}
+          {% set user_name = log_entry.user.get_name() %}
+        {% elif log_entry.user_id %}
+          {% set user_name = _('User #%(user_id)s', user_id=log_entry.user_id) %}
+        {% else %}
+          {% set user_name = _('An unknown user') %}
+        {% endif %}
+        {% if log_entry.user_id %}
+          {% set user_url = url_for('.user_profile', user_id=log_entry.user_id) %}
+        {% else %}
+          {% set user_url = '' %}
+        {% endif %}
+        {% if log_entry.type == LocationLogEntryType.CREATE_LOCATION %}
+          <td>
+            {% if log_entry.user_id %}
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> created the location.', user_url=user_url, user_name=user_name) }}
+            {% else %}
+              {{ _('The location was created.') }}
+            {% endif %}
+          </td>
+          <td></td>
+        {% elif log_entry.type == LocationLogEntryType.UPDATE_LOCATION %}
+          <td>
+            {% if log_entry.user_id %}
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> updated the information for this location.', user_url=user_url, user_name=user_name) }}
+            {% else %}
+              {{ _('The information for this location was updated.') }}
+            {% endif %}
+          </td>
+          <td></td>
+        {% elif log_entry.type == LocationLogEntryType.ADD_OBJECT %}
+          {% if 'object_id' in log_entry %}
+            <td>
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned <a href="%(object_url)s">%(object_name)s</a> to this location.', user_url=user_url, user_name=user_name, object_url=url_for('.object', object_id=log_entry.object_id, _anchor='locations'), object_name=_('%(object_name)s (#%(object_id)s)', object_id=log_entry.object_id, object_name=log_entry.object.name | get_translated_text) if ('object' in log_entry and log_entry.object and log_entry.object.name) else _('Object #%(object_id)s', object_id=log_entry.object_id)) }}
+            </td>
+            <td>
+              <a href="{{ url_for('.object', object_id=log_entry.object_id, _anchor='locations') }}">{{ _('View') }}</a>
+            </td>
+          {% else %}
+            <td>
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned an object to this location.', user_url=user_url, user_name=user_name) }}
+            </td>
+            <td></td>
+          {% endif %}
+        {% elif log_entry.type == LocationLogEntryType.CHANGE_OBJECT %}
+          {% if 'object_id' in log_entry %}
+            <td>
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> updated the information for <a href="%(object_url)s">%(object_name)s</a>.', user_url=user_url, user_name=user_name, object_url=url_for('.object', object_id=log_entry.object_id, _anchor='locations'), object_name=_('%(object_name)s (#%(object_id)s)', object_id=log_entry.object_id, object_name=log_entry.object.name | get_translated_text) if ('object' in log_entry and log_entry.object and log_entry.object.name) else _('Object #%(object_id)s', object_id=log_entry.object_id)) }}
+            </td>
+            <td>
+              <a href="{{ url_for('.object', object_id=log_entry.object_id, _anchor='locations') }}">{{ _('View') }}</a>
+            </td>
+          {% else %}
+            <td>
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> updated the information for an object at this location.', user_url=user_url, user_name=user_name) }}
+            </td>
+            <td></td>
+          {% endif %}
+        {% elif log_entry.type == LocationLogEntryType.REMOVE_OBJECT %}
+          {% if 'object_id' in log_entry %}
+            {% if 'new_location_id' in log_entry and log_entry['new_location_id'] is not none %}
+              <td>
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned <a href="%(object_url)s">%(object_name)s</a> to <a href="%(location_url)s">%(location_name)s</a>.', user_url=user_url, user_name=user_name, object_url=url_for('.object', object_id=log_entry.object_id, _anchor='locations'), object_name=_('%(object_name)s (#%(object_id)s)', object_id=log_entry.object_id, object_name=log_entry.object.name | get_translated_text) if ('object' in log_entry and log_entry.object and log_entry.object.name) else _('Object #%(object_id)s', object_id=log_entry.object_id), location_url=url_for('.location', location_id=log_entry.new_location_id), location_name=_('%(location_name)s (#%(location_id)s)', location_id=log_entry.new_location_id, location_name=log_entry.new_location.name | get_translated_text) if ('new_location' in log_entry and log_entry.new_location and log_entry.new_location.name) else _('Location #%(location_id)s', location_id=log_entry.new_location_id)) }}
+              </td>
+            {% else %}
+              <td>
+                {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned <a href="%(object_url)s">%(object_name)s</a> to a different location or to a responsible user.', user_url=user_url, user_name=user_name, object_url=url_for('.object', object_id=log_entry.object_id, _anchor='locations'), object_name=_('%(object_name)s (#%(object_id)s)', object_id=log_entry.object_id, object_name=log_entry.object.name | get_translated_text) if ('object' in log_entry and log_entry.object and log_entry.object.name) else _('Object #%(object_id)s', object_id=log_entry.object_id)) }}
+              </td>
+            {% endif %}
+            <td>
+              <a href="{{ url_for('.object', object_id=log_entry.object_id, _anchor='locations') }}">{{ _('View') }}</a>
+            </td>
+          {% else %}
+            <td>
+              {{ _('<a href="%(user_url)s">%(user_name)s</a> assigned an object from this location to a different location or to a responsible user.', user_url=user_url, user_name=user_name) }}
+            </td>
+            <td></td>
+          {% endif %}
+        {% else %}
+          <td>{{ _('Unknown event') }}</td>
+          <td></td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
 {% endblock %}

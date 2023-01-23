@@ -1,12 +1,22 @@
-{% if data and data.user_id %}
-  {% set user = get_user(data.user_id) %}
-  <a href="{{ url_for('.user_profile', user_id=user.id, _external=True) }}">
-  {% if user is none %}
-    {{ _('User') }} #{{ user.id }}
+{% if data is not none and "user_id" in data and data.user_id is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
+    {% set component_uuid = data.component_uuid %}
   {% else %}
-    {{ user.name }} (#{{ user.id }})
+    {% set component_uuid = none %}
   {% endif %}
-  </a>
+  {% with component_id = get_component_id_by_uuid(component_uuid) %}
+    {% with referenced_user = get_user(data.user_id, component_id) %}
+      {% if referenced_user is not none %}
+        {{ user_reference(referenced_user, external=True, text=true) }}
+      {% elif component_uuid is not none %}
+        {% set user_ref = FederationUserRef(fed_id=data.user_id, component_uuid=component_uuid) %}
+        {{ _('User') }} #{{ data.user_id }} @ {{ user_ref.component.get_name() }}
+        {{ import_information_symbol(user_ref, text=true) }}
+      {% else %}
+        {{ _('User') }} #{{ data.user_id }}
+      {% endif %}
+    {% endwith %}
+  {% endwith %}
 {% else %}
   &mdash;
 {% endif %}

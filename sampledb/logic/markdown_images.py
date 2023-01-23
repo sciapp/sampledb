@@ -20,7 +20,8 @@ from bs4 import BeautifulSoup
 import datetime
 import flask
 
-from .users import get_user
+from .components import check_component_exists
+from .users import check_user_exists
 from ..models.markdown_images import MarkdownImage
 from .. import db
 
@@ -38,7 +39,7 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     :raise errors.UserDoesNotExistError: if no user with the given ID exists
     """
     # ensure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
 
     _remove_expired_images()
 
@@ -59,22 +60,25 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     return file_name
 
 
-def get_markdown_image(file_name: str, user_id: int) -> typing.Optional[bytes]:
+def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_id: typing.Optional[int] = None) -> typing.Optional[bytes]:
     """
     Return the content of a Markdown image, if it is found.
 
     If the image is temporary, only the user who uploaded it may access it.
 
-    :param file_name:
-    :param user_id:
+    :param file_name: the file name of the image
+    :param user_id: the user ID of the user accessing the image
+    :param component_id: the component the image has been imported from
     :return: the binary file content or None
     """
-    image = MarkdownImage.query.filter_by(file_name=file_name).first()
+    image = MarkdownImage.query.filter_by(file_name=file_name, component_id=component_id).first()
     if image is None:
+        if component_id is not None:
+            check_component_exists(component_id)
         return None
     if image.user_id != user_id and not image.permanent:
         return None
-    return image.content
+    return typing.cast(bytes, image.content)
 
 
 def mark_referenced_markdown_images_as_permanent(html_content: str) -> None:
@@ -108,7 +112,7 @@ def find_referenced_markdown_images(html_content: str) -> typing.Set[str]:
     return file_names
 
 
-def _remove_expired_images():
+def _remove_expired_images() -> None:
     expiration_datetime = datetime.datetime.utcnow() - datetime.timedelta(days=2)
     expired_images = MarkdownImage.query.filter_by(permanent=False).filter(MarkdownImage.utc_datetime < expiration_datetime).all()
     for expired_image in expired_images:

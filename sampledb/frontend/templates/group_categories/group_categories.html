@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Group Categories') }} — {{ service_name }}{% endblock %}
+
+{% macro show_group_category_tree(group_category_tree) %}
+  <ul class="groups_list">
+  {% for category in group_categories %}
+    {% if category.id in group_category_tree['child_categories'] %}
+      <li>
+        {{ group_categories_by_id[category.id].name | get_translated_text(default=_('Unnamed Category')) }}
+        <div>
+        {% if not current_user.is_readonly and (not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] or current_user.is_admin) %}
+          <a href="{{ url_for('.group_category', category_id=category.id) }}" class="btn btn-xs btn-default">{{ _('Edit') }}</a>
+          <button type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#deleteCategory{{ category.id }}Modal">
+            {{ _('Delete') }}
+          </button>
+          <div class="modal fade" id="deleteCategory{{ category.id }}Modal" tabindex="-1" role="dialog" aria-labelledby="deleteCategory{{ category.id }}ModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="deleteCategory{{ category.id }}ModalLabel">{{ _('Delete Group Category') }}</h4>
+                </div>
+                <form action="{{ url_for('.group_category', category_id=category.id) }}" method="post" style="display: inline">
+                  {{ delete_category_form.hidden_tag() }}
+                  <input type="hidden" name="{{ delete_category_form.category_id.name }}" value="{{ category.id }}" />
+                  <div class="modal-body">
+                    {% if group_category_tree['child_categories'][category.id]['child_categories'] %}
+                      {{ _('Do you really want to delete this group category and all its subcategories?') }}
+                    {% else %}
+                      {{ _('Do you really want to delete this group category?') }}
+                    {% endif %}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ _('Delete') }}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        </div>
+        {{ show_group_category_tree(group_category_tree['child_categories'][category.id]) }}
+      </li>
+    {% endif %}
+  {% endfor %}
+  </ul>
+{% endmacro %}
+
+
+{% block content %}
+  <h1>{{ _('Group Categories') }}</h1>
+  <p class="text-muted">{{ _('Group Categories provide a hierarchical structure to the lists of basic and project groups, but do not impact permissions in any way.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/group_categories.html">{{ _('Read more.')}}</a></p>
+  {% if not current_user.is_readonly and (current_user.is_admin or not config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES']) %}
+  <p>
+    <a href="{{ url_for('.new_group_category') }}" class="btn btn-default"> {{ _('Create Group Category') }}</a>
+  </p>
+  {% endif %}
+  {{ show_group_category_tree(group_category_tree) }}
+{% endblock content %}

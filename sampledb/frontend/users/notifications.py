@@ -15,7 +15,7 @@ from wtforms.fields import IntegerField
 from wtforms.validators import InputRequired
 
 from .. import frontend
-from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments, instrument_translations
+from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments, components
 from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
 
 
@@ -33,6 +33,14 @@ class DeleteNotificationForm(FlaskForm):
 
 class MarkNotificationAsReadForm(FlaskForm):
     mark_notification_read = IntegerField(validators=[InputRequired()])
+
+
+def _object_location_assignment_is_confirmed_or_declined(object_location_assignment_id):
+    try:
+        object_location_assignment = locations.get_object_location_assignment(object_location_assignment_id)
+    except errors.ObjectLocationAssignmentDoesNotExistError:
+        return False
+    return object_location_assignment.confirmed or object_location_assignment.declined
 
 
 @frontend.route('/users/me/notifications')
@@ -119,14 +127,24 @@ def notifications(user_id):
         is_group_member=_is_group_member,
         get_project=_safe_get_project,
         get_instrument=_safe_get_instrument,
-        get_instrument_with_translation_in_language=_safe_get_instrument_with_translation_in_language,
         get_instrument_log_entry=_safe_get_instrument_log_entry,
+        get_component=components.get_component,
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
+        get_object_location_assignment=_safe_get_object_location_assignment,
         Permissions=object_permissions.Permissions,
-        object_location_assignment_is_confirmed=lambda object_location_assignment_id: locations.get_object_location_assignment(object_location_assignment_id).confirmed,
+        object_location_assignment_is_confirmed_or_declined=_object_location_assignment_is_confirmed_or_declined,
         datetime=datetime
     )
+
+
+def _safe_get_object_location_assignment(
+        object_location_assignment_id: int
+) -> typing.Optional[locations.ObjectLocationAssignment]:
+    try:
+        return locations.get_object_location_assignment(object_location_assignment_id)
+    except errors.ObjectLocationAssignmentDoesNotExistError:
+        return None
 
 
 def _safe_get_group(group_id: int) -> typing.Optional[groups.Group]:
@@ -168,16 +186,4 @@ def _safe_get_instrument_log_entry(instrument_log_entry_id: int) -> typing.Optio
     try:
         return instrument_log_entries.get_instrument_log_entry(instrument_log_entry_id)
     except errors.InstrumentLogEntryDoesNotExistError:
-        return None
-
-
-def _safe_get_instrument_with_translation_in_language(
-        instrument_id: int,
-        language_id: int
-) -> typing.Optional[instruments.Instrument]:
-    try:
-        return instrument_translations.get_instrument_with_translation_in_language(instrument_id, language_id)
-    except errors.InstrumentDoesNotExistError:
-        return None
-    except errors.InstrumentTranslationDoesNotExistError:
         return None

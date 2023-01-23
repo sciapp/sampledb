@@ -7,16 +7,31 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2022-02-28 09:32+0100\n"
-"PO-Revision-Date: 2020-11-10 16:31+0100\n"
+"POT-Creation-Date: 2023-01-18 12:33+0100\n"
+"PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.11.0\n"
+
+msgid "Editing imported action types is not yet supported."
+msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
+
+msgid "Sample"
+msgstr "Probe"
+
+msgid "Raw Dataset"
+msgstr "Rohdatensatz"
+
+msgid "Derived Dataset"
+msgstr "Abgeleiteter Datensatz"
+
+msgid "Unnamed Action Type"
+msgstr "Unbenannter Aktionstyp"
 
 msgid "Please fill out the form."
 msgstr "Bitte füllen Sie das Formular aus."
@@ -40,7 +55,7 @@ msgstr "Ungültiger Aktionstyp"
 msgid "Unknown action type"
 msgstr "Unbekannter Aktionstyp"
 
-msgid "Actions with this type can only be created or edited by administrators"
+msgid "Actions with this type can only be created or edited by administrators."
 msgstr ""
 "Aktionen diesen Typs können nur von Administratoren erstellt oder "
 "bearbeitet werden."
@@ -55,6 +70,9 @@ msgstr ""
 "Die verwendete Schema-Vorlage existiert nicht mehr. Bitte verwenden Sie "
 "den JSON-Editor um die Aktion zu bearbeiten."
 
+msgid "Editing imported actions is not yet supported."
+msgstr "Das Bearbeiten importierter Aktionen wird noch nicht unterstützt."
+
 msgid "Insufficient permissions to use the requested action as a template."
 msgstr ""
 "Unzureichende Berechtigungen um die angefragte Aktion als Schablone zu "
@@ -65,6 +83,12 @@ msgstr "Die angefragte Aktion existiert nicht."
 
 msgid "Only administrators can create actions of this type."
 msgstr "Nur Administratoren können Aktionen diesen Typs erstellen."
+
+msgid "Unnamed Instrument"
+msgstr "Unbenanntes Instrument"
+
+msgid "Unknown error: "
+msgstr "Unbekannter Fehler: "
 
 msgid "Something went wrong"
 msgstr "Ein Fehler ist aufgetreten"
@@ -83,20 +107,139 @@ msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
 "Aktion zu bearbeiten."
 
-msgid "Failed to update action permissions."
-msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
-
 msgid "Successfully updated action permissions."
 msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
 
+msgid "Failed to update action permissions."
+msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
+
+msgid "The object is currently being exported."
+msgstr "Dieses Objekt wird gerade exportiert."
+
+msgid "Exporting imported objects is not supported."
+msgstr "Das Exportieren importierter Objekte wird nicht unterstützt."
+
 msgid "No suitable Dataverses available for export."
 msgstr "Kein für Export brauchbares Dataverse verfügbar."
+
+#, python-format
+msgid "An error occurred while exporting the object: %(error)s"
+msgstr "Beim Export des Objekts ist ein Fehler aufgetreten: %(error)s"
 
 msgid "PDF file"
 msgstr "PDF-Dokument"
 
 msgid "Please select an export format."
 msgstr "Bitte wählen Sie ein Export-Format aus."
+
+msgid "This database does not exist"
+msgstr "Diese Datenbank existiert nicht"
+
+msgid "This database name is invalid"
+msgstr "Dieser Datenbank-Name ist ungültig"
+
+msgid "This database address is invalid"
+msgstr "Diese Datenbank-Adresse ist ungültig"
+
+msgid "A database with this UUID or name has already been added"
+msgstr "Eine Datenbank mit dieser UUID oder diesem Namen wurde bereits hinzugefügt"
+
+msgid "Invalid UUID"
+msgstr "Ungültige UUID"
+
+msgid "Only secure communication via https is allowed"
+msgstr "Nur verschlüsselte Kommunikation über HTTPS ist erlaubt"
+
+msgid "Failed to add database"
+msgstr "Das Hinzufügen der Datenbank ist fehlgeschlagen"
+
+msgid "Database information updated successfully"
+msgstr "Die Datenbank-Informationen wurden erfolgreich aktualisiert"
+
+msgid "Successfully imported data changes."
+msgstr "Änderungen erfolgreich importiert."
+
+msgid "Missing database address."
+msgstr "Die Datenbankadresse fehlt."
+
+msgid "No valid authentication method configured."
+msgstr "Keine gültige Authentifikationsmethode konfiguriert."
+
+msgid "Invalid authentication method."
+msgstr "Ungültige Authentifizierungsmethode."
+
+#, python-format
+msgid "Received invalid data. Error message: \"%(error)s\""
+msgstr "Ungültige Daten empfangen. Fehlermeldung: \"%(error)s\""
+
+msgid ""
+"This database has not been configured to exchange data with other "
+"databases."
+msgstr ""
+"Diese Datenbank wurde nicht zum Austausch von Daten mit anderen "
+"Datenbanken konfiguriert."
+
+msgid "Server error when requesting the data."
+msgstr "Serverfehler bei der Abfrage der Daten."
+
+msgid "Received error code when requesting the data."
+msgstr "Fehlercode bei der Abfrage der Daten empfangen."
+
+#, python-format
+msgid ""
+"Failed to establish a connection to %(component_name)s "
+"(%(component_address)s)."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
+"fehlgeschlagen."
+
+msgid "Successfully removed the authentication method."
+msgstr "Die Authentifizierungsmethode wurde erfolgreich entfernt."
+
+msgid "Authentication method has already been deleted."
+msgstr "Die Authentifizierungsmethode wurde bereits gelöscht."
+
+msgid "Failed to remove the authentication method."
+msgstr "Das Entfernen der Authentifizierungsmethode ist fehlgeschlagen."
+
+msgid "Failed to add API token."
+msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
+
+msgid "Invalid token. Required length: 64 digits."
+msgstr "Ungültiges Token. Geforderte Länge: 64 Zeichen."
+
+msgid "This token has already been linked to this database."
+msgstr "Dieses Token wurde bereits mit dieser Datenbank verknüpft."
+
+msgid "The database information has been added successfully"
+msgstr "Die Datenbank wurde erfolgreich angelegt"
+
+msgid "That database does not exist."
+msgstr "Diese Datenbank existiert nicht."
+
+msgid "There is no alias for this database."
+msgstr "Es gibt keinen Nutzer-Alias für diese Datenbank."
+
+msgid "User alias updated successfully."
+msgstr "Der Nutzeralias wurde erfolgreich aktualisiert."
+
+msgid "The alias for this database has already been deleted."
+msgstr "Der Nutzer-Alias für diese Datenbank wurde bereits gelöscht."
+
+msgid "Please enter your name as: surname, given names."
+msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
+
+msgid "The group category was deleted successfully."
+msgstr "Die Gruppen-Kategorie wurde erfolgreich gelöscht."
+
+msgid "The group category was created successfully."
+msgstr "Die Gruppen-Kategorie wurde erfolgreich erstellt."
+
+msgid "Invalid parent group category."
+msgstr "Ungültige Eltern-Kategorie."
+
+msgid "The group category was updated successfully."
+msgstr "Die Gruppen-Kategorie wurde erfolgreich aktualisiert."
 
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
@@ -115,13 +258,16 @@ msgid "You cannot create a log entry for this instrument."
 msgstr "Sie können keinen Log-Eintrag für dieses Instrument erstellen."
 
 msgid "Please enter a valid event datetime."
-msgstr "Bitte geben Sie einen gültigen Ereigniszeitpunkt ein,"
+msgstr "Bitte geben Sie einen gültigen Ereigniszeitpunkt ein."
 
 msgid "Please enter an instrument name."
 msgstr "Bitte geben Sie einen Instrumentnamen ein."
 
 msgid "The instrument was created successfully."
 msgstr "Das Instrument wurde erfolgreich erstellt."
+
+msgid "Editing imported instruments is not yet supported."
+msgstr "Das Bearbeiten importierter Instrumente wird noch nicht unterstützt."
 
 msgid "Please enter an english instrument name."
 msgstr "Bitte geben Sie einen englischen Instrumentnamen ein."
@@ -149,8 +295,31 @@ msgstr ""
 "Das Aktualisieren der Sprache ist fehlgeschlagen. Bitte versuchen Sie es "
 "erneut."
 
+msgid "Editing imported location types is not yet supported."
+msgstr "Das Bearbeiten importierter Ortstypen wird noch nicht unterstützt."
+
 msgid "Only administrators can edit locations."
 msgstr "Nur Administratoren können Orte bearbeiten."
+
+msgid "Editing imported locations is not yet supported."
+msgstr "Das Bearbeiten importierter Orte wird noch nicht unterstützt."
+
+msgid "You do not have permissions to edit this location."
+msgstr "Ihnen fehlen die Berechtigungen um diesen Ort zu bearbeiten."
+
+msgid "You do not have permissions to view this location."
+msgstr "Ihnen fehlen die Berechtigungen um diesen Ort anzuzeigen."
+
+msgid "You need GRANT permissions to edit the permissions for this location."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Orts zu bearbeiten."
+
+msgid "Successfully updated location permissions."
+msgstr "Die Ortsberechtigungen wurden erfolgreich aktualisiert."
+
+msgid "Failed to update location permissions."
+msgstr "Das Bearbeiten der Ortsberechtigungen ist fehlgeschlagen."
 
 msgid "Only administrators can create locations."
 msgstr "Nur Administratoren können Orte erstellen."
@@ -158,11 +327,10 @@ msgstr "Nur Administratoren können Orte erstellen."
 msgid "The requested parent location does not exist."
 msgstr "Dieser Eltern-Ort existiert nicht."
 
-msgid "The confirmation token is missing."
-msgstr "Das Bestätigungstoken fehlt."
-
-msgid "The confirmation token is invalid."
-msgstr "Das Bestätigungstoken ist ungültig."
+msgid ""
+"You do not have the required permissions for the requested parent "
+"location."
+msgstr "Ihnen fehlen die Berechtigungen um den gewünschten Eltern-Ort zu nutzen."
 
 msgid "This responsibility assignment does not exist."
 msgstr "Diese Verantwortungszuweisung existiert nicht."
@@ -173,8 +341,26 @@ msgstr "Diese Verantwortungszuweisung gehört zu einem anderen Nutzer."
 msgid "This responsibility assignment has already been confirmed."
 msgstr "Diese Verantwortungszuweisung wurde bereits bestätigt."
 
+msgid "This responsibility assignment has already been declined."
+msgstr "Diese Verantwortungszuweisung wurde bereits abgelehnt."
+
+msgid "The confirmation token is missing."
+msgstr "Das Bestätigungstoken fehlt."
+
+msgid "The confirmation token is invalid."
+msgstr "Das Bestätigungstoken ist ungültig."
+
 msgid "You have successfully confirmed this responsibility assignment."
 msgstr "Sie haben diese Verantwortungszuweisung erfolgreich bestätigt."
+
+msgid "The declination token is missing."
+msgstr "Das Ablehnungstoken fehlt."
+
+msgid "The declination token is invalid."
+msgstr "Das Ablehnungstoken ist ungültig."
+
+msgid "You have successfully declined this responsibility assignment."
+msgstr "Sie haben diese Verantwortungszuweisung erfolgreich abgelehnt."
 
 msgid "Please enter at least an english name."
 msgstr "Bitte geben Sie zumindest einen englischen Namen ein."
@@ -182,416 +368,253 @@ msgstr "Bitte geben Sie zumindest einen englischen Namen ein."
 msgid "One of these languages is not supported."
 msgstr "Eine dieser Sprachen wird nicht unterstützt."
 
+msgid "Please select a valid location type."
+msgstr "Bitte wählen Sie einen gültigen Ortstyp aus."
+
+msgid "Only administrators may create locations of this type."
+msgstr "Nur Administratoren können Orte dieses Typs erstellen."
+
+msgid "Locations of this type may not have a parent location."
+msgstr "Orte dieses Typs dürfen keinen Eltern-Ort haben."
+
+msgid "This location may not have sub locations."
+msgstr "Dieser Ort darf keine Unter-Orte haben."
+
+msgid "This location may not have responsible users."
+msgstr "Dieser Ort darf keine verantwortlichen Nutzer haben."
+
 msgid "The location was created successfully."
 msgstr "Der Ort wurde erfolgreich erstellt."
 
 msgid "The location was updated successfully."
 msgstr "Der Ort wurde erfolgreich aktualisiert."
 
+#, python-format
 msgid ""
-"Please select at least one hazard or confirm that the object poses no "
-"hazards."
+"<a href=\"%(user_url)s\">%(user_name)s</a> created this object as part of"
+" a batch."
 msgstr ""
-"Bitte wählen Sie mindestens ein Gefahrensymbol aus, oder bestätigen Sie, "
-"dass das Objekt keine Gefahr darstellt."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt als Teil einer "
+"Charge erstellt."
 
-msgid "Please select a sample."
-msgstr "Bitte wählen Sie eine Probe aus."
+#, python-format
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> created this object."
+msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt erstellt."
 
-msgid "Please select a measurement."
-msgstr "Bitte wählen Sie eine Messung aus."
+#, python-format
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> edited this object."
+msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt bearbeitet."
 
-msgid "Please select an object reference."
-msgstr "Bitte wählen Sie eine Objektreferenz aus."
-
-msgid "Please enter a magnitude."
-msgstr "Bitte geben Sie eine Größe ein."
-
-msgid "Unable to parse magnitude."
-msgstr "Größe konnte nicht geparset werden."
-
-msgid "The magnitude must be a number."
-msgstr "Die Größe muss eine Zahl sein."
-
-msgid "Please enter a valid datetime."
-msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein,"
-
-msgid "Please select a user."
-msgstr "Bitte wählen Sie einen Nutzer aus."
+#, python-format
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> posted a comment."
+msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat eine Datei eingetragen."
 
 #, python-format
 msgid ""
-"The advanced search was used automatically. Search for "
-"\"%(query_string)s\" to use the simple search."
+"<a href=\"%(user_url)s\">%(user_name)s</a> restored a previous version of"
+" this object."
 msgstr ""
-"Die erweiterte Suche wurde automatisch verwendet. Suchen Sie nach "
-"\"%(query_string)s\" um die einfache Suche zu verwenden."
-
-msgid "Unable to copy permissions. Default permissions will be applied."
-msgstr ""
-"Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
-"werden angewandt."
-
-msgid "No object selected. Default permissions will be applied."
-msgstr "Kein Objekt ausgewählt. Standardberechtigungen werden angewandt."
-
-msgid ""
-"Unable to grant permissions to basic group. Default permissions will be "
-"applied."
-msgstr ""
-"Rechtevergabe-Berechtigungen konnten nicht an die einfache Gruppe "
-"vergeben werden. Standardberechtigungen werden angewandt."
-
-msgid "No basic group selected. Default permissions will be applied."
-msgstr "Keine einfache Gruppe ausgewählt. Standardberechtigungen werden angewandt."
-
-msgid ""
-"Unable to grant permissions to project group. Default permissions will be"
-" applied."
-msgstr ""
-"Rechtevergabe-Berechtigungen konnten nicht an die Projektgruppe vergeben "
-"werden. Standardberechtigungen werden angewandt."
-
-msgid "No project group selected. Default permissions will be applied."
-msgstr "Keine Projektgruppe asugewählt. Standardberechtigungen werden angewandt."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat eine vorherige Version "
+"dieses Objekts wiederhergestellt."
 
 #, python-format
-msgid "The maximum number of objects in one batch is %(max_batch_size)s."
-msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
-
-msgid "The number of objects in batch must be an positive integer."
-msgstr ""
-"Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl "
-"sein."
-
-msgid "The objects were created successfully."
-msgstr "Die Objekte wurden erfolgreich erstellt."
-
-msgid "The object was created successfully."
-msgstr "Das Objekt wurde erfolgreich erstellt."
-
-msgid "The object was updated successfully."
-msgstr "Das Objekt wurde erfolgreich aktualisiert."
-
-msgid "Creating objects with this action has been disabled."
-msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
-
-msgid "Unknown"
-msgstr "Unbekannt"
-
-msgid "Unknown Object"
-msgstr "Unbekanntes Objekt"
-
-msgid "Successfully posted a comment."
-msgstr "Kommentar erfolgreich eingetragen."
-
-msgid "Please enter a comment text."
-msgstr "Bitte geben Sie einen Kommentartext ein."
-
-msgid "You already have permissions to access this object."
-msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
-
-msgid "Your request for permissions has been sent."
-msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
-
-msgid "Successfully assigned a new location to this object."
-msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
-
-msgid "Please select a location or a responsible user."
-msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
-
-msgid "This object has already been linked to this publication."
-msgstr "Dieses Objekt wurde bereits mit dieser Publikation verknüpft."
-
-msgid "Successfully linked this object to a publication."
-msgstr "Das Objekt wurde erfolgreich mit der Publikation verknüpft."
-
-msgid "Successfully updated the information for this publication."
-msgstr "Die Informationen für diese Publikation wurden erfolgreich aktualisiert."
-
-msgid ""
-"Please enter a valid DOI for the publication you want to link this object"
-" to."
-msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
-
-msgid "The file was hidden successfully."
-msgstr "Die Datei wurde erfolgreich versteckt."
-
-msgid "Successfully uploaded files."
-msgstr "Die Dateien wurden erfolgreich hochgeladen."
-
-msgid "Failed to upload files."
-msgstr "Das Hochladen der Dateien ist fehlgeschlagen"
-
-msgid "Successfully posted link."
-msgstr "Der Link wurde erfolgreich eingetragen."
-
-msgid "Failed to post link."
-msgstr "Das Eintragen des Links ist fehlgeschlagen."
-
-msgid "This object does not exist."
-msgstr "Dieses Objekt existiert nicht."
-
-msgid "You do not have the required permissions to use this object as a template."
-msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
-
-msgid "This object was created with a different action."
-msgstr "Dieses Objekt wurde mit einer anderen Aktion erstellt."
-
-msgid "This action does not exist."
-msgstr "Diese Aktion existiert nicht."
-
-msgid "You do not have the required permissions to use this action."
-msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
-
-msgid "Successfully copied object permissions."
-msgstr "Die Berechtigungen wurden erfolgreich kopiert."
-
-msgid "Successfully updated object permissions."
-msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
-
-msgid ""
-"A problem occurred while changing the object permissions. Please try "
-"again."
-msgstr ""
-"Beim Ändern der Berechtigungen ist ein Problem aufgetreten. Bitte "
-"versuchen Sie es später erneut."
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> posted a file."
+msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat eine Datei eingetragen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> created this "
-"object as part of a batch."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"als Teil einer Charge erstellt."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> created this "
-"object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"erstellt."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> edited this "
-"object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"bearbeitet."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> posted a "
-"comment."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat einen "
-"Kommentar für dieses Objekt eingetragen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> restored a "
-"previous version of this object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine "
-"vorherige Version dieses Objekts wiederhergestellt."
-
-#, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> posted a file."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine Datei "
-"hochgeladen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
-"object in <a href=\"%(object_url)s\">measurement %(measurement_name)s "
+"<a href=\"%(user_url)s\">%(user_name)s</a> used this object in <a "
+"href=\"%(object_url)s\">measurement %(measurement_name)s "
 "(#%(measurement_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in <a href=\"%(object_url)s\">Messung %(measurement_name)s "
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in <a "
+"href=\"%(object_url)s\">Messung %(measurement_name)s "
 "(#%(measurement_id)s)</a> verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
-"object in <a href=\"%(object_url)s\">measurement #%(measurement_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> used this object in <a "
+"href=\"%(object_url)s\">measurement #%(measurement_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in <a href=\"%(object_url)s\">Messung #%(measurement_id)s</a> verwendet."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in <a "
+"href=\"%(object_url)s\">Messung #%(measurement_id)s</a> verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
-"object in a measurement."
+"<a href=\"%(user_url)s\">%(user_name)s</a> used this object in a "
+"measurement."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in einer Messung verwendet."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in einer "
+"Messung verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
-"object to create <a href=\"%(object_url)s\">sample %(sample_name)s "
-"(#%(sample_id)s)</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> used this object to create <a "
+"href=\"%(object_url)s\">sample %(sample_name)s (#%(sample_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"zur Erstellung von <a href=\"%(object_url)s\">Probe %(sample_name)s "
-"(#%(sample_id)s)</a> verwendet."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
+"von <a href=\"%(object_url)s\">Probe %(sample_name)s (#%(sample_id)s)</a>"
+" verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
-"object to create <a href=\"%(object_url)s\">sample #%(sample_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> used this object to create <a "
+"href=\"%(object_url)s\">sample #%(sample_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"zur Erstellung von <a href=\"%(object_url)s\">Probe #%(sample_id)s</a> "
-"verwendet."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
+"von <a href=\"%(object_url)s\">Probe #%(sample_id)s</a> verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> used this "
-"object to create a sample."
+"<a href=\"%(user_url)s\">%(user_name)s</a> used this object to create a "
+"sample."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"zur Erstellung einer Probe verwendet."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
+"einer Probe verwendet."
+
+msgid " (confirmed)"
+msgstr " (bestätigt)"
+
+msgid " (declined)"
+msgstr " (abgelehnt)"
+
+msgid " (unconfirmed)"
+msgstr " (unbestätigt)"
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
-"object to <a href=\"%(location_url)s\">location #%(location_id)s</a> and "
-"<a href=\"%(other_user_url)s\">user #%(responsible_user_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
+"href=\"%(location_url)s\">%(location_name)s</a> and <a "
+"href=\"%(other_user_url)s\">user "
+"#%(responsible_user_id)s</a>%(responsibility_status)s."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"dem <a href=\"%(location_url)s\">Ort #%(location_id)s</a> und <a "
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem <a "
+"href=\"%(location_url)s\">%(location_name)s</a> und <a "
 "href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
-"zugeweisen."
+"zugeweisen%(responsibility_status)s."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
-"object to <a href=\"%(location_url)s\">location #%(location_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
+"href=\"%(location_url)s\">%(location_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> das Objekt dem "
-"<a href=\"%(location_url)s\">Ort %(location_id)s</a> zugewiesen."
+"<a href=\"%(user_url)s\">%(user_name)s</a> das Objekt dem <a "
+"href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> assigned this "
-"object to <a href=\"%(other_user_url)s\">user "
-"#%(responsible_user_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to <a "
+"href=\"%(other_user_url)s\">user "
+"#%(responsible_user_id)s</a>%(responsibility_status)s."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"dem <a href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
-"zugewiesen."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem <a "
+"href=\"%(other_user_url)s\">Nutzer %(responsible_user_id)s</a> "
+"zugewiesen%(responsibility_status)s."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked "
-"publication <a href=\"https://dx.doi.org/%(doi)s\">%(doi)s</a> to this "
-"object."
+"<a href=\"%(user_url)s\">%(user_name)s</a> linked publication <a "
+"href=\"https://dx.doi.org/%(doi)s\">%(doi)s</a> to this object."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
-"Publikation <a href=\"https://doi.org/%(doi)s\">%(doi)s</a> mit dem "
-"Objekt verknüpft."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat Publikation <a "
+"href=\"https://doi.org/%(doi)s\">%(doi)s</a> mit dem Objekt verknüpft."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
-" object in the metadata of <a href=\"%(object_url)s\">object "
-"%(object_name)s (#%(other_object_id)s)</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> referenced this object in the "
+"metadata of <a href=\"%(object_url)s\">object %(object_name)s "
+"(#%(other_object_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in den Metadaten von <a href=\"(object_url)s\">%(object_name)s "
-"#%(other_object_id)s</a> referenziert."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
+"Metadaten von <a href=\"%(object_url)s\">%(object_name)s "
+"(#%(other_object_id)s)</a> referenziert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
-" object in the metadata of <a href=\"%(object_url)s\">object "
-"#%(other_object_id)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> referenced this object in the "
+"metadata of <a href=\"%(object_url)s\">object #%(other_object_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in den Metadaten von <a href=\"(object_url)s\">object "
-"#%(other_object_id)s</a> referenziert."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
+"Metadaten von <a href=\"%(object_url)s\">Objekt #%(other_object_id)s</a> "
+"referenziert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
-" object in the metadata of an unknown object."
+"<a href=\"%(user_url)s\">%(user_name)s</a> referenced this object in the "
+"metadata of an unknown object."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in den Metadaten eines unbekannten Objekts referenziert."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
+"Metadaten eines unbekannten Objekts referenziert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> referenced this"
-" object in the metadata of another object."
+"<a href=\"%(user_url)s\">%(user_name)s</a> referenced this object in the "
+"metadata of another object."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"in den Metadaten eines anderen Objekts referenziert."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
+"Metadaten eines anderen Objekts referenziert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> exported this "
-"object to dataverse as <a "
-"href=\"%(dataverse_url)s\">%(dataverse_url)s</a>."
+"<a href=\"%(user_url)s\">%(user_name)s</a> exported this object to "
+"dataverse as <a href=\"%(dataverse_url)s\">%(dataverse_url)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"als <a href=\"%(dataverse_url)s\">%(dataverse_url)s</a> in ein Dataverse "
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt als <a "
+"href=\"%(dataverse_url)s\">%(dataverse_url)s</a> in ein Dataverse "
 "exportiert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked this "
-"object to <a href=\"%(project_url)s\">project group %(project_name)s "
+"<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to <a "
+"href=\"%(project_url)s\">project group %(project_name)s "
 "(#%(project_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"mit <a href=\"%(project_url)s\">Projektgruppe %(project_name)s "
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit <a "
+"href=\"%(project_url)s\">Projektgruppe %(project_name)s "
 "(#%(project_id)s)</a> verknüpft."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> linked this "
+"<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to a "
+"project group."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit einer "
+"Projektgruppe verknüpft."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> deleted the project group this"
+" object was linked to."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Projektgruppe gelöscht"
+" mit der das Objekt verknüpft war."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
+"object to <a href=\"%(project_url)s\">project group %(project_name)s "
+"(#%(project_id)s)</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
+"Objekts mit <a href=\"%(project_url)s\">Projektgruppe %(project_name)s "
+"(#%(project_id)s)</a> entfernt."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
 "object to a project group."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat das Objekt "
-"mit einer Projektgruppe verknüpft."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
+"Objekts mit einer Projektgruppe entfernt."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> deleted the "
-"project group this object was linked to."
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> performed an unknown action."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
-"Projektgruppe gelöscht mit der das Objekt verknüpft war."
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat eine unbekannte Aktion "
+"durchgeführt."
 
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> removed the "
-"link of this object to <a href=\"%(project_url)s\">project group "
-"%(project_name)s (#%(project_id)s)</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
-"Verknüpfung dieses Objekts mit <a href=\"%(project_url)s\">Projektgruppe "
-"%(project_name)s (#%(project_id)s)</a> entfernt."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> removed the "
-"link of this object to a project group."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat die "
-"Verknüpfung dieses Objekts mit einer Projektgruppe entfernt."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> performed an "
-"unknown action."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s (#%(user_id)s)</a> hat eine "
-"unbekannte Aktion durchgeführt."
+msgid "Object"
+msgstr "Objekt"
 
 msgid "Invalid project group invitation token. Please request a new invitation."
 msgstr ""
@@ -795,14 +818,376 @@ msgstr ""
 "Die Verknüpfung zwischen Objekt und Projektgruppe wurde erfolgreich "
 "aufgehoben."
 
+msgid "The SciCat export type is not set for objects of this type."
+msgstr "Der SciCat Export-Typ ist für Objekte diesen Typs nicht gesetzt."
+
+msgid "An unknown error occurred while uploading the dataset."
+msgstr "Beim Export des Datensatzes ist ein unbekannter Fehler aufgetreten."
+
+#, python-format
+msgid "%(scicat_name)s is currently unreachable, please try again later."
+msgstr ""
+"%(scicat_name)s is aktuell nicht erreichbar, bitte versuchen Sie es "
+"später erneut."
+
 msgid "Please enter your contact email."
 msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
 
 msgid "Passwords must match"
 msgstr "Passwörter müssen übereinstimmen"
 
-msgid "Please enter your name as: surname, given names."
-msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vorname."
+msgid "Unknown Location"
+msgstr "Unbekannter Ort"
+
+msgid "Location"
+msgstr "Ort"
+
+msgid "Unnamed Location"
+msgstr "Unbenannter Ort"
+
+#, python-format
+msgid "Unknown database (%(uuid)s)"
+msgstr "Unbekannte Datenbank (%(uuid)s)"
+
+msgid "Basic Group"
+msgstr "Einfache Gruppe"
+
+msgid "Project Group"
+msgstr "Projektgruppe"
+
+msgid "Group Category"
+msgstr "Gruppen-Kategorie"
+
+msgid "Unnamed Category"
+msgstr "Unbenannte Kategorie"
+
+msgid "Unnamed Project Group"
+msgstr "Unbenannte Projektgruppe"
+
+msgid "File stored in other database is not available."
+msgstr "Datei aus anderer Datenbank ist nicht verfügbar."
+
+msgid "Uploading files for imported objects is not yet supported."
+msgstr ""
+"Das Hochladen von Dateien wird für importierte Objekte noch nicht "
+"unterstützt."
+
+msgid "The file was hidden successfully."
+msgstr "Die Datei wurde erfolgreich versteckt."
+
+msgid "Successfully uploaded files."
+msgstr "Die Dateien wurden erfolgreich hochgeladen."
+
+msgid "Failed to upload files."
+msgstr "Das Hochladen der Dateien ist fehlgeschlagen."
+
+msgid "Successfully posted link."
+msgstr "Der Link wurde erfolgreich eingetragen."
+
+msgid "Failed to post link."
+msgstr "Das Eintragen des Links ist fehlgeschlagen."
+
+msgid "Unable to copy permissions. Default permissions will be applied."
+msgstr ""
+"Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
+"werden angewandt."
+
+msgid "No object selected. Default permissions will be applied."
+msgstr "Kein Objekt ausgewählt. Standardberechtigungen werden angewandt."
+
+msgid ""
+"Unable to grant permissions to basic group. Default permissions will be "
+"applied."
+msgstr ""
+"Rechtevergabe-Berechtigungen konnten nicht an die einfache Gruppe "
+"vergeben werden. Standardberechtigungen werden angewandt."
+
+msgid "No basic group selected. Default permissions will be applied."
+msgstr "Keine einfache Gruppe ausgewählt. Standardberechtigungen werden angewandt."
+
+msgid ""
+"Unable to grant permissions to project group. Default permissions will be"
+" applied."
+msgstr ""
+"Rechtevergabe-Berechtigungen konnten nicht an die Projektgruppe vergeben "
+"werden. Standardberechtigungen werden angewandt."
+
+msgid "No project group selected. Default permissions will be applied."
+msgstr "Keine Projektgruppe asugewählt. Standardberechtigungen werden angewandt."
+
+#, python-format
+msgid "The maximum number of objects in one batch is %(max_batch_size)s."
+msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
+
+msgid "The number of objects in batch must be an positive integer."
+msgstr ""
+"Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl "
+"sein."
+
+msgid "The objects were created successfully."
+msgstr "Die Objekte wurden erfolgreich erstellt."
+
+msgid "The object was created successfully."
+msgstr "Das Objekt wurde erfolgreich erstellt."
+
+msgid "The object was updated successfully."
+msgstr "Das Objekt wurde erfolgreich aktualisiert."
+
+msgid "Creating objects with this action has been disabled."
+msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
+
+msgid ""
+"Please select at least one hazard or confirm that the object poses no "
+"hazards."
+msgstr ""
+"Bitte wählen Sie mindestens ein Gefahrensymbol aus, oder bestätigen Sie, "
+"dass das Objekt keine Gefahr darstellt."
+
+msgid "Please select a sample."
+msgstr "Bitte wählen Sie eine Probe aus."
+
+msgid "Please select a measurement."
+msgstr "Bitte wählen Sie eine Messung aus."
+
+msgid "Please select an object reference."
+msgstr "Bitte wählen Sie eine Objektreferenz aus."
+
+msgid "Please enter a magnitude."
+msgstr "Bitte geben Sie eine Größe ein."
+
+msgid "Unable to parse time."
+msgstr "Zeitangabe konnte nicht geparst werden."
+
+msgid "Unable to parse magnitude."
+msgstr "Größe konnte nicht geparst werden."
+
+msgid "The magnitude must be a number."
+msgstr "Die Größe muss eine Zahl sein."
+
+msgid "Please enter a valid datetime."
+msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
+
+msgid "Please select a user."
+msgstr "Bitte wählen Sie einen Nutzer aus."
+
+#, python-format
+msgid ""
+"The advanced search was used automatically. Search for "
+"\"%(query_string)s\" to use the simple search."
+msgstr ""
+"Die erweiterte Suche wurde automatisch verwendet. Suchen Sie nach "
+"\"%(query_string)s\" um die einfache Suche zu verwenden."
+
+msgid "Tags"
+msgstr "Tags"
+
+msgid "Hazards"
+msgstr "Gefahren"
+
+msgid "Objects"
+msgstr "Objekte"
+
+msgid "Unnamed Action"
+msgstr "Unbenannte Aktion"
+
+msgid "Only one of location_ids and location may be set."
+msgstr "location_ids und location dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse location IDs."
+msgstr "Orts-IDs konnten nicht geparst werden."
+
+msgid "Invalid location ID."
+msgstr "Ungültige Orts-ID."
+
+msgid "Only one of action_ids and action may be set."
+msgstr "action_ids und action dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse action IDs."
+msgstr "Aktions-IDs konnten nicht geparst werden."
+
+msgid "Invalid action ID."
+msgstr "Ungültige Aktions-ID"
+
+msgid "Unable to parse instrument IDs."
+msgstr "Instrument-ID konnte nicht geparst werden."
+
+msgid "Invalid instrument ID."
+msgstr "Ungültige Instrument-ID"
+
+msgid "Only one of action_type_ids and t may be set."
+msgstr "action_type_ids und t dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse action type IDs."
+msgstr "Aktionstyp-IDs konnten nicht geparst werden."
+
+msgid "Invalid action type ID."
+msgstr "Ungültige Aktionstyp-ID"
+
+msgid "Unable to parse related user ID."
+msgstr "Die ID des zugehörigen Nutzers konnte nicht geparst werden."
+
+msgid "Invalid related user ID."
+msgstr "Ungültige Zugehöriger-Nutzer-ID."
+
+msgid "Unable to parse user ID."
+msgstr "Nutzer-ID konnte nicht geparst werden."
+
+msgid "Unable to parse group ID."
+msgstr "Gruppen-ID konnte nicht geparst werden."
+
+msgid "Invalid group ID."
+msgstr "Ungültige Gruppen-ID."
+
+msgid "You need to be a member of this group to list its objects."
+msgstr ""
+"Sie müssen ein Mitglied dieser Gruppe sein, um ihre Objekte anzeigen zu "
+"können."
+
+msgid "Unable to parse project ID."
+msgstr "Projekt-ID konnte nicht geparst werden."
+
+msgid "Invalid project ID."
+msgstr "Ungültige Projekt-ID."
+
+msgid "You need to be a member of this project group to list its objects."
+msgstr ""
+"Sie müssen ein Mitglied dieser Projektgruppe sein, um ihre Objekte "
+"anzeigen zu können."
+
+msgid "Unable to parse database ID."
+msgstr "Datenbank-ID konnte nicht geparst werden."
+
+msgid "Invalid database ID."
+msgstr "Ungültige Datenbank-ID."
+
+msgid "Unable to parse origin ID."
+msgstr "Quell-ID konnte nicht geparst werden."
+
+msgid "Successfully assigned a new location to objects."
+msgstr "Der neue Ort wurde erfolgreich den Objekten zugewiesen."
+
+msgid "Please select a location or a responsible user."
+msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
+
+msgid "You already have permissions to access this object."
+msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
+
+msgid "Your request for permissions has been sent."
+msgstr "Ihre Berechtigungs-Anfrage wurde versandt."
+
+msgid "Successfully copied object permissions."
+msgstr "Die Berechtigungen wurden erfolgreich kopiert."
+
+msgid ""
+"A problem occurred while changing the object permissions. Please try "
+"again."
+msgstr ""
+"Beim Ändern der Berechtigungen ist ein Problem aufgetreten. Bitte "
+"versuchen Sie es später erneut."
+
+#, python-format
+msgid "Unable to contact %(component_name)s. Missing database address."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s ist fehlgeschlagen. Die "
+"Datenbankadresse fehlt."
+
+#, python-format
+msgid ""
+"No valid authentication method configured for %(component_name)s "
+"(%(component_address)s)."
+msgstr ""
+"Es besteht keine gültige Authentifikationsmethode für %(component_name)s "
+"(%(component_address)s)."
+
+#, python-format
+msgid "Unable to contact %(component_name)s (%(component_address)s)."
+msgstr ""
+"Der Verbindungsaufbau zu %(component_name)s (%(component_address)s) ist "
+"fehlgeschlagen."
+
+msgid "Successfully updated object permissions."
+msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
+
+msgid "This version contains invalid data and cannot be restored."
+msgstr ""
+"Diese Version enthält ungültige Daten und kann nicht wiederhergestellt "
+"werden."
+
+msgid "Editing imported objects is not yet supported."
+msgstr "Das Bearbeiten importierter Objekte wird noch nicht unterstützt."
+
+msgid "The schema for this object cannot be updated."
+msgstr "Das Schema für dieses Objekt kann nicht aktualisiert werden."
+
+msgid "Please enter a valid URL."
+msgstr "Bitte geben Sie eine gültige URL ein."
+
+msgid "The URL you have entered exceeds the length limit."
+msgstr "Die eingegebene URL überschreitet die Längenbeschränkung."
+
+msgid "The IP address you entered is invalid."
+msgstr "Die eingegebene IP-Adresse ist ungültig."
+
+msgid "The port number you entered is invalid."
+msgstr "Die eingegebene Port-Nummer ist ungültig."
+
+msgid "Unknown"
+msgstr "Unbekannt"
+
+msgid "Commenting on imported objects is not yet supported."
+msgstr "Das Kommentieren importierter Objekte wird noch nicht unterstützt."
+
+msgid "Successfully posted a comment."
+msgstr "Kommentar erfolgreich eingetragen."
+
+msgid "Please enter a comment text."
+msgstr "Bitte geben Sie einen Kommentartext ein."
+
+msgid "Assigning locations to imported objects is not yet supported."
+msgstr "Das Zuweisen importierter Objekte zu Orten wird noch nicht unterstützt."
+
+msgid "Successfully assigned a new location to this object."
+msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
+
+msgid "Assigning publications to imported objects is not yet supported."
+msgstr ""
+"Das Verknüpfen importierter Objekte zu Publikationen wird noch nicht "
+"unterstützt."
+
+msgid "This object has already been linked to this publication."
+msgstr "Dieses Objekt wurde bereits mit dieser Publikation verknüpft."
+
+msgid "Successfully linked this object to a publication."
+msgstr "Das Objekt wurde erfolgreich mit der Publikation verknüpft."
+
+msgid "Successfully updated the information for this publication."
+msgstr "Die Informationen für diese Publikation wurden erfolgreich aktualisiert."
+
+msgid ""
+"Please enter a valid DOI for the publication you want to link this object"
+" to."
+msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
+
+msgid "This object does not exist."
+msgstr "Dieses Objekt existiert nicht."
+
+msgid "You do not have the required permissions to use this object as a template."
+msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
+
+msgid "This object was created with a different action."
+msgstr "Dieses Objekt wurde mit einer anderen Aktion erstellt."
+
+msgid "This action does not exist."
+msgstr "Diese Aktion existiert nicht."
+
+msgid "You do not have the required permissions to use this action."
+msgstr "Ihnen fehlen die Berechtigungen um diese Aktion zu nutzen."
+
+msgid "The selected object cannot be used in this action."
+msgstr "Das ausgewählte Objekt kann nicht in dieser Aktion verwendet werden."
+
+msgid "The selected objects cannot be used in this action."
+msgstr "Die ausgewählten Objekte können nicht in dieser Aktion verwendet werden."
 
 msgid "API Log"
 msgstr "API Log"
@@ -829,6 +1214,12 @@ msgstr "Endpunkt"
 
 msgid "This API token has not been used so far."
 msgstr "Dieses API Token ist noch nicht benutzt worden."
+
+msgid "Expand All"
+msgstr "Alle ausklappen"
+
+msgid "Collapse All"
+msgstr "Alle einklappen"
 
 msgid "Bold"
 msgstr "Fettdruck"
@@ -859,6 +1250,57 @@ msgstr "Tabelle einfügen"
 
 msgid "Toggle Preview"
 msgstr "Vorschau ein-/ausschalten"
+
+msgid "Please select an object."
+msgstr "Bitte wählen Sie ein Objekt aus."
+
+msgid "Clear"
+msgstr "Leeren"
+
+msgid ""
+"No results for \"<span class=\"query-container\">QUERY</span>\" — <span "
+"class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
+"event)\">Clear</span>"
+msgstr ""
+"Keine Ergebnisse für „<span class=\"query-container\">QUERY</span>“ — "
+"<span class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
+"event)\">Leeren</span>"
+
+msgid ""
+"PLACEHOLDER2 results for \"<span class=\"query-container\">QUERY</span>\""
+" — <span class=\"objectpicker-button\" onclick=\"objectpicker_clear(this,"
+" event)\">Clear</span>"
+msgstr ""
+"PLACEHOLDER2 Ergebnisse für „<span class=\"query-"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button\" "
+"onclick=\"objectpicker_clear(this, event)\">Leeren</span>"
+
+msgid ""
+"PLACEHOLDER1 of PLACEHOLDER2 results for \"<span class=\"query-"
+"container\">QUERY</span>\" — <span class=\"objectpicker-button\" "
+"onclick=\"objectpicker_show_all(this, event)\">Show all</span> — <span "
+"class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
+"event)\">Clear</span>"
+msgstr ""
+"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen für „<span class=\"query-"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button\" "
+"onclick=\"objectpicker_show_all(this, event)\">Alle anzeigen</span> — "
+"<span class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
+"event)\">Leeren</span>"
+
+msgid "No results"
+msgstr "Keine Ergebnisse"
+
+msgid "PLACEHOLDER2 results"
+msgstr "PLACEHOLDER2 Ergebnisse"
+
+msgid ""
+"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-"
+"button\" onclick=\"objectpicker_show_all(this, event)\">Show all</span>"
+msgstr ""
+"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
+"button\" onclick=\"objectpicker_show_all(this, event)\">Alle "
+"anzeigen</span>"
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
@@ -908,8 +1350,14 @@ msgstr "Instrumente"
 msgid "Actions"
 msgstr "Aktionen"
 
-msgid "Objects"
-msgstr "Objekte"
+msgid "Objects with <b>READ</b> permissions"
+msgstr "Objekte mit <b>LESE</b>-Berechtigungen"
+
+msgid "Objects with <b>WRITE</b> permissions"
+msgstr "Objekte mit <b>SCHREIB</b>-Berechtigungen"
+
+msgid "Objects with <b>GRANT</b> permissions"
+msgstr "Objekte mit <b>RECHTEVERGABE</b>-Berechtigungen"
 
 msgid "More"
 msgstr "Mehr"
@@ -926,14 +1374,23 @@ msgstr "Projektgruppen"
 msgid "Locations"
 msgstr "Orte"
 
-msgid "Tags"
-msgstr "Tags"
+msgid "Publications"
+msgstr "Publikationen"
+
+msgid "Other Databases"
+msgstr "Andere Datenbanken"
 
 msgid "Action Types"
 msgstr "Aktionstypen"
 
+msgid "Location Types"
+msgstr "Ortstypen"
+
 msgid "Languages"
 msgstr "Sprachen"
+
+msgid "Monitoring Dashboard"
+msgstr "Monitoring Dashboard"
 
 msgid "Preferences"
 msgstr "Einstellungen"
@@ -949,6 +1406,12 @@ msgstr "Ihre Projektgruppen"
 
 msgid "Your Actions"
 msgstr "Ihre Aktionen"
+
+msgid "Your Objects"
+msgstr "Ihre Objekte"
+
+msgid "User Alias Settings"
+msgstr "Nutzer-Alias Einstellungen"
 
 msgid "Invite a Guest"
 msgstr "Gast einladen"
@@ -987,7 +1450,7 @@ msgid ""
 "erroneously, please"
 msgstr ""
 "Ihr Nutzerkonto wurde als nur lesend markiert. Falls Sie denken, dass "
-"dies irrtümlicherweise geschah, "
+"dies irrtümlicherweise geschah,"
 
 msgid "contact an administrator"
 msgstr "kontaktieren Sie bitte einen Administrator"
@@ -1001,11 +1464,38 @@ msgstr "Teams"
 msgid "Citation Guide"
 msgstr "Zitierhilfe"
 
-msgid "Imprint"
+msgid "Legal Notice"
 msgstr "Impressum"
 
 msgid "Privacy Policy"
 msgstr "Datenschutzerklärung"
+
+msgid "Accessibility"
+msgstr "Barrierefreiheit"
+
+msgid "Urgent Notifications"
+msgstr "Wichtige Benachrichtigungen"
+
+#, python-format
+msgid ""
+"<a href=\"%(assigner_url)s\">%(assigner_name)s</a> assigned you as "
+"responsible user for <a href=\"%(object_url)s\">%(object_name)s</a>."
+msgstr ""
+"<a href=\"%(assigner_url)s\">%(assigner_name)s</a> hat Sie als "
+"verantwortlichen Nutzer für <a "
+"href=\"%(object_url)s\">%(object_name)s</a> eingetragen."
+
+msgid "View Object"
+msgstr "Objekt anzeigen"
+
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgid "Decline"
+msgstr "Ablehnen"
+
+msgid "Remind me in 1 hour"
+msgstr "In 1 Stunde erinnern"
 
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
@@ -1048,6 +1538,12 @@ msgstr "Passwort"
 
 msgid "Please enter a password with at least 3 characters."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
+
+msgid "Confirm Password"
+msgstr "Passwort bestätigen"
+
+msgid "Please enter the same password as above."
+msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
 
 msgid "Cancel"
 msgstr "Abbrechen"
@@ -1096,8 +1592,8 @@ msgid ""
 "testing, may be offline at any time and the <strong>data will be "
 "deleted!</strong>"
 msgstr ""
-"Dies ist eine Vorschauinstallation von %(service_name)s. Sie wird für Tests"
-" genutzt, daher kann sie jederzeit ausfallen und <strong>die hier "
+"Dies ist eine Vorschauinstallation von %(service_name)s. Sie wird für "
+"Tests genutzt, daher kann sie jederzeit ausfallen und <strong>die hier "
 "gespeicherten Daten werden gelöscht werden!</strong>"
 
 #, python-format
@@ -1106,6 +1602,12 @@ msgstr "Willkommen bei %(service_name)s"
 
 msgid "Sign In"
 msgstr "Anmelden"
+
+msgid "Create Object"
+msgstr "Objekt erstellen"
+
+msgid "View Objects"
+msgstr "Objekte anzeigen"
 
 #, python-format
 msgid ""
@@ -1124,8 +1626,20 @@ msgid "another user"
 msgstr "einen anderen Nutzer"
 
 #, python-format
-msgid "The invitation to %(email)s has been sent."
-msgstr "Die Einladung an %(email)s wurde versandt."
+msgid "An invitation has been sent to %(email)s."
+msgstr "Eine Einladung wurde an %(email)s versendet."
+
+#, python-format
+msgid ""
+"Sending an invitation to %(email)s failed. Please verify that the email "
+"address is correct."
+msgstr ""
+"Das Senden einer Einladung an %(email)s is fehlgeschlagen. Bitte "
+"überprüfen Sie die E-Mail-Adresse."
+
+#, python-format
+msgid "An invitation will be sent to %(email)s."
+msgstr "Eine Einladung wird an %(email)s versendet werden."
 
 msgid "Invite"
 msgstr "Einladen"
@@ -1187,11 +1701,8 @@ msgid ""
 "#%(object_id)s</a>."
 msgstr ""
 "<a href=\"%(assigner_url)s\">%(assigner_name)s</a> hat Sie als "
-"verantwortlichen Nutzer für <a href=\"%(object_url)s\">Object "
+"verantwortlichen Nutzer für <a href=\"%(object_url)s\">Objekt "
 "#%(object_id)s</a> eingetragen."
-
-msgid "Confirm"
-msgstr "Bestätigen"
 
 #, python-format
 msgid ""
@@ -1209,7 +1720,7 @@ msgstr "Der einfachen Gruppe beitreten"
 
 #, python-format
 msgid "The invitation has expired at %(expiration_datetime)s."
-msgstr "Die Einladung ist abgelaufen am %(expiration_datetime)s"
+msgstr "Die Einladung ist abgelaufen am %(expiration_datetime)s."
 
 #, python-format
 msgid ""
@@ -1301,8 +1812,54 @@ msgstr ""
 "href=\"%(log_entry_url)s\">Log-Eintrag</a> für das Instrument <a "
 "href=\"%(instrument_url)s\">%(instrument_name)s</a> bearbeitet."
 
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> has declined responsibility "
+"for <a href=\"%(object_url)s\">object #%(object_id)s</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verantwortung für <a "
+"href=\"%(object_url)s\">Object #%(object_id)s</a> abgelehnt."
+
+msgid "An unknown object responsibility assignment has been declined."
+msgstr "Eine unbekannte Verantwortungszuweisung wurde abgelehnt."
+
+#, python-format
+msgid ""
+"Importing <a href=\"%(object_url)s\">object #%(object_id)s</a> into <a "
+"href=\"%(component_url)s\">%(component_name)s</a> has failed."
+msgstr ""
+"Das Importieren von <a href=\"%(object_url)s\">Objekt #%(object_id)s</a> "
+"in <a href=\"%(component_url)s\">%(component_name)s</a> ist "
+"fehlgeschlagen."
+
+#, python-format
+msgid ""
+"Importing <a href=\"%(object_url)s\">object #%(object_id)s</a> into "
+"another database has failed."
+msgstr ""
+"Das Importieren von <a href=\"%(object_url)s\">Objekt #%(object_id)s</a> "
+"in eine andere Datenbank ist fehlgeschlagen."
+
+#, python-format
+msgid ""
+"<a href=\"%(object_url)s\">Object #%(object_id)s</a> has been imported "
+"into <a href=\"%(component_url)s\">%(component_name)s</a> with the "
+"following notes:"
+msgstr ""
+"<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> wurde mit den "
+"folgenden Hinweisen in <a "
+"href=\"%(component_url)s\">%(component_name)s</a> importiert:"
+
+#, python-format
+msgid ""
+"<a href=\"%(object_url)s\">Object #%(object_id)s</a> has been imported "
+"into another database with the following notes:"
+msgstr ""
+"<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> wurde mit den "
+"folgenden Hinweisen in eine andere Datenbank importiert:"
+
 msgid "Unknown notification type."
-msgstr "Unbekannter Benachrichtigungstyp"
+msgstr "Unbekannter Benachrichtigungstyp."
 
 msgid "Mark as Read"
 msgstr "Als gelesen markieren"
@@ -1393,7 +1950,7 @@ msgid "TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
 
 msgid "Unknown Two Factor Authentication Method"
-msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode."
+msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode"
 
 msgid "Disable"
 msgstr "Deaktivieren"
@@ -1443,6 +2000,9 @@ msgstr "Ankündigungen"
 msgid "Becoming responsible for an object"
 msgstr "Für ein Objekt verantworlich werden"
 
+msgid "Responsibility for an object being declined"
+msgstr "Verantwortung für ein Objekt wird abgelehnt"
+
 msgid "Being invited to a basic group"
 msgstr "In eine einfache Gruppe eingeladen werden"
 
@@ -1461,6 +2021,12 @@ msgstr "Eine Änderung in einem Instrument-Log-Eintrag erhalten"
 msgid "Being referenced in object metadata"
 msgstr "In den Metadaten eines Objekts referenziert werden"
 
+msgid "Failure of importing an object into another database"
+msgstr "Fehlschlag des Imports eines Objekts in eine andere Datenbank"
+
+msgid "Receiving notes after importing an object into another database"
+msgstr "Hinweise beim Import eines Objekts in eine andere Datenbank erhalten"
+
 msgid "Default Permissions"
 msgstr "Standardberechtigungen"
 
@@ -1474,50 +2040,24 @@ msgstr ""
 "ändern, verwenden Sie bitte den <strong>Berechtigungen "
 "bearbeiten</strong>-Knopf auf der Seite des Objekts."
 
-msgid "Special Groups"
-msgstr "Sondergruppen"
+msgid "Permission to view objects and their properties, files and comments."
+msgstr ""
+"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
+"zu sehen."
 
-msgid "None"
-msgstr "Keine"
+msgid ""
+"Permission to edit objects and their properties and add files and "
+"comments. Includes Read permissions."
+msgstr ""
+"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
+"zu bearbeiten. Beinhaltet Lese-Berechtigungen."
 
-msgid "Read"
-msgstr "Lesen"
-
-msgid "Write"
-msgstr "Schreiben"
-
-msgid "Grant"
-msgstr "Rechtevergabe"
-
-msgid "Administrators"
-msgstr "Administratoren"
-
-msgid "Instrument Scientists"
-msgstr "Instrumentverantwortliche"
-
-msgid "Everyone"
-msgstr "Jeder Nutzer"
-
-msgid "Add User"
-msgstr "Nutzer hinzufügen"
-
-msgid "User"
-msgstr "Nutzer"
-
-msgid "Add"
-msgstr "Hinzufügen"
-
-msgid "Add Basic Group"
-msgstr "Einfache Gruppe hinzufügen"
-
-msgid "Basic Group"
-msgstr "Einfache Gruppe"
-
-msgid "Add Project Group"
-msgstr "Projektgruppe hinzufügen"
-
-msgid "Project Group"
-msgstr "Projektgruppe"
+msgid ""
+"Permission to grant permissions to other users. Includes Write "
+"permissions."
+msgstr ""
+"Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
+"Schreib-Berechtigungen."
 
 msgid "Other Settings"
 msgstr "Sonstige Einstellungen"
@@ -1562,6 +2102,15 @@ msgstr "Ja &mdash; Zeige Objekt-Schema Titel beim Betrachten von Metadaten"
 msgid "No &mdash; Hide object schema titles when viewing metadata"
 msgstr "Nein &mdash; Verstecke Objekt-Schema Titel beim Betrachten von Metadaten"
 
+msgid "Show objects table at full width"
+msgstr "Zeige Objekttabelle in voller Breite"
+
+msgid "Yes &mdash; Let the objects table be as wide as the browser window"
+msgstr "Ja &mdash; Mache die Objekttabelle so breit wie das Browserfenster"
+
+msgid "No &mdash; Limit the objects table to the regular content width"
+msgstr "Nein &mdash; Begrenze die Objekttabelle auf die normale Inhaltsbreite"
+
 msgid "Language"
 msgstr "Sprache"
 
@@ -1586,8 +2135,8 @@ msgstr "Administratoreinstellungen"
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
 
-msgid "Yes &mdash; Use <b>GRANT</b> permissions for all objects"
-msgstr "Ja &mdash; Verwende <b>RECHTEVERGABE</b>-Berechtigungen für alle Objekte"
+msgid "Yes &mdash; Always use <b>GRANT</b> permissions"
+msgstr "Ja &mdash; Verwende immer <b>RECHTEVERGABE</b>-Berechtigungen"
 
 msgid "No &mdash; Use regular permission system"
 msgstr "Nein &mdash; Verwende das normale Berechtigungenssystem"
@@ -1613,14 +2162,11 @@ msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 msgid "Type"
 msgstr "Typ"
 
+msgid "Add"
+msgstr "Hinzufügen"
+
 msgid "Change Password"
 msgstr "Passwort ändern"
-
-msgid "Confirm Password"
-msgstr "Passwort bestätigen"
-
-msgid "Please enter the same password as above."
-msgstr "Bitte geben Sie das selbe Passwort ein wie oben."
 
 msgid "Change"
 msgstr "Ändern"
@@ -1629,7 +2175,7 @@ msgid "Create API Token"
 msgstr "API Token erstellen"
 
 msgid "Please enter a description for the API token."
-msgstr "Bitte geben Sie eine Beschreibung für das API Token an"
+msgstr "Bitte geben Sie eine Beschreibung für das API Token an."
 
 msgid "New API Token"
 msgstr "Neues API Token"
@@ -1644,6 +2190,9 @@ msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
+
+msgid "User"
+msgstr "Nutzer"
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -1695,8 +2244,24 @@ msgstr ""
 msgid "deactivated"
 msgstr "deaktiviert"
 
-msgid "View Objects"
-msgstr "Objekte anzeigen"
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">User #%(user_id)s</a> (<a "
+"href=\"%(component_url)s\">%(component_name)s</a>)"
+msgstr ""
+"<a href=\"%(user_url)s\">Nutzer #%(user_id)s</a> (<a "
+"href=\"%(component_url)s\">%(component_name)s</a>)"
+
+#, python-format
+msgid "User #%(user_id)s (%(component_name)s)"
+msgstr "Nutzer #%(user_id)s (%(component_name)s)"
+
+msgid "Last Update"
+msgstr "Letzte Aktualisierung"
+
+#, python-format
+msgid "by <a href=\"%(user_url)s\">%(user_name)s</a>"
+msgstr "durch <a href=\"%(user_url)s\">%(user_name)s</a>"
 
 msgid "… with activity by this user"
 msgstr "… mit Aktivität dieses Nutzers"
@@ -1728,6 +2293,31 @@ msgstr "Aktivieren"
 msgid "Deactivate"
 msgstr "Deaktivieren"
 
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Edit Profile Information"
+msgstr "Profil-Informationen bearbeiten"
+
+msgid "Please enter an ORCID iD or leave this field blank."
+msgstr "Bitte geben Sie eine ORCID iD ein oder lassen Sie dieses Feld leer."
+
+msgid "Affiliation, e.g. an institute, company or department"
+msgstr "Zugehörigkeit, z.B. ein Institut, ein Unternehmen oder eine Abteilung"
+
+msgid ""
+"Publications can be linked to objects to track where and how an object "
+"has been used in a publication."
+msgstr ""
+"Publikationen können mit Objekten verknüpft werden, um nachverfolgen zu "
+"können, wo und wie diese in Veröffentlichungen genutzt werden."
+
+msgid "Untitled publication"
+msgstr "Publikation ohne Titel"
+
+msgid "No publications have been linked to any objects yet."
+msgstr "Es wurden noch keine Publikationen mit Objekten verknüpft."
+
 #, python-format
 msgid "Account Recovery Email sent to %(email)s"
 msgstr "E-Mail zur Nutzerkonto-Wiederherstellung gesendet an %(email)s"
@@ -1751,8 +2341,8 @@ msgstr ""
 "Ihren Spam-Ordner und <a href=\"mailto:%(contact_email)s?subject=Account "
 "Recovery for %(email)s\">kontaktieren Sie einen Administator</a>."
 
-msgid "Account Creation"
-msgstr "Nutzerkonto Erstellen"
+msgid "Create Account"
+msgstr "Nutzerkonto erstellen"
 
 msgid "Please enter the necessary information to create an account."
 msgstr ""
@@ -1761,9 +2351,6 @@ msgstr ""
 
 msgid "Retype Password"
 msgstr "Passwort wiederholen"
-
-msgid "Create Account"
-msgstr "Nutzerkonto erstellen"
 
 msgid "Forgot your password?"
 msgstr "Passwort vergessen?"
@@ -1849,11 +2436,29 @@ msgstr "ist kleiner als Größe"
 msgid "is not equal to quantity"
 msgstr "ist nicht gleich zu Größe"
 
+msgid "is object reference equal to"
+msgstr "ist eine Referenz zu dem Objekt"
+
+msgid "is object reference not equal to"
+msgstr "ist eine Referenz zu einem anderen Objekt als"
+
+msgid "is user reference equal to"
+msgstr "ist eine Referenz zu dem Nutzer"
+
+msgid "is user reference not equal to"
+msgstr "ist eine Referenz zu einem anderen Nutzer als"
+
+msgid "is not set"
+msgstr "ist nicht gesetzt"
+
 msgid "Text"
 msgstr "Text"
 
 msgid "Quantity"
 msgstr "Physikalische Größe"
+
+msgid "Object Reference"
+msgstr "Objektreferenz"
 
 msgid "Object must meet all conditions (and)"
 msgstr "Objekt muss alle Bedingungen erfüllen (and)"
@@ -2098,6 +2703,12 @@ msgstr ""
 "Nein, verhindere das Einbinden von Aktionen dieses Typs als Schema-"
 "Vorlage in anderen Aktionen"
 
+msgid "Usable in"
+msgstr "Verwendbar in"
+
+msgid "SciCat Export Type"
+msgstr "SciCat-Export-Typ"
+
 msgid "View Actions"
 msgstr "Aktionen anzeigen"
 
@@ -2206,6 +2817,9 @@ msgstr ""
 "Erlaube das Einbinden von Aktionen dieses Typs als Schema-Vorlage in "
 "anderen Aktionen"
 
+msgid "Nothing selected"
+msgstr "Nichts ausgewählt"
+
 msgid ""
 "Action Types represent different kinds of actions, such as sample "
 "creation or measurements."
@@ -2216,17 +2830,26 @@ msgstr ""
 msgid "Create Action Type"
 msgstr "Aktionstyp erstellen"
 
+msgid "Adjust sorting"
+msgstr "Sortierung anpassen"
+
+msgid "Apply"
+msgstr "Anwenden"
+
 msgid "Action"
 msgstr "Aktion"
 
-msgid "This custom action is not public. "
+msgid "This custom action is not public."
 msgstr "Diese benutzerdefinierte Aktion ist nicht öffentlich."
 
-msgid "This custom action is public. "
+msgid "This custom action is public."
 msgstr "Diese benutzerdefinierte Aktion ist öffentlich."
 
 msgid "This action has been hidden from action lists."
 msgstr "Diese Aktion wurde aus Aktionslisten versteckt."
+
+msgid "Only administrators can create objects with this action."
+msgstr "Nur Administratoren können mit dieser Aktion Objekte erstellen."
 
 msgid "Modify the settings for this action."
 msgstr "Einstellungen für diese Aktion modifizieren."
@@ -2304,7 +2927,7 @@ msgid "Please enter the default magnitude (in base units) as a number."
 msgstr "Bitte geben Sie den Standardwert (in Basis-Einheiten) als Zahl ein."
 
 msgid "Please enter valid units"
-msgstr "Bitte geben Sie gültige Einheiten ein."
+msgstr "Bitte geben Sie gültige Einheiten ein"
 
 msgid "Schema Template input must not be empty"
 msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
@@ -2363,8 +2986,31 @@ msgstr "Kein Instrument ausgewählt"
 msgid "Hide this action from action lists"
 msgstr "Diese Aktion aus Aktionslisten verstecken"
 
+msgid "All users with Read permissions can create objects using this action"
+msgstr ""
+"Alle Nutzer mit Lese-Berechtigungen können mit dieser Aktion Objekte "
+"erstellen"
+
+msgid "Only administrators can create objects using this action"
+msgstr "Nur Administratoren können mit dieser Aktion Objekte erstellen"
+
+msgid "Creating objects using this action is disabled"
+msgstr "Das Erzeugen von Objekten mit dieser Aktion ist deaktiviert"
+
 msgid "Schema"
 msgstr "Schema"
+
+msgid "Invalid JSON input, can not use graphical editor"
+msgstr "Ungültige JSON-Eingabe, grafischer Editor kann nicht verwendet werden"
+
+msgid "Use Graphical Editor"
+msgstr "Grafischen Editor verwenden"
+
+msgid "Graphical Editor"
+msgstr "Grafischer Editor"
+
+msgid "JSON Editor"
+msgstr "JSON-Editor"
 
 msgid "Title"
 msgstr "Titel"
@@ -2374,9 +3020,6 @@ msgstr "An"
 
 msgid "Disabled"
 msgstr "Aus"
-
-msgid "Hazards"
-msgstr "Gefahren"
 
 msgid "Properties"
 msgstr "Eigenschaften"
@@ -2412,16 +3055,13 @@ msgid "Text (Multiline)"
 msgstr "Text (mehrzeilig)"
 
 msgid "Text (Markdown)"
-msgstr " Text (Markdown)"
+msgstr "Text (Markdown)"
 
 msgid "Text (Choice)"
 msgstr "Text (Auswahl)"
 
 msgid "Boolean"
 msgstr "Wahrheitswert"
-
-msgid "Object Reference"
-msgstr "Objektreferenz"
 
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
@@ -2439,7 +3079,7 @@ msgid "No"
 msgstr "Nein"
 
 msgid "Additional information on the property."
-msgstr "Weitere Informationen zur Eigenschaft"
+msgstr "Weitere Informationen zur Eigenschaft."
 
 msgid "Note"
 msgstr "Hinweis"
@@ -2472,11 +3112,14 @@ msgstr "Eine Liste von Auswahlmöglichkeiten; ein Wert pro Zeile."
 msgid "Choices"
 msgstr "Auswahlmöglichkeiten"
 
+msgid "Unit or a list of units the user can choose from, separated by commas."
+msgstr "Einheit oder Liste von auswählbaren Einheiten, getrennt durch Kommata."
+
 msgid "Units"
 msgstr "Einheiten"
 
 msgid "Standard magnitude in base units."
-msgstr "Standardwert in Basiseinheiten"
+msgstr "Standardwert in Basiseinheiten."
 
 msgid "Schema Editor Warning"
 msgstr "Schema Editor Warnung"
@@ -2490,17 +3133,8 @@ msgstr ""
 "grafischen Schema-Editor nicht unterstützt werden. Falls Sie fortfahren, "
 "könnten diese aus dem Schema entfernt werden."
 
-#, python-format
-msgid ""
-"If you wish to edit the schema with the text-based editor, you can enable"
-" it in your <a href=\"%(preference_url)s\">preferences</a>."
-msgstr ""
-"Falls Sie das Schema im text-basierten Editor bearbeiten möchten, können "
-"Sie diesen in den <a href=\"%(preference_url)s\">Einstellungen</a> "
-"aktivieren."
-
-msgid "Edit Preferences"
-msgstr "Einstellungen bearbeiten"
+msgid "Use JSON Editor"
+msgstr "JSON-Editor verwenden"
 
 msgid "Action Permissions"
 msgstr "Aktionsberechtigungen"
@@ -2517,13 +3151,6 @@ msgstr ""
 "Berechtigung um Schemas und Beschreibungen von Aktionen zu bearbeiten. "
 "Beinhaltet Lese-Berechtigungen."
 
-msgid ""
-"Permission to grant permissions to other users. Includes Write "
-"permissions."
-msgstr ""
-"Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
-"Schreib-Berechtigungen."
-
 #, python-format
 msgid "%(action_type)s Actions"
 msgstr "%(action_type)s-Aktionen"
@@ -2537,6 +3164,125 @@ msgstr ""
 
 msgid "Create Action"
 msgstr "Aktion erstellen"
+
+msgid "Background Tasks"
+msgstr "Hintergrund-Aufgaben"
+
+msgid "Background tasks are currently enabled."
+msgstr "Hintergrund-Aufgaben sind aktuell aktiviert."
+
+msgid "Background tasks are currently disabled."
+msgstr "Hintergrund-Aufgaben sind aktuell deaktiviert."
+
+msgid "This table shows a list of pending or failed tasks."
+msgstr ""
+"Diese Tabelle zeigt eine List aller ausstehenden oder fehlgeschlagenen "
+"Aufgaben."
+
+msgid "Some tasks will be deleted automatically once they are completed or fail."
+msgstr ""
+"Manche Aufgaben werden automatisch gelöscht, sobald Sie abgeschlossen "
+"oder fehlgeschlagen sind."
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Data"
+msgstr "Daten"
+
+msgid "There are no pending or failed tasks."
+msgstr "Aktuell gibt es keine ausstehenden oder fehlgeschlagenen Aufgaben."
+
+msgid "Warnings"
+msgstr "Warnungen"
+
+msgid ""
+"Some objects have files in <code>local</code> storage, please move them "
+"to <code>database</code> storage."
+msgstr ""
+"Manche Objekte haben Dateien mit <code>local</code> Speicherung, bitte "
+"übertragen Sie diese zu <code>database</code> Speicherung."
+
+msgid ""
+"Asynchronous loading of object lists is disabled, please do not set the "
+"configuration value <code>LOAD_OBJECTS_IN_BACKGROUND</code> or set it to "
+"<code>True</code> or <code>1</code>."
+msgstr ""
+"Asynchrones Laden von Objektlisten ist deaktiviert, bitte setzen Sie die "
+"Konfigurationsvariable <code>LOAD_OBJECTS_IN_BACKGROUND</code> nicht oder"
+" setzen Sie sie auf <code>True</code> oder <code>1</code>."
+
+msgid ""
+"There are numeric tags, please evaluate if these are necessary for your "
+"use case and set the configuration value <code>ENABLE_NUMERIC_TAGS</code>"
+" to <code>False</code> to disable them."
+msgstr ""
+"Es werden numerische Tags verwendet, bitte prüfen Sie, ob diese für Ihren"
+" Anwendungsfall notwendig sind und setzen Sie den Konfigurationswert "
+"<code>ENABLE_NUMERIC_TAGS</code> auf <code>False</code>, um diese zu "
+"deaktivieren."
+
+msgid ""
+"Numeric tags are enabled, please do not set the configuration value "
+"<code>ENABLE_NUMERIC_TAGS</code> or set it to <code>False</code>."
+msgstr ""
+"Numerische Tags sind aktiviert, bitte setzen Sie den Konfigurationswert "
+"<code>ENABLE_NUMERIC_TAGS</code> nicht oder setzen Sie ihn auf "
+"<code>False</code>."
+
+msgid "There are no warnings for this installation of SampleDB."
+msgstr "Es gibt keine Warnungen für diese SampleDB-Installation."
+
+msgid "Bad Request"
+msgstr "Fehlerhafte Anfrage"
+
+#, python-format
+msgid ""
+"An error occurred while handling this request. Please try again later and"
+" if the issue persists, please <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">contact an "
+"administrator</a>."
+msgstr ""
+"Bei der Bearbeitung dieser Anfrage ist ein Fehler aufgetreten. Bitte "
+"versuchen Sie es später erneut und <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
+"Sie einen Administrator</a> falls das Problem weiterhin besteht."
+
+msgid "Forbidden"
+msgstr "Verboten"
+
+msgid "You are not authorized to view the page you tried to open."
+msgstr "Sie sind nicht berechtigt, die Seite, die Sie öffnen wollten, anzuzeigen."
+
+msgid "Not Found"
+msgstr "Nicht gefunden"
+
+#, python-format
+msgid ""
+"The page you tried to open could not be found. If you think it should be "
+"available, please <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">contact an "
+"administrator</a>."
+msgstr ""
+"Die Seite, die Sie öffnen wollten, konnte nicht gefunden werden. Wenn Sie"
+" glauben, dass sie verfügbar sein sollte, <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
+"Sie einen Administrator</a>."
+
+msgid "Internal Server Error"
+msgstr "Interner Server-Fehler"
+
+#, python-format
+msgid ""
+"An error occurred in %(service_name)s while handling this request. Please"
+" try again later and if the issue persists, please <a "
+"href=\"mailto:%(contact_email)s?subject=%(service_name)s\">contact an "
+"administrator</a>."
+msgstr ""
+"Bei der Bearbeitung Ihrer Anfrage ist ein Fehler innerhalb von "
+"%(service_name)s aufgetreten. Bitte versuchen Sie es später erneut und <a"
+" href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
+"Sie einen Administrator</a> falls das Problem weiterhin besteht."
 
 #, python-format
 msgid "%(dataverse_name)s not reachable"
@@ -2565,6 +3311,39 @@ msgstr ""
 "href=\"mailto:%(contact_email)s?subject=%(service_name)s\">kontaktieren "
 "Sie bitte einen Administrator</a>."
 
+msgid "Group Categories"
+msgstr "Gruppen-Kategorien"
+
+msgid "Delete Group Category"
+msgstr "Gruppen-Kategorie löschen"
+
+msgid ""
+"Do you really want to delete this group category and all its "
+"subcategories?"
+msgstr ""
+"Wollen Sie diese Gruppen-Kategorie und alle ihre Unter-Kategorien "
+"wirklich löschen?"
+
+msgid "Do you really want to delete this group category?"
+msgstr "Wollen Sie diese Gruppen-Kategorie wirklich löschen?"
+
+msgid ""
+"Group Categories provide a hierarchical structure to the lists of basic "
+"and project groups, but do not impact permissions in any way."
+msgstr ""
+"Gruppen-Kategorien ergänzen die Listen der einfachen und Projektgruppen "
+"um eine hierarchische Struktur, ohne die Berechtigungen in irgendeiner "
+"Weise zu beeinflussen."
+
+msgid "Create Group Category"
+msgstr "Gruppen-Kategorie erstellen"
+
+msgid "Parent Category"
+msgstr "Eltern-Kategorie"
+
+msgid "Categories"
+msgstr "Kategorien"
+
 msgid "Members"
 msgstr "Mitglieder"
 
@@ -2589,8 +3368,14 @@ msgstr "Bitte geben Sie einen Gruppennamen ein."
 msgid "Please enter a shorter group name (at most 100 characters)."
 msgstr "Bitte geben Sie einen kürzeren Gruppennamen ein (höchstens 100 Zeichen)."
 
+msgid "No category selected"
+msgstr "Keine Kategorie ausgewählt"
+
 msgid "Are you certain you want to delete this basic group?"
 msgstr "Sind Sie sich sicher, dass Sie diese einfache Gruppe löschen wollen?"
+
+msgid "Member"
+msgstr "Mitglied"
 
 msgid ""
 "A basic group consists of equal users which share the object permissions "
@@ -2602,8 +3387,8 @@ msgstr ""
 msgid "Create Basic Group"
 msgstr "Einfache Gruppe erstellen"
 
-msgid "Member"
-msgstr "Mitglied"
+msgid "Manage Group Categories"
+msgstr "Gruppen-Kategorien verwalten"
 
 msgid "This instrument has been hidden from instrument lists."
 msgstr "Dieses Instrument wurde aus Instrumentlisten versteckt."
@@ -2839,8 +3624,21 @@ msgstr "wird auf der Instrumentseite angezeigt"
 msgid "shown in the instrument list"
 msgstr "wird in der Instrumentliste angezeigt"
 
+msgid "Instrument Scientists"
+msgstr "Instrumentverantwortliche"
+
 msgid "No user selected"
 msgstr "Kein Nutzer ausgewählt"
+
+msgid "No location selected"
+msgstr "Kein Ort ausgewählt"
+
+msgid ""
+"Instruments cannot be assigned to this location. Please select a "
+"different location."
+msgstr ""
+"Diesem Ort können keine Instrumente zugewiesen werden. Bitte wählen Sie "
+"einen anderen Ort aus."
 
 msgid "Instrument Log Categories"
 msgstr "Instrument Log Kategorien"
@@ -2897,6 +3695,9 @@ msgstr "Zeitpunktsformat für datetime"
 msgid "Datetime format for moment"
 msgstr "Zeitpunktsformat für moment"
 
+msgid "Datetime format for moment output"
+msgstr "Zeitpunktsformat für moment-Ausgabe"
+
 msgid "Enabled for input"
 msgstr "Für Eingabe aktiviert"
 
@@ -2944,17 +3745,253 @@ msgstr "Eine neue Sprache hinzufügen"
 msgid "Disabled for input"
 msgstr "Für Eingabe deaktiviert"
 
-msgid "Location"
-msgstr "Ort"
+msgid "Location Type"
+msgstr "Ortstyp"
+
+msgid "Location Name (Singular)"
+msgstr "Ortsname (Singular)"
+
+msgid "Location Name (Plural)"
+msgstr "Ortsname (Plural)"
+
+msgid "Yes, only administrators can create locations of this type"
+msgstr "Ja, nur Administratoren können Orte dieses Typs erstellen"
+
+msgid "No, all users can create locations of this type"
+msgstr "Nein, alle Nutzer können Orte dieses Typs erstellen"
+
+msgid "Enable Parent Location"
+msgstr "Eltern-Ort aktivieren"
+
+msgid "Yes, locations of this type may have a parent location"
+msgstr "Ja, Orte dieses Typs dürfen einen Eltern-Ort haben"
+
+msgid "No, locations of this type may not have a parent location"
+msgstr "Nein, Orte dieses Typs dürfen keinen Eltern-Ort haben"
+
+msgid "Enable Sub-Locations"
+msgstr "Unter-Orte aktivieren"
+
+msgid "Yes, locations of this type may have sub-locations"
+msgstr "Ja, Orte dieses Typs dürfen Unter-Orte haben"
+
+msgid "No, locations of this type may not have sub-locations"
+msgstr "Nein, Orte dieses Typs dürfen keine Unter-Orte haben"
+
+msgid "Enable Object Assignemnts"
+msgstr "Ortszuweisungen aktivieren"
+
+msgid "Yes, objects may be assigned to locations of this type"
+msgstr "Ja, Orten dieses Typs dürfen Objekte zugewiesen werden"
+
+msgid "No, objects may not be assigned to locations of this type"
+msgstr "Nein, Orten dieses Typs dürfen keine Objekte zugewiesen werden"
+
+msgid "Enable Instruments"
+msgstr "Instrumente aktivieren"
+
+msgid "Yes, instruments may be assigned to locations of this type"
+msgstr "Ja, Orten dieses Typs dürfen Instrumente zugewiesen werden"
+
+msgid "No, instruments may not be assigned to locations of this type"
+msgstr "Nein, Orten dieses Typs dürfen keine Instrumente zugewiesen werden"
+
+msgid "Enable Responsible Users"
+msgstr "Verantwortliche Nutzer aktivieren"
+
+msgid "Yes, locations of this type may have responsible users"
+msgstr "Ja, Orte dieses Typs dürfen verantwortliche Nutzer haben"
+
+msgid "No, locations of this type may not have responsible users"
+msgstr "Nein, Orte dieses Typs dürfen keine verantwortlichen Nutzer haben"
+
+msgid "Show Location Log"
+msgstr "Zeige Orts-Log"
+
+msgid "Yes, show a log for locations of this type"
+msgstr "Ja, zeige ein Log für Orte dieses Typs"
+
+msgid "No, do not show a log for locations of this type"
+msgstr "Nein, zeige kein Log für Orte dieses Typs"
+
+msgid "Modify the settings for this location type."
+msgstr "Einstellungen für diesen Ortstyp bearbeiten."
+
+msgid "Edit Location Type"
+msgstr "Ortstyp bearbeiten"
+
+msgid "Only administrators can create locations of this type"
+msgstr "Nur Administratoren können Orte dieses Typs erstellen"
+
+msgid "Locations of this type may have a parent location"
+msgstr "Orte dieses Typs dürfen einen Eltern-Ort haben"
+
+msgid "Locations of this type may have sub-locations"
+msgstr "Orte dieses Typs dürfen Unter-Orte haben"
+
+msgid "Objects may be assigned to locations of this type"
+msgstr "Objekte dürfen Orten dieses Typs zugewiesen werden"
+
+msgid "Instruments may be assigned to locations of this type"
+msgstr "Instrumente dürfen Orten dieses Typs zugewiesen werden"
+
+msgid "Locations of this type may have responsible users"
+msgstr "Orte dieses Typs dürfen verantwortliche Nutzer haben"
+
+msgid "Show a log for locations of this type"
+msgstr "Zeige ein Log für Orte dieses Typs"
+
+msgid ""
+"Location Types represent different kinds of locations, such as rooms or "
+"containers."
+msgstr ""
+"Ortstypen repräsentieren verschiedene Arten von Orten, wie z.B. Räume "
+"oder Container."
+
+msgid "Create Location Type"
+msgstr "Ortstyp erstellen"
+
+msgid ""
+"This location has been hidden from location lists, but will be shown "
+"because it contains other locations that have not been hidden."
+msgstr ""
+"Dieser Ort wurde aus Ortslisten versteckt, wird aber angezeigt werden, da"
+" er andere, nicht versteckte Orte enthält."
+
+msgid "This location has been hidden from location lists."
+msgstr "Dieser Ort wurde aus Ortslisten versteckt."
 
 msgid "Sub-Locations"
 msgstr "Unter-Orte"
+
+#, python-format
+msgid "Created on <a href=\"%(component_url)s\">%(component_name)s</a>"
+msgstr "Erstellt auf <a href=\"%(component_url)s\">%(component_name)s</a>"
+
+msgid "… at this location"
+msgstr "… an diesem Ort"
+
+msgid "… at sub-locations"
+msgstr "… an Unter-Orten"
+
+msgid "… at this location and sub-locations"
+msgstr "… an diesem Ort oder Unter-Orten"
 
 msgid "Edit Location"
 msgstr "Ort bearbeiten"
 
 msgid "Create Sub-Location"
 msgstr "Unter-Ort erstellen"
+
+msgid "Edit the permissions for this location."
+msgstr "Berechtigungen für diesen Ort bearbeiten."
+
+msgid "Location Log"
+msgstr "Orts-Log"
+
+#, python-format
+msgid "User #%(user_id)s"
+msgstr "Nutzer #%(user_id)s"
+
+msgid "An unknown user"
+msgstr "Ein unbekannter Nutzer"
+
+#, python-format
+msgid "<a href=\"%(user_url)s\">%(user_name)s</a> created the location."
+msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat den Ort erstellt."
+
+msgid "The location was created."
+msgstr "Der Ort wurde erstellt."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> updated the information for "
+"this location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Informationen für "
+"diesen Ort aktualisiert."
+
+msgid "The information for this location was updated."
+msgstr "Die Informationen für diesen Ort wurden aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned <a "
+"href=\"%(object_url)s\">%(object_name)s</a> to this location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
+"href=\"%(object_url)s\">%(object_name)s</a> diesem Ort zugewiesen."
+
+#, python-format
+msgid "%(object_name)s (#%(object_id)s)"
+msgstr "%(object_name)s (#%(object_id)s)"
+
+#, python-format
+msgid "Object #%(object_id)s"
+msgstr "Objekt #%(object_id)s"
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned an object to this "
+"location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat diesem Ort ein Objekt "
+"zugewiesen."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> updated the information for <a"
+" href=\"%(object_url)s\">%(object_name)s</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Informationen für <a "
+"href=\"%(object_url)s\">%(object_name)s</a> aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> updated the information for an"
+" object at this location."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Information für ein "
+"Objekt an diesem Ort aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned <a "
+"href=\"%(object_url)s\">%(object_name)s</a> to <a "
+"href=\"%(location_url)s\">%(location_name)s</a>."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
+"href=\"%(object_url)s\">%(object_name)s</a> zu dem Ort <a "
+"href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
+
+#, python-format
+msgid "%(location_name)s (#%(location_id)s)"
+msgstr "%(location_name)s (#%(location_id)s)"
+
+#, python-format
+msgid "Location #%(location_id)s"
+msgstr "Ort #%(location_id)s"
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned <a "
+"href=\"%(object_url)s\">%(object_name)s</a> to a different location or to"
+" a responsible user."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
+"href=\"%(object_url)s\">%(object_name)s</a> einem anderen Ort oder einem "
+"verantwortlichen Nutzer zugewiesen."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> assigned an object from this "
+"location to a different location or to a responsible user."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat ein Objekt von diesem Ort "
+"einem anderen Ort oder einem verantwortlichen Nutzer zugewiesen."
+
+msgid "Unknown event"
+msgstr "Unbekanntes Ereignis"
 
 msgid ""
 "Please verify that the location you want to create does not exist already"
@@ -2969,17 +4006,52 @@ msgstr "Bitte geben Sie einen Ortsnamen ein."
 msgid "Please enter a shorter location name (at most 100 characters)."
 msgstr "Bitte geben Sie einen kürzeren Ortsnamen an (höchstens 100 Zeichen)."
 
+msgid "No location type selected"
+msgstr "Kein Ortstyp ausgewählt"
+
 msgid "Parent Location"
 msgstr "Eltern-Ort"
 
-msgid "No location selected"
-msgstr "Kein Ort ausgewählt"
+msgid "The previous parent location may not have any sub-locations."
+msgstr "Der bisherige Eltern-Ort darf keine Unter-Orte haben."
+
+msgid "Responsible Users"
+msgstr "Verantwortliche Nutzer"
+
+msgid "Hide this location from location lists"
+msgstr "Diesen Ort aus Ortslisten verstecken"
+
+msgid "Location Permissions"
+msgstr "Ortsberechtigungen"
+
+msgid "Only administrators can manage locations."
+msgstr "Nur Administratoren können Orte verwalten."
+
+msgid "Permission to view location information."
+msgstr "Berechtigungen um Ortsinformationen anzuzeigen."
+
+msgid ""
+"Permission to edit locations and create sub-locations for them. Includes "
+"Read permissions."
+msgstr ""
+"Berechtigung um Orte zu bearbeiten und Unter-Orte für sie zu erstellen. "
+"Beinhaltet Lese-Berechtigungen."
 
 msgid "Locations allow users to track where an object can be found."
 msgstr "Orte ermöglichen es Nutzern nachzuverfolgen, wo sich ein Objekt befindet."
 
 msgid "Create Location"
 msgstr "Ort erstellen"
+
+msgid ""
+"Some locations have been hidden because you lack the required permissions"
+" to access them."
+msgstr ""
+"Manche Orte werden nicht angezeigt, weil Ihnen die benötigten "
+"Berechtigungen fehlen, um diese zu betrachten."
+
+msgid "Responsible Users:"
+msgstr "Verantwortliche Nutzer:"
 
 #, python-format
 msgid "Export to %(dataverse_name)s"
@@ -3094,26 +4166,128 @@ msgstr ""
 msgid "Continue"
 msgstr "Weiter"
 
+msgid "Waiting for Export"
+msgstr "Warten auf Export"
+
+#, python-format
+msgid ""
+"The object is currently being exported. Once the export has been "
+"completed, you will be redirected to %(dataverse_name)s."
+msgstr ""
+"Das Objekt wird gerade exportiert. Sobald der Export beendet wurde, "
+"werden Sie automatisch zu %(dataverse_name)s weitergeleitet."
+
+msgid "Export failed"
+msgstr "Export fehlgeschlagen"
+
+#, python-format
+msgid "The export failed with the following message: %(error_message)s"
+msgstr "Der Export ist mit folgender Meldung fehlgeschlagen: %(error_message)s"
+
 msgid "Object Permissions"
 msgstr "Objektberechtigungen"
 
-msgid "Object"
-msgstr "Objekt"
+msgid "Not a valid ID. Expected a positive integer."
+msgstr "Keine gültige ID. Positive Ganzzahl erwartet."
+
+msgid "Project Group has already been added."
+msgstr "Projektgruppe wurde bereits hinzugefügt."
+
+msgid "Basic Group has already been added."
+msgstr "Einfache Gruppe wurde bereits hinzugefügt."
+
+msgid "User has already been added."
+msgstr "Nutzer wurde bereits hinzugefügt."
 
 msgid "Permissions"
 msgstr "Berechtigungen"
 
-msgid "Permission to view objects and their properties, files and comments."
+msgid "Other databases"
+msgstr "Andere Datenbanken"
+
+msgid "Database"
+msgstr "Datenbank"
+
+msgid "Access"
+msgstr "Zugriff"
+
+msgid "Share"
+msgstr "Teilen"
+
+msgid "Do not share"
+msgstr "Nicht teilen"
+
+msgid "Comments"
+msgstr "Kommentare"
+
+msgid "Special Groups"
+msgstr "Sondergruppen"
+
+msgid "Read"
+msgstr "Lesen"
+
+msgid "Write"
+msgstr "Schreiben"
+
+msgid "Grant"
+msgstr "Rechtevergabe"
+
+msgid "Administrators"
+msgstr "Administratoren"
+
+msgid "Add User"
+msgstr "Nutzer hinzufügen"
+
+msgid "Select User"
+msgstr "Nutzer auswählen"
+
+msgid "If a user is missing from this list, please enter their ID below."
 msgstr ""
-"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
-"zu sehen."
+"Falls ein Nutzer in dieser Liste fehlt, geben Sie bitte dessen ID unten "
+"ein."
+
+msgid "or"
+msgstr "oder"
+
+msgid "Enter User ID"
+msgstr "Nutzer-ID eingeben"
+
+msgid "To find the user ID, check the user profile in the other database."
+msgstr "Die ID eines Nutzers finden Sie in dessen Profil in der anderen Datenbank."
+
+msgid "User ID"
+msgstr "Nutzer-ID"
 
 msgid ""
-"Permission to edit objects and their properties and add files and "
-"comments. Includes Read permissions."
+"Objects from other databases are currently read-only, but "
+"<strong>WRITE</strong> permissions may allow users to edit the object or "
+"add comments or files to it in the future."
 msgstr ""
-"Berechtigung um Objekte und deren Eigenschaften, Dateien und Kommentare "
-"zu bearbeiten. Beinhaltet Lese-Berechtigungen."
+"Objekte aus anderen Datenbanken erlauben aktuell nur lesenden Zugriff, "
+"allerdings können <strong>SCHREIB</strong>-Berechtigungen es Nutzern "
+"zukünftig erlauben, das Objekt zu editieren oder Kommentare oder Dateien "
+"hinzuzufügen."
+
+msgid "Add Basic Group"
+msgstr "Einfache Gruppe hinzufügen"
+
+msgid "Enter Basic Group ID"
+msgstr "Einfache-Gruppen-ID eingeben"
+
+msgid "Basic Group ID"
+msgstr "Einfache-Gruppen-ID"
+
+msgid "Add Project Group"
+msgstr "Projektgruppe hinzufügen"
+
+msgid "Enter Project Group ID"
+msgstr "Projektgruppen-ID eingeben"
+
+msgid "Project Group ID"
+msgstr "Projektgruppen-ID"
+
+msgid "Add database"
+msgstr "Datenbank hinzufügen"
 
 msgid "Loading..."
 msgstr "Laden..."
@@ -3122,7 +4296,7 @@ msgid "Copy Permissions"
 msgstr "Berechtigungen kopieren"
 
 msgid "Copy permissions from other Object"
-msgstr "Berechtigungen von anderem Objekt kopieren."
+msgstr "Berechtigungen von anderem Objekt kopieren"
 
 msgid ""
 "You can replace the current permissions by copying the permissions from "
@@ -3134,35 +4308,204 @@ msgstr ""
 msgid "Versions"
 msgstr "Versionen"
 
+msgid "You have to select at least one object."
+msgstr "Sie müssen mindestens ein Objekt auswählen."
+
+msgid "You have to select a location or a responsible user."
+msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
+
+msgid "You do not have write permissions for at least one object."
+msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+
 msgid "Error:"
 msgstr "Fehler:"
 
 msgid "Query:"
 msgstr "Abfrage:"
 
-msgid " for <a href=\"{}\">Project Group #{}: {}</a>"
-msgstr " für <a href=\"{}\">Projektgruppe #{}: {}</a>"
+msgid "for action type:"
+msgstr "für den Aktionstyp:"
 
-msgid " for <a href=\"{}\">Basic Group #{}: {}</a>"
-msgstr " für <a href=\"{}\">einfache Gruppe #{}: {}</a>"
+msgid "for action types:"
+msgstr "für die Aktionstypen:"
 
-msgid " for <a href=\"{}\">Action #{}: {}</a>"
-msgstr " für <a href=\"{}\">Aktion #{}: {}</a>"
+msgid "for action:"
+msgstr "für die Aktion:"
 
-msgid " for <a href=\"{}\">Location #{}: {}</a>"
-msgstr " für <a href=\"{}\">Ort #{}: {}</a>"
+msgid "for actions:"
+msgstr "für die Aktionen:"
 
-msgid " for <a href=\"{}\">User #{}: {}</a>"
-msgstr " für <a href=\"{}\">Nutzer #{}: {}</a>"
+msgid "for instrument:"
+msgstr "für das Instrument:"
 
-msgid " for Publication <a href=\"https://doi.org/{}\">doi:{}</a>"
-msgstr " für Veröffentlichung <a href=\"https://doi.org/{}\">doi:{}</a>"
+msgid "for instruments:"
+msgstr "für die Instrumente:"
+
+msgid "for location:"
+msgstr "für den Ort:"
+
+msgid "for locations:"
+msgstr "für die Orte:"
+
+msgid "for publication:"
+msgstr "für die Publikation:"
+
+msgid "with activity by user:"
+msgstr "mit Aktivität des Nutzers:"
+
+#, python-format
+msgid "with %(permissions)s permissions for anonymous users"
+msgstr "mit %(permissions)s-Berechtigungen für anonyme Nutzer"
+
+#, python-format
+msgid "with %(permissions)s permissions for all signed-in users"
+msgstr "mit %(permissions)s-Berechtigungen für alle angemeldeten Nutzer"
+
+#, python-format
+msgid "with %(permissions)s permissions for user:"
+msgstr "mit %(permissions)s-Berechtigungen für den Nutzer:"
+
+#, python-format
+msgid "with %(permissions)s permissions"
+msgstr "mit %(permissions)s-Berechtigungen"
+
+#, python-format
+msgid "with %(permissions)s permissions for basic group:"
+msgstr "mit %(permissions)s-Berechtigungen für die einfache Gruppe:"
+
+#, python-format
+msgid "with %(permissions)s permissions for project group:"
+msgstr "mit %(permissions)s-Berechtigungen für die Projektgruppe:"
+
+msgid "from this database"
+msgstr "aus dieser Datenbank"
+
+msgid "from this database and from"
+msgstr "aus dieser Datenbank und aus"
+
+msgid "from"
+msgstr "aus"
+
+msgid "and"
+msgstr "und"
+
+msgid "Options"
+msgstr "Einstellungen"
+
+msgid "Show additional properties"
+msgstr "Zeige weitere Eigenschaften"
+
+msgid "No additional properties"
+msgstr "Keine weiteren Eigenschaften"
+
+msgid "Show creation information"
+msgstr "Zeige Informationen zur Erstellung"
+
+msgid "Show Date"
+msgstr "Datum anzeigen"
+
+msgid "Show User"
+msgstr "Nutzer anzeigen"
+
+msgid "Show last edit information"
+msgstr "Zeige Informationen zur letzten Änderung"
+
+msgid "Show Other Database information"
+msgstr "Zeige Informationen zu Anderen Datenbanken"
+
+msgid "Show Other Databases"
+msgstr "Zeige Andere Datenbanken"
+
+msgid "Show Action information"
+msgstr "Zeige Informationen zur Aktion"
+
+msgid "Show Instrument"
+msgstr "Instrument anzeigen"
+
+msgid "Show Action"
+msgstr "Aktion anzeigen"
+
+msgid "Show Location and Responsibility information"
+msgstr "Zeige Informationen zu Ort und Verantwortlichkeit"
+
+msgid "Show Location"
+msgstr "Ort anzeigen"
+
+msgid "Show Responsible User"
+msgstr "Verantwortlichen Nutzer anzeigen"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Filter by Permissions"
+msgstr "Nach Berechtigungen filtern"
+
+msgid "Filter by Permissions for All Signed-In Users"
+msgstr "Nach Berechtigungen für alle angemeldeten Nutzer filtern"
+
+msgid "Filter by Permissions for Anonymous Users"
+msgstr "Nach Berechtigungen für anonyme Nutzer filtern"
+
+msgid "Filter by Action Type"
+msgstr "Nach Aktionstyp filtern"
+
+msgid "All action types"
+msgstr "Alle Aktionstypen"
+
+msgid "Filter by Action"
+msgstr "Nach Aktion filtern"
+
+msgid "All actions"
+msgstr "Alle Aktionen"
+
+msgid "Filter by Instrument"
+msgstr "Nach Instrument filtern"
+
+msgid "All instruments"
+msgstr "Alle Instrumente"
+
+msgid "Filter by Location"
+msgstr "Nach Ort filtern"
+
+msgid "All locations"
+msgstr "Alle Orte"
+
+msgid "Filter by Publication"
+msgstr "Nach Publikation filtern"
+
+msgid "All publications"
+msgstr "Alle Publikationen"
+
+msgid "Filter by Origin"
+msgstr "Nach Quelle filtern"
+
+msgid "All origins"
+msgstr "Alle Quellen"
+
+msgid "Assign Location"
+msgstr "Ort zuweisen"
+
+msgid "Responsible User"
+msgstr "Verantwortlicher Nutzer"
 
 msgid "Created"
 msgstr "Erstellt"
 
 msgid "Last modified"
 msgstr "Zuletzt geändert"
+
+msgid "You need at least write permission to change the location of an object."
+msgstr ""
+"Sie brauchen mindestens Schreib-Berechtigung um den Ort eines Objekts zu "
+"ändern."
+
+#, python-format
+msgid "Shared by %(component_name)s"
+msgstr "Geteilt von %(component_name)s"
+
+#, python-format
+msgid "Shared with %(component_name)s"
+msgstr "Geteilt mit %(component_name)s"
 
 msgid "Pages"
 msgstr "Seiten"
@@ -3187,6 +4530,62 @@ msgstr ""
 
 msgid "Restore"
 msgstr "Wiederherstellen"
+
+#, python-format
+msgid "Export to %(scicat_name)s"
+msgstr "Nach %(scicat_name)s exportieren"
+
+#, python-format
+msgid ""
+"%(service_name)s can export the metadata of this object to "
+"%(scicat_name)s."
+msgstr ""
+"%(service_name)s kann die Metadaten und Dateien für dieses Objekt nach "
+"%(scicat_name)s exportieren."
+
+msgid "Input Datasets"
+msgstr "Eingabe-Datensätze"
+
+msgid "Owner Group"
+msgstr "Owner-Gruppe"
+
+msgid "Access Groups"
+msgstr "Access-Gruppen"
+
+#, python-format
+msgid "Select which properties should be exported to %(scicat_name)s."
+msgstr ""
+"Wählen Sie aus, welche Eigenschaften nach %(scicat_name)s exportiert "
+"werden sollen."
+
+#, python-format
+msgid "Select which tags should be exported as keywords to %(scicat_name)s."
+msgstr "Wählen Sie aus, welche Tags nach %(scicat_name)s exportiert werden sollen."
+
+#, python-format
+msgid ""
+"To access your SciCat token, visit <a "
+"href=\"%(scicat_frontend_url)s/user\">%(scicat_name)s</a>"
+msgstr ""
+"Um auf Ihr SciCat Token zuzugreifen, besuchen Sie <a "
+"href=\"%(scicat_frontend_url)s/user\">%(scicat_name)s</a>"
+
+msgid "SciCat Token"
+msgstr "SciCat Token"
+
+msgid "The token you entered was invalid."
+msgstr "Das eingegebene Token war ungültig."
+
+#, python-format
+msgid "Store this token in %(service_name)s"
+msgstr "Token in %(service_name)s speichern"
+
+msgid ""
+"You can delete a stored SciCat token at any time by editing your "
+"preferences."
+msgstr ""
+"Sie können ein gespeichertes SciCat Token jederzeit löschen, in dem Sie "
+"ihre Einstellung bearbeiten."
 
 msgid "Insufficient Permissions"
 msgstr "Fehlende Berechtigungen"
@@ -3216,8 +4615,14 @@ msgstr "%(item_name)s hinzufügen"
 msgid "Filter by Action…"
 msgstr "Nach Aktion filtern…"
 
+msgid "sets:"
+msgstr "setzt:"
+
 msgid "New Object"
 msgstr "Neues Objekt"
+
+msgid "Select fields to insert reference"
+msgstr "Wähle die Felder für die Referenz aus"
 
 msgid "Batch Information"
 msgstr "Chargeninformationen"
@@ -3252,9 +4657,6 @@ msgstr "Kein Objekt ausgewählt"
 msgid "Create Instrument Log Entry"
 msgstr "Instrument-Log-Eintrag erstellen"
 
-msgid "No category selected"
-msgstr "Keine Kategorie ausgewählt"
-
 msgid "required"
 msgstr "erforderlich"
 
@@ -3280,9 +4682,22 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 msgid "All Actions"
 msgstr "Alle Aktionen"
 
+msgid "Apply Recipe"
+msgstr "Rezept anwenden"
+
 #, python-format
 msgid "Field %(index)s"
 msgstr "Feld %(index)s"
+
+msgid "The following languages have been disabled for input:"
+msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
+
+msgid ""
+"There are errors in other fields. Please click \"Edit Object\" to perform"
+" this change."
+msgstr ""
+"Es sind Fehler in anderen Feldern aufgetreten. Bitte klicken Sie auf "
+"\"Objekt bearbeiten\", um die Änderung durchzuführen."
 
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
@@ -3290,16 +4705,30 @@ msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 msgid "Unsupported item type for horizontal_table style."
 msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
+msgid "This page contains an archived version of the current object information."
+msgstr ""
+"Diese Seite enthält eine archivierte Version der aktuellen "
+"Objektinformationen."
+
+msgid "This page contains an archived version of previous object information."
+msgstr "Diese Seite enthält eine archivierte Version früherer Objektinformationen."
+
 #, python-format
 msgid ""
-"This is an archived version of the object information. For the current "
-"information, <a href=\"%(latest_version_url)s\">click here</a>."
+"For always up-to-date information, <a "
+"href=\"%(latest_version_url)s\">click here</a>."
 msgstr ""
-"Dies ist eine archivierte Version der Objektinformationen. Die aktuellen "
-"Informationen finden Sie <a href=\"%(latest_version_url)s\">hier</a>."
+"Die stets aktuellen Informationen finden Sie <a "
+"href=\"%(latest_version_url)s\">hier</a>."
 
 msgid "Information"
 msgstr "Informationen"
+
+msgid "This object has been imported without data."
+msgstr "Dieses Objekt wurde ohne Daten importiert."
 
 msgid "View object information in a different language."
 msgstr "Zeigt Objektinformationen in einer anderen Sprache an."
@@ -3328,7 +4757,7 @@ msgstr ""
 
 #, python-format
 msgid "View the Project Group linked to this %(object_type_name)s."
-msgstr "Zeige die mit diesem Objekt verknüpfte Projektgruppe an."
+msgstr "Zeige die mit diesem %(object_type_name)s verknüpfte Projektgruppe an."
 
 msgid "View Project Group"
 msgstr "Projektgruppe anzeigen"
@@ -3336,34 +4765,51 @@ msgstr "Projektgruppe anzeigen"
 msgid "Create a new object based on the information for this object."
 msgstr "Ein neues Objekt anhand der Informationen des Objektes erstellen."
 
-msgid "Create a new measurement using this sample."
-msgstr "Erstelle eine neue Messung mit dieser Probe."
+#, python-format
+msgid ""
+"Create a new %(new_object_name_singular)s using this "
+"%(current_object_name_singular)s."
+msgstr ""
+"Aus dieser %(current_object_name_singular)s eine neue "
+"%(new_object_name_singular)s erstellen."
 
 #, python-format
-msgid "Use in %(measurement_type_name)s"
-msgstr "In %(measurement_type_name)s nutzen"
+msgid "Use in %(action_type_name)s"
+msgstr "In %(action_type_name)s nutzen"
 
 msgid "Favorites"
 msgstr "Favoriten"
 
 #, python-format
-msgid "See other %(measurement_type_name)s Actions..."
-msgstr "Andere %(measurement_type_name)s-Aktionen anzeigen..."
+msgid "See other %(action_type_name)s Actions..."
+msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
 
 msgid "Generate a PDF containing labels for this object."
-msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren"
+msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren."
 
 msgid "Generate Labels"
 msgstr "Etiketten generieren"
 
 msgid "Show a QR code for a link to this object."
-msgstr "QR Code mit einem Link zu diesem Objekt zeigen"
+msgstr "QR Code mit einem Link zu diesem Objekt zeigen."
 
 msgid "Show QR Code"
 msgstr "QR Code anzeigen"
 
 msgid "Export object information to an archive or PDF file."
 msgstr "Objektinformationen in ein Archiv oder eine PDF-Datei exportieren."
+
+#, python-format
+msgid "Export object information to %(scicat_name)s."
+msgstr "Exportiere Objektinformationen nach %(scicat_name)s."
+
+#, python-format
+msgid "View object information on %(scicat_name)s."
+msgstr "Zeigt Objektinformationen in %(scicat_name)s an."
+
+#, python-format
+msgid "View on %(scicat_name)s"
+msgstr "In %(scicat_name)s anzeigen"
 
 #, python-format
 msgid "Export object information and files to %(dataverse_name)s."
@@ -3407,8 +4853,14 @@ msgstr "Informationen anzeigen"
 msgid "View preview"
 msgstr "Vorschau anzeigen"
 
+msgid "Download file from other database"
+msgstr "Datei aus anderer Datenbank herunterladen"
+
 msgid "Download file"
 msgstr "Datei herunterladen"
+
+msgid "Copied successfully"
+msgstr "Erfolgreich kopiert"
 
 msgid "Copy link to clipboard"
 msgstr "Link kopieren"
@@ -3418,7 +4870,7 @@ msgstr "Externen Link öffnen"
 
 #, python-format
 msgid "There are no files for this %(object_type)s."
-msgstr "Es gibt keine Dateien für dieses Objekt."
+msgstr "Es gibt keine Dateien für dieses %(object_type)s."
 
 msgid "Hidden File Information"
 msgstr "Informationen zu versteckter Datei"
@@ -3444,6 +4896,14 @@ msgstr "Verlinkt von"
 msgid "Posted by"
 msgstr "Eingetragen von"
 
+#, python-format
+msgid ""
+"This file was created as file #%(fed_id)s in database <a "
+"href=\"%(component_url)s\">%(component_name)s</a>"
+msgstr ""
+"Diese Datei wurde als Datei #%(fed_id)s in der Datenbank <a "
+"href=\"%(component_url)s\">%(component_name)s</a> erstellt"
+
 msgid "History"
 msgstr "Verlauf"
 
@@ -3463,13 +4923,16 @@ msgstr ""
 " zu:"
 
 #, python-format
+msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the URL to:"
+msgstr ""
+"<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die URL aktualisiert "
+"zu:"
+
+#, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the description to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die Beschreibung "
 "aktualisiert zu:"
-
-msgid "Edit"
-msgstr "Bearbeiten"
 
 msgid "Hide"
 msgstr "Verstecken"
@@ -3506,9 +4969,6 @@ msgstr "Link eintragen"
 msgid "Submit"
 msgstr "Absenden"
 
-msgid "Please enter a valid URL."
-msgstr "Bitte geben Sie eine gültige URL ein."
-
 msgid "Mixed label formats"
 msgstr "Gemischte Etikettenformate"
 
@@ -3516,7 +4976,7 @@ msgstr "Gemischte Etikettenformate"
 msgid ""
 "This will generate labels in a selection of predefined formats. To "
 "request adding a new format, please <a "
-"href=\"mailto:%(contact_email)s\">contact an administrator</a>"
+"href=\"mailto:%(contact_email)s\">contact an administrator</a>."
 msgstr ""
 "Dies wird Etiketten in einer Auswahl verschiedener, vordefinierter "
 "Formate erstellen. Bitte <a "
@@ -3582,26 +5042,20 @@ msgstr "Objekt QR Code"
 msgid "To view this object in the future, scan this QR code:"
 msgstr "Um dieses Objekt zukünftig anzuzeigen, scannen Sie diesen QR Code:"
 
-msgid "Responsible User"
-msgstr "Verantwortlicher Nutzer"
-
 msgid "Assigning User"
 msgstr "Zuweisender Nutzer"
 
 msgid "The user has confirmed this responsibility assignment."
 msgstr "Der Nutzer hat die Verantwortungszuweisung bestätigt."
 
+msgid "The user has declined this responsibility assignment."
+msgstr "Der Nutzer hat die Verantwortungszuweisung abgelehnt."
+
 msgid "The user has not confirmed this responsibility assignment yet."
 msgstr "Der Nutzer hat die Verantwortungszuweisung noch nicht bestätigt."
 
 msgid "This object has not been assigned to a location yet."
 msgstr "Diesem Objekt wurde noch kein Ort zugewiesen."
-
-msgid "Assign Location"
-msgstr "Ort zuweisen"
-
-msgid "Publications"
-msgstr "Publikationen"
 
 msgid "DOI"
 msgstr "DOI"
@@ -3621,8 +5075,8 @@ msgstr "Bitte geben Sie eine gültige DOI ein."
 msgid "Link Publication"
 msgstr "Publikation verknüpfen"
 
-msgid "Comments"
-msgstr "Kommentare"
+msgid "Unknown User"
+msgstr "Unbekannter Nutzer"
 
 msgid "There are no comments for this object."
 msgstr "Es gibt keine Kommentare für dieses Objekt."
@@ -3639,222 +5093,307 @@ msgstr "Aktivitäts-Log"
 msgid "Measurements"
 msgstr "Messungen"
 
+msgid "References"
+msgstr "Referenzen"
+
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> created the object using data "
-"from <a href=\"%(previous_object_url)s\">object "
-"#%(previous_object_id)s</a>."
+"%(user_ref)s created the object using data from <a "
+"href=\"%(previous_object_url)s\">object #%(previous_object_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit Daten von "
-"<a href=\"%(previous_object_url)s\">Objekt #%(previous_object_id)s</a> "
+"%(user_ref)s hat das Objekt mit Daten von <a "
+"href=\"%(previous_object_url)s\">Objekt #%(previous_object_id)s</a> "
 "erstellt."
 
 #, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> created the object."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt erstellt."
+msgid "%(user_ref)s created the object."
+msgstr "%(user_ref)s hat das Objekt erstellt."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> created the object as part of "
-"a <a href=\"%(batch_url)s\">batch</a>."
+"%(user_ref)s created the object as part of a <a "
+"href=\"%(batch_url)s\">batch</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt als Teil einer "
-"<a href=\"%(batch_url)s\">Charge</a> erstellt."
+"%(user_ref)s hat das Objekt als Teil einer <a "
+"href=\"%(batch_url)s\">Charge</a> erstellt."
 
 #, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> edited the object."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt bearbeitet."
+msgid "%(user_ref)s edited the object."
+msgstr "%(user_ref)s hat das Objekt bearbeitet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> restored object <a "
-"href=\"%(version_url)s\">version #%(version_id)s</a>."
+"%(user_ref)s restored object <a href=\"%(version_url)s\">version "
+"#%(version_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(version_url)s\">Objektversion #%(version_id)s</a> "
-"wiederhergestellt."
+"%(user_ref)s hat <a href=\"%(version_url)s\">Objektversion "
+"#%(version_id)s</a> wiederhergestellt."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object in <a "
+"%(user_ref)s used the object in <a "
 "href=\"%(measurement_url)s\">%(measurement_name)s "
 "(#%(measurement_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in <a "
+"%(user_ref)s hat das Objekt in <a "
 "href=\"%(measurement_url)s\">%(measurement_name)s "
 "(#%(measurement_id)s)</a> verwendet."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object in a "
-"measurement."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in einer "
-"Messung verwendet."
+msgid "%(user_ref)s used the object in a measurement."
+msgstr "%(user_ref)s hat das Objekt in einer Messung verwendet."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create <a "
+"%(user_ref)s used the object to create <a "
 "href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
-"von <a href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a> "
-"verwendet."
+"%(user_ref)s hat das Objekt zur Erstellung von <a "
+"href=\"%(sample_url)s\">%(sample_name)s (#%(sample_id)s)</a> verwendet."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> used the object to create a "
-"sample."
+msgid "%(user_ref)s used the object to create a sample."
+msgstr "%(user_ref)s hat das Objekt zur Erstellung einer Probe verwendet."
+
+#, python-format
+msgid "%(user_ref)s posted a comment for this object."
+msgstr "%(user_ref)s hat einen Kommentar für dieses Objekt eingetragen."
+
+#, python-format
+msgid "%(user_ref)s uploaded <a href=\"%(file_url)s\">%(file_name)s</a>."
+msgstr "%(user_ref)s hat <a href=\"%(file_url)s\">%(file_name)s</a> hochgeladen."
+
+#, python-format
+msgid "%(user_ref)s uploaded %(file_name)s."
+msgstr "%(user_ref)s hat %(file_name)s hochgeladen."
+
+#, python-format
+msgid "%(user_ref)s linked <a href=\"%(link_url)s\">%(link_url)s</a>."
+msgstr "%(user_ref)s hat <a href=\"%(link_url)s\">%(link_url)s</a> verlinkt."
+
+#, python-format
+msgid "%(user_ref)s posted <a href=\"%(file_url)s\">file #%(file_id)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt zur Erstellung "
-"einer Probe verwendet."
+"%(user_ref)s hat <a href=\"%(file_url)s\">Datei #%(file_id)s</a> "
+"eingetragen."
+
+#, python-format
+msgid "%(user_ref)s posted a file."
+msgstr "%(user_ref)s hat eine Datei eingetragen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> posted a comment for this "
-"object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat einen Kommentar für dieses"
-" Objekt eingetragen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> uploaded <a "
-"href=\"%(file_url)s\">%(file_name)s</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(file_url)s\">%(file_name)s</a> hochgeladen."
-
-#, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> uploaded %(file_name)s."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat %(file_name)s hochgeladen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked <a "
-"href=\"%(link_url)s\">%(link_url)s</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(link_url)s\">%(link_url)s</a> verlinkt."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> posted <a "
-"href=\"%(file_url)s\">file #%(file_id)s</a>."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat <a "
-"href=\"%(file_url)s\">Datei #%(file_id)s</a> eingetragen."
-
-#, python-format
-msgid "<a href=\"%(user_url)s\">%(user_name)s</a> posted a file."
-msgstr "<a href=\"%(user_url)s\">%(user_name)s</a> hat eine Datei eingetragen."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to "
-"location <a href=\"%(location_url)s\">%(location_name)s</a> and user <a "
+"%(user_ref)s assigned this object to location <a "
+"href=\"%(location_url)s\">%(location_name)s</a> and user <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Ort <a "
+"%(user_ref)s hat das Objekt dem Ort <a "
 "href=\"%(location_url)s\">%(location_name)s</a> und Nutzer <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to "
-"location <a href=\"%(location_url)s\">%(location_name)s</a>."
+"%(user_ref)s assigned this object to location <a "
+"href=\"%(location_url)s\">%(location_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Ort <a "
+"%(user_ref)s hat das Objekt dem Ort <a "
 "href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> assigned this object to user "
-"<a href=\"%(other_user_url)s\">%(other_user_name)s</a>."
+"%(user_ref)s assigned this object to user <a "
+"href=\"%(other_user_url)s\">%(other_user_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt dem Nutzer <a "
+"%(user_ref)s hat das Objekt dem Nutzer <a "
 "href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked publication <a "
+"%(user_ref)s linked publication <a "
 "href=\"https://doi.org/%(url_doi)s\">%(doi)s</a> to the object."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat Publikation <a "
+"%(user_ref)s hat Publikation <a "
 "href=\"https://doi.org/%(url_doi)s\">%(doi)s</a> mit dem Objekt "
 "verknüpft."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> referenced the object in the "
-"metadata of <a href=\"%(object_url)s\">%(object_name)s "
-"(#%(object_id)s)</a>."
+"%(user_ref)s referenced the object in the metadata of <a "
+"href=\"%(object_url)s\">%(object_name)s (#%(object_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten von <a href=\"%(object_url)s\">%(object_name)s "
-"(#%(object_id)s)</a> referenziert."
+"%(user_ref)s hat das Objekt in den Metadaten von <a "
+"href=\"%(object_url)s\">%(object_name)s (#%(object_id)s)</a> "
+"referenziert."
+
+#, python-format
+msgid "%(user_ref)s referenced the object in the metadata of another object."
+msgstr ""
+"%(user_ref)s hat das Objekt in den Metadaten eines anderen Objekts "
+"referenziert."
+
+#, python-format
+msgid "%(user_ref)s exported this object to a Dataverse."
+msgstr "%(user_ref)s hat das Objekt in ein Dataverse exportiert."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> referenced the object in the "
-"metadata of another object."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in den "
-"Metadaten eines anderen Objekts referenziert."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> exported this object to a "
-"Dataverse."
-msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt in ein "
-"Dataverse exportiert."
-
-#, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to <a "
+"%(user_ref)s linked this object to <a "
 "href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit <a "
+"%(user_ref)s hat das Objekt mit <a "
 "href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a> "
 "verknüpft."
 
 #, python-format
-msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> linked this object to a "
-"project group."
+msgid "%(user_ref)s linked this object to a project group."
+msgstr "%(user_ref)s hat das Objekt mit einer Projektgruppe verknüpft."
+
+#, python-format
+msgid "%(user_ref)s deleted the project group this object was linked to."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit einer "
-"Projektgruppe verknüpft."
+"%(user_ref)s hat die Projektgruppe gelöscht mit der das Objekt verknüpft "
+"war."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> deleted the project group this"
-" object was linked to."
+"%(user_ref)s removed the link of this object to <a "
+"href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Projektgruppe gelöscht"
-" mit der das Objekt verknüpft war."
+"%(user_ref)s hat die Verknüpfung dieses Objekts mit <a "
+"href=\"%(project_url)s\">%(project_name)s (#%(project_id)s)</a> entfernt."
+
+#, python-format
+msgid "%(user_ref)s removed the link of this object to a project group."
+msgstr ""
+"%(user_ref)s hat die Verknüpfung dieses Objekts mit einer Projektgruppe "
+"entfernt."
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
-"object to <a href=\"%(project_url)s\">%(project_name)s "
-"(#%(project_id)s)</a>."
+"This object version was created as object #%(fed_object_id)s, version "
+"%(fed_version_id)s in database <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
-"Objekts mit <a href=\"%(project_url)s\">%(project_name)s "
-"(#%(project_id)s)</a> entfernt."
+"Diese Objektversion wurde als Objekt #%(fed_object_id)s, Version "
+"%(fed_version_id)s in der Datenbank <a "
+"href=\"%(component_url)s\">%(component_name)s</a> erstellt."
+
+msgid "This object is being shared with users from the following databases:"
+msgstr "Dieses Objekt wird mit Nutzern der folgenden Datenbanken geteilt:"
+
+#, python-format
+msgid "(imported as object <a href=\"%(remote_object_url)s\">#%(object_id)s</a>)"
+msgstr ""
+"(importiert als <a href=\"%(remote_object_url)s\">Objekt "
+"#%(object_id)s</a>)"
+
+#, python-format
+msgid "(imported as object #%(object_id)s)"
+msgstr "(importiert als Objekt #%(object_id)s)"
+
+msgid "(imported)"
+msgstr "(importiert)"
+
+msgid "(not imported)"
+msgstr "(nicht importiert)"
+
+msgid "an unknown user"
+msgstr "einem unbekannten Nutzer"
 
 #, python-format
 msgid ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> removed the link of this "
-"object to a project group."
+"Version #%(version_id)s of the object shared by %(user_ref)s was imported"
+" with the following notes:"
 msgstr ""
-"<a href=\"%(user_url)s\">%(user_name)s</a> hat die Verknüpfung dieses "
-"Objekts mit einer Projektgruppe entfernt."
+"Version #%(version_id)s des von %(user_ref)s geteilten Objekts wurde mit "
+"den folgenden Hinweisen importiert:"
 
-msgid "Unknown event"
-msgstr "Unbekanntes Ereignis"
+#, python-format
+msgid "Version #%(version_id)s of the object shared by %(user_ref)s was imported."
+msgstr ""
+"Version #%(version_id)s des von %(user_ref)s geteilten Objekts wurde "
+"importiert."
+
+#, python-format
+msgid ""
+"A new version (#%(version_id)s) of the object shared by %(user_ref)s was "
+"imported with the following notes:"
+msgstr ""
+"Eine von %(user_ref)s geteilte neue Version (#%(version_id)s) des Objekts"
+" wurde mit den folgenden Hinweisen importiert:"
+
+#, python-format
+msgid ""
+"A new version (#%(version_id)s) of the object shared by %(user_ref)s was "
+"imported."
+msgstr ""
+"Eine von %(user_ref)s geteilte neue Version (#%(version_id)s) des Objekts"
+" wurde importiert."
+
+#, python-format
+msgid ""
+"%(user_ref)s has shared the object with <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat das Objekt mit <a "
+"href=\"%(component_url)s\">%(component_name)s</a> geteilt."
+
+#, python-format
+msgid "%(user_ref)s has shared the object with an unknown database."
+msgstr "%(user_ref)s hat das Objekt mit einer unbekannten Datenbank geteilt."
+
+#, python-format
+msgid ""
+"%(user_ref)s has updated the settings for sharing this object with <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"%(user_ref)s hat die Einstellungen zum Teilen des Objekts mit <a "
+"href=\"%(component_url)s\">%(component_name)s</a> aktualisiert."
+
+#, python-format
+msgid ""
+"%(user_ref)s has updated the settings for sharing this object with an "
+"unknown database."
+msgstr ""
+"%(user_ref)s hat die Einstellungen zum Teilen des Objekts mit einer "
+"unbekannten Datenbank aktualisiert."
+
+#, python-format
+msgid ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> has imported the "
+"object."
+msgstr ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> hat das Objekt "
+"importiert."
+
+msgid "An unknown database has imported the object."
+msgstr "Eine unbekannte Datenbank hat das Objekt importiert."
+
+#, python-format
+msgid ""
+"The object was created as <a href=\"%(remote_object_url)s\">object "
+"#%(remote_object_id)s</a>."
+msgstr ""
+"Das Objekt wurde als <a href=\"%(remote_object_url)s\">Objekt "
+"#%(remote_object_id)s</a> erstellt."
+
+#, python-format
+msgid "The object was created as object #%(remote_object_id)s."
+msgstr "Das Objekt wurde als Objekt #%(remote_object_id)s erstellt."
+
+#, python-format
+msgid ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> has failed to import"
+" the object."
+msgstr ""
+"<a href=\"%(component_url)s\">%(component_name)s</a> konnte das Objekt "
+"nicht erfolgreich importieren."
+
+msgid "An unknown database has failed to import the object."
+msgstr "Eine unbekannte Datenbank konnte das Objekt nicht erfolgreich importieren."
+
+msgid "The other database returned the following notes:"
+msgstr "Die andere Datenbank hat die folgenden Hinweise zurückgegeben:"
 
 msgid "Related Objects"
 msgstr "Zugehörige Objekte"
@@ -3877,6 +5416,9 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 msgid "files selected"
 msgstr "Dateien ausgewählt"
 
+msgid "Show less"
+msgstr "Weniger anzeigen"
+
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
@@ -3895,6 +5437,204 @@ msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
 msgid "References %(object_name)s (#%(object_id)s) in its metadata"
 msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
+msgid "Address"
+msgstr "Adresse"
+
+msgid "UUID"
+msgstr "UUID"
+
+msgid "Copy UUID"
+msgstr "UUID kopieren"
+
+msgid "Edit Database"
+msgstr "Datenbank bearbeiten"
+
+msgid "Add import token to import updates"
+msgstr "Import Token hinzufügen, um Aktualisierungen zu importieren"
+
+msgid "Set address to import updates"
+msgstr "Adresse angeben, um Aktualisierungen zu importieren"
+
+msgid "Set address and import token to import updates"
+msgstr "Adresse und Import Token angeben, um Aktualisierungen zu importieren"
+
+msgid "Import Updates"
+msgstr "Aktualisierungen importieren"
+
+msgid ""
+"When an object is shared with another database, the information will be "
+"sent immediately. However if this approach fails, e.g. because the "
+"database is temporarily unreachable, administrators can import updates "
+"from the database instead."
+msgstr ""
+"Wenn ein Objekt mit einer anderen Datenbank geteilt wird, werden die "
+"Informationen sofort versendet. Falls dies allerdings fehlschlägt, "
+"beispielsweise weil die Datenbank kurzzeitig nicht erreichbar ist, können"
+" Administratoren stattdessen Aktualisierungen von der Datenbank "
+"anfordern."
+
+msgid "Request updates from before the last import"
+msgstr "Aktualisierungen von vor dem letzten Import anfordern"
+
+msgid ""
+"Regularly, the other database will only send updates that occurred after "
+"the last import. If this checkbox is checked, all available information "
+"will be requested instead. This may take significantly longer than a "
+"regular update."
+msgstr ""
+"Üblicherweise sendet die andere Datenbank nur Aktualisierungen, die nach "
+"dem letzten Import aufgetreten sind. Wird diese Option ausgewählt, werden"
+" stattdessen alle verfügbaren Informationen angefragt. Dies kann deutlich"
+" länger als ein normales Update dauern."
+
+msgid "Authentication Tokens"
+msgstr "Authentifizierungs-Tokens"
+
+#, python-format
+msgid ""
+"Tokens used by %(component_name)s to authenticate when requesting data "
+"from this database."
+msgstr ""
+"Tokens, die von %(component_name)s zur Authentifikation bei der Abfrage "
+"von Daten bei dieser Datenbank verwendet werden."
+
+msgid "Import"
+msgstr "Import"
+
+#, python-format
+msgid ""
+"Tokens used by this database to authenticate when requesting data from "
+"%(component_name)s."
+msgstr ""
+"Tokens, die von dieser Datenbank zur Authentifikation bei der Abfrage von"
+" Daten bei %(component_name)s verwendet werden."
+
+msgid "New authentication token"
+msgstr "Neues Authentifizierungs-Token"
+
+msgid "Save Changes"
+msgstr "Änderungen speichern"
+
+msgid "Create authentication token"
+msgstr "Authentifizierungs-Token erstellen"
+
+msgid "Please enter a description for the authentication token."
+msgstr "Bitte geben Sie eine Beschreibung für das API Token an."
+
+msgid "Add own authentication token"
+msgstr "Eigenes Authentifizierungs-Token hinzufügen"
+
+msgid "Token"
+msgstr "Token"
+
+msgid "Please enter the authentication token."
+msgstr "Bitte geben Sie das Authentifizierungs-Token ein."
+
+msgid "User Alias"
+msgstr "Nutzer-Alias"
+
+#, python-format
+msgid "User Alias shared with %(component_name)s"
+msgstr "Nutzer-Alias, der mit %(component_name)s geteilt wird"
+
+msgid "(Taken from profile)"
+msgstr "(Übernommen aus Nutzerprofil)"
+
+msgid "E-Mail"
+msgstr "E-Mail"
+
+#, python-format
+msgid ""
+"As you have not configured an user alias yet, no personal information "
+"about you is shared with %(component_name)s."
+msgstr ""
+"Da Sie noch keinen Nutzer-Alias eingerichtet haben, werden keine "
+"persönlichen Daten mit %(component_name)s geteilt."
+
+#, python-format
+msgid "Create User Alias for %(component_name)s"
+msgstr "Alias für %(component_name)s erstellen"
+
+#, python-format
+msgid ""
+"%(service_name)s can share information with other SampleDB instances. To "
+"determine which personal data is shared with other databases, you can <a "
+"href=\"%(alias_url)s\">create an alias</a>."
+msgstr ""
+"%(service_name)s kann Informationen mit anderen SampleDB Instanzen "
+"teilen. Um zu bestimmen welche personenbezogenen Daten mit anderen "
+"Datenbanken geteilt werden, können Sie <a href=\"%(alias_url)s\">einen "
+"Alias anlegen</a>."
+
+#, python-format
+msgid "UUID of %(service_name)s: "
+msgstr "UUID von %(service_name)s: "
+
+msgid "Add Database"
+msgstr "Datenbank hinzufügen"
+
+#, python-format
+msgid ""
+"When an object is shared by %(service_name)s with other databases, "
+"%(service_name)s is configured to share the information from your user "
+"profile by default. You can define a user alias for each database and "
+"control what information should be shared instead."
+msgstr ""
+"Wenn ein Objekt von %(service_name)s mit einer anderen Datenbank geteilt "
+"wird ist %(service_name)s so konfiguriert, dass die Informationen aus "
+"Ihrem Nutzer-Profil standardmäßig geteilt werden. Sie können für jede "
+"Datenbank einen Nutzer-Alias definieren und einstellen, welche "
+"Informationen stattdessen geteilt werden sollen."
+
+#, python-format
+msgid ""
+"When an object is shared by %(service_name)s with other databases, by "
+"default no information about you except for your user ID will be shared. "
+"You can define a user alias for each database and control what "
+"information may be shared."
+msgstr ""
+"Wenn ein Objekt von %(service_name)s mit einer anderen Datenbank geteilt "
+"wird, werden standardmäßig bis auf Ihre Nutzer-ID keine weiteren "
+"Informationen über Sie ausgetauscht. Sie können für jede Datenbank einen "
+"Nutzer-Alias definieren und einstellen, welche Informationen geteilt "
+"werden dürfen."
+
+#, python-format
+msgid "%(service_name)s is configured to share user information automatically."
+msgstr ""
+"%(service_name)s wurde so konfiguriert, dass Nutzer-Informationen "
+"automatisch geteilt werden."
+
+msgid "Add User Alias"
+msgstr "Nutzer-Alias hinzufügen"
+
+#, python-format
+msgid ""
+"Always use the value from my user profile (currently: "
+"<strong>%(value)s</strong>)"
+msgstr ""
+"Nutze immer den Wert in meinem Nutzerprofil (aktuell: "
+"<strong>%(value)s</strong>)"
+
+msgid "not set"
+msgstr "nicht gesetzt"
+
+msgid "Copy from"
+msgstr "Kopieren von"
+
+msgid "user profile"
+msgstr "Nutzerprofil"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+#, python-format
+msgid "Edit Alias for %(component_name)s"
+msgstr "Alias für %(component_name)s bearbeiten"
+
+msgid "Edit Alias:"
+msgstr "Alias bearbeiten:"
+
 msgid "Unable to export data of type:"
 msgstr "Exportieren nicht möglich für Typ:"
 
@@ -3904,6 +5644,18 @@ msgstr "Exportiert&nbsp;am %(export_date)s"
 
 msgid "File"
 msgstr "Datei"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Anonymous Users"
+msgstr "Anonyme Nutzer"
+
+msgid "All Signed-In Users"
+msgstr "Alle angemeldeten Nutzer"
+
+msgid "Unnamed Basic Group"
+msgstr "Unbenannte einfache Gruppe"
 
 #, python-format
 msgid ""
@@ -3917,9 +5669,6 @@ msgstr ""
 msgid "This project group is a part of"
 msgstr "Diese Projektgruppe ist Teil von"
 
-msgid "and"
-msgstr "und"
-
 msgid "Child Project Groups"
 msgstr "Kind-Projektgruppen"
 
@@ -3929,9 +5678,6 @@ msgid ""
 msgstr ""
 "Nutzer dieser Kind-Projektgruppe können andere Nutzer zu ihrer Eltern-"
 "Projektgruppe einladen."
-
-msgid "GRANT"
-msgstr "RECHTEVERGABE"
 
 msgid "Edit Project Group"
 msgstr "Projektgruppe bearbeiten"
@@ -3969,6 +5715,9 @@ msgstr "LESEN"
 
 msgid "WRITE"
 msgstr "SCHREIBEN"
+
+msgid "GRANT"
+msgstr "RECHTEVERGABE"
 
 msgid ""
 "Permissions limit what a user can do, regarding the project group itself "
@@ -4164,7 +5913,7 @@ msgstr ""
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."
 
-msgid "This user is already a member of this basic group"
+msgid "This user is already a member of this basic group."
 msgstr "Dieser Nutzer ist bereits ein Mitglied dieser einfachen Gruppe."
 
 msgid "The user was successfully invited to the basic group."
@@ -4243,17 +5992,18 @@ msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 msgid "Successfully updated your user name."
 msgstr "Der Nutzername wurde erfolgreich geändert."
 
+msgid ""
+"Sending an email failed. Please try again later or contact an "
+"administrator."
+msgstr ""
+"Das Senden einer E-Mail ist fehlgeschlagen. Bitte versuchen Sie es später"
+" erneut oder kontaktieren Sie einen Administrator."
+
 msgid "Please see your email to confirm this change."
 msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
 
 msgid "Successfully updated your user information."
 msgstr "Ihre Nutzerinformationen wurden erfolgreich geändert."
-
-msgid "Successfully removed the authentication method."
-msgstr "Die Authentifizierungsmethode wurde erfolgreich entfernt."
-
-msgid "Failed to remove the authentication method."
-msgstr "Das Entfernen der Authentifizierungsmethode ist fehlgeschlagen."
 
 msgid "Successfully added the authentication method."
 msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
@@ -4301,6 +6051,9 @@ msgstr "Der Nutzer wurde aktiviert."
 msgid "The user has been deactivated."
 msgstr "Der Nutzer wurde deaktiviert."
 
+msgid "Successfully updated the user information."
+msgstr "Die Nutzerinformationen wurden erfolgreich geändert."
+
 msgid ""
 "You cannot set up a new two factor authentication method while another is"
 " active."
@@ -4325,6 +6078,22 @@ msgstr ""
 "Sie es erneut."
 
 #, python-format
+msgid "Unnamed Action (#%(action_id)s)"
+msgstr "Unbenannte Aktion (#%(action_id)s)"
+
+#, python-format
+msgid "Database #%(id)s"
+msgstr "Datenbank #%(id)s"
+
+#, python-format
+msgid "Unnamed Instrument (#%(instrument_id)s)"
+msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
+
+#, python-format
+msgid "Imported User (#%(user_id)s%(db_ref)s)"
+msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
+
+#, python-format
 msgid ""
 "Unable to convert property '%(title)s' from type '%(type1)s' to type "
 "'%(type2)s'."
@@ -4333,16 +6102,16 @@ msgstr ""
 "'%(type2)s' konvertieren."
 
 #, python-format
+msgid "Unable to convert property '%(title)s' of type '%(type)s'."
+msgstr "Konnte Eigenschaft '%(title)s' von Typ '%(type)s' nicht umwandeln."
+
+#, python-format
 msgid ""
 "Unable to convert quantity '%(title)s' to different dimensionality: "
 "%(dimensionality1)s -> %(dimensionality2)s"
 msgstr ""
 "Konnte physikalische Größe '%(title)s' nicht von Dimensionalität "
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
-
-#, python-format
-msgid "Unable to convert property '%(title)s' of type '%(type)s'."
-msgstr "Konnte Eigenschaft '%(title)s' von Typ '%(type)s' nicht umwandeln."
 
 #, python-format
 msgid "The text must be one of %(choices)s."
@@ -4369,6 +6138,14 @@ msgid "Please enter the date and time in the format: %(datetime_format)s"
 msgstr ""
 "Bitte geben Sie Datum und Uhrzeit in folgendem Format ein: "
 "%(datetime_format)s"
+
+#, python-format
+msgid "Must be greater than or equal to %(value)s"
+msgstr "Muss größer als oder gleich zu %(value)s sein"
+
+#, python-format
+msgid "Must be less than or equal to %(value)s"
+msgstr "Muss kleiner als oder gleich zu %(value)s sein"
 
 msgid "plotly data must be valid JSON"
 msgstr "Die plotly-Daten müssen gültiges JSON sein"

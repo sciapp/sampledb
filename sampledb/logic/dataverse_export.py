@@ -16,10 +16,12 @@ from urllib.parse import urlencode
 import flask
 import requests
 
+from .components import get_component_by_uuid
 from .. import db
 from .units import prettify_units
-from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings, instrument_translations, languages
-from ..models import DataverseExport
+from .utils import get_translated_text
+from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
+from ..models import DataverseExport, DataverseExportStatus, Permissions, ObjectLogEntryType
 
 
 DATAVERSE_TIMEOUT = 30
@@ -65,16 +67,11 @@ def _flatten_metadata_object(
 def _translations_to_str(
         content: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
 ) -> str:
-    if isinstance(content, dict):
-        if len(content) == 1:
-            content = content[list(content)[0]]
-        else:
-            content = json.dumps(content)
-    return content
+    return get_translated_text(content, language_code='en')
 
 
 def get_title_for_property(
-        path: typing.List[str],
+        path: typing.List[typing.Union[str, int]],
         schema: typing.Dict[str, typing.Any]
 ) -> str:
     """
@@ -130,7 +127,12 @@ def get_property_export_default(
         return False
 
 
-def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
+def _convert_metadata_to_process(
+        metadata: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        user_id: int,
+        property_whitelist: typing.Sequence[typing.List[typing.Union[str, int]]]
+) -> typing.List[typing.Dict[str, typing.Any]]:
     fields = []
     for value, path in flatten_metadata(metadata):
         if path not in property_whitelist:
@@ -145,9 +147,9 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
             if units == '1':
                 # dimensionless quantities with a factor of 1 do not need units
                 units = ''
-            magnitude = f"{datatypes.Quantity.from_json(value).magnitude:g}"
+            magnitude = f"{float(datatypes.Quantity.from_json(value).magnitude):g}"
         elif value['_type'] == 'text':
-            text_value = _translations_to_str(datatypes.Text.from_json(value).text)
+            text_value = _translations_to_str(datatypes.Text.from_json(value).text) or ''
         elif value['_type'] == 'bool':
             text_value = str(datatypes.Boolean.from_json(value).value)
         elif value['_type'] == 'datetime':
@@ -169,20 +171,73 @@ def _convert_metadata_to_process(metadata, schema, user_id, property_whitelist):
             # tags are handled separately via the keywords in Citation Metadata
             continue
         elif value['_type'] == 'user':
-            try:
-                text_value = users.get_user(value['user_id']).name
-            except errors.UserDoesNotExistError:
-                text_value = 'Unknown'
+            if 'component_uuid' in value:
+                try:
+                    component = get_component_by_uuid(value['component_uuid'])
+                    try:
+                        name = users.get_user(value['user_id'], component.id).name
+                        if name is None:
+                            text_value = f'Unknown (#{value["user_id"]} @ {component.get_name()})'
+                        else:
+                            text_value = f'{name} (#{value["user_id"]} @ {component.get_name()})'
+                    except errors.UserDoesNotExistError:
+                        text_value = f'Unknown (#{value["user_id"]} @ {component.get_name()})'
+                except errors.ComponentDoesNotExistError:
+                    text_value = f'Unknown (#{value["user_id"]} @ {value["component_uuid"]})'
+            else:
+                try:
+                    user = users.get_user(value["user_id"])
+                    if user.name is None:
+                        name = 'Unknown'
+                    else:
+                        name = user.name
+                    if user.component is not None:
+                        text_value = f'{name} (#{value["user_id"]}, #{user.fed_id} @ {user.component.get_name()}))'
+                    else:
+                        text_value = f'{name} (#{value["user_id"]})'
+                except errors.UserDoesNotExistError:
+                    text_value = f'Unknown (#{value["user_id"]})'
         elif value['_type'] in ('sample', 'measurement', 'object_reference'):
             object_id = value['object_id']
-            if object_permissions.Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id):
-                object_name = _translations_to_str(objects.get_object(object_id).data.get('name', {}).get('text'))
+            if 'component_uuid' in value:
+                try:
+                    component = get_component_by_uuid(value['component_uuid'])
+                    component_id = component.id
+                    component_name = component.get_name()
+                except errors.ComponentDoesNotExistError:
+                    component_id = None
+                    component_name = value['component_uuid']
             else:
+                component_name = None
+                component_id = None
+            try:
+                if component_id:
+                    obj = objects.get_fed_object(object_id, component_id)
+                else:
+                    obj = objects.get_object(object_id)
+                if Permissions.READ in object_permissions.get_user_object_permissions(object_id, user_id) and obj.data:
+                    object_name = _translations_to_str(obj.data.get('name', {}).get('text'))
+                else:
+                    object_name = None
+                if obj.component:
+                    component_name = obj.component.get_name()
+                    fed_id = obj.fed_object_id
+                else:
+                    component_name = None
+                    fed_id = obj.fed_object_id
+            except errors.ObjectDoesNotExistError:
+                fed_id = value['object_id']
                 object_name = None
             if object_name:
-                text_value = f"{object_name} (#{object_id})"
+                if component_name:
+                    text_value = f"{object_name} (#{object_id}, #{fed_id} @ {component_name})"
+                else:
+                    text_value = f"{object_name} (#{object_id})"
             else:
-                text_value = f"#{object_id}"
+                if component_name:
+                    text_value = f"#{object_id} (#{fed_id} @ {component_name})"
+                else:
+                    text_value = f"#{object_id}"
         else:
             continue
         fields.append({
@@ -229,7 +284,7 @@ def upload_object(
         property_whitelist: typing.Optional[typing.Sequence[typing.List[typing.Union[str, int]]]] = None,
         file_id_whitelist: typing.Sequence[int] = (),
         tag_whitelist: typing.Sequence[str] = ()
-) -> typing.Tuple[bool, typing.Union[str, typing.Dict[str, typing.Any]]]:
+) -> typing.Tuple[bool, str]:
     """
     Uploads object information and files to a given Dataverse.
 
@@ -259,23 +314,19 @@ def upload_object(
     sampledb_metadata = object.data
     schema = object.schema
 
-    action = actions.get_action(object.action_id)
-    if action.instrument_id:
-        instrument_name = instrument_translations.get_instrument_translation_for_instrument_in_language(
-            instrument_id=action.instrument_id,
-            language_id=languages.Language.ENGLISH,
-            use_fallback=True
-        ).name
-    else:
-        instrument_name = None
+    instrument_name = None
+    if object.action_id and not flask.current_app.config['DISABLE_INSTRUMENTS']:
+        action = actions.get_action(object.action_id)
+        if action.instrument:
+            instrument_name = action.instrument.name.get('en', 'Unnamed Instrument')
 
     author_ids = set()
     for entry in object_log.get_object_log_entries(object.id, user_id):
         if entry.type in {
-            object_log.ObjectLogEntryType.CREATE_BATCH,
-            object_log.ObjectLogEntryType.CREATE_OBJECT,
-            object_log.ObjectLogEntryType.EDIT_OBJECT,
-            object_log.ObjectLogEntryType.RESTORE_OBJECT_VERSION,
+            ObjectLogEntryType.CREATE_BATCH,
+            ObjectLogEntryType.CREATE_OBJECT,
+            ObjectLogEntryType.EDIT_OBJECT,
+            ObjectLogEntryType.RESTORE_OBJECT_VERSION,
         }:
             author_ids.add(entry.user_id)
 
@@ -283,16 +334,17 @@ def upload_object(
         users.get_user(author_id)
         for author_id in author_ids
     ]
-    authors.sort(key=lambda author: author.name)
+    authors.sort(key=lambda author: author.name)  # type: ignore
 
     tags = set()
-    for property in object.data.values():
-        if '_type' in property and property['_type'] == 'tags':
-            for tag in property['tags']:
-                if tag in tag_whitelist:
-                    tags.add(tag)
-    tags = list(tags)
-    tags.sort()
+    if object.data:
+        for property in object.data.values():
+            if '_type' in property and property['_type'] == 'tags':
+                for tag in property['tags']:
+                    if tag in tag_whitelist:
+                        tags.add(tag)
+    sorted_tags = list(tags)
+    sorted_tags.sort()
 
     author_metadata = []
 
@@ -326,7 +378,16 @@ def upload_object(
                 "value": author.affiliation
             }
 
-    method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist)
+    if sampledb_metadata is not None and schema is not None:
+        method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist)
+    else:
+        method_parameters = []
+
+    if object.component is None or object.component.uuid == flask.current_app.config['SERVICE_NAME']:
+        description = f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
+    else:
+        object_component = object.component
+        description = f'Dataset exported as object #{object.object_id} from {flask.current_app.config["SERVICE_NAME"]} and created as object #{object.fed_object_id} at {object_component.get_name()}.'
 
     citation_metadata = {
         'displayName': 'Citation Metadata',
@@ -335,7 +396,7 @@ def upload_object(
                 'typeName': 'title',
                 'multiple': False,
                 'typeClass': 'primitive',
-                'value': sampledb_metadata['name']['text'].get('en', json.dumps(sampledb_metadata['name']['text'])) if isinstance(sampledb_metadata['name']['text'], dict) else json.dumps(sampledb_metadata['name']['text'])
+                'value': (sampledb_metadata['name']['text'].get('en', json.dumps(sampledb_metadata['name']['text'])) if isinstance(sampledb_metadata['name']['text'], dict) else json.dumps(sampledb_metadata['name']['text'])) if sampledb_metadata is not None else ''
             },
             {
                 'typeName': 'alternativeURL',
@@ -401,7 +462,7 @@ def upload_object(
                             'typeName': 'dsDescriptionValue',
                             'multiple': False,
                             'typeClass': 'primitive',
-                            'value': f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
+                            'value': description
                         }
                     }
                 ]
@@ -427,8 +488,31 @@ def upload_object(
         ]
     }
 
-    if tags:
-        citation_metadata['fields'].append({
+    if object.component is not None:
+        citation_metadata['fields'].append({  # type: ignore
+            'typeName': 'otherId',
+            'multiple': True,
+            'typeClass': 'compound',
+            'value': [
+                {
+                    'otherIdAgency': {
+                        'typeName': 'otherIdAgency',
+                        'multiple': False,
+                        'typeClass': 'primitive',
+                        'value': object.component.get_name()
+                    },
+                    'otherIdValue': {
+                        'typeName': 'otherIdValue',
+                        'multiple': False,
+                        'typeClass': 'primitive',
+                        'value': str(object.fed_object_id)
+                    }
+                }
+            ]
+        })
+
+    if sorted_tags:
+        citation_metadata['fields'].append({  # type: ignore
             "typeName": "keyword",
             "multiple": True,
             "typeClass": "compound",
@@ -440,7 +524,7 @@ def upload_object(
                         "typeClass": "primitive",
                         "value": tag
                     }
-                } for tag in tags
+                } for tag in sorted_tags
             ]
         })
 
@@ -450,7 +534,7 @@ def upload_object(
     }
 
     if method_parameters:
-        process_metadata['fields'].append({
+        process_metadata['fields'].append({  # type: ignore
             'typeName': 'processMethodsPar',
             'multiple': True,
             'typeClass': 'compound',
@@ -458,7 +542,7 @@ def upload_object(
         })
 
     if instrument_name:
-        process_metadata['fields'].append({
+        process_metadata['fields'].append({  # type: ignore
             "typeName": "processInstru",
             "multiple": True,
             "typeClass": "compound",
@@ -502,15 +586,22 @@ def upload_object(
         if r.status_code == 201 and result['status'] == 'OK':
             persistent_id = result['data']['persistentId']
             dataverse_url = f'{server_url}/dataset.xhtml?{urlencode({"persistentId": persistent_id})}'
-            dataverse_export = DataverseExport(object_id, dataverse_url, user_id)
-            db.session.add(dataverse_export)
+            dataverse_export = DataverseExport.query.filter_by(object_id=object_id).first()
+            if dataverse_export and dataverse_export.status == DataverseExportStatus.TASK_CREATED:
+                DataverseExport.query.filter_by(object_id=object_id).update(dict(
+                    status=DataverseExportStatus.EXPORT_FINISHED,
+                    dataverse_url=dataverse_url
+                ))
+            else:
+                dataverse_export = DataverseExport(object_id, dataverse_url, user_id, DataverseExportStatus.EXPORT_FINISHED)
+                db.session.add(dataverse_export)
             db.session.commit()
             object_log.export_to_dataverse(user_id, object_id, dataverse_url)
             _upload_files_to_dataset(server_url, api_token, persistent_id, object_id, file_id_whitelist)
             return True, dataverse_url
-        return False, r.json()
+        return False, r.json()['message']
     except Exception:
-        return False, {}
+        return False, ""
 
 
 def _upload_files_to_dataset(
@@ -539,7 +630,7 @@ def _upload_files_to_dataset(
             continue
         if file.is_hidden:
             continue
-        if file.data.get('storage') in {'local', 'database'}:
+        if file.storage in {'local', 'database'}:
             file_name = file.original_file_name
             file_content = file.open(read_only=True).read()
             if file.title and file.description:
@@ -702,6 +793,19 @@ def _list_dataverses_nested(
     return child_dataverses
 
 
+def get_dataverse_export_state(object_id: int) -> typing.Optional[DataverseExportStatus]:
+    """
+    Returns the current status of a dataverse export.
+
+    :param object_id: the ID of an existing object
+    :return: the current state or None
+    """
+    dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
+    if dataverse_export is None:
+        return None
+    return dataverse_export.status  # type: ignore
+
+
 def get_dataverse_url(object_id: int) -> typing.Optional[str]:
     """
     Return the URL for an object in a Dataverse instance.
@@ -709,10 +813,10 @@ def get_dataverse_url(object_id: int) -> typing.Optional[str]:
     :param object_id: the ID of an existing object
     :return: the URL or None
     """
-    dataverse_export = DataverseExport.query.filter_by(object_id=object_id).first()
+    dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
     if dataverse_export is None:
         return None
-    return dataverse_export.dataverse_url
+    return dataverse_export.dataverse_url  # type: ignore
 
 
 def get_user_valid_api_token(server_url: str, user_id: int) -> typing.Optional[str]:
@@ -727,10 +831,10 @@ def get_user_valid_api_token(server_url: str, user_id: int) -> typing.Optional[s
     :raise errors.DataverseNotReachableError: if there was an error during
         communication with the Dataverse API
     """
-    api_token = settings.get_user_settings(user_id)['DATAVERSE_API_TOKEN']
+    api_token: typing.Optional[str] = settings.get_user_setting(user_id, 'DATAVERSE_API_TOKEN')
     if not api_token:
         # make sure the user even exists
-        users.get_user(user_id)
+        users.check_user_exists(user_id)
         return None
     if not is_api_token_valid(server_url, api_token):
         return None

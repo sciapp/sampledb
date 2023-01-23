@@ -4,7 +4,7 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
 {% block content %}
@@ -15,6 +15,18 @@
   <h1>{{ _('Project Group') }} #{{ project.id }}: {{ project.name | get_translated_text }}</h1>
   {% if object_id is not none %}
   <p class="text-muted">{{ _('This project group is linked to <a href=\"%(object_url)s\">%(object_type)s #%(object_id)d%(object_name)s</a>.', object_type=((object_action.type.object_name | get_translated_text) if object_action else _('Object')), object_id=object_id, object_name=((': ' + (object.data.name.text | get_translated_text)) if object else ''), object_url=url_for(".object", object_id=object_id)) }}</p>
+  {% endif %}
+  {% if project_group_categories %}
+    <p>
+      <strong>{{ _('Categories') }}:</strong>
+      {% for category in project_group_categories %}
+        {%- if not loop.first %}, {% endif -%}
+        {%- for category_name in group_category_names[category.id] -%}
+          {%- if not loop.first %} / {% endif -%}
+          {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+        {%- endfor -%}
+      {% endfor %}
+    </p>
   {% endif %}
   <p>{{ project.description | get_translated_text }}</p>
   {% if not config['DISABLE_SUBPROJECTS'] %}
@@ -43,7 +55,7 @@
     <ul>
       {% for project_id in child_project_ids %}
         {% with project = get_project(project_id) %}
-          <li><a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>{% if child_project_ids_can_add_to_parent.get(project_id, False) %} <span class="label label-default"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Users of this child project group may invite other users to its parent project group.') }}">{{ _('GRANT') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></span>{% endif %}</li>
+          <li><a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>{% if child_project_ids_can_add_to_parent.get(project_id, False) %} <span class="label label-default"><span data-toggle="tooltip" data-placement="bottom" title="{{ _('Users of this child project group may invite other users to its parent project group.') }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></span>{% endif %}</li>
         {% endwith %}
       {% endfor %}
     </ul>
@@ -51,17 +63,21 @@
   {% endif %}
   <h2>{{ _('Members') }}</h2>
   <ul>
-    {% for user_id in project_member_user_ids_and_permissions %}
-      {% with user = get_user(user_id) %}
-        <li><i class="fa fa-user" aria-hidden="true"></i> <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }} (#{{ user.id }})</a>
-        {% if remove_project_member_form and user_id != current_user.id %}
-        <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectMember{{ user_id }}Form">
-          {{ remove_project_member_form.csrf_token() }}
-          <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">{{ _('Remove') }}</button>
-        </form>
-        {% endif %}
-        </li>
-      {% endwith %}
+    {% for user_id, user_permissions in project_member_user_ids_and_permissions.items() %}
+      <li><i class="fa fa-user" aria-hidden="true"></i>
+        {{ user_reference(user_id) }}
+      <span class="label label-default">
+      {% if user_permissions == user_permissions.READ %}{{ _('Read') }}{% endif %}
+      {% if user_permissions == user_permissions.WRITE %}{{ _('Write') }}{% endif %}
+      {% if user_permissions == user_permissions.GRANT %}{{ _('Grant') }}{% endif %}
+      </span>
+      {% if remove_project_member_form and user_id != current_user.id %}
+      <form method="post" style="display: inline;margin-left:0.5em" action="{{ url_for('.project', project_id=project.id) }}" id="removeProjectMember{{ user_id }}Form">
+        {{ remove_project_member_form.csrf_token() }}
+        <button type="submit" class="btn btn-danger btn-xs" name="remove_member" value="{{ user_id }}">{{ _('Remove') }}</button>
+      </form>
+      {% endif %}
+      </li>
     {% endfor %}
     {% for group_id in project_member_group_ids_and_permissions %}
       {% with group = get_group(group_id) %}
@@ -274,6 +290,22 @@
 
           <input type="hidden" id="input-translations" name="{{ edit_project_form.translations.name }}" value="">
 
+          {% if group_categories %}
+            <div class="form-group">
+              <label for="select-categories" class="control-label">{{ _("Categories") }}</label>
+              <select class="selectpicker form-control" multiple="multiple" id="select-categories" name="{{ edit_project_form.categories.name }}" data-none-selected-text="{{ _('No category selected') }}">
+                {% for category in group_categories %}
+                  <option value="{{ category.id }}" {% if category in project_group_categories %}selected="selected"{% endif %}>
+                    {%- for category_name in group_category_names[category.id] -%}
+                      {%- if not loop.first %} / {% endif -%}
+                      {{ category_name | get_translated_text(default=_('Unnamed Category')) }}
+                    {%- endfor -%}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          {% endif %}
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
@@ -301,7 +333,7 @@
               <div class="col-sm-9">
                 <select class="selectpicker" name="{{ invite_user_form.user_id.name }}" id="inviteUserId" data-width="100%" data-live-search="true">
                 {% for user in invitable_user_list | sort(attribute='name') %}
-                  <option value="{{ user.id }}" {% if invite_user_form.user_id.data == user_id %}selected="selected"{% endif %}>{{ user.name }} (#{{ user.id }})</option>
+                  <option value="{{ user.id }}" {% if invite_user_form.user_id.data == user_id %}selected="selected"{% endif %}>{{ user.get_name() }}</option>
                 {% endfor %}
                 </select>
               </div>
@@ -483,12 +515,12 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   {% if object_link_form and not object_id and not current_user.is_readonly and config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-    <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 <script>
 
 window.translations = {{ translations | tojson }};

@@ -3,48 +3,39 @@
 
 """
 
-from . import build_translations
-from . import create_instrument
-from . import disable_two_factor_authentication
-from . import update_instrument
-from . import list_instruments
-from . import update_instrument_responsible_users
-from . import create_action
-from . import update_action
-from . import list_actions
-from . import export_action_schema
-from . import create_other_user
-from . import move_local_files_to_database
-from . import send_announcement
-from . import set_administrator
-from . import set_up_demo
-from . import set_user_readonly
-from . import set_user_hidden
-from . import run
+import importlib.util
+import os
+import string
+import typing
+import types
 
-script_modules = {
-    module.__name__.split('.')[-1]: module
-    for module in (
-        build_translations,
-        create_instrument,
-        disable_two_factor_authentication,
-        update_instrument,
-        list_instruments,
-        update_instrument_responsible_users,
-        create_action,
-        update_action,
-        list_actions,
-        export_action_schema,
-        create_other_user,
-        move_local_files_to_database,
-        send_announcement,
-        set_administrator,
-        set_up_demo,
-        set_user_readonly,
-        set_user_hidden,
-        run
-    )
-}
+
+def _find_script_modules() -> typing.Dict[str, types.ModuleType]:
+    """
+    Find, import and return all .py files located in the scripts directory.
+    """
+    scripts_path = os.path.abspath(os.path.dirname(__file__))
+    script_modules = {}
+    for file_name in os.listdir(scripts_path):
+        module_name, file_extension = os.path.splitext(file_name)
+        # only import Python files
+        if file_extension != '.py':
+            continue
+        # prevent importing files with invalid module names
+        if not all(c in string.ascii_letters + string.digits + '_' for c in module_name) or module_name.startswith('__'):
+            continue
+        module_path = os.path.join(scripts_path, file_name)
+        spec = importlib.util.spec_from_file_location(f'sampledb.scripts.{module_name}', module_path)
+        if not spec or not spec.loader:
+            continue
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        script_modules[module_name] = module
+    return script_modules
+
+
+script_modules = _find_script_modules()
+globals().update(script_modules)
 
 script_documentation = {
     script_name: script_module.__doc__

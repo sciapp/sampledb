@@ -3,30 +3,31 @@
 
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
-import smtplib
 
 import flask
-import flask_mail
 
 from . import errors
 from .. import logic
 from ..models import notifications
 from ..models.notifications import NotificationType, NotificationMode
+from .background_tasks.send_mail import post_send_mail_task
 from .. import db
-from .. import mail
 
 
-class Notification(collections.namedtuple('Notification', ['id', 'type', 'user_id', 'data', 'was_read', 'utc_datetime'])):
+@dataclasses.dataclass(frozen=True)
+class Notification:
     """
     This class provides an immutable wrapper around models.notifications.Notification.
     """
-
-    def __new__(cls, id: int, type: NotificationType, user_id: int, data: typing.Dict[str, typing.Any], was_read: bool, utc_datetime: typing.Optional[datetime.datetime] = None):
-        self = super(Notification, cls).__new__(cls, id, type, user_id, data, was_read, utc_datetime)
-        return self
+    id: int
+    type: NotificationType
+    user_id: int
+    data: typing.Dict[str, typing.Any]
+    was_read: bool
+    utc_datetime: typing.Optional[datetime.datetime] = None
 
     @classmethod
     def from_database(cls, notification: notifications.Notification) -> 'Notification':
@@ -52,7 +53,7 @@ def get_notifications(user_id: int, unread_only: bool = False, _additional_filte
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     query = notifications.Notification.query.filter_by(user_id=user_id)
     if unread_only:
         query = query.filter_by(was_read=False)
@@ -97,14 +98,16 @@ def get_num_notifications(user_id: int, unread_only: bool = False) -> int:
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
+    num_notifications: int
     if unread_only:
-        return notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
+        num_notifications = notifications.Notification.query.filter_by(user_id=user_id, was_read=False).count()
     else:
-        return notifications.Notification.query.filter_by(user_id=user_id).count()
+        num_notifications = notifications.Notification.query.filter_by(user_id=user_id).count()
+    return num_notifications
 
 
-def get_notification(notification_id) -> Notification:
+def get_notification(notification_id: int) -> Notification:
     """
     Get a specific notification.
 
@@ -149,7 +152,7 @@ def _store_notification(type: NotificationType, user_id: int, data: typing.Dict[
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification = notifications.Notification(
         type=type,
         user_id=user_id,
@@ -171,6 +174,9 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         exists
     """
     user = logic.users.get_user(user_id)
+    if user.email is None:
+        return None
+
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Notification"
 
@@ -185,7 +191,9 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         get_group=logic.groups.get_group,
         get_project=logic.projects.get_project,
         get_instrument=logic.instruments.get_instrument,
-        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry
+        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry,
+        get_object_location_assignment=logic.locations.get_object_location_assignment,
+        get_component=logic.components.get_component
     )
     text = flask.render_template(
         template_path + '.txt',
@@ -196,20 +204,19 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
         get_group=logic.groups.get_group,
         get_project=logic.projects.get_project,
         get_instrument=logic.instruments.get_instrument,
-        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry
+        get_instrument_log_entry=logic.instrument_log_entries.get_instrument_log_entry,
+        get_object_location_assignment=logic.locations.get_object_location_assignment,
+        get_component=logic.components.get_component
     )
     while '\n\n\n' in text:
         text = text.replace('\n\n\n', '\n\n')
-    try:
-        mail.send(flask_mail.Message(
-            subject,
-            sender=flask.current_app.config['MAIL_SENDER'],
-            recipients=[user.email],
-            body=text,
-            html=html
-        ))
-    except smtplib.SMTPRecipientsRefused:
-        pass
+
+    post_send_mail_task(
+        subject=subject,
+        recipients=[user.email],
+        text=text,
+        html=html
+    )
 
 
 def mark_notification_as_read(notification_id: int) -> None:
@@ -276,7 +283,7 @@ def set_notification_mode_for_type(type: NotificationType, user_id: int, mode: N
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is None:
         notification_mode_for_type = notifications.NotificationModeForType(type=type, user_id=user_id, mode=mode)
@@ -296,7 +303,7 @@ def set_notification_mode_for_all_types(user_id: int, mode: NotificationMode) ->
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification_mode_for_types = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
     for notification_mode_for_type in notification_mode_for_types:
         db.session.delete(notification_mode_for_type)
@@ -314,14 +321,16 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
     """
-    # ensure the user exists
-    logic.users.get_user(user_id)
+    user = logic.users.get_user(user_id)
+    if user.component_id is not None:
+        # disable notifications for users from other components
+        return NotificationMode.IGNORE
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
-        return notification_mode_for_type.mode
+        return typing.cast(NotificationMode, notification_mode_for_type.mode)
     notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
     if notification_mode_for_all_types is not None:
-        return notification_mode_for_all_types.mode
+        return typing.cast(NotificationMode, notification_mode_for_all_types.mode)
     if type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED:
         return NotificationMode.IGNORE
     return NotificationMode.WEBAPP
@@ -336,7 +345,7 @@ def get_notification_modes(user_id: int) -> typing.Dict[typing.Optional[Notifica
         exists
     """
     # ensure the user exists
-    logic.users.get_user(user_id)
+    logic.users.check_user_exists(user_id)
     notification_modes = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
     return {
         notification_mode_for_type.type: notification_mode_for_type.mode
@@ -381,6 +390,15 @@ def create_notification_for_being_assigned_as_responsible_user(object_location_a
         ),
         _external=True
     )
+    declination_url = flask.url_for(
+        'frontend.decline_responsibility_for_object',
+        t=logic.security_tokens.generate_token(
+            object_location_assignment_id,
+            salt='decline_responsibility',
+            secret_key=flask.current_app.config['SECRET_KEY']
+        ),
+        _external=True
+    )
     _create_notification(
         type=NotificationType.ASSIGNED_AS_RESPONSIBLE_USER,
         user_id=object_location_assignment.responsible_user_id,
@@ -388,7 +406,8 @@ def create_notification_for_being_assigned_as_responsible_user(object_location_a
             'object_id': object_location_assignment.object_id,
             'assigner_id': object_location_assignment.user_id,
             'object_location_assignment_id': object_location_assignment_id,
-            'confirmation_url': confirmation_url
+            'confirmation_url': confirmation_url,
+            'declination_url': declination_url
         }
     )
 
@@ -416,7 +435,7 @@ def create_notification_for_being_invited_to_a_group(
     # ensure the group exists
     logic.groups.get_group(group_id)
     # ensure the inviter exists
-    logic.users.get_user(inviter_id)
+    logic.users.check_user_exists(inviter_id)
     _create_notification(
         type=NotificationType.INVITED_TO_GROUP,
         user_id=user_id,
@@ -424,7 +443,7 @@ def create_notification_for_being_invited_to_a_group(
             'group_id': group_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
-            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None
         }
     )
 
@@ -452,7 +471,7 @@ def create_notification_for_being_invited_to_a_project(
     # ensure the project exists
     logic.projects.get_project(project_id)
     # ensure the inviter exists
-    logic.users.get_user(inviter_id)
+    logic.users.check_user_exists(inviter_id)
     _create_notification(
         type=NotificationType.INVITED_TO_PROJECT,
         user_id=user_id,
@@ -460,7 +479,7 @@ def create_notification_for_being_invited_to_a_project(
             'project_id': project_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
-            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None
         }
     )
 
@@ -509,9 +528,9 @@ def create_notification_for_having_received_an_objects_permissions_request(user_
         object ID exists
     """
     # ensure the object exists
-    logic.objects.get_object(object_id)
+    logic.objects.check_object_exists(object_id)
     # ensure the requester exists
-    logic.users.get_user(requester_id)
+    logic.users.check_user_exists(requester_id)
     _create_notification(
         type=NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST,
         user_id=user_id,
@@ -556,7 +575,7 @@ def create_notification_for_being_referenced_by_object_metadata(user_id: int, ob
         exists
     """
     # ensure the instrument log entry exists
-    logic.objects.get_object(object_id)
+    logic.objects.check_object_exists(object_id)
     _create_notification(
         type=NotificationType.REFERENCED_BY_OBJECT_METADATA,
         user_id=user_id,
@@ -590,5 +609,92 @@ def create_notification_for_an_edited_instrument_log_entry(
         data={
             'instrument_log_entry_id': instrument_log_entry_id,
             'version_id': version_id
+        }
+    )
+
+
+def create_notification_for_a_declined_responsibility_assignment(
+        user_id: int,
+        object_location_assignment_id: int
+) -> None:
+    """
+    Create a notification of type RESPONSIBILITY_ASSIGNMENT_DECLINED.
+
+    :param user_id: the ID of an existing user
+    :param object_location_assignment_id: the ID of an existing object location
+        assignment
+    :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
+        location assignment with the given object location assignment ID exists
+    """
+    # ensure the object location assignment exists
+    logic.locations.get_object_location_assignment(object_location_assignment_id)
+    _create_notification(
+        type=NotificationType.RESPONSIBILITY_ASSIGNMENT_DECLINED,
+        user_id=user_id,
+        data={
+            'object_location_assignment_id': object_location_assignment_id,
+        }
+    )
+
+
+def create_notification_for_a_failed_remote_object_import(
+        user_id: int,
+        object_id: int,
+        component_id: int
+) -> None:
+    """
+    Create a notification of type REMOTE_OBJECT_IMPORT_FAILED.
+
+    :param user_id: the ID of an existing user
+    :param object_id: the ID of an existing object
+    :param component_id: the ID of an existing component
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with the
+        given component ID exists
+    """
+    # ensure the object exists
+    logic.objects.check_object_exists(object_id)
+    # ensure the component exists
+    logic.components.check_component_exists(component_id)
+    _create_notification(
+        type=NotificationType.REMOTE_OBJECT_IMPORT_FAILED,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'component_id': component_id
+        }
+    )
+
+
+def create_notification_for_a_remote_object_import_with_notes(
+        user_id: int,
+        object_id: int,
+        component_id: int,
+        import_notes: typing.List[str]
+) -> None:
+    """
+    Create a notification of type REMOTE_OBJECT_IMPORT_NOTES.
+
+    :param user_id: the ID of an existing user
+    :param object_id: the ID of an existing object
+    :param component_id: the ID of an existing component
+    :param import_notes: the import notes from importing the object
+    :raise errors.ObjectDoesNotExistError: when no object with the given
+        object ID exists
+    :raise errors.ComponentDoesNotExistError: when no component with the
+        given component ID exists
+    """
+    # ensure the object exists
+    logic.objects.check_object_exists(object_id)
+    # ensure the component exists
+    logic.components.check_component_exists(component_id)
+    _create_notification(
+        type=NotificationType.REMOTE_OBJECT_IMPORT_NOTES,
+        user_id=user_id,
+        data={
+            'object_id': object_id,
+            'component_id': component_id,
+            'import_notes': import_notes
         }
     )

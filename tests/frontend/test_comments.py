@@ -23,7 +23,7 @@ def user(flask_server):
         sampledb.db.session.commit()
         # force attribute refresh
         assert user.id is not None
-    return user
+    return sampledb.logic.users.User.from_database(user)
 
 
 @pytest.fixture

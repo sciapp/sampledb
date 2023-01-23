@@ -36,17 +36,28 @@ class DataverseAPITokenForm(FlaskForm):
 @frontend.route('/objects/<int:object_id>/dataverse_export/', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.GRANT)
 def dataverse_export(object_id):
+    dataverse_export_status = logic.dataverse_export.get_dataverse_export_state(object_id)
     existing_dataverse_url = logic.dataverse_export.get_dataverse_url(object_id)
-    if existing_dataverse_url:
-        return flask.render_template(
-            'objects/dataverse_export_already_exported.html',
-            object_id=object_id,
-            dataverse_url=existing_dataverse_url
-        )
+
+    if dataverse_export_status:
+        if dataverse_export_status == logic.dataverse_export.DataverseExportStatus.TASK_CREATED:
+            flask.flash(_('The object is currently being exported.'), 'info')
+            return flask.redirect(flask.url_for('.object', object_id=object_id))
+        elif dataverse_export_status == logic.dataverse_export.DataverseExportStatus.EXPORT_FINISHED and existing_dataverse_url:
+            return flask.render_template(
+                'objects/dataverse_export_already_exported.html',
+                object_id=object_id,
+                dataverse_url=existing_dataverse_url
+            )
 
     server_url = flask.current_app.config['DATAVERSE_URL']
     if not server_url:
         return flask.abort(404)
+
+    object = logic.objects.get_object(object_id)
+    if object.component_id is not None:
+        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
 
     dataverse_export_form = DataverseExportForm()
 
@@ -80,7 +91,6 @@ def dataverse_export(object_id):
             had_invalid_api_token=had_invalid_api_token
         )
 
-    object = logic.objects.get_object(object_id)
     properties = [
         (metadata, path)
         for metadata, path in logic.dataverse_export.flatten_metadata(object.data)
@@ -154,7 +164,7 @@ def dataverse_export(object_id):
         tag_whitelist = list(tag_whitelist)
         tag_whitelist.sort()
         dataverse = dataverse_export_form.dataverse.data
-        success, dataset_url_or_response = logic.dataverse_export.upload_object(
+        task_status_or_result, task = logic.background_tasks.background_dataverse_export.post_dataverse_export_task(
             object_id=object_id,
             user_id=flask_login.current_user.id,
             server_url=server_url,
@@ -164,14 +174,16 @@ def dataverse_export(object_id):
             file_id_whitelist=file_id_whitelist,
             tag_whitelist=tag_whitelist
         )
-        if success:
-            dataset_url = dataset_url_or_response
-            return flask.redirect(dataset_url)
-        try:
-            message = dataset_url_or_response.get('message')
-        except Exception:
-            message = "An unknown error occurred while uploading the dataset."
-        flask.flash(message, 'error')
+        if task:
+            return flask.redirect(flask.url_for(".dataverse_export_loading", task_id=task.id))
+        else:
+            success, export_result = task_status_or_result
+            if success:
+                return flask.redirect(export_result['url'])
+            else:
+                error_message = export_result['error_message']
+                flask.flash(_('An error occurred while exporting the object: %(error)s', error=_(error_message, service_name=flask.current_app.config["SERVICE_NAME"], dataverse_name=flask.current_app.config["DATAVERSE_NAME"])), 'error')
+                return flask.redirect(flask.url_for(".dataverse_export", object_id=object_id))
 
     return flask.render_template(
         "objects/dataverse_export.html",
@@ -183,3 +195,40 @@ def dataverse_export(object_id):
         get_property_export_default=lambda path: logic.dataverse_export.get_property_export_default(path, object.schema),
         dataverse_export_form=dataverse_export_form
     )
+
+
+@frontend.route("/objects/<int:task_id>/dataverse_export_loading/", methods=['GET'])
+def dataverse_export_loading(task_id):
+    task_result = logic.background_tasks.get_background_task_result(task_id, False)
+    if task_result:
+        if task_result["status"].is_final():
+            if task_result["status"] == logic.background_tasks.core.BackgroundTaskStatus.DONE:
+                return flask.redirect(task_result["result"])
+            else:
+                return flask.render_template('objects/dataverse_export_loading.html', polling=False, error_message=task_result['result'])
+        else:
+            return flask.render_template('objects/dataverse_export_loading.html', task_id=task_id, polling=True), 202
+    else:
+        return flask.abort(404)
+
+
+@frontend.route("/objects/<int:task_id>/dataverse_export_status/", methods=['GET'])
+def dataverse_export_status(task_id):
+    task_result = logic.background_tasks.get_background_task_result(task_id, False)
+    if task_result:
+        if task_result["status"].is_final():
+            if task_result["status"] == logic.background_tasks.core.BackgroundTaskStatus.DONE:
+                return {"dataverse_url": task_result["result"]}
+            else:
+                return {
+                    "url": flask.url_for(".dataverse_export_loading", task_id=task_id),
+                    "error_message": task_result["result"]
+                }, 406
+
+        else:
+            return {}, 202
+    else:
+        return {
+            "url": flask.url_for(".dataverse_export_loading", task_id=task_id),
+            "error_message": "task_id not found"
+        }, 404

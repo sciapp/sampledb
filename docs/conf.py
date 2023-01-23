@@ -12,7 +12,7 @@ sys.path.insert(0, base_dir)
 
 service_name = 'SampleDB'
 service_url = 'https://iffsamples.fz-juelich.de'
-service_imprint = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
+service_legal_notice = 'https://pgi-jcns.fz-juelich.de/portal/pages/imprint.html'
 contact_email = 'f.rhiem@fz-juelich.de'
 
 project = service_name
@@ -68,7 +68,7 @@ html_theme_options = {
         'Source Code': 'https://github.com/sciapp/sampledb',
         'Issues': 'https://github.com/sciapp/sampledb/issues',
         'Contact': 'mailto:{}'.format(contact_email),
-        'Imprint': service_imprint,
+        'Legal Notice': service_legal_notice,
         'PGI/JCNS-TA': 'https://pgi-jcns.fz-juelich.de',
     }
 }
@@ -109,7 +109,7 @@ rst_prolog = """
 .. |service_actions_url| replace:: {service_url}/actions
 .. |service_instruments_url| replace:: {service_url}/instruments
 
-.. _let us know: mailto:{contact_email}
+.. _let us know: https://github.com/sciapp/sampledb/issues/new
 
 """.format(
     service_name=service_name,

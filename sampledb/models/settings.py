@@ -16,13 +16,17 @@ from .. import db
 from .users import User
 
 
-class Settings(db.Model):
+class Settings(db.Model):  # type: ignore
     __tablename__ = 'settings'
 
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), primary_key=True)
     data = db.Column(db.JSON, nullable=False)
 
-    def __init__(self, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
+    def __init__(
+            self,
+            user_id: int,
+            data: typing.Dict[str, typing.Any]
+    ) -> None:
         self.user_id = user_id
         self.data = data
 

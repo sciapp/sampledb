@@ -40,10 +40,8 @@ try:
         import flask
         import flask_login
         if user_id is None:
-            user = sampledb.logic.instruments.get_instruments()[0].responsible_users[0]
-        else:
-            user = sampledb.models.User.query.get(user_id)
-        assert user is not None
+            user_id = sampledb.logic.instruments.get_instruments()[0].responsible_users[0].id
+        user = sampledb.logic.users.get_user(user_id)
         flask_login.login_user(user)
         # Remove the message asking the user to sign in
         flask.session.pop('_flashes', None)
@@ -56,8 +54,8 @@ try:
     print("To sign in as instrument scientist, visit:")
     print("http://localhost:5000/users/me/autologin")
     print("or visit any other site that requires being signed in.")
-    print()
+    print(flush=True)
 
-    app.run(debug=True, host=os.environ.get('SAMPLEDB_DEMO_HOST'))
+    app.run(debug=True, host=os.environ.get('SAMPLEDB_DEMO_HOST'), use_reloader=False)
 finally:
     shutil.rmtree(temp_dir)

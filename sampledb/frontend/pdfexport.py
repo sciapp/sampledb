@@ -8,7 +8,7 @@ import urllib.parse
 
 import flask
 import flask_login
-import jinja2
+import markupsafe
 import qrcode
 import qrcode.image.pil
 from flask_babel import _, refresh
@@ -21,8 +21,8 @@ from ..logic.object_log import ObjectLogEntryType
 from ..logic.users import get_user
 
 from .markdown_images import IMAGE_FORMATS
-from .objects import get_object_if_current_user_has_read_permissions
-from .utils import custom_format_datetime
+from .objects.objects import get_object_if_current_user_has_read_permissions
+from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
 
 SECTIONS = {
@@ -41,7 +41,6 @@ def create_pdfexport(
 ):
     exported_files = {}
 
-    language_id = logic.languages.get_language_by_lang_code(lang_code).id
     flask.g.override_locale = lang_code
     refresh()
 
@@ -90,100 +89,150 @@ def create_pdfexport(
             object_log_entries = object_log.get_object_log_entries(object_id=object.id, user_id=flask_login.current_user.id)
             for object_log_entry in reversed(object_log_entries):
                 user_id = object_log_entry.user_id
-                user_url = jinja2.escape(flask.url_for('.user_profile', user_id=user_id, _external=True))
-                user_name = jinja2.escape(get_user(object_log_entry.user_id).name)
+                user_url = markupsafe.escape(flask.url_for('.user_profile', user_id=user_id, _external=True))
+                user_name = markupsafe.escape(get_user(object_log_entry.user_id).get_name())
 
-                entry_datetime = jinja2.escape(custom_format_datetime(object_log_entry.utc_datetime))
+                entry_datetime = markupsafe.escape(custom_format_datetime(object_log_entry.utc_datetime))
                 text = f'{entry_datetime} — '
                 if object_log_entry.type == ObjectLogEntryType.CREATE_BATCH:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> created this object as part of a batch.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> created this object as part of a batch.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.CREATE_OBJECT:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> created this object.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> created this object.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.EDIT_OBJECT:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> edited this object.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> edited this object.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.POST_COMMENT:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> posted a comment.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> posted a comment.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> restored a previous version of this object.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> restored a previous version of this object.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> posted a file.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> posted a file.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
                     try:
                         measurement_id = int(object_log_entry.data['measurement_id'])
-                        object_url = jinja2.escape(flask.url_for('.object', object_id=measurement_id, _external=True))
+                        object_url = markupsafe.escape(flask.url_for('.object', object_id=measurement_id, _external=True))
                         permissions = logic.object_permissions.get_user_object_permissions(measurement_id, flask_login.current_user.id)
                         if logic.object_permissions.Permissions.READ in permissions:
-                            measurement_name = jinja2.escape(get_translated_text(get_object(measurement_id).data['name']['text']))
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> used this object in <a href="%(object_url)s">measurement %(measurement_name)s (#%(measurement_id)s)</a>.', user_url=user_url, user_name=user_name, user_id=user_id, object_url=object_url, measurement_id=measurement_id, measurement_name=measurement_name)
+                            measurement_name = markupsafe.escape(get_translated_text(get_object(measurement_id).name))
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement %(measurement_name)s (#%(measurement_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, measurement_id=measurement_id, measurement_name=measurement_name)
                         else:
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> used this object in <a href="%(object_url)s">measurement #%(measurement_id)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, object_url=object_url, measurement_id=measurement_id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement #%(measurement_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, measurement_id=measurement_id)
                     except Exception:
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> used this object in a measurement.', user_url=user_url, user_name=user_name, user_id=user_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in a measurement.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
                     try:
                         sample_id = int(object_log_entry.data['sample_id'])
-                        object_url = jinja2.escape(flask.url_for('.object', object_id=sample_id, _external=True))
+                        object_url = markupsafe.escape(flask.url_for('.object', object_id=sample_id, _external=True))
                         permissions = logic.object_permissions.get_user_object_permissions(sample_id, flask_login.current_user.id)
                         if logic.object_permissions.Permissions.READ in permissions:
-                            sample_name = jinja2.escape(get_translated_text(get_object(sample_id).data['name']['text']))
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> used this object to create <a href="%(object_url)s">sample %(sample_name)s (#%(sample_id)s)</a>.', user_url=user_url, user_name=user_name, user_id=user_id, object_url=object_url, sample_id=sample_id, sample_name=sample_name)
+                            sample_name = markupsafe.escape(get_translated_text(get_object(sample_id).name))
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample %(sample_name)s (#%(sample_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, sample_id=sample_id, sample_name=sample_name)
                         else:
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> used this object to create <a href="%(object_url)s">sample #%(sample_id)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, object_url=object_url, sample_id=sample_id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample #%(sample_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, sample_id=sample_id)
                     except Exception:
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> used this object to create a sample.', user_url=user_url, user_name=user_name, user_id=user_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create a sample.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION:
                     object_location_assignment_id = object_log_entry.data['object_location_assignment_id']
                     object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
+                    if object_location_assignment.location_id is not None:
+                        location_url = markupsafe.escape(
+                            flask.url_for(
+                                '.location',
+                                location_id=object_location_assignment.location_id,
+                                _external=True
+                            )
+                        )
+                        location_name = get_location_name(
+                            location_or_location_id=object_location_assignment.location_id,
+                            include_id=True,
+                            language_code=lang_code
+                        )
+                    else:
+                        location_url = None
+                        location_name = None
+                    if object_location_assignment.responsible_user_id is not None:
+                        other_user_url = markupsafe.escape(
+                            flask.url_for(
+                                '.user_profile',
+                                user_id=object_location_assignment.responsible_user_id,
+                                _external=True
+                            )
+                        )
+                    else:
+                        other_user_url = None
+                    if object_location_assignment.confirmed:
+                        responsibility_status = _(' (confirmed)')
+                    elif object_location_assignment.declined:
+                        responsibility_status = _(' (declined)')
+                    else:
+                        responsibility_status = _(' (unconfirmed)')
                     if object_location_assignment.location_id is not None and object_location_assignment.responsible_user_id is not None:
-                        other_user_url = jinja2.escape(flask.url_for('.user_profile', user_id=object_location_assignment.responsible_user_id, _external=True))
-                        location_url = jinja2.escape(flask.url_for('.location', location_id=object_location_assignment.location_id, _external=True))
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> assigned this object to <a href="%(location_url)s">location #%(location_id)s</a> and <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, location_url=location_url, location_id=object_location_assignment.location_id, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
+                        text += _(
+                            '<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a> and <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>%(responsibility_status)s.',
+                            user_url=user_url,
+                            user_name=user_name,
+                            location_url=location_url,
+                            location_name=location_name,
+                            other_user_url=other_user_url,
+                            responsible_user_id=object_location_assignment.responsible_user_id,
+                            responsibility_status=responsibility_status
+                        )
                     elif object_location_assignment.location_id is not None:
-                        location_url = jinja2.escape(flask.url_for('.location', location_id=object_location_assignment.location_id, _external=True))
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> assigned this object to <a href="%(location_url)s">location #%(location_id)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, location_url=location_url, location_id=object_location_assignment.location_id)
+                        text += _(
+                            '<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(location_url)s">%(location_name)s</a>.',
+                            user_url=user_url,
+                            user_name=user_name,
+                            location_url=location_url,
+                            location_name=location_name
+                        )
                     elif object_location_assignment.responsible_user_id is not None:
-                        other_user_url = jinja2.escape(flask.url_for('.user_profile', user_id=object_location_assignment.responsible_user_id, _external=True))
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> assigned this object to <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, other_user_url=other_user_url, responsible_user_id=object_location_assignment.responsible_user_id)
+                        text += _(
+                            '<a href="%(user_url)s">%(user_name)s</a> assigned this object to <a href="%(other_user_url)s">user #%(responsible_user_id)s</a>%(responsibility_status)s.',
+                            user_url=user_url,
+                            user_name=user_name,
+                            other_user_url=other_user_url,
+                            responsible_user_id=object_location_assignment.responsible_user_id,
+                            responsibility_status=responsibility_status
+                        )
                 elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION:
-                    doi = jinja2.escape(object_log_entry.data['doi'])
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> linked publication <a href="https://dx.doi.org/%(doi)s">%(doi)s</a> to this object.', user_url=user_url, user_name=user_name, user_id=user_id, doi=doi)
+                    doi = markupsafe.escape(object_log_entry.data['doi'])
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> linked publication <a href="https://dx.doi.org/%(doi)s">%(doi)s</a> to this object.', user_url=user_url, user_name=user_name, doi=doi)
                 elif object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA:
                     if object_log_entry.data['object_id'] is not None:
                         try:
                             other_object_id = int(object_log_entry.data['object_id'])
-                            object_url = jinja2.escape(flask.url_for('.object', object_id=other_object_id, _external=True))
+                            object_url = markupsafe.escape(flask.url_for('.object', object_id=other_object_id, _external=True))
                             permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['object_id'], flask_login.current_user.id)
                             if logic.object_permissions.Permissions.READ in permissions:
-                                object_name = jinja2.escape(get_object(object_log_entry.data['object_id']).data['name']['text'])
-                                text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> referenced this object in the metadata of <a href="%(object_url)s">object %(object_name)s (#%(other_object_id)s)</a>.', user_url=user_url, user_name=user_name, user_id=user_id, object_url=object_url, object_name=object_name, other_object_id=other_object_id)
+                                object_name = markupsafe.escape(get_translated_text(get_object(object_log_entry.data['object_id']).name))
+                                text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object %(object_name)s (#%(other_object_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, object_name=object_name, other_object_id=other_object_id)
                             else:
-                                text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> referenced this object in the metadata of <a href="%(object_url)s">object #%(other_object_id)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, object_url=object_url, other_object_id=other_object_id)
+                                text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object #%(other_object_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, other_object_id=other_object_id)
                         except Exception:
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> referenced this object in the metadata of an unknown object.', user_url=user_url, user_name=user_name, user_id=user_id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of an unknown object.', user_url=user_url, user_name=user_name)
                     else:
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> referenced this object in the metadata of another object.', user_url=user_url, user_name=user_name, user_id=user_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of another object.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.EXPORT_TO_DATAVERSE:
-                    dataverse_url = jinja2.escape(object_log_entry.data['dataverse_url'])
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> exported this object to dataverse as <a href="%(dataverse_url)s">%(dataverse_url)s</a>.', user_url=user_url, user_name=user_name, user_id=user_id, dataverse_url=dataverse_url)
+                    dataverse_url = markupsafe.escape(object_log_entry.data['dataverse_url'])
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> exported this object to dataverse as <a href="%(dataverse_url)s">%(dataverse_url)s</a>.', user_url=user_url, user_name=user_name, dataverse_url=dataverse_url)
                 elif object_log_entry.type == ObjectLogEntryType.LINK_PROJECT:
                     try:
                         project = logic.projects.get_project(object_log_entry.data['project_id'])
                         project_url = flask.url_for('.project', project_id=project.id)
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> linked this object to <a href="%(project_url)s">project group %(project_name)s (#%(project_id)s)</a>.', user_url=user_url, user_name=user_name, user_id=user_id, project_url=project_url, project_name=get_translated_text(project.name), project_id=project.id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">project group %(project_name)s (#%(project_id)s)</a>.', user_url=user_url, user_name=user_name, project_url=project_url, project_name=get_translated_text(project.name), project_id=project.id)
                     except logic.errors.ProjectDoesNotExistError:
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> linked this object to a project group.', user_url=user_url, user_name=user_name, user_id=user_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT:
                     if object_log_entry.data.get('project_deleted'):
-                        text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> deleted the project group this object was linked to.', user_url=user_url, user_name=user_name, user_id=user_id)
+                        text += _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=user_url, user_name=user_name)
                     else:
                         try:
                             project = logic.projects.get_project(object_log_entry.data['project_id'])
                             project_url = flask.url_for('.project', project_id=project.id)
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> removed the link of this object to <a href="%(project_url)s">project group %(project_name)s (#%(project_id)s)</a>.', user_url=user_url, user_name=user_name, user_id=user_id, project_url=project_url, project_name=get_translated_text(project.name), project_id=project.id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to <a href="%(project_url)s">project group %(project_name)s (#%(project_id)s)</a>.', user_url=user_url, user_name=user_name, project_url=project_url, project_name=get_translated_text(project.name), project_id=project.id)
                         except logic.errors.ProjectDoesNotExistError:
-                            text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> removed the link of this object to a project group.', user_url=user_url, user_name=user_name, user_id=user_id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> removed the link of this object to a project group.', user_url=user_url, user_name=user_name)
                 else:
-                    text += _('<a href="%(user_url)s">%(user_name)s (#%(user_id)s)</a> performed an unknown action.', user_url=user_url, user_name=user_name, user_id=user_id)
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> performed an unknown action.', user_url=user_url, user_name=user_name)
                 activity_log_entries.append(text)
 
         locations_entries = []
@@ -193,11 +242,11 @@ def create_pdfexport(
                 locations_entries.append({
                     'utc_datetime': location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M'),
                     'assigning_user_id': location_assignment.user_id,
-                    'assigning_user_name': logic.users.get_user(location_assignment.user_id).name,
+                    'assigning_user_name': logic.users.get_user(location_assignment.user_id).get_name(),
                     'location_id': location_assignment.location_id,
-                    'location_name': logic.locations.get_location(location_assignment.location_id).name if location_assignment.location_id else None,
+                    'location_name': get_location_name(location_assignment.location_id, include_id=True, language_code=lang_code) if location_assignment.location_id else None,
                     'responsible_user_id': location_assignment.responsible_user_id,
-                    'responsible_user_name': logic.users.get_user(location_assignment.responsible_user_id).name if location_assignment.responsible_user_id else None,
+                    'responsible_user_name': logic.users.get_user(location_assignment.responsible_user_id).get_name() if location_assignment.responsible_user_id else None,
                     'description': location_assignment.description
                 })
 
@@ -229,21 +278,17 @@ def create_pdfexport(
         qrcode_file.seek(0)
         qrcode_url = 'data:image/png;base64,' + base64.b64encode(qrcode_file.read()).decode('utf-8')
 
-        action = logic.actions.get_action(object.action_id)
+        if object.action_id is not None:
+            action = logic.actions.get_action(object.action_id)
+        else:
+            action = None
         objects.append((object, action, activity_log_entries, locations_entries, publications, comments, files, qrcode_url))
 
-    def get_user_if_exists(user_id):
-        try:
-            return get_user(user_id)
-        except logic.errors.UserDoesNotExistError:
-            return None
-
     def get_object_type_name(action):
-        return logic.action_type_translations.get_action_type_translation_for_action_type_in_language(
-            action_type_id=action.type_id,
-            language_id=language_id,
-            use_fallback=True
-        ).object_name
+        if action is None or action.type is None:
+            return _('Object')
+        else:
+            return get_translated_text(action.type.object_name, default=_('Object'))
 
     html = flask.render_template(
         'pdfexport/export.html',

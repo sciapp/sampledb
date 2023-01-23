@@ -47,7 +47,7 @@ def test_list_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 0
 
     project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
@@ -55,7 +55,7 @@ def test_list_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects/')
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 1
     project_url = project_anchors[0]['href']
     assert project_url.endswith('/projects/{}'.format(project_id))
@@ -69,7 +69,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 0
 
     other_project_id = sampledb.logic.projects.create_project("Example Project", "", other_user.id).id
@@ -77,7 +77,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 0
 
     project_id = sampledb.logic.projects.create_project("Example Project 2", "", user_session.user_id).id
@@ -85,7 +85,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format(user_session.user_id))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 1
     project_url = project_anchors[0]['href']
     assert project_url.endswith('/projects/{}'.format(project_id))
@@ -93,7 +93,7 @@ def test_list_user_projects(flask_server, user_session):
     r = user_session.get(flask_server.base_url + 'projects?user_id={}'.format('unknown'))
     assert r.status_code == 200
     document = BeautifulSoup(r.content, 'html.parser')
-    project_anchors = document.find('ul', id='projects_list').find_all('a')
+    project_anchors = document.find('ul', {'class': 'groups_list'}).find_all('a')
     assert len(project_anchors) == 2
     assert any(project_anchor['href'].endswith('/projects/{}'.format(project_id)) for project_anchor in project_anchors)
     assert any(project_anchor['href'].endswith('/projects/{}'.format(other_project_id)) for project_anchor in project_anchors)
@@ -133,7 +133,7 @@ def test_create_project(flask_server, user_session):
     assert project.name == {'en': 'Example Project'}
     assert project.description == {'en': 'Example Description'}
 
-    assert r.headers['Location'] == flask_server.base_url + 'projects/{}'.format(project.id)
+    assert r.headers['Location'] == '/projects/{}'.format(project.id)
 
 
 def test_leave_project(flask_server, user_session):
@@ -286,8 +286,10 @@ def test_remove_last_user_from_project_permissions(flask_server, user_session):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'none',
@@ -309,8 +311,10 @@ def test_keep_project_permissions(flask_server, user_session):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'grant',
@@ -330,8 +334,10 @@ def test_change_last_user_project_permissions(flask_server, user_session):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'write',
@@ -353,8 +359,10 @@ def test_update_user_project_permissions(flask_server, user_session, user):
     user_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token,
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'write',
@@ -378,8 +386,10 @@ def test_swap_grant_project_permissions(flask_server, user_session, user):
     user_csrf_token_1 = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-1-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': user_csrf_token_0,
         'user_permissions-0-user_id': str(user_session.user_id),
         'user_permissions-0-permissions': 'write',
@@ -399,12 +409,14 @@ def test_update_project_permissions_without_grant(flask_server, user_session, us
 
     r = user_session.get(flask_server.base_url + 'projects/{}/permissions'.format(project_id))
     assert r.status_code == 200
-    assert BeautifulSoup(r.content, 'html.parser').find('form', {'id': 'form-project-permissions'}) is None
+    assert BeautifulSoup(r.content, 'html.parser').find('form', {'id': 'form-permissions'}) is None
     assert BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'user_permissions-0-csrf_token'}) is None
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': '',
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'user_permissions-0-csrf_token': '',
         'user_permissions-0-user_id': str(user.id),
         'user_permissions-0-permissions': 'write',
@@ -432,8 +444,10 @@ def test_update_group_project_permissions(flask_server, user_session, user):
     group_csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'group_permissions-0-csrf_token'})['value']
 
     form_data = {
-        'edit_user_permissions': 'edit_user_permissions',
+        'edit_permissions': 'edit_permissions',
         'csrf_token': csrf_token,
+        'all_user_permissions': 'none',
+        'anonymous_user_permissions': 'none',
         'group_permissions-0-csrf_token': group_csrf_token,
         'group_permissions-0-group_id': str(group_id),
         'group_permissions-0-permissions': 'write',
@@ -571,7 +585,7 @@ def test_use_project_and_parent_project_invitation_email(flask_server, app, user
         parent_project_id = sampledb.logic.projects.create_project("Parent Project", "", inviting_user.id).id
         project_id = sampledb.logic.projects.create_project("Example Project", "", inviting_user.id).id
         sampledb.logic.projects.create_subproject_relationship(parent_project_id=parent_project_id, child_project_id=project_id, child_can_add_users_to_parent=True)
-        project = sampledb.models.projects.Project.query.get(project_id)
+        project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
 
         sampledb.logic.projects.invite_user_to_project(project.id, user_session.user_id, inviting_user.id, [parent_project_id])
 

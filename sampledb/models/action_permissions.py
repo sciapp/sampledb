@@ -13,7 +13,7 @@ from .projects import Project
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class UserActionPermissions(db.Model):
+class UserActionPermissions(db.Model):  # type: ignore
     __tablename__ = 'user_action_permissions'
 
     action_id = db.Column(db.Integer, db.ForeignKey(Action.id), nullable=False)
@@ -22,11 +22,10 @@ class UserActionPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(action_id, user_id),
-        {},
     )
 
 
-class GroupActionPermissions(db.Model):
+class GroupActionPermissions(db.Model):  # type: ignore
     __tablename__ = 'group_action_permissions'
 
     action_id = db.Column(db.Integer, db.ForeignKey(Action.id), nullable=False)
@@ -35,11 +34,10 @@ class GroupActionPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(action_id, group_id),
-        {},
     )
 
 
-class ProjectActionPermissions(db.Model):
+class ProjectActionPermissions(db.Model):  # type: ignore
     __tablename__ = 'project_action_permissions'
 
     action_id = db.Column(db.Integer, db.ForeignKey(Action.id), nullable=False)
@@ -48,11 +46,11 @@ class ProjectActionPermissions(db.Model):
 
     __table_args__ = (
         db.PrimaryKeyConstraint(action_id, project_id),
-        {},
     )
 
 
-class PublicActions(db.Model):
-    __tablename__ = 'public_actions'
+class AllUserActionPermissions(db.Model):  # type: ignore
+    __tablename__ = 'all_user_action_permissions'
 
     action_id = db.Column(db.Integer, db.ForeignKey(Action.id), primary_key=True)
+    permissions = db.Column(db.Enum(Permissions), nullable=False, default=Permissions.NONE)

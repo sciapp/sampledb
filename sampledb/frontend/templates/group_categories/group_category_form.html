@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Group Category') }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}"/>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
+  <script>
+    $(function(){
+      const language_picker = $('#select-languages');
+      function updateEnabledLanguages() {
+        let language_ids = $.map(language_picker.selectpicker('val'), function(language_id) {
+          return +language_id;
+        });
+        language_ids.push({{ ENGLISH.id }});
+        $('[data-language-id]').each(function(_, e) {
+          let element = $(e);
+          if (language_ids.includes(+element.data('languageId'))) {
+            element.show();
+            element.find('input').prop('disabled', false);
+          } else {
+            element.hide();
+            element.find('input').prop('disabled', true);
+          }
+        });
+      }
+      language_picker.on('changed.bs.select', updateEnabledLanguages);
+      updateEnabledLanguages();
+
+      // enforce text length limits
+      $('[data-language-id] input').on('change', function(e) {
+        const input = $(this);
+        const input_text = input.val();
+        let error_text = '';
+        if (input_text.length === 0) {
+          error_text = input.data('emptyText');
+        } else if (input_text.length > input.data('maxLength')) {
+          error_text = input.data('maxLengthText');
+        }
+        const input_group = input.parent();
+        const input_help_block = input_group.next('.help-block');
+        input_help_block.text(error_text);
+
+        input_group.parent().toggleClass('has-error', error_text !== '');
+      }).change();
+    });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    {{ group_category_form.hidden_tag() }}
+
+    <div class="form-group row" style="padding-right: 10px">
+      <label for="select-languages" class="control-label col-md-10">{{ _("Languages") }}</label>
+      <select class="selectpicker btn-xs select-language col-md-2" data-style="btn-default btn-xs" multiple="multiple" name="translation-languages" id="select-languages">
+        {% for language in languages %}
+          <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected" {% endif %} {% if language.id in translation_language_ids %} selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <div class="form-group" style="margin-bottom: 0">
+          <label class="control-label">{{ _('Name') }}</label>
+      </div>
+      {% for language in languages %}
+        <div class="form-group" data-language-id="{{ language.id }}">
+          <div class="input-group">
+            <input type="text" class="form-control" name="name_{{ language.id }}" placeholder="{{ _('Name') }}" value="{{ translated_texts.name.get(language.lang_code, '') }}" data-empty-text="{{ _("Please enter a name.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter name (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon">{{ language.names | get_translated_text }}</span>
+          </div>
+          <span class="help-block"></span>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="form-group">
+      <label for="select-categories" class="control-label">{{ _("Parent Category") }}</label>
+      <select class="selectpicker form-control" required="required" id="select-categories" name="{{ group_category_form.parent_category_id.name }}">
+        {% for category_id, category_name in group_category_form.parent_category_id.choices %}
+          <option value="{{ category_id }}" {% if category_id == group_category_form.parent_category_id.data %}selected="selected"{% endif %}>
+            {{ category_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.group_categories') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}

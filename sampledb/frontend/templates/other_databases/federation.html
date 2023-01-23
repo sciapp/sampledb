@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Other Databases') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  {% if config['FEDERATION_UUID'] is none %}
+    <div class="alert alert-danger" role="alert">
+      {{ _('This database has not been configured to exchange data with other databases.') }}
+    </div>
+  {% endif %}
+  <h1>{{ _('Other Databases') }}</h1>
+  <p class="text-muted">{{ _('%(service_name)s can share information with other SampleDB instances. To determine which personal data is shared with other databases, you can <a href="%(alias_url)s">create an alias</a>.', service_name=service_name, alias_url=url_for('.user_alias')) }}</p>
+  <p>
+    <label>{{ _('UUID of %(service_name)s: ', service_name=service_name) }}</label>
+    <span id="local-uuid">{{ config['FEDERATION_UUID'] }}</span>
+    <span data-placement="top" data-trigger="manual" title="" data-original-title="{{ _('Copied successfully') }}">
+      <span data-uuid="{{ config['FEDERATION_UUID'] }}" class="btn btn-link copy-uuid" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="" data-original-title="{{ _('Copy UUID') }}">
+        <i class="fa fa-clipboard"></i>
+      </span>
+    </span>
+  </p>
+  {% if current_user.is_admin %}
+  <p>
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#addComponentModal">{{ _('Add Database') }}</button>
+  </p>
+  {% endif %}
+  {% if components %}
+  <ul id="components_list">
+    {% for component in components %}
+    <li><a href="{{ url_for('.component', component_id=component.id) }}">{{ component.get_name() }}</a> {% if component.address is not none %}(<a href="{{ component.address }}">{{ component.address }}</a>){% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if current_user.is_admin %}
+  <div class="modal fade" id="addComponentModal" tabindex="-1" role="dialog" aria-labelledby="addComponentModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="addComponentModalLabel">{{ _('Add Database') }}</h4>
+        </div>
+        <form method="post" class="form-horizontal">
+          {{ add_component_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group {% if add_component_form.address.errors %}has-error{% endif %}">
+              <label for="addComponentAddress" class="col-sm-2 control-label">{{ _('Address') }}</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addComponentAddress" name="{{ add_component_form.address.name }}" placeholder="{{ _('Address') }}" value="{{ add_component_form.address.data }}">
+                {% for error_message in add_component_form.address.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
+            <div class="form-group {% if add_component_form.uuid.errors %}has-error{% endif %}">
+              <label for="addComponentUUID" class="col-sm-2 control-label">{{ _('UUID') }}</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addComponentUUID" name="{{ add_component_form.uuid.name }}" placeholder="{{ _('UUID') }}" value="{{ add_component_form.uuid.data }}">
+                {% for error_message in add_component_form.uuid.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
+            <div class="form-group {% if add_component_form.name.errors %}has-error{% endif %}">
+              <label for="addComponentName" class="col-sm-2 control-label">{{ _('Name') }}</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addComponentName" name="{{ add_component_form.name.name }}" placeholder="{{ _('Name') }}" value="{{ add_component_form.name.data }}">
+                {% for error_message in add_component_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="addComponentDescription" class="col-sm-2 control-label">{{ _('Description') }}</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" style="resize: vertical; min-height:2.5em;" id="addComponentDescription" name="{{ add_component_form.description.name }}" placeholder="{{ _('Description') }}">{{ add_component_form.description.data }}</textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="add" value="add">{{ _('Add Database') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    {% if show_add_form %}
+    $(document).ready(function() {
+      var add_modal = $('#addComponentModal');
+      add_modal.removeClass('fade');
+      add_modal.modal('show');
+      add_modal.addClass('fade');
+    });
+    {% endif %}
+    {% if config['FEDERATION_UUID'] is not none %}
+    $('span.copy-uuid').on('click', function () {
+      var button = $(this);
+      navigator.clipboard.writeText(button.attr('data-uuid')).then(
+        () => {
+          var wrapper = button.parent();
+          button.tooltip('hide');
+          wrapper.tooltip('show');
+          setTimeout(function () {
+            wrapper.tooltip('hide');
+          }, 500);
+        }
+      );
+    });
+    {% endif %}
+  </script>
+{% endblock %}

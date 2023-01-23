@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Location Type') }} #{{ location_type.id }}: {{ location_type.name | get_translated_text }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>
+    <a href="{{ url_for('.location_type', type_id=location_type.id) }}" title="{{ location_type.name | get_translated_text }}">{{ location_type.name | get_translated_text }}</a>
+    {{ import_information_symbol(location_type) }}
+  </h1>
+
+  <dl>
+    <dt>{{ _('Location Name (Singular)') }}</dt><dd>{{ location_type.location_name_singular | get_translated_text }}</dd>
+    <dt>{{ _('Location Name (Plural)') }}</dt><dd>{{ location_type.location_name_plural | get_translated_text }}</dd>
+    <dt>{{ _('Only for Administrators') }}</dt><dd>{% if location_type.admin_only %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, only administrators can create locations of this type') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, all users can create locations of this type') }}{% endif %}</dd>
+    <dt>{{ _('Enable Parent Location') }}</dt><dd>{% if location_type.enable_parent_location %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, locations of this type may have a parent location') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, locations of this type may not have a parent location') }}{% endif %}</dd>
+    <dt>{{ _('Enable Sub-Locations') }}</dt><dd>{% if location_type.enable_sub_locations %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, locations of this type may have sub-locations') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, locations of this type may not have sub-locations') }}{% endif %}</dd>
+    <dt>{{ _('Enable Object Assignemnts') }}</dt><dd>{% if location_type.enable_object_assignments %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, objects may be assigned to locations of this type') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, objects may not be assigned to locations of this type') }}{% endif %}</dd>
+    <dt>{{ _('Enable Instruments') }}</dt><dd>{% if location_type.enable_instruments %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, instruments may be assigned to locations of this type') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, instruments may not be assigned to locations of this type') }}{% endif %}</dd>
+    <dt>{{ _('Enable Responsible Users') }}</dt><dd>{% if location_type.enable_responsible_users %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, locations of this type may have responsible users') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, locations of this type may not have responsible users') }}{% endif %}</dd>
+    <dt>{{ _('Show Location Log') }}</dt><dd>{% if location_type.show_location_log %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, show a log for locations of this type') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, do not show a log for locations of this type') }}{% endif %}</dd>
+  </dl>
+  {% if current_user.is_admin and not current_user.is_readonly and location_type.fed_id is none %}
+    <a href="{{ url_for('.location_type', type_id=location_type.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this location type.') }}">{{ _('Edit Location Type') }}</a>
+  {% endif %}
+{% endblock %}

@@ -30,7 +30,19 @@ def user(auth_user):
     return auth_user[1]
 
 
-def test_get_instrument(flask_server, auth, user):
+@pytest.fixture
+def location(flask_server, user):
+    with flask_server.app.app_context():
+        return sampledb.logic.locations.create_location(
+            name={"en": "Example Location"},
+            description={"en": ""},
+            parent_location_id=None,
+            user_id=user.id,
+            type_id=sampledb.logic.locations.LocationType.LOCATION
+        )
+
+
+def test_get_instrument(flask_server, auth, user, location):
     r = requests.get(flask_server.base_url + 'api/v1/instruments/1', auth=auth)
     assert r.status_code == 404
 
@@ -48,9 +60,11 @@ def test_get_instrument(flask_server, auth, user):
         'name': "Example Instrument",
         'description': "This is an example instrument",
         'is_hidden': False,
-        'instrument_scientists': []
+        'instrument_scientists': [],
+        'location_id': None
     }
 
+    sampledb.logic.instruments.set_instrument_location(instrument.id, location.id)
     sampledb.logic.instruments.add_instrument_responsible_user(instrument.id, user.id)
     r = requests.get(flask_server.base_url + 'api/v1/instruments/{}'.format(instrument.id), auth=auth)
     assert r.status_code == 200
@@ -59,7 +73,8 @@ def test_get_instrument(flask_server, auth, user):
         'name': "Example Instrument",
         'description': "This is an example instrument",
         'is_hidden': False,
-        'instrument_scientists': [user.id]
+        'instrument_scientists': [user.id],
+        'location_id': location.id
     }
 
 
@@ -83,6 +98,7 @@ def test_get_instruments(flask_server, auth):
             'name': "Example Instrument",
             'description': "This is an example instrument",
             'is_hidden': False,
-            'instrument_scientists': []
+            'instrument_scientists': [],
+            'location_id': None
         }
     ]

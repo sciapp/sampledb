@@ -2,19 +2,20 @@
 """
 RESTful API for SampleDB
 """
+import typing
 
 import flask
 
-from flask_restful import Resource
-
-from .authentication import object_permissions_required, Permissions
+from .authentication import object_permissions_required
+from ..utils import Resource, ResponseData
 from ...logic.comments import Comment, create_comment, get_comments_for_object, get_comment_for_object
 from ...logic import errors
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def comment_to_json(comment: Comment):
+def comment_to_json(comment: Comment) -> typing.Dict[str, typing.Any]:
     comment_json = {
         'object_id': comment.object_id,
         'comment_id': comment.id,
@@ -27,7 +28,7 @@ def comment_to_json(comment: Comment):
 
 class ObjectComment(Resource):
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int, comment_id: int):
+    def get(self, object_id: int, comment_id: int) -> ResponseData:
         try:
             comment = get_comment_for_object(object_id=object_id, comment_id=comment_id)
         except errors.CommentDoesNotExistError:
@@ -39,7 +40,7 @@ class ObjectComment(Resource):
 
 class ObjectComments(Resource):
     @object_permissions_required(Permissions.WRITE)
-    def post(self, object_id: int):
+    def post(self, object_id: int) -> ResponseData:
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, dict):
             return {
@@ -68,12 +69,13 @@ class ObjectComments(Resource):
         comment_url = flask.url_for(
             'api.object_comment',
             object_id=object_id,
-            comment_id=comment_id
+            comment_id=comment_id,
+            _external=True
         )
         return flask.redirect(comment_url, code=201)
 
     @object_permissions_required(Permissions.READ)
-    def get(self, object_id: int):
+    def get(self, object_id: int) -> ResponseData:
         return [
             comment_to_json(comment)
             for comment in get_comments_for_object(object_id)

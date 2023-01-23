@@ -74,12 +74,25 @@ Readonly Users
 
 Users can be limited to READ permissions, e.g. for former employees who should still have access to their data but should not be able to create new SampleDB entries.
 
-Hidden users
+Hidden Users
 ------------
 
 Users can also be hidden from users lists, which may be useful in similar use cases as when marking a user as readonly. These users can still be seen as part of an object's history or as members of basic and project groups, but they will not be shown in the central users list, when granting permissions, inviting a user to a group, etc.
 
-Deactivated users
+Deactivated Users
 ------------------
 
 Users can also be deactivated. These users will be unable to sign in to their account or use the API until they have been reactivated by an administrator. As they will be unable to access their own data, this should only be used if marking a user as readonly will not suffice.
+
+
+User Aliases
+------------
+
+If |service_name| is set up to be used in a federation to share data with other databases, users can decide which personal data should be shared by configuring user aliases.
+A user alias allows to set name, affiliation, and role for each database individually or to disable or enable the transfer of these values from the user profile.
+Also, it can be allowed or forbidden to share the email address and ORCID iD.
+
+If a user does not create an alias for a database, no personal information will be shared with that database.
+
+.. note::
+    Administrators can enable that the information from user profiles will be shared by default.

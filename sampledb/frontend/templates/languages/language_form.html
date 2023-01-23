@@ -4,14 +4,14 @@
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -55,6 +55,10 @@
       <div class="form-group {% if language_form.datetime_format_moment.name in language_form.errors %}has-error{% endif %}">
         <label for="input-datetime-format-moment" class="control-label">{{ _('Datetime format for moment') }}</label>
         <input type="text" class="form-control" id="input-datetime-format-moment" placeholder="{{ _('Datetime format for moment') }}" value="{{ language_form.datetime_format_moment.data or '' }}" name="{{ language_form.datetime_format_moment.name }}">
+      </div>
+      <div class="form-group {% if language_form.datetime_format_moment_output.name in language_form.errors %}has-error{% endif %}">
+        <label for="input-datetime-format-moment-output" class="control-label">{{ _('Datetime format for moment output') }}</label>
+        <input type="text" class="form-control" id="input-datetime-format-moment-output" placeholder="{{ _('Datetime format for moment output') }}" value="{{ language_form.datetime_format_moment_output.data or '' }}" name="{{ language_form.datetime_format_moment_output.name }}">
       </div>
       <div class="form-group">
         <div class="checkbox">

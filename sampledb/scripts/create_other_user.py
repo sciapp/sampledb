@@ -7,12 +7,15 @@ Usage: python -m sampledb create_other_user <name> <email>
 
 import os
 import sys
+import typing
+
 from .. import create_app
-from ..logic.users import create_user, UserType
+from ..logic.users import create_user
 from ..logic.authentication import add_other_authentication
+from ..models import UserType
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 2 or not all(arguments):
         print(__doc__)
         exit(1)

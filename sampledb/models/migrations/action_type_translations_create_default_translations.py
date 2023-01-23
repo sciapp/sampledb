@@ -5,6 +5,8 @@ Create default action type translations.
 
 import os
 
+import flask_sqlalchemy
+
 from ..actions import ActionType
 from ..languages import Language
 
@@ -12,12 +14,12 @@ MIGRATION_INDEX = 52
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
-    action_type_columns = db.session.execute("""
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
+    action_type_columns = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'action_types'
-        """).fetchall()
+        """)).fetchall()
     if ('name',) in action_type_columns:
         return False
 
@@ -85,10 +87,10 @@ def run(db):
     ]
     existing_translation_action_type_and_language_ids = [
         (action_type_id, language_id)
-        for action_type_id, language_id in db.session.execute("""
-              SELECT action_type_id, language_id
-              FROM action_type_translations
-          """).fetchall()
+        for action_type_id, language_id in db.session.execute(db.text("""
+            SELECT action_type_id, language_id
+            FROM action_type_translations
+        """)).fetchall()
     ]
     performed_migration = False
     for action_type_translation in default_action_type_translation:
@@ -97,9 +99,9 @@ def run(db):
             continue
 
         # Perform migration
-        db.session.execute("""
-                             INSERT INTO action_type_translations (action_type_id, language_id, name, description, object_name, object_name_plural, view_text, perform_text)
-                              VALUES (:action_type_id, :language_id,:name, :description, :object_name, :object_name_plural, :view_text, :perform_text)
-                          """, params=action_type_translation)
+        db.session.execute(db.text("""
+            INSERT INTO action_type_translations (action_type_id, language_id, name, description, object_name, object_name_plural, view_text, perform_text)
+            VALUES (:action_type_id, :language_id,:name, :description, :object_name, :object_name_plural, :view_text, :perform_text)
+        """), params=action_type_translation)
         performed_migration = True
     return performed_migration

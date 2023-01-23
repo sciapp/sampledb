@@ -1,6 +1,6 @@
 <div class="{% if id_prefix+'_text' in errors %}has-error{% elif id_prefix+'_text' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
-{% if 'multiline' in schema and schema['multiline']  %}
-  <textarea class="form-control" style="resize: vertical;" rows="1" name="{{ id_prefix }}_text" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text' in form_data %}{{ form_data[id_prefix+'_text'] }}{% elif data is not none and "text" in data %}{{ data.text }}{% endif %}</textarea>
+{% if 'multiline' in schema and schema['multiline'] or 'markdown' in schema and schema['markdown'] %}
+  <textarea class="form-control" style="resize: vertical;" rows="1" name="{{ id_prefix }}_text" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}">{% if id_prefix+'_text' in form_data %}{{ form_data[id_prefix+'_text'] }}{% elif data is not none and "text" in data %}{{ data.text | get_all_translated_texts('\n') }}{% endif %}</textarea>
 {% elif 'choices' in schema  %}
   <select class="form-control selectpicker" name="{{ id_prefix }}_text">
   {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '')  %}
@@ -29,6 +29,6 @@
   {% endfor %}
   </select>
 {% else %}
-  <input type="text" class="form-control" name="{{ id_prefix }}_text" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}" {% if id_prefix+'_text' in form_data %}value="{{ form_data[id_prefix+'_text'] }}"{% elif data is not none and "text" in data %}value="{{ data.text }}"{% endif %}>
+  <input type="text" class="form-control" name="{{ id_prefix }}_text" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}" {% if id_prefix+'_text' in form_data %}value="{{ form_data[id_prefix+'_text'] }}"{% elif data is not none and "text" in data %}value="{{ data.text | get_all_translated_texts(' ') }}"{% endif %}>
 {% endif %}
 </div>

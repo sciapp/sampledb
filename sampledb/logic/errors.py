@@ -2,6 +2,7 @@
 """
 
 """
+import typing
 
 
 class ObjectDoesNotExistError(Exception):
@@ -13,6 +14,22 @@ class FileDoesNotExistError(Exception):
 
 
 class ObjectVersionDoesNotExistError(Exception):
+    pass
+
+
+class ObjectNotSharedError(Exception):
+    pass
+
+
+class ObjectNotFederatedError(Exception):
+    pass
+
+
+class ShareDoesNotExistError(Exception):
+    pass
+
+
+class ShareAlreadyExistsError(Exception):
     pass
 
 
@@ -28,6 +45,10 @@ class InvalidFileStorageError(Exception):
     pass
 
 
+class FederationFileNotAvailableError(Exception):
+    pass
+
+
 class GroupDoesNotExistError(Exception):
     pass
 
@@ -37,6 +58,14 @@ class GroupAlreadyExistsError(Exception):
 
 
 class UserDoesNotExistError(Exception):
+    pass
+
+
+class UserAliasDoesNotExistError(Exception):
+    pass
+
+
+class UserAliasAlreadyExistsError(Exception):
     pass
 
 
@@ -69,6 +98,10 @@ class UserNotResponsibleForInstrumentError(Exception):
 
 
 class UndefinedUnitError(Exception):
+    pass
+
+
+class MismatchedUnitError(Exception):
     pass
 
 
@@ -116,8 +149,32 @@ class CreatingObjectsDisabledError(Exception):
     pass
 
 
+class UnauthorizedRequestError(Exception):
+    pass
+
+
+class RequestServerError(Exception):
+    pass
+
+
+class RequestError(Exception):
+    pass
+
+
+class ComponentNotConfiguredForFederationError(Exception):
+    pass
+
+
+class NoAuthenticationMethodError(Exception):
+    pass
+
+
+class AuthenticationMethodDoesNotExistError(Exception):
+    pass
+
+
 class SchemaError(Exception):
-    def __init__(self, message, path):
+    def __init__(self, message: str, path: typing.List[str]) -> None:
         if path:
             message += ' (at ' + ' -> '.join(path) + ')'
         super(SchemaError, self).__init__(message)
@@ -127,12 +184,12 @@ class SchemaError(Exception):
 
 
 class ValidationError(SchemaError):
-    def __init__(self, message, path):
+    def __init__(self, message: str, path: typing.List[str]) -> None:
         super(ValidationError, self).__init__(message, path)
 
 
 class ValidationMultiError(ValidationError):
-    def __init__(self, errors):
+    def __init__(self, errors: typing.List[ValidationError]) -> None:
         message = '\n'.join(error.message for error in errors)
         super(ValidationMultiError, self).__init__(message, [])
         self.paths = [error.path for error in errors]
@@ -226,6 +283,34 @@ class ActionTypeDoesNotExistError(Exception):
     pass
 
 
+class InvalidComponentNameError(Exception):
+    pass
+
+
+class InvalidComponentAddressError(Exception):
+    pass
+
+
+class InsecureComponentAddressError(Exception):
+    pass
+
+
+class InvalidComponentUUIDError(Exception):
+    pass
+
+
+class ComponentAlreadyExistsError(Exception):
+    pass
+
+
+class ComponentDoesNotExistError(Exception):
+    pass
+
+
+class ComponentValidationError(Exception):
+    pass
+
+
 class CommentDoesNotExistError(Exception):
     pass
 
@@ -279,4 +364,72 @@ class LanguageAlreadyExistsError(Exception):
 
 
 class TwoFactorAuthenticationMethodDoesNotExistError(Exception):
+    pass
+
+
+class InvalidDataExportError(Exception):
+    pass
+
+
+class InvalidJSONError(Exception):
+    pass
+
+
+class InvalidTokenError(Exception):
+    pass
+
+
+class TokenExistsError(Exception):
+    pass
+
+
+class MissingComponentAddressError(Exception):
+    pass
+
+
+class BackgroundTaskDoesNotExistError(Exception):
+    pass
+
+
+class InvalidURLError(Exception):
+    pass
+
+
+class URLTooLongError(Exception):
+    pass
+
+
+class InvalidIPAddressError(Exception):
+    pass
+
+
+class InvalidPortNumberError(Exception):
+    pass
+
+
+class InvalidDefaultPermissionsError(Exception):
+    pass
+
+
+class SciCatNotReachableError(Exception):
+    pass
+
+
+class ObjectLocationAssignmentAlreadyConfirmedError(Exception):
+    pass
+
+
+class ObjectLocationAssignmentAlreadyDeclinedError(Exception):
+    pass
+
+
+class LocationTypeDoesNotExistError(Exception):
+    pass
+
+
+class GroupCategoryDoesNotExistError(Exception):
+    pass
+
+
+class CyclicGroupCategoryError(Exception):
     pass

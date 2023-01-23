@@ -10,12 +10,11 @@ import jsonschema.exceptions
 import pytest
 import sqlalchemy as db
 import sqlalchemy.dialects.postgresql as postgresql
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 import sampledb
 import sampledb.utils
-from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables
+from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables, Object
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -32,10 +31,6 @@ class Action(Base):
     __tablename__ = 'test_actions'
     id = db.Column(db.Integer, primary_key=True)
     schema = db.Column(postgresql.JSONB)
-
-
-class Object(VersionedJSONSerializableObjectTables.VersionedJSONSerializableObject):
-    pass
 
 
 @pytest.fixture
@@ -63,7 +58,6 @@ def session(engine):
 def objects(engine):
     objects = VersionedJSONSerializableObjectTables(
         'test_objects',
-        object_type=Object,
         user_id_column=User.id,
         action_id_column=Action.id,
         action_schema_column=Action.schema,
@@ -289,3 +283,65 @@ def test_update_object_invalid_data(session: sessionmaker(), objects: VersionedJ
     }
     with pytest.raises(jsonschema.exceptions.ValidationError):
         objects.update_object(object1.object_id, data={'test': '1'}, schema=schema, user_id=user.id)
+
+
+def test_restore_object_version(engine, session: sessionmaker()) -> None:
+    data_validator_calls = []
+
+    def data_validator(*args, **kwargs):
+        data_validator_calls.append((args, kwargs))
+        return True
+
+    schema_validator_calls = []
+
+    def schema_validator(*args, **kwargs):
+        schema_validator_calls.append((args, kwargs))
+        return True
+
+    objects = VersionedJSONSerializableObjectTables(
+        'test_objects2',
+        user_id_column=User.id,
+        action_id_column=Action.id,
+        action_schema_column=Action.schema,
+        data_validator=data_validator,
+        schema_validator=schema_validator
+    )
+    objects.bind = engine
+    objects.metadata.create_all(engine)
+
+    user = User(name="User")
+    session.add(user)
+    action = Action(id=0, schema={})
+    session.add(action)
+    session.commit()
+
+    object = objects.create_object(action_id=action.id, data={'d': 0}, schema={'s': 0}, user_id=user.id)
+    assert data_validator_calls == [
+        (({'d': 0}, {'s': 0}), {})
+    ]
+    assert schema_validator_calls == [
+        (({'s': 0},), {})
+    ]
+    objects.update_object(object.object_id, data={'d': 1}, schema={'s': 1}, user_id=user.id)
+    assert data_validator_calls == [
+        (({'d': 0}, {'s': 0}), {}),
+        (({'d': 1}, {'s': 1}), {})
+    ]
+    assert schema_validator_calls == [
+        (({'s': 0},), {}),
+        (({'s': 1},), {})
+    ]
+    objects.restore_object_version(object.object_id, version_id=0, user_id=user.id)
+    assert data_validator_calls == [
+        (({'d': 0}, {'s': 0}), {}),
+        (({'d': 1}, {'s': 1}), {}),
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': True})
+    ]
+    assert schema_validator_calls == [
+        (({'s': 0},), {}),
+        (({'s': 1},), {}),
+        (({'s': 0},), {})
+    ]
+    object = objects.get_current_object(object.object_id)
+    assert object.data == {'d': 0}
+    assert object.schema == {'s': 0}

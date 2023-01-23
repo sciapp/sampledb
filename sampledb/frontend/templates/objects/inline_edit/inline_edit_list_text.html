@@ -1,18 +1,7 @@
 <div class="input-list form-area">
     {# View #}
     <div class="view-switch">
-        {% if data is not none and data.text %}
-            {% if schema.markdown and data.is_markdown %}
-                <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;"
-                      class="object-user-content">{{ (data.text | get_translated_text(metadata_language)) | markdown_to_safe_html | safe }}</span>
-            {% elif 'multiline' in schema and schema['multiline'] %}
-                <span style="word-wrap: break-word; white-space: pre-wrap; word-break: normal;">{{ data.text | get_translated_text(metadata_language) }}</span>
-            {% else %}
-                {{ data.text | get_translated_text }}
-            {% endif %}
-        {% else %}
-            &mdash;
-        {% endif %}
+        {% include "objects/view/text_base.html" %}
         <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
         <div class="alert-upload-failed">
             {{ _('Your input is not valid. Please check.') }}

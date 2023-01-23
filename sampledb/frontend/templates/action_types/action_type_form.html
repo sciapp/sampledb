@@ -4,15 +4,15 @@
 
 {% block stylesheets %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-toggle.min.css') }}"/>
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}"/>
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-toggle.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 
   <script>
     window.translations = [
@@ -342,15 +342,33 @@
                  {% if action_type_form.is_template.data %}checked="checked"{% endif %}> {{ _('Allow actions of this type as schema templates in other actions') }}
           </label>
         </div>
+        <div class="form-group">
+          <div class="form-group" style="margin-bottom: 0">
+              <label for="select-usable_in_action_types-input" class="control-label">{{ _("Usable in")}}</label>
+          </div>
+          <select title="{{ _('Nothing selected') }}" id="select-select_usable_in_action_types-input" name="{{ action_type_form.select_usable_in_action_types.name }}" class="selectpicker" multiple> 
+            {% for value, label in action_type_form.select_usable_in_action_types.choices %}
+            <option value="{{value}}" {% if value in action_type_form.select_usable_in_action_types.shared_action_types %} data-icon="fa fa-share-alt" {% endif %} {% if action_type_form.select_usable_in_action_types.data and value in action_type_form.select_usable_in_action_types.data %} selected="selected" {% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="select-scicat_export-type" class="control-label">{{ _("SciCat Export Type") }}</label>
+          </div>
+          <select id="select-scicat_export-type" name="{{ action_type_form.scicat_export_type.name }}" class="selectpicker">
+            {% for value, label in action_type_form.scicat_export_type.choices %}
+            <option value="{{ value }}" {% if action_type_form.scicat_export_type.data == value %} selected="selected"{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">
-        <a href="{{ url_for('.action_types') }}" class="btn btn-default pull-right"
-           style="width:20em">Cancel</a>
+        <a href="{{ url_for('.action_types') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
       </div>
       <div class="col-md-3">
-        <button type="submit" name="action_submit" class="btn btn-primary pull-right"
-                style="width:20em">{{ submit_text }}</button>
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
       </div>
     </div>
   </form>

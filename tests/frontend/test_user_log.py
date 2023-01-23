@@ -42,7 +42,7 @@ def test_get_current_user_log_redirect(flask_server, user):
     assert r.status_code == 302
     assert 'Location' in r.headers
     url = r.headers['Location']
-    assert url == flask_server.base_url + 'users/{}'.format(user.id)
+    assert url == '/users/{}'.format(user.id)
 
 
 def test_get_other_user_log_redirect(flask_server, user, other_user):

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('User') }} #{{ user.id }}: {{ user.name }} — {{ service_name }}{% endblock %}
+{% block title %}{{ _('User') }} #{{ user.id }}: {{ user.get_name() }} — {{ service_name }}{% endblock %}
 
 {% block content %}
 <h1>{{ _('User Profile') }}</h1>
@@ -8,17 +8,32 @@
   <dt>{{ _('ID') }}</dt>
   <dd>#{{ user.id }}</dd>
   <dt>{{ _('Name') }}</dt>
-  <dd>{{ user.name }}
+  <dd>
+    {% if user.name is not none %}
+      {{ user.name }}
+    {% else %}
+      &mdash;
+    {% endif %}
     {% if user.is_admin %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Administrators can manage actions, objects and other %(service_name)s content.', service_name=service_name) }}">{{ _('administrator') }}</span>{% endif %}
     {% if user.type.name.lower() == 'other' %}<span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Bot users are meant for the automation of object creation and other tasks.') }}">{{ _('bot') }}</span>{% endif %}
     {% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as read only are unable to create or change entries in %(service_name)s.', service_name=service_name) }}">{{ _('read only') }}</span>{% endif %}
     {% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as hidden will not be shown in user lists.') }}">{{ _('hidden') }}</span>{% endif %}
     {% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Deactivated accounts cannot be used until they are activated again.') }}">{{ _('deactivated') }}</span>{% endif %}
   </dd>
+  {% if user.component is not none %}
+    <dt>{{ _('Other Databases') }}</dt>
+    <dd>
+      {% if user.component.address is not none %}
+      {{ _('<a href="%(user_url)s">User #%(user_id)s</a> (<a href="%(component_url)s">%(component_name)s</a>)', user_url=user.component.address ~ relative_url_for('.user_profile', user_id=user.fed_id), user_id=user.fed_id, component_url=user.component.address, component_name=user.component.get_name()) }}
+      {% else %}
+        {{ _('User #%(user_id)s (%(component_name)s)', user_id=user.id, component_name=user.component.get_name()) }}
+      {% endif %}
+    </dd>
+  {% endif %}
   <dt>ORCID iD</dt>
   <dd>
     {% if user.orcid %}
-      <div itemscope itemtype="https://schema.org/Person"><a itemprop="sameAs" content="https://orcid.org/{{ user.orcid }}" href="https://orcid.org/{{ user.orcid }}" target="orcid.widget" rel="me noopener noreferrer" style="vertical-align:top;"><img src="{{ url_for('static', filename='img/orcid_16x16.png') }}" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">https://orcid.org/{{ user.orcid }}</a></div>
+      <div itemscope itemtype="https://schema.org/Person"><a itemprop="sameAs" content="https://orcid.org/{{ user.orcid }}" href="https://orcid.org/{{ user.orcid }}" target="orcid.widget" rel="me noopener noreferrer" style="vertical-align:top;"><img src="{{ fingerprinted_static('sampledb/img/orcid_16x16.png') }}" style="width:1em;margin-right:.5em;" alt="ORCID iD icon">https://orcid.org/{{ user.orcid }}</a></div>
     {% else %}
       &mdash;
     {% endif %}
@@ -42,13 +57,58 @@
   {% for extra_field_id, extra_field in EXTRA_USER_FIELDS.items() %}
   <dt>{{ (extra_field.name | get_translated_text) or extra_field_id }}</dt>
   <dd>
-    {% if user.extra_fields.get(extra_field_id) %}
-      {{ user.extra_fields.get(extra_field_id) }}
+    {{ (user.extra_fields or {}).get(extra_field_id, '&mdash;') | safe }}
+  </dd>
+  {% endfor %}
+  <dt>{{ _('Basic Groups') }}</dt>
+  <dd>
+    {% if basic_groups %}
+    <ul style="margin-bottom: 0; padding-left: 0">
+    {% for group in basic_groups %}
+      <li><a href="{{ url_for('.group', group_id=group.id) }}">{{ group.name | get_translated_text }}</a></li>
+    {% endfor %}
+    </ul>
     {% else %}
       &mdash;
     {% endif %}
   </dd>
-  {% endfor %}
+  <dt>{{ _('Project Groups') }}</dt>
+  <dd>
+    {% if project_groups %}
+    <ul style="margin-bottom: 0; padding-left: 0">
+    {% for group in project_groups %}
+      <li><a href="{{ url_for('.project', project_id=group.id) }}">{{ group.name | get_translated_text }}</a></li>
+    {% endfor %}
+    </ul>
+    {% else %}
+      &mdash;
+    {% endif %}
+  </dd>
+  {% if instruments and not config['DISABLE_INSTRUMENTS'] %}
+    <dt>{{ _('Instruments') }}</dt>
+    <dd>
+     <ul style="margin-bottom: 0; padding-left: 0">
+      {% for instrument in instruments %}
+        <li><a href="{{ url_for('.instrument', instrument_id=instrument.id) }}">{{ instrument.name | get_translated_text }}</a></li>
+      {% endfor %}
+      </ul>
+    </dd>
+  {% endif %}
+  {% if config['SHOW_LAST_PROFILE_UPDATE'] or last_modifying_user %}
+  <dt>
+    {{ _('Last Update') }}
+  </dt>
+  <dd>
+  {% if user.last_modified and user.last_modified_by_id %}
+    {{ user.last_modified | babel_format_datetime }}
+  {% elif not last_modifying_user %}
+    &mdash;
+  {% endif %}
+  {% if last_modifying_user %}
+    {{ _('by <a href="%(user_url)s">%(user_name)s</a>', user_url=url_for('.user_profile', user_id=last_modifying_user.id), user_name=last_modifying_user.get_name()) }}
+  {% endif %}
+  </dd>
+  {% endif %}
 </dl>
   <div class="btn-group">
     <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>
@@ -69,7 +129,7 @@
     {{ user_read_only_form.hidden_tag() }}
     <input type="hidden" value="toggle_read_only" name="{{ user_read_only_form.action.name }}" />
     <input type="checkbox" {% if user_read_only_form.should_be_read_only.default %}checked="checked"{% endif %} name="{{ user_read_only_form.should_be_read_only.name }}" style="display: none"/>
-    <button type="submit" class="btn btn-default" style="width: 12em">
+    <button type="submit" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
       {% if user_read_only_form.should_be_read_only.default %}{{ _('Mark as read only')}}{% else %}{{ _('Unmark as read only')}}{% endif %}
     </button>
   </form>
@@ -79,7 +139,7 @@
     {{ user_hidden_form.hidden_tag() }}
     <input type="hidden" value="toggle_hidden" name="{{ user_hidden_form.action.name }}" />
     <input type="checkbox" {% if user_hidden_form.should_be_hidden.default %}checked="checked"{% endif %} name="{{ user_hidden_form.should_be_hidden.name }}" style="display: none"/>
-    <button type="submit" class="btn btn-default" style="width: 12em">
+    <button type="submit" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
       {% if user_hidden_form.should_be_hidden.default %}{{ _('Mark as hidden')}}{% else %}{{ _('Unmark as hidden')}}{% endif %}
     </button>
   </form>
@@ -89,9 +149,73 @@
     {{ user_hidden_form.hidden_tag() }}
     <input type="hidden" value="toggle_active" name="{{ user_active_form.action.name }}" />
     <input type="checkbox" {% if user_active_form.should_be_active.default %}checked="checked"{% endif %} name="{{ user_active_form.should_be_active.name }}" style="display: none"/>
-    <button type="submit" class="btn btn-default" style="width: 12em">
+    <button type="submit" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
       {% if user_active_form.should_be_active.default %}{{ _('Activate') }}{% else %}{{ _('Deactivate') }}{% endif %}
     </button>
   </form>
+  {% endif %}
+  {% if user_profile_form and user.id != current_user.id %}
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#editProfileModal"  style="width: 12em; margin-bottom: 1px">
+      {{ _('Edit') }}
+    </button>
+
+    <div class="modal fade" id="editProfileModal" tabindex="-1" role="dialog" aria-labelledby="editProfileModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <form method="post" action="{{ url_for('.user_profile', user_id=user.id) }}">
+            {{ user_profile_form.hidden_tag() }}
+            <input type="hidden" value="edit_profile" name="{{ user_profile_form.action.name }}" />
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="editProfileModalLabel">{{ _('Edit Profile Information') }}</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group {% if user_profile_form.orcid.errors %} has-error{% endif %}">
+                <label for="input-orcid" class="control-label">ORCID iD</label>
+                <div class="input-group">
+                  <span class="input-group-addon">https://orcid.org/</span>
+                  <input class="form-control" type="text" id="input-orcid" name="{{user_profile_form.orcid.name}}" value="{{ user_profile_form.orcid.data or '' }}" placeholder="xxxx-xxxx-xxxx-xxxx">
+                </div>
+                {% if user_profile_form.orcid.errors %}
+                  <span class="help-block">{{ _('Please enter an ORCID iD or leave this field blank.') }}</span>
+                {% endif %}
+              </div>
+              <div class="form-group {% if user_profile_form.affiliation.errors %} has-error{% endif %}">
+                <label for="input-affiliation" class="control-label">{{ _('Affiliation') }}</label>
+                <input class="form-control" type="text" id="input-affiliation" name="{{user_profile_form.affiliation.name}}" value="{{ user_profile_form.affiliation.data or ""}}" placeholder="{{ _('Affiliation, e.g. an institute, company or department') }}">
+              </div>
+              <div class="form-group {% if user_profile_form.role.errors %} has-error{% endif %}">
+                <label for="input-role" class="control-label">{{ _('Role') }}</label>
+                <input class="form-control" type="text" id="input-role" name="{{user_profile_form.role.name}}" value="{{ user_profile_form.role.data or ""}}" placeholder="{{ _('Role, e.g. PhD student, principal investigator or technician') }}">
+              </div>
+              {% for extra_field_id, extra_field in EXTRA_USER_FIELDS.items() %}
+              <div class="form-group">
+                <label for="extra_field_{{ extra_field_id }}" class="control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
+                <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (user.extra_fields or {}).get(extra_field_id, request.form.get('extra_field_' + extra_field_id, '')) }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+              </div>
+              {% endfor %}
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+              <button type="submit" class="btn btn-primary">{{ _('Save') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% elif user.id == current_user.id %}
+    <a href="{{ url_for('.user_preferences', user_id=user.id) }}" class="btn btn-default" style="width: 12em; margin-bottom: 1px">
+      {{ _('Edit') }}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+
+  {% if user_profile_form and request.form.get(user_profile_form.action.name) == 'edit_profile' %}
+    <script>
+      $('#editProfileModal').modal();
+    </script>
   {% endif %}
 {% endblock %}

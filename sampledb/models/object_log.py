@@ -5,6 +5,7 @@
 
 import enum
 import datetime
+import typing
 
 from .. import db
 from .objects import Objects
@@ -31,7 +32,7 @@ class ObjectLogEntryType(enum.Enum):
     UNLINK_PROJECT = 14
 
 
-class ObjectLogEntry(db.Model):
+class ObjectLogEntry(db.Model):  # type: ignore
     __tablename__ = 'object_log_entries'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -40,9 +41,15 @@ class ObjectLogEntry(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data = db.Column(db.JSON, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
-    user = db.relationship('User')
 
-    def __init__(self, type, object_id, user_id, data, utc_datetime=None):
+    def __init__(
+            self,
+            type: ObjectLogEntryType,
+            object_id: int,
+            user_id: int,
+            data: typing.Dict[str, typing.Any],
+            utc_datetime: typing.Optional[datetime.datetime] = None
+    ) -> None:
         self.type = type
         self.object_id = object_id
         self.user_id = user_id
@@ -51,5 +58,5 @@ class ObjectLogEntry(db.Model):
             utc_datetime = datetime.datetime.utcnow()
         self.utc_datetime = utc_datetime
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<{0}(id={1.id}, type={1.type}, object_id={1.object_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)

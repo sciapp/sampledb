@@ -1,0 +1,68 @@
+{% if form_data.get(id_prefix+'_oid') %}
+  {% set selected_id = form_data[id_prefix+'_oid'] %}
+{% elif data is not none and "object_id" in data %}
+  {% if "component_uuid" in data and data.component_uuid is not none %}
+    {% set sel = namespace(selected_id=None) %}
+    {% for obj in referencable_objects %}
+      {% if obj.fed_object_id == data["object_id"] and obj.component.uuid == data["component_uuid"] %}
+        {% set sel.selected_id = obj.object_id %}
+      {% endif %}
+    {% endfor %}
+    {% set selected_id = sel.selected_id | string %}
+  {% else %}
+    {% set selected_id = data.object_id | string %}
+  {% endif %}
+{% else %}
+  {% set selected_id = none %}
+{% endif %}
+
+{% if schema_action_ids is none and schema_action_type_ids is none %}
+  {% set valid_action_ids = none %}
+{% else %}
+  {% set valid_action_ids = [] %}
+  {% for action_id in action_type_id_by_action_id %}
+    {% if schema_action_ids is none or action_id in schema_action_ids %}
+      {% if schema_action_type_ids is none or action_type_id_by_action_id[action_id] in schema_action_type_ids %}
+        {{ valid_action_ids.append(action_id) or '' }}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
+  <div class="objectpicker-container">
+    <input type="text" class="form-control typeahead" style="width: 100%" value="{% if selected_id is not none %}#{{ selected_id }}{% endif %}" placeholder="{{ _('No object selected') }}" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1"/>
+    <span class="objectpicker-caret"></span>
+    <input type="hidden" name="{{ id_prefix+'_oid' }}" value="{% if selected_id is not none %}{{ selected_id }}{% endif %}" />
+  </div>
+{% else %}
+  <select class="form-control selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %}" name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
+    <option value="">&mdash;</option>
+  {% if not referencable_objects and selected_id %}
+    {% set referencable_objects = [get_object_if_current_user_has_read_permissions(selected_id | int)] %}
+  {% endif %}
+  {% for obj in referencable_objects %}
+    {% if (obj is not none) and (valid_action_ids is none or obj.action_id in valid_action_ids) %}
+      <option {% if obj.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ obj.object_id }}" {% if obj.action_id is not none %}data-action-id="{{ obj.action_id }}" {% endif %}{% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if obj.data is not none and 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.name | get_translated_text }}"{% endif %}>{% if obj.name | get_translated_text == '' %}&mdash;{% else %}{{ obj.name | get_translated_text }}{% endif %} (#{{ obj.object_id }}{% if obj.component_id is not none %}, #{{ obj.fed_object_id }} @ {{ obj.component.get_name() }}{% endif %})</option>
+    {% endif %}
+  {% endfor %}
+  </select>
+  {% if valid_action_ids is none or valid_action_ids | length > 1 %}
+    <select class="selectpicker objectpicker-actionpicker" data-live-search="true" data-width="100%">
+      <option selected="selected" value="">{{ _('All Actions') }}</option>
+      {% for action in sorted_actions %}
+        {% if valid_action_ids is none or action.id in valid_action_ids %}
+      <option value="{{ action.id }}" {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %}>
+          {% if action.user is not none %}
+            {{ action.user.name }} /
+          {% endif %}
+          {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
+            {{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} &mdash;
+          {% endif %}
+          {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }}{% if action.component_id is not none %}, #{{ action.fed_id }} @ {{ get_component(action.component_id).get_name() }}{% endif %})
+        {% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  {% endif %}
+{% endif %}

@@ -2,33 +2,39 @@
 """
 RESTful API for SampleDB
 """
+import typing
 
 import flask
-from flask_restful import Resource
 
 from .authentication import multi_auth
-from ...logic.action_translations import get_action_with_translation_in_language
-from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions, Permissions
-from ...logic.languages import Language
-from ...logic import errors
-from ...models.actions import ActionType
+from ..utils import Resource, ResponseData
+from ...logic.actions import get_action
+from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions
+from ...logic import errors, utils, actions
+from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-def action_to_json(action):
+def action_to_json(action: actions.Action) -> typing.Dict[str, typing.Any]:
     return {
         'action_id': action.id,
-        'instrument_id': action.instrument_id,
+        'instrument_id': action.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
         'user_id': action.user_id,
         'type': {
-            ActionType.SAMPLE_CREATION: 'sample',
-            ActionType.MEASUREMENT: 'measurement',
-            ActionType.SIMULATION: 'simulation'
+            actions.ActionType.SAMPLE_CREATION: 'sample',
+            actions.ActionType.MEASUREMENT: 'measurement',
+            actions.ActionType.SIMULATION: 'simulation'
         }.get(action.type_id, 'custom'),
         'type_id': action.type_id,
-        'name': action.translation.name,
-        'description': action.translation.description,
+        'name': utils.get_translated_text(
+            action.name,
+            language_code='en'
+        ) or None,
+        'description': utils.get_translated_text(
+            action.description,
+            language_code='en'
+        ) or None,
         'is_hidden': action.is_hidden,
         'schema': action.schema
     }
@@ -36,30 +42,25 @@ def action_to_json(action):
 
 class Action(Resource):
     @multi_auth.login_required
-    def get(self, action_id: int):
+    def get(self, action_id: int) -> ResponseData:
         try:
-            action = get_action_with_translation_in_language(
-                action_id=action_id,
-                language_id=Language.ENGLISH
+            action = get_action(
+                action_id=action_id
             )
         except errors.ActionDoesNotExistError:
             return {
                 "message": "action {} does not exist".format(action_id)
             }, 404
         if Permissions.READ not in get_user_action_permissions(action_id=action_id, user_id=flask.g.user.id):
-            return {
-                "message": "insufficient permissions to access action {}".format(action_id)
-            }, 403
+            return flask.abort(403)
         return action_to_json(action)
 
 
 class Actions(Resource):
     @multi_auth.login_required
-    def get(self):
+    def get(self) -> ResponseData:
         actions = get_actions_with_permissions(user_id=flask.g.user.id, permissions=Permissions.READ)
         return [
-            action_to_json(get_action_with_translation_in_language(
-                action_id=action.id,
-                language_id=Language.ENGLISH
-            )) for action in actions
+            action_to_json(action)
+            for action in actions
         ]

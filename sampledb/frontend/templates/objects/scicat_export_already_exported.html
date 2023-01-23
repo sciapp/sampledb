@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}— {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}</h1>
+  <p>{{ _('This object has already been exported as:') }} <a href="{{ scicat_url }}">{{ scicat_url }}</a>.</p>
+  <p><a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default">{{ _('Back') }}</a></p>
+{% endblock %}

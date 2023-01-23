@@ -20,7 +20,7 @@ def test_create_project():
     project_id = sampledb.logic.projects.create_project("Example Project", "", user.id).id
 
     assert len(sampledb.models.projects.Project.query.all()) == 1
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Example Project"}
@@ -78,7 +78,7 @@ def test_create_project_with_long_name():
     project_id = sampledb.logic.projects.create_project("A" * 100, "", user.id).id
 
     assert len(sampledb.models.projects.Project.query.all()) == 1
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "A" * 100}
@@ -147,7 +147,7 @@ def test_update_project():
 
     sampledb.logic.projects.update_project(project_id, {'en': "Test Project"}, {'en': "Test Description"})
 
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Test Project"}
@@ -164,7 +164,7 @@ def test_update_project_that_does_not_exist():
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
         sampledb.logic.projects.update_project(project_id + 1, {'en': "Test Project"}, {'en': "Test Description"})
 
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Example Project"}
@@ -182,7 +182,7 @@ def test_update_project_with_existing_name():
     with pytest.raises(sampledb.logic.errors.ProjectAlreadyExistsError):
         sampledb.logic.projects.update_project(project_id, {'en': "Example Project"}, {})
 
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Example Project 2"}
@@ -201,7 +201,7 @@ def test_update_project_with_empty_name():
     with pytest.raises(sampledb.logic.errors.MissingEnglishTranslationError):
         sampledb.logic.projects.update_project(project_id, {}, {'en': "Test Description"})
 
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Example Project"}
@@ -218,7 +218,7 @@ def test_update_project_with_long_name():
     with pytest.raises(sampledb.logic.errors.InvalidProjectNameError):
         sampledb.logic.projects.update_project(project_id, {'en': "A" * 101}, {})
 
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Example Project"}
@@ -226,7 +226,7 @@ def test_update_project_with_long_name():
 
     sampledb.logic.projects.update_project(project_id, {'en': "A" * 100}, {})
 
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "A" * 100}
@@ -264,7 +264,7 @@ def test_delete_project_that_does_not_exist():
         sampledb.logic.projects.delete_project(project_id + 1)
 
     assert len(sampledb.models.projects.Project.query.all()) == 1
-    project = sampledb.models.projects.Project.query.get(project_id)
+    project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
     assert project is not None
     assert project.id == project_id
     assert project.name == {'en': "Test Project"}
@@ -409,7 +409,7 @@ def test_invite_user_to_project(flask_server, app):
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         project_id = sampledb.logic.projects.create_project("Example Project", "", user.id).id
-        project = sampledb.models.projects.Project.query.get(project_id)
+        project = sampledb.models.projects.Project.query.filter_by(id=project_id).first()
 
         other_user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
         sampledb.db.session.add(other_user)
@@ -649,7 +649,7 @@ def test_get_project_member_ids_for_project_that_does_not_exist():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     project_id = sampledb.logic.projects.create_project("Example Project", "", user.id).id
-    sampledb.models.projects.Project.query.get(project_id)
+    sampledb.models.projects.Project.query.filter_by(id=project_id).first()
 
     with pytest.raises(sampledb.logic.errors.ProjectDoesNotExistError):
         sampledb.logic.projects.get_project_member_user_ids_and_permissions(project_id + 1)
@@ -1676,6 +1676,7 @@ def test_project_translations():
         lang_code=german.lang_code,
         datetime_format_datetime=german.datetime_format_datetime,
         datetime_format_moment=german.datetime_format_moment,
+        datetime_format_moment_output=german.datetime_format_moment_output,
         enabled_for_input=True,
         enabled_for_user_interface=True
     )
@@ -1792,3 +1793,21 @@ def test_project_translations():
             description={},
             initial_user_id=user.id
         )
+
+
+def test_sort_project_id_hierarchy_list():
+    user = sampledb.logic.users.create_user('User', 'example@example.org', sampledb.models.UserType.PERSON)
+    project_id1 = sampledb.logic.projects.create_project({"en": "a"}, {"en": ""}, user.id).id
+    project_id2 = sampledb.logic.projects.create_project({"en": "c"}, {"en": ""}, user.id).id
+    project_id3 = sampledb.logic.projects.create_project({"en": "B"}, {"en": ""}, user.id).id
+    project_id4 = sampledb.logic.projects.create_project({"en": "2-B"}, {"en": ""}, user.id).id
+    project_id5 = sampledb.logic.projects.create_project({"en": "1-B"}, {"en": ""}, user.id).id
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id=project_id3, child_project_id=project_id4)
+    sampledb.logic.projects.create_subproject_relationship(parent_project_id=project_id3, child_project_id=project_id5)
+    project_id_hierarchy_list = sampledb.logic.projects.get_project_id_hierarchy_list([project_id1, project_id2, project_id3, project_id4, project_id5])
+    project_id_hierarchy_list = sampledb.logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: project.id)
+    assert project_id_hierarchy_list == [(0, project_id1), (0, project_id2), (0, project_id3), (1, project_id4), (1, project_id5)]
+    project_id_hierarchy_list = sampledb.logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: project.name['en'])
+    assert project_id_hierarchy_list == [(0, project_id3), (1, project_id5), (1, project_id4), (0, project_id1), (0, project_id2)]
+    project_id_hierarchy_list = sampledb.logic.projects.sort_project_id_hierarchy_list(project_id_hierarchy_list, key=lambda project: project.name['en'].lower())
+    assert project_id_hierarchy_list == [(0, project_id1), (0, project_id3), (1, project_id5), (1, project_id4), (0, project_id2)]

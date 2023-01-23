@@ -13,17 +13,17 @@ import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
 import pytz
-from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField
+from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField, SelectField
 from wtforms.validators import DataRequired, ValidationError
 
 from . import frontend
-from ..logic.action_translations import get_action_translation_for_action_in_language
-from ..logic.action_type_translations import get_action_type_translation_for_action_type_in_language
-from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users
+from ..logic.action_permissions import get_user_action_permissions
+from ..logic.components import get_component
+from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
-from ..logic.instrument_translations import get_instrument_translation_for_instrument_in_language, get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation, get_instruments_with_translation_in_language
+from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
-from ..logic.actions import ActionType
+from ..logic.actions import ActionType, get_actions
 from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
@@ -32,7 +32,7 @@ from ..logic.objects import get_object
 from ..logic.object_permissions import Permissions, get_object_info_with_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly, generate_qrcode
+from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
@@ -76,11 +76,10 @@ class InstrumentLogEntryForm(FlaskForm):
     def validate_event_utc_datetime(form, field):
         if field.data:
             try:
-                settings = get_user_settings(flask_login.current_user.id)
                 language = get_user_language(flask_login.current_user)
                 parsed_datetime = datetime.datetime.strptime(field.data, language.datetime_format_datetime)
                 # convert datetime to utc
-                local_datetime = pytz.timezone(settings['TIMEZONE']).localize(parsed_datetime)
+                local_datetime = pytz.timezone(flask_login.current_user.timezone).localize(parsed_datetime)
                 utc_datetime = local_datetime.astimezone(pytz.utc)
                 field.data = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
             except Exception:
@@ -101,11 +100,13 @@ class InstrumentLogOrderForm(FlaskForm):
 @frontend.route('/instruments/')
 @flask_login.login_required
 def instruments():
-    user_language_id = get_user_language(flask_login.current_user).id
-    all_instruments = get_instruments_with_translation_in_language(user_language_id)
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
+    all_instruments = get_instruments()
     instruments = []
+    user_has_admin_permissions = flask_login.current_user.has_admin_permissions
     for instrument in all_instruments:
-        if instrument.is_hidden and not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
+        if instrument.is_hidden and not user_has_admin_permissions and flask_login.current_user not in instrument.responsible_users:
             continue
         instruments.append(instrument)
     user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
@@ -113,29 +114,29 @@ def instruments():
     # Sort by: favorite / not favorite, instrument name
     instruments.sort(key=lambda instrument: (
         0 if instrument.id in user_favorite_instrument_ids else 1,
-        instrument.translation.name.lower()
+        get_translated_text(instrument.name).lower()
     ))
     toggle_favorite_instrument_form = ToggleFavoriteInstrumentForm()
     return flask.render_template(
         'instruments/instruments.html',
         instruments=instruments,
         user_favorite_instrument_ids=user_favorite_instrument_ids,
-        toggle_favorite_instrument_form=toggle_favorite_instrument_form
+        toggle_favorite_instrument_form=toggle_favorite_instrument_form,
+        get_user=get_user,
+        get_component=get_component
     )
 
 
 @frontend.route('/instruments/<int:instrument_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def instrument(instrument_id):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
         return flask.abort(404)
     user_language = get_user_language(flask_login.current_user)
-    user_language_id = user_language.id
-
-    instrument_translations = get_instrument_translations_for_instrument(instrument_id=instrument.id)
-    single_instrument_translation = get_instrument_translation_for_instrument_in_language(instrument_id, user_language_id, use_fallback=True)
 
     is_instrument_responsible_user = any(
         responsible_user.id == flask_login.current_user.id
@@ -330,18 +331,15 @@ def instrument(instrument_id):
                 reverse=not instrument_log_order_ascending
             )
 
-    action_translations = {
-        action.id: get_action_translation_for_action_in_language(
-            action_id=action.id,
-            language_id=user_language_id,
-            use_fallback=True
-        )
-        for action in instrument.actions
-    }
+    instrument_actions = [
+        action
+        for action in get_actions(instrument_id=instrument.id)
+        if Permissions.READ in get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
+    ]
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
-        instrument_translations=instrument_translations,
+        instrument_actions=instrument_actions,
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
         instrument_log_categories=instrument_log_categories,
@@ -353,10 +351,10 @@ def instrument(instrument_id):
         mobile_upload_qrcode=mobile_upload_qrcode,
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
-        action_translations=action_translations,
-        single_instrument_translation=single_instrument_translation,
-        get_action_type_translation_for_action_type_in_language=get_action_type_translation_for_action_type_in_language,
-        ActionType=ActionType
+        languages=get_languages(),
+        ActionType=ActionType,
+        get_user=get_user,
+        get_component=get_component
     )
 
 
@@ -371,11 +369,14 @@ class InstrumentForm(FlaskForm):
     users_can_view_log_entries = BooleanField(default=False)
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
+    location = SelectField()
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
 @flask_login.login_required
 def new_instrument():
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     check_current_user_is_not_readonly()
@@ -387,9 +388,17 @@ def new_instrument():
 
     instrument_form = InstrumentForm()
     instrument_form.instrument_responsible_users.choices = [
-        (str(user.id), user.name)
+        (str(user.id), user)
         for user in get_users()
+        if user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin)
     ]
+    all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
+    instrument_form.location.choices = choices
+    instrument_form.location.all_choices = all_choices
+    instrument_form.location.default = '-1'
+    if not instrument_form.is_submitted():
+        instrument_form.location.data = instrument_form.location.default
+
     if instrument_form.validate_on_submit():
 
         try:
@@ -478,6 +487,9 @@ def new_instrument():
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
 
+        if instrument_form.location.data is not None and instrument_form.location.data != '-1':
+            set_instrument_location(instrument.id, int(instrument_form.location.data))
+
         try:
             category_data = json.loads(instrument_form.categories.data)
         except Exception:
@@ -529,10 +541,15 @@ def new_instrument():
 @frontend.route('/instruments/<int:instrument_id>/edit', methods=['GET', 'POST'])
 @flask_login.login_required
 def edit_instrument(instrument_id):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
         return flask.abort(404)
+    if instrument.component_id is not None:
+        flask.flash(_('Editing imported instruments is not yet supported.'), 'error')
+        return flask.abort(403)
     check_current_user_is_not_readonly()
     if not flask_login.current_user.is_admin and flask_login.current_user not in instrument.responsible_users:
         return flask.abort(403)
@@ -545,13 +562,22 @@ def edit_instrument(instrument_id):
     instrument_form = InstrumentForm()
 
     instrument_form.instrument_responsible_users.choices = [
-        (str(user.id), user.name)
+        (str(user.id), user)
         for user in get_users()
+        if user in instrument.responsible_users or (user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin))
     ]
     instrument_form.instrument_responsible_users.default = [
         str(user.id)
         for user in instrument.responsible_users
     ]
+    all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
+    instrument_form.location.choices = choices
+    instrument_form.location.all_choices = all_choices
+
+    if instrument.location_id is not None:
+        instrument_form.location.default = str(instrument.location_id)
+    else:
+        instrument_form.location.default = '-1'
 
     if not instrument_form.is_submitted():
         instrument_form.is_markdown.data = instrument.description_is_markdown
@@ -561,8 +587,12 @@ def edit_instrument(instrument_id):
         instrument_form.users_can_view_log_entries.data = instrument.users_can_view_log_entries
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
         instrument_form.is_hidden.data = instrument.is_hidden
+        instrument_form.location.data = instrument_form.location.default
+    location_is_invalid = instrument_form.location.data not in {
+        location_id_str
+        for location_id_str, location_name in choices
+    }
     if instrument_form.validate_on_submit():
-
         update_instrument(
             instrument_id=instrument.id,
             description_is_markdown=instrument_form.is_markdown.data,
@@ -578,6 +608,11 @@ def edit_instrument(instrument_id):
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+
+        if instrument_form.location.data is not None and instrument_form.location.data != '-1':
+            set_instrument_location(instrument.id, int(instrument_form.location.data))
+        else:
+            set_instrument_location(instrument.id, None)
 
         # translations
         try:
@@ -741,13 +776,16 @@ def edit_instrument(instrument_id):
         ENGLISH=english,
         instrument_log_categories=get_instrument_log_categories(instrument.id),
         languages=get_languages(only_enabled_for_input=True),
-        instrument_form=instrument_form
+        instrument_form=instrument_form,
+        location_is_invalid=location_is_invalid
     )
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/<int:log_entry_id>/file_attachments/<int:file_attachment_id>')
 @flask_login.login_required
 def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_id):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
@@ -783,6 +821,8 @@ def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['GET'])
 def instrument_log_mobile_file_upload(instrument_id: int, token: str):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:
@@ -805,6 +845,8 @@ def instrument_log_mobile_file_upload(instrument_id: int, token: str):
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['POST'])
 def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
     try:
         instrument = get_instrument(instrument_id)
     except InstrumentDoesNotExistError:

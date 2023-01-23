@@ -3,6 +3,34 @@
 {% block title %}{{ _('New Object') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
+  {% if possible_properties|length > 1 and passed_object_ids and show_selecting_modal %}
+  <div class="modal fade" id="selectionModal" tabindex="-1" role="dialog" data-target="selectionModalLabel">
+    <div class="modal-dialog" role="document">
+      <form class="form" method="post" action="{{ url_for('.new_object', action_id=action_id, object_id=passed_object_ids, fields_selected=True) }}">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="selectionModalLabel">{{ _('Select fields to insert reference') }}</h4>
+          </div>
+          <div class="modal-body">
+            <ul id="fieldsModalList" class="list-group">
+              {% for property_name, property_data in possible_properties.items() %}
+                <li class="list-group-item">
+                  <input type="checkbox" name="{{ property_name }}" id="propertyCheckbox{{loop.index}}" data-value="{{ property_name }}">
+                  <label for="propertyCheckbox{{loop.index}}">{{ property_data['title'] | get_translated_text }}</label>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal"> {{ _('Cancel') }} </button>
+            <button type="submit" class="btn btn-primary"> {{ _('Apply') }} </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   <form class="form-horizontal" method="post" action="{% if previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
     {{ form.csrf_token() }}
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
@@ -71,11 +99,18 @@
         {% if has_grant_for_previous_object and not 'action_submit' in request.form and request.args.get('previous_object_id') %}
         {% set selected_obj_id = request.args.get('previous_object_id') %}
         {% endif %}
+        {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
+          <div class="pull-right objectpicker-container" style="width:280px">
+          <input id="copyPermissionsSelect" type="text" class="form-control typeahead" value="" placeholder="{{ _("No object selected") }}" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" />
+          <input type="hidden" name="copy_permissions_object_id" value="" />
+          </div>
+        {% else %}
         <select id="copyPermissionsSelect" class="selectpicker pull-right" data-width="280px" name="copy_permissions_object_id" data-live-search="true" data-sampledb-default-selected="{{ selected_obj_id }}" data-sampledb-required-perm="3" data-sampledb-start-show=".copyPermissionsLoading" data-sampledb-start-hide="#copyPermissionsChkBox" data-sampledb-empty-disable="#copyPermissionsChkBox, #copyPermissionsSelect" data-sampledb-stop-hide=".copyPermissionsLoading" data-sampledb-stop-show="#copyPermissionsChkBox" data-none-selected-text="{{ _("No object selected") }}">
           {% for object in existing_objects %}
-          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.data['name']['text'] | get_translated_text }} (#{{ object.id }})</option>
+          <option value="{{ object.id }}" {% if object.id | string == selected_obj_id %}selected="selected"{% endif %}>{{ object.name | get_translated_text }} (#{{ object.id }})</option>
           {% endfor %}
         </select>
+        {% endif %}
       </div>
       {% endif %}
         <div class="col-md-offset-3 col-md-9">
@@ -83,7 +118,7 @@
             </span>
         </div>
     </div>
-    {% if may_create_log_entry%}
+    {% if may_create_log_entry and not config['DISABLE_INSTRUMENTS']%}
     <div class="form-group clearfix" style="padding:0 0.75em">
       <div class="col-md-9 col-md-offset-3">
         <div class="input-group pull-right">
@@ -157,7 +192,7 @@
           }
       }
 
-      return ($('[data-name="help-block-pattern"]').length === 0);
+      return true;
     });
     {% if user_groups %}
     $('select[name="permissions_for_group_group_id"]').on('show.bs.select', function () {
@@ -180,6 +215,10 @@
         permissions_object_id_select.selectpicker('val', null);
     }
     {% endif %}
+    {% if possible_properties|length > 1 and passed_object_ids and show_selecting_modal %}
+      $('#selectionModal').modal('show');
+    {% endif %}
+
   });
   </script>
 {% endblock%}

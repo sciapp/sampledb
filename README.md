@@ -1,6 +1,8 @@
+<img src="https://raw.githubusercontent.com/sciapp/sampledb/develop/docs/static/img/logo.svg" align="right" width="60" height="60" />
+
 # SampleDB
 
-[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DOI](https://zenodo.org/badge/221237572.svg)](https://zenodo.org/badge/latestdoi/221237572)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02107/status.svg)](https://doi.org/10.21105/joss.02107)
 
@@ -23,7 +25,7 @@ If you do not have Docker installed yet, please [install Docker](https://docs.do
 First, get the [docker-compose.yml](https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml) configuration file. You can git clone this repo or just get the file:
 
 ```bash
-curl https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml --output docker-compose.yml
+curl https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml.dist --output docker-compose.yml
 ```
 
 Then simply bring everything up with:
@@ -63,7 +65,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.20.0
+    sciapp/sampledb:0.21.0
 ```
 
 ### Once it's started

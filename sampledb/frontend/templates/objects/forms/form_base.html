@@ -2,24 +2,23 @@
 
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}" />
+    <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-  <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
 {% endif %}
 <script type="text/javascript">
   window.mde_fields = [];
@@ -29,7 +28,8 @@
       $(this).datetimepicker({
         locale: "{{ get_user_language(current_user).lang_code }}",
         format: "{{ get_user_language(current_user).datetime_format_moment }}",
-        date: $(this).attr('data-datetime')
+        date: $(this).attr('data-datetime'),
+        timeZone: "{{ current_user.timezone }}"
       });
     });
 
@@ -67,6 +67,23 @@
           parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
         }
       {% endfor %}
+
+      let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
+      if (disabled_languages_error.length === 1) {
+          let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
+          let all_disabled_languages_removed = true;
+          for (let i = 0; i < disabled_language_codes.length; i++) {
+              if (enabled_languages.includes(disabled_language_codes[i])) {
+                  all_disabled_languages_removed = false;
+                  break;
+              }
+          }
+          if (all_disabled_languages_removed) {
+              disabled_languages_error.hide();
+          } else {
+              disabled_languages_error.show();
+          }
+      }
     }
 
     var select_language_selectpicker = $('.select-language')
@@ -147,5 +164,131 @@
     }.bind(tagsinput));
   });
 
+  function refreshRecipeTooltip(id_prefix, recipes, showTooltip=false) {
+    let div = $('#' + id_prefix + '_recipe_div');
+    let input = $('#' + id_prefix + '_recipe_input');
+    let recipe = recipes[input.val()];
+    let changedValues = []
+    let recipeName = recipe['name'];
+    for (const [_, value] of Object.entries(recipe['property_values'])) {
+      changedValues.push(value['title'])
+    }
+    div.attr('title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    div.attr('data-original-title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    div.tooltip('hide');
+  }
+
+  $('document').ready(function() {$("select[id$='_recipe_input']").change();})
+
+  function applyRecipe(id_prefix, recipes, isTable) {
+    let codeMirrors = {};
+    $('.CodeMirror').each(function(i, el){
+      codeMirrors[el.CodeMirror.getTextArea().name] = el.CodeMirror
+    });
+    for (const [property, value] of Object.entries(recipes[$('#' + id_prefix + '_recipe_input').val()]['property_values'])) {
+      if (!isTable && value['value'] !== null && (value['type'] === 'text' || value['type'] === 'multiline' || value['type'] === 'markdown') && value['value'].constructor === Object) {
+        let language_select = $('#' + id_prefix + '_' + property + '_-select-language');
+        if (language_select.length == 1) {
+          let selected_languages = language_select.val();
+          if (selected_languages === '' || selected_languages.length === 0) {
+            selected_languages = ['en'];
+          } else {
+            selected_languages.push('en');
+          }
+          for (const [lang, _text] of Object.entries(value['value'])) {
+            if (selected_languages.indexOf(lang) === -1) {
+              selected_languages.push(lang)
+            }
+          }
+          language_select.selectpicker('val', selected_languages);
+        }
+      }
+      switch (value['type']) {
+        case 'text':
+          if (typeof value['value'] === 'string' || value['value'] instanceof String) {
+            if (isTable) {
+              $('input[name="' + id_prefix + '_' + property + '__text"]').val(value['value'] || '');
+            } else {
+              $('input[name="' + id_prefix + '_' + property + '__text_en"]').val(value['value'] || '');
+            }
+          } else if (value['value'] === null) {
+            if (isTable) {
+              $('input[name="' + id_prefix + '_' + property + '__text"]').val('');
+            } else {
+              $('input[name^="' + id_prefix + '_' + property + '__text_"]').val('');
+            }
+          } else if (value['value'].constructor === Object) {
+            if (isTable) {
+              $('input[name="' + id_prefix + '_' + property + '__text"]').val(value['value']['en']);
+            } else {
+              for (const [lang, text] of Object.entries(value['value'])) {
+                $('input[name="' + id_prefix + '_' + property + '__text_' + lang + '"]').val(text || '');
+              }
+            }
+          }
+          break;
+        case 'multiline':
+          if (typeof value['value'] === 'string' || value['value'] instanceof String) {
+            if (isTable) {
+              $('textarea[name="' + id_prefix + '_' + property + '__text"]').val(value['value'] || '');
+            } else {
+              $('textarea[name="' + id_prefix + '_' + property + '__text_en"]').val(value['value'] || '');
+            }
+          } else if (value['value'] === null) {
+            if (isTable) {
+              $('textarea[name="' + id_prefix + '_' + property + '__text"]').val('');
+            } else {
+              $('textarea[name^="' + id_prefix + '_' + property + '__text_"]').val('');
+            }
+          } else if (value['value'].constructor === Object) {
+            if (isTable) {
+              $('textarea[name="' + id_prefix + '_' + property + '__text"]').val(value['value']['en'] || '');
+            } else {
+              for (const [lang, text] of Object.entries(value['value'])) {
+                $('textarea[name="' + id_prefix + '_' + property + '__text_' + lang + '"]').val(text || '');
+              }
+            }
+          }
+          break;
+        case 'markdown':
+          if (!isTable) {
+            if (typeof value['value'] === 'string' || value['value'] instanceof String) {
+              codeMirrors[id_prefix + '_' + property + '__text_en'].setValue(value['value'] || '');
+            } else if (value['value'] === null) {
+              for (let name in codeMirrors) {
+                if (name.startsWith(id_prefix + '_' + property + '__text_')) {
+                  codeMirrors[name].setValue('');
+                }
+              }
+            } else if (value['value'].constructor === Object) {
+              for (const [lang, text] of Object.entries(value['value'])) {
+                codeMirrors[id_prefix + '_' + property + '__text_' + lang].setValue(text || '');
+              }
+            }
+          } else {
+            if (typeof value['value'] === 'string' || value['value'] instanceof String || value['value'] === null) {
+              $('textarea[name="' + id_prefix + '_' + property + '__text"]').val(value['value'] || '');
+            } else if (value['value'].constructor === Object) {
+              $('textarea[name="' + id_prefix + '_' + property + '__text"]').val(value['value']['en'] || '');
+            }
+          }
+          break;
+        case 'choice':
+          let selectpicker = $('select[name="' + id_prefix + '_' + property + '__text"]');
+          selectpicker.val(value['value'] || '');
+          selectpicker.selectpicker('refresh');
+          break;
+        case 'quantity':
+          $('input[name="' + id_prefix + '_' + property + '__magnitude"]').val(value['value'] || '');
+          break;
+        case 'bool':
+          $('input[name="' + id_prefix + '_' + property + '__value"]').prop('checked', value['value']);
+          break;
+        case 'datetime':
+          $('input[name="' + id_prefix + '_' + property + '__datetime"]').val(value['value'] || '');
+          break;
+      }
+    }
+  }
 </script>
 {% endblock %}

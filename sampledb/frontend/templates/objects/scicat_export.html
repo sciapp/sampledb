@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }} — {{ service_name }}{% endblock %}
+
+
+{% block stylesheets %}
+  {{ super() }}
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script>
+  $(function() {
+    $('.scicat-export-select-all').click(function() {
+      $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', true);
+    });
+    $('.scicat-export-select-none').click(function() {
+      $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', false);
+    });
+  });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}</h1>
+  <p class="text-muted">{{ _('%(service_name)s can export the metadata of this object to %(scicat_name)s.', service_name=service_name, scicat_name=config['SCICAT_NAME']) }}</p>
+  <form method="post">
+  {{ scicat_export_form.hidden_tag() }}
+  <input type="hidden" value="{{ scicat_export_form.api_token.data }}" name="{{ scicat_export_form.api_token.name }}" />
+  {% if scicat_export_form.instrument.choices | length > 1 or scicat_export_form.instrument.choices[0][0] != '-' %}
+  <div class="form-group">
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="select-instrument" class="control-label">{{ _("Instrument") }}</label>
+    </div>
+    <select id="select-instrument" name="{{ scicat_export_form.instrument.name }}" class="selectpicker">
+      {% for value, label in scicat_export_form.instrument.choices %}
+      <option value="{{ value }}" {% if value == '-' %}selected="selected"{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% else %}
+    <input type="hidden" name="{{ scicat_export_form.instrument.name }}" value="-" />
+  {% endif %}
+  {% if scicat_export_form.sample.choices | length > 1 or scicat_export_form.sample.choices[0][0] != '-' %}
+  <div class="form-group">
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="select-sample" class="control-label">{{ _("Sample") }}</label>
+    </div>
+    <select id="select-sample" name="{{ scicat_export_form.sample.name }}" class="selectpicker">
+      {% for value, label in scicat_export_form.sample.choices %}
+      <option value="{{ value }}" {% if value == '-' %}selected="selected"{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% else %}
+    <input type="hidden" name="{{ scicat_export_form.sample.name }}" value="-" />
+  {% endif %}
+  {% if scicat_export_form.input_datasets.choices %}
+  <div class="form-group">
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="select-input_datasets" class="control-label">{{ _("Input Datasets") }}</label>
+    </div>
+    <select id="select-input_datasets" name="{{ scicat_export_form.input_datasets.name }}" class="selectpicker" multiple="multiple">
+      {% for value, label in scicat_export_form.input_datasets.choices %}
+      <option value="{{ value }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="form-group">
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="select-owner_group" class="control-label">{{ _("Owner Group") }}</label>
+    </div>
+    <select id="select-owner_group" name="{{ scicat_export_form.owner_group.name }}" class="selectpicker">
+      {% for value, label in scicat_export_form.owner_group.choices %}
+      <option value="{{ value }}" {% if value == '-' %}selected="selected"{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+  {% if scicat_export_form.access_groups.choices %}
+  <div class="form-group">
+    <div class="form-group" style="margin-bottom: 0">
+      <label for="select-access_groups" class="control-label">{{ _("Access Groups") }}</label>
+    </div>
+    <select id="select-access_groups" name="{{ scicat_export_form.access_groups.name }}" class="selectpicker" multiple="multiple">
+      {% for value, label in scicat_export_form.access_groups.choices %}
+      <option value="{{ value }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+    <label>{{ _('Properties') }}</label>
+    <p class="text-muted">{{ _('Select which properties should be exported to %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}</p>
+    <div class="form-group">
+      <span class="btn btn-default scicat-export-select-all" style="width:8em">{{ _('Select all') }}</span>
+      <span class="btn btn-default scicat-export-select-none" style="width:8em">{{ _('Unselect all') }}</span>
+    </div>
+    <div class="form-group">
+    {% for value, path in properties %}
+      <label style="font-weight: normal"><input type="checkbox" class="scicat-export-property" {% if get_property_export_default(path) or path in export_properties %}checked="checked"{% endif %} {% if path == ['name'] %}disabled="disabled"{% endif %} name="property,{{ path | join(',') }}"/> {{ get_title_for_property(path) }}</label><br />
+    {% endfor %}
+    </div>
+  </div>
+  {% if scicat_export_form.tags.choices %}
+  <div>
+    <label>{{ _('Tags / Keywords') }}</label>
+    <p class="text-muted">{{ _('Select which tags should be exported as keywords to %(scicat_name)s.', scicat_name=config['SCICAT_NAME']) }}</p>
+    <div class="form-group">
+      <span class="btn btn-default scicat-export-select-all" style="width:8em">{{ _('Select all') }}</span>
+      <span class="btn btn-default scicat-export-select-none" style="width:8em">{{ _('Unselect all') }}</span>
+    </div>
+    <div class="form-group">
+      {% for tag, _ in scicat_export_form.tags.choices %}
+      <label style="font-weight: normal"><input type="checkbox" name="tags" value="{{ tag }}" /> {{ tag }}</label><br />
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  <div class="form-group">
+    <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default" style="width:8em">{{ _('Cancel') }}</a>
+    <input type="submit" class="btn btn-primary" value="{{ _('Export') }}" name="do_export" style="width:8em" />
+  </div>
+  </form>
+{% endblock %}

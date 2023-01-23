@@ -19,7 +19,7 @@
     </div>
   {% endif %}
 {% if not current_user.is_authenticated %}
-  <div class="jumbotron">
+  <div class="jumbotron text-center">
     <h1>{{ _('Welcome to %(service_name)s', service_name=service_name)}}</h1>
     <p>{{ service_description | get_translated_text }}</p>
     <div class="container">
@@ -29,20 +29,20 @@
     </div>
   </div>
 {% else %}
-  <div class="jumbotron">
+  <div class="jumbotron text-center">
     <h1>{{ _('Welcome to %(service_name)s', service_name=service_name) }}</h1>
     <p>{{ service_description | get_translated_text }}</p>
     <div class="container">
-    {% for action_type in get_action_types_with_translations_in_language(get_user_language(current_user).id) %}
-        {% if action_type.show_on_frontpage %}
+    {% for action_type in get_action_types() %}
+      {% if action_type.show_on_frontpage and (action_type.fed_id is none or action_type.fed_id > 0) %}
       <div class="row">
         {% if not current_user.is_readonly %}
         <div class="col-md-offset-2 col-md-4">
-          <a href="{{ url_for('frontend.actions', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.translation.perform_text }}</a>
+          <a href="{{ url_for('frontend.actions', t=action_type.id, can_create_objects='') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
         </div>
         {% endif %}
         <div class="{% if current_user.is_readonly %}col-md-offset-4{% endif %} col-md-4">
-          <a href="{{ url_for('frontend.objects', t=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.translation.view_text }}</a>
+          <a href="{{ url_for('frontend.objects', action_type_ids=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.view_text | get_translated_text(default=_('View Objects')) }}</a>
         </div>
       </div>
       {% endif %}
@@ -51,4 +51,3 @@
   </div>
 {% endif %}
 {% endblock %}
-

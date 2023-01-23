@@ -62,7 +62,7 @@
     <div class="form-group">
         <label for="extra_field_{{ extra_field_id }}" class="col-sm-4 control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ user.extra_fields.get(extra_field_id) or '' }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (user.extra_fields or {}).get(extra_field_id, '') }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
         </div>
     </div>
     {% endfor %}
@@ -227,18 +227,23 @@
         {% set notification_types = {
               NotificationType.ANNOUNCEMENT: (_("Announcements"), False),
               NotificationType.ASSIGNED_AS_RESPONSIBLE_USER: (_("Becoming responsible for an object"), True),
+              NotificationType.RESPONSIBILITY_ASSIGNMENT_DECLINED: (_("Responsibility for an object being declined"), True),
               NotificationType.INVITED_TO_GROUP: (_("Being invited to a basic group"), False),
               NotificationType.INVITED_TO_PROJECT: (_("Being invited to a project group"), False),
               NotificationType.RECEIVED_OBJECT_PERMISSIONS_REQUEST: (_("Receiving object permission requests"), False),
               NotificationType.INSTRUMENT_LOG_ENTRY_CREATED: (_("Receiving a new instrument log entry"), True),
               NotificationType.INSTRUMENT_LOG_ENTRY_EDITED: (_("Receiving an edit to an instrument log"), True),
               NotificationType.REFERENCED_BY_OBJECT_METADATA: (_("Being referenced in object metadata"), True),
+              NotificationType.REMOTE_OBJECT_IMPORT_FAILED: (_("Failure of importing an object into another database"), False),
+              NotificationType.REMOTE_OBJECT_IMPORT_NOTES: (_("Receiving notes after importing an object into another database"), True),
               NotificationType.OTHER: (_("Other"), False)
             }
         %}
+        {% set instrument_related_notification_types = [NotificationType.INSTRUMENT_LOG_ENTRY_CREATED, NotificationType.INSTRUMENT_LOG_ENTRY_EDITED]%}
         {% for notification_type in notification_types %}
           {% set notification_description = notification_types[notification_type][0] %}
           {% set notification_can_be_ignored = notification_types[notification_type][1] %}
+          {% if notification_type not in instrument_related_notification_types %}
           <tr>
             <td style="vertical-align: middle">{{ notification_description }}</td>
             {% for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL] %}
@@ -250,6 +255,7 @@
             </td>
             {% endfor %}
           </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>
@@ -258,256 +264,20 @@
     </div>
   </form>
 
-  {% if not current_user.is_readonly %}
   <h2>{{ _('Default Permissions')}}</h2>
   <p><strong>{{ _('Note:') }}</strong> {{ _('These permissions will be used for objects that you create in the future. To change the permissions for an already existing object, please use the <strong>Edit permissions</strong> button on the object\'s site.') }}</p>
 
-    <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
-    {{ default_permissions_form.csrf_token }}
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th scope="col" style="width: 40%">{{ _('Special Groups') }}</th>
-        <th scope="col" class="text-center">{{ _('None') }}</th>
-        <th scope="col" class="text-center">{{ _('Read') }}</th>
-        <th scope="col" class="text-center">{{ _('Write') }}</th>
-        <th scope="col" class="text-center">{{ _('Grant') }}</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="vertical-align: middle">{{ _('Administrators') }}</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        {% for possible_permissions in [Permissions.GRANT] %}
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permission_administrators_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" id="permission_administrators_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" checked disabled />
-          </td>
-        {% endfor %}
-      </tr>
-      <tr>
-        <td style="vertical-align: middle">{{ _('Instrument Scientists')}}</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        {% for possible_permissions in [Permissions.GRANT] %}
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_instrument_responsible_users_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" id="permissions_instrument_responsible_users_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" checked disabled />
-          </td>
-        {% endfor %}
-      </tr>
-      <tr>
-        <td style="vertical-align: middle">{{ _('Everyone') }}</td>
-        {% for possible_permissions in [Permissions.NONE, Permissions.READ] %}
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_public_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" name="{{ default_permissions_form.public_permissions.name }}" id="permissions_public_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if public_permissions == possible_permissions %}checked{% endif %} />
-          </td>
-        {% endfor %}
-        <td></td>
-        <td></td>
-      </tr>
-      {% if default_permissions_form.group_permissions | length > 0 %}
-      <tr>
-        <th scope="col" style="width: 40%">{{ _('Basic Groups') }}</th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-      </tr>
-      {% endif %}
-      {% for group_permissions_form in default_permissions_form.group_permissions %}
-      {% set group_id = group_permissions_form.group_id.data | int %}
-      {% set group = get_group(group_id) %}
-        <tr>
-          <td>
-            <a href="{{ url_for('.group', group_id=group_id) }}">{{ group.name | get_translated_text }}</a>
-            {{ group_permissions_form.csrf_token }}
-            <input type="hidden" name="{{ group_permissions_form.group_id.name }}" value="{{ group_id }}">
-          </td>
-          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-            <td class="text-center" style="vertical-align: middle">
-              <label for="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-              <input type="radio" name="{{ group_permissions_form.permissions.name }}" id="permissions_group_{{ group_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if group_permissions[group_id] == possible_permissions %}checked{% endif %} />
-            </td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
-      {% if default_permissions_form.project_permissions | length > 0 %}
-      <tr>
-        <th scope="col" style="width: 40%">{{ _('Project Groups') }}</th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-      </tr>
-      {% endif %}
-      {% for project_permissions_form in default_permissions_form.project_permissions %}
-      {% set project_id = project_permissions_form.project_id.data | int %}
-      {% set project = get_project(project_id) %}
-        <tr>
-          <td>
-            <a href="{{ url_for('.project', project_id=project_id) }}">{{ project.name | get_translated_text }}</a>
-            {{ project_permissions_form.csrf_token }}
-            <input type="hidden" name="{{ project_permissions_form.project_id.name }}" value="{{ project_id }}">
-          </td>
-          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-            <td class="text-center" style="vertical-align: middle">
-              <label for="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-              <input type="radio" name="{{ project_permissions_form.permissions.name }}" id="permissions_project_{{ project_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if project_permissions[project_id] == possible_permissions %}checked{% endif %} />
-            </td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
-      {% if default_permissions_form.user_permissions | length > 0 %}
-      <tr>
-        <th scope="col" style="width: 40%">{{ _('Users') }}</th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-        <th scope="col" class="text-center"></th>
-      </tr>
-      {% endif %}
-      {% for user_permissions_form in default_permissions_form.user_permissions %}
-        {% set user_id = user_permissions_form.user_id.data | int %}
-        {% set user = get_user(user_id) %}
-        {% set permissions = user_permissions.get(user_id, Permissions.NONE) %}
-        <tr>
-          <td>
-            <a href="{{ url_for('.user_profile', user_id=user_id) }}">{{ user.name }}</a>
-            {{ user_permissions_form.csrf_token }}
-            <input type="hidden" name="{{ user_permissions_form.user_id.name }}" value="{{ user_id }}">
-          </td>
-          {% if user.id == current_user.id %}
-            <input type="hidden" name="{{ user_permissions_form.permissions.name }}" value="grant" />
-          {% endif %}
-          {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-            <td class="text-center" style="vertical-align: middle">
-              <label for="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-              <input type="radio" {% if user.id != current_user.id %}name="{{ user_permissions_form.permissions.name }}"{% endif %} id="permissions_user_{{ user_id }}_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if user_permissions[user_id] == possible_permissions %}checked{% endif %} {% if user.id == current_user.id %}disabled{% endif %}/>
-            </td>
-          {% endfor %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <div class="container">
-    <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_user_permissions" value="edit_user_permissions">{{ _('Save') }}</button>
-  </div>
-  </form>
-  {% if users %}
-    <h3>{{ _('Add User')}}</h3>
-    <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
-    {{ add_user_permissions_form.csrf_token }}
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th scope="col" style="width: 40%">{{ _('User') }}</th>
-          <th scope="col" class="text-center">{{ _('None') }}</th>
-          <th scope="col" class="text-center">{{ _('Read') }}</th>
-          <th scope="col" class="text-center">{{ _('Write') }}</th>
-          <th scope="col" class="text-center">{{ _('Grant') }}</th></tr>
-      </thead>
-      <tbody>
-      <tr>
-        <td>
-          <select class="selectpicker" name="{{ add_user_permissions_form.user_id.name }}" data-width="100%" data-live-search="true">
-          {% for user in users %}
-            <option value="{{ user.id }}">{{ user.name }} (#{{ user.id }})</option>
-          {% endfor %}
-          </select>
-        </td>
-        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_new_user_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" name="{{ add_user_permissions_form.permissions.name }}" id="permissions_new_user_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
-          </td>
-        {% endfor %}
-      </tr>
-      </tbody>
-    </table>
-    <div class="container">
-      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add_user_permissions" value="add_user_permissions">{{ _('Add') }}</button>
-    </div>
-    </form>
-  {% endif %}
-  {% if groups %}
-    <h3>{{ _('Add Basic Group') }}</h3>
-    <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
-    {{ add_group_permissions_form.csrf_token }}
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th scope="col" style="width: 40%">{{ _('Basic Group') }}</th>
-          <th scope="col" class="text-center">{{ _('None') }}</th>
-          <th scope="col" class="text-center">{{ _('Read') }}</th>
-          <th scope="col" class="text-center">{{ _('Write') }}</th>
-          <th scope="col" class="text-center">{{ _('Grant') }}</th></tr>
-      </thead>
-      <tbody>
-      <tr>
-        <td>
-          <select class="selectpicker" name="{{ add_group_permissions_form.group_id.name }}" data-width="100%" data-live-search="true">
-          {% for group in groups %}
-            <option value="{{ group.id }}">{{ group.name | get_translated_text }} (#{{ group.id }})</option>
-
-          {% endfor %}
-          </select>
-        </td>
-        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_new_group_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" name="{{ add_group_permissions_form.permissions.name }}" id="permissions_new_group_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
-          </td>
-        {% endfor %}
-      </tr>
-      </tbody>
-    </table>
-    <div class="container">
-      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add_group_permissions" value="add_group_permissions">{{ _('Add') }}</button>
-    </div>
-    </form>
-  {% endif %}
-  {% if projects %}
-    <h3>{{ _('Add Project Group') }}</h3>
-    <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post">
-    {{ add_project_permissions_form.csrf_token }}
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th scope="col" style="width: 40%">{{ _('Project Group') }}</th>
-          <th scope="col" class="text-center">{{ _('None') }}</th>
-          <th scope="col" class="text-center">{{ _('Read') }}</th>
-          <th scope="col" class="text-center">{{ _('Write') }}</th>
-          <th scope="col" class="text-center">{{ _('Grant') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-      <tr>
-        <td>
-          <select class="selectpicker" name="{{ add_project_permissions_form.project_id.name }}" data-width="100%" data-live-search="true">
-          {% for project in projects %}
-            <option value="{{ project.id }}">{{ project.name | get_translated_text }} (#{{ project.id }})</option>
-          {% endfor %}
-          </select>
-        </td>
-        {% for possible_permissions in [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_new_project_{{ possible_permissions.name.lower() }}" class="sr-only">{{ possible_permissions.name.lower() }}</label>
-            <input type="radio" name="{{ add_project_permissions_form.permissions.name }}" id="permissions_new_project_{{ possible_permissions.name.lower() }}" value="{{ possible_permissions.name.lower() }}" {% if possible_permissions == Permissions.READ %}checked{% endif %}  {% if possible_permissions == Permissions.NONE %}disabled{% endif %} />
-          </td>
-        {% endfor %}
-      </tr>
-      </tbody>
-    </table>
-    <div class="container">
-      <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="add_project_permissions" value="add_project_permissions">{{ _('Add') }}</button>
-    </div>
-    </form>
-  {% endif %}
-  {% endif %}
+  {% set user_may_edit = not current_user.is_readonly %}
+  {% set form_url = url_for('.user_preferences', user_id=current_user.id) %}
+  {% set permissions_form = default_permissions_form %}
+  {% set fixed_user_permissions = {current_user.id: Permissions.GRANT}  %}
+  {% set show_administrators = True %}
+  {% set show_instrument_scientists = True %}
+  {% set show_all_users = True %}
+  {% set read_permissions_description = _('Permission to view objects and their properties, files and comments.') %}
+  {% set write_permissions_description = _('Permission to edit objects and their properties and add files and comments. Includes Read permissions.') %}
+  {% set grant_permissions_description = _('Permission to grant permissions to other users. Includes Write permissions.') %}
+  {% include "permissions/permissions.html" %}
 
   <h2>{{ _('Other Settings') }}</h2>
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
@@ -586,6 +356,29 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-full-width-objects-table-yes">
+        {{ _('Show objects table at full width') }} {{ user_settings["FULL_WIDTH_OBJECTS_TABLE"] }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-full-width-objects-table" id="input-full-width-objects-table-yes" value="yes" {% if user_settings["FULL_WIDTH_OBJECTS_TABLE"] is true %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Let the objects table be as wide as the browser window') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-full-width-objects-table" id="input-full-width-objects-table-no" value="no" {% if user_settings["FULL_WIDTH_OBJECTS_TABLE"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Limit the objects table to the regular content width') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-full-width-objects-table" id="input-full-width-objects-table-default" value="default" {% if user_settings["FULL_WIDTH_OBJECTS_TABLE"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
       <label class="col-md-4 control-label" for="select-locale">
         {{ _('Language') }}
       </label>
@@ -601,6 +394,7 @@
       </span>
     </div>
 
+    {% if not config['TIMEZONE'] %}
     <input type="text" hidden id="timezone" value="" name="timezone">
 
     <div class="form-group">
@@ -616,6 +410,7 @@
           </select>
       </span>
     </div>
+    {% endif %}
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-objects-per-page">
         {{ _('Objects per Page') }}
@@ -637,7 +432,7 @@
       <div class="radio col-md-4">
         <label>
           <input type="radio" name="input-use-admin-permissions" id="input-use-admin-permissions-yes" value="yes" {% if user_settings["USE_ADMIN_PERMISSIONS"] %}checked="checked"{% endif %}>
-          {{ _('Yes &mdash; Use <b>GRANT</b> permissions for all objects') }}
+          {{ _('Yes &mdash; Always use <b>GRANT</b> permissions') }}
         </label>
       </div>
       <div class="radio col-md-4">
@@ -816,15 +611,16 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/moment-with-locales.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/moment-timezone.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
 
+  {% if not config['TIMEZONE'] %}
     <script>
     const tz_pref = moment.tz.guess(true);
     var auto_tz = document.getElementById("auto_tz");
     auto_tz.textContent += tz_pref;
-  </script>
+    </script>
+  {% endif %}
   {% if created_api_token %}
     <script>
   $('#viewApiTokenModal').modal('show');
@@ -858,5 +654,5 @@
 
 {% block stylesheets %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}

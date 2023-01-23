@@ -1,0 +1,21 @@
+{% if data is not none and "object_id" in data and data.object_id is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
+    {% set component_uuid = data.component_uuid %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% with referenced_object = get_object_if_current_user_has_read_permissions(data.object_id, component_uuid) %}
+    {% if referenced_object is not none %}
+      <a href="{{ url_for('frontend.object', object_id=referenced_object.object_id) }}">{{ referenced_object.name | get_translated_text(metadata_language) or '—' }} (#{{ referenced_object.object_id }})</a>
+      {{ import_information_symbol(referenced_object) }}
+    {% elif component_uuid is not none %}
+      {% set object_ref = FederationObjectRef(fed_id=data.object_id, component_uuid=component_uuid) %}
+      #{{ data.object_id }} @ {{ object_ref.component.get_name() }}
+      {{ import_information_symbol(object_ref) }}
+    {% else %}
+      <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{ data.object_id }}</a>
+    {% endif %}
+  {% endwith %}
+{% else %}
+  &mdash;
+{% endif %}

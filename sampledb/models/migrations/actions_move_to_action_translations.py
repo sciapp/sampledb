@@ -5,37 +5,39 @@ Splits actions into action and action_translations
 
 import os
 
+import flask_sqlalchemy
+
 from ..languages import Language
 
 MIGRATION_INDEX = 50
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute("""
+    column_names = db.session.execute(db.text("""
             SELECT column_name
             FROM information_schema.columns
             WHERE table_name = 'actions'
-        """).fetchall()
+        """)).fetchall()
     if ('name',) not in column_names:
         return False
 
     # Perform migration
     existing_data = [
         action_data
-        for action_data in db.session.execute("""
+        for action_data in db.session.execute(db.text("""
             SELECT id, name, description, short_description
             FROM actions
-        """).fetchall()
+        """)).fetchall()
     ]
 
-    db.session.execute("""
+    db.session.execute(db.text("""
             ALTER TABLE actions
             DROP COLUMN name,
             DROP COLUMN description,
             DROP COLUMN short_description
-        """)
+        """))
 
     for action_id, name, description, short_description in existing_data:
         # Perform migration
@@ -46,9 +48,9 @@ def run(db):
             'description': description,
             'short_description': short_description,
         }
-        db.session.execute("""
+        db.session.execute(db.text("""
                       INSERT INTO action_translations (action_id, language_id, name, description, short_description)
                       VALUES (:action_id, :language_id, :name, :description, :short_description)
-                  """, params=translation)
+                  """), params=translation)
 
     return True

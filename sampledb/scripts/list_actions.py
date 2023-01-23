@@ -4,18 +4,18 @@ Script for listing all actions in SampleDB.
 
 Usage: python -m sampledb list_actions
 """
+import typing
 
 from .. import create_app
-from ..logic.action_translations import get_actions_with_translation_in_language
-from ..logic.languages import Language
+from ..logic.actions import get_actions
 
 
-def main(arguments):
+def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
         exit(1)
     app = create_app()
     with app.app_context():
-        actions = get_actions_with_translation_in_language(Language.ENGLISH)
+        actions = get_actions()
         for action in actions:
-            print(" - #{0.id}: {0.translation.name}".format(action))
+            print(f" - #{action.id}: {action.name.get('en', 'Unnamed Action')}")

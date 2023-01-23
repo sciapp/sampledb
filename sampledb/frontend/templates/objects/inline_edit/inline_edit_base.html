@@ -2,9 +2,9 @@
 
 {% block stylesheets %}
     {{ super() }}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/inscrybmde.min.css') }}"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/inline-edit.css') }}"/>
+    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}"/>
+    <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}"/>
+    <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/inline-edit.css') }}"/>
 {% endblock %}
 
 {% set id_prefix = "object_" %}
@@ -19,21 +19,24 @@
     </form>
 {% endblock %}
 
+{% block content %}
+    <div class="alert alert-danger alert-dismissible" role="alert" style="display: none" id="inline-edit-alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span>
+      </button>
+      {{ _('There are errors in other fields. Please click "Edit Object" to perform this change.') }}
+    </div>
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/markdown_image_upload.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/typeahead.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/inscrybmde.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/inline-edit.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
+    <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}"></script>
     {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-        <script src="{{ url_for('static', filename='js/sampledb-load-objects.js') }}"></script>
-    {% endif %}
-    {% if get_user_language(current_user).lang_code == 'de' %}
-        <script src="{{ url_for('static', filename='js/plotly-locale-de.js') }}"></script>
-        <script type="text/javascript">
-            Plotly.setPlotConfig({locale: 'de'})
-        </script>
+        <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
     {% endif %}
 
     <script type="text/javascript">
@@ -66,6 +69,23 @@
                         parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
                     }
                 {% endfor %}
+
+                let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
+                if (disabled_languages_error.length === 1) {
+                    let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
+                    let all_disabled_languages_removed = true;
+                    for (let i = 0; i < disabled_language_codes.length; i++) {
+                        if (enabled_languages.includes(disabled_language_codes[i])) {
+                            all_disabled_languages_removed = false;
+                            break;
+                        }
+                    }
+                    if (all_disabled_languages_removed) {
+                        disabled_languages_error.hide();
+                    } else {
+                        disabled_languages_error.show();
+                    }
+                }
             }
 
             var select_language_selectpicker = $('.select-language')

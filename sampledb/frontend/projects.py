@@ -14,7 +14,8 @@ from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import verify_token
 from ..logic.languages import get_languages, get_language, get_language_by_lang_code
 from ..models.languages import Language
-from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, ProjectPermissionsForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm, ObjectLinkForm
+from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm, ObjectLinkForm
+from .permission_forms import PermissionsForm
 from .utils import check_current_user_is_not_readonly
 from ..logic.utils import get_translated_text
 
@@ -85,6 +86,12 @@ def project(project_id):
     description_language_ids = []
     if Permissions.WRITE in user_permissions:
         edit_project_form = EditProjectForm()
+        group_categories = list(logic.group_categories.get_group_categories())
+        group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
+        edit_project_form.categories.choices = [
+            (str(category.id), category)
+            for category in group_categories
+        ]
         for name in project.name.items():
             lang_id = get_language_by_lang_code(name[0]).id
             name_language_ids.append(lang_id)
@@ -115,6 +122,7 @@ def project(project_id):
                 translations.append(item)
     else:
         edit_project_form = None
+        group_categories = None
     show_edit_form = False
     english = get_language(Language.ENGLISH)
 
@@ -129,7 +137,7 @@ def project(project_id):
 
     if Permissions.GRANT in user_permissions:
         invitable_user_list = []
-        for user in logic.users.get_users(exclude_hidden=True):
+        for user in logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True):
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
@@ -184,7 +192,7 @@ def project(project_id):
         remove_project_group_form = RemoveProjectGroupForm()
 
     project_invitations = None
-    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_settings(flask_login.current_user.id)['SHOW_INVITATION_LOG']
+    show_invitation_log = flask_login.current_user.is_admin and logic.settings.get_user_setting(flask_login.current_user.id, 'SHOW_INVITATION_LOG')
     if Permissions.GRANT in user_permissions or flask_login.current_user.is_admin:
         project_invitations = logic.projects.get_project_invitations(
             project_id=project_id,
@@ -329,6 +337,13 @@ def project(project_id):
                         descriptions[lang_code] = ''
 
                 logic.projects.update_project(project_id, names, descriptions)
+                logic.group_categories.set_project_group_categories(
+                    project_group_id=project_id,
+                    category_ids=[
+                        int(category_id)
+                        for category_id in edit_project_form.categories.data
+                    ]
+                )
             except ValueError as e:
                 flask.flash(str(e), 'error')
                 edit_project_form.translations.errors.append(str(e))
@@ -424,7 +439,7 @@ def project(project_id):
                 if action_type.enable_project_link:
                     linkable_action_ids.extend([
                         action.id
-                        for action in logic.actions.get_actions(action_type.id)
+                        for action in logic.actions.get_actions(action_type_id=action_type.id)
                     ])
                     if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
                         for object_info in logic.object_permissions.get_object_info_with_permissions(user_id, Permissions.GRANT, action_type_id=action_type.id):
@@ -436,6 +451,8 @@ def project(project_id):
             object_action = logic.actions.get_action(object.action_id)
         else:
             object = None
+    project_group_categories = logic.group_categories.get_project_group_categories(project.id)
+    group_category_names = logic.group_categories.get_full_group_category_names()
     return flask.render_template(
         'projects/project.html',
         ENGLISH=english,
@@ -452,6 +469,9 @@ def project(project_id):
         project_member_user_ids_and_permissions=project_member_user_ids_and_permissions,
         project_member_group_ids_and_permissions=project_member_group_ids_and_permissions,
         project_invitations=project_invitations,
+        project_group_categories=project_group_categories,
+        group_categories=group_categories,
+        group_category_names=group_category_names,
         show_invitation_log=show_invitation_log,
         object=object,
         object_id=object_id,
@@ -496,9 +516,17 @@ def projects():
         projects = logic.projects.get_user_projects(user_id)
     else:
         projects = logic.projects.get_projects()
-    for project in projects:
-        project.permissions = logic.projects.get_user_project_permissions(project_id=project.id, user_id=flask_login.current_user.id, include_groups=True)
+    project_permissions_by_id = {
+        project.id: logic.projects.get_user_project_permissions(project_id=project.id, user_id=flask_login.current_user.id, include_groups=True)
+        for project in projects
+    }
     create_project_form = CreateProjectForm()
+    group_categories = list(logic.group_categories.get_group_categories())
+    group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
+    create_project_form.categories.choices = [
+        (str(category.id), category)
+        for category in group_categories
+    ]
     show_create_form = False
     if 'create' in flask.request.form:
         allowed_language_ids = [
@@ -536,6 +564,13 @@ def projects():
                             descriptions[lang_code] = ''
 
                     project_id = logic.projects.create_project(names, descriptions, flask_login.current_user.id).id
+                    logic.group_categories.set_project_group_categories(
+                        project_group_id=project_id,
+                        category_ids=[
+                            int(category_id)
+                            for category_id in create_project_form.categories.data
+                        ]
+                    )
                 except ValueError as e:
                     flask.flash(str(e), 'error')
                     create_project_form.translations.errors.append(str(e))
@@ -553,17 +588,33 @@ def projects():
         project.id: project
         for project in projects
     }
-    project_id_hierarchy_list = logic.projects.get_project_id_hierarchy_list(list(projects_by_id))
     english = get_language(Language.ENGLISH)
+    group_categories_by_id = {
+        category.id: category
+        for category in group_categories
+    }
+    group_category_names = logic.group_categories.get_full_group_category_names()
+    group_category_tree = logic.group_categories.get_group_category_tree(
+        basic_group_ids=set(),
+        project_group_ids={project.id for project in projects}
+    )
+    parent_project_ids = logic.projects.get_all_parent_project_ids()
+    projects.sort(key=lambda project: get_translated_text(project.name).lower())
     return flask.render_template(
         "projects/projects.html",
         create_project_form=create_project_form,
         show_create_form=show_create_form,
         Permissions=logic.projects.Permissions,
         projects_by_id=projects_by_id,
-        project_id_hierarchy_list=project_id_hierarchy_list,
+        project_permissions_by_id=project_permissions_by_id,
         languages=get_languages(only_enabled_for_input=True),
-        ENGLISH=english
+        ENGLISH=english,
+        projects=projects,
+        parent_project_ids=parent_project_ids,
+        group_categories=group_categories,
+        group_categories_by_id=group_categories_by_id,
+        group_category_names=group_category_names,
+        group_category_tree=group_category_tree,
     )
 
 
@@ -578,20 +629,35 @@ def project_permissions(project_id):
     user_permissions = logic.projects.get_project_member_user_ids_and_permissions(project_id, include_groups=False)
     group_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id)
     if Permissions.GRANT in logic.projects.get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
+        delete_project_form = DeleteProjectForm()
         user_permission_form_data = []
-        for user_id, permissions in user_permissions.items():
+        for user_id, permissions in sorted(user_permissions.items()):
             if user_id is None:
                 continue
             user_permission_form_data.append({'user_id': user_id, 'permissions': permissions.name.lower()})
         group_permission_form_data = []
-        for group_id, permissions in group_permissions.items():
+        for group_id, permissions in sorted(group_permissions.items()):
             if group_id is None:
                 continue
             group_permission_form_data.append({'group_id': group_id, 'permissions': permissions.name.lower()})
-        edit_user_permissions_form = ProjectPermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
+        permissions_form = PermissionsForm(user_permissions=user_permission_form_data, group_permissions=group_permission_form_data)
+        # disable permissions for all users and other projects
+        permissions_form.all_user_permissions.choices = [('none', Permissions.NONE)]
+        permissions_form.project_permissions.max_entries = 0
     else:
-        edit_user_permissions_form = None
-    return flask.render_template('projects/project_permissions.html', project=project, user_permissions=user_permissions, group_permissions=group_permissions, project_permissions=project_permissions, get_user=logic.users.get_user, get_group=logic.groups.get_group, Permissions=Permissions, form=edit_user_permissions_form)
+        delete_project_form = None
+        permissions_form = None
+    return flask.render_template(
+        'projects/project_permissions.html',
+        project=project,
+        delete_project_form=delete_project_form,
+        user_permissions=user_permissions,
+        group_permissions=group_permissions,
+        get_user=logic.users.get_user,
+        get_group=logic.groups.get_group,
+        Permissions=Permissions,
+        permissions_form=permissions_form
+    )
 
 
 @frontend.route('/projects/<int:project_id>/permissions', methods=['POST'])
@@ -604,13 +670,16 @@ def update_project_permissions(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.abort(404)
 
-    edit_user_permissions_form = ProjectPermissionsForm()
-    if 'edit_user_permissions' in flask.request.form and edit_user_permissions_form.validate_on_submit():
+    permissions_form = PermissionsForm()
+    # disable permissions for all users and other projects
+    permissions_form.all_user_permissions.choices = [('none', Permissions.NONE)]
+    permissions_form.project_permissions.max_entries = 0
+    if 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
         # First handle GRANT updates, then others (to prevent temporarily not having a GRANT user)
-        for user_permissions_data in sorted(edit_user_permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
+        for user_permissions_data in sorted(permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
             user_id = user_permissions_data['user_id']
             try:
-                logic.users.get_user(user_id)
+                logic.users.check_user_exists(user_id)
             except logic.errors.UserDoesNotExistError:
                 continue
             permissions = Permissions.from_name(user_permissions_data['permissions'])
@@ -618,7 +687,7 @@ def update_project_permissions(project_id):
                 logic.projects.update_user_project_permissions(project_id=project_id, user_id=user_id, permissions=permissions)
             except logic.errors.NoMemberWithGrantPermissionsForProjectError:
                 continue
-        for group_permissions_data in edit_user_permissions_form.group_permissions.data:
+        for group_permissions_data in permissions_form.group_permissions.data:
             group_id = group_permissions_data['group_id']
             try:
                 logic.groups.get_group(group_id)

@@ -13,7 +13,8 @@ import flask
 import flask_login
 
 from . import frontend
-from ..logic import markdown_images
+from ..logic import markdown_images, errors
+from ..logic.components import get_component_by_uuid
 
 _temporary_markdown_images = {}
 
@@ -28,6 +29,34 @@ IMAGE_FORMATS = {
 @flask_login.login_required
 def markdown_image(file_name):
     image_data = markdown_images.get_markdown_image(file_name, flask_login.current_user.id)
+    if image_data is None:
+        return flask.abort(404)
+    file_extension = os.path.splitext(file_name)[1]
+    return flask.Response(
+        image_data,
+        mimetype=IMAGE_FORMATS.get(file_extension, 'application/octet-stream')
+    )
+
+
+@frontend.route('/markdown_images/<component>/<file_name>')
+@flask_login.login_required
+def markdown_image_component(component, file_name):
+    try:
+        component_id = int(component)
+    except ValueError:
+        try:
+            if component == flask.current_app.config['FEDERATION_UUID']:
+                component_id = None
+            else:
+                component_id = get_component_by_uuid(component).id
+        except errors.InvalidComponentUUIDError:
+            return flask.abort(400)
+        except errors.ComponentDoesNotExistError:
+            return flask.abort(404)
+    try:
+        image_data = markdown_images.get_markdown_image(file_name, flask_login.current_user.id, component_id=component_id)
+    except errors.ComponentDoesNotExistError:
+        return flask.abort(404)
     if image_data is None:
         return flask.abort(404)
     file_extension = os.path.splitext(file_name)[1]

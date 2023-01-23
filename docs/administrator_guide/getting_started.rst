@@ -43,7 +43,7 @@ Next, start the SampleDB container:
         --restart=always \
         --name sampledb \
         -p 8000:8000 \
-        sciapp/sampledb:0.20.0
+        sciapp/sampledb:0.21.0
 
 This will start a minimal SampleDB installation at ``http://localhost:8000`` and allow you to sign in with the username ``admin`` and the password ``password``.
 
@@ -60,7 +60,7 @@ Although you have a minimal SampleDB installation now, you will need to perform 
 
 Your mail server might require additional settings and you can find descriptions of these variables in the :ref:`list of configuration environment variables<configuration>`.
 
-You can use this moment to set other configuration variables, e.g. for the service name, service description, or imprint and privacy policy links.
+You can use this moment to set other configuration variables, e.g. for the service name, service description, or legal notice and privacy policy links.
 
 You can restart the SampleDB container to change configuration variables at any time, so you can always return to this step later on.
 

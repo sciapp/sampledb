@@ -30,7 +30,7 @@ def test_create_group():
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
 
     assert len(sampledb.models.groups.Group.query.all()) == 1
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -90,7 +90,7 @@ def test_create_group_with_long_name():
     group_id = sampledb.logic.groups.create_group("A" * 100, "", user.id).id
 
     assert len(sampledb.models.groups.Group.query.all()) == 1
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -173,7 +173,7 @@ def test_update_group():
         }
     )
 
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -202,7 +202,7 @@ def test_update_group_that_does_not_exist():
             }
         )
 
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -228,7 +228,7 @@ def test_update_group_with_existing_name():
             description={}
         )
 
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -257,7 +257,7 @@ def test_update_group_with_empty_name():
             description={'en': "Test Description"}
         )
 
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -280,7 +280,7 @@ def test_update_group_with_long_name():
             description={}
         )
 
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -296,7 +296,7 @@ def test_update_group_with_long_name():
         description={}
     )
 
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -338,7 +338,7 @@ def test_delete_group_that_does_not_exist():
         sampledb.logic.groups.delete_group(group_id + 1)
 
     assert len(sampledb.models.groups.Group.query.all()) == 1
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
     assert group is not None
     assert group.id == group_id
     assert group.name == {
@@ -354,7 +354,7 @@ def test_add_user_to_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
@@ -395,7 +395,7 @@ def test_invite_user_that_is_already_a_member_to_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
     assert user in group.members
@@ -412,7 +412,7 @@ def test_invite_user_to_group(flask_server, app):
         sampledb.db.session.add(user)
         sampledb.db.session.commit()
         group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-        group = sampledb.models.groups.Group.query.get(group_id)
+        group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
         other_user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
         sampledb.db.session.add(other_user)
@@ -447,7 +447,7 @@ def test_add_user_to_group_that_does_not_exist():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
 
@@ -462,7 +462,7 @@ def test_add_user_that_does_not_exist_to_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
 
@@ -477,7 +477,7 @@ def test_add_user_that_is_already_a_member_to_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
     assert user in group.members
@@ -494,7 +494,7 @@ def test_remove_user_from_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
@@ -516,7 +516,7 @@ def test_remove_last_user_from_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
     assert user in group.members
@@ -531,7 +531,7 @@ def test_remove_user_from_group_that_does_not_exist():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
     assert user in group.members
@@ -548,7 +548,7 @@ def test_remove_user_that_does_not_exist_from_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     assert len(group.members) == 1
     assert user in group.members
@@ -565,7 +565,7 @@ def test_remove_user_that_is_not_a_member_from_group():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
@@ -585,7 +585,7 @@ def test_get_user_groups():
     sampledb.db.session.commit()
     sampledb.logic.groups.create_group("Test Group", "", user.id)
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
@@ -623,7 +623,7 @@ def test_get_group_member_ids():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    group = sampledb.models.groups.Group.query.get(group_id)
+    group = sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     user = sampledb.models.User("Example User", "example@example.com", sampledb.models.UserType.PERSON)
     sampledb.db.session.add(user)
@@ -648,7 +648,7 @@ def test_get_group_member_ids_for_group_that_does_not_exist():
     sampledb.db.session.add(user)
     sampledb.db.session.commit()
     group_id = sampledb.logic.groups.create_group("Example Group", "", user.id).id
-    sampledb.models.groups.Group.query.get(group_id)
+    sampledb.models.groups.Group.query.filter_by(id=group_id).first()
 
     with pytest.raises(sampledb.logic.errors.GroupDoesNotExistError):
         sampledb.logic.groups.get_group_member_ids(group_id + 1)
@@ -701,6 +701,7 @@ def test_group_translations(user):
         lang_code=german.lang_code,
         datetime_format_datetime=german.datetime_format_datetime,
         datetime_format_moment=german.datetime_format_moment,
+        datetime_format_moment_output=german.datetime_format_moment_output,
         enabled_for_input=True,
         enabled_for_user_interface=True
     )

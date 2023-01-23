@@ -15,7 +15,7 @@ association_table = db.Table(
 )
 
 
-class Group(db.Model):
+class Group(db.Model):  # type: ignore
     __tablename__ = 'groups'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -24,7 +24,7 @@ class Group(db.Model):
     members = db.relationship("User", secondary=association_table, backref="groups")
 
 
-class GroupInvitation(db.Model):
+class GroupInvitation(db.Model):  # type: ignore
     __tablename__ = 'group_invitations'
 
     id = db.Column(db.Integer, primary_key=True)

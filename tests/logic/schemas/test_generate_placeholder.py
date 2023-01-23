@@ -2,11 +2,15 @@
 """
 
 """
+import dataclasses
+import inspect
 
 import pytest
 
 from sampledb.logic.schemas import generate_placeholder
 from sampledb.logic.errors import SchemaError
+import sampledb.logic
+import sampledb.models
 
 
 def test_generate_bool_object():
@@ -110,6 +114,22 @@ def test_generate_quantity_object_default_invalid_units():
     }
     with pytest.raises(SchemaError):
         generate_placeholder(object_schema)
+
+
+def test_generate_quantity_object_default_multiple_units():
+    object_schema = {
+        'title': 'Example Quantity',
+        'type': 'quantity',
+        'units': ['mm', 'm'],
+        'default': 1e-3
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'quantity',
+        'dimensionality': '[length]',
+        'units': 'mm',
+        'magnitude_in_base_units': 1e-3
+    }
 
 
 def test_generate_object():
@@ -325,6 +345,59 @@ def test_generate_user_object():
     }
     placeholder_object = generate_placeholder(object_schema)
     assert placeholder_object is None
+
+
+def test_generate_user_object_with_default_self(flask_server):
+    user = sampledb.logic.users.create_user(
+        name='Test',
+        email='test@example.org',
+        type=sampledb.models.UserType.PERSON
+    )
+    object_schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'default': 'self'
+    }
+
+    @dataclasses.dataclass
+    class MockUser:
+        id: int
+        is_authenticated: bool
+
+    # mock current user to avoid being dependent on the request context
+    generate_placeholder_module = inspect.getmodule(sampledb.logic.schemas.generate_placeholder)
+    previous_current_user = generate_placeholder_module.current_user
+
+    generate_placeholder_module.current_user = MockUser(id=user.id, is_authenticated=True)
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'user',
+        'user_id': user.id
+    }
+
+    generate_placeholder_module.current_user = MockUser(id=-1, is_authenticated=False)
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None
+    generate_placeholder_module.current_user = previous_current_user
+
+
+def test_generate_user_object_with_default_user_id():
+    user = sampledb.logic.users.create_user(
+        name='Test',
+        email='test@example.org',
+        type=sampledb.models.UserType.PERSON
+    )
+    object_schema = {
+        'title': 'Example User',
+        'type': 'user',
+        'default': user.id
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object == {
+        '_type': 'user',
+        'user_id': user.id
+    }
+
 
 def test_generate_plotly_chart_object():
     object_schema = {

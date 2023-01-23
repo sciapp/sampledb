@@ -3,6 +3,10 @@
 HTTP API
 ========
 
+The SampleDB HTTP API makes it possible to use HTTP requests to perform most actions that can be done via the web frontend. This can be very useful for automated data entry, e.g. for uploading metadata from instrument control software, and retrieval, e.g. for data analysis.
+
+There are libraries for sending HTTP requests for most programming languages, and users of Python or Matlab can use the `sampledbapi <https://ag-salinga.zivgitlabpages.uni-muenster.de/sampledb-api-wrapper/index.html>`_ package `developed at WWU Münster <https://github.com/AG-Salinga/sampledb-api-wrapper>`_ for even simpler use of the HTTP API.
+
 Authentication
 --------------
 
@@ -190,7 +194,7 @@ Creating a new object
 
     .. sourcecode:: http
 
-        POST /api/v1/objects/1/versions/ HTTP/1.1
+        POST /api/v1/objects/ HTTP/1.1
         Host: iffsamples.fz-juelich.de
         Content-Type: application/json
         Accept: application/json
@@ -277,16 +281,70 @@ Updating an object / Creating a new object version
     :statuscode 404: the object does not exist
 
 
+Getting related object IDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/related_objects
+
+    Gets object IDs related to an object (`object_id`).
+
+    If an object ID refers to an object from `another database <federation>`_
+    that does not exist in this instance of SampleDB, the `component_uuid`
+    property contains the UUID of the source component. Otherwise, even if the
+    object is originally from another database, `component_uuid` will be null.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/related_objects HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "referenced_objects": [
+                {
+                    "object_id:" 2,
+                    "component_uuid": null
+                },
+                {
+                    "object_id:" 1,
+                    "component_uuid": "273e5cb7-6831-46f9-a774-1fe73c11977d"
+                }
+            ],
+            "referencing_objects": [
+                {
+                    "object_id:" 3,
+                    "component_uuid": null
+                }
+            ]
+        }
+
+    :>json array referenced_objects: the IDs of objects referenced by the metadata for this object
+    :>json array referencing_objects: the IDs of objects referencing this object in their metadata
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
 Object Permissions
 ------------------
 
 
-Reading whether an object is public
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Reading whether an object is readable by all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:get:: /api/v1/objects/(int:object_id)/permissions/public
 
-    Get whether or not an object is public.
+    Get whether or not an object is readable by all authenticated users.
 
     **Example request**:
 
@@ -311,12 +369,12 @@ Reading whether an object is public
     :statuscode 404: the object does not exist
 
 
-Setting whether an object is public
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Setting whether an object is readable by all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. http:put:: /api/v1/objects/(int:object_id)/permissions/public
 
-    Get whether or not an object is public.
+    Set whether or not an object should be readable by all authenticated users.
 
     **Example request**:
 
@@ -337,6 +395,130 @@ Setting whether an object is public
         Content-Type: application/json
 
         false
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Getting the permissions for all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/authenticated_users
+
+    Get the permissions for an object for all authenticated users.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/authenticated_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "none"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting the permissions for all authenticated users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/authenticated_users
+
+    Set the permissions for an object for all authenticated users.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/authenticated_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "read"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have GRANT permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Getting the permissions for anonymous users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/objects/(int:object_id)/permissions/anonymous_users
+
+    Get the permissions for an object for anonymous users, if anonymous users are enabled.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/objects/1/permissions/anonymous_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "none"
+
+    :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this object
+    :statuscode 404: the object does not exist
+
+
+Setting the permissions for anonymous users
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:put:: /api/v1/objects/(int:object_id)/permissions/anonymous_users
+
+    Set the permissions for an object for anonymous users, if anonymous users are enabled.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        PUT /api/v1/objects/1/permissions/anonymous_users HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        "read"
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        "read"
 
     :statuscode 200: no error
     :statuscode 403: the user does not have GRANT permissions for this object
@@ -672,7 +854,8 @@ Reading a list of all instruments
                 "name": "Example Instrument",
                 "description": "This is an example instrument",
                 "is_hidden": false,
-                "instrument_scientists": [1, 42]
+                "instrument_scientists": [1, 42],
+                "location_id": null
             }
         ]
 
@@ -707,7 +890,8 @@ Reading an instrument
             "name": "Example Instrument",
             "description": "This is an example instrument",
             "is_hidden": false,
-            "instrument_scientists": [1, 42]
+            "instrument_scientists": [1, 42],
+            "location_id": 1
         }
 
     :>json number instrument_id: the instrument's ID
@@ -715,6 +899,7 @@ Reading an instrument
     :>json string description: the instruments's description
     :>json bool is_hidden: whether or not the instrument is hidden
     :>json list instrument_scientists: the instrument scientists' IDs
+    :>json number location_id: the instrument location's ID
     :statuscode 200: no error
     :statuscode 404: the instrument does not exist
 
@@ -1471,7 +1656,9 @@ Reading a list of all locations
                 "location_id": 1,
                 "name": "Example Location",
                 "description": "This is an example location",
-                "parent_location_id": null
+                "parent_location_id": null,
+                "type_id": -99,
+                "is_hidden": false
             }
         ]
 
@@ -1505,14 +1692,19 @@ Reading a location
             "location_id": 1,
             "name": "Example Location",
             "description": "This is an example location",
-            "parent_location_id": null
+            "parent_location_id": null,
+            "type_id": -99,
+            "is_hidden": false
         }
 
     :>json number location_id: the location's ID
     :>json string name: the locations's name
     :>json string description: the locations's description
     :>json number parent_location_id: the parent location's ID
+    :>json number type_id: the location type's ID
+    :>json bool is_hidden: whether or not the location is hidden
     :statuscode 200: no error
+    :statuscode 403: the user does not have READ permissions for this location
     :statuscode 404: the location does not exist
 
 
@@ -1593,6 +1785,77 @@ Reading an object's location
     :>json number utc_datetime: the datetime when the object was stored
     :statuscode 200: no error
     :statuscode 404: the object or the object location assignment does not exist
+
+
+Location Types
+--------------
+
+
+Reading a list of all location types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/location_types/
+
+    Get a list of all location types.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/location_types/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "location_type_id": 1,
+                "name": "Example Location Type"
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading a location type
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/location_types/(int:location_type_id)
+
+    Get the specific location type (`location_type_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/location_types/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "location_type_id": 1,
+            "name": "Example Location Type"
+        }
+
+    :>json number location_type_id: the location type's ID
+    :>json string name: the location type's name
+    :statuscode 200: no error
+    :statuscode 404: the location type does not exist
 
 
 Files
@@ -1682,7 +1945,7 @@ Uploading a file
 
 .. http:post:: /api/v1/objects/(int:object_id)/files/
 
-    Create a new file with local storage for a specific object (`object_id`).
+    Create a new file with database storage for a specific object (`object_id`).
 
     **Example request**:
 
@@ -1694,7 +1957,7 @@ Uploading a file
         Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 
         {
-            "storage": "local",
+            "storage": "database",
             "original_file_name": "test.txt",
             "base64_content": "dGVzdA=="
         }

@@ -18,13 +18,13 @@ As the project models use flask-sqlalchemy however, the functions in this
 module should be called from within a Flask application context.
 """
 
-import collections
+import dataclasses
 import datetime
 import typing
 import flask
 from .. import db
-from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship
-from .users import get_user
+from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship, Object
+from .users import get_user, check_user_exists
 from .security_tokens import generate_token
 from . import groups
 from . import errors
@@ -38,28 +38,35 @@ from .languages import get_language_by_lang_code, Language
 MAX_PROJECT_NAME_LENGTH = 100
 
 
-class Project(collections.namedtuple('Project', ['id', 'name', 'description'])):
+@dataclasses.dataclass(frozen=True)
+class Project:
     """
     This class provides an immutable wrapper around models.projects.Project.
     """
-
-    def __new__(cls, id: int, name: dict, description: dict):
-        self = super(Project, cls).__new__(cls, id, name, description)
-        return self
+    id: int
+    name: typing.Dict[str, str]
+    description: typing.Dict[str, str]
 
     @classmethod
     def from_database(cls, project: projects.Project) -> 'Project':
-        return Project(id=project.id, name=project.name, description=project.description)
+        return Project(
+            id=project.id,
+            name=project.name,
+            description=project.description
+        )
 
 
-class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'project_id', 'user_id', 'inviter_id', 'utc_datetime', 'accepted'])):
+@dataclasses.dataclass(frozen=True)
+class ProjectInvitation:
     """
     This class provides an immutable wrapper around models.projects.ProjectInvitation.
     """
-
-    def __new__(cls, id: int, project_id: int, user_id: int, inviter_id: int, utc_datetime: datetime.datetime, accepted: bool):
-        self = super(ProjectInvitation, cls).__new__(cls, id, project_id, user_id, inviter_id, utc_datetime, accepted)
-        return self
+    id: int
+    project_id: int
+    user_id: int
+    inviter_id: int
+    utc_datetime: datetime.datetime
+    accepted: bool
 
     @classmethod
     def from_database(cls, project_invitation: projects.ProjectInvitation) -> 'ProjectInvitation':
@@ -73,12 +80,16 @@ class ProjectInvitation(collections.namedtuple('ProjectInvitation', ['id', 'proj
         )
 
     @property
-    def expired(self):
+    def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return datetime.datetime.utcnow() >= expiration_datetime
+        return bool(datetime.datetime.utcnow() >= expiration_datetime)
 
 
-def create_project(name: typing.Union[str, dict], description: typing.Union[str, dict], initial_user_id: int) -> Project:
+def create_project(
+        name: typing.Union[str, typing.Dict[str, str]],
+        description: typing.Union[str, typing.Dict[str, str]],
+        initial_user_id: int
+) -> Project:
     """
     Creates a new project with the given name and description and adds an
     initial user to it.
@@ -132,18 +143,22 @@ def create_project(name: typing.Union[str, dict], description: typing.Union[str,
         if item[1] == '':
             del description[item[0]]
 
-    user = get_user(initial_user_id)
+    check_user_exists(initial_user_id)
     project = projects.Project(name=name, description=description)
     db.session.add(project)
-
     db.session.commit()
-    user_project_permissions = projects.UserProjectPermissions(project_id=project.id, user_id=user.id, permissions=Permissions.GRANT)
+
+    user_project_permissions = projects.UserProjectPermissions(project_id=project.id, user_id=initial_user_id, permissions=Permissions.GRANT)
     db.session.add(user_project_permissions)
     db.session.commit()
     return Project.from_database(project)
 
 
-def update_project(project_id: int, name: dict, description: dict) -> None:
+def update_project(
+        project_id: int,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str]
+) -> None:
     """
     Updates the project's name and description.
 
@@ -183,7 +198,7 @@ def update_project(project_id: int, name: dict, description: dict) -> None:
     if 'en' not in name:
         raise errors.MissingEnglishTranslationError()
 
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
 
@@ -208,7 +223,7 @@ def delete_project(project_id: int) -> None:
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     # project object permissions and project default permissions will be
@@ -227,7 +242,7 @@ def get_project(project_id: int) -> Project:
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     return Project.from_database(project)
@@ -254,7 +269,7 @@ def get_project_member_user_ids_and_permissions(project_id: int, include_groups:
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id).all()
@@ -289,7 +304,7 @@ def get_user_project_permissions(project_id: int, user_id: int, include_groups: 
     """
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id, user_id=user_id).first()
     if user_permissions:
-        permissions = user_permissions.permissions
+        permissions = typing.cast(Permissions, user_permissions.permissions)
     else:
         # verify that project exists or raise error
         get_project(project_id)
@@ -312,7 +327,7 @@ def get_project_member_group_ids_and_permissions(project_id: int) -> typing.Dict
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     group_permissions = projects.GroupProjectPermissions.query.filter_by(project_id=project_id).all()
@@ -331,8 +346,8 @@ def get_user_projects(
     Returns a list of the project IDs of all projects the user with the given
     user ID is a member of.
 
-    :param project_id: the ID of an existing project
-    :param include_groups: whether or not groups membership should be
+    :param user_id: the ID of an existing user
+    :param include_groups: whether groups membership should be
         considered as well
     :param min_permissions: only return projects for which the user has at
         least this permission level
@@ -379,10 +394,10 @@ def invite_user_to_project(
     :raise errors.UserAlreadyMemberOfProjectError: when the user with the given
         user ID already is a member of this project
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    get_user(user_id)
+    check_user_exists(user_id)
     if Permissions.READ in get_user_project_permissions(project_id, user_id):
         raise errors.UserAlreadyMemberOfProjectError()
     invitation = projects.ProjectInvitation(
@@ -426,16 +441,16 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
     :raise errors.UserAlreadyMemberOfProjectError: when the user is already
         a member of the project
     """
-    if permissions == permissions.NONE:
+    if permissions == Permissions.NONE:
         # project members with no permissions are not stored
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    user = get_user(user_id)
+    check_user_exists(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
-        user_id=user.id
+        user_id=user_id
     ).first()
     if existing_permissions is not None:
         raise errors.UserAlreadyMemberOfProjectError()
@@ -448,9 +463,9 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
         include_accepted_invitations=False
     )
     for invitation in invitations:
-        invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
-        invitation.accepted = True
-        db.session.add(invitation)
+        mutable_invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
+        mutable_invitation.accepted = True
+        db.session.add(mutable_invitation)
     db.session.commit()
     if other_project_ids:
         ancestor_project_ids = get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
@@ -476,10 +491,10 @@ def add_group_to_project(project_id: int, group_id: int, permissions: Permission
     :raise errors.GroupAlreadyMemberOfProjectError: when the group is already
         a member of the project
     """
-    if permissions == permissions.NONE:
+    if permissions == Permissions.NONE:
         # project members with no permissions are not stored
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     group = groups.get_group(group_id)
@@ -513,13 +528,13 @@ def remove_user_from_project(project_id: int, user_id: int) -> None:
     :raise errors.NoMemberWithGrantPermissionsForProjectError: when there would
         be no user or group with grant permissions left
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    user = get_user(user_id)
+    check_user_exists(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
-        user_id=user.id
+        user_id=user_id
     ).first()
     if existing_permissions is None:
         raise errors.UserNotMemberOfProjectError()
@@ -550,7 +565,7 @@ def remove_group_from_project(project_id: int, group_id: int) -> None:
     :raise errors.GroupNotMemberOfProjectError: when the group is not a member of
         the project
     """
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     group = groups.get_group(group_id)
@@ -587,10 +602,10 @@ def update_user_project_permissions(project_id: int, user_id: int, permissions: 
     if permissions == Permissions.NONE:
         remove_user_from_project(project_id=project_id, user_id=user_id)
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
-    get_user(user_id)
+    check_user_exists(user_id)
     existing_permissions = projects.UserProjectPermissions.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -632,7 +647,7 @@ def update_group_project_permissions(project_id: int, group_id: int, permissions
     if permissions == Permissions.NONE:
         remove_group_from_project(project_id=project_id, group_id=group_id)
         return
-    project = projects.Project.query.get(project_id)
+    project = projects.Project.query.filter_by(id=project_id).first()
     if project is None:
         raise errors.ProjectDoesNotExistError()
     groups.get_group(group_id)
@@ -653,7 +668,7 @@ def get_group_projects(group_id: int) -> typing.List[Project]:
     Returns a list of the project IDs of all projects the group with the given
     group ID is a member of.
 
-    :param project_id: the ID of an existing project
+    :param group_id: the ID of an existing group
     :return: the member ID list
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists
@@ -730,6 +745,26 @@ def delete_subproject_relationship(parent_project_id: int, child_project_id: int
         raise errors.SubprojectRelationshipDoesNotExistError()
     db.session.delete(subproject_relationship)
     db.session.commit()
+
+
+def get_all_parent_project_ids() -> typing.Dict[int, typing.Sequence[int]]:
+    """
+    Return a dict containing the parent project IDs for each existing project.
+
+    If a project's ID is not in the dict, assume it has no parent project.
+
+    :return: dict of parent project IDs
+    """
+    subproject_relationships: typing.Iterable[SubprojectRelationship] = SubprojectRelationship.query.all()
+    parent_project_ids: typing.Dict[int, typing.Set[int]] = {}
+    for relationship in subproject_relationships:
+        if relationship.child_project_id not in parent_project_ids:
+            parent_project_ids[relationship.child_project_id] = set()
+        parent_project_ids[relationship.child_project_id].add(relationship.parent_project_id)
+    return {
+        project_id: tuple(parent_project_ids[project_id])
+        for project_id in parent_project_ids
+    }
 
 
 def get_parent_project_ids(project_id: int, only_if_child_can_add_users_to_parent: bool = False) -> typing.List[int]:
@@ -827,7 +862,7 @@ def can_child_add_users_to_parent_project(child_project_id: int, parent_project_
     ).first()
     if subproject_relationship is None:
         return False
-    return subproject_relationship.child_can_add_users_to_parent
+    return bool(subproject_relationship.child_can_add_users_to_parent)
 
 
 def get_project_invitations(
@@ -881,6 +916,60 @@ def get_project_invitation(invitation_id: int) -> ProjectInvitation:
     if invitation is None:
         raise errors.ProjectInvitationDoesNotExistError()
     return ProjectInvitation.from_database(invitation)
+
+
+def sort_project_id_hierarchy_list(
+        project_id_hierarchy_list: typing.List[typing.Tuple[int, int]],
+        key: typing.Callable[[Project], typing.Any]
+) -> typing.List[typing.Tuple[int, int]]:
+    """
+    Sort a project ID hierarchy list by the given key function.
+
+    :param project_id_hierarchy_list: the unsorted project ID hierarchy list
+    :param key: the key function for sorting
+    :return: the sorted project ID hierarchy list
+    """
+    def sort_sublist(
+            project_id_hierarchy_list: typing.List[typing.Tuple[int, int]],
+            sort_keys: typing.Mapping[int, typing.Any],
+            current_level: int = 0
+    ) -> typing.List[typing.Tuple[int, int]]:
+        current_level_indices = []
+        sublist_indices: typing.Dict[int, typing.List[int]] = {}
+        previous_id = None
+        for i in range(len(project_id_hierarchy_list)):
+            level, project_id = project_id_hierarchy_list[i]
+            if level == current_level:
+                current_level_indices.append(i)
+                previous_id = project_id
+            elif previous_id is not None:
+                if previous_id in sublist_indices and sublist_indices[previous_id][1] == i - 1:
+                    sublist_indices[previous_id][1] = i
+                else:
+                    sublist_indices[previous_id] = [i, i]
+
+        new_project_id_hierarchy_list = []
+        for i in sorted(current_level_indices, key=lambda i: sort_keys[project_id_hierarchy_list[i][1]]):  # type: ignore
+            new_project_id_hierarchy_list.append(project_id_hierarchy_list[i])
+            project_id = project_id_hierarchy_list[i][1]
+            if project_id in sublist_indices:
+                sublist_start, sublist_end = sublist_indices[project_id]
+                new_project_id_hierarchy_list.extend(sort_sublist(
+                    project_id_hierarchy_list=project_id_hierarchy_list[sublist_start:sublist_end + 1],
+                    sort_keys=sort_keys,
+                    current_level=current_level + 1
+                ))
+        return new_project_id_hierarchy_list
+
+    project_ids = {
+        project_id
+        for level, project_id in project_id_hierarchy_list
+    }
+    sort_keys = {
+        project_id: key(get_project(project_id))
+        for project_id in project_ids
+    }
+    return sort_sublist(project_id_hierarchy_list, sort_keys)
 
 
 def get_project_id_hierarchy_list(project_ids: typing.List[int]) -> typing.List[typing.Tuple[int, int]]:
@@ -963,11 +1052,11 @@ def link_project_and_object(
         for either the project or the object
     """
     # make sure the object exists
-    objects.get_object(object_id)
+    objects.check_object_exists(object_id)
     # make sure the project exists
     get_project(project_id)
     # make sure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
     if projects.ProjectObjectAssociation.query.filter(
             db.or_(
                 projects.ProjectObjectAssociation.project_id == project_id,
@@ -1002,14 +1091,14 @@ def unlink_project_and_object(
         between the project and the object
     """
     # make sure the user exists
-    get_user(user_id)
+    check_user_exists(user_id)
     association = projects.ProjectObjectAssociation.query.filter_by(
         project_id=project_id,
         object_id=object_id
     ).first()
     if association is None:
         # make sure the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         # make sure the project exists
         get_project(project_id)
         raise errors.ProjectObjectLinkDoesNotExistsError()
@@ -1033,13 +1122,13 @@ def get_project_linked_to_object(object_id: int) -> typing.Optional[Project]:
     ).first()
     if association is None:
         # make sure the object exists
-        objects.get_object(object_id)
+        objects.check_object_exists(object_id)
         return None
 
     return get_project(association.project_id)
 
 
-def get_object_linked_to_project(project_id: int) -> typing.Optional[objects.Object]:
+def get_object_linked_to_project(project_id: int) -> typing.Optional[Object]:
     """
     Return the object linked to a given project, or None.
 

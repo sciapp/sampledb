@@ -6,13 +6,15 @@ Create default languages.
 import json
 import os
 
+import flask_sqlalchemy
+
 from ..languages import Language
 
 MIGRATION_INDEX = 49
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
-def run(db):
+def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     default_languages = [
         {
             'id': Language.ENGLISH,
@@ -40,10 +42,10 @@ def run(db):
 
     existing_language_ids = [
         language[0]
-        for language in db.session.execute("""
+        for language in db.session.execute(db.text("""
                SELECT id
                FROM languages;
-           """).fetchall()
+           """)).fetchall()
     ]
 
     performed_migration = False
@@ -53,22 +55,33 @@ def run(db):
             continue
 
         # Perform migration
-        db.session.execute("""
+        db.session.execute(db.text("""
                INSERT INTO languages (id, names, lang_code, datetime_format_datetime, datetime_format_moment, enabled_for_input)
                VALUES (:id, :names, :lang_code, :datetime_format_datetime, :datetime_format_moment, :enabled_for_input);
-           """, params=language)
+           """), params=language)
         performed_migration = True
 
-    languages_column_names = db.session.execute("""
+    languages_column_names = db.session.execute(db.text("""
         SELECT column_name
         FROM information_schema.columns
         WHERE table_name = 'languages'
-    """).fetchall()
+    """)).fetchall()
     if ('enabled_for_user_interface',) in languages_column_names:
-        db.session.execute("""
+        db.session.execute(db.text("""
             UPDATE languages
             SET enabled_for_user_interface = TRUE
             WHERE id < 0
-        """)
+        """))
+    if ('datetime_format_moment_output',) in languages_column_names:
+        db.session.execute(db.text("""
+            UPDATE languages
+            SET datetime_format_moment_output = 'MMM D, YYYY, h:mm:ss A'
+            WHERE id = -99
+        """))
+        db.session.execute(db.text("""
+            UPDATE languages
+            SET datetime_format_moment_output = 'DD.MM.YYYY HH:mm:ss'
+            WHERE id = -98
+        """))
 
     return performed_migration

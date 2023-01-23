@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Location') }} — {{ service_name }}{% endblock %}
+{% block title %}{% if location %}{{ _('Location') }} #{{ location.id }}: {{ location | get_location_name(False) }}{% else %}{{ _('Location') }}{% endif %} — {{ service_name }}{% endblock %}
 
 {% block stylesheets %}
   {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script>
   window.translations = {{ translations | tojson }};
   if (window.translations.length === 0) {
@@ -64,8 +64,25 @@ $(function (){
       return translation
     });
     updateTranslationJSON();
-    return $(this).find('.has-error').length === 0;
-  })
+    return $(this).find('.has-error').length === $(this).find('.has-error.may-have-error').length;
+  });
+
+  let location_type_picker = $('select#input-location-type');
+  location_type_picker.on('changed.bs.select', function() {
+      let selected_option = location_type_picker.find('option:selected');
+      if (selected_option.data('enableParentLocation')) {
+          $('select#input-parent-location').prop('disabled', false).closest('.form-group').show();
+          $('input#input-parent-location-replacement').prop('disabled', true);
+      } else {
+          $('select#input-parent-location').prop('disabled', true).closest('.form-group').hide();
+          $('input#input-parent-location-replacement').prop('disabled', false);
+      }
+      if (selected_option.data('enableResponsibleUsers')) {
+          $('select#input-responsible_users').prop('disabled', false).closest('.form-group').show();
+      } else {
+          $('select#input-responsible_users').prop('disabled', true).closest('.form-group').hide();
+      }
+  }).trigger('changed.bs.select');
 });
 
   </script>
@@ -130,14 +147,37 @@ $(function (){
         {% endif %}
       </div>
 
-      <div class="form-group {% if location_form.parent_location.name in location_form.errors %}has-error{% endif %}">
+    {% if location_types | length == 1 and location_form.type.data == location_types[0].id | string %}
+      <input type="hidden" name="{{ location_form.type.name }}" value="{{ location_form.type.data }}" />
+    {% else %}
+      <div class="form-group {% if location_form.type.name in location_form.errors %}has-error{% endif %} may-have-error">
+        <label for="input-location-type" class="control-label">{{ _('Location Type') }}</label>
+          <select class="selectpicker form-control" id="input-location-type" name="{{ location_form.type.name }}" data-none-selected-text="{{ _('No location type selected') }}">
+          {% for location_type_id, location_type_name in location_form.type.choices %}
+          <option {% if location_type_is_fed[location_type_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_type_id }}" {% if location_form.type.data == location_type_id %}selected="selected"{% endif %} data-enable-parent-location="{{ location_type_enable_parent_location[location_type_id] | tojson }}" data-enable-responsible-users="{{ location_type_enable_responsible_users[location_type_id] | tojson }}">{% if location_type_id == '-1' %}&mdash;{% else %}{{ location_type_name | get_translated_text }}{% endif %}</option>
+          {% endfor %}
+        </select>
+        {% for error_message in location_form.type.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+      </div>
+    {% endif %}
+
+    {% if location_types | length == 1 and location_form.type.data == location_types[0].id | string and not location_types[0].enable_parent_location %}
+      <input type="hidden" name="{{ location_form.parent_location.name }}" value="-1" />
+    {% else %}
+      <div class="form-group {% if location_form.parent_location.name in location_form.errors %}has-error{% endif %} may-have-error">
+        <input type="hidden" name="{{ location_form.parent_location.name }}" value="-1" disabled="disabled" id="input-parent-location-replacement" />
         <label for="input-parent-location" class="control-label">{{ _('Parent Location') }}</label>
           <select class="selectpicker form-control" id="input-parent-location" name="{{ location_form.parent_location.name }}" data-none-selected-text="{{ _('No location selected') }}">
           {% for location_id, location_name in location_form.parent_location.choices %}
-          <option value="{{ location_id }}" {% if location_form.parent_location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name | get_translated_text }}{% endif %}</option>
+          <option {% if location_is_fed[location_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ location_id }}" {% if location_form.parent_location.data == location_id %}selected="selected"{% endif %}>{% if location_id == '-1' %}&mdash;{% else %}{{ location_name | get_translated_text }}{% endif %}</option>
           {% endfor %}
         </select>
+        {% for error_message in location_form.parent_location.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+        {% if previous_parent_location_is_invalid %}
+          <span class="help-block">{{ _('The previous parent location may not have any sub-locations.') }}</span>
+        {% endif %}
       </div>
+    {% endif %}
 
       <div class="form-group" data-name="input-descriptions">
         <div class="form-group row" style="padding-right: 10px; margin-bottom: 0">
@@ -169,6 +209,28 @@ $(function (){
 
       <input type="hidden" id="input-translations" name="{{ location_form.translations.name }}" value="">
 
+      {% if submit_text == 'Create' %}
+        <label for="input-public">
+          <input type="checkbox" id="input-public" name="{{ location_form.is_public.name }}" {% if location_form.is_public.data != False %}checked="checked"{% endif %}> {{ _('Public') }}
+        </label>
+      {% endif %}
+
+    {% if has_grant_permissions and not (location_types | length == 1 and location_form.type.data == location_types[0].id | string and not location_types[0].enable_responsible_users) %}
+      <div class="form-group">
+        <label for="input-responsible_users" class="control-label">{{ _('Responsible Users')}}</label>
+        <select id="input-responsible_users" name="{{ location_form.responsible_users.name }}" class="selectpicker form-control" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No user selected') }}">
+          {% for user_id, user_name in location_form.responsible_users.choices %}
+            <option value="{{ user_id }}" {% if user_id in location_form.responsible_users.data %}selected="selected"{% endif %}>{{ user_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% endif %}
+
+    {% if may_change_hidden %}
+      <label for="input-hidden" style="font-weight:400">
+        <input type="checkbox" id="input-hidden" name="{{ location_form.is_hidden.name }}" {% if location_form.is_hidden.data != False %}checked="checked"{% endif %}> {{ _('Hide this location from location lists') }}
+      </label>
+    {% endif %}
     </div>
 
     <div class="form-group row clearfix" style="padding-right:0.75em">

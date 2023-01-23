@@ -5,6 +5,7 @@
 
 import io
 import json
+import sys
 import tarfile
 import zipfile
 
@@ -48,7 +49,7 @@ def set_up_state(user: User):
         name='Example Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
     action2 = actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema={
@@ -70,7 +71,7 @@ def set_up_state(user: User):
         name='Irrelevant Action',
         description=''
     )
-    sampledb.logic.action_permissions.set_action_public(action2.id)
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action2.id, sampledb.models.Permissions.READ)
     data = {'name': {'_type': 'text', 'text': 'Object'}}
     object = objects.create_object(user_id=user.id, action_id=action.id, data=data)
     def save_content(file): file.write("This is a test file.".encode('utf-8'))
@@ -116,7 +117,7 @@ def validate_data(data):
     del data['instruments'][0]['instrument_log_entries'][0]['versions'][0]['utc_datetime']
 
     user_id = sampledb.logic.users.get_users()[0].id
-    action_id = sampledb.logic.actions.get_actions(sampledb.models.ActionType.SAMPLE_CREATION)[0].id
+    action_id = sampledb.logic.actions.get_actions(action_type_id=sampledb.models.ActionType.SAMPLE_CREATION)[0].id
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
     instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
@@ -182,9 +183,9 @@ def validate_data(data):
                 'name': 'Example Action',
                 'user_id': None,
                 'instrument_id': None,
-                'description': '',
+                'description': None,
                 'description_is_markdown': False,
-                'short_description': '',
+                'short_description': None,
                 'short_description_is_markdown': False
             }
         ],
@@ -194,7 +195,7 @@ def validate_data(data):
                 'name': 'Example Instrument',
                 'description': 'Example Instrument Description',
                 'description_is_markdown': False,
-                'short_description': '',
+                'short_description': None,
                 'short_description_is_markdown': False,
                 'instrument_scientist_ids': [],
                 'instrument_log_entries': [
@@ -308,3 +309,23 @@ def test_tar_gz_export(user, app, tmpdir):
 
         with tar_file.extractfile(f'sampledb_export/instruments/{instrument_id}/log_entries/{instrument_log_entry_id}/files/{instrument_log_entry_file_id}/example.txt') as text_file:
             assert text_file.read() == b'Example Content'
+
+
+def test_eln_export(user, app, tmpdir):
+    files.FILE_STORAGE_PATH = tmpdir
+
+    set_up_state(user)
+    object_id = sampledb.logic.objects.get_objects()[0].id
+    instrument_id = sampledb.logic.instruments.get_instruments()[0].id
+    instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
+    instrument_log_entry_file_id = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(instrument_log_entry_id)[0].id
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        zip_bytes = export.get_eln_archive(user.id)
+    app.config['SERVER_NAME'] = server_name
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
+        assert zip_file.testzip() is None
+        with zip_file.open('sampledb_export/ro-crate-metadata.json') as data_file:
+            json.load(data_file)
