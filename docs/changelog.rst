@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.21.1
+--------------
+
+Currently in development.
+
+- Fixed filtering by activity of a user
+
 Version 0.21
 ------------
 
