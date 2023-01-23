@@ -4,7 +4,7 @@ Changelog
 Version 0.21.1
 --------------
 
-Currently in development.
+Released on January 25th, 2023.
 
 - Fixed filtering by activity of a user
 
