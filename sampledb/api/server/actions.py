@@ -10,7 +10,7 @@ from .authentication import multi_auth
 from ..utils import Resource, ResponseData
 from ...logic.actions import get_action
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions
-from ...logic import errors, utils, actions
+from ...logic import errors, utils, actions, action_types
 from ...models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -22,9 +22,9 @@ def action_to_json(action: actions.Action) -> typing.Dict[str, typing.Any]:
         'instrument_id': action.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
         'user_id': action.user_id,
         'type': {
-            actions.ActionType.SAMPLE_CREATION: 'sample',
-            actions.ActionType.MEASUREMENT: 'measurement',
-            actions.ActionType.SIMULATION: 'simulation'
+            action_types.ActionType.SAMPLE_CREATION: 'sample',
+            action_types.ActionType.MEASUREMENT: 'measurement',
+            action_types.ActionType.SIMULATION: 'simulation'
         }.get(action.type_id, 'custom'),
         'type_id': action.type_id,
         'name': utils.get_translated_text(

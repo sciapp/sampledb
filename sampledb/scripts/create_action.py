@@ -10,7 +10,8 @@ import sys
 import typing
 
 from .. import create_app
-from ..logic.actions import create_action, get_action_type, get_action_types, check_action_type_exists
+from ..logic.action_types import check_action_type_exists, get_action_type, get_action_types
+from ..logic.actions import create_action
 from ..logic.action_translations import set_action_translation
 from ..logic.instruments import check_instrument_exists
 from ..logic.languages import Language

@@ -12,7 +12,8 @@ from flask_babel import _
 
 from ... import logic
 from ... import models
-from ...logic.actions import get_actions, get_action, get_action_type, get_action_types
+from ...logic.actions import get_actions, get_action
+from ...logic.action_types import get_action_type, get_action_types
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
 from ...logic.users import get_users

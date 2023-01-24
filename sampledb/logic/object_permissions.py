@@ -11,6 +11,7 @@ import sqlalchemy
 from .. import db
 from . import errors
 from . import actions
+from . import action_types
 from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
 from . import instruments
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
@@ -335,7 +336,7 @@ def get_objects_with_permissions(
 
     if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
         # include federated equivalents for default action types
-        all_action_types = actions.get_action_types()
+        all_action_types = action_types.get_action_types()
         fed_default_action_types: typing.Dict[int, typing.List[int]] = {}
         for action_type in all_action_types:
             if action_type.fed_id is not None and action_type.fed_id <= 0:

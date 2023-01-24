@@ -6,15 +6,16 @@ import typing
 import datetime
 
 from sampledb import db, models
-from sampledb.logic.actions import check_action_exists, check_action_type_exists
-from sampledb.logic.comments import get_comment
-from sampledb.logic.components import check_component_exists
-from sampledb.logic.files import get_file
-from sampledb.logic.instruments import check_instrument_exists
-from sampledb.logic.locations import check_location_exists, get_object_location_assignment, get_location_type
-from sampledb.logic.objects import check_object_exists
-from sampledb.logic.users import check_user_exists
-from sampledb.models import fed_logs
+from .actions import check_action_exists
+from .action_types import check_action_type_exists
+from .comments import get_comment
+from .components import check_component_exists
+from .files import get_file
+from .instruments import check_instrument_exists
+from .locations import check_location_exists, get_object_location_assignment, get_location_type
+from .objects import check_object_exists
+from .users import check_user_exists
+from ..models import fed_logs
 
 
 def _store_new_fed_user_log_entry(

@@ -7,7 +7,7 @@ import pytest
 
 from sampledb import db, models
 from sampledb.logic import fed_logs, errors
-from sampledb.logic.actions import create_action_type
+from sampledb.logic.action_types import create_action_type
 from sampledb.logic.comments import create_comment, get_comment
 from sampledb.logic.components import add_component
 from sampledb.logic.files import create_url_file

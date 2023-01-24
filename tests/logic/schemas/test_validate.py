@@ -1150,7 +1150,7 @@ def test_validate_sample_with_federated_action_type():
     component = sampledb.logic.components.add_component(
         uuid='c52c42c3-1b6d-44a9-a2c7-88d99c4c9677'
     )
-    action_type = sampledb.logic.actions.create_action_type(
+    action_type = sampledb.logic.action_types.create_action_type(
         admin_only=False,
         show_on_frontpage=False,
         show_in_navbar=False,
@@ -1414,7 +1414,7 @@ def test_validate_measurement_with_federated_action_type():
     component = sampledb.logic.components.add_component(
         uuid='c52c42c3-1b6d-44a9-a2c7-88d99c4c9677'
     )
-    action_type = sampledb.logic.actions.create_action_type(
+    action_type = sampledb.logic.action_types.create_action_type(
         admin_only=False,
         show_on_frontpage=False,
         show_in_navbar=False,
@@ -1764,7 +1764,7 @@ def test_validate_object_reference_with_federated_action_type():
     component = sampledb.logic.components.add_component(
         uuid='c52c42c3-1b6d-44a9-a2c7-88d99c4c9677'
     )
-    action_type = sampledb.logic.actions.create_action_type(
+    action_type = sampledb.logic.action_types.create_action_type(
         admin_only=False,
         show_on_frontpage=False,
         show_in_navbar=False,

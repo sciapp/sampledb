@@ -16,7 +16,8 @@ from ... import logic
 from ... import models
 from ...logic import user_log, object_sorting
 from ...logic.instruments import get_instruments, get_instrument
-from ...logic.actions import get_action, get_action_type
+from ...logic.actions import get_action
+from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
 from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists
@@ -84,7 +85,7 @@ def objects():
     all_actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )
-    all_action_types = logic.actions.get_action_types(
+    all_action_types = logic.action_types.get_action_types(
         filter_fed_defaults=True
     )
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
@@ -828,9 +829,9 @@ def objects():
         objects_allowed_to_select = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
     elif create_from_objects and use_in_action_type_id:
         use_in_action_form = UseInActionForm()
-        use_in_action_type = logic.actions.get_action_type(use_in_action_type_id)
+        use_in_action_type = logic.action_types.get_action_type(use_in_action_type_id)
 
-        if use_in_action_type_id == models.ActionType.MEASUREMENT and logic.actions.is_usable_in_action_types_table_empty():
+        if use_in_action_type_id == models.ActionType.MEASUREMENT and logic.action_types.is_usable_in_action_types_table_empty():
             if not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
                 for object in objects:
                     if object['action'] and object['action'].type_id == models.ActionType.SAMPLE_CREATION:
@@ -856,11 +857,11 @@ def objects():
 
     else:
         create_from_objects = None
-        if logic.actions.is_usable_in_action_types_table_empty():
+        if logic.action_types.is_usable_in_action_types_table_empty():
             if not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
                 for object in objects:
                     if object['action'] and object['action'].type_id == models.ActionType.SAMPLE_CREATION:
-                        available_action_types.append(logic.actions.get_action_type(models.ActionType.MEASUREMENT))
+                        available_action_types.append(logic.action_types.get_action_type(models.ActionType.MEASUREMENT))
                         break
 
         else:
@@ -1346,7 +1347,7 @@ def save_object_list_defaults():
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ
         )
-        all_action_types = logic.actions.get_action_types(
+        all_action_types = logic.action_types.get_action_types(
             filter_fed_defaults=True
         )
         all_actions = get_sorted_actions_for_user(

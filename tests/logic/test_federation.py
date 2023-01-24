@@ -12,10 +12,11 @@ import pytest
 
 import sampledb.logic.components
 from sampledb import logic, db
-from sampledb.logic import errors, actions, instruments, object_permissions
+from sampledb.logic import errors, actions, instruments, object_permissions, action_types
 from sampledb.logic.action_translations import get_action_translations_for_action, set_action_translation, get_action_translation_for_action_in_language
 from sampledb.logic.action_type_translations import get_action_type_translations_for_action_type
-from sampledb.logic.actions import get_action, get_action_type, create_action_type, create_action
+from sampledb.logic.actions import get_action, create_action
+from sampledb.logic.action_types import get_action_type, create_action_type
 from sampledb.logic.comments import get_comment, create_comment, get_comments_for_object
 from sampledb.logic.components import get_component_by_uuid, add_component, get_component, Component
 from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_location_type_log_entries_for_location_type, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
@@ -1850,13 +1851,13 @@ def test_import_action_no_translations(component):
 
 def test_import_action_type(component):
     # default action_types
-    num_types = len(actions.get_action_types())
+    num_types = len(action_types.get_action_types())
     action_type_data = deepcopy(ACTION_TYPE_DATA)
     start_datetime = datetime.datetime.utcnow()
     action_type = parse_import_action_type(action_type_data, component)
     _check_action_type(action_type_data)
 
-    assert len(actions.get_action_types()) == num_types + 1
+    assert len(action_types.get_action_types()) == num_types + 1
 
     log_entries = get_fed_action_type_log_entries_for_action_type(action_type.id)
     assert len(FedActionTypeLogEntry.query.all()) == 1
@@ -1870,14 +1871,14 @@ def test_import_action_type(component):
 
 def test_import_default_action_type(component):
     for i, action_type_id in enumerate([ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION]):
-        num_types = len(actions.get_action_types())
+        num_types = len(action_types.get_action_types())
         action_type_data = deepcopy(ACTION_TYPE_DATA)
         action_type_data['action_type_id'] = action_type_id
         start_datetime = datetime.datetime.utcnow()
         action_type = parse_import_action_type(action_type_data, component)
         _check_action_type(action_type_data)
 
-        assert len(actions.get_action_types()) == num_types + 1
+        assert len(action_types.get_action_types()) == num_types + 1
 
         log_entries = get_fed_action_type_log_entries_for_action_type(action_type.id)
         assert len(FedActionTypeLogEntry.query.all()) == 1 + i
@@ -1891,7 +1892,7 @@ def test_import_default_action_type(component):
 
 def test_update_action_type(component):
     # default action_types
-    num_types = len(actions.get_action_types())
+    num_types = len(action_types.get_action_types())
 
     old_action_type_data = deepcopy(ACTION_TYPE_DATA)
     start_datetime = datetime.datetime.utcnow()
@@ -1923,7 +1924,7 @@ def test_update_action_type(component):
     action_type = parse_import_action_type(action_type_data, component)
     _check_action_type(action_type_data)
 
-    assert len(actions.get_action_types()) == num_types + 1
+    assert len(action_types.get_action_types()) == num_types + 1
     assert old_action_type.id == action_type.id
 
     log_entries = get_fed_action_type_log_entries_for_action_type(action_type.id)
@@ -1944,7 +1945,7 @@ def test_update_action_type(component):
 
 def test_parse_action_type_invalid_data(component):
     # default action_types
-    num_types = len(actions.get_action_types())
+    num_types = len(action_types.get_action_types())
     num_translations = len(ActionTypeTranslation.query.all())
 
     _invalid_id_test(ACTION_TYPE_DATA, 'action_type_id', parse_action_type)
@@ -1969,7 +1970,7 @@ def test_parse_action_type_invalid_data(component):
         _invalid_translation_str_test(ACTION_TYPE_DATA, lang, 'view_text', parse_action_type)
         _invalid_translation_str_test(ACTION_TYPE_DATA, lang, 'perform_text', parse_action_type)
 
-    assert len(actions.get_action_types()) == num_types
+    assert len(action_types.get_action_types()) == num_types
     assert len(FedActionTypeLogEntry.query.all()) == 0
     assert len(ActionTypeTranslation.query.all()) == num_translations
 

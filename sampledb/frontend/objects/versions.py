@@ -9,7 +9,8 @@ from flask_babel import _
 
 from .. import frontend
 from ... import logic
-from ...logic.actions import get_action_type, get_action
+from ...logic.actions import get_action
+from ...logic.action_types import get_action_type
 from ...logic.object_permissions import Permissions, get_user_object_permissions
 from ...logic.settings import get_user_setting
 from ...logic.objects import get_object, get_object_versions, get_current_object_version_id

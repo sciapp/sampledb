@@ -7,7 +7,7 @@ import flask
 import flask_login
 
 from .. import frontend
-from ...logic.actions import get_action_types
+from ...logic.action_types import get_action_types
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_objects_with_permissions
 from ...logic.users import get_users
