@@ -2,10 +2,10 @@
 """
 
 """
+import json
 
 import flask
 import flask_login
-import json
 from flask_babel import _
 
 from . import frontend
@@ -73,10 +73,7 @@ def project(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.abort(404)
     user_permissions = logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_id, include_groups=True)
-    if Permissions.READ in user_permissions:
-        show_objects_link = True
-    else:
-        show_objects_link = False
+    show_objects_link = Permissions.READ in user_permissions
     if Permissions.READ in user_permissions:
         leave_project_form = LeaveProjectForm()
     else:

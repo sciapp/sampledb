@@ -56,9 +56,9 @@ class SelectMultipleFieldFix(SelectMultipleField):
         # SelectMultipleField does not yet support the validate_choice flag
         # used by SelectField. This is already fixed in master of wtforms, but
         # until the new version is released, this adds support for the flag.
-        if not self.validate_choice:
-            return None
-        super(SelectMultipleFieldFix, self).pre_validate(form)
+        if self.validate_choice:
+            super().pre_validate(form)
+        return None
 
 
 class InstrumentLogEntryForm(FlaskForm):

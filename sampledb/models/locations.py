@@ -6,11 +6,11 @@
 import datetime
 import typing
 
-from .. import db
+from sqlalchemy.dialects import postgresql
 
+from .. import db
 from .objects import Objects
 from .users import User
-import sqlalchemy.dialects.postgresql as postgresql
 
 
 location_user_association_table = db.Table(

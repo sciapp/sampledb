@@ -39,13 +39,13 @@ class ActionTypeTranslation(db.Model):  # type: ignore
             view_text: str,
             perform_text: str
     ) -> None:
-        self.language_id = language_id,
-        self.action_type_id = action_type_id,
-        self.name = name,
-        self.description = description,
-        self.object_name = object_name,
-        self.object_name_plural = object_name_plural,
-        self.view_text = view_text,
+        self.language_id = language_id
+        self.action_type_id = action_type_id
+        self.name = name
+        self.description = description
+        self.object_name = object_name
+        self.object_name_plural = object_name_plural
+        self.view_text = view_text
         self.perform_text = perform_text
 
     def __eq__(self, other: typing.Any) -> bool:

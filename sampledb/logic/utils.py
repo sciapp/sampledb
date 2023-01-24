@@ -163,8 +163,8 @@ def get_translated_text(
         if translated_text:
             return translated_text
         # fall back to first language code with non-empty content
-        for language_code in sorted(text):
-            translated_text = text[language_code]
+        for fallback_language_code in sorted(text):
+            translated_text = text[fallback_language_code]
             if translated_text:
                 return translated_text
 

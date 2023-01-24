@@ -4,6 +4,7 @@
 """
 
 import datetime
+import http
 import secrets
 
 import flask
@@ -637,8 +638,10 @@ def email_for_resetting_password():
     request_password_reset_form = RequestPasswordResetForm()
     if flask.request.method == "GET":
         #  GET (email dialog )
-        return flask.render_template('reset_password_by_email.html',
-                                     request_password_reset_form=request_password_reset_form)
+        return flask.render_template(
+            'reset_password_by_email.html',
+            request_password_reset_form=request_password_reset_form
+        )
     if flask.request.method == "POST":
         has_error = False
         if request_password_reset_form.validate_on_submit():
@@ -655,9 +658,12 @@ def email_for_resetting_password():
                         email=email,
                         has_error=has_error
                     )
-        return flask.render_template('reset_password_by_email.html',
-                                     request_password_reset_form=request_password_reset_form,
-                                     has_error=has_error)
+        return flask.render_template(
+            'reset_password_by_email.html',
+            request_password_reset_form=request_password_reset_form,
+            has_error=has_error
+        )
+    return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)
 
 
 def reset_password():

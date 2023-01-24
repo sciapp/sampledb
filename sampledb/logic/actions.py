@@ -254,7 +254,7 @@ def create_action_type(
         enable_project_link: bool,
         disable_create_objects: bool,
         is_template: bool,
-        usable_in_action_type_ids: typing.Sequence[int] = [],
+        usable_in_action_type_ids: typing.Sequence[int] = (),
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None,
         scicat_export_type: typing.Optional[SciCatExportType] = None
@@ -332,7 +332,7 @@ def update_action_type(
         enable_project_link: bool,
         disable_create_objects: bool,
         is_template: bool,
-        usable_in_action_type_ids: typing.Sequence[int] = [],
+        usable_in_action_type_ids: typing.Sequence[int] = (),
         scicat_export_type: typing.Optional[SciCatExportType] = None
 ) -> ActionType:
     """

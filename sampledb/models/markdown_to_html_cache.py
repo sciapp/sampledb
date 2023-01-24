@@ -2,9 +2,9 @@
 """
 
 """
+from sqlalchemy.dialects import postgresql
 
 from .. import db
-import sqlalchemy.dialects.postgresql as postgresql
 
 
 class MarkdownToHTMLCacheEntry(db.Model):  # type: ignore

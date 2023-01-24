@@ -20,13 +20,13 @@ from ..logic.languages import Language
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 4:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     action_id_str, name, description, schema_file_name = arguments
     try:
         action_id = int(action_id_str)
     except ValueError:
         print("Error: action_id must be an integer", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
     app = create_app()
     with app.app_context():
@@ -34,14 +34,14 @@ def main(arguments: typing.List[str]) -> None:
             check_action_exists(action_id)
         except ActionDoesNotExistError:
             print('Error: no action with this id exists', file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         with open(schema_file_name, 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
         try:
             validate_schema(schema)
         except ValidationError as e:
             print('Error: invalid schema: {}'.format(str(e)), file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         set_action_translation(
             language_id=Language.ENGLISH,
             action_id=action_id,

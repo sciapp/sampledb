@@ -25,13 +25,13 @@ from .objects.objects import get_object_if_current_user_has_read_permissions
 from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
 
-SECTIONS = {
+SECTIONS = frozenset({
     'activity_log',
     'locations',
     'publications',
     'files',
     'comments'
-}
+})
 
 
 def create_pdfexport(
@@ -68,10 +68,10 @@ def create_pdfexport(
                 file_id = int(file_id)
                 file = exported_files[(object_id, file_id)]
                 if file.storage in {'local', 'database'} and not file.is_hidden:
-                    for file_extension in IMAGE_FORMATS:
+                    for file_extension, mime_type in IMAGE_FORMATS.items():
                         if file.original_file_name.endswith(file_extension):
                             image_data = file.open(read_only=True).read()
-                            url = 'data:' + IMAGE_FORMATS[file_extension] + ';base64,' + base64.b64encode(image_data).decode('utf-8')
+                            url = 'data:' + mime_type + ';base64,' + base64.b64encode(image_data).decode('utf-8')
                             break
             except Exception:
                 pass

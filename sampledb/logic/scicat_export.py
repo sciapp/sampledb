@@ -289,7 +289,8 @@ def upload_object(
             json=[data],
             headers={
                 'Authorization': api_token
-            }
+            },
+            timeout=SCICAT_TIMEOUT
         )
     except requests.exceptions.RequestException:
         raise errors.SciCatNotReachableError()

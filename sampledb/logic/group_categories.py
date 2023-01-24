@@ -331,8 +331,8 @@ def get_full_group_category_names() -> typing.Dict[int, typing.Sequence[typing.D
                 else:
                     any_missing = True
     return {
-        category_id: tuple(category_names[category_id])
-        for category_id in category_names
+        category_id: tuple(individual_category_names)
+        for category_id, individual_category_names in category_names.items()
     }
 
 

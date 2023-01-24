@@ -5,7 +5,7 @@
 
 import flask
 import flask_login
-from flask_babel import _
+from flask_babel import _, gettext
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField, BooleanField
 from wtforms.validators import InputRequired
@@ -13,8 +13,6 @@ from wtforms.validators import InputRequired
 from . import frontend
 from .. import logic
 from .utils import check_current_user_is_not_readonly
-
-from flask_babel import gettext
 
 
 @frontend.route('/languages/')

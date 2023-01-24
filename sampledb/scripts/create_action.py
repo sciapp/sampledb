@@ -23,7 +23,7 @@ from .. import models
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 5:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     instrument_id_str, action_type_id_str, name, description, schema_file_name = arguments
     if instrument_id_str == 'None':
         instrument_id: typing.Optional[int] = None
@@ -32,7 +32,7 @@ def main(arguments: typing.List[str]) -> None:
             instrument_id = int(instrument_id_str)
         except ValueError:
             print("Error: instrument_id must be an integer or 'None'", file=sys.stderr)
-            exit(1)
+            sys.exit(1)
     try:
         action_type_id: typing.Optional[int] = int(action_type_id_str)
     except ValueError:
@@ -53,25 +53,25 @@ def main(arguments: typing.List[str]) -> None:
         print(f'- "simulation" (for {get_translated_text(get_action_type(models.ActionType.SIMULATION).name, "en")})', file=sys.stderr)
         for action_type in get_action_types():
             print(f'- "{action_type.id}" (for {get_translated_text(action_type.name, "en")})', file=sys.stderr)
-        exit(1)
+        sys.exit(1)
     app = create_app()
     with app.app_context():
         if instrument_id is not None:
             if app.config['DISABLE_INSTRUMENTS']:
                 print('Error: instruments are disabled', file=sys.stderr)
-                exit(1)
+                sys.exit(1)
             try:
                 check_instrument_exists(instrument_id)
             except InstrumentDoesNotExistError:
                 print('Error: no instrument with this id exists', file=sys.stderr)
-                exit(1)
+                sys.exit(1)
         with open(schema_file_name, 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
         try:
             validate_schema(schema)
         except ValidationError as e:
             print('Error: invalid schema: {}'.format(str(e)), file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         action = create_action(
             instrument_id=instrument_id,
             action_type_id=action_type_id,

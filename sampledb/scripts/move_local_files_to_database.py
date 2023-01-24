@@ -6,6 +6,7 @@ unchanged. The file directory will not be changed by this script.
 
 Usage: python -m sampledb move_local_files_to_database
 """
+import sys
 import typing
 
 from sampledb import db, models, logic, create_app
@@ -14,7 +15,7 @@ from sampledb import db, models, logic, create_app
 def main(arguments: typing.List[str]) -> None:
     if arguments:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
 
     num_moved_files = 0
     num_local_files = 0

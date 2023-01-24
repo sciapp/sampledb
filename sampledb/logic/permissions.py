@@ -34,7 +34,7 @@ from ..models import Permissions
 from .. import db
 
 
-class ResourcePermissions(object):
+class ResourcePermissions:
     def __init__(
             self,
             resource_id_name: str,

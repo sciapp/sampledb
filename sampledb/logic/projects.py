@@ -21,7 +21,9 @@ module should be called from within a Flask application context.
 import dataclasses
 import datetime
 import typing
+
 import flask
+
 from .. import db
 from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship, Object
 from .users import get_user, check_user_exists
@@ -762,8 +764,8 @@ def get_all_parent_project_ids() -> typing.Dict[int, typing.Sequence[int]]:
             parent_project_ids[relationship.child_project_id] = set()
         parent_project_ids[relationship.child_project_id].add(relationship.parent_project_id)
     return {
-        project_id: tuple(parent_project_ids[project_id])
-        for project_id in parent_project_ids
+        project_id: tuple(individual_parent_project_ids)
+        for project_id, individual_parent_project_ids in parent_project_ids.items()
     }
 
 
@@ -937,8 +939,8 @@ def sort_project_id_hierarchy_list(
         current_level_indices = []
         sublist_indices: typing.Dict[int, typing.List[int]] = {}
         previous_id = None
-        for i in range(len(project_id_hierarchy_list)):
-            level, project_id = project_id_hierarchy_list[i]
+        for i, hierarchy_list_entry in enumerate(project_id_hierarchy_list):
+            level, project_id = hierarchy_list_entry
             if level == current_level:
                 current_level_indices.append(i)
                 previous_id = project_id

@@ -284,7 +284,7 @@ def objects():
                         # convert origins back to tuples
                         filter_origin_ids = [
                             tuple(origin)
-                            for origin in filter_origin_ids
+                            for origin in filter_origin_ids  # pylint: disable=not-an-iterable
                         ]
                 except Exception:
                     filter_origin_ids = None
@@ -1451,6 +1451,7 @@ def save_object_list_defaults():
             }
         )
         return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
+    return flask.abort(400)
 
 
 @frontend.route("/edit_locations", methods=["POST"])

@@ -518,7 +518,7 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
         action = actions.get_action(sample.action_id)
         if action.type is None:
             raise ValidationError('object must be sample', path)
-        if action.type_id != ActionType.SAMPLE_CREATION and action.type.fed_id != ActionType.SAMPLE_CREATION:
+        if ActionType.SAMPLE_CREATION not in {action.type_id, action.type.fed_id}:
             raise ValidationError('object must be sample', path)
 
 
@@ -558,7 +558,7 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
         action = actions.get_action(measurement.action_id)
         if action.type is None:
             raise ValidationError('object must be measurement', path)
-        if action.type_id != ActionType.MEASUREMENT and action.type.fed_id != ActionType.MEASUREMENT:
+        if ActionType.MEASUREMENT not in {action.type_id, action.type.fed_id}:
             raise ValidationError('object must be measurement', path)
 
 

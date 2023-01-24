@@ -24,7 +24,7 @@ def help_and_exit(return_code: int) -> None:
         '',
         sep='\n'
     )
-    exit(return_code)
+    sys.exit(return_code)
 
 
 def main(argv: typing.List[str]) -> None:
@@ -35,16 +35,17 @@ def main(argv: typing.List[str]) -> None:
     if script in ('help', '--help', '-h'):
         if arguments and arguments[0] in script_documentation:
             print(script_documentation[arguments[0]])
-            exit(0)
+            sys.exit(0)
         return help_and_exit(0)
     if any(argument in ('help', '--help', '-h') for argument in arguments):
         if script in script_documentation:
             print(script_documentation[script])
-            exit(0)
+            sys.exit(0)
         return help_and_exit(0)
     if script not in script_functions:
         return help_and_exit(2)
     script_functions[script](arguments)
+    return None
 
 
 if __name__ == '__main__':

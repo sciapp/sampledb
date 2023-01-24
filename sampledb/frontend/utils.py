@@ -151,7 +151,7 @@ def plotly_base64_image_from_json(object):
     try:
         fig_plot = plotly.io.from_json(json.dumps(object))
     except ValueError:
-        return
+        return None
     image_stream = BytesIO()
     fig_plot.write_image(image_stream, "svg")
     image_stream.seek(0)
@@ -338,6 +338,16 @@ def format_time(
     if units == 'min':
         minutes = int(magnitude_in_base_units // 60)
         return f'{minutes:02d}:{custom_format_number(seconds, display_digits, 2, True)}'
+    # fall back to regular quantity formatting
+    return custom_format_quantity(
+        data={
+            'magnitude_in_base_units': magnitude_in_base_units,
+            'units': units
+        },
+        schema={
+            'display_digits': display_digits
+        }
+    )
 
 
 @jinja_filter('format_quantity')
@@ -862,8 +872,8 @@ def get_locations_form_data(
         ('-1', '')
     ]
     unvisited_location_ids_prefixes_and_subtrees = [
-        (location_id, '', locations_tree[location_id], [location_id])
-        for location_id in locations_tree
+        (location_id, '', location, [location_id])
+        for location_id, location in locations_tree.items()
     ]
     while unvisited_location_ids_prefixes_and_subtrees:
         location_id, name_prefix, subtree, id_path = unvisited_location_ids_prefixes_and_subtrees.pop(0)

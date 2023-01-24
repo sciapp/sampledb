@@ -161,12 +161,12 @@ def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, typ
         if link.title:
             publication_titles[link.doi].append(link.title)
     publications = []
-    for doi in publication_titles:
+    for doi, titles in publication_titles.items():
         title: typing.Optional[str]
-        if publication_titles[doi]:
+        if titles:
             # sort titles lexicographically, then find most commonly used title
-            publication_titles[doi].sort()
-            title = collections.Counter(publication_titles[doi]).most_common(1)[0][0]
+            titles.sort()
+            title = collections.Counter(titles).most_common(1)[0][0]
         else:
             title = None
         publications.append((doi, title))

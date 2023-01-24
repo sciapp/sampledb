@@ -17,13 +17,13 @@ from ..logic.errors import ActionDoesNotExistError
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 2:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     action_id_str, schema_file_name = arguments
     try:
         action_id = int(action_id_str)
     except ValueError:
         print("Error: action_id must be an integer", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
     app = create_app()
     with app.app_context():
@@ -31,7 +31,7 @@ def main(arguments: typing.List[str]) -> None:
             action = get_action(action_id)
         except ActionDoesNotExistError:
             print('Error: no action with this id exists', file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         schema = action.schema
     with open(schema_file_name, 'w') as schema_file:
         json.dump(schema, schema_file, indent=2)

@@ -2,12 +2,12 @@
 """
 
 """
+from sqlalchemy.dialects import postgresql
 
 from .. import db
 from .permissions import Permissions
 from .groups import Group
 from .users import User
-import sqlalchemy.dialects.postgresql as postgresql
 
 
 class Project(db.Model):  # type: ignore

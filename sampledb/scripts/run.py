@@ -16,7 +16,7 @@ from .. import create_app
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) > 1:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     if arguments:
         port_str = arguments[0]
         try:
@@ -25,7 +25,7 @@ def main(arguments: typing.List[str]) -> None:
                 raise ValueError()
         except ValueError:
             print("Error: port must be between 1024 and 65535", file=sys.stderr)
-            exit(1)
+            sys.exit(1)
     else:
         port = 8000
 

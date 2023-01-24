@@ -16,8 +16,6 @@ import typing
 import datetime
 import flask
 
-import sqlalchemy.exc
-
 from .components import get_component_by_uuid
 from ..models import Objects, Object, Action, ActionType, Permissions
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
@@ -62,15 +60,12 @@ def create_object(
     if action.type is not None and action.type.disable_create_objects:
         raise CreatingObjectsDisabledError()
     users.check_user_exists(user_id)
-    try:
-        object = Objects.create_object(
-            data=data,
-            schema=schema,
-            user_id=user_id,
-            action_id=action_id
-        )
-    except sqlalchemy.exc.IntegrityError:
-        raise
+    object = Objects.create_object(
+        data=data,
+        schema=schema,
+        user_id=user_id,
+        action_id=action_id
+    )
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
@@ -174,10 +169,7 @@ def create_object_batch(
     users.check_user_exists(user_id)
     try:
         for data in data_sequence:
-            try:
-                object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
-            except sqlalchemy.exc.IntegrityError:
-                raise
+            object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
             objects.append(object)
     finally:
         if objects:
@@ -464,10 +456,10 @@ def _get_object_properties(
             # cast as data cannot be a list unless schema type is array
             yield previous_path, schema, typing.cast(typing.Dict[str, typing.Any], data)
 
-    return list([
+    return [
         (path, schema, data)
         for path, schema, data in iter_object_properties([], object.schema, object.data)
-    ])
+    ]
 
 
 @typing.overload
@@ -580,7 +572,7 @@ def _send_user_references_notifications(object: Object, user_id: int) -> None:
     """
 
     for referenced_user_id, previous_referenced_user_id in find_user_references(object):
-        if referenced_user_id != user_id and referenced_user_id != previous_referenced_user_id:
+        if referenced_user_id not in {user_id, previous_referenced_user_id}:
             create_notification_for_being_referenced_by_object_metadata(referenced_user_id, object.object_id)
 
 

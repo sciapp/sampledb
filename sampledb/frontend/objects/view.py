@@ -135,10 +135,7 @@ def object(object_id):
         action_type = get_action_type(action.type_id) if action.type_id is not None else None
         instrument = action.instrument
         object_type = get_translated_text(action_type.object_name) if action_type else None
-        if action.schema is not None and action.schema != object.schema:
-            new_schema_available = True
-        else:
-            new_schema_available = False
+        new_schema_available = action.schema is not None and action.schema != object.schema
         user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
         if logic.actions.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT'] and action_type and action_type.id == models.ActionType.SAMPLE_CREATION:
             usable_in_action_types = [logic.actions.get_action_type(models.ActionType.MEASUREMENT)]

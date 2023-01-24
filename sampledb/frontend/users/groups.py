@@ -2,11 +2,11 @@
 """
 
 """
+import json
 
 import flask
 import flask_login
 from flask_babel import _
-import json
 
 from .. import frontend
 from ... import logic

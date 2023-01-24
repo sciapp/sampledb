@@ -2,9 +2,9 @@
 """
 
 """
+import typing
 
 import sqlalchemy
-import typing
 
 
 def ascending(sorting_func: typing.Any) -> typing.Any:
