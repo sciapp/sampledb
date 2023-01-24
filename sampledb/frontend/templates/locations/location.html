@@ -41,6 +41,22 @@
     <h4>{{ _('Other Databases') }}</h4>
     {{ _('Created on <a href="%(component_url)s">%(component_name)s</a>', component_url=url_for('.component', component_id=location.component.id), component_name=location.component.get_name()) }}
   {% endif %}
+  {% if location.type.enable_capacities %}
+    <h4>{{ _('Capacity') }}</h4>
+    {% if stored_objects or capacities %}
+      <ul>
+        {% for action_type in action_types %}
+          {% if action_type.id in stored_objects or action_type.id in capacities %}
+            {% set num_stored_objects = stored_objects.get(action_type.id, 0) %}
+            {% set capacity = capacities.get(action_type.id, 0) %}
+            <li {% if capacity is not none and num_stored_objects > capacity %}style="color:#f94442"{% endif %}>{{ num_stored_objects }}&#8239;/&#8239;{% if capacity is not none %}{{ capacity }}{% else %}&infin;{% endif %} {{ action_type.object_name_plural | get_translated_text }}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">{{ _('No storage capacity has been configured for this location.') }}</p>
+    {% endif %}
+  {% endif %}
 
   <div class="button-row">
   {% if descendent_location_ids %}

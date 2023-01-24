@@ -5,6 +5,8 @@
 import datetime
 import io
 import json
+import typing
+
 import math
 
 import flask
@@ -27,6 +29,7 @@ from ...logic.objects import get_object
 from ...logic.object_log import ObjectLogEntryType
 from ...logic.projects import get_project
 from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object
+from ...logic.locations import Location, get_location_capacities, get_assigned_object_count_by_action_types
 from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
 from ...logic.files import FileLogEntryType
@@ -335,7 +338,23 @@ def object(object_id):
     user_may_assign_location = user_may_edit
     if user_may_assign_location:
         location_form = ObjectLocationAssignmentForm()
-        all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
+
+        def location_filter(location: Location, action_type_id: typing.Optional[int] = action_type.id if action_type is not None else None) -> bool:
+            if not location.type.enable_object_assignments:
+                return False
+            if location.type.enable_capacities:
+                if action_type_id is None:
+                    return False
+                capacity = get_location_capacities(location.id).get(action_type_id, 0)
+                if capacity is not None:
+                    if capacity == 0:
+                        return False
+                    num_stored_objects = get_assigned_object_count_by_action_types(location.id, ignored_object_ids=[object_id]).get(action_type_id, 0)
+                    if num_stored_objects + 1 > capacity:
+                        return False
+            return True
+
+        all_choices, choices = get_locations_form_data(filter=location_filter)
         location_form.location.all_choices = all_choices
         location_form.location.choices = choices
         possible_responsible_users = [('-1', None)]
@@ -686,8 +705,12 @@ def post_object_location(object_id):
             valid_description[language_code] = description_text
         description = valid_description
         if location_id is not None or responsible_user_id is not None:
-            assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
-            flask.flash(_('Successfully assigned a new location to this object.'), 'success')
+            try:
+                assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
+            except errors.ExceedingLocationCapacityError:
+                flask.flash(_('The selected location does not have the capacity to store this object.'), 'error')
+            else:
+                flask.flash(_('Successfully assigned a new location to this object.'), 'success')
         else:
             flask.flash(_('Please select a location or a responsible user.'), 'error')
     else:

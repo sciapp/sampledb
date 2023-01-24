@@ -1064,3 +1064,36 @@ class VersionedJSONSerializableObjectTables:
         if current_object_info is None:
             return None
         return typing.cast(int, current_object_info[0])
+
+    @_use_transaction
+    def get_action_ids_for_object_ids(
+            self,
+            object_ids: typing.Sequence[int],
+            connection: typing.Optional[db.engine.Connection] = None
+    ) -> typing.Dict[int, typing.Optional[int]]:
+        """
+        Get the action IDs for a list of object IDs.
+
+        :param object_ids: the IDs of existing objects
+        :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
+        :return: the objects' action IDs
+        """
+        assert connection is not None  # ensured by decorator
+
+        object_ids_and_action_ids = connection.execute(
+            db
+            .select(
+                self._current_table.c.object_id, self._current_table.c.action_id
+            )
+            .where(
+                self._current_table.c.object_id.in_(object_ids)
+            )
+        ).fetchall()
+        result = {
+            object_id: action_id
+            for object_id, action_id in object_ids_and_action_ids
+        }
+        for object_id in object_ids:
+            if object_id not in result:
+                result[object_id] = None
+        return result

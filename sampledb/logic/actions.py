@@ -386,3 +386,18 @@ def update_actions_using_template_action(
     db.session.commit()
     for other_template_action_id in updated_template_action_ids:
         update_actions_using_template_action(other_template_action_id)
+
+
+def get_action_type_ids_for_action_ids(
+        action_ids: typing.Sequence[int]
+) -> typing.Dict[int, typing.Optional[int]]:
+    action_ids_and_action_type_ids = models.actions.Action.query.with_entities(
+        models.actions.Action.id,
+        models.actions.Action.type_id
+    ).filter(
+        models.actions.Action.id.in_(action_ids)
+    ).all()
+    return {
+        action_id: action_type_id
+        for action_id, action_type_id in action_ids_and_action_type_ids
+    }
