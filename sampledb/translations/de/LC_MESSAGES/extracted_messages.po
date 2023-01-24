@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-01-18 12:33+0100\n"
+"POT-Creation-Date: 2023-01-23 15:09+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -4311,11 +4311,11 @@ msgstr "Versionen"
 msgid "You have to select at least one object."
 msgstr "Sie müssen mindestens ein Objekt auswählen."
 
-msgid "You have to select a location or a responsible user."
-msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
-
 msgid "You do not have write permissions for at least one object."
 msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+
+msgid "You have to select a location or a responsible user."
+msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
 msgid "Error:"
 msgstr "Fehler:"
@@ -4482,11 +4482,37 @@ msgstr "Nach Quelle filtern"
 msgid "All origins"
 msgstr "Alle Quellen"
 
+msgid "Multiple Objects"
+msgstr "Mehrere Objekte"
+
 msgid "Assign Location"
 msgstr "Ort zuweisen"
 
+msgid "Use in Action"
+msgstr "In Aktion nutzen"
+
+#, python-format
+msgid "Use in %(action_type_name)s"
+msgstr "In %(action_type_name)s nutzen"
+
+msgid "Select objects for which you want to change the location."
+msgstr "Wähle Objekte aus bei denen Sie den Ort ändern wollen."
+
 msgid "Responsible User"
 msgstr "Verantwortlicher Nutzer"
+
+#, python-format
+msgid "Select objects that can be used in %(action_type_name)s Actions."
+msgstr ""
+"Wählen Sie Objekte aus, die in einer %(action_type_name)s-Aktion genutzt "
+"werden können."
+
+msgid "Favorites"
+msgstr "Favoriten"
+
+#, python-format
+msgid "See other %(action_type_name)s Actions..."
+msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
 
 msgid "Created"
 msgstr "Erstellt"
@@ -4498,6 +4524,12 @@ msgid "You need at least write permission to change the location of an object."
 msgstr ""
 "Sie brauchen mindestens Schreib-Berechtigung um den Ort eines Objekts zu "
 "ändern."
+
+#, python-format
+msgid "The object cannot be used in a %(action_type_name)s Action."
+msgstr ""
+"Das ausgewählte Objekt kann nicht in einer %(action_type_name)s-Aktion "
+"genutzt werden."
 
 #, python-format
 msgid "Shared by %(component_name)s"
@@ -4772,17 +4804,6 @@ msgid ""
 msgstr ""
 "Aus dieser %(current_object_name_singular)s eine neue "
 "%(new_object_name_singular)s erstellen."
-
-#, python-format
-msgid "Use in %(action_type_name)s"
-msgstr "In %(action_type_name)s nutzen"
-
-msgid "Favorites"
-msgstr "Favoriten"
-
-#, python-format
-msgid "See other %(action_type_name)s Actions..."
-msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
 
 msgid "Generate a PDF containing labels for this object."
 msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren."
