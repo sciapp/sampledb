@@ -45,6 +45,7 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'action_ids',
     'action',
     'instrument_ids',
+    'related_user',
     'user',
     'user_permissions',
     'all_users_permissions',
