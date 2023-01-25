@@ -3007,3 +3007,102 @@ def test_validate_file_schema_with_invalid_preview():
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_workflow_show_more():
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "1"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text",
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity", "text"],
+        "workflow_show_more": ["quantity"]
+    }
+
+    validate_schema(schema)
+
+    schema['workflow_show_more'] = 'quantity'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_show_more'] = ['quant']
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_workflow_view():
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "1"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text",
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity", "text"],
+        "workflow_view": {
+            "referencing_action_type_id": 1,
+            "referencing_action_id": [1],
+            "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
+            "referenced_action_id": 1
+        }
+    }
+
+    validate_schema(schema)
+
+    schema['workflow_view']['key'] = 'value'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referencing_action_type_id'] = 'MEASUREMENT'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referencing_action_id'] = 'Action'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_type_id'] = 'MEASUREMENT'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_id'] = 'Action'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referencing_action_id'] = [ActionType.MEASUREMENT, False]
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_type_id'] = [1, None]
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_id'] = [-99, False]
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

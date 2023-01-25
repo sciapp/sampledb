@@ -310,13 +310,14 @@ def _validate_object_schema(
     if schema.get('template') is not None:
         invalid_template_action_ids = list(invalid_template_action_ids) + [typing.cast(int, schema['template'])]
 
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note', 'show_more'}
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note', 'show_more', 'workflow_show_more'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
         valid_keys.add('batch')
         valid_keys.add('batch_name_format')
         valid_keys.add('notebookTemplates')
+        valid_keys.add('workflow_view')
     if path:
         # the top level object must not have any conditions
         valid_keys.add('conditions')
@@ -460,12 +461,31 @@ def _validate_object_schema(
                 elif schema['properties'][property_name]['type'] == 'bool':
                     raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
 
-    if 'show_more' in schema:
-        if not isinstance(schema['show_more'], list):
-            raise ValidationError('show_more must be list', path)
-        for property_name in schema['show_more']:
-            if property_name not in schema['properties'].keys():
-                raise ValidationError(f'unknown property: {property_name}', path)
+    for show_more_key in ['show_more', 'workflow_show_more']:
+        if show_more_key in schema:
+            if not isinstance(schema[show_more_key], list):
+                raise ValidationError(f'{show_more_key} must be list', path)
+            for property_name in schema[show_more_key]:
+                if property_name not in schema['properties'].keys():
+                    raise ValidationError(f'unknown property: {property_name}', path)
+
+    if 'workflow_view' in schema:
+        id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
+        workflow_valid_keys = set(id_keys)
+        if not isinstance(schema['workflow_view'], dict):
+            raise ValidationError('workflow_view must be a dict', path)
+        for key in schema['workflow_view'].keys():
+            if key not in workflow_valid_keys:
+                raise ValidationError(f'invalid key in workflow_view: {key}', path)
+        for key in id_keys:
+            if key in schema['workflow_view'] and not (
+                schema['workflow_view'][key] is None or
+                type(schema['workflow_view'][key]) == int or
+                type(schema['workflow_view'][key]) == list and all(
+                    type(action_type_id) == int for action_type_id in schema['workflow_view'][key]
+                )
+            ):
+                raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
