@@ -117,7 +117,7 @@
       <span class="sr-only">{{ _('Toggle Dropdown') }}</span>
     </button>
     <ul class="dropdown-menu">
-      <li><a href="{{ url_for('.objects', user=user.id) }}">{{ _('… with activity by this user') }}</a></li>
+      <li><a href="{{ url_for('.objects', related_user=user.id) }}">{{ _('… with activity by this user') }}</a></li>
       <li role="separator" class="divider"></li>
       <li><a href="{{ url_for('.objects', user=user.id, user_permissions='READ') }}">{{ _('… with <b>READ</b> permissions') }}</a></li>
       <li><a href="{{ url_for('.objects', user=user.id, user_permissions='WRITE') }}">{{ _('… with <b>WRITE</b> permissions') }}</a></li>
