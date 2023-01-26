@@ -300,8 +300,10 @@ def upload_object(
     :param property_whitelist: a list of property paths to be uploaded
     :param file_id_whitelist: a list of file IDs to be uploaded
     :param tag_whitelist: a list of tags to be set as keywords
-    :return: whether or not the upload was successful and the Dataverse url
+    :return: whether the upload was successful and the Dataverse url
         or a dictionary containing additional information
+    :raise DataverseNotReachableError: when an HTTP request to the Dataverse
+        instance fails
     """
     if property_whitelist is None:
         property_whitelist = [['name']]

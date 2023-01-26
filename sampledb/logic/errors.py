@@ -432,3 +432,7 @@ class GroupCategoryDoesNotExistError(Exception):
 
 class CyclicGroupCategoryError(Exception):
     pass
+
+
+class FileCreationError(Exception):
+    pass

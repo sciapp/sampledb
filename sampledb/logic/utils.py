@@ -227,7 +227,12 @@ def parse_url(
     :param max_length: the URI strings maximum allowed length (default: 2048)
     :param valid_schemes: valid URI schemes
     :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
-    :raises: InvalidURIError if the given URI is invalid
+    :raise errors.InvalidURLError: if the given URL is invalid
+    :raise errors.URLTooLongError: if the given URL is too long
+    :raise errors.InvalidIPAddressError: if the IP contained in the given URL
+        is invalid
+    :raise errors.InvalidPortNumberError: if the port contained in the given
+        URL is invalid
     """
     if not len(url) <= max_length:
         raise errors.URLTooLongError()

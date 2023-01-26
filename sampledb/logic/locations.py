@@ -133,6 +133,34 @@ class ObjectLocationAssignment:
         )
 
 
+@typing.overload
+def create_location(
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str],
+        parent_location_id: typing.Optional[int],
+        user_id: int,
+        type_id: int,
+        *,
+        fed_id: None = None,
+        component_id: None = None
+) -> Location:
+    ...
+
+
+@typing.overload
+def create_location(
+        name: typing.Optional[typing.Dict[str, str]],
+        description: typing.Optional[typing.Dict[str, str]],
+        parent_location_id: typing.Optional[int],
+        user_id: typing.Optional[int],
+        type_id: int,
+        *,
+        fed_id: int,
+        component_id: int
+) -> Location:
+    ...
+
+
 def create_location(
         name: typing.Optional[typing.Dict[str, str]],
         description: typing.Optional[typing.Dict[str, str]],
@@ -161,10 +189,11 @@ def create_location(
         exists
     :raise errors.LocationTypeDoesNotExistError: when no location type with the
         given location type ID exists
+    :raise errors.MissingEnglishTranslationError: when name does not contain
+        an english translation
     """
-
-    if (component_id is None) != (fed_id is None) or (component_id is None and (name is None or description is None or user_id is None)):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
+    assert component_id is not None or (name is not None and description is not None and user_id is not None)
 
     if name is not None:
         if isinstance(name, str):
@@ -654,6 +683,8 @@ def confirm_object_responsibility(object_location_assignment_id: int) -> None:
         assignment
     :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
         location assignment with the given object location assignment ID exists
+    :raise errors.ObjectLocationAssignmentAlreadyDeclinedError: when the
+        object location assignment has already been declined
     """
     object_location_assignment = get_object_location_assignment(object_location_assignment_id)
     if object_location_assignment.declined:
@@ -671,6 +702,8 @@ def decline_object_responsibility(object_location_assignment_id: int) -> None:
         assignment
     :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
         location assignment with the given object location assignment ID exists
+    :raise errors.ObjectLocationAssignmentAlreadyConfirmedError: when the
+        object location assignment has already been confirmed
     """
     object_location_assignment = get_object_location_assignment(object_location_assignment_id)
     if object_location_assignment.confirmed:

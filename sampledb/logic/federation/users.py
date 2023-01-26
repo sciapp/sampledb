@@ -43,6 +43,8 @@ def import_user(
         component: Component
 ) -> User:
     component_id = _get_or_create_component_id(user_data['component_uuid'])
+    # component_id will only be None if this would import a local user
+    assert component_id is not None
     try:
         mutable_user = get_mutable_user(user_data['fed_id'], component_id)
         ignored_keys = {

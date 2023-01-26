@@ -288,6 +288,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         bytes when encoded as UTF-8
     :raise errors.TooManyFilesForObjectError: when there are already 10000
         files for the object with the given id
+    :raise errors.FileCreationError: if creating the file has failed
     """
     # ensure that the file name is valid
     if len(file_name.encode('utf8')) > 150:
@@ -305,10 +306,10 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
     try:
         with file.open(read_only=False) as storage_file:
             save_content(storage_file)
-    except Exception:
+    except Exception as exc:
         db.session.delete(db_file)
         db.session.commit()
-        raise
+        raise errors.FileCreationError() from exc
     _create_file_logs(file)
     return file
 
@@ -329,7 +330,7 @@ def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> 
         exists
     :raise errors.TooManyFilesForObjectError: when there are already 10000
         files for the object with the given id
-    :raise errors.UserNotAllowedError: when the current user is not allowed to
+    :raise errors.UnauthorizedRequestError: when the current user is not allowed to
         add this certain filepath
     """
     path_permissions: typing.Dict[str, typing.List[int]] = flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST']
@@ -486,8 +487,6 @@ def create_fed_file(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    if fed_id is None or component_id is None:
-        raise TypeError('Missing federation reference.')
     file = _create_db_file(object_id, user_id, data, utc_datetime, fed_id, component_id)
     if save_content:
         binary_data_file = io.BytesIO()

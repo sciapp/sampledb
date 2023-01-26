@@ -172,13 +172,13 @@ def test_create_user_fed(component):
 
 def test_create_user_exceptions(component):
     assert len(User.query.all()) == 0
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         sampledb.logic.users.create_user(name=None, email=None, fed_id=1, type=UserType.FEDERATION_USER)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         sampledb.logic.users.create_user(name=None, email=None, component_id=component.id, type=UserType.FEDERATION_USER)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         sampledb.logic.users.create_user(name='User', email=None, type=UserType.FEDERATION_USER)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         sampledb.logic.users.create_user(name=None, email='user@example.com', type=UserType.FEDERATION_USER)
     with pytest.raises(errors.ComponentDoesNotExistError):
         sampledb.logic.users.create_user(name=None, email=None, fed_id=1, component_id=component.id + 1, type=UserType.FEDERATION_USER)

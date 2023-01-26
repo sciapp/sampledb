@@ -240,6 +240,53 @@ def get_action_type(action_type_id: int, component_id: typing.Optional[int] = No
     return ActionType.from_database(action_type)
 
 
+@typing.overload
+def create_action_type(
+        admin_only: bool,
+        show_on_frontpage: bool,
+        show_in_navbar: bool,
+        enable_labels: bool,
+        enable_files: bool,
+        enable_locations: bool,
+        enable_publications: bool,
+        enable_comments: bool,
+        enable_activity_log: bool,
+        enable_related_objects: bool,
+        enable_project_link: bool,
+        disable_create_objects: bool,
+        is_template: bool,
+        usable_in_action_type_ids: typing.Sequence[int] = (),
+        fed_id: None = None,
+        component_id: None = None,
+        scicat_export_type: typing.Optional[SciCatExportType] = None
+) -> ActionType:
+    ...
+
+
+@typing.overload
+def create_action_type(
+        admin_only: bool,
+        show_on_frontpage: bool,
+        show_in_navbar: bool,
+        enable_labels: bool,
+        enable_files: bool,
+        enable_locations: bool,
+        enable_publications: bool,
+        enable_comments: bool,
+        enable_activity_log: bool,
+        enable_related_objects: bool,
+        enable_project_link: bool,
+        disable_create_objects: bool,
+        is_template: bool,
+        usable_in_action_type_ids: typing.Sequence[int] = (),
+        *,
+        fed_id: int,
+        component_id: int,
+        scicat_export_type: typing.Optional[SciCatExportType] = None
+) -> ActionType:
+    ...
+
+
 def create_action_type(
         admin_only: bool,
         show_on_frontpage: bool,
@@ -282,8 +329,7 @@ def create_action_type(
     :param scicat_export_type: the SciCat type to use during export, or None
     :return: the created action type
     """
-    if (component_id is None) != (fed_id is None):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
 
     if component_id is not None:
         # ensure that the component can be found
@@ -385,6 +431,44 @@ def update_action_type(
     return ActionType.from_database(action_type)
 
 
+@typing.overload
+def create_action(
+        *,
+        action_type_id: int,
+        schema: typing.Dict[str, typing.Any],
+        instrument_id: typing.Optional[int] = None,
+        user_id: typing.Optional[int] = None,
+        description_is_markdown: bool = False,
+        is_hidden: bool = False,
+        short_description_is_markdown: bool = False,
+        fed_id: None = None,
+        component_id: None = None,
+        admin_only: bool = False,
+        disable_create_objects: bool = False,
+        strict_schema_validation: bool = True,
+) -> Action:
+    ...
+
+
+@typing.overload
+def create_action(
+        *,
+        action_type_id: typing.Optional[int],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
+        instrument_id: typing.Optional[int] = None,
+        user_id: typing.Optional[int] = None,
+        description_is_markdown: bool = False,
+        is_hidden: bool = False,
+        short_description_is_markdown: bool = False,
+        fed_id: int,
+        component_id: int,
+        admin_only: bool = False,
+        disable_create_objects: bool = False,
+        strict_schema_validation: bool = True,
+) -> Action:
+    ...
+
+
 def create_action(
         *,
         action_type_id: typing.Optional[int],
@@ -427,8 +511,8 @@ def create_action(
     :raise errors.UserDoesNotExistError: when user_id is not None and no user
         with the given user ID exists
     """
-    if (component_id is None) != (fed_id is None) or (component_id is None and (action_type_id is None or schema is None)):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
+    assert component_id is not None or (action_type_id is not None and schema is not None)
 
     if action_type_id is not None:
         # ensure the action type exists

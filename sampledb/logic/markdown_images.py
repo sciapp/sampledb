@@ -37,6 +37,7 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     :param user_id: the ID of the user who uploaded the file
     :return: the generated file name to identify the image
     :raise errors.UserDoesNotExistError: if no user with the given ID exists
+    :raise RuntimeError: if the function fails to generate a file name
     """
     # ensure the user exists
     check_user_exists(user_id)

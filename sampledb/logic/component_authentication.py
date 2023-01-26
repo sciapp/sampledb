@@ -106,6 +106,8 @@ def remove_component_authentication_method(
     Remove a component authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
+    :raise error.AuthenticationMethodDoesNotExistError: when no component
+        authentication method with the given ID exists
     """
     authentication_method = ComponentAuthentication.query.filter(ComponentAuthentication.id == authentication_method_id).first()
     if authentication_method is None:
@@ -122,6 +124,8 @@ def remove_own_component_authentication_method(
     Remove a component authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
+    :raise error.AuthenticationMethodDoesNotExistError: when no component
+        authentication method with the given ID exists
     """
     authentication_method = OwnComponentAuthentication.query.filter(OwnComponentAuthentication.id == authentication_method_id).first()
     if authentication_method is None:

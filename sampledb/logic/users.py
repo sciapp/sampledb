@@ -278,8 +278,6 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    if user_id is None:
-        raise TypeError("user_id must be int")
     if component_id is None or component_id == 0:
         user = users.User.query.filter_by(id=user_id).first()
     else:
@@ -406,6 +404,37 @@ def get_users_by_name(name: str) -> typing.List[User]:
     ]
 
 
+@typing.overload
+def create_user(
+        name: str,
+        email: str,
+        type: UserType,
+        orcid: typing.Optional[str] = None,
+        affiliation: typing.Optional[str] = None,
+        role: typing.Optional[str] = None,
+        extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        fed_id: None = None,
+        component_id: None = None
+) -> User:
+    ...
+
+
+@typing.overload
+def create_user(
+        name: typing.Optional[str],
+        email: typing.Optional[str],
+        type: UserType,
+        orcid: typing.Optional[str] = None,
+        affiliation: typing.Optional[str] = None,
+        role: typing.Optional[str] = None,
+        extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        *,
+        fed_id: int,
+        component_id: int
+) -> User:
+    ...
+
+
 def create_user(
         name: typing.Optional[str],
         email: typing.Optional[str],
@@ -435,8 +464,8 @@ def create_user(
     :return: the newly created user
     """
 
-    if (component_id is None) != (fed_id is None) or (component_id is None and (name is None or email is None)):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
+    assert component_id is not None or (name is not None and email is not None)
 
     if component_id is not None:
         check_component_exists(component_id)
