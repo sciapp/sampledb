@@ -56,11 +56,9 @@ analyze:
     - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
     - python -m pylint sampledb --disable=R,C,W,E --enable=W9015 --load-plugins=pylint.extensions.docparams
 
-check-migrations:
+.template-check-migrations:
   stage: test
   image: python:3.10-slim-bullseye
-  services:
-    - postgres:12
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -77,11 +75,29 @@ check-migrations:
     # re-create database to ensure it is entirely empty
     - dropdb -h postgres -U postgres postgres
     - createdb -h postgres -U postgres postgres
-    # check out stable version
+    # check out old stable version
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
-    - git fetch upstream master
+    - git fetch upstream v0.20.0
     - git checkout FETCH_HEAD
     # set up database with stable version
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # check out current version again
+    - git checkout $CI_COMMIT_SHA
+    # upgrade database using migrations
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_v0.20.0.sql
+    # ensure both backups yield identical backups
+    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_v0.20.0.sql
+    # re-create database to ensure it is entirely empty
+    - dropdb -h postgres -U postgres postgres
+    - createdb -h postgres -U postgres postgres
+    # check out development version
+    - git fetch upstream master
+    - git checkout FETCH_HEAD
+    # set up database with development version
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # check out current version again
@@ -111,6 +127,21 @@ check-migrations:
     - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
+
+check-migrations-postgres-11:
+  extends: .template-check-migrations
+  services:
+    - postgres:11
+
+check-migrations-postgres-12:
+  extends: .template-check-migrations
+  services:
+    - postgres:12
+
+check-migrations-postgres-13:
+  extends: .template-check-migrations
+  services:
+    - postgres:13
 
 check-translations:
   stage: test
