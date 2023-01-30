@@ -16,9 +16,9 @@ def main(arguments: typing.List[str]) -> None:
         print(__doc__)
         sys.exit(1)
     text_file_name, html_file_name = arguments
-    with open(text_file_name, 'r') as text_file:
+    with open(text_file_name, 'r', encoding='utf-8') as text_file:
         text = text_file.read()
-    with open(html_file_name, 'r') as html_file:
+    with open(html_file_name, 'r', encoding='utf-8') as html_file:
         html = html_file.read()
     app = create_app()
     with app.app_context():

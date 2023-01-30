@@ -381,7 +381,7 @@ def check_config(
         test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
-        with open(test_file_path, 'a'):
+        with open(test_file_path, 'ab'):
             # open the file to check that it exists
             pass
     except Exception:
