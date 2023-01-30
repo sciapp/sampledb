@@ -18,7 +18,10 @@ login_manager = LoginManager()
 login_manager.session_protection = 'basic'
 
 mail = Mail()
-db = SQLAlchemy()
+db = SQLAlchemy(
+    engine_options={'future': True},
+    session_options={'future': True}
+)
 babel = Babel()
 
 
