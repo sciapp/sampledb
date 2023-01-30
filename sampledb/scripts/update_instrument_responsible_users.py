@@ -24,7 +24,7 @@ def main(arguments: typing.List[str]) -> None:
         print("Error: instrument_id must be an integer", file=sys.stderr)
         sys.exit(1)
     instrument_responsible_user_ids = []
-    for i, user_id_str in enumerate(arguments[1:]):
+    for user_id_str in arguments[1:]:
         try:
             user_id = int(user_id_str)
         except ValueError:

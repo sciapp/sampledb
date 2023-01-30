@@ -239,7 +239,7 @@ class Objects(Resource):
         query_string = flask.request.args.get('q', '')
         if query_string:
             try:
-                unwrapped_filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, True)
+                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, True)
             except Exception:
                 # TODO: ensure that advanced search does not cause exceptions
                 def unwrapped_filter_func(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Any:

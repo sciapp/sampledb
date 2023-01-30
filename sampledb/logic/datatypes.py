@@ -35,7 +35,7 @@ class _ReducingEncoder(json.JSONEncoder):
     This class is used for the _contains_type(obj) function and should not be re-used for other purposes.
     """
     def default(self, o: typing.Any) -> typing.Any:
-        for type_name, cls in JSONEncoder.serializable_types.items():
+        for cls in JSONEncoder.serializable_types.values():
             if isinstance(o, cls):
                 return {}
         # Let the base class default method raise the TypeError

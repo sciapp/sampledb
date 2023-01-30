@@ -278,7 +278,7 @@ def apply_unary_operator(
 ) -> typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]]:
     previous_tokens = tokens
     new_tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]] = []
-    for i, token in reversed(list(enumerate(previous_tokens))):
+    for token in reversed(list(previous_tokens)):
         if isinstance(token, list):
             new_tokens.insert(0, apply_unary_operator(token, operator))
             continue

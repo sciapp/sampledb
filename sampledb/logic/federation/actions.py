@@ -388,7 +388,7 @@ def _parse_schema(
                 schema['languages'].remove(language)
 
     if 'choices' in schema:
-        for i, choice in enumerate(schema['choices']):
+        for choice in schema['choices']:
             if isinstance(choice, dict):
                 for lang_code in list(choice.keys()):
                     if lang_code not in all_language_codes:

@@ -115,7 +115,7 @@ def create_user_from_ldap(user_ldap_uid: str) -> typing.Optional[users.User]:
     )
     if user is None:
         return None
-    user_id, name, email = user
+    name, email = user[1:]
     if not email:
         raise errors.NoEmailInLDAPAccountError('There is no email set for your LDAP account. Please contact your administrator.')
     if not name:

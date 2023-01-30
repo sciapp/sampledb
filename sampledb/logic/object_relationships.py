@@ -41,7 +41,7 @@ def get_related_object_ids(
     referencing_object_ids: typing.Set[typing.Tuple[int, typing.Optional[int]]] = set()
     if include_referenced_objects:
         object = get_object(object_id)
-        for referenced_object_id, previously_referenced_object_id, schema_type in find_object_references(object, include_fed_references=True):
+        for referenced_object_id, _previously_referenced_object_id, _schema_type in find_object_references(object, include_fed_references=True):
             if referenced_object_id is not None:
                 referenced_object_ids.add(referenced_object_id)
     if include_referencing_objects:

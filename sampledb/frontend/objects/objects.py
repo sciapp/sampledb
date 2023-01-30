@@ -1378,16 +1378,16 @@ def save_object_list_defaults():
             filter_action_type_ids,
             filter_action_ids,
             filter_instrument_ids,
-            filter_related_user_id,
+            _filter_related_user_id,
             filter_doi,
             filter_anonymous_permissions,
             filter_all_users_permissions,
             filter_user_id,
             filter_user_permissions,
-            filter_group_id,
-            filter_group_permissions,
-            filter_project_id,
-            filter_project_permissions,
+            _filter_group_id,
+            _filter_group_permissions,
+            _filter_project_id,
+            _filter_project_permissions,
             filter_origin_ids,
         ) = _parse_object_list_filters(
             params=flask.request.form,
@@ -1438,7 +1438,7 @@ def save_object_list_defaults():
         ) = _parse_object_list_options(
             params=flask.request.form
         )
-        display_properties, display_property_titles = _parse_display_properties(
+        display_properties, _display_property_titles = _parse_display_properties(
             params=flask.request.form
         )
         set_user_settings(
