@@ -71,7 +71,7 @@ def main(arguments: typing.List[str]) -> None:
         try:
             validate_schema(schema)
         except ValidationError as e:
-            print('Error: invalid schema: {}'.format(str(e)), file=sys.stderr)
+            print(f'Error: invalid schema: {str(e)}', file=sys.stderr)
             sys.exit(1)
         action = create_action(
             instrument_id=instrument_id,
@@ -84,4 +84,4 @@ def main(arguments: typing.List[str]) -> None:
             name=name,
             description=description
         )
-        print("Success: the action has been created in SampleDB (#{})".format(action.id))
+        print(f"Success: the action has been created in SampleDB (#{action.id})")

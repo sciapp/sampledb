@@ -103,10 +103,9 @@ class File:
         if self.storage == 'local':
             # ensure that 4 digits are enough for every valid file ID
             assert MAX_NUM_FILES <= 10000
-            # TODO: make the base path configurable
             object = objects.get_object(self.object_id)
             action_id = object.action_id
-            prefixed_file_name = '{file_id:04d}_{file_name}'.format(file_id=self.id, file_name=self.original_file_name)
+            prefixed_file_name = f'{self.id:04d}_{self.original_file_name}'
             return os.path.join(FILE_STORAGE_PATH or '', str(action_id), str(self.object_id), prefixed_file_name)
         else:
             raise InvalidFileStorageError()

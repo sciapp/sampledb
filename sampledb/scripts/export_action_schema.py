@@ -35,4 +35,4 @@ def main(arguments: typing.List[str]) -> None:
         schema = action.schema
     with open(schema_file_name, 'w', encoding='utf-8') as schema_file:
         json.dump(schema, schema_file, indent=2)
-    print("Success: the action schema has been exported to {}".format(schema_file_name))
+    print(f"Success: the action schema has been exported to {schema_file_name}")

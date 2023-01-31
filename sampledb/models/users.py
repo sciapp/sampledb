@@ -93,7 +93,7 @@ class User(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name={1.name})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name={self.name})>'
 
 
 class UserInvitation(db.Model):  # type: ignore
@@ -166,4 +166,4 @@ class UserFederationAlias(db.Model):  # type: ignore
             self.last_modified = last_modified
 
     def __repr__(self) -> str:
-        return '<{0}(user_id={1.user_id}, component_id={1.component_id}; name={1.name})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(user_id={self.user_id}, component_id={self.component_id}; name={self.name})>'

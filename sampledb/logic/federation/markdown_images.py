@@ -17,7 +17,7 @@ def parse_markdown_image(
     try:
         md_image_data = base64.b64decode(data)
     except binascii.Error:
-        raise errors.InvalidDataExportError('Invalid markdown image \'{}\''.format(filename))
+        raise errors.InvalidDataExportError(f'Invalid markdown image \'{filename}\'')
     return filename, md_image_data
 
 

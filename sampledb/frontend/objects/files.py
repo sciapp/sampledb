@@ -100,11 +100,11 @@ def update_file_information(object_id, file_id):
             )
         except logic.errors.FileDoesNotExistError:
             return flask.abort(404)
-        return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
+        return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor=f'file-{file_id}'))
     else:
         if 'url' in form.errors:
             errorcode = form.errors['url']
-            return flask.redirect(flask.url_for('.object', object_id=object_id, edit_invalid_link_file=file_id, edit_invalid_link_error=errorcode, _anchor='file-{}'.format(file_id)))
+            return flask.redirect(flask.url_for('.object', object_id=object_id, edit_invalid_link_file=file_id, edit_invalid_link_error=errorcode, _anchor=f'file-{file_id}'))
         return flask.abort(400)
 
 
@@ -126,7 +126,7 @@ def hide_file(object_id, file_id):
     except logic.errors.FileDoesNotExistError:
         return flask.abort(404)
     flask.flash(_('The file was hidden successfully.'), 'success')
-    return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor='file-{}'.format(file_id)))
+    return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor=f'file-{file_id}'))
 
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])

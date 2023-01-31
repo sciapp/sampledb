@@ -84,7 +84,7 @@ class LocationType(db.Model):  # type: ignore
         self.component_id = component_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name="{1.name}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name="{self.name}")>'
 
 
 class Location(db.Model):  # type: ignore
@@ -126,7 +126,7 @@ class Location(db.Model):  # type: ignore
         self.type_id = type_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name="{1.name}", description="{1.description}", parent_location_id={1.parent_location_id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name="{self.name}", description="{self.description}", parent_location_id={self.parent_location_id})>'
 
 
 class ObjectLocationAssignment(db.Model):  # type: ignore
@@ -184,7 +184,7 @@ class ObjectLocationAssignment(db.Model):  # type: ignore
         self.component_id = component_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed}, declined={1.declined})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, object_id={self.object_id}, location_id={self.location_id}, user_id={self.user_id}, responsible_user_id={self.responsible_user_id}, utc_datetime={self.utc_datetime}, description="{self.description}", confirmed={self.confirmed}, declined={self.declined})>'
 
 
 class LocationCapacity(db.Model):  # type: ignore

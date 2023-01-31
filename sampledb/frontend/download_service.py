@@ -37,8 +37,7 @@ def download_service(object_id: int):
     signature = generate_token(
         job_id,
         'download_service_zipping',
-        flask.current_app.config['DOWNLOAD_SERVICE_SECRET'])
-    url = '{}?signature={}'.format(
-        flask.current_app.config['DOWNLOAD_SERVICE_URL'],
-        signature)
+        flask.current_app.config['DOWNLOAD_SERVICE_SECRET']
+    )
+    url = f'{flask.current_app.config["DOWNLOAD_SERVICE_URL"]}?signature={signature}'
     return flask.redirect(url, code=302)

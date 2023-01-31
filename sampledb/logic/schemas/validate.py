@@ -99,9 +99,9 @@ def _validate_array(
     if not isinstance(instance, list):
         raise ValidationError('instance must be list', path)
     if 'minItems' in schema and len(instance) < schema['minItems']:
-        raise ValidationError('expected at least {} items'.format(schema['minItems']), path)
+        raise ValidationError(f'expected at least {schema["minItems"]} items', path)
     if 'maxItems' in schema and len(instance) > schema['maxItems']:
-        raise ValidationError('expected at most {} items'.format(schema['maxItems']), path)
+        raise ValidationError(f'expected at most {schema["maxItems"]} items', path)
     errors = []
     for index, item in enumerate(instance):
         try:
@@ -132,10 +132,10 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'hazards':
         raise ValidationError('expected _type "hazards"', path)
     if not isinstance(instance['hazards'], list):
@@ -144,11 +144,11 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
     hazards = []
     for index, item in enumerate(instance['hazards']):
         if not isinstance(item, int):
-            errors.append(ValidationError('invalid hazard index type: {}'.format(type(item)), path + ['hazards', str(index)]))
+            errors.append(ValidationError(f'invalid hazard index type: {type(item)}', path + ['hazards', str(index)]))
         elif item in hazards:
-            errors.append(ValidationError('duplicate hazard index: {}'.format(item), path + ['hazards', str(index)]))
+            errors.append(ValidationError(f'duplicate hazard index: {item}', path + ['hazards', str(index)]))
         elif item < 1 or item > 9:
-            errors.append(ValidationError('invalid hazard index: {}'.format(item), path + ['hazards', str(index)]))
+            errors.append(ValidationError(f'invalid hazard index: {item}', path + ['hazards', str(index)]))
         else:
             hazards.append(item)
 
@@ -179,10 +179,10 @@ def _validate_tags(
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'tags':
         raise ValidationError('expected _type "tags"', path)
     if not isinstance(instance['tags'], list):
@@ -191,13 +191,13 @@ def _validate_tags(
     tags = []
     for index, item in enumerate(instance['tags']):
         if not isinstance(item, str):
-            errors.append(ValidationError('invalid tag type: {}'.format(type(item)), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'invalid tag type: {type(item)}', path + ['tags', str(index)]))
         elif item in tags:
-            errors.append(ValidationError('duplicate tag: {}'.format(item), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'duplicate tag: {item}', path + ['tags', str(index)]))
         elif item.lower() != item:
-            errors.append(ValidationError('tag not lowercase: {}'.format(item), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'tag not lowercase: {item}', path + ['tags', str(index)]))
         elif any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in item):
-            errors.append(ValidationError('tag contains invalid character: {}'.format(item), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'tag contains invalid character: {item}', path + ['tags', str(index)]))
         elif strict and all(c in string.digits for c in item) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
             errors.append(ValidationError('numeric tags are not supported', path + ['tags', str(index)]))
         else:
@@ -234,7 +234,7 @@ def _validate_object(
         if not are_conditions_fulfilled(property_schema.get('conditions'), instance):
             properties_with_unfulfilled_conditions.append(property_name)
             if property_name in instance or (property_name == 'name' and not path):
-                errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
+                errors.append(ValidationError(f'conditions for property "{property_name}" not fulfilled', path + [property_name]))
 
     if 'required' in schema:
         for property_name in schema['required']:
@@ -242,11 +242,11 @@ def _validate_object(
                 # this property must not be included, as its conditions are not fulfilled
                 continue
             if property_name not in instance:
-                errors.append(ValidationError('missing required property "{}"'.format(property_name), path + [property_name]))
+                errors.append(ValidationError(f'missing required property "{property_name}"', path + [property_name]))
     for property_name, property_value in instance.items():
         try:
             if property_name not in schema['properties']:
-                raise ValidationError('unknown property "{}"'.format(property_name), path + [property_name])
+                raise ValidationError(f'unknown property "{property_name}"', path + [property_name])
             else:
                 validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict)
         except ValidationError as e:
@@ -275,10 +275,10 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'text':
         raise ValidationError('expected _type "text"', path)
     if not isinstance(instance['text'], str) and not isinstance(instance['text'], dict):
@@ -355,10 +355,10 @@ def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Di
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'datetime':
         raise ValidationError('expected _type "datetime"', path)
     if not isinstance(instance['utc_datetime'], str):
@@ -385,10 +385,10 @@ def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'bool':
         raise ValidationError('expected _type "bool"', path)
     if not isinstance(instance['value'], bool):
@@ -411,10 +411,10 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
     if 'units' not in instance:
@@ -481,9 +481,9 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     if not isinstance(instance['dimensionality'], str):
         raise ValidationError('dimensionality must be str', path)
     if quantity_magnitude.dimensionality != schema_quantity.dimensionality:
-        raise ValidationError('Invalid units, expected units for dimensionality "{}"'.format(str(schema_quantity.dimensionality)), path)
+        raise ValidationError(f'Invalid units, expected units for dimensionality "{str(schema_quantity.dimensionality)}"', path)
     if str(quantity_magnitude.dimensionality) != instance['dimensionality']:
-        raise ValidationError('Invalid dimensionality, expected "{}"'.format(str(schema_quantity.dimensionality)), path)
+        raise ValidationError(f'Invalid dimensionality, expected "{str(schema_quantity.dimensionality)}"', path)
 
 
 def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
@@ -502,10 +502,10 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'sample':
         raise ValidationError('expected _type "sample"', path)
     if not isinstance(instance['object_id'], int):
@@ -542,10 +542,10 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'measurement':
         raise ValidationError('expected _type "measurement"', path)
     if not isinstance(instance['object_id'], int):
@@ -582,10 +582,10 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'user':
         raise ValidationError('expected _type "user"', path)
     if not isinstance(instance['user_id'], int):
@@ -615,10 +615,10 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'object_reference':
         raise ValidationError('expected _type "object_reference"', path)
     if not isinstance(instance['object_id'], int):
@@ -671,10 +671,10 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
     schema_keys = instance.keys()
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'plotly_chart':
         raise ValidationError('expected _type "plotly_chart"', path)
     if isinstance(instance['plotly'], str):
@@ -714,10 +714,10 @@ def _validate_timeseries(
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'timeseries':
         raise ValidationError('expected _type "timeseries"', path)
     if 'units' not in instance:

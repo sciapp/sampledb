@@ -33,4 +33,4 @@ class Component(db.Model):  # type: ignore
         self.last_sync_timestamp = last_sync_timestamp
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, address={1.address}, uuid={1.uuid}, name={1.name}, description={1.description})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, address={self.address}, uuid={self.uuid}, name={self.name}, description={self.description})>'

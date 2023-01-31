@@ -48,4 +48,4 @@ class Comment(db.Model):  # type: ignore
         self.component_id = component_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, object_id={1.object_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, content="{1.content}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, object_id={self.object_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, content="{self.content}")>'

@@ -66,13 +66,13 @@ def parse_object_location_assignment(
     fed_id = _get_id(assignment_data.get('id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local object location assignment {} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'Invalid update for local object location assignment {fed_id} @ {uuid}')
 
     responsible_user_data = _get_dict(assignment_data.get('responsible_user'))
     location_data = _get_dict(assignment_data.get('location'))
     description = _get_translation(assignment_data.get('description'))
     if responsible_user_data is None and location_data is None and description is None:
-        raise errors.InvalidDataExportError('Empty object location assignment {} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'Empty object location assignment {fed_id} @ {uuid}')
 
     return ObjectLocationAssignmentData(
         fed_id=fed_id,

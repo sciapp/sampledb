@@ -35,5 +35,4 @@ class DownloadServiceJobFile(db.Model):  # type: ignore
         self.expiration = self.creation + timedelta(seconds=flask.current_app.config['DOWNLOAD_SERVICE_TIME_LIMIT'])
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, object_id={1.object_id}, file_id={1.file_id}' \
-            .format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, object_id={self.object_id}, file_id={self.file_id}'

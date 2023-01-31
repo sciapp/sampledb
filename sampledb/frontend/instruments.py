@@ -185,7 +185,7 @@ def instrument(instrument_id):
         instrument_log_entry_form.objects.choices = []
     else:
         instrument_log_entry_form.objects.choices = [
-            (str(object_info.object_id), "{} (#{})".format(get_translated_text(object_info.name_json), object_info.object_id))
+            (str(object_info.object_id), f"{get_translated_text(object_info.name_json)} (#{object_info.object_id})")
             for object_info in get_object_info_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
         ]
     instrument_log_categories = get_instrument_log_categories(instrument_id)

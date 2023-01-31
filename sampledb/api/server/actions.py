@@ -49,7 +49,7 @@ class Action(Resource):
             )
         except errors.ActionDoesNotExistError:
             return {
-                "message": "action {} does not exist".format(action_id)
+                "message": f"action {action_id} does not exist"
             }, 404
         if Permissions.READ not in get_user_action_permissions(action_id=action_id, user_id=flask.g.user.id):
             return flask.abort(403)

@@ -50,7 +50,7 @@ class Location(Resource):
             location = locations.get_location(location_id=location_id)
         except errors.LocationDoesNotExistError:
             return {
-                "message": "location {} does not exist".format(location_id)
+                "message": f"location {location_id} does not exist"
             }, 404
         permissions = location_permissions.location_permissions.get_permissions_for_user(
             resource_id=location_id,
@@ -85,7 +85,7 @@ class LocationType(Resource):
             location_type = locations.get_location_type(location_type_id=location_type_id)
         except errors.LocationTypeDoesNotExistError:
             return {
-                "message": "location type {} does not exist".format(location_type_id)
+                "message": f"location type {location_type_id} does not exist"
             }, 404
         return location_type_to_json(location_type)
 
@@ -106,11 +106,11 @@ class ObjectLocationAssignment(Resource):
             object_location_assignments = locations.get_object_location_assignments(object_id=object_id)
         except errors.ObjectDoesNotExistError:
             return {
-                "message": "object {} does not exist".format(object_id)
+                "message": f"object {object_id} does not exist"
             }, 404
         if object_location_assignment_index < 0 or object_location_assignment_index >= len(object_location_assignments):
             return {
-                "message": "location assignment {} for object {} does not exist".format(object_location_assignment_index, object_id)
+                "message": f"location assignment {object_location_assignment_index} for object {object_id} does not exist"
             }, 404
         return object_location_assignment_to_json(object_location_assignments[object_location_assignment_index])
 
@@ -125,5 +125,5 @@ class ObjectLocationAssignments(Resource):
             ]
         except errors.ObjectDoesNotExistError:
             return {
-                "message": "object {} does not exist".format(object_id)
+                "message": f"object {object_id} does not exist"
             }, 404

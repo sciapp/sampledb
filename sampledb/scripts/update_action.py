@@ -40,7 +40,7 @@ def main(arguments: typing.List[str]) -> None:
         try:
             validate_schema(schema)
         except ValidationError as e:
-            print('Error: invalid schema: {}'.format(str(e)), file=sys.stderr)
+            print(f'Error: invalid schema: {str(e)}', file=sys.stderr)
             sys.exit(1)
         set_action_translation(
             language_id=Language.ENGLISH,

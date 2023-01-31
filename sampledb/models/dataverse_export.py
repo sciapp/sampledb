@@ -44,4 +44,4 @@ class DataverseExport(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(object_id={1.object_id}, dataverse_url={1.dataverse_url})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(object_id={self.object_id}, dataverse_url={self.dataverse_url})>'

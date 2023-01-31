@@ -27,7 +27,7 @@ def parse_comment(
     fed_id = _get_id(comment_data.get('comment_id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local comment #{}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local comment #{fed_id}')
     return CommentData(
         fed_id=fed_id,
         component_uuid=uuid,

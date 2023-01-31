@@ -42,7 +42,7 @@ class Authentication(db.Model):  # type: ignore
         self.user_id = user_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id})>'
 
 
 class TwoFactorAuthenticationMethod(db.Model):  # type: ignore

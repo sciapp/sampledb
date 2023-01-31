@@ -79,7 +79,7 @@ class Instrument(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id})>'
 
     @property
     def name(self) -> typing.Dict[str, str]:

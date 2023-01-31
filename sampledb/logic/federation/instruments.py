@@ -64,7 +64,7 @@ def parse_instrument(
     uuid = _get_uuid(instrument_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local instrument {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local instrument {fed_id}')
     result = InstrumentData(
         fed_id=fed_id,
         component_uuid=uuid,

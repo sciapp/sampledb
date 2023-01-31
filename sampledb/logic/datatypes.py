@@ -134,7 +134,7 @@ class DateTime:
         self.utc_datetime = utc_datetime.replace(microsecond=0)
 
     def __repr__(self) -> str:
-        return '<{0}(utc_datetime={1})>'.format(type(self).__name__, self.utc_datetime.strftime(self.FORMAT_STRING))
+        return f'<{type(self).__name__}(utc_datetime={self.utc_datetime.strftime(self.FORMAT_STRING)})>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -198,7 +198,7 @@ class Quantity:
                 try:
                     self.pint_units = ureg.Unit(self.units)
                 except (pint.errors.UndefinedUnitError, AttributeError):
-                    raise ValueError("Invalid units '{}'".format(self.units))
+                    raise ValueError(f"Invalid units '{self.units}'")
             if already_in_base_units is False:
                 self.magnitude = magnitude
                 self.magnitude_in_base_units = ureg.Quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
@@ -213,7 +213,7 @@ class Quantity:
         self.dimensionality = str(int_ureg.Unit(self.pint_units).dimensionality)
 
     def __repr__(self) -> str:
-        return '<{0}(magnitude={1.magnitude}, units="{1.units}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(magnitude={self.magnitude}, units="{self.units}")>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -237,7 +237,7 @@ class Quantity:
             try:
                 pint_units = ureg.Unit(units)
             except (pint.errors.UndefinedUnitError, AttributeError):
-                raise ValueError("Invalid units '{}'".format(units))
+                raise ValueError(f"Invalid units '{units}'")
 
         if 'magnitude' in obj:
             magnitude = obj['magnitude']
@@ -274,7 +274,7 @@ class Boolean:
         self.value = bool(value)
 
     def __repr__(self) -> str:
-        return '<{0}(value={1.value})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(value={self.value})>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -312,7 +312,7 @@ class Text:
         self.text = text
 
     def __repr__(self) -> str:
-        return '<{0}(text="{1.text}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(text="{self.text}")>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):

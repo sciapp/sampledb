@@ -545,7 +545,7 @@ def objects():
                 )
                 num_objects_found = num_objects_found_list[0]
         except Exception as e:
-            search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
+            search_notes.append(('error', f"Error during search: {e}", 0, 0))
             objects = []
             num_objects_found = 0
         if any(note[0] == 'error' for note in search_notes):
@@ -978,7 +978,7 @@ def referencable_objects():
                 required_perm = Permissions(int(flask.request.args['required_perm']))
             except ValueError:
                 return {
-                    "message": "argument {} is not a valid permission.".format(flask.request.args['required_perm'])
+                    "message": f"argument {flask.request.args['required_perm']} is not a valid permission."
                 }, 400
 
     action_ids = None
@@ -1003,12 +1003,15 @@ def referencable_objects():
     )
 
     def dictify(x):
+        name = get_translated_text(x.name_json) or '—'
+        if x.component_name is None:
+            name += f' (#{x.object_id})'
+        else:
+            name += f' (#{x.object_id}, #{x.fed_object_id} @ {x.component_name})'
         return {
             'id': x.object_id,
-            'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '—', x.object_id) if x.component_name is None
-            else '{} (#{}, #{} @ {})'.format(flask.escape(get_translated_text(x.name_json)) or '—', x.object_id, x.fed_object_id, flask.escape(x.component_name)),
-            'unescaped_text': '{} (#{})'.format(get_translated_text(x.name_json) or '—', x.object_id) if x.component_name is None
-            else '{} (#{}, #{} @ {})'.format(get_translated_text(x.name_json) or '—', x.object_id, x.fed_object_id, x.component_name),
+            'text': flask.escape(name),
+            'unescaped_text': name,
             'action_id': x.action_id,
             'max_permission': x.max_permission,
             'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else [],

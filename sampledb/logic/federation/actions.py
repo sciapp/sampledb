@@ -79,7 +79,7 @@ def parse_action(
     uuid = _get_uuid(action_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local action {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local action {fed_id}')
     schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(action_data.get('schema'))
     if schema is not None:
         _parse_schema(schema)

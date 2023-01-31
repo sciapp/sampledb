@@ -261,10 +261,10 @@ def check_config(
                 admin_username = config.get('ADMIN_USERNAME', 'admin').lower()
                 admin_email = config.get('ADMIN_EMAIL', config['CONTACT_EMAIL']).lower()
                 print(
-                    'A new admin user with the username "{}", the email '
-                    'address "{}" and the given ADMIN_PASSWORD will be '
+                    f'A new admin user with the username "{admin_username}", the email '
+                    f'address "{admin_email}" and the given ADMIN_PASSWORD will be '
                     'created.'
-                    '\n'.format(admin_username, admin_email),
+                    '\n',
                     file=sys.stderr
                 )
                 internal_config['ADMIN_INFO'] = (

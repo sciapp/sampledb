@@ -98,7 +98,7 @@ def parse_user(
     fed_id = _get_id(user_data.get('user_id'))
     if uuid != component.uuid:
         # only accept user data from original source
-        raise errors.InvalidDataExportError('User data update for user #{} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'User data update for user #{fed_id} @ {uuid}')
     return UserData(
         fed_id=fed_id,
         component_uuid=uuid,

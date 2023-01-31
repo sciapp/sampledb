@@ -45,7 +45,7 @@ def main(arguments: typing.List[str]) -> None:
             try:
                 check_user_exists(user_id)
             except UserDoesNotExistError:
-                print('Error: no user with the id #{} exists'.format(user_id), file=sys.stderr)
+                print(f'Error: no user with the id #{user_id} exists', file=sys.stderr)
                 sys.exit(1)
         previous_instrument_responsible_user_ids = [user.id for user in instrument.responsible_users]
         for user_id in instrument_responsible_user_ids:

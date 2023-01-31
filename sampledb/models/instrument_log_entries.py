@@ -75,7 +75,7 @@ class InstrumentLogEntry(db.Model):  # type: ignore
         self.user_id = user_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, instrument_id={1.instrument_id}, user_id={1.user_id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, instrument_id={self.instrument_id}, user_id={self.user_id})>'
 
 
 class InstrumentLogEntryVersion(db.Model):  # type: ignore
@@ -109,7 +109,7 @@ class InstrumentLogEntryVersion(db.Model):  # type: ignore
         self.event_utc_datetime = event_utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(log_entry_id={1.log_entry_id}, version_id={1.version_id},  utc_datetime={1.utc_datetime}, content="{1.content}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(log_entry_id={self.log_entry_id}, version_id={self.version_id},  utc_datetime={self.utc_datetime}, content="{self.content}")>'
 
 
 class InstrumentLogFileAttachment(db.Model):  # type: ignore
@@ -132,7 +132,7 @@ class InstrumentLogFileAttachment(db.Model):  # type: ignore
         self.content = content
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, log_entry_id={1.log_entry_id}, file_name="{1.file_name}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, log_entry_id={self.log_entry_id}, file_name="{self.file_name}")>'
 
 
 class InstrumentLogObjectAttachment(db.Model):  # type: ignore
@@ -152,4 +152,4 @@ class InstrumentLogObjectAttachment(db.Model):  # type: ignore
         self.object_id = object_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, log_entry_id={1.log_entry_id}, object_id={1.object_id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, log_entry_id={self.log_entry_id}, object_id={self.object_id})>'

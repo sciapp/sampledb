@@ -36,7 +36,7 @@ class ComponentAuthentication(db.Model):  # type: ignore
         self.component_id = component_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id})>'
 
 
 class OwnComponentAuthentication(db.Model):  # type: ignore
@@ -59,4 +59,4 @@ class OwnComponentAuthentication(db.Model):  # type: ignore
         self.component_id = component_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id})>'

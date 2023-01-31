@@ -17,7 +17,7 @@ class Literal:
         self.end_position = self.start_position + len(self.input_text)
 
     def __repr__(self) -> str:
-        return '<Literal({})>'.format(self.input_text)
+        return f'<Literal({self.input_text})>'
 
 
 class Text(Literal):
@@ -25,7 +25,7 @@ class Text(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Text({})>'.format(self.value.text)
+        return f'<Text({self.value.text})>'
 
 
 class Tag(Literal):
@@ -33,7 +33,7 @@ class Tag(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Tag(#{})>'.format(self.value)
+        return f'<Tag(#{self.value})>'
 
 
 class Reference(Literal):
@@ -41,7 +41,7 @@ class Reference(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Reference(#{})>'.format(self.value)
+        return f'<Reference(#{self.value})>'
 
 
 class Boolean(Literal):
@@ -49,7 +49,7 @@ class Boolean(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Boolean({})>'.format(self.value.value)
+        return f'<Boolean({self.value.value})>'
 
 
 class Attribute(Literal):
@@ -57,7 +57,7 @@ class Attribute(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Attribute({})>'.format(self.value)
+        return f'<Attribute({self.value})>'
 
 
 class Null(Literal):
@@ -65,7 +65,7 @@ class Null(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Null({})>'.format(self.value)
+        return f'<Null({self.value})>'
 
 
 class Quantity(Literal):
@@ -73,7 +73,7 @@ class Quantity(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Quantity({})>'.format(self.value)
+        return f'<Quantity({self.value})>'
 
 
 class Date(Literal):
@@ -81,7 +81,7 @@ class Date(Literal):
         super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Date({})>'.format(self.value.utc_datetime)
+        return f'<Date({self.value.utc_datetime})>'
 
 
 class Token:
@@ -90,7 +90,7 @@ class Token:
         self.start_position = start_position
 
     def __repr__(self) -> str:
-        return '<Token("{}")>'.format(self.input_text)
+        return f'<Token("{self.input_text}")>'
 
 
 class Operator:
@@ -100,7 +100,7 @@ class Operator:
         self.operator = operator
 
     def __repr__(self) -> str:
-        return '<Operator(operator="{}")>'.format(self.operator)
+        return f'<Operator(operator="{self.operator}")>'
 
 
 class ParseError(Exception):
