@@ -7,6 +7,8 @@ import importlib
 import os
 import typing
 
+from ... import db
+
 
 def should_skip_by_index(db: typing.Any, index: int) -> bool:
     """
@@ -93,3 +95,24 @@ def find_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typ
         name, function = migrations[index]
         sorted_migrations.append((index, name, function))
     return sorted_migrations
+
+
+def table_has_column(table_name: str, column_name: str) -> bool:
+    """
+    Return whether a table has a column with a given name.
+
+    :param table_name: the name of the table
+    :param column_name: the name of the column to check for
+    :return: whether the column exists
+    """
+    return bool(db.session.execute(
+        db.text("""
+            SELECT COUNT(*)
+            FROM information_schema.columns
+            WHERE table_name = :table_name AND column_name = :column_name
+        """),
+        params={
+            'table_name': table_name,
+            'column_name': column_name
+        }
+    ).scalar())
