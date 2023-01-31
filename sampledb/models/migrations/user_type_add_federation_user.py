@@ -7,16 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import enum_has_value
+
 MIGRATION_INDEX = 78
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    enum_values = db.session.execute(db.text("""
-        SELECT unnest(enum_range(NULL::usertype))::text;
-    """)).fetchall()
-    if ('FEDERATION_USER',) in enum_values:
+    if enum_has_value('usertype', 'FEDERATION_USER'):
         return False
 
     # Perform migration

@@ -7,16 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import enum_has_value
+
 MIGRATION_INDEX = 18
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    enum_values = db.session.execute(db.text("""
-        SELECT unnest(enum_range(NULL::userlogentrytype))::text;
-    """)).fetchall()
-    if ('CREATE_INSTRUMENT_LOG_ENTRY',) in enum_values:
+    if enum_has_value('userlogentrytype', 'CREATE_INSTRUMENT_LOG_ENTRY'):
         return False
 
     # Perform migration

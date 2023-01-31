@@ -116,3 +116,25 @@ def table_has_column(table_name: str, column_name: str) -> bool:
             'column_name': column_name
         }
     ).scalar())
+
+
+def enum_has_value(enum_name: str, value_name: str) -> bool:
+    """
+    Return whether an enum has a value with a given name.
+
+    :param enum_name: the name of the enum
+    :param value_name: the name of the value to check for
+    :return: whether the value exists
+    """
+    return bool(db.session.execute(
+        db.text("""
+            SELECT COUNT(*)
+            FROM pg_type
+            JOIN pg_enum ON pg_enum.enumtypid = pg_type.oid
+            WHERE pg_type.typname = :enum_name AND pg_enum.enumlabel = :value_name
+        """),
+        params={
+            'enum_name': enum_name,
+            'value_name': value_name
+        }
+    ).scalar())

@@ -7,16 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import enum_has_value
+
 MIGRATION_INDEX = 100
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    enum_values = db.session.execute(db.text("""
-        SELECT unnest(enum_range(NULL::filelogentrytype))::text;
-    """)).fetchall()
-    if ('EDIT_URL',) in enum_values:
+    if enum_has_value('filelogentrytype', 'EDIT_URL'):
         return False
 
     # Perform migration
