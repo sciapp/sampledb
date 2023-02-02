@@ -138,3 +138,34 @@ def enum_has_value(enum_name: str, value_name: str) -> bool:
             'value_name': value_name
         }
     ).scalar())
+
+
+def add_enum_value(enum_name: str, value_name: str) -> None:
+    """
+    Add a value to an enum.
+
+    :param enum_name: the name of the enum
+    :param value_name: the name of the value to add
+    """
+    # Use connection and run COMMIT as ALTER TYPE cannot run in a transaction (in PostgreSQL 11)
+    engine = db.engine.execution_options(autocommit=False)
+    with engine.connect() as connection:
+        connection.execute(db.text("COMMIT"))
+        connection.execute(db.text(f"""
+            ALTER TYPE {enum_name}
+            ADD VALUE '{value_name}'
+        """))
+
+
+def enum_value_migration(enum_name: str, value_name: str) -> bool:
+    """
+    Perform a migration for adding a value to an enum, if the value is missing.
+
+    :param enum_name: the name of the enum
+    :param value_name: the name of the value to add
+    :return: whether the migration was performed
+    """
+    if enum_has_value(enum_name, value_name):
+        return False
+    add_enum_value(enum_name, value_name)
+    return True
