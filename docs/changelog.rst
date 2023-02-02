@@ -4,7 +4,7 @@ Changelog
 Version 0.21.2
 --------------
 
-Currently in development.
+Released on February 2nd, 2023.
 
 - Fixed compatibility with PostgreSQL 11
 
