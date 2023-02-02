@@ -6,6 +6,7 @@ import typing
 
 import ldap3
 import ldap3.core.exceptions
+import ldap3.utils.conv
 import flask
 
 from ..models import Authentication, AuthenticationType, UserType
@@ -38,7 +39,7 @@ def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[
     try:
         connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS)
         object_def = ldap3.ObjectDef(object_def, connection)
-        reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(user_ldap_uid))
+        reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(ldap3.utils.conv.escape_filter_chars(user_ldap_uid)))
         reader.search(attributes)
         # search if uid matches exactly one user, not more
         if len(reader) != 1:

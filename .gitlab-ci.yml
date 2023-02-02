@@ -63,11 +63,9 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0209,C0301,C0302,C0413,C0415,W0212,W0238,W0511,W1202,W1514,W0603,W0612,W0613,W0621,W0622,W0703,W0707,W9006,E1101,E0213  --load-plugins=pylint.extensions.docparams sampledb/
 
-check-migrations:
+.template-check-migrations:
   stage: test
   image: python:3.10-slim-bullseye
-  services:
-    - postgres:12
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -84,11 +82,29 @@ check-migrations:
     # re-create database to ensure it is entirely empty
     - dropdb -h postgres -U postgres postgres
     - createdb -h postgres -U postgres postgres
-    # check out stable version
+    # check out old stable version
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
-    - git fetch upstream master
+    - git fetch upstream v0.20.0
     - git checkout FETCH_HEAD
     # set up database with stable version
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # check out current version again
+    - git checkout $CI_COMMIT_SHA
+    # upgrade database using migrations
+    - python3 -m pip install -r requirements.txt
+    - python3 -m sampledb list_actions
+    # create backup for comparison
+    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_v0.20.0.sql
+    # ensure both backups yield identical backups
+    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_v0.20.0.sql
+    # re-create database to ensure it is entirely empty
+    - dropdb -h postgres -U postgres postgres
+    - createdb -h postgres -U postgres postgres
+    # check out development version
+    - git fetch upstream master
+    - git checkout FETCH_HEAD
+    # set up database with development version
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # check out current version again
@@ -118,6 +134,21 @@ check-migrations:
     - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
+
+check-migrations-postgres-11:
+  extends: .template-check-migrations
+  services:
+    - postgres:11
+
+check-migrations-postgres-12:
+  extends: .template-check-migrations
+  services:
+    - postgres:12
+
+check-migrations-postgres-13:
+  extends: .template-check-migrations
+  services:
+    - postgres:13
 
 check-translations:
   stage: test

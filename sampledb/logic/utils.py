@@ -14,7 +14,7 @@ from . import errors
 from .. import db
 from .background_tasks.send_mail import post_send_mail_task
 from .security_tokens import generate_token
-from ..models import Authentication, AuthenticationType, User, File, Tag, BackgroundTaskStatus, BackgroundTask
+from ..models import Authentication, AuthenticationType, User, File, Tag, BackgroundTaskStatus, BackgroundTask, UserType
 from ..utils import ansi_color
 
 
@@ -84,6 +84,13 @@ def send_recovery_email(
     email_authentication = Authentication.query.filter(db.and_(Authentication.login['login'].astext == email, Authentication.type == AuthenticationType.EMAIL)).first()
     if email_authentication is not None and email_authentication.user not in users:
         users.append(email_authentication.user)
+
+    # do not provide password resets for users from other databases
+    users = [
+        user
+        for user in users
+        if user.type != UserType.FEDERATION_USER
+    ]
 
     if not users:
         return None
