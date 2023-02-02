@@ -41,6 +41,11 @@ sampledb.logic.authentication.NUM_BCYRPT_ROUNDS = 4
 sampledb.config.MAIL_SUPPRESS_SEND = True
 sampledb.config.TEMPLATES_AUTO_RELOAD = True
 
+# avoid dead database connections, which might occur due to the database reset mechanism in the tests
+sampledb.config.SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,
+    "pool_recycle": 60,
+}
 sampledb.config.SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{0}:@localhost:5432/{0}'.format(getpass.getuser())
 sampledb.config.MAIL_SENDER = 'sampledb@example.com'
 sampledb.config.MAIL_SERVER = 'mail.example.com'
