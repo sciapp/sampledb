@@ -20,7 +20,10 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
         return False
 
     # Perform migration
-    with db.engine.begin() as connection:
+    # Use connection and run COMMIT as ALTER TYPE cannot run in a transaction (in PostgreSQL 11)
+    engine = db.engine.execution_options(autocommit=False)
+    with engine.connect() as connection:
+        connection.execute(db.text("COMMIT"))
         connection.execute(db.text("""
             ALTER TYPE notificationtype
             ADD VALUE 'REMOTE_OBJECT_IMPORT_FAILED'
