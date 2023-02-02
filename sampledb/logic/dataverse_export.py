@@ -588,10 +588,10 @@ def upload_object(
             dataverse_url = f'{server_url}/dataset.xhtml?{urlencode({"persistentId": persistent_id})}'
             dataverse_export = DataverseExport.query.filter_by(object_id=object_id).first()
             if dataverse_export and dataverse_export.status == DataverseExportStatus.TASK_CREATED:
-                DataverseExport.query.filter_by(object_id=object_id).update(dict(
-                    status=DataverseExportStatus.EXPORT_FINISHED,
-                    dataverse_url=dataverse_url
-                ))
+                DataverseExport.query.filter_by(object_id=object_id).update({
+                    'status': DataverseExportStatus.EXPORT_FINISHED,
+                    'dataverse_url': dataverse_url
+                })
             else:
                 dataverse_export = DataverseExport(object_id, dataverse_url, user_id, DataverseExportStatus.EXPORT_FINISHED)
                 db.session.add(dataverse_export)

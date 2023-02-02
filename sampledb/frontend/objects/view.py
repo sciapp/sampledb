@@ -95,7 +95,7 @@ def object(object_id):
     if mode in {'edit', 'upgrade'} or flask.request.method == 'POST':
         check_current_user_is_not_readonly()
         action = get_action(object.action_id)
-        should_upgrade_schema = (mode == 'upgrade')
+        should_upgrade_schema = mode == 'upgrade'
         if should_upgrade_schema and (not action.schema or action.schema == object.schema):
             flask.flash(_('The schema for this object cannot be updated.'), 'error')
             return flask.redirect(flask.url_for('.object', object_id=object_id))
