@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.21.2
+--------------
+
+Currently in development.
+
+- Fixed compatibility with PostgreSQL 11
+
 Version 0.21.1
 --------------
 
