@@ -441,7 +441,7 @@ def parse_object_form_data(form_data, schema, id_prefix, errors, required=False)
     data = {}
     for property_name, property_schema in schema['properties'].items():
         property_id_prefix = id_prefix + '__' + property_name
-        property_required = (property_name in schema.get('required', []))
+        property_required = property_name in schema.get('required', [])
         property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
         if property is not None:
             data[property_name] = property
