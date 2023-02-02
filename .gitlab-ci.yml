@@ -4,18 +4,21 @@ stages:
   - deploy
 
 variables:
-  POSTGRES_HOST: postgres
   POSTGRES_DB: postgres
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ""
-  SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres:5432/postgres"
   POSTGRES_HOST_AUTH_METHOD: trust
 
 test:
   stage: test
   image: python:3.10-slim-bullseye
   services:
-    - postgres:12
+    - name: postgres:12
+      alias: postgres-test
+      variables:
+        POSTGRES_HOST: postgres-test
+  variables:
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres-test:5432/postgres"
   tags:
     - kubernetes-executor
   script:
@@ -78,10 +81,10 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_without_upgrade.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_without_upgrade.sql
     # re-create database to ensure it is entirely empty
-    - dropdb -h postgres -U postgres postgres
-    - createdb -h postgres -U postgres postgres
+    - dropdb -h $POSTGRES_HOST -U postgres postgres
+    - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out old stable version
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
     - git fetch upstream v0.20.0
@@ -95,12 +98,12 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_v0.20.0.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_with_upgrade_from_v0.20.0.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_v0.20.0.sql
     # re-create database to ensure it is entirely empty
-    - dropdb -h postgres -U postgres postgres
-    - createdb -h postgres -U postgres postgres
+    - dropdb -h $POSTGRES_HOST -U postgres postgres
+    - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out development version
     - git fetch upstream master
     - git checkout FETCH_HEAD
@@ -113,12 +116,12 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_master.sql
     # re-create database to ensure it is entirely empty
-    - dropdb -h postgres -U postgres postgres
-    - createdb -h postgres -U postgres postgres
+    - dropdb -h $POSTGRES_HOST -U postgres postgres
+    - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out development version
     - git fetch upstream develop
     - git checkout FETCH_HEAD
@@ -131,24 +134,42 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
 
 check-migrations-postgres-11:
   extends: .template-check-migrations
   services:
-    - postgres:11
+    - name: postgres:11
+      alias: postgres11
+      variables:
+        POSTGRES_HOST: postgres11
+  variables:
+    POSTGRES_HOST: postgres11
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres11:5432/postgres"
 
 check-migrations-postgres-12:
   extends: .template-check-migrations
   services:
-    - postgres:12
+    - name: postgres:12
+      alias: postgres12
+      variables:
+        POSTGRES_HOST: postgres12
+  variables:
+    POSTGRES_HOST: postgres12
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres12:5432/postgres"
 
 check-migrations-postgres-13:
   extends: .template-check-migrations
   services:
-    - postgres:13
+    - name: postgres:13
+      alias: postgres13
+      variables:
+        POSTGRES_HOST: postgres13
+  variables:
+    POSTGRES_HOST: postgres13
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres13:5432/postgres"
 
 check-translations:
   stage: test
@@ -179,7 +200,12 @@ documentation:
   stage: test
   image: python:3.10-slim-bullseye
   services:
-    - postgres:latest
+    - name: postgres:12
+      alias: postgres-documentation
+      variables:
+        POSTGRES_HOST: postgres-documentation
+  variables:
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres-documentation:5432/postgres"
   tags:
     - kubernetes-executor
   script:
