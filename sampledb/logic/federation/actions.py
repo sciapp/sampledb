@@ -156,6 +156,8 @@ def import_action(
         return schema
 
     component_id = _get_or_create_component_id(action_data['component_uuid'])
+    # component_id will only be None if this would import a local action
+    assert component_id is not None
 
     action_type_id = _get_or_create_action_type_id(action_data['action_type'])
     instrument_id = _get_or_create_instrument_id(action_data['instrument'])

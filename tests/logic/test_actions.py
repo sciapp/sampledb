@@ -137,7 +137,7 @@ def test_create_action_fed_invalid_component(component):
 
 
 def test_create_action_fed_missing_fed_id(component):
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         actions.create_action(
             action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
             schema=SCHEMA,
@@ -146,7 +146,7 @@ def test_create_action_fed_missing_fed_id(component):
 
 
 def test_create_action_fed_missing_component():
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         actions.create_action(
             action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
             schema=SCHEMA,
@@ -167,7 +167,7 @@ def test_create_action_type_fed(component):
 
 
 def test_create_action_type_fed_missing_component():
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         actions.create_action_type(
             False, True, True, True, True, True, True, True, True, True, True, False, False,
             fed_id=1
@@ -175,7 +175,7 @@ def test_create_action_type_fed_missing_component():
 
 
 def test_create_action_type_fed_missing_fed_id(component):
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         actions.create_action_type(
             False, True, True, True, True, True, True, True, True, True, True, False, False,
             component_id=component.id + 1

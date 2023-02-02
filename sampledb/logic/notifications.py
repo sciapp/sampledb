@@ -113,7 +113,7 @@ def get_notification(notification_id: int) -> Notification:
 
     :param notification_id: the ID of an existing notification
     :return: a notification
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     notification = notifications.Notification.query.filter_by(id=notification_id).first()
@@ -224,7 +224,7 @@ def mark_notification_as_read(notification_id: int) -> None:
     Mark a notification as having been read.
 
     :param notification_id: the ID of an existing notification
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     notification = notifications.Notification.query.filter_by(id=notification_id).first()
@@ -244,7 +244,7 @@ def mark_notification_for_being_assigned_as_responsible_user_as_read(user_id: in
     :param object_location_assignment_id: the object location assignment ID
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     unread_notifications = get_notifications_by_type(
@@ -262,7 +262,7 @@ def delete_notification(notification_id: int) -> None:
     Delete a notification.
 
     :param notification_id: the ID of an existing notification
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     notification = notifications.Notification.query.filter_by(id=notification_id).first()

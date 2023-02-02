@@ -96,6 +96,7 @@ def get_markdown_from_object_data(data: typing.Union[typing.Dict[str, typing.Any
 
     :param data: the object data to get Markdown text from
     :return: a list of all found Markdown texts
+    :raise errors.ValidationError: when the contained markdown data is invalid
     """
     markdown_texts = []
     if isinstance(data, dict):

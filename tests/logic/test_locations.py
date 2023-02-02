@@ -115,15 +115,15 @@ def test_create_location_fed(user, component):
 
 
 def test_create_location_invalid_parameters(user, component):
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location(None, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, None, None, user.id, locations.LocationType.LOCATION)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, None, locations.LocationType.LOCATION)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION, fed_id=1, component_id=None)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION, fed_id=None, component_id=component.id)
 
 

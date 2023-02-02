@@ -55,6 +55,8 @@ def create_object(
         action ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
+    :raise errors.CreatingObjectsDisabledError: when creating objects is
+        disabled for the given action
     """
     action = actions.get_action(action_id)
     if action.type is not None and action.type.disable_create_objects:

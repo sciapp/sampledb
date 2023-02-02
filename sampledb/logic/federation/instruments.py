@@ -106,6 +106,8 @@ def import_instrument(
         component: Component
 ) -> Instrument:
     component_id = _get_or_create_component_id(instrument_data['component_uuid'])
+    # component_id will only be None if this would import a local instrument
+    assert component_id is not None
     try:
         mutable_instrument = get_mutable_instrument(instrument_data['fed_id'], component_id)
 

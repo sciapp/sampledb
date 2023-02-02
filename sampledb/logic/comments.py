@@ -45,6 +45,31 @@ class Comment:
         )
 
 
+@typing.overload
+def create_comment(
+        object_id: int,
+        user_id: int,
+        content: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        fed_id: None = None,
+        component_id: None = None
+) -> int:
+    ...
+
+
+@typing.overload
+def create_comment(
+        object_id: int,
+        user_id: typing.Optional[int],
+        content: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        *,
+        fed_id: int,
+        component_id: int
+) -> int:
+    ...
+
+
 def create_comment(
         object_id: int,
         user_id: typing.Optional[int],
@@ -69,8 +94,8 @@ def create_comment(
         exists
     """
 
-    if (component_id is None) != (fed_id is None) or (component_id is None and user_id is None):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
+    assert component_id is not None or user_id is not None
 
     # ensure that the object exists
     objects.check_object_exists(object_id)
@@ -138,8 +163,8 @@ def update_comment(
     comment = models.Comment.query.filter_by(id=comment_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()
-    if comment.component_id is None and user_id is None:
-        raise ValueError('user_id must not be None for local comments.')
+    # user_id must not be None for local comments
+    assert comment.component_id is not None or user_id is not None
     comment.user_id = user_id
     comment.content = content
     comment.utc_datetime = utc_datetime

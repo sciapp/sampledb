@@ -68,6 +68,8 @@ def import_location(
         users: typing.List[UserData]
 ) -> Location:
     component_id = _get_or_create_component_id(location_data['component_uuid'])
+    # component_id will only be None if this would import a local location
+    assert component_id is not None
 
     parent = _parse_location_ref(location_data.get('parent_location'))
     if parent is None:

@@ -108,6 +108,8 @@ def create_project(
     :raise errors.ProjectAlreadyExistsError: when another project with the given
         name already exists
     :raise errors.LanguageDoesNotExistError: when there is no language for the given lang codes
+    :raise errors.MissingEnglishTranslationError: when the name does not
+        contain an english translation
     """
     if isinstance(name, str):
         name = {
@@ -174,29 +176,21 @@ def update_project(
     :raise errors.ProjectAlreadyExistsError: when another project with the given
         name already exists
     :raise errors.LanguageDoesNotExistError: when there is no language for the given lang codes.
+    :raise errors.MissingEnglishTranslationError: when the name does not
+        contain an english translation
     """
-    try:
-        for language_code, name_text in list(name.items()):
-            language = get_language_by_lang_code(language_code)
-            if not 1 <= len(name_text) <= MAX_PROJECT_NAME_LENGTH:
-                if language.id != Language.ENGLISH and not name_text:
-                    del name[language_code]
-                else:
-                    raise errors.InvalidProjectNameError()
-            existing_project = projects.Project.query.filter(
-                projects.Project.name[language_code].astext.cast(db.Unicode) == name_text
-            ).first()
-            if existing_project is not None and existing_project.id != project_id:
-                raise errors.ProjectAlreadyExistsError()
-
-    except errors.LanguageDoesNotExistError:
-        raise errors.LanguageDoesNotExistError("There is no language for the given lang code")
-    except errors.InvalidProjectNameError:
-        raise errors.InvalidProjectNameError()
-    except errors.ProjectAlreadyExistsError:
-        raise errors.ProjectAlreadyExistsError()
-    except Exception as e:
-        raise e
+    for language_code, name_text in list(name.items()):
+        language = get_language_by_lang_code(language_code)
+        if not 1 <= len(name_text) <= MAX_PROJECT_NAME_LENGTH:
+            if language.id != Language.ENGLISH and not name_text:
+                del name[language_code]
+            else:
+                raise errors.InvalidProjectNameError()
+        existing_project = projects.Project.query.filter(
+            projects.Project.name[language_code].astext.cast(db.Unicode) == name_text
+        ).first()
+        if existing_project is not None and existing_project.id != project_id:
+            raise errors.ProjectAlreadyExistsError()
     if 'en' not in name:
         raise errors.MissingEnglishTranslationError()
 

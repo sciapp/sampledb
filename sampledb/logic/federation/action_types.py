@@ -74,6 +74,8 @@ def import_action_type(
         component: Component
 ) -> ActionType:
     component_id = _get_or_create_component_id(action_type_data['component_uuid'])
+    # component_id will only be None if this would import a local action type
+    assert component_id is not None
 
     try:
         action_type = get_action_type(action_type_data['fed_id'], component_id)

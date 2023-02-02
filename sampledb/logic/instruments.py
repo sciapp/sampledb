@@ -75,6 +75,38 @@ class Instrument:
         return f"<{type(self).__name__}(id={self.id!r})>"
 
 
+@typing.overload
+def create_instrument(
+        *,
+        description_is_markdown: bool = False,
+        users_can_create_log_entries: bool = False,
+        users_can_view_log_entries: bool = False,
+        notes_is_markdown: bool = False,
+        create_log_entry_default: bool = False,
+        is_hidden: bool = False,
+        short_description_is_markdown: bool = False,
+        fed_id: None = None,
+        component_id: None = None
+) -> Instrument:
+    ...
+
+
+@typing.overload
+def create_instrument(
+        *,
+        description_is_markdown: bool = False,
+        users_can_create_log_entries: bool = False,
+        users_can_view_log_entries: bool = False,
+        notes_is_markdown: bool = False,
+        create_log_entry_default: bool = False,
+        is_hidden: bool = False,
+        short_description_is_markdown: bool = False,
+        fed_id: int,
+        component_id: int
+) -> Instrument:
+    ...
+
+
 def create_instrument(
         *,
         description_is_markdown: bool = False,
@@ -105,9 +137,7 @@ def create_instrument(
     :param component_id: the ID of the exporting component
     :return: the new instrument
     """
-
-    if (component_id is None) != (fed_id is None):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
 
     if component_id is not None:
         check_component_exists(component_id)

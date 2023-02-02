@@ -62,6 +62,8 @@ def add_email_authentication(user_id: int, email: str, password: str, confirmed:
     :param email: the email to use during authentication
     :param password: the password
     :param confirmed: whether the authentication method has been confirmed already
+    :raise errors.AuthenticationMethodWrong: when email is no valid email
+        address
     """
     email = email.lower().strip()
     if '@' not in email[1:-1]:
@@ -83,6 +85,12 @@ def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirme
     :param ldap_uid: the LDAP uid to use during authentication
     :param password: the LDAP password
     :param confirmed: whether the authentication method has been confirmed already
+    :raise errors.AuthenticationMethodAlreadyExists: when an LDAP authentication
+        method with the given UID already exists
+    :raise errors.LDAPAccountAlreadyExistError: when an LDAP authentication
+        method already exists for this user
+    :raise errors.LDAPAccountOrPasswordWrongError: when the UID and password
+        combination could not be validated
     """
     ldap_uid = ldap_uid.lower().strip()
     if Authentication.query.filter(Authentication.login['login'].astext == ldap_uid).first():
@@ -237,6 +245,8 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     Remove an authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
+    :raise errors.OnlyOneAuthenticationMethod: when this would remove the only
+        authentication method for this user
     """
     authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
     if authentication_method is None:

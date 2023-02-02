@@ -244,6 +244,7 @@ class VersionedJSONSerializableObjectTables:
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_data: whether the data must be validated
         :return: the newly created object as object_type
+        :raise ValueError: if the schema and action are None for a local object
         """
         assert connection is not None  # ensured by decorator
         if utc_datetime is None and fed_object_id is None:
