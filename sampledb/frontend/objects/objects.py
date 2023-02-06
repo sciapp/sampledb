@@ -1179,7 +1179,7 @@ def _parse_object_list_filters(
             flask.flash(_('Invalid group ID.'), 'error')
             return FALLBACK_RESULT
         else:
-            if flask_login.current_user.id not in group_member_ids:
+            if flask_login.current_user.id not in group_member_ids and not flask_login.current_user.has_admin_permissions:
                 flask.flash(_('You need to be a member of this group to list its objects.'), 'error')
                 return FALLBACK_RESULT
             filter_group_permissions = {
@@ -1206,7 +1206,7 @@ def _parse_object_list_filters(
                     project_id=filter_project_id,
                     user_id=flask_login.current_user.id,
                     include_groups=True
-            ):
+            ) and not flask_login.current_user.has_admin_permissions:
                 flask.flash(_('You need to be a member of this project group to list its objects.'), 'error')
                 return FALLBACK_RESULT
             filter_project_permissions = {
