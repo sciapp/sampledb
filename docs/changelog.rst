@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.21.3
+--------------
+
+Currently in development.
+
+- Translate group names in invitation notifications
+
 Version 0.21.2
 --------------
 
