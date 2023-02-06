@@ -1333,27 +1333,6 @@ msgstr "Erweiterte Suche"
 msgid "Build Search Query"
 msgstr "Suchanfrage erstellen"
 
-#, python-format
-msgid "Search %(objects)s from this project group"
-msgstr "Suche in allen %(objects)s dieser Projektgruppe"
-
-msgid "Search objects from this project group"
-msgstr "Suche in allen Objekten dieser Projektgruppe"
-
-#, python-format
-msgid "Search %(objects)s from this action"
-msgstr "Suche in allen %(objects)s dieser Aktion"
-
-msgid "Search objects from this action"
-msgstr "Suche in allen Objekten dieser Aktion"
-
-#, python-format
-msgid "Search all %(objects)s"
-msgstr "Suche in allen %(objects)s"
-
-msgid "Search all objects"
-msgstr "Suche in allen Objekten"
-
 msgid "Instruments"
 msgstr "Instrumente"
 
@@ -1509,27 +1488,6 @@ msgstr "In 1 Stunde erinnern"
 
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
-
-msgid "Advanced Search (by action)…"
-msgstr "Erweiterte Suche (nach Aktion)…"
-
-msgid "Search (by action)…"
-msgstr "Suche (nach Aktion)…"
-
-msgid "Advanced Search (by project group)…"
-msgstr "Erweiterte Suche (nach Projektgruppe)…"
-
-msgid "Search (by project group)…"
-msgstr "Suche (nach Projektgruppe)…"
-
-msgid "Advanced Search (by type)…"
-msgstr "Erweiterte Suche (nach Typ)…"
-
-msgid "Search (by type)…"
-msgstr "Suche (nach Typ)…"
-
-msgid "Advanced "
-msgstr "Erweiterte "
 
 msgid "Create Bot User"
 msgstr "Botnutzer erstellen"
