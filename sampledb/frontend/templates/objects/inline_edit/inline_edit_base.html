@@ -39,7 +39,7 @@
         <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
     {% endif %}
 
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
         window.mde_fields = [];
 
         $(function () {

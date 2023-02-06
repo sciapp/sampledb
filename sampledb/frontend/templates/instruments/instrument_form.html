@@ -17,7 +17,7 @@
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   {% set allowed_language_ids = [] %}
   window.languages = [
     {% for language in languages %}

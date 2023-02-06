@@ -611,6 +611,9 @@ DISABLE_INSTRUMENTS = False
 
 ENABLE_FUNCTION_CACHES = True
 
+# CSP headers should be set, however this value can be used to disable them if necessary
+ENABLE_CONTENT_SECURITY_POLICY = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -674,6 +677,7 @@ for config_name in [
     'USE_TYPEAHEAD_FOR_OBJECTS',
     'DISABLE_INSTRUMENTS',
     'ENABLE_FUNCTION_CACHES',
+    'ENABLE_CONTENT_SECURITY_POLICY',
 ]:
     value = globals().get(config_name)
     if isinstance(value, str):

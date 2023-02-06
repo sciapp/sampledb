@@ -58,7 +58,7 @@ def _assert_all_routes_are_handled(flask_server, handled_routes, arguments):
     flask_server.app.config['SERVER_NAME'] = server_name
 
 
-def test_status_codes(flask_server, user):
+def test_status_codes(flask_server, user, driver):
     flask_server.app.config['DATAVERSE_URL'] = 'http://localhost'
     flask_server.app.config['SCICAT_FRONTEND_URL'] = 'http://localhost'
     flask_server.app.config['SCICAT_API_URL'] = 'http://localhost'
@@ -256,6 +256,7 @@ def test_status_codes(flask_server, user):
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     expected_status_codes = {
         '': 200,
         'action_types/': 200,
@@ -445,6 +446,8 @@ def test_status_codes(flask_server, user):
             allow_redirects=False,
             headers=headers
         ).status_code == expected_status_code
+        driver.get(flask_server.base_url + 'objects/')
+        assert flask_server.app.csp_reports == []
 
     # routes which do not need to be tested, e.g. because they are part of the testing environment
     excluded_routes = [

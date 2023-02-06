@@ -14,13 +14,13 @@
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
-  <script type="text/javascript">
-    const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }}
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+    const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }};
     let selected_object_ids = [];
 
     $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover' });
@@ -38,6 +38,10 @@
 
 
     $(document).ready(function() {
+      $('.checkbox-select-child').on('click', function() {
+        handleObjectSelection(this);
+      });
+
       let filter_origin_ids_picker = $('#filter_origin_ids');
       let filter_action_type_ids_picker = $('#filter_action_type_ids');
       let filter_action_ids_picker = $('#filter_action_ids');
@@ -149,6 +153,7 @@
       submit_button.prop('disabled', false);
       return true;
     }
+    $('[data-multiselect-check-submittable="true"]').on('change', checkSubmittable);
 
     function checkLabelFormSubmittable() {
       {% if generate_labels %}
@@ -359,7 +364,7 @@
 {% block content %}
   {# counter for plotly_chart_plots #}
   {% set plot_counter = namespace(value=0) %}
-  <script type="text/javascript">
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.plotly_charts = [];
   </script>
   {% if search_notes is defined %}
@@ -917,14 +922,14 @@
       <a type="button" class="btn btn-default" href="{{ build_modified_url(blocked_parameters=['use_in_action_type', 'create_from_objects']) }}"> {{ _('Cancel') }} </a>
       {% if favorite_actions|length > 0 %}
         <div class="btn-group" style="display: inline-block; margin-top: 2px" id="multiselect-submit-tooltip" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
-          <button class="btn btn-primary dropdown-toggle" id="multiselect-submit" type="button" id="dropdown-use-selection" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
+          <button class="btn btn-primary dropdown-toggle" id="multiselect-submit" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
             {{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text(default=_('Unnamed Action Type'))) }} <span class="caret"> </span>
           </button>
-          <div class="dropdown-menu dropdown-menu-right multiselect-actions" aria-labelledby="dropdown-use-selection">
+          <div class="dropdown-menu dropdown-menu-right multiselect-actions" aria-labelledby="multiselect-submit">
             <li style="padding: 3px 20px;"><strong>{{ _('Favorites') }}:</strong></li>
             {% for action in favorite_actions %}
               {% if not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not current_user.is_admin) %}
-                <li><button onclick="$('#action-id-selection').val('{{ action.id }}')" type="submit" class="btn btn-link" style="margin-bottom: 5px;">
+                <li><button id="multiselect-submit-action-id-{{ action.id }}" type="submit" class="btn btn-link" style="margin-bottom: 5px;">
                     <i class="fa fa-bar-chart fa-fw"></i>
                     {% if action.user_id is not none %}
                       {% set action_owner = get_user(action.user_id) %}
@@ -936,15 +941,33 @@
                     {% endif %}
                     {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
                   </button></li>
+                  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+                    document.getElementById('multiselect-submit-action-id-{{ action.id }}').addEventListener('click', function() {
+                      $('#action-id-selection').val('{{ action.id }}');
+                      $('#action-type-id-selection').val('');
+                    });
+                  </script>
               {% endif %}
             {% endfor %}
             <li role="seperator" class="divider"></li>
-            <li><button type="submit" class="btn btn-link" onclick="$('#action-type-id-selection').val('{{ use_in_action_type.id }}')">{{ _('See other %(action_type_name)s Actions...', action_type_name=use_in_action_type.name|get_translated_text) }}</a></li>
+            <li><button type="submit" class="btn btn-link" id="multiselect-submit-action-type-id-{{ use_in_action_type.id }}">{{ _('See other %(action_type_name)s Actions...', action_type_name=use_in_action_type.name|get_translated_text) }}</button></li>
+            <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+              document.getElementById('multiselect-submit-action-type-id-{{ use_in_action_type.id }}').addEventListener('click', function() {
+               $('#action-id-selection').val('');
+               $('#action-type-id-selection').val('{{ use_in_action_type.id }}');
+              });
+            </script>
           </div>
         </div>
       {% else %}
         <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
-          <button type="submit" class="btn btn-primary" id="multiselect-submit" onclick="$('#action-type-id-selection').val('{{ use_in_action_type.id }}')" disabled>{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
+          <button type="submit" class="btn btn-primary" id="multiselect-submit" disabled>{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
+          <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+            document.getElementById('multiselect-submit').addEventListener('click', function() {
+              $('#action-id-selection').val('');
+               $('#action-type-id-selection').val('{{ use_in_action_type.id }}');
+            });
+          </script>
         </span>
       {% endif %}
     </div>
@@ -967,7 +990,7 @@
         <div class="col-sm-6 col-sm-offset-3">
           <div class="form-group">
             <label for="select-mf-paper-size" class="control-label"> {{ _('Paper Size:') }}</label>
-            <select id="select-mf-paper-size" class="selectpicker form-control" name="{{ generate_labels_form.paper_size.name }}" onchange="checkSubmittable();">
+            <select id="select-mf-paper-size" class="selectpicker form-control" name="{{ generate_labels_form.paper_size.name }}" data-multiselect-check-submittable="true">
               {% for value, label in generate_labels_form.paper_size.choices %}
               <option value="{{ value }}" {% if loop.first %} selected="selected" {% endif %}> {{ label }}</option>
               {% endfor %}
@@ -976,7 +999,7 @@
           </div>
           <div class="form-group">
             <label for="input-mf-labels-per-object" class="control-label">{{ _('Labels per Object:') }}</label>
-            <input id="input-mf-labels-per-object" type="number" min="1" value="1" class="form-control" aria-label="Labels per Object" name="{{ generate_labels_form.labels_per_object.name }}" onchange="checkSubmittable();" />
+            <input id="input-mf-labels-per-object" type="number" min="1" value="1" class="form-control" aria-label="Labels per Object" name="{{ generate_labels_form.labels_per_object.name }}" data-multiselect-check-submittable="true" />
             <span class="text-muted generate-labels-helper" id="input-mf-labels-per-object-helper" style="color: red;"></span>
           </div>
         </div>
@@ -985,7 +1008,7 @@
         <div class="col-sm-6 col-sm-offset-3">
           <div class="form-group">
             <label for="select-fw-paper-size" class="control-label"> {{ _('Paper Size:') }}</label>
-            <select id="select-fw-paper-size" class="selectpicker form-control" name="{{ generate_labels_form.paper_size.name }}" onchange="checkSubmittable();" disabled="disabled">
+            <select id="select-fw-paper-size" class="selectpicker form-control" name="{{ generate_labels_form.paper_size.name }}" data-multiselect-check-submittable="true" disabled="disabled">
               {% for value, label in generate_labels_form.paper_size.choices %}
                 <option value="{{ value }}" {% if loop.first %} selected="selected" {% endif %}> {{ label }}</option>
               {% endfor %}
@@ -995,7 +1018,7 @@
           <div class="form-group">
             <label for="input-fw-label-width" class="control-label">{{ _('Label Width:') }}</label>
             <div class="input-group">
-              <input id="input-fw-label-width" type="text" class="form-control" aria-label="Label Width" value="40" name="{{ generate_labels_form.label_width.name }}" onchange="checkSubmittable();" disabled="disabled" />
+              <input id="input-fw-label-width" type="text" class="form-control" aria-label="Label Width" value="40" name="{{ generate_labels_form.label_width.name }}" data-multiselect-check-submittable="true" disabled="disabled" />
               <span class="input-group-addon">mm</span>
             </div>
             <span class="text-muted generate-labels-helper" id="input-fw-label-width-helper" style="color: red;"></span>
@@ -1003,14 +1026,14 @@
           <div class="form-group">
             <label for="input-fw-label-min-height">{{ _('Minimum Label Height:') }}</label>
             <div class="input-group ">
-              <input id="input-fw-label-min-height" type="text" class="form-control" aria-label="Label Heigth" value="0" name="{{ generate_labels_form.min_label_height.name }}" onchange="checkSubmittable();" disabled="disabled"/>
+              <input id="input-fw-label-min-height" type="text" class="form-control" aria-label="Label Heigth" value="0" name="{{ generate_labels_form.min_label_height.name }}" data-multiselect-check-submittable="true" disabled="disabled"/>
               <span class="input-group-addon">mm</span>
             </div>
             <span class="text-muted generate-labels-helper" id="input-fw-min-label-height-helper" style="color: red;"></span>
           </div>
           <div class="form-group">
             <label for="input-fw-labels-per-object">{{ _('Labels per Object:') }}</label>
-            <input id="input-fw-labels-per-object" type="number" min="1" class="form-control" aria-label="Labels per Object" value="1" name="{{ generate_labels_form.labels_per_object.name }}" onchange="checkSubmittable();" disabled="disabled"/>
+            <input id="input-fw-labels-per-object" type="number" min="1" class="form-control" aria-label="Labels per Object" value="1" name="{{ generate_labels_form.labels_per_object.name }}" data-multiselect-check-submittable="true" disabled="disabled"/>
             <span class="text-muted generate-labels-helper" id="input-fw-labels-per-object-helper" style="color: red;"></span>
           </div>
           <div class="form-group">
@@ -1026,7 +1049,7 @@
             <div>
               <div class="checkbox">
                 <label>
-                  <input type="checkbox" name="{{ generate_labels_form.center_qr_ghs.name }}" checked="checked" disabled="disabled" onchange="checkSubmittable();"> {{ _('Center QR Code and GHS symbols') }}
+                  <input type="checkbox" name="{{ generate_labels_form.center_qr_ghs.name }}" checked="checked" disabled="disabled" data-multiselect-check-submittable="true"> {{ _('Center QR Code and GHS symbols') }}
                 </label>
               </div>
             </div>
@@ -1037,7 +1060,7 @@
         <div class="col-sm-6 col-sm-offset-3">
           <div class="form-group">
             <label for="select-mh-paper-size" class="control-label"> {{ _('Paper Size:') }}</label>
-            <select id="select-mh-paper-size" class="selectpicker form-control" name="{{ generate_labels_form.paper_size.name }}" onchange="checkSubmittable();" disabled="disabled">
+            <select id="select-mh-paper-size" class="selectpicker form-control" name="{{ generate_labels_form.paper_size.name }}" data-multiselect-check-submittable="true" disabled="disabled">
               {% for value, label in generate_labels_form.paper_size.choices %}
                 <option value="{{ value }}" {% if loop.first %} selected="selected" {% endif %}> {{ label }}</option>
               {% endfor %}
@@ -1046,14 +1069,14 @@
           <div class="form-group">
             <label for="input-mh-min-label-width" class="control-label">{{ _('Minimum Label Width:') }}</label>
             <div class="input-group">
-              <input id="input-mh-min-label-width" type="text" class="form-control" aria-label="Label Width" value="0" name="{{ generate_labels_form.min_label_width.name }}" onchange="checkSubmittable();" disabled="disabled"/>
+              <input id="input-mh-min-label-width" type="text" class="form-control" aria-label="Label Width" value="0" name="{{ generate_labels_form.min_label_width.name }}" data-multiselect-check-submittable="true" disabled="disabled"/>
               <span class="input-group-addon">mm</span>
             </div>
             <span class="text-muted generate-labels-helper" id="input-mh-min-label-width-helper" style="color: red;"></span>
           </div>
           <div class="form-group">
             <label for="input-mh-labels-per-object">{{ _('Labels per Object:') }}</label>
-            <input id="input-mh-labels-per-object" type="number" min="1" class="form-control" aria-label="Labels per Object" value="1" name="{{ generate_labels_form.labels_per_object.name }}" onchange="checkSubmittable();" disabled="disabled"/>
+            <input id="input-mh-labels-per-object" type="number" min="1" class="form-control" aria-label="Labels per Object" value="1" name="{{ generate_labels_form.labels_per_object.name }}" data-multiselect-check-submittable="true" disabled="disabled"/>
             <span class="text-muted generate-labels-helper" id="input-mh-labels-per-object-helper" style="color: red;"></span>
           </div>
           <div class="form-group">
@@ -1136,7 +1159,7 @@
   {% for object in objects %}
     <tr>
       {% if edit_location or create_from_objects or generate_labels %}
-      <td><input type="checkbox" name="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" onclick="handleObjectSelection(this)" {% if (edit_location or create_from_objects or generate_labels) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{% if edit_location %} {{ _('You need at least write permission to change the location of an object.') }} {% elif create_from_objects %} {{ _('The object cannot be used in a %(action_type_name)s Action.', action_type_name=use_in_action_type.name|get_translated_text) }} {% endif %}" {% endif %}/> </td>
+      <td><input type="checkbox" name="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{% if edit_location %} {{ _('You need at least write permission to change the location of an object.') }} {% elif create_from_objects %} {{ _('The object cannot be used in a %(action_type_name)s Action.', action_type_name=use_in_action_type.name|get_translated_text) }} {% endif %}" {% endif %}/> </td>
       {% endif %}
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>

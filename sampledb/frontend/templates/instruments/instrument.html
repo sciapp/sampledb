@@ -128,9 +128,9 @@
           </form>
           <button type="button" id="button-instrument-log-list-filter" class="btn btn-sm btn-primary" style="height:32px" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
             {% for category in instrument_log_categories %}
-              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' /> {{ category.title }}</label><br />
             {% endfor %}
-              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> {{ _('Uncategorized') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' /> {{ _('Uncategorized') }}</label><br />
               <hr />
               <div class='input-group date'>
                 <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
@@ -147,8 +147,16 @@
               {% endfor %}
               </select>
               </div>
-              <script>
+              <script type='text/javascript' nonce='{{ generate_inline_script_nonce() }}'>
                 setup_instrument_log_filter_states();
+                document.getElementById('instrument_log_filter_none').addEventListener('click', function() {
+                  update_instrument_log_filter_states();
+                });
+                {% for category in instrument_log_categories %}
+                  document.getElementById('instrument_log_filter_{{ category.id }}').addEventListener('click', function() {
+                    update_instrument_log_filter_states();
+                  });
+                {% endfor %}
               </script>
             ">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
@@ -497,7 +505,7 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   {% endif %}
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
-  <script type="text/javascript">
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     window.categoriesShown = {
       {% for category in instrument_log_categories %}
       '{{ category.id }}': true,

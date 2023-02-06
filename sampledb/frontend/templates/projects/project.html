@@ -521,7 +521,7 @@
     <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-<script>
+<script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
 window.translations = {{ translations | tojson }};
 
@@ -569,7 +569,7 @@ $(function (){
 
 </script>
   {% if show_edit_form %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(document).ready(function() {
       var edit_modal = $('#editProjectModal');
       edit_modal.removeClass('fade');

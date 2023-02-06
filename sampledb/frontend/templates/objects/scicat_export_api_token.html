@@ -4,7 +4,7 @@
 
 {% block scripts %}
   {{ super() }}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(function () {
       $('[data-toggle="tooltip"]').tooltip()
     })

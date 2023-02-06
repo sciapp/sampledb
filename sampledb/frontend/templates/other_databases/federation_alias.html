@@ -27,7 +27,7 @@
           <td rowspan="5" class="fit">
               <a href="{{ url_for('.component', component_id=alias['component_id']) }}">{{ component_names[alias['component_id']] }}</a>
               {% if edit_alias_form %}
-              <div style="margin-top: 1em;"><button type="button" class="btn btn-default" data-toggle="modal" data-target="#editAliasModal" aria-label="{{ _('Edit') }}" onclick="setEditAliasForm({{ alias['component_id'] }});" style="min-width: 100%">{{ _('Edit') }}</button></div>
+              <div style="margin-top: 1em;"><button type="button" class="btn btn-default button-edit-alias" data-toggle="modal" data-target="#editAliasModal" aria-label="{{ _('Edit') }}" data-component-id="{{ alias['component_id'] }}" style="min-width: 100%">{{ _('Edit') }}</button></div>
               {% endif %}
               {% if delete_alias_form %}
               <div style="margin-top: 1em;">
@@ -140,7 +140,7 @@
         {% endif %}
         <div class="checkbox" style="">
           <label>
-            <input onchange="useRealDataInputChanged('name', '-add');" type="checkbox" id="checkbox-use-real-name-add" name="{{ add_alias_form.use_real_name.name }}" {% if add_alias_form.use_real_name.data %}checked="checked"{% endif %}>
+            <input type="checkbox" id="checkbox-use-real-name-add" name="{{ add_alias_form.use_real_name.name }}" {% if add_alias_form.use_real_name.data %}checked="checked"{% endif %}>
             {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('name', _('not set')) if user_data.get('name') != '' else _('not set')) }}
           </label>
         </div>
@@ -162,7 +162,7 @@
       <div class="col-sm-8">
         <div class="checkbox" style="">
           <label>
-            <input type="checkbox" onchange="useRealDataInputChanged('orcid', '-add');" id="checkbox-use-real-orcid-add" name="{{ add_alias_form.use_real_orcid.name }}" {% if add_alias_form.use_real_orcid.data %}checked="checked"{% endif %}>
+            <input type="checkbox" id="checkbox-use-real-orcid-add" name="{{ add_alias_form.use_real_orcid.name }}" {% if add_alias_form.use_real_orcid.data %}checked="checked"{% endif %}>
             {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('orcid', _('not set')) if user_data.get('orcid') != '' else _('not set')) }}
           </label>
         </div>
@@ -177,7 +177,7 @@
         {% endif %}
         <div class="checkbox" style="">
           <label>
-            <input type="checkbox" onchange="useRealDataInputChanged('affiliation', '-add');" id="checkbox-use-real-affiliation-add" name="{{ add_alias_form.use_real_affiliation.name }}" {% if add_alias_form.use_real_affiliation.data %}checked="checked"{% endif %}>
+            <input type="checkbox" id="checkbox-use-real-affiliation-add" name="{{ add_alias_form.use_real_affiliation.name }}" {% if add_alias_form.use_real_affiliation.data %}checked="checked"{% endif %}>
             {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('affiliation', _('not set')) if user_data.get('affiliation') != '' else _('not set')) }}
           </label>
         </div>
@@ -192,7 +192,7 @@
         {% endif %}
         <div class="checkbox" style="">
           <label>
-            <input type="checkbox" onchange="useRealDataInputChanged('role', '-add');" id="checkbox-use-real-role-add" name="{{ add_alias_form.use_real_role.name }}" {% if add_alias_form.use_real_role.data %}checked="checked"{% endif %}>
+            <input type="checkbox" id="checkbox-use-real-role-add" name="{{ add_alias_form.use_real_role.name }}" {% if add_alias_form.use_real_role.data %}checked="checked"{% endif %}>
             {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('role', _('not set')) if user_data.get('role') != '' else _('not set'))  }}
           </label>
         </div>
@@ -209,7 +209,7 @@
           {% for alias in aliases %}
           <option value="{{ alias['component_id'] }}">{{ component_names[alias['component_id']] }}</option>
           {% endfor %}
-        </select><button type="button" class="btn btn-default" onclick="copyAliasFromInput('-add');" aria-label="{{ _('Copy') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy') }}</span></button>
+        </select><button type="button" class="btn btn-default" id="button-copy-from-add" aria-label="{{ _('Copy') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy') }}</span></button>
       </div>
     </div>
     <div class="form-group">
@@ -242,7 +242,7 @@
                   {% endif %}
                   <div class="checkbox" style="">
                     <label>
-                      <input onchange="useRealDataInputChanged('name', '-edit');" type="checkbox" id="checkbox-use-real-name-edit" name="{{ edit_alias_form.use_real_name.name }}" {% if edit_alias_form.use_real_name.data %}checked="checked"{% endif %}>
+                      <input type="checkbox" id="checkbox-use-real-name-edit" name="{{ edit_alias_form.use_real_name.name }}" {% if edit_alias_form.use_real_name.data %}checked="checked"{% endif %}>
                       {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('name', _('not set')) if user_data.get('name') != '' else _('not set')) }}
                     </label>
                   </div>
@@ -253,7 +253,7 @@
                 <div class="col-sm-8">
                   <div class="checkbox" style="">
                     <label>
-                      <input onchange="useRealDataInputChanged('email', '-edit');" type="checkbox" id="checkbox-use-real-email-edit" name="{{ edit_alias_form.use_real_email.name }}" {% if edit_alias_form.use_real_email.data %}checked="checked"{% endif %}>
+                      <input type="checkbox" id="checkbox-use-real-email-edit" name="{{ edit_alias_form.use_real_email.name }}" {% if edit_alias_form.use_real_email.data %}checked="checked"{% endif %}>
                       {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('email', _('not set')) if user_data.get('email') != '' else _('not set')) }}
                     </label>
                   </div>
@@ -264,7 +264,7 @@
                 <div class="col-sm-8">
                   <div class="checkbox" style="">
                     <label>
-                      <input onchange="useRealDataInputChanged('orcid', '-edit');" type="checkbox" id="checkbox-use-real-orcid-edit" name="{{ edit_alias_form.use_real_orcid.name }}" {% if edit_alias_form.use_real_orcid.data %}checked="checked"{% endif %}>
+                      <input type="checkbox" id="checkbox-use-real-orcid-edit" name="{{ edit_alias_form.use_real_orcid.name }}" {% if edit_alias_form.use_real_orcid.data %}checked="checked"{% endif %}>
                       {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('orcid', _('not set')) if user_data.get('orcid') != '' else _('not set')) }}
                     </label>
                   </div>
@@ -279,7 +279,7 @@
                   {% endif %}
                   <div class="checkbox" style="">
                     <label>
-                      <input onchange="useRealDataInputChanged('affiliation', '-edit');" type="checkbox" id="checkbox-use-real-affiliation-edit" name="{{ edit_alias_form.use_real_affiliation.name }}" {% if edit_alias_form.use_real_affiliation.data %}checked="checked"{% endif %}>
+                      <input type="checkbox" id="checkbox-use-real-affiliation-edit" name="{{ edit_alias_form.use_real_affiliation.name }}" {% if edit_alias_form.use_real_affiliation.data %}checked="checked"{% endif %}>
                       {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('affiliation', _('not set')) if user_data.get('affiliation') != '' else _('not set')) }}
                     </label>
                   </div>
@@ -294,7 +294,7 @@
                   {% endif %}
                   <div class="checkbox" style="">
                     <label>
-                      <input onchange="useRealDataInputChanged('role', '-edit');" type="checkbox" id="checkbox-use-real-role-edit" name="{{ edit_alias_form.use_real_role.name }}" {% if edit_alias_form.use_real_role.data %}checked="checked"{% endif %}>
+                      <input type="checkbox" id="checkbox-use-real-role-edit" name="{{ edit_alias_form.use_real_role.name }}" {% if edit_alias_form.use_real_role.data %}checked="checked"{% endif %}>
                       {{ _('Always use the value from my user profile (currently: <strong>%(value)s</strong>)', value=user_data.get('role', _('not set')) if user_data.get('role') != '' else _('not set')) }}
                     </label>
                   </div>
@@ -309,7 +309,7 @@
                     {% for alias in aliases %}
                     <option value="{{ alias['component_id'] }}">{{ component_names[alias['component_id']] }}</option>
                     {% endfor %}
-                  </select><button type="button" class="btn btn-default" onclick="copyAliasFromInput('-edit');" aria-label="{{ _('Copy') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy') }}</span></button>
+                  </select><button type="button" class="btn btn-default" id="button-copy-from-edit" aria-label="{{ _('Copy') }}" name="copy" value="Copy"><span aria-hidden="true">{{ _('Copy') }}</span></button>
                 </div>
               </div>
             </div>
@@ -326,7 +326,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="text/javascript">
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     var aliases_by_component = {{ aliases_by_component | tojson }};
     var component_names = {{ component_names | tojson }};
     var user_data = {{ user_data | tojson }};
@@ -378,9 +378,63 @@
       useRealDataInputChanged(field, '-edit');
       {% endif %}
     }
+
+    $(function() {
+      $('#checkbox-use-real-name-add').on('change', function() {
+        useRealDataInputChanged('name', '-add');
+      });
+
+      $('#checkbox-use-real-email-add').on('change', function() {
+        useRealDataInputChanged('email', '-add');
+      });
+
+      $('#checkbox-use-real-orcid-add').on('change', function() {
+        useRealDataInputChanged('orcid', '-add');
+      });
+
+      $('#checkbox-use-real-affiliation-add').on('change', function() {
+        useRealDataInputChanged('affiliation', '-add');
+      });
+
+      $('#checkbox-use-real-role-add').on('change', function() {
+        useRealDataInputChanged('role', '-add');
+      });
+
+      $('#checkbox-use-real-name-edit').on('change', function() {
+        useRealDataInputChanged('name', '-edit');
+      });
+
+      $('#checkbox-use-real-email-edit').on('change', function() {
+        useRealDataInputChanged('email', '-edit');
+      });
+
+      $('#checkbox-use-real-orcid-edit').on('change', function() {
+        useRealDataInputChanged('orcid', '-edit');
+      });
+
+      $('#checkbox-use-real-affiliation-edit').on('change', function() {
+        useRealDataInputChanged('affiliation', '-edit');
+      });
+
+      $('#checkbox-use-real-role-edit').on('change', function() {
+        useRealDataInputChanged('role', '-edit');
+      });
+
+      $('#button-copy-from-add').on('click', function() {
+        copyAliasFromInput('-add');
+      });
+
+      $('#button-copy-from-edit').on('click', function() {
+        copyAliasFromInput('-edit');
+      });
+
+      $('.button-edit-alias').on('click', function() {
+        setEditAliasForm($(this).data('componentId'));
+      });
+    });
   </script>
   {% if show_edit_form %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(document).ready(function() {
       var edit_modal = $('#editAliasModal');
       edit_modal.removeClass('fade');

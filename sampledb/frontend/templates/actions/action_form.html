@@ -20,7 +20,7 @@
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   // translations of error / help messages used in the static schema_editor.js
   window.schema_editor_translations = {
     'object_must_have_name_text': "{{ _("Objects must have a property 'name' as a <i>Text (Simple)</i> property.") }}",
@@ -346,7 +346,7 @@
           <span class="sr-only">{{ _('Use Graphical Editor') }}</span>
           <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" {% if use_schema_editor %}checked="checked"{% endif %} />
         </label>
-        <script>
+        <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
         {% if error_message is not none %}
           window.schema_editor_error_message = {{ error_message | tojson }};
         {% else %}

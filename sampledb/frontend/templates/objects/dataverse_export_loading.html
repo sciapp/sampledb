@@ -5,7 +5,7 @@
 {% block scripts %}
   {{ super() }}
   {% if polling %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     const POLLING_SLEEP_TIME = 10000;
     const poll = function() {
       $.ajax({

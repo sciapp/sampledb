@@ -54,6 +54,7 @@ from ..logic.objects import get_object, Object
 from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name
+from ..utils import generate_inline_script_nonce
 
 
 def jinja_filter(name: str = ''):
@@ -89,6 +90,7 @@ jinja_function()(get_component_or_none)
 jinja_function()(get_component_id_by_uuid)
 jinja_function()(get_unhandled_object_responsibility_assignments)
 jinja_function()(is_full_location_tree_hidden)
+jinja_function()(generate_inline_script_nonce)
 
 
 qrcode_cache = {}
