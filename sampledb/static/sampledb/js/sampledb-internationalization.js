@@ -91,6 +91,7 @@ function initMarkdownField(element, height) {
     status: false,
     minHeight: height,
     forceSync: true,
+    autoDownloadFontAwesome: false,
     toolbar: [
         {
           name: "bold",
