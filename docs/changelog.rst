@@ -7,6 +7,7 @@ Version 0.21.3
 Currently in development.
 
 - Translate group names in invitation notifications
+- Fixed filtering objects by group permissions
 
 Version 0.21.2
 --------------
