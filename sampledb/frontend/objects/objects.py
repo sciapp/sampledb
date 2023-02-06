@@ -1504,6 +1504,35 @@ def edit_multiple_locations():
                 continue
             valid_description[language_code] = description_text
         description = valid_description
+        if location_id is not None:
+            location = get_location(location_id)
+            if location.type.enable_capacities:
+                action_ids_for_object_ids = logic.objects.get_action_ids_for_object_ids(selected_object_ids)
+                selected_action_ids = [
+                    action_ids_for_object_ids.get(object_id)
+                    for object_id in selected_object_ids
+                ]
+                action_type_ids_for_action_ids = logic.actions.get_action_type_ids_for_action_ids(selected_action_ids)
+                selected_action_type_ids = [
+                    action_type_ids_for_action_ids.get(action_id)
+                    for action_id in selected_action_ids
+                ]
+                action_types = logic.action_types.get_action_types()
+                action_type_id_aliases = {
+                    action_type.id: action_type.fed_id
+                    for action_type in action_types
+                    if action_type.fed_id is not None and action_type.fed_id < 0
+                }
+                selected_action_type_ids = [
+                    action_type_id_aliases.get(action_type_id, action_type_id)
+                    for action_type_id in selected_action_type_ids
+                ]
+                location_capacities = logic.locations.get_location_capacities(location_id)
+                num_stored_objects = logic.locations.get_assigned_object_count_by_action_types(location_id, ignored_object_ids=selected_object_ids)
+                for action_type_id in set(selected_action_type_ids):
+                    if location_capacities.get(action_type_id, 0) is not None and num_stored_objects.get(action_type_id, 0) + selected_action_type_ids.count(action_type_id) > location_capacities.get(action_type_id, 0):
+                        flask.flash(_('The selected location does not have the capacity to store these objects.'), 'error')
+                        return flask.redirect(flask.url_for('.objects'))
         if location_id is not None or responsible_user_id is not None:
             for object_id in selected_object_ids:
                 logic.locations.assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)

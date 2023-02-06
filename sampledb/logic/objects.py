@@ -618,3 +618,15 @@ def get_current_object_version_id(object_id: int) -> int:
     if version_id is None:
         raise errors.ObjectDoesNotExistError()
     return version_id
+
+
+def get_action_ids_for_object_ids(
+        object_ids: typing.Sequence[int]
+) -> typing.Dict[int, typing.Optional[int]]:
+    """
+    Get the action IDs for a list of object IDs.
+
+    :param object_ids: the IDs of existing objects
+    :return: the objects' action IDs
+    """
+    return Objects.get_action_ids_for_object_ids(object_ids)

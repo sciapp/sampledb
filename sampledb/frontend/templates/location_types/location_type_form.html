@@ -139,6 +139,11 @@
       </label>
     </div>
     <div class="checkbox">
+      <label for="input-enable_capacities" style="font-weight:400">
+        <input type="checkbox" id="input-enable_capacities" name="{{ location_type_form.enable_capacities.name }}" {% if location_type_form.enable_capacities.data %}checked="checked"{% endif %}> {{ _('Locations of this type have a limited storage capacity') }}
+      </label>
+    </div>
+    <div class="checkbox">
       <label for="input-show_location_log" style="font-weight:400">
         <input type="checkbox" id="input-show_location_log" name="{{ location_type_form.show_location_log.name }}" {% if location_type_form.show_location_log.data %}checked="checked"{% endif %}> {{ _('Show a log for locations of this type') }}
       </label>

@@ -24,3 +24,8 @@ Location Log
 ^^^^^^^^^^^^
 
 If enabled for the location type, the location log can show a list of events relevant to the individual location, such as when it was created or updated and when objects were assigned to it.
+
+Storage Capacities
+^^^^^^^^^^^^^^^^^^
+
+If enabled for the location type, locations can have a maximum capacity for the amount of objects that can be stored there. Users can set this number or set it to be unlimited to allow an arbitrary amount of objects of that action type to be stored at the location.

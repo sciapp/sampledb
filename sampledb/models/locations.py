@@ -11,6 +11,7 @@ from sqlalchemy.dialects import postgresql
 from .. import db
 from .objects import Objects
 from .users import User
+from .actions import ActionType
 
 
 location_user_association_table = db.Table(
@@ -50,6 +51,7 @@ class LocationType(db.Model):  # type: ignore
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component = db.relationship('Component')
+    enable_capacities = db.Column(db.Boolean, nullable=False)
 
     def __init__(
             self,
@@ -62,6 +64,7 @@ class LocationType(db.Model):  # type: ignore
             enable_object_assignments: bool,
             enable_responsible_users: bool,
             enable_instruments: bool,
+            enable_capacities: bool,
             show_location_log: bool,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
@@ -75,6 +78,7 @@ class LocationType(db.Model):  # type: ignore
         self.enable_object_assignments = enable_object_assignments
         self.enable_responsible_users = enable_responsible_users
         self.enable_instruments = enable_instruments
+        self.enable_capacities = enable_capacities
         self.show_location_log = show_location_log
         self.fed_id = fed_id
         self.component_id = component_id
@@ -181,3 +185,11 @@ class ObjectLocationAssignment(db.Model):  # type: ignore
 
     def __repr__(self) -> str:
         return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed}, declined={1.declined})>'.format(type(self).__name__, self)
+
+
+class LocationCapacity(db.Model):  # type: ignore
+    __tablename__ = 'location_capacities'
+
+    location_id = db.Column(db.Integer, db.ForeignKey(Location.id), primary_key=True)
+    action_type_id = db.Column(db.Integer, db.ForeignKey(ActionType.id), primary_key=True)
+    capacity = db.Column(db.Integer, nullable=True)

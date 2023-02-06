@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-01-23 15:09+0100\n"
+"POT-Creation-Date: 2023-01-25 08:55+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1063,6 +1063,11 @@ msgstr "Ungültige Datenbank-ID."
 msgid "Unable to parse origin ID."
 msgstr "Quell-ID konnte nicht geparst werden."
 
+msgid "The selected location does not have the capacity to store these objects."
+msgstr ""
+"Der ausgewählte Ort hat nicht die nötigen Kapazitäten um diese Objekte zu"
+" lagern."
+
 msgid "Successfully assigned a new location to objects."
 msgstr "Der neue Ort wurde erfolgreich den Objekten zugewiesen."
 
@@ -1145,6 +1150,11 @@ msgstr "Bitte geben Sie einen Kommentartext ein."
 
 msgid "Assigning locations to imported objects is not yet supported."
 msgstr "Das Zuweisen importierter Objekte zu Orten wird noch nicht unterstützt."
+
+msgid "The selected location does not have the capacity to store this object."
+msgstr ""
+"Der ausgewählte Ort hat nicht die nötige Kapazität um dieses Objekt zu "
+"lagern."
 
 msgid "Successfully assigned a new location to this object."
 msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
@@ -3805,6 +3815,15 @@ msgstr "Ja, Orte dieses Typs dürfen verantwortliche Nutzer haben"
 msgid "No, locations of this type may not have responsible users"
 msgstr "Nein, Orte dieses Typs dürfen keine verantwortlichen Nutzer haben"
 
+msgid "Enable Object Capacities"
+msgstr "Objektkapazität aktivieren"
+
+msgid "Yes, locations of this type have limited storage capacities"
+msgstr "Ja, Orte dieses Typs haben eine beschränkte Lagerkapazität"
+
+msgid "No, locations of this type can store an unlimited amount of objects"
+msgstr "Nein, an Orten dieses Typs können unbegrenzt Objekte gelagert werden"
+
 msgid "Show Location Log"
 msgstr "Zeige Orts-Log"
 
@@ -3838,6 +3857,9 @@ msgstr "Instrumente dürfen Orten dieses Typs zugewiesen werden"
 msgid "Locations of this type may have responsible users"
 msgstr "Orte dieses Typs dürfen verantwortliche Nutzer haben"
 
+msgid "Locations of this type have a limited storage capacity"
+msgstr "Orte dieses Typs haben eine beschränkte Lagerkapazität"
+
 msgid "Show a log for locations of this type"
 msgstr "Zeige ein Log für Orte dieses Typs"
 
@@ -3867,6 +3889,12 @@ msgstr "Unter-Orte"
 #, python-format
 msgid "Created on <a href=\"%(component_url)s\">%(component_name)s</a>"
 msgstr "Erstellt auf <a href=\"%(component_url)s\">%(component_name)s</a>"
+
+msgid "Capacity"
+msgstr "Kapazität"
+
+msgid "No storage capacity has been configured for this location."
+msgstr "Für diesen Ort wurde keine Lagerkapazität konfiguriert."
 
 msgid "… at this location"
 msgstr "… an diesem Ort"
@@ -4014,6 +4042,15 @@ msgstr "Eltern-Ort"
 
 msgid "The previous parent location may not have any sub-locations."
 msgstr "Der bisherige Eltern-Ort darf keine Unter-Orte haben."
+
+msgid "Storage Capacities"
+msgstr "Lagerkapazitäten"
+
+msgid "Unlimited"
+msgstr "Unbegrenzt"
+
+msgid "Limited"
+msgstr "Begrenzt"
 
 msgid "Responsible Users"
 msgstr "Verantwortliche Nutzer"

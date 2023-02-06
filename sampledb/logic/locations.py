@@ -12,7 +12,9 @@ import datetime
 import typing
 
 from .components import Component
-from .. import db
+from . import actions
+from .action_types import check_action_type_exists
+from .. import db, models, logic
 from . import user_log, object_log, location_log, objects, users, errors, languages, components
 from .notifications import create_notification_for_being_assigned_as_responsible_user
 from ..models import locations
@@ -33,6 +35,7 @@ class LocationType:
     enable_object_assignments: bool
     enable_responsible_users: bool
     enable_instruments: bool
+    enable_capacities: bool
     show_location_log: bool
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -53,6 +56,7 @@ class LocationType:
             enable_object_assignments=location_type.enable_object_assignments,
             enable_responsible_users=location_type.enable_responsible_users,
             enable_instruments=location_type.enable_instruments,
+            enable_capacities=location_type.enable_capacities,
             show_location_log=location_type.show_location_log,
             fed_id=location_type.fed_id,
             component_id=location_type.component_id,
@@ -448,6 +452,8 @@ def assign_location_to_object(
         location ID exists
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         or responsible user ID exists
+    :raise errors.ExceedingLocationCapacityError: when assigning the object
+        to this location would exceed the location's capacity
     """
 
     if description is not None:
@@ -461,8 +467,22 @@ def assign_location_to_object(
     # ensure the object exists
     objects.check_object_exists(object_id)
     if location_id is not None:
-        # ensure the location exists
-        check_location_exists(location_id)
+        location = get_location(location_id)
+        if location.type.enable_capacities:
+            action_id = objects.get_object(object_id).action_id
+            if action_id is None:
+                raise errors.ExceedingLocationCapacityError()
+            action_type_id = actions.get_action(action_id).type_id
+            capacity = get_location_capacities(location_id).get(action_type_id, 0)
+            if capacity is not None:
+                if capacity == 0:
+                    raise errors.ExceedingLocationCapacityError()
+                num_stored_objects = get_assigned_object_count_by_action_types(
+                    location_id,
+                    ignored_object_ids=[object_id]
+                ).get(action_type_id, 0)
+                if num_stored_objects + 1 > capacity:
+                    raise errors.ExceedingLocationCapacityError()
     # ensure the user exists
     users.check_user_exists(user_id)
     object_location_assignment = locations.ObjectLocationAssignment(
@@ -744,6 +764,7 @@ def create_location_type(
         enable_object_assignments: bool,
         enable_responsible_users: bool,
         enable_instruments: bool,
+        enable_capacities: bool,
         show_location_log: bool,
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None
@@ -761,6 +782,7 @@ def create_location_type(
     :param enable_object_assignments: whether objects may be assigned to locations of this type
     :param enable_responsible_users: whether locations of this type may have responsible users
     :param enable_instruments: whether instruments may be assigned to locations of this type
+    :param enable_capacities: whether locations of this type have capacities
     :param show_location_log: whether the location log should be shown for locations of this type
     :param fed_id: the federation ID of the location type
     :param component_id: origin component ID
@@ -776,6 +798,7 @@ def create_location_type(
         enable_object_assignments=enable_object_assignments,
         enable_responsible_users=enable_responsible_users,
         enable_instruments=enable_instruments,
+        enable_capacities=enable_capacities,
         show_location_log=show_location_log,
         fed_id=fed_id,
         component_id=component_id
@@ -796,6 +819,7 @@ def update_location_type(
         enable_object_assignments: bool,
         enable_responsible_users: bool,
         enable_instruments: bool,
+        enable_capacities: bool,
         show_location_log: bool,
 ) -> None:
     """
@@ -812,6 +836,7 @@ def update_location_type(
     :param enable_object_assignments: whether objects may be assigned to locations of this type
     :param enable_responsible_users: whether locations of this type may have responsible users
     :param enable_instruments: whether instruments may be assigned to locations of this type
+    :param enable_capacities: whether locations of this type have capacities
     :param show_location_log: whether the location log should be shown for locations of this type
     :raise errors.LocationTypeDoesNotExistError: if no location type with the
         given ID exists
@@ -828,6 +853,7 @@ def update_location_type(
     location_type.enable_object_assignments = enable_object_assignments
     location_type.enable_responsible_users = enable_responsible_users
     location_type.enable_instruments = enable_instruments
+    location_type.enable_capacities = enable_capacities
     location_type.show_location_log = show_location_log
     db.session.add(location_type)
     db.session.commit()
@@ -907,3 +933,159 @@ def get_descendent_location_ids(
                 descendent_location_ids.add(child_location_id)
                 location_tree_queue.append(locations_tree[child_location_id])
     return descendent_location_ids
+
+
+def get_location_capacities(
+        location_id: int
+) -> typing.Dict[int, typing.Optional[int]]:
+    """
+    Get the capacity by action type for a given location.
+
+    :param location_id: the ID of an existing location
+    :return: a dict mapping action type IDs to capacities
+    :raise errors.LocationDoesNotExistError: when no location with the given
+        location ID exists
+    """
+    location_capacities = locations.LocationCapacity.query.filter_by(location_id=location_id).all()
+    if not location_capacities:
+        check_location_exists(location_id)
+    return {
+        location_capacity.action_type_id: location_capacity.capacity
+        for location_capacity in location_capacities
+    }
+
+
+def set_location_capacity(
+        location_id: int,
+        action_type_id: int,
+        capacity: typing.Optional[int]
+) -> None:
+    """
+    Set the capacity for objects of a given action type at a given location.
+
+    :param location_id: the ID of an existing location
+    :param action_type_id: the ID of an existing action type
+    :param capacity: the storage capacity, or None for unlimited capacity
+    :raise errors.LocationDoesNotExistError: when no location with the given
+        location ID exists
+    :raise errors.ActionTypeDoesNotExistError: when no action type with the
+        given action type ID exists
+    """
+    check_location_exists(location_id)
+    check_action_type_exists(action_type_id)
+    if capacity is not None and capacity < 0:
+        capacity = 0
+    location_capacity = locations.LocationCapacity.query.filter_by(location_id=location_id, action_type_id=action_type_id).first()
+    if capacity == 0:
+        if location_capacity is not None:
+            db.session.delete(location_capacity)
+    else:
+        if location_capacity is None:
+            location_capacity = locations.LocationCapacity(
+                location_id=location_id,
+                action_type_id=action_type_id,
+                capacity=capacity
+            )
+        else:
+            location_capacity.capacity = capacity
+        db.session.add(location_capacity)
+    db.session.commit()
+
+
+def clear_location_capacities(
+        location_id: int
+) -> None:
+    """
+    Set the capacity for objects of any action type at a given location to 0.
+
+    :param location_id: the ID of an existing location
+    :raise errors.LocationDoesNotExistError: when no location with the given
+        location ID exists
+    """
+    check_location_exists(location_id)
+    location_capacities = locations.LocationCapacity.query.filter_by(location_id=location_id).all()
+    if location_capacities:
+        for location_capacity in location_capacities:
+            db.session.delete(location_capacity)
+        db.session.commit()
+    else:
+        check_location_exists(location_id)
+
+
+def get_assigned_object_count_by_action_types(  # pylint: disable=useless-param-doc
+        location_id: int,
+        ignored_object_ids: typing.Sequence[int] = ()
+) -> typing.Dict[int, int]:
+    """
+    Get the amount of objects (by action type) assigned to a given location.
+
+    :param location_id: the ID of an existing location
+    :param ignored_object_ids: a list of object IDs to ignore
+    :return: a dict mapping action type IDs to object counts
+    :raise errors.LocationDoesNotExistError: when no location with the given
+        location ID exists
+    """
+    # location -> objects
+    location_assignments = locations.ObjectLocationAssignment.query.filter_by(
+        location_id=location_id
+    ).filter(
+        db.not_(locations.ObjectLocationAssignment.object_id.in_(ignored_object_ids))
+    ).subquery('location_assignments')
+    current_location_assignments = locations.ObjectLocationAssignment.query.distinct(
+        locations.ObjectLocationAssignment.object_id
+    ).filter(
+        locations.ObjectLocationAssignment.object_id == location_assignments.c.object_id
+    ).order_by(
+        locations.ObjectLocationAssignment.object_id,
+        locations.ObjectLocationAssignment.utc_datetime.desc()
+    ).all()
+    current_location_assignments = [
+        location_assignment
+        for location_assignment in current_location_assignments
+        if location_assignment.location_id == location_id
+    ]
+    if not current_location_assignments:
+        check_location_exists(location_id)
+        return {}
+    # objects -> actions
+    stored_object_ids = [
+        a.object_id for a in current_location_assignments
+    ]
+    action_ids_for_object_ids = logic.objects.get_action_ids_for_object_ids(stored_object_ids)
+    # actions -> action types
+    stored_action_ids = [
+        typing.cast(int, action_ids_for_object_ids[object_id])
+        for object_id in stored_object_ids
+        if action_ids_for_object_ids.get(object_id) is not None
+    ]
+    action_type_ids_for_action_ids = logic.actions.get_action_type_ids_for_action_ids(stored_action_ids)
+    # action types -> fed action types
+    stored_action_type_ids = set(action_type_ids_for_action_ids.values())
+    action_type_ids_and_fed_action_type_ids = models.actions.ActionType.query.with_entities(
+        models.actions.ActionType.id,
+        models.actions.ActionType.fed_id
+    ).filter(
+        models.actions.ActionType.fed_id.is_not(None),
+        models.actions.ActionType.fed_id < 0,
+        models.actions.ActionType.id.in_(stored_action_type_ids)
+    ).all()
+    fed_action_type_ids_for_action_type_ids = {
+        action_type_id: fed_action_type_id
+        for action_type_id, fed_action_type_id in action_type_ids_and_fed_action_type_ids
+    }
+    # location -> action types
+    result = {}
+    for object_id in stored_object_ids:
+        action_id = action_ids_for_object_ids.get(object_id)
+        if action_id is None:
+            continue
+        action_type_id = action_type_ids_for_action_ids.get(action_id)
+        if action_type_id is None:
+            continue
+        action_type_id = fed_action_type_ids_for_action_type_ids.get(action_type_id, action_type_id)
+        if action_type_id is None:
+            continue
+        if action_type_id not in result:
+            result[action_type_id] = 0
+        result[action_type_id] += 1
+    return result

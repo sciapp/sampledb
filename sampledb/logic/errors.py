@@ -436,3 +436,7 @@ class CyclicGroupCategoryError(Exception):
 
 class FileCreationError(Exception):
     pass
+
+
+class ExceedingLocationCapacityError(Exception):
+    pass

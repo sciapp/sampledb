@@ -169,6 +169,7 @@ def location_type():
         enable_object_assignments=True,
         enable_responsible_users=True,
         enable_instruments=False,
+        enable_capacities=False,
         show_location_log=True
     )
 

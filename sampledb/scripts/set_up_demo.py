@@ -549,6 +549,7 @@ This example shows how Markdown can be used for instrument Notes.
             enable_object_assignments=True,
             enable_responsible_users=True,
             enable_instruments=False,
+            enable_capacities=True,
             show_location_log=True,
         )
         container = sampledb.logic.locations.create_location(
@@ -560,6 +561,7 @@ This example shows how Markdown can be used for instrument Notes.
         )
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(container.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.locations.set_location_responsible_users(container.id, [instrument_responsible_user.id, admin.id])
+        sampledb.logic.locations.set_location_capacity(container.id, sampledb.models.ActionType.SAMPLE_CREATION, 2)
 
         for object in sampledb.logic.objects.get_objects():
             sampledb.logic.instrument_log_entries.create_instrument_log_object_attachment(

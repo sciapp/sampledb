@@ -9,7 +9,7 @@ import flask
 import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SelectMultipleField, BooleanField
+from wtforms import StringField, SelectField, SelectMultipleField, BooleanField, IntegerField, FormField, FieldList
 from wtforms.validators import DataRequired
 
 from . import frontend
@@ -17,7 +17,7 @@ from .permission_forms import set_up_permissions_forms, handle_permission_forms
 from .. import logic
 from ..logic import errors
 from ..logic.components import get_component
-from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility, get_object_location_assignments
+from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility, get_object_location_assignments, get_location_capacities, get_assigned_object_count_by_action_types
 from ..logic.location_log import get_log_entries_for_location, LocationLogEntryType
 from ..logic.languages import Language, get_language, get_languages, get_language_by_lang_code
 from ..logic.security_tokens import verify_token
@@ -31,6 +31,11 @@ from ..logic.utils import get_translated_text
 from ..models import Permissions
 
 
+class LocationCapacityForm(FlaskForm):
+    action_type_id = SelectField(validators=[DataRequired()], coerce=int, choices=[], validate_choice=False)
+    capacity = IntegerField()
+
+
 class LocationForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
     parent_location = SelectField()
@@ -38,6 +43,7 @@ class LocationForm(FlaskForm):
     type = SelectField(validators=[DataRequired()])
     responsible_users = SelectMultipleField()
     is_hidden = BooleanField(default=False)
+    capacities = FieldList(FormField(LocationCapacityForm))
 
 
 @frontend.route('/locations/')
@@ -122,6 +128,14 @@ def location(location_id):
         for location_id in locations_map
     }
     descendent_location_ids = logic.locations.get_descendent_location_ids(locations_tree)
+    if location.type.enable_capacities:
+        capacities = get_location_capacities(location.id)
+        stored_objects = get_assigned_object_count_by_action_types(location.id)
+        action_types = logic.action_types.get_action_types(filter_fed_defaults=True)
+    else:
+        capacities = None
+        stored_objects = None
+        action_types = None
     return flask.render_template(
         'locations/location.html',
         locations_map=locations_map,
@@ -135,6 +149,9 @@ def location(location_id):
         Permissions=Permissions,
         location_log_entries=get_log_entries_for_location(location.id, flask_login.current_user.id) if location.type.show_location_log else None,
         LocationLogEntryType=LocationLogEntryType,
+        capacities=capacities,
+        stored_objects=stored_objects,
+        action_types=action_types,
         get_component=get_component,
         get_user=get_user
     )
@@ -406,6 +423,12 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         for location_id in locations_map
         if location_id not in invalid_location_ids and locations_map[location_id].type.enable_sub_locations
     ]
+    action_types = logic.action_types.get_action_types(filter_fed_defaults=True)
+    valid_action_types = [
+        action_type
+        for action_type in action_types
+        if action_type.enable_locations and not action_type.disable_create_objects
+    ]
     if has_grant_permissions:
         users = [
             user
@@ -438,6 +461,10 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
     }
     location_type_enable_responsible_users = {
         str(location_type.id): location_type.enable_responsible_users
+        for location_type in location_types
+    }
+    location_type_enable_capacities = {
+        str(location_type.id): location_type.enable_capacities
         for location_type in location_types
     }
     location_is_fed = {
@@ -473,9 +500,27 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         else:
             location_form.is_hidden.data = False
 
+        if location is not None:
+            capacities = get_location_capacities(location.id)
+            for action_type_id, capacity in capacities.items():
+                location_form.capacities.append_entry({
+                    'action_type_id': action_type_id,
+                    'capacity': capacity
+                })
+
     form_is_valid = False
     if location_form.validate_on_submit():
         form_is_valid = True
+
+    for action_type in valid_action_types:
+        for entry in location_form.capacities.entries:
+            if entry.action_type_id.data == action_type.id:
+                break
+        else:
+            location_form.capacities.append_entry({
+                'action_type_id': action_type.id,
+                'capacity': 0
+            })
 
     if location is not None:
         name_language_ids = []
@@ -595,6 +640,21 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         if not location_type.enable_responsible_users and responsible_user_ids:
             location_form.responsible_users.errors.append(_('This location may not have responsible users.'))
             form_is_valid = False
+    if form_is_valid and location_type.enable_capacities:
+        valid_action_type_ids = {
+            action_type.id
+            for action_type in valid_action_types
+        }
+        handled_action_types = set()
+        for entry in location_form.capacities.entries:
+            if entry.action_type_id.data not in valid_action_type_ids:
+                form_is_valid = False
+            elif entry.action_type_id.data in handled_action_types:
+                form_is_valid = False
+            else:
+                handled_action_types.add(entry.action_type_id.data)
+            if entry.capacity.data is not None and not 0 <= entry.capacity.data <= 1000000000:
+                form_is_valid = False
     if form_is_valid:
         if location is None:
             location = create_location(
@@ -622,6 +682,11 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             flask.flash(_('The location was updated successfully.'), 'success')
         if has_grant_permissions:
             logic.locations.set_location_responsible_users(location.id, responsible_user_ids)
+        if location_type.enable_capacities:
+            for entry in location_form.capacities.entries:
+                logic.locations.set_location_capacity(location.id, entry.action_type_id.data, entry.capacity.data)
+        else:
+            logic.locations.clear_location_capacities(location.id)
         return flask.redirect(flask.url_for('.location', location_id=location.id))
     if english.id not in description_language_ids:
         description_language_ids.append(english.id)
@@ -640,6 +705,8 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         location_type_is_fed=location_type_is_fed,
         location_type_enable_parent_location=location_type_enable_parent_location,
         location_type_enable_responsible_users=location_type_enable_responsible_users,
+        location_type_enable_capacities=location_type_enable_capacities,
+        valid_action_types=valid_action_types,
         previous_parent_location_is_invalid=previous_parent_location_is_invalid,
         has_grant_permissions=has_grant_permissions,
         may_change_hidden=may_change_hidden,

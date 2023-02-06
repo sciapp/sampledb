@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.22
+------------
+
+Currently in development.
+
+- Implemented object storage capacities for locations
+
 Version 0.21.2
 --------------
 
