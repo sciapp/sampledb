@@ -16,7 +16,8 @@ from .. import frontend
 from ... import logic
 from ... import models
 from ...logic import object_log, comments, errors
-from ...logic.actions import get_action, get_action_type
+from ...logic.actions import get_action
+from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
 from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
@@ -137,8 +138,8 @@ def object(object_id):
         object_type = get_translated_text(action_type.object_name) if action_type else None
         new_schema_available = action.schema is not None and action.schema != object.schema
         user_may_use_as_template = Permissions.READ in get_user_action_permissions(object.action_id, user_id=flask_login.current_user.id)
-        if logic.actions.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT'] and action_type and action_type.id == models.ActionType.SAMPLE_CREATION:
-            usable_in_action_types = [logic.actions.get_action_type(models.ActionType.MEASUREMENT)]
+        if logic.action_types.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT'] and action_type and action_type.id == models.ActionType.SAMPLE_CREATION:
+            usable_in_action_types = [logic.action_types.get_action_type(models.ActionType.MEASUREMENT)]
         else:
             usable_in_action_types = action_type.usable_in_action_types if action_type is not None else None
     else:
@@ -256,15 +257,15 @@ def object(object_id):
     else:
         favorite_actions_by_action_type_id = None
 
-    if logic.actions.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
+    if logic.action_types.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
         action_type_name_by_action_type_id = {
             models.ActionType.MEASUREMENT: get_translated_text(
-                logic.actions.get_action_type(models.ActionType.MEASUREMENT).name, default="Unnamed Action Type"
+                logic.action_types.get_action_type(models.ActionType.MEASUREMENT).name, default="Unnamed Action Type"
             )
         }
     elif usable_in_action_types:
         action_type_name_by_action_type_id = {
-            action_type.id: get_translated_text(logic.actions.get_action_type(action_type.id).name, default="Unnamed Action Type")
+            action_type.id: get_translated_text(logic.action_types.get_action_type(action_type.id).name, default="Unnamed Action Type")
             for action_type in usable_in_action_types}
     else:
         action_type_name_by_action_type_id = {}

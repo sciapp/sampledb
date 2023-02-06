@@ -3,7 +3,7 @@ import sampledb.logic
 
 def test_update_template_action():
     template_action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.logic.actions.ActionType.TEMPLATE,
+        action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,
         schema={
             'title': 'Test Template',
             'type': 'object',
@@ -21,7 +21,7 @@ def test_update_template_action():
         }
     )
     including_action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
         schema={
             'title': 'Test Action',
             'type': 'object',
@@ -108,7 +108,7 @@ def test_update_template_action():
 
 def test_update_template_action_recursion():
     template_action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.logic.actions.ActionType.TEMPLATE,
+        action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,
         schema={
             'title': 'Test Template',
             'type': 'object',
@@ -126,7 +126,7 @@ def test_update_template_action_recursion():
         }
     )
     including_template_action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.logic.actions.ActionType.TEMPLATE,
+        action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,
         schema={
             'title': 'Including Template Action',
             'type': 'object',
@@ -168,7 +168,7 @@ def test_update_template_action_recursion():
         'required': ['name']
     }
     including_action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.logic.actions.ActionType.TEMPLATE,
+        action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,
         schema={
             'title': 'Including Action',
             'type': 'object',

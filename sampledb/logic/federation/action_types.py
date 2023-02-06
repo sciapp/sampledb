@@ -5,7 +5,7 @@ import flask
 from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict
 from ..languages import get_languages, get_language, get_language_by_lang_code
-from ..actions import get_action_type, update_action_type, create_action_type, ActionType
+from ..action_types import ActionType, get_action_type, create_action_type, update_action_type
 from ..action_type_translations import set_action_type_translation, get_action_type_translations_for_action_type
 from ..components import Component
 from .. import errors, fed_logs

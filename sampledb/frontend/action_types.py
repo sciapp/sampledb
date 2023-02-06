@@ -14,7 +14,7 @@ from flask_babel import _
 from . import frontend
 from .. import logic
 from .utils import check_current_user_is_not_readonly, get_translated_text
-from ..logic.actions import SciCatExportType
+from ..logic.action_types import SciCatExportType
 from ..logic.components import get_component_or_none
 
 
@@ -22,7 +22,7 @@ class ActionTypesSortingForm(FlaskForm):
     encoded_order = StringField("Order-String", [DataRequired()])
 
     def validate_encoded_order(form, field):
-        valid_action_type_ids = [action_type.id for action_type in logic.actions.get_action_types()]
+        valid_action_type_ids = [action_type.id for action_type in logic.action_types.get_action_types()]
 
         try:
             split_string = field.data.split(",")
@@ -47,11 +47,11 @@ def action_types():
     if sorting_form.validate_on_submit():
         check_current_user_is_not_readonly()
 
-        logic.actions.set_action_types_order(sorting_form.encoded_order.data)
+        logic.action_types.set_action_types_order(sorting_form.encoded_order.data)
 
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=logic.actions.get_action_types(),
+        action_types=logic.action_types.get_action_types(),
         sorting_form=sorting_form
     )
 
@@ -63,7 +63,7 @@ def action_type(type_id):
         return flask.abort(403)
 
     try:
-        action_type = logic.actions.get_action_type(
+        action_type = logic.action_types.get_action_type(
             action_type_id=type_id
         )
     except logic.errors.ActionTypeDoesNotExistError:
@@ -124,12 +124,12 @@ class ActionTypeForm(FlaskForm):
     def set_select_usable_in_action_types_attributes(self):
         self.select_usable_in_action_types.choices = [
             (action_type.id, get_translated_text(action_type.name, default=_('Unnamed Action Type')))
-            for action_type in logic.actions.get_action_types()
+            for action_type in logic.action_types.get_action_types()
             if not action_type.disable_create_objects
         ]
 
         self.select_usable_in_action_types.shared_action_types = [action_type.id
-                                                                  for action_type in logic.actions.get_action_types()
+                                                                  for action_type in logic.action_types.get_action_types()
                                                                   if action_type.component_id is not None]
 
 
@@ -161,7 +161,7 @@ def show_action_type_form(type_id):
 
     if type_id is not None:
         try:
-            action_type = logic.actions.get_action_type(type_id)
+            action_type = logic.action_types.get_action_type(type_id)
         except logic.errors.ActionTypeDoesNotExistError:
             return flask.abort(404)
         if 'action_submit' not in flask.request.form:
@@ -225,7 +225,7 @@ def show_action_type_form(type_id):
                             submit_text=_('Create') if type_id is None else _('Save')
                         )
 
-                action_type = logic.actions.create_action_type(
+                action_type = logic.action_types.create_action_type(
                     admin_only=action_type_form.admin_only.data,
                     show_on_frontpage=action_type_form.show_on_frontpage.data,
                     show_in_navbar=action_type_form.show_in_navbar.data,
@@ -272,7 +272,7 @@ def show_action_type_form(type_id):
 
         else:
 
-            action_type = logic.actions.update_action_type(
+            action_type = logic.action_types.update_action_type(
                 action_type_id=type_id,
                 admin_only=action_type_form.admin_only.data,
                 show_on_frontpage=action_type_form.show_on_frontpage.data,

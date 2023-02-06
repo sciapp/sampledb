@@ -6,11 +6,11 @@
 import pytest
 
 import sampledb
-from sampledb.logic import actions, action_type_translations, errors
+from sampledb.logic import action_types, action_type_translations, errors
 
 
 def test_set_action_type_translation():
-    action_type = actions.create_action_type(
+    action_type = action_types.create_action_type(
         admin_only=False,
         show_on_frontpage=True,
         show_in_navbar=True,
@@ -90,7 +90,7 @@ def test_set_action_type_translation():
 
 
 def test_get_action_translations_for_action():
-    action_type = actions.create_action_type(
+    action_type = action_types.create_action_type(
         admin_only=False,
         show_on_frontpage=True,
         show_in_navbar=True,
@@ -144,7 +144,7 @@ def test_get_action_translations_for_action():
 
 
 def test_delete_action_translation():
-    action_type = actions.create_action_type(
+    action_type = action_types.create_action_type(
         admin_only=False,
         show_on_frontpage=True,
         show_in_navbar=True,

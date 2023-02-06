@@ -20,7 +20,8 @@ from . import frontend
 from .permission_forms import handle_permission_forms, set_up_permissions_forms
 from .. import models
 from ..logic.action_permissions import Permissions, get_action_permissions_for_all_users, get_user_action_permissions, set_action_permissions_for_all_users, get_action_permissions_for_groups, get_action_permissions_for_projects, get_action_permissions_for_users, get_sorted_actions_for_user
-from ..logic.actions import Action, create_action, get_action, update_action, get_action_type, get_action_types
+from ..logic.actions import Action, create_action, get_action, update_action
+from ..logic.action_types import get_action_type, get_action_types
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation
 from ..logic.languages import get_languages, get_language, Language
 from ..logic.components import get_component

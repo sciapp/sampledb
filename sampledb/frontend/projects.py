@@ -432,7 +432,7 @@ def project(project_id):
         object_link_form = ObjectLinkForm()
         if object is None:
             already_linked_object_ids = [link[1] for link in logic.projects.get_project_object_links()]
-            for action_type in logic.actions.get_action_types():
+            for action_type in logic.action_types.get_action_types():
                 if action_type.enable_project_link:
                     linkable_action_ids.extend([
                         action.id

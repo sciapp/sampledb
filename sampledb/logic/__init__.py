@@ -6,6 +6,7 @@
 from . import actions
 from . import action_permissions
 from . import action_translations
+from . import action_types
 from . import action_type_translations
 from . import api_log
 from . import authentication
@@ -68,6 +69,7 @@ __all__ = [
     'actions',
     'action_permissions',
     'action_translations',
+    'action_types',
     'action_type_translations',
     'api_log',
     'authentication',

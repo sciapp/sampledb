@@ -36,7 +36,8 @@ from ..logic.users import get_user, User
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
-from ..logic.actions import Action, ActionType
+from ..logic.actions import Action
+from ..logic.action_types import ActionType
 from ..logic.instruments import Instrument
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.languages import get_user_language
