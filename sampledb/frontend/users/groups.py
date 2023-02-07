@@ -171,6 +171,9 @@ def group(group_id):
         return flask.abort(404)
     group_member_ids.sort(key=lambda user_id: logic.users.get_user(user_id).name.lower())
     user_is_member = flask_login.current_user.id in group_member_ids
+    user_can_leave = user_is_member
+    # admins are treated as members for the sake of permissions
+    user_is_member = user_is_member or flask_login.current_user.has_admin_permissions
     group = logic.groups.get_group(group_id)
     show_edit_form = False
 
@@ -182,7 +185,10 @@ def group(group_id):
 
     if user_is_member:
         show_objects_link = True
-        leave_group_form = LeaveGroupForm()
+        if user_can_leave:
+            leave_group_form = LeaveGroupForm()
+        else:
+            leave_group_form = None
         invite_user_form = InviteUserForm()
         edit_group_form = EditGroupForm()
         group_categories = list(logic.group_categories.get_group_categories())
@@ -295,7 +301,7 @@ def group(group_id):
                     flask.flash(_('The user was successfully invited to the basic group.'), 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
         elif 'leave' in flask.request.form:
-            if leave_group_form.validate_on_submit():
+            if user_can_leave and leave_group_form.validate_on_submit():
                 try:
                     logic.groups.remove_user_from_group(group_id, flask_login.current_user.id)
                 except logic.errors.GroupDoesNotExistError:

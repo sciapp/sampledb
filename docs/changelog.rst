@@ -7,6 +7,7 @@ Version 0.22
 Currently in development.
 
 - Implemented object storage capacities for locations
+- Applied admin permissions to managing groups
 
 Version 0.21.3
 --------------

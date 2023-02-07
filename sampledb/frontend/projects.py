@@ -73,11 +73,13 @@ def project(project_id):
     except logic.errors.ProjectDoesNotExistError:
         return flask.abort(404)
     user_permissions = logic.projects.get_user_project_permissions(project_id=project_id, user_id=user_id, include_groups=True)
-    show_objects_link = Permissions.READ in user_permissions
     if Permissions.READ in user_permissions:
         leave_project_form = LeaveProjectForm()
     else:
         leave_project_form = None
+    if flask_login.current_user.has_admin_permissions:
+        user_permissions = Permissions.GRANT
+    show_objects_link = Permissions.READ in user_permissions
     translations = []
     name_language_ids = []
     description_language_ids = []
@@ -625,7 +627,7 @@ def project_permissions(project_id):
 
     user_permissions = logic.projects.get_project_member_user_ids_and_permissions(project_id, include_groups=False)
     group_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id)
-    if Permissions.GRANT in logic.projects.get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True):
+    if Permissions.GRANT in logic.projects.get_user_project_permissions(project_id=project_id, user_id=flask_login.current_user.id, include_groups=True) or flask_login.current_user.has_admin_permissions:
         delete_project_form = DeleteProjectForm()
         user_permission_form_data = []
         for user_id, permissions in sorted(user_permissions.items()):
@@ -662,7 +664,7 @@ def project_permissions(project_id):
 def update_project_permissions(project_id):
     check_current_user_is_not_readonly()
     try:
-        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, include_groups=True):
+        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, include_groups=True) and not flask_login.current_user.has_admin_permissions:
             return flask.abort(403)
     except logic.errors.ProjectDoesNotExistError:
         return flask.abort(404)
@@ -712,10 +714,10 @@ def link_object(project_id):
         return flask.redirect(flask.url_for('.project', project_id=project_id))
     object_id = object_link_form.object_id.data
     try:
-        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, True):
+        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, include_groups=True) and not flask_login.current_user.has_admin_permissions:
             flask.flash(_("You do not have GRANT permissions for this project group."), 'error')
             return flask.redirect(flask.url_for('.project', project_id=project_id))
-        if Permissions.GRANT not in logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id):
+        if Permissions.GRANT not in logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id) and not flask_login.current_user.has_admin_permissions:
             flask.flash(_("You do not have GRANT permissions for this object."), 'error')
             return flask.redirect(flask.url_for('.project', project_id=project_id))
         logic.projects.link_project_and_object(project_id, object_id, flask_login.current_user.id)
@@ -742,7 +744,7 @@ def unlink_object(project_id):
         return flask.redirect(flask.url_for('.project', project_id=project_id))
     object_id = object_link_form.object_id.data
     try:
-        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, True):
+        if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, include_groups=True) and not flask_login.current_user.has_admin_permissions:
             flask.flash(_("You do not have GRANT permissions for this project group."), 'error')
             return flask.redirect(flask.url_for('.project', project_id=project_id))
         logic.projects.unlink_project_and_object(project_id, object_id, flask_login.current_user.id)
