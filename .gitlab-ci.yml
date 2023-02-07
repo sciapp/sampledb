@@ -115,6 +115,8 @@ analyze:
     # check out development version
     - git fetch upstream develop
     - git checkout FETCH_HEAD
+    # do not check migrating from develop to this commit if this commit is not a descendant of develop
+    - git merge-base --is-ancestor HEAD $CI_COMMIT_SHA || exit 0
     # set up database with development version
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions

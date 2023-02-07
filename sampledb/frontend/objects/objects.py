@@ -53,6 +53,7 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'location_ids',
     'location',
     'doi',
+    'group',
     'project',
     'component_id',
 )
