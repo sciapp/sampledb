@@ -4,7 +4,7 @@ Changelog
 Version 0.21.3
 --------------
 
-Currently in development.
+Released on February 7th, 2023.
 
 - Translate group names in invitation notifications
 - Fixed filtering objects by group permissions
