@@ -621,6 +621,11 @@ msgstr ""
 "Ungültiges Projektgruppen-Einladungstoken. Bitte fragen Sie nach einer "
 "neuen Einladung."
 
+msgid "Unknown project group invitation. Please request a new invitation."
+msgstr ""
+"Unbekannte Projektgruppen-Einladung. Bitte fragen Sie nach einer neuen "
+"Einladung."
+
 msgid ""
 "This invitation token has already been used. Please request a new "
 "invitation."
@@ -5925,6 +5930,9 @@ msgid "Invalid basic group invitation token. Please request a new invitation."
 msgstr ""
 "Ungültiges Gruppen-Einladungstoken. Bitte fragen Sie nach einer neuen "
 "Einladung."
+
+msgid "Unknown basic group invitation. Please request a new invitation."
+msgstr "Unbekannte Gruppen-Einladung. Bitte fragen Sie nach einer neuen Einladung."
 
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."

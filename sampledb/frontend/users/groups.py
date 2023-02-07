@@ -139,7 +139,12 @@ def group(group_id):
             flask.flash(_('Invalid basic group invitation token. Please request a new invitation.'), 'error')
             return flask.abort(403)
         if 'invitation_id' in token_data:
-            if logic.groups.get_group_invitation(token_data['invitation_id']).accepted:
+            try:
+                group_invitation = logic.groups.get_group_invitation(token_data['invitation_id'])
+            except logic.errors.GroupInvitationDoesNotExistError:
+                flask.flash(_('Unknown basic group invitation. Please request a new invitation.'), 'error')
+                return flask.abort(403)
+            if group_invitation.accepted:
                 flask.flash(_('This invitation token has already been used. Please request a new invitation.'), 'error')
                 return flask.abort(403)
         if token_data.get('group_id', None) != group_id:

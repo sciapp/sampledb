@@ -31,7 +31,12 @@ def project(project_id):
             flask.flash(_('Invalid project group invitation token. Please request a new invitation.'), 'error')
             return flask.abort(403)
         if 'invitation_id' in token_data:
-            if logic.projects.get_project_invitation(token_data['invitation_id']).accepted:
+            try:
+                project_invitation = logic.projects.get_project_invitation(token_data['invitation_id'])
+            except logic.errors.ProjectInvitationDoesNotExistError:
+                flask.flash(_('Unknown project group invitation. Please request a new invitation.'), 'error')
+                return flask.abort(403)
+            if project_invitation.accepted:
                 flask.flash(_('This invitation token has already been used. Please request a new invitation.'), 'error')
                 return flask.abort(403)
         if token_data.get('project_id', None) != project_id:
