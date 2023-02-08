@@ -18,7 +18,7 @@ def post_dataverse_export_task(
     property_whitelist: typing.Optional[typing.Sequence[typing.List[typing.Union[str, int]]]],
     file_id_whitelist: typing.Sequence[int] = (),
     tag_whitelist: typing.Sequence[str] = ()
-) -> typing.Tuple[BackgroundTaskStatus | typing.Tuple[bool, dict[str, typing.Any]], typing.Optional[BackgroundTask]]:
+) -> typing.Tuple[typing.Union[BackgroundTaskStatus, typing.Tuple[bool, dict[str, typing.Any]]], typing.Optional[BackgroundTask]]:
     data = {
         'object_id': object_id,
         'user_id': user_id,

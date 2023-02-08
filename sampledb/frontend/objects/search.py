@@ -9,14 +9,16 @@ import flask_login
 from .. import frontend
 from ...logic.action_types import get_action_types
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import Permissions, get_objects_with_permissions
+from ...logic.object_permissions import get_objects_with_permissions
 from ...logic.users import get_users
 from ..utils import get_search_paths
+from ...utils import FlaskResponseT
+from ...models import Permissions
 
 
 @frontend.route('/objects/search/')
-@flask_login.login_required
-def search():
+@flask_login.login_required  # type: ignore[misc]
+def search() -> FlaskResponseT:
     actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id
     )

@@ -12,10 +12,12 @@ from wtforms.validators import InputRequired
 
 from . import frontend
 from .. import logic
+from ..models import Permissions
 from .pdfexport import create_pdfexport
+from ..utils import FlaskResponseT
 
 
-class CreateExportForm(FlaskForm):
+class CreateExportForm(FlaskForm):  # type: ignore[misc]
     file_extension = SelectField(
         choices=[],
         validators=[InputRequired()]
@@ -23,16 +25,16 @@ class CreateExportForm(FlaskForm):
 
 
 @frontend.route('/users/me/export')
-@flask_login.login_required
-def export_self():
+@flask_login.login_required  # type: ignore[misc]
+def export_self() -> FlaskResponseT:
     return flask.redirect(
         flask.url_for('.export', user_id=flask_login.current_user.id)
     )
 
 
 @frontend.route('/users/<int:user_id>/export', methods=['POST', 'GET'])
-@flask_login.login_required
-def export(user_id):
+@flask_login.login_required  # type: ignore[misc]
+def export(user_id: int) -> FlaskResponseT:
     if user_id != flask_login.current_user.id and not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -48,7 +50,7 @@ def export(user_id):
         if file_extension == '.pdf':
             readable_objects = logic.object_permissions.get_objects_with_permissions(
                 user_id,
-                logic.object_permissions.Permissions.READ
+                Permissions.READ
             )
             file_bytes = create_pdfexport(list(sorted(
                 object.id
@@ -67,7 +69,7 @@ def export(user_id):
                 file_bytes,
                 200,
                 headers={
-                    'Content-Type': file_type,
+                    'Content-Type': file_type or 'application/octet-stream',
                     'Content-Disposition': f'attachment; filename=sampledb_export{file_extension}'
                 }
             )

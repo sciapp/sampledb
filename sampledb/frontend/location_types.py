@@ -13,13 +13,14 @@ from flask_babel import _
 from . import frontend
 from .. import logic
 from .utils import check_current_user_is_not_readonly
+from ..utils import FlaskResponseT
 
 from ..logic.components import get_component_or_none
 
 
 @frontend.route('/location_types/')
-@flask_login.login_required
-def location_types():
+@flask_login.login_required  # type: ignore[misc]
+def location_types() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -31,8 +32,8 @@ def location_types():
 
 
 @frontend.route('/location_types/<int(signed=True):type_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def location_type(type_id):
+@flask_login.login_required  # type: ignore[misc]
+def location_type(type_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -58,14 +59,14 @@ def location_type(type_id):
 
 
 @frontend.route('/location_types/new', methods=['GET', 'POST'])
-@flask_login.login_required
-def new_location_type():
+@flask_login.login_required  # type: ignore[misc]
+def new_location_type() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     return show_location_type_form(None)
 
 
-class LocationTypeForm(FlaskForm):
+class LocationTypeForm(FlaskForm):  # type: ignore[misc]
     admin_only = BooleanField()
     enable_parent_location = BooleanField()
     enable_sub_locations = BooleanField()
@@ -76,7 +77,9 @@ class LocationTypeForm(FlaskForm):
     enable_capacities = BooleanField()
 
 
-def show_location_type_form(type_id: typing.Optional[int]):
+def show_location_type_form(
+        type_id: typing.Optional[int]
+) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     location_type_form = LocationTypeForm()
 
@@ -91,7 +94,7 @@ def show_location_type_form(type_id: typing.Optional[int]):
     translation_language_ids = {english_id}
     translated_texts = {
         text_name: {
-            english_id: ''
+            'en': ''
         }
         for text_name in ('name', 'location_name_singular', 'location_name_plural')
     }
@@ -130,11 +133,11 @@ def show_location_type_form(type_id: typing.Optional[int]):
             location_type_form.enable_instruments.data = True
             location_type_form.enable_capacities.data = False
     else:
-        translation_language_ids = flask.request.form.getlist('translation-languages')
+        translation_language_id_strs = flask.request.form.getlist('translation-languages')
         translation_language_ids = {
             language_id
             for language_id in language_id_by_lang_code.values()
-            if str(language_id) in translation_language_ids or language_id == english_id
+            if str(language_id) in translation_language_id_strs or language_id == english_id
         }
         # set translated texts from form
         for text_name in translated_texts:
@@ -157,7 +160,9 @@ def show_location_type_form(type_id: typing.Optional[int]):
                 enable_instruments=location_type_form.enable_instruments.data,
                 enable_capacities=location_type_form.enable_capacities.data,
                 show_location_log=location_type_form.show_location_log.data,
-                **translated_texts
+                name=translated_texts['name'],
+                location_name_singular=translated_texts['location_name_singular'],
+                location_name_plural=translated_texts['location_name_plural']
             ).id
         else:
             logic.locations.update_location_type(
@@ -170,7 +175,9 @@ def show_location_type_form(type_id: typing.Optional[int]):
                 enable_instruments=location_type_form.enable_instruments.data,
                 enable_capacities=location_type_form.enable_capacities.data,
                 show_location_log=location_type_form.show_location_log.data,
-                **translated_texts
+                name=translated_texts['name'],
+                location_name_singular=translated_texts['location_name_singular'],
+                location_name_plural=translated_texts['location_name_plural']
             )
         return flask.redirect(flask.url_for('.location_type', type_id=type_id))
 

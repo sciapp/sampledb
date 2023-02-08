@@ -2,6 +2,7 @@
 """
 
 """
+import typing
 
 import flask
 import flask_login
@@ -13,11 +14,12 @@ from wtforms.validators import InputRequired
 from . import frontend
 from .. import logic
 from .utils import check_current_user_is_not_readonly
+from ..utils import FlaskResponseT
 
 
 @frontend.route('/languages/')
-@flask_login.login_required
-def languages():
+@flask_login.login_required  # type: ignore[misc]
+def languages() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -28,8 +30,8 @@ def languages():
 
 
 @frontend.route('/languages/<int(signed=True):language_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def language(language_id):
+@flask_login.login_required  # type: ignore[misc]
+def language(language_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -52,14 +54,14 @@ def language(language_id):
 
 
 @frontend.route('/language/new', methods=['GET', 'POST'])
-@flask_login.login_required
-def new_language():
+@flask_login.login_required  # type: ignore[misc]
+def new_language() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     return show_language_form(None)
 
 
-class LanguageForm(FlaskForm):
+class LanguageForm(FlaskForm):  # type: ignore
     name_english = StringField(validators=[InputRequired()])
     lang_code = StringField(validators=[InputRequired()])
     datetime_format_datetime = StringField(validators=[InputRequired()])
@@ -69,7 +71,9 @@ class LanguageForm(FlaskForm):
     enabled_for_user_interface = BooleanField()
 
 
-def show_language_form(language_id):
+def show_language_form(
+        language_id: typing.Optional[int]
+) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     language_form = LanguageForm()
 
@@ -97,14 +101,14 @@ def show_language_form(language_id):
         except logic.errors.LanguageDoesNotExistError:
             existing_language_for_code = None
         names = {}
-        for key in flask.request.form:
-            for lang in logic.languages.get_languages():
-                if key == 'name_' + str(lang.id):
-                    if flask.request.form.get(key).strip():
-                        names[lang.lang_code] = flask.request.form.get(key).strip()
+        for language in logic.languages.get_languages():
+            key = 'name_' + str(language.id)
+            value = flask.request.form.get(key, '').strip()
+            if value:
+                names[language.lang_code] = value
         names['en'] = language_form.name_english.data.strip()
         if language_id is None and existing_language_for_code is None:
-            names[language_form.lang_code.data.strip().lower()] = flask.request.form.get('name_new').strip()
+            names[language_form.lang_code.data.strip().lower()] = flask.request.form.get('name_new', '').strip()
             language = logic.languages.create_language(
                 names=names,
                 lang_code=language_form.lang_code.data.strip().lower(),

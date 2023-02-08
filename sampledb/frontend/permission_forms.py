@@ -10,7 +10,7 @@ from ..logic.permissions import ResourcePermissions
 from ..models import Permissions
 
 
-class UserPermissionsForm(FlaskForm):
+class UserPermissionsForm(FlaskForm):  # type: ignore[misc]
     user_id = IntegerField(
         validators=[InputRequired()]
     )
@@ -20,7 +20,7 @@ class UserPermissionsForm(FlaskForm):
     )
 
 
-class GroupPermissionsForm(FlaskForm):
+class GroupPermissionsForm(FlaskForm):  # type: ignore[misc]
     group_id = IntegerField(
         validators=[InputRequired()]
     )
@@ -30,7 +30,7 @@ class GroupPermissionsForm(FlaskForm):
     )
 
 
-class ProjectPermissionsForm(FlaskForm):
+class ProjectPermissionsForm(FlaskForm):  # type: ignore[misc]
     project_id = IntegerField(
         validators=[InputRequired()]
     )
@@ -40,7 +40,7 @@ class ProjectPermissionsForm(FlaskForm):
     )
 
 
-class PermissionsForm(FlaskForm):
+class PermissionsForm(FlaskForm):  # type: ignore[misc]
     all_user_permissions = SelectField(
         choices=[(p.name.lower(), p) for p in (Permissions.NONE, Permissions.READ)],
         validators=[InputRequired()]

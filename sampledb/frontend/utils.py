@@ -23,6 +23,7 @@ import flask_babel
 import flask_login
 from flask_babel import format_datetime, format_date, get_locale
 from babel import numbers
+import markupsafe
 import qrcode
 import qrcode.image.svg
 import plotly
@@ -43,57 +44,66 @@ from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.actions import Action
 from ..logic.action_types import ActionType
 from ..logic.instruments import Instrument
+from ..logic.instrument_log_entries import InstrumentLogFileAttachment
 from ..logic.action_permissions import get_sorted_actions_for_user
 from ..logic.languages import get_user_language
 from ..logic.locations import Location, LocationType, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden, get_locations_tree
 from ..logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
 from ..logic.datatypes import JSONEncoder
 from ..logic.security_tokens import generate_token
-from ..logic.object_permissions import get_user_object_permissions, Permissions
-from ..logic.objects import get_object, Object
+from ..logic.object_permissions import get_user_object_permissions
+from ..logic.objects import get_object
 from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
-from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name
+from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
+from ..logic.files import File
 from ..utils import generate_inline_script_nonce
+from ..models import Permissions, Object
 
 
-def jinja_filter(name: str = ''):
-    def decorator(func, name):
-        if not name:
-            name = func.__name__
-        jinja_filter.filters[name] = func
+class JinjaFilter:
+    JinjaFilterT = typing.TypeVar('JinjaFilterT')
+    filters: typing.Dict[str, typing.Any] = {}
+
+    def __init__(self, name: str = '') -> None:
+        self._name = name
+
+    def __call__(self, func: JinjaFilterT) -> JinjaFilterT:
+        if not self._name:
+            self._name = func.__name__  # type: ignore[attr-defined]
+        self.filters[self._name] = func
         return func
 
-    return lambda func: decorator(func, name)
 
+class JinjaFunction:
+    JinjaFunctionT = typing.TypeVar('JinjaFunctionT')
+    functions: typing.Dict[str, typing.Any] = {}
 
-def jinja_function(name: str = ''):
-    def decorator(func, name):
-        if not name:
-            name = func.__name__
-        jinja_function.functions[name] = func
+    def __init__(self, name: str = '') -> None:
+        self._name = name
+
+    def __call__(self, func: JinjaFunctionT) -> JinjaFunctionT:
+        if not self._name:
+            self._name = func.__name__  # type: ignore[attr-defined]
+        self.functions[self._name] = func
         return func
 
-    return lambda func: decorator(func, name)
+
+JinjaFilter()(hash)
+JinjaFilter()(prettify_units)
+JinjaFilter('urlencode')(quote_plus)
+JinjaFilter()(markdown_to_safe_html)
+JinjaFilter()(get_translated_text)
+JinjaFilter()(get_all_translated_texts)
+
+JinjaFunction()(get_component_or_none)
+JinjaFunction()(get_component_id_by_uuid)
+JinjaFunction()(get_unhandled_object_responsibility_assignments)
+JinjaFunction()(is_full_location_tree_hidden)
+JinjaFunction()(generate_inline_script_nonce)
 
 
-jinja_filter.filters = {}
-jinja_filter()(hash)
-jinja_filter()(prettify_units)
-jinja_filter('urlencode')(quote_plus)
-jinja_filter()(markdown_to_safe_html)
-jinja_filter()(get_translated_text)
-jinja_filter()(get_all_translated_texts)
-
-jinja_function.functions = {}
-jinja_function()(get_component_or_none)
-jinja_function()(get_component_id_by_uuid)
-jinja_function()(get_unhandled_object_responsibility_assignments)
-jinja_function()(is_full_location_tree_hidden)
-jinja_function()(generate_inline_script_nonce)
-
-
-qrcode_cache = {}
+qrcode_cache: typing.Dict[str, str] = {}
 
 
 def generate_qrcode(url: str, should_cache: bool = True) -> str:
@@ -116,8 +126,8 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
     return qrcode_url
 
 
-@jinja_filter()
-def has_preview(file):
+@JinjaFilter()
+def has_preview(file: File) -> bool:
     if file.storage not in {'local', 'database', 'federation'}:
         return False
     file_name = file.original_file_name
@@ -125,36 +135,37 @@ def has_preview(file):
     return file_extension in flask.current_app.config.get('MIME_TYPES', {})
 
 
-def file_name_is_image(file_name):
+def file_name_is_image(file_name: str) -> bool:
     file_extension = os.path.splitext(file_name)[1]
-    return flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '').startswith('image/')
+    mime_types: typing.Dict[str, str] = flask.current_app.config.get('MIME_TYPES', {})
+    return mime_types.get(file_extension, '').startswith('image/')
 
 
-@jinja_filter()
-def is_image(file):
+@JinjaFilter()
+def is_image(file: File) -> bool:
     # federation files are not recognized as images to prevent loading their thumbnails from other database
     if file.storage not in {'local', 'database'}:
         return False
     return file_name_is_image(file.original_file_name)
 
 
-@jinja_filter()
-def attachment_is_image(file_attachment):
+@JinjaFilter()
+def attachment_is_image(file_attachment: InstrumentLogFileAttachment) -> bool:
     return file_name_is_image(file_attachment.file_name)
 
 
-@jinja_filter()
-def get_num_unread_notifications(user):
+@JinjaFilter()
+def get_num_unread_notifications(user: User) -> int:
     return get_num_notifications(user.id, unread_only=True)
 
 
-def check_current_user_is_not_readonly():
+def check_current_user_is_not_readonly() -> None:
     if flask_login.current_user.is_readonly:
         raise UserIsReadonlyError()
 
 
-@jinja_filter('plot')
-def plotly_base64_image_from_json(object):
+@JinjaFilter('plot')
+def plotly_base64_image_from_json(object: typing.Dict[str, typing.Any]) -> typing.Optional[str]:
     try:
         fig_plot = plotly.io.from_json(json.dumps(object))
     except ValueError:
@@ -165,8 +176,8 @@ def plotly_base64_image_from_json(object):
     return 'data:image/svg+xml;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
 
 
-@jinja_filter()
-def plotly_chart_get_title(plotly_object):
+@JinjaFilter()
+def plotly_chart_get_title(plotly_object: typing.Dict[str, typing.Any]) -> str:
     layout = plotly_object.get('layout')
     if isinstance(layout, dict):
         title = layout.get('title')
@@ -179,12 +190,15 @@ def plotly_chart_get_title(plotly_object):
     return ""
 
 
-@jinja_filter()
-def to_json_no_extra_escapes(json_object, indent=None):
+@JinjaFilter()
+def to_json_no_extra_escapes(
+        json_object: typing.Dict[str, typing.Any],
+        indent: typing.Optional[int] = None
+) -> str:
     return json.dumps(json_object, indent=indent)
 
 
-@jinja_filter('generic_format_datetime')
+@JinjaFilter('generic_format_datetime')
 def generic_format_datetime(
         utc_datetime: typing.Union[str, datetime]
 ) -> str:
@@ -200,11 +214,11 @@ def generic_format_datetime(
     return utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
 
-@jinja_filter('babel_format_datetime')
+@JinjaFilter('babel_format_datetime')
 def custom_format_datetime(
         utc_datetime: typing.Union[str, datetime],
         format: typing.Optional[str] = None
-) -> str:
+) -> typing.Union[str, datetime]:
     """
     Returns a reformatted date in the given format.
 
@@ -217,7 +231,7 @@ def custom_format_datetime(
             utc_datetime = parse_datetime_string(utc_datetime)
         if format is None:
             format2 = 'medium'
-            return format_datetime(utc_datetime, format=format2)
+            return typing.cast(str, format_datetime(utc_datetime, format=format2))
         else:
             utc_datetime = pytz.utc.localize(utc_datetime)
             local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone))
@@ -226,19 +240,22 @@ def custom_format_datetime(
         return utc_datetime
 
 
-@jinja_filter('babel_format_date')
-def custom_format_date(date, format='%Y-%m-%d'):
+@JinjaFilter('babel_format_date')
+def custom_format_date(
+        date: typing.Union[datetime, str],
+        format: str = '%Y-%m-%d'
+) -> str:
     if isinstance(date, datetime):
         datetime_obj = date
     else:
         datetime_obj = datetime.strptime(date, format)
-    return format_date(datetime_obj)
+    return typing.cast(str, format_date(datetime_obj))
 
 
-@jinja_filter('babel_format_time')
+@JinjaFilter('babel_format_time')
 def custom_format_time(
         utc_datetime: typing.Union[str, datetime]
-) -> str:
+) -> typing.Union[str, datetime]:
     """
     Return a formatted time.
 
@@ -248,12 +265,12 @@ def custom_format_time(
     try:
         if not isinstance(utc_datetime, datetime):
             utc_datetime = parse_datetime_string(utc_datetime)
-        return flask_babel.format_time(utc_datetime)
+        return typing.cast(str, flask_babel.format_time(utc_datetime))
     except ValueError:
         return utc_datetime
 
 
-@jinja_filter('babel_format_number')
+@JinjaFilter('babel_format_number')
 def custom_format_number(
     number: typing.Union[str, int, float],
     display_digits: typing.Optional[int] = None,
@@ -273,7 +290,7 @@ def custom_format_number(
         # if number is a string that can not be formatted. Wrong inputs...
         number = float(number)
     except ValueError:
-        return number
+        return typing.cast(str, number)
     if type(display_digits) is not int:
         display_digits = None
     else:
@@ -327,25 +344,29 @@ def custom_format_number(
             decimal_quantization=False
         )
     else:
-        with numbers.decimal.localcontext() as ctx:
+        # babel.numbers doesn't explicitly export decimal, but it is
+        # recommended to use babel.numbers.decimal instead of the standard
+        # library module, in case babel decides to use a different decimal
+        # implementation in the future
+        with numbers.decimal.localcontext() as ctx:  # type: ignore[attr-defined]
             ctx.prec = 15
-            return numbers.format_decimal(
-                numbers.decimal.Decimal(number),
+            return typing.cast(str, numbers.format_decimal(
+                numbers.decimal.Decimal(number),  # type: ignore[attr-defined]
                 locale=locale,
                 format=f,
                 decimal_quantization=False
-            )
+            ))
 
 
-@jinja_filter('format_time')
+@JinjaFilter('format_time')
 def format_time(
     magnitude_in_base_units: float,
     units: str,
     display_digits: typing.Optional[int] = None
-):
+) -> str:
     if units not in {'min', 'h'}:
         raise errors.MismatchedUnitError()
-    decimal = 0
+    decimal = 0.0
     magnitude_str = str(magnitude_in_base_units)
     if '.' in magnitude_str:
         # string manipulation to prevent ugly float-arithmetics
@@ -375,7 +396,7 @@ def format_time(
     )
 
 
-@jinja_filter('format_quantity')
+@JinjaFilter('format_quantity')
 def custom_format_quantity(
         data: typing.Optional[typing.Dict[str, typing.Any]],
         schema: typing.Dict[str, typing.Any]
@@ -387,24 +408,25 @@ def custom_format_quantity(
         return custom_format_number(data.get('magnitude_in_base_units', 0), schema.get('display_digits', None))
     narrow_non_breaking_space = '\u202f'
     magnitude = data.get('magnitude_in_base_units', 0)
-    if data.get('units') in {'h', 'min'}:
-        return f'{format_time(magnitude, data.get("units"), schema.get("display_digits"))}{narrow_non_breaking_space}{data.get("units")}'
+    units = data.get('units')
+    if units in {'h', 'min'}:
+        return f'{format_time(magnitude, units, schema.get("display_digits"))}{narrow_non_breaking_space}{data.get("units")}'
     quantity = Quantity.from_json(data)
     return custom_format_number(quantity.magnitude, schema.get('display_digits', None)) + narrow_non_breaking_space + prettify_units(quantity.units)
 
 
-@jinja_filter()
-def parse_datetime_string(datetime_string):
+@JinjaFilter()
+def parse_datetime_string(datetime_string: str) -> datetime:
     return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S')
 
 
-@jinja_filter()
-def default_format_datetime(utc_datetime: typing.Union[str, datetime]) -> str:
+@JinjaFilter()
+def default_format_datetime(utc_datetime: typing.Union[str, datetime]) -> typing.Union[str, datetime]:
     return custom_format_datetime(utc_datetime, format='%Y-%m-%d %H:%M:%S')
 
 
-@jinja_filter()
-def convert_datetime_input(datetime_input):
+@JinjaFilter()
+def convert_datetime_input(datetime_input: str) -> str:
     if not datetime_input:
         return ''
     try:
@@ -415,13 +437,13 @@ def convert_datetime_input(datetime_input):
         return ''
 
 
-@jinja_filter()
-def base64encode(value):
+@JinjaFilter()
+def base64encode(value: typing.Any) -> str:
     return base64.b64encode(json.dumps(value).encode('utf8')).decode('ascii')
 
 
-@jinja_filter('are_conditions_fulfilled')
-def filter_are_conditions_fulfilled(data, property_schema) -> bool:
+@JinjaFilter('are_conditions_fulfilled')
+def filter_are_conditions_fulfilled(data: typing.Dict[str, typing.Any], property_schema: typing.Dict[str, typing.Any]) -> bool:
     if not data:
         return False
     if not isinstance(property_schema, dict):
@@ -429,15 +451,25 @@ def filter_are_conditions_fulfilled(data, property_schema) -> bool:
     return are_conditions_fulfilled(property_schema.get('conditions'), data)
 
 
-@jinja_filter()
-def to_string_if_dict(data) -> str:
+@typing.overload
+def to_string_if_dict(data: typing.Dict[str, typing.Any]) -> str:
+    ...
+
+
+@typing.overload
+def to_string_if_dict(data: typing.Any) -> typing.Any:
+    ...
+
+
+@JinjaFilter()
+def to_string_if_dict(data: typing.Any) -> typing.Any:
     if isinstance(data, dict):
         return str(data)
     else:
         return data
 
 
-@jinja_filter()
+@JinjaFilter()
 def get_location_name(
         location_or_location_id: typing.Union[int, Location],
         include_id: bool = False,
@@ -456,26 +488,26 @@ def get_location_name(
         location = location_or_location_id
         location_id = location.id
     else:
-        return flask_babel.gettext("Unknown Location")
+        return typing.cast(str, flask_babel.gettext("Unknown Location"))
 
     if location is not None and has_read_permissions is None:
         has_read_permissions = Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id)
 
     if location is None or not has_read_permissions:
         # location ID is always included when the location cannot be accessed
-        location_name = flask_babel.gettext("Location") + f' #{location_id}'
+        location_name = typing.cast(str, flask_babel.gettext("Location")) + f' #{location_id}'
     else:
         location_name = get_translated_text(
             location.name,
             language_code=language_code,
-            default=flask_babel.gettext('Unnamed Location')
+            default=typing.cast(str, flask_babel.gettext('Unnamed Location'))
         )
         if include_id:
             location_name += f' (#{location_id})'
     return location_name
 
 
-@jinja_filter()
+@JinjaFilter()
 def get_full_location_name(
         location_or_location_id: typing.Union[int, Location],
         include_id: bool = False,
@@ -493,7 +525,7 @@ def get_full_location_name(
     else:
         location = None
     if location is None:
-        return flask_babel.gettext("Unknown Location")
+        return typing.cast(str, flask_babel.gettext("Unknown Location"))
 
     full_location_name = get_location_name(location, include_id=include_id, language_code=language_code)
     while location.parent_location_id is not None:
@@ -502,23 +534,23 @@ def get_full_location_name(
     return full_location_name
 
 
-@jinja_filter()
-def to_datatype(obj):
+@JinjaFilter()
+def to_datatype(obj: typing.Any) -> typing.Any:
     return json.loads(json.dumps(obj), object_hook=JSONEncoder.object_hook)
 
 
-def get_style_aliases(style):
+def get_style_aliases(style: str) -> typing.List[str]:
     return {
         'horizontal_table': ['table', 'horizontal_table'],
         'full_width_table': ['table']
     }.get(style, [style])
 
 
-def get_template(template_folder, default_prefix, schema):
+def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any]) -> str:
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
-    base_file = schema["type"] + ".html"
+    base_file = str(schema["type"]) + ".html"
 
-    file_order = [(default_prefix + base_file)]
+    file_order = [default_prefix + base_file]
     if schema.get('parent_style'):
         for parent_style in get_style_aliases(schema['parent_style']):
             file_order.insert(0, (default_prefix + parent_style + "_" + base_file))
@@ -537,40 +569,40 @@ def get_template(template_folder, default_prefix, schema):
     return template_folder + default_prefix + base_file
 
 
-@jinja_function()
-def get_form_template(schema):
+@JinjaFunction()
+def get_form_template(schema: typing.Dict[str, typing.Any]) -> str:
     return get_template('objects/forms/', 'form_', schema)
 
 
-@jinja_function()
-def get_view_template(schema):
+@JinjaFunction()
+def get_view_template(schema: typing.Dict[str, typing.Any]) -> str:
     return get_template('objects/view/', '', schema)
 
 
-@jinja_function()
-def get_inline_edit_template(schema):
+@JinjaFunction()
+def get_inline_edit_template(schema: typing.Dict[str, typing.Any]) -> str:
     return get_template('objects/inline_edit/', 'inline_edit_', schema)
 
 
-@jinja_function()
-def get_local_month_names():
+@JinjaFunction()
+def get_local_month_names() -> typing.List[str]:
     return [
         flask_babel.get_locale().months['format']['wide'][i]
         for i in range(1, 13)
     ]
 
 
-@jinja_function()
-def get_templates(user_id):
+@JinjaFunction()
+def get_templates(user_id: int) -> typing.List[Action]:
     return [
         action
         for action in get_sorted_actions_for_user(user_id=user_id)
-        if action.type_id is not None and action.type.is_template and action.schema
+        if action.type is not None and action.type.is_template and action.schema
     ]
 
 
-@jinja_function()
-def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None):
+@JinjaFunction()
+def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
     try:
         return get_user(user_id, component_id)
     except errors.UserDoesNotExistError:
@@ -582,8 +614,11 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None):
 _application_root_url: typing.Optional[str] = None
 
 
-@jinja_function()
-def relative_url_for(route: str, **kwargs) -> str:
+@JinjaFunction()
+def relative_url_for(
+        route: str,
+        **kwargs: typing.Any
+) -> str:
     global _application_root_url
     if _application_root_url is None:
         _application_root_url = flask.url_for('frontend.index')
@@ -621,7 +656,7 @@ def get_fingerprint(file_path: str) -> str:
 STATIC_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
 
 
-@jinja_function()
+@JinjaFunction()
 def fingerprinted_static(filename: str) -> str:
     return flask.url_for(
         'static',
@@ -630,9 +665,14 @@ def fingerprinted_static(filename: str) -> str:
     )
 
 
+class SearchPathInfo(typing.TypedDict):
+    types: typing.List[str]
+    titles: typing.List[str]
+
+
 def get_search_paths(
-        actions,
-        action_types,
+        actions: typing.List[Action],
+        action_types: typing.List[ActionType],
         path_depth_limit: typing.Optional[int] = None,
         valid_property_types: typing.Sequence[str] = (
             'text',
@@ -644,10 +684,10 @@ def get_search_paths(
             'sample',
             'measurement',
         )
-):
-    search_paths = {}
-    search_paths_by_action = {}
-    search_paths_by_action_type = {}
+) -> typing.Tuple[typing.Dict[str, SearchPathInfo], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]]]:
+    search_paths: typing.Dict[str, SearchPathInfo] = {}
+    search_paths_by_action: typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]] = {}
+    search_paths_by_action_type: typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]] = {}
     for action_type in action_types:
         search_paths_by_action_type[action_type.id] = {}
     for action in actions:
@@ -665,15 +705,15 @@ def get_search_paths(
                 key if key is not None else '?'
                 for key in property_path
             )
-            property_type = property_info.get('type')
-            property_title = flask.escape(get_translated_text(property_info.get('title')))
+            property_type = str(property_info.get('type', ''))
+            property_title = markupsafe.escape(get_translated_text(property_info.get('title')))
             if property_type in {'object_reference', 'sample', 'measurement'}:
                 # unify object_reference, sample and measurement
                 property_type = 'object_reference'
-            property_infos = {
-                'types': [property_type],
-                'titles': [property_title]
-            }
+            property_infos = SearchPathInfo(
+                types=[property_type],
+                titles=[property_title]
+            )
             search_paths_by_action[action.id][property_path] = property_infos
             if property_path not in search_paths_by_action_type[action.type_id]:
                 search_paths_by_action_type[action.type_id][property_path] = property_infos
@@ -692,8 +732,8 @@ def get_search_paths(
     return search_paths, search_paths_by_action, search_paths_by_action_type
 
 
-@jinja_function()
-def get_num_deprecation_warnings():
+@JinjaFunction()
+def get_num_deprecation_warnings() -> int:
     return sum([
         show_admin_local_storage_warning(),
         show_load_objects_in_background_warning(),
@@ -701,8 +741,12 @@ def get_num_deprecation_warnings():
     ])
 
 
-@jinja_function()
-def get_search_query(attribute, data, metadata_language=None):
+@JinjaFunction()
+def get_search_query(
+        attribute: str,
+        data: typing.Dict[str, typing.Any],
+        metadata_language: typing.Optional[str] = None
+) -> str:
     if data is None:
         return f'{attribute} == null'
     if data['_type'] == 'bool':
@@ -730,7 +774,7 @@ def get_search_query(attribute, data, metadata_language=None):
     return f'!({attribute} == null)'
 
 
-@jinja_function()
+@JinjaFunction()
 def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> str:
     confirmation_url = flask.url_for(
         'frontend.accept_responsibility_for_object',
@@ -744,7 +788,7 @@ def build_object_location_assignment_confirmation_url(object_location_assignment
     return confirmation_url
 
 
-@jinja_function()
+@JinjaFunction()
 def build_object_location_assignment_declination_url(object_location_assignment_id: int) -> str:
     confirmation_url = flask.url_for(
         'frontend.decline_responsibility_for_object',
@@ -758,15 +802,16 @@ def build_object_location_assignment_declination_url(object_location_assignment_
     return confirmation_url
 
 
-@jinja_function()
+@JinjaFunction()
 def get_object_name_if_user_has_permissions(object_id: int) -> str:
     fallback_name = f"{flask_babel.gettext('Object')} #{object_id}"
     try:
         permissions = get_user_object_permissions(object_id, flask_login.current_user.id)
         if Permissions.READ in permissions:
             object = get_object(object_id)
-            object_name = get_translated_text(object.data['name']['text'])
-            return f"{object_name} (#{object_id})"
+            if object.data:
+                object_name = get_translated_text(object.data['name']['text'])
+                return f"{object_name} (#{object_id})"
     except errors.ObjectDoesNotExistError:
         pass
     return fallback_name
@@ -795,7 +840,7 @@ class FederationRef:
         name: str
         address: typing.Optional[str]
 
-        def get_name(self):
+        def get_name(self) -> str:
             return self.name
 
     @property
@@ -809,21 +854,21 @@ class FederationRef:
             )
 
 
-@jinja_function()
+@JinjaFunction()
 @dataclasses.dataclass(frozen=True)
 class FederationObjectRef(FederationRef):
     referenced_class: typing.Type[Object] = Object
 
 
-@jinja_function()
+@JinjaFunction()
 @dataclasses.dataclass(frozen=True)
 class FederationUserRef(FederationRef):
     referenced_class: typing.Type[User] = User
 
 
-@jinja_function()
+@JinjaFunction()
 def get_federation_url(obj: typing.Any) -> str:
-    component_address = obj.component.address
+    component_address: str = obj.component.address
     if not component_address.endswith('/'):
         component_address = component_address + '/'
     if isinstance(obj, FederationRef):
@@ -941,7 +986,7 @@ def get_locations_form_data(
     return all_choices, choices
 
 
-@jinja_function()
+@JinjaFunction()
 def get_user_or_none(user_id: int) -> typing.Optional[User]:
     try:
         return get_user(user_id)
@@ -1027,7 +1072,11 @@ def get_groups_form_data(
     )
     all_choices = []
 
-    def _add_project_group_to_all_choices(id_path, name_prefix, group_id):
+    def _add_project_group_to_all_choices(
+            id_path: typing.List[int],
+            name_prefix: str,
+            group_id: int
+    ) -> None:
         if not id_path and get_parent_project_ids(group_id):
             return
         child_project_ids = child_project_group_ids_by_id[group_id]
@@ -1047,7 +1096,12 @@ def get_groups_form_data(
                 id_path, name_prefix, child_project_id
             )
 
-    def _fill_all_choices(id_path, name_prefix, group_category_id, group_category_tree):
+    def _fill_all_choices(
+            id_path: typing.List[int],
+            name_prefix: str,
+            group_category_id: typing.Optional[int],
+            group_category_tree: GroupCategoryTree
+    ) -> None:
         if not group_category_tree['contains_basic_groups'] and not group_category_tree['contains_project_groups']:
             return
         if group_category_id is not None:
@@ -1102,7 +1156,7 @@ def get_groups_form_data(
     return any_choice_enabled, all_choices
 
 
-@jinja_function()
+@JinjaFunction()
 def get_basic_group_name_prefixes(group_id: int) -> typing.List[str]:
     group_categories = get_basic_group_categories(group_id)
     return sorted([
@@ -1114,7 +1168,7 @@ def get_basic_group_name_prefixes(group_id: int) -> typing.List[str]:
     ])
 
 
-@jinja_function()
+@JinjaFunction()
 def get_project_group_name_prefixes(project_id: int) -> typing.List[str]:
     group_categories = get_project_group_categories(project_id)
     name_prefixes = [
@@ -1137,8 +1191,11 @@ def get_project_group_name_prefixes(project_id: int) -> typing.List[str]:
     return sorted(name_prefixes)
 
 
-@jinja_filter()
-def to_timeseries_data(data, schema):
+@JinjaFilter()
+def to_timeseries_data(
+        data: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Dict[str, typing.Any]:
     entries = list(sorted(
         (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
         for entry in data['data']
@@ -1193,15 +1250,17 @@ def to_timeseries_data(data, schema):
     }
 
 
-@jinja_filter()
-def to_timeseries_csv(rows):
+@JinjaFilter()
+def to_timeseries_csv(
+        rows: typing.List[typing.List[typing.Union[str, float]]]
+) -> str:
     rows = copy.deepcopy(rows)
     user_timezone = pytz.timezone(flask_login.current_user.timezone)
     if user_timezone != pytz.utc:
         # convert datetimes from UTC if necessary
         for row in rows:
             try:
-                parsed_datetime = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
+                parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
             except ValueError:
                 continue
             local_datetime = pytz.utc.localize(parsed_datetime)

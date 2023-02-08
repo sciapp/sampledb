@@ -22,10 +22,11 @@ from ...models import Authentication, UserType
 from ... import db
 
 from ..users_forms import InvitationForm, RegistrationForm
+from ...utils import FlaskResponseT
 
 
 @frontend.route('/users/invitation', methods=['GET', 'POST'])
-def invitation_route():
+def invitation_route() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated:
         return invitation()
     elif 'token' in flask.request.args:
@@ -34,7 +35,7 @@ def invitation_route():
         return flask.abort(403)
 
 
-def invitation():
+def invitation() -> FlaskResponseT:
     invitation_form = InvitationForm()
     if flask.request.method == "GET":
         #  GET (invitation dialog)
@@ -77,8 +78,11 @@ def invitation():
         return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)
 
 
-def registration():
+def registration() -> FlaskResponseT:
     token = flask.request.args.get('token')
+    if token is None:
+        flask.flash(_('Invalid invitation token. Please request a new invitation.'), 'error')
+        return flask.abort(403)
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
     token_data = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
     if token_data is None:

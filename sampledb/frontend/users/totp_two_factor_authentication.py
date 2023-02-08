@@ -18,15 +18,16 @@ from .authentication import complete_sign_in
 from ...logic import errors, authentication
 from ...logic.users import get_user
 from ..utils import generate_qrcode
+from ...utils import FlaskResponseT
 
 
-class TOTPForm(FlaskForm):
+class TOTPForm(FlaskForm):  # type: ignore[misc]
     code = StringField(validators=[InputRequired()])
 
 
 @frontend.route('/users/me/two_factor_authentication/totp/setup', methods=['GET', 'POST'])
-@flask_login.login_required
-def setup_totp_two_factor_authentication():
+@flask_login.login_required  # type: ignore[misc]
+def setup_totp_two_factor_authentication() -> FlaskResponseT:
     active_method = authentication.get_active_two_factor_authentication_method(flask_login.current_user.id)
     if active_method is not None:
         flask.flash(_('You cannot set up a new two factor authentication method while another is active.'), 'error')
@@ -61,7 +62,7 @@ def setup_totp_two_factor_authentication():
 
 
 @frontend.route('/users/me/two_factor_authentication/totp/confirm', methods=['GET', 'POST'])
-def confirm_totp_two_factor_authentication():
+def confirm_totp_two_factor_authentication() -> FlaskResponseT:
     confirm_data = flask.session.get('confirm_data')
     if confirm_data is None:
         flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
@@ -116,7 +117,7 @@ def confirm_totp_two_factor_authentication():
             method.id: method
             for method in all_methods
         }.get(confirm_data.get('method_id'))
-        if method.active:
+        if method is not None and method.active:
             method = None
     if method is None or method.id != confirm_data.get('method_id'):
         flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')

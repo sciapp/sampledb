@@ -3,6 +3,7 @@
 
 """
 import json
+import typing
 
 import flask
 import flask_login
@@ -16,7 +17,7 @@ from ...logic import user_log
 from ...logic.actions import get_action
 from ...logic.components import get_component_by_uuid
 from ...logic.errors import ObjectDoesNotExistError, ComponentDoesNotExistError
-from ...logic.object_permissions import Permissions, get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ...logic.object_permissions import get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ...logic.shares import get_shares_for_object, add_object_share, update_object_share
 from ...logic.users import get_users, get_users_for_component
 from ...logic.groups import get_group
@@ -25,11 +26,12 @@ from ...logic.projects import get_project
 from ...logic.components import get_component, get_components
 from .forms import CopyPermissionsForm, ObjectNewShareAccessForm, ObjectEditShareAccessForm
 from ..permission_forms import PermissionsForm, UserPermissionsForm, GroupPermissionsForm, ProjectPermissionsForm, handle_permission_forms, set_up_permissions_forms
-from ...utils import object_permissions_required
+from ...utils import object_permissions_required, FlaskResponseT
 from ..utils import get_user_if_exists, check_current_user_is_not_readonly, get_groups_form_data
+from ...models import Permissions, Object
 
 
-def on_unauthorized(object_id: int):
+def on_unauthorized(object_id: int) -> FlaskResponseT:
     permissions_by_user = get_object_permissions_for_users(object_id)
     has_grant_user = any(
         Permissions.GRANT in permissions
@@ -38,7 +40,7 @@ def on_unauthorized(object_id: int):
     return flask.render_template('objects/unauthorized.html', object_id=object_id, has_grant_user=has_grant_user), 403
 
 
-def get_object_if_current_user_has_read_permissions(object_id, component_uuid=None):
+def get_object_if_current_user_has_read_permissions(object_id: int, component_uuid: typing.Optional[str] = None) -> typing.Optional[Object]:
     user_id = flask_login.current_user.id
     if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
         try:
@@ -64,7 +66,7 @@ def get_object_if_current_user_has_read_permissions(object_id, component_uuid=No
         return object
 
 
-def get_fed_object_if_current_user_has_read_permissions(fed_object_id, component_uuid):
+def get_fed_object_if_current_user_has_read_permissions(fed_object_id: int, component_uuid: str) -> typing.Optional[Object]:
     user_id = flask_login.current_user.id
     component = get_component_by_uuid(component_uuid)
     try:
@@ -78,8 +80,8 @@ def get_fed_object_if_current_user_has_read_permissions(fed_object_id, component
 
 
 @frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])
-@flask_login.login_required
-def object_permissions_request(object_id):
+@flask_login.login_required  # type: ignore[misc]
+def object_permissions_request(object_id: int) -> FlaskResponseT:
     current_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     if Permissions.READ in current_permissions:
         flask.flash(_('You already have permissions to access this object.'), 'error')
@@ -91,7 +93,7 @@ def object_permissions_request(object_id):
 
 @frontend.route('/objects/<int:object_id>/permissions')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_permissions(object_id):
+def object_permissions(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
     components = get_components()
@@ -108,9 +110,9 @@ def object_permissions(object_id):
     anonymous_user_permissions = get_object_permissions_for_anonymous_users(object_id=object_id)
     component_policies = {share.component_id: share for share in get_shares_for_object(object_id)}
     policies = {share.component_id: share.policy for share in get_shares_for_object(object_id)}
-    suggested_user_id = flask.request.args.get('add_user_id', '')
+    suggested_user_id_str = flask.request.args.get('add_user_id', '')
     try:
-        suggested_user_id = int(suggested_user_id)
+        suggested_user_id = int(suggested_user_id_str)
     except ValueError:
         suggested_user_id = None
     if Permissions.GRANT in get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id):
@@ -163,7 +165,8 @@ def object_permissions(object_id):
         edit_component_policy_form.files.data = True
         edit_component_policy_form.comments.data = True
         edit_component_policy_form.object_location_assignments.data = True
-        copy_permissions_form = CopyPermissionsForm()
+        copy_permissions_form: typing.Optional[CopyPermissionsForm] = CopyPermissionsForm()
+        assert copy_permissions_form is not None
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
@@ -189,7 +192,7 @@ def object_permissions(object_id):
 
         users = []
         possible_new_components = None
-        component_users = []
+        component_users = {}
         show_groups_form = False
         groups_treepicker_info = None
         show_projects_form = False
@@ -233,7 +236,7 @@ def object_permissions(object_id):
 
 @frontend.route('/objects/<int:object_id>/permissions', methods=['POST'])
 @object_permissions_required(Permissions.GRANT)
-def update_object_permissions(object_id):
+def update_object_permissions(object_id: int) -> FlaskResponseT:
     permissions_form = PermissionsForm()
     add_user_permissions_form = UserPermissionsForm()
     add_group_permissions_form = GroupPermissionsForm()
@@ -276,27 +279,27 @@ def update_object_permissions(object_id):
         policy_permissions_are_valid = False
         for attr_name, value in flask.request.form.items():
             if attr_name.startswith('permissions_add_policy_user_'):
-                user_id = attr_name[len('permissions_add_policy_user_'):]
+                user_id_str = attr_name[len('permissions_add_policy_user_'):]
                 try:
-                    user_id = int(user_id)
+                    user_id = int(user_id_str)
                 except ValueError:
                     break
                 if value not in allowed_permissions:
                     break
                 policy['permissions']['users'][user_id] = value
             if attr_name.startswith('permissions_add_policy_group_'):
-                basic_group_id = attr_name[len('permissions_add_policy_group_'):]
+                basic_group_id_str = attr_name[len('permissions_add_policy_group_'):]
                 try:
-                    basic_group_id = int(basic_group_id)
+                    basic_group_id = int(basic_group_id_str)
                 except ValueError:
                     break
                 if value not in allowed_permissions:
                     break
                 policy['permissions']['groups'][basic_group_id] = value
             if attr_name.startswith('permissions_add_policy_project_'):
-                project_group_id = attr_name[len('permissions_add_policy_project_'):]
+                project_group_id_str = attr_name[len('permissions_add_policy_project_'):]
                 try:
-                    project_group_id = int(project_group_id)
+                    project_group_id = int(project_group_id_str)
                 except ValueError:
                     break
                 if value not in allowed_permissions:
@@ -335,27 +338,27 @@ def update_object_permissions(object_id):
         policy_permissions_are_valid = False
         for attr_name, value in flask.request.form.items():
             if attr_name.startswith('permissions_edit_policy_user_'):
-                user_id = attr_name[len('permissions_edit_policy_user_'):]
+                user_id_str = attr_name[len('permissions_edit_policy_user_'):]
                 try:
-                    user_id = int(user_id)
+                    user_id = int(user_id_str)
                 except ValueError:
                     break
                 if value not in allowed_permissions:
                     break
                 policy['permissions']['users'][user_id] = value
             if attr_name.startswith('permissions_edit_policy_group_'):
-                basic_group_id = attr_name[len('permissions_edit_policy_group_'):]
+                basic_group_id_str = attr_name[len('permissions_edit_policy_group_'):]
                 try:
-                    basic_group_id = int(basic_group_id)
+                    basic_group_id = int(basic_group_id_str)
                 except ValueError:
                     break
                 if value not in allowed_permissions:
                     break
                 policy['permissions']['groups'][basic_group_id] = value
             if attr_name.startswith('permissions_edit_policy_project_'):
-                project_group_id = attr_name[len('permissions_edit_policy_project_'):]
+                project_group_id_str = attr_name[len('permissions_edit_policy_project_'):]
                 try:
-                    project_group_id = int(project_group_id)
+                    project_group_id = int(project_group_id_str)
                 except ValueError:
                     break
                 if value not in allowed_permissions:

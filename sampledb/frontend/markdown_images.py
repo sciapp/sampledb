@@ -15,8 +15,7 @@ import flask_login
 from . import frontend
 from ..logic import markdown_images, errors
 from ..logic.components import get_component_by_uuid
-
-_temporary_markdown_images = {}
+from ..utils import FlaskResponseT
 
 IMAGE_FORMATS = {
     '.png': 'image/png',
@@ -26,8 +25,8 @@ IMAGE_FORMATS = {
 
 
 @frontend.route('/markdown_images/<file_name>')
-@flask_login.login_required
-def markdown_image(file_name):
+@flask_login.login_required  # type: ignore[misc]
+def markdown_image(file_name: str) -> FlaskResponseT:
     image_data = markdown_images.get_markdown_image(file_name, flask_login.current_user.id)
     if image_data is None:
         return flask.abort(404)
@@ -39,8 +38,8 @@ def markdown_image(file_name):
 
 
 @frontend.route('/markdown_images/<component>/<file_name>')
-@flask_login.login_required
-def markdown_image_component(component, file_name):
+@flask_login.login_required  # type: ignore[misc]
+def markdown_image_component(component: str, file_name: str) -> FlaskResponseT:
     try:
         component_id = int(component)
     except ValueError:
@@ -67,8 +66,8 @@ def markdown_image_component(component, file_name):
 
 
 @frontend.route('/markdown_images/', methods=['POST'])
-@flask_login.login_required
-def upload_markdown_image():
+@flask_login.login_required  # type: ignore[misc]
+def upload_markdown_image() -> FlaskResponseT:
     image_data_url = flask.request.get_data()
     for image_file_extension, image_content_type in IMAGE_FORMATS.items():
         image_data_url_prefix = b'data:' + image_content_type.encode('ascii') + b';base64,'

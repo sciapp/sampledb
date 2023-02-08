@@ -9,20 +9,21 @@ import flask_login
 from .. import frontend
 
 from ...logic.api_log import get_api_log_entries
-from ...logic.authentication import Authentication, AuthenticationType
+from ...models import Authentication, AuthenticationType
+from ...utils import FlaskResponseT
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 @frontend.route('/users/me/api_token_id/<int:api_token_id>/log/')
-@flask_login.login_required
-def current_user_api_log(api_token_id):
+@flask_login.login_required  # type: ignore[misc]
+def current_user_api_log(api_token_id: int) -> FlaskResponseT:
     return flask.redirect(flask.url_for('.api_log', user_id=flask_login.current_user.id, api_token_id=api_token_id))
 
 
 @frontend.route('/users/<int:user_id>/api_token_id/<int:api_token_id>/log/')
-@flask_login.login_required
-def api_log(user_id, api_token_id):
+@flask_login.login_required  # type: ignore[misc]
+def api_log(user_id: int, api_token_id: int) -> FlaskResponseT:
     if user_id != flask_login.current_user.id and not flask_login.current_user.is_admin:
         return flask.abort(404)
     api_token = Authentication.query.filter_by(

@@ -2,18 +2,20 @@
 """
 
 """
+import typing
 
 import flask
 
 from . import frontend
 from ..logic.errors import UserIsReadonlyError, DataverseNotReachableError
 from ..api.server.errors import is_api_error, handle_api_error
+from ..utils import FlaskResponseT
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
 @frontend.app_errorhandler(400)
-def bad_request(error):
+def bad_request(error: typing.Any) -> FlaskResponseT:
     if is_api_error():
         return handle_api_error(error)
     try:
@@ -23,14 +25,14 @@ def bad_request(error):
 
 
 @frontend.app_errorhandler(401)
-def unauthorized(error):
+def unauthorized(error: typing.Any) -> FlaskResponseT:
     if is_api_error():
         return handle_api_error(error)
     raise error
 
 
 @frontend.app_errorhandler(403)
-def forbidden(error):
+def forbidden(error: typing.Any) -> FlaskResponseT:
     if is_api_error():
         return handle_api_error(error)
     try:
@@ -40,7 +42,7 @@ def forbidden(error):
 
 
 @frontend.app_errorhandler(404)
-def file_not_found(error):
+def file_not_found(error: typing.Any) -> FlaskResponseT:
     if is_api_error():
         return handle_api_error(error)
     try:
@@ -50,7 +52,7 @@ def file_not_found(error):
 
 
 @frontend.app_errorhandler(500)
-def internal_server_error(error):
+def internal_server_error(error: typing.Any) -> FlaskResponseT:
     if is_api_error():
         return handle_api_error(error)
     try:
@@ -60,10 +62,10 @@ def internal_server_error(error):
 
 
 @frontend.errorhandler(UserIsReadonlyError)
-def user_is_readonly_error(error):
+def user_is_readonly_error(error: typing.Any) -> FlaskResponseT:
     return flask.render_template('errors/user_is_readonly.html'), 403
 
 
 @frontend.errorhandler(DataverseNotReachableError)
-def dataverse_not_reachable_error(error):
+def dataverse_not_reachable_error(error: typing.Any) -> FlaskResponseT:
     return flask.render_template('errors/dataverse_not_reachable.html'), 500

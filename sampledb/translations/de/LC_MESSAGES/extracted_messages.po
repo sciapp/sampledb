@@ -102,16 +102,16 @@ msgstr "Bitte geben Sie einen Namen mit 1 bis 100 Zeichen ein."
 msgid "The action was updated successfully."
 msgstr "Die Aktion wurde erfolgreich aktualisiert."
 
-msgid "You need GRANT permissions to edit the permissions for this action."
-msgstr ""
-"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
-"Aktion zu bearbeiten."
-
 msgid "Successfully updated action permissions."
 msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
 
 msgid "Failed to update action permissions."
 msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
+
+msgid "You need GRANT permissions to edit the permissions for this action."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
+"Aktion zu bearbeiten."
 
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
@@ -310,16 +310,16 @@ msgstr "Ihnen fehlen die Berechtigungen um diesen Ort zu bearbeiten."
 msgid "You do not have permissions to view this location."
 msgstr "Ihnen fehlen die Berechtigungen um diesen Ort anzuzeigen."
 
-msgid "You need GRANT permissions to edit the permissions for this location."
-msgstr ""
-"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
-"Orts zu bearbeiten."
-
 msgid "Successfully updated location permissions."
 msgstr "Die Ortsberechtigungen wurden erfolgreich aktualisiert."
 
 msgid "Failed to update location permissions."
 msgstr "Das Bearbeiten der Ortsberechtigungen ist fehlgeschlagen."
+
+msgid "You need GRANT permissions to edit the permissions for this location."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Orts zu bearbeiten."
 
 msgid "Only administrators can create locations."
 msgstr "Nur Administratoren können Orte erstellen."
@@ -1223,9 +1223,6 @@ msgid ""
 "Please enter a valid DOI for the publication you want to link this object"
 " to."
 msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
-
-msgid "This object does not exist."
-msgstr "Dieses Objekt existiert nicht."
 
 msgid "You do not have the required permissions to use this object as a template."
 msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."

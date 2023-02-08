@@ -1,3 +1,6 @@
+import typing
+
+import wtforms
 from wtforms.validators import ValidationError
 
 import flask
@@ -7,8 +10,8 @@ from ..models import Permissions
 from ..logic.object_permissions import get_user_object_permissions
 
 
-def ObjectIdValidator(required_perm: Permissions, allow_self: bool = False):
-    def validate(form, field):
+def ObjectIdValidator(required_perm: Permissions, allow_self: bool = False) -> typing.Callable[[wtforms.Form, wtforms.Field], None]:
+    def validate(form: wtforms.Form, field: wtforms.Field) -> None:
         user_id = flask_login.current_user.id
         object_id = field.data
 
@@ -17,7 +20,7 @@ def ObjectIdValidator(required_perm: Permissions, allow_self: bool = False):
         except ValueError:
             raise ValidationError("Object_id is not an int.")
 
-        if "object_id" in flask.request.view_args and not allow_self:
+        if flask.request.view_args and "object_id" in flask.request.view_args and not allow_self:
             if object_id == flask.request.view_args["object_id"]:
                 raise ValidationError("You can not select the same object.")
 
@@ -28,8 +31,8 @@ def ObjectIdValidator(required_perm: Permissions, allow_self: bool = False):
     return validate
 
 
-def MultipleObjectIdValidator(required_perm: Permissions, allow_self: bool = False):
-    def validate(form, field):
+def MultipleObjectIdValidator(required_perm: Permissions, allow_self: bool = False) -> typing.Callable[[wtforms.Form, wtforms.Field], None]:
+    def validate(form: wtforms.Form, field: wtforms.Field) -> None:
         user_id = flask_login.current_user.id
         object_ids = field.data
         for object_id in object_ids:
@@ -38,7 +41,7 @@ def MultipleObjectIdValidator(required_perm: Permissions, allow_self: bool = Fal
             except ValueError:
                 raise ValidationError("Object_id is not an int.")
 
-            if "object_id" in flask.request.view_args and not allow_self:
+            if flask.request.view_args and "object_id" in flask.request.view_args and not allow_self:
                 if object_id == flask.request.view_args["object_id"]:
                     raise ValidationError("You can not select the same object.")
 

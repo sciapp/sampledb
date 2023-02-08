@@ -3,6 +3,7 @@
 
 """
 import json
+import typing
 
 import flask
 import flask_login
@@ -14,12 +15,14 @@ from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupFor
 from ...logic.security_tokens import verify_token
 from ...logic.languages import get_languages, Language, get_language_by_lang_code, get_language
 from ..utils import check_current_user_is_not_readonly
+from ...utils import FlaskResponseT
 from ...logic.utils import get_translated_text
+from ...models import NotificationType
 
 
 @frontend.route('/groups/', methods=['GET', 'POST'])
-@flask_login.login_required
-def groups():
+@flask_login.login_required  # type: ignore[misc]
+def groups() -> FlaskResponseT:
     user_id = None
     allowed_language_ids = [
         language.id
@@ -126,13 +129,12 @@ def groups():
 
 
 @frontend.route('/groups/<int:group_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def group(group_id):
-    translations = []
+@flask_login.login_required  # type: ignore[misc]
+def group(group_id: int) -> FlaskResponseT:
     name_language_ids = []
     description_language_ids = []
-    if 'token' in flask.request.args:
-        token = flask.request.args.get('token')
+    token = flask.request.args.get('token')
+    if token:
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
         token_data = verify_token(token, salt='invite_to_group', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
         if token_data is None:
@@ -159,7 +161,7 @@ def group(group_id):
             return flask.abort(403)
 
         for notification in logic.notifications.get_notifications(user_id, unread_only=True):
-            if notification.type == logic.notifications.NotificationType.INVITED_TO_GROUP:
+            if notification.type == NotificationType.INVITED_TO_GROUP:
                 if notification.data['group_id'] == group_id:
                     logic.notifications.mark_notification_as_read(notification.id)
 
@@ -174,7 +176,7 @@ def group(group_id):
     except logic.errors.GroupDoesNotExistError:
         flask.flash(_('This basic group does not exist.'), 'error')
         return flask.abort(404)
-    group_member_ids.sort(key=lambda user_id: logic.users.get_user(user_id).name.lower())
+    group_member_ids.sort(key=lambda user_id: (logic.users.get_user(user_id).name or '').lower())
     user_is_member = flask_login.current_user.id in group_member_ids
     user_can_leave = user_is_member
     # admins are treated as members for the sake of permissions
@@ -188,6 +190,13 @@ def group(group_id):
         for language in get_languages(only_enabled_for_input=True)
     ]
 
+    class GroupTranslation(typing.TypedDict):
+        language_id: int
+        lang_name: str
+        name: str
+        description: str
+
+    translations: typing.List[GroupTranslation] = []
     if user_is_member:
         show_objects_link = True
         if user_can_leave:
@@ -207,36 +216,37 @@ def group(group_id):
         else:
             delete_group_form = None
         remove_group_member_form = RemoveGroupMemberForm()
-        for name in group.name.items():
-            lang_id = get_language_by_lang_code(name[0]).id
-            name_language_ids.append(lang_id)
-            item = {
-                'language_id': lang_id,
-                'lang_name': get_translated_text(get_language(lang_id).names),
-                'name': name[1],
-                'description': ''
-            }
-            translations.append(item)
 
-        for description in group.description.items():
-            if description[0] == '':
+        for lang_code, name in group.name.items():
+            lang_id = get_language_by_lang_code(lang_code).id
+            name_language_ids.append(lang_id)
+            translation = GroupTranslation(
+                language_id=lang_id,
+                lang_name=get_translated_text(get_language(lang_id).names),
+                name=name,
+                description=''
+            )
+            translations.append(translation)
+
+        for lang_code, description in group.description.items():
+            if lang_code == '':
                 continue
             found = False
-            lang_id = get_language_by_lang_code(description[0]).id
+            lang_id = get_language_by_lang_code(lang_code).id
             description_language_ids.append(lang_id)
             for translation in translations:
                 if lang_id == translation['language_id']:
-                    translation['description'] = description[1]
+                    translation['description'] = description
                     found = True
                     break
             if not found:
-                item = {
-                    'language_id': lang_id,
-                    'lang_name': get_translated_text(get_language(lang_id).names),
-                    'name': '',
-                    'description': description[1]
-                }
-                translations.append(item)
+                translation = GroupTranslation(
+                    language_id=lang_id,
+                    lang_name=get_translated_text(get_language(lang_id).names),
+                    name='',
+                    description=description[1]
+                )
+                translations.append(translation)
 
         if 'edit' in flask.request.form:
             check_current_user_is_not_readonly()
@@ -305,7 +315,7 @@ def group(group_id):
                 else:
                     flask.flash(_('The user was successfully invited to the basic group.'), 'success')
                     return flask.redirect(flask.url_for('.group', group_id=group_id))
-        elif 'leave' in flask.request.form:
+        elif 'leave' in flask.request.form and leave_group_form is not None:
             if user_can_leave and leave_group_form.validate_on_submit():
                 try:
                     logic.groups.remove_user_from_group(group_id, flask_login.current_user.id)

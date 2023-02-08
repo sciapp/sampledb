@@ -3,6 +3,7 @@
 
 """
 import json
+import typing
 
 import flask
 import flask_login
@@ -10,21 +11,22 @@ from flask_babel import _
 
 from . import frontend
 from .. import logic
-from ..logic.object_permissions import Permissions
+from ..models import Permissions, NotificationType
 from ..logic.security_tokens import verify_token
 from ..logic.languages import get_languages, get_language, get_language_by_lang_code
 from ..models.languages import Language
 from .projects_forms import CreateProjectForm, EditProjectForm, LeaveProjectForm, InviteUserToProjectForm, InviteGroupToProjectForm, AddSubprojectForm, RemoveSubprojectForm, DeleteProjectForm, RemoveProjectMemberForm, RemoveProjectGroupForm, ObjectLinkForm
 from .permission_forms import PermissionsForm
 from .utils import check_current_user_is_not_readonly
+from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def project(project_id):
+@flask_login.login_required  # type: ignore[misc]
+def project(project_id: int) -> FlaskResponseT:
     if 'token' in flask.request.args:
-        token = flask.request.args.get('token')
+        token = flask.request.args.get('token', '')
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
         token_data = verify_token(token, salt='invite_to_project', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
         if token_data is None:
@@ -57,7 +59,7 @@ def project(project_id):
         if not flask.current_app.config['DISABLE_SUBPROJECTS']:
             other_project_ids = token_data.get('other_project_ids', [])
             for notification in logic.notifications.get_notifications(user_id, unread_only=True):
-                if notification.type == logic.notifications.NotificationType.INVITED_TO_PROJECT:
+                if notification.type == NotificationType.INVITED_TO_PROJECT:
                     if notification.data['project_id'] == project_id:
                         logic.notifications.mark_notification_as_read(notification.id)
         else:
@@ -85,7 +87,14 @@ def project(project_id):
     if flask_login.current_user.has_admin_permissions:
         user_permissions = Permissions.GRANT
     show_objects_link = Permissions.READ in user_permissions
-    translations = []
+
+    class ProjectTranslation(typing.TypedDict):
+        language_id: typing.Union[int, str]
+        lang_name: str
+        name: str
+        description: str
+
+    translations: typing.List[ProjectTranslation] = []
     name_language_ids = []
     description_language_ids = []
     if Permissions.WRITE in user_permissions:
@@ -96,34 +105,34 @@ def project(project_id):
             (str(category.id), category)
             for category in group_categories
         ]
-        for name in project.name.items():
-            lang_id = get_language_by_lang_code(name[0]).id
+        for lang_code, name in project.name.items():
+            lang_id = get_language_by_lang_code(lang_code).id
             name_language_ids.append(lang_id)
-            item = {
+            translation: ProjectTranslation = {
                 'language_id': lang_id,
                 'lang_name': get_translated_text(get_language(lang_id).names),
-                'name': name[1],
+                'name': name,
                 'description': ''
             }
-            translations.append(item)
+            translations.append(translation)
 
-        for description in project.description.items():
-            if description[0] == '':
+        for lang_code, description in project.description.items():
+            if lang_code == '':
                 continue
-            lang_id = get_language_by_lang_code(description[0]).id
+            lang_id = get_language_by_lang_code(lang_code).id
             description_language_ids.append(lang_id)
             for translation in translations:
                 if lang_id == translation['language_id']:
-                    translation['description'] = description[1]
+                    translation['description'] = description
                     break
             else:
-                item = {
+                translation = {
                     'language_id': lang_id,
                     'lang_name': get_translated_text(get_language(lang_id).names),
                     'name': '',
-                    'description': description[1]
+                    'description': description
                 }
-                translations.append(item)
+                translations.append(translation)
     else:
         edit_project_form = None
         group_categories = None
@@ -134,7 +143,7 @@ def project(project_id):
     project_member_group_ids_and_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id)
 
     project_member_user_ids = list(project_member_user_ids_and_permissions.keys())
-    project_member_user_ids.sort(key=lambda user_id: logic.users.get_user(user_id).name.lower())
+    project_member_user_ids.sort(key=lambda user_id: (logic.users.get_user(user_id).name or '').lower())
 
     project_member_group_ids = list(project_member_group_ids_and_permissions.keys())
     project_member_group_ids.sort(key=lambda group_id: get_translated_text(logic.groups.get_group(group_id).name).lower())
@@ -147,7 +156,7 @@ def project(project_id):
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
     else:
         invitable_user_list = []
-        parent_projects_with_add_permissions = []
+        parent_projects_with_add_permissions = set()
     if invitable_user_list:
         other_project_ids_data = []
         for parent_project_id in parent_projects_with_add_permissions:
@@ -205,7 +214,7 @@ def project(project_id):
         )
 
     object = logic.projects.get_object_linked_to_project(project_id)
-    if 'leave' in flask.request.form and Permissions.READ in user_permissions:
+    if 'leave' in flask.request.form and Permissions.READ in user_permissions and leave_project_form is not None:
         if leave_project_form.validate_on_submit():
             try:
                 logic.projects.remove_user_from_project(project_id=project_id, user_id=user_id)
@@ -234,7 +243,7 @@ def project(project_id):
                             project_deleted=True
                         )
                 return flask.redirect(flask.url_for('.projects'))
-    if 'delete' in flask.request.form and Permissions.GRANT in user_permissions:
+    if 'delete' in flask.request.form and Permissions.GRANT in user_permissions and delete_project_form is not None:
         if delete_project_form.validate_on_submit():
             check_current_user_is_not_readonly()
             # create object log entry if deleting a project linked to an object
@@ -253,7 +262,7 @@ def project(project_id):
             else:
                 flask.flash(_('You have successfully deleted the project group.'), 'success')
                 return flask.redirect(flask.url_for('.projects'))
-    if 'remove_member' in flask.request.form and Permissions.GRANT in user_permissions:
+    if 'remove_member' in flask.request.form and Permissions.GRANT in user_permissions and remove_project_member_form is not None:
         if remove_project_member_form.validate_on_submit():
             check_current_user_is_not_readonly()
             member_id_str = flask.request.form['remove_member']
@@ -282,7 +291,7 @@ def project(project_id):
             else:
                 flask.flash(_('You have successfully removed this user from the project group.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    if 'remove_group' in flask.request.form and Permissions.GRANT in user_permissions:
+    if 'remove_group' in flask.request.form and Permissions.GRANT in user_permissions and remove_project_group_form is not None:
         if remove_project_group_form.validate_on_submit():
             check_current_user_is_not_readonly()
             group_id_str = flask.request.form['remove_group']
@@ -308,7 +317,7 @@ def project(project_id):
             else:
                 flask.flash(_('You have successfully removed this basic group from the project group.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    if 'edit' in flask.request.form and Permissions.WRITE in user_permissions:
+    if 'edit' in flask.request.form and Permissions.WRITE in user_permissions and edit_project_form is not None:
         show_edit_form = True
         if edit_project_form.validate_on_submit():
             check_current_user_is_not_readonly()
@@ -361,7 +370,7 @@ def project(project_id):
             else:
                 flask.flash(_('Project group information updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    if 'add_user' in flask.request.form and Permissions.GRANT in user_permissions:
+    if 'add_user' in flask.request.form and Permissions.GRANT in user_permissions and invite_user_form is not None:
         if invite_user_form.validate_on_submit():
             check_current_user_is_not_readonly()
             if not any(user.id == invite_user_form.user_id.data for user in invitable_user_list):
@@ -390,7 +399,7 @@ def project(project_id):
             else:
                 flask.flash(_('The user was successfully invited to the project group.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))
-    if 'add_group' in flask.request.form and Permissions.GRANT in user_permissions:
+    if 'add_group' in flask.request.form and Permissions.GRANT in user_permissions and invite_group_form is not None:
         if invite_group_form.validate_on_submit():
             check_current_user_is_not_readonly()
             if not any(group.id == invite_group_form.group_id.data for group in invitable_group_list):
@@ -451,7 +460,7 @@ def project(project_id):
                                 linkable_objects.append((object_info.object_id, get_translated_text(object_info.name_json)))
     if object is not None:
         object_permissions = logic.object_permissions.get_user_object_permissions(object.object_id, flask_login.current_user.id)
-        if Permissions.READ in object_permissions:
+        if Permissions.READ in object_permissions and object.action_id is not None:
             object_action = logic.actions.get_action(object.action_id)
         else:
             object = None
@@ -506,8 +515,8 @@ def project(project_id):
 
 
 @frontend.route('/projects/', methods=['GET', 'POST'])
-@flask_login.login_required
-def projects():
+@flask_login.login_required  # type: ignore[misc]
+def projects() -> FlaskResponseT:
     user_id = None
     if 'user_id' in flask.request.args:
         try:
@@ -608,7 +617,7 @@ def projects():
         "projects/projects.html",
         create_project_form=create_project_form,
         show_create_form=show_create_form,
-        Permissions=logic.projects.Permissions,
+        Permissions=Permissions,
         projects_by_id=projects_by_id,
         project_permissions_by_id=project_permissions_by_id,
         languages=get_languages(only_enabled_for_input=True),
@@ -623,8 +632,8 @@ def projects():
 
 
 @frontend.route('/projects/<int:project_id>/permissions')
-@flask_login.login_required
-def project_permissions(project_id):
+@flask_login.login_required  # type: ignore[misc]
+def project_permissions(project_id: int) -> FlaskResponseT:
     try:
         project = logic.projects.get_project(project_id)
     except logic.errors.ProjectDoesNotExistError:
@@ -665,8 +674,8 @@ def project_permissions(project_id):
 
 
 @frontend.route('/projects/<int:project_id>/permissions', methods=['POST'])
-@flask_login.login_required
-def update_project_permissions(project_id):
+@flask_login.login_required  # type: ignore[misc]
+def update_project_permissions(project_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     try:
         if Permissions.GRANT not in logic.projects.get_user_project_permissions(project_id, flask_login.current_user.id, include_groups=True) and not flask_login.current_user.has_admin_permissions:
@@ -680,7 +689,7 @@ def update_project_permissions(project_id):
     permissions_form.project_permissions.max_entries = 0
     if 'edit_permissions' in flask.request.form and permissions_form.validate_on_submit():
         # First handle GRANT updates, then others (to prevent temporarily not having a GRANT user)
-        for user_permissions_data in sorted(permissions_form.user_permissions.data, key=lambda upd: upd['permissions'] != 'grant'):
+        for user_permissions_data in sorted(permissions_form.user_permissions.data, key=lambda upd: typing.cast(bool, upd['permissions'] != 'grant')):
             user_id = user_permissions_data['user_id']
             try:
                 logic.users.check_user_exists(user_id)
@@ -710,8 +719,8 @@ def update_project_permissions(project_id):
 
 
 @frontend.route('/projects/<int:project_id>/object_link', methods=['POST'])
-@flask_login.login_required
-def link_object(project_id):
+@flask_login.login_required  # type: ignore[misc]
+def link_object(project_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object_link_form = ObjectLinkForm()
     if not object_link_form.validate_on_submit():
@@ -740,8 +749,8 @@ def link_object(project_id):
 
 
 @frontend.route('/projects/<int:project_id>/object_unlink', methods=['POST'])
-@flask_login.login_required
-def unlink_object(project_id):
+@flask_login.login_required  # type: ignore[misc]
+def unlink_object(project_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object_link_form = ObjectLinkForm()
     if not object_link_form.validate_on_submit():

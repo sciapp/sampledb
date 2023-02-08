@@ -4,6 +4,8 @@ Module for generation sample/object labels as PDF files.
 import io
 import base64
 import os
+import typing
+
 from PIL import Image
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.pagesizes import A4, LETTER
@@ -25,7 +27,7 @@ HORIZONTAL_LABEL_MARGIN = 10
 VERTICAL_LABEL_MARGIN = 10
 
 
-def _generate_ghs_image_uris():
+def _generate_ghs_image_uris() -> typing.List[str]:
     ghs_image_uris = []
     GHS_IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'sampledb', 'img')
     for i in range(0, 10):
@@ -43,7 +45,16 @@ def _generate_ghs_image_uris():
 GHS_IMAGE_URIS = _generate_ghs_image_uris()
 
 
-def _draw_centered_wrapped_text(canvas, text, left_offset, width, top_cursor, font_name, font_size, line_height):
+def _draw_centered_wrapped_text(
+        canvas: Canvas,
+        text: str,
+        left_offset: float,
+        width: float,
+        top_cursor: float,
+        font_name: str,
+        font_size: float,
+        line_height: float
+) -> float:
     lines = []
     while text:
         text = text.lstrip()
@@ -64,11 +75,26 @@ def _draw_centered_wrapped_text(canvas, text, left_offset, width, top_cursor, fo
     return top_cursor
 
 
-def _draw_label(canvas, sample_name, sample_creator, sample_creation_date, sample_id, ghs_classes, qrcode_uri, left_offset, top_offset, width, minimum_height, qrcode_width, ghs_classes_side_by_side=False, centered=True):
+def _draw_label(
+        canvas: Canvas,
+        sample_name: str,
+        sample_creator: str,
+        sample_creation_date: str,
+        sample_id: int,
+        ghs_classes: typing.List[int],
+        qrcode_uri: str,
+        left_offset: float,
+        top_offset: float,
+        width: float,
+        minimum_height: float,
+        qrcode_width: float,
+        ghs_classes_side_by_side: bool = False,
+        centered: bool = True
+) -> float:
     font_name = "Helvetica"
     font_size = 8
     right_offset = left_offset + width
-    top_cursor = top_offset - 3 * mm
+    top_cursor: float = top_offset - 3 * mm
 
     top_cursor = _draw_centered_wrapped_text(canvas, sample_name, left_offset + 0.5 * mm, width - 1 * mm, top_cursor, font_name + '-Bold', font_size, 1.2)
     canvas.line(left_offset, top_cursor + font_size / 2 * 1.2, right_offset, top_cursor + font_size / 2 * 1.2)
@@ -145,7 +171,20 @@ def _draw_label(canvas, sample_name, sample_creator, sample_creation_date, sampl
     return top_cursor
 
 
-def _draw_long_label(canvas: Canvas, sample_name, sample_creator, sample_creation_date, sample_id, ghs_classes, qrcode_uri, left_offset, bottom_offset, minimum_width=0, include_qrcode=False, qrcode_size=15 * mm):
+def _draw_long_label(
+        canvas: Canvas,
+        sample_name: str,
+        sample_creator: str,
+        sample_creation_date: str,
+        sample_id: int,
+        ghs_classes: typing.List[int],
+        qrcode_uri: str,
+        left_offset: float,
+        bottom_offset: float,
+        minimum_width: float = 0,
+        include_qrcode: bool = False,
+        qrcode_size: float = 15 * mm
+) -> float:
     font_name = "Helvetica"
     font_size = 8
     canvas.setFont(font_name, font_size)
@@ -197,11 +236,23 @@ def _draw_long_label(canvas: Canvas, sample_name, sample_creator, sample_creatio
 
 
 def create_labels(
-        object_id, object_name, object_url, creation_user, creation_date, ghs_classes, paper_format=DEFAULT_PAPER_FORMAT,
-        create_mixed_labels=True, create_long_labels=False, include_qrcode_in_long_labels=False,
-        label_width=18, label_minimum_height=0, label_minimum_width=0, qrcode_width=18, ghs_classes_side_by_side=False,
-        centered=True
-):
+        object_id: int,
+        object_name: str,
+        object_url: str,
+        creation_user: str,
+        creation_date: str,
+        ghs_classes: typing.List[int],
+        paper_format: str = DEFAULT_PAPER_FORMAT,
+        create_mixed_labels: bool = True,
+        create_long_labels: bool = False,
+        include_qrcode_in_long_labels: bool = False,
+        label_width: float = 18,
+        label_minimum_height: float = 0,
+        label_minimum_width: float = 0,
+        qrcode_width: float = 18,
+        ghs_classes_side_by_side: bool = False,
+        centered: bool = True
+) -> bytes:
     object_specification = {
         object_id: {
             "object_name": object_name,
@@ -227,9 +278,21 @@ def create_labels(
     )
 
 
-def create_multiple_labels(object_specifications, quantity=1, label_width=18, min_label_width=0, min_label_height=0, qr_code_width=18,
-                           paper_format=DEFAULT_PAPER_FORMAT, create_mixed_labels=False, create_long_labels=False,
-                           include_qrcode_in_long_labels=False, ghs_classes_side_by_side=False, centered=True, fill_single_page=False):
+def create_multiple_labels(
+        object_specifications: typing.Dict[int, typing.Dict[str, typing.Any]],
+        quantity: int = 1,
+        label_width: float = 18,
+        min_label_width: float = 0,
+        min_label_height: float = 0,
+        qr_code_width: float = 18,
+        paper_format: str = DEFAULT_PAPER_FORMAT,
+        create_mixed_labels: bool = False,
+        create_long_labels: bool = False,
+        include_qrcode_in_long_labels: bool = False,
+        ghs_classes_side_by_side: bool = False,
+        centered: bool = True,
+        fill_single_page: bool = False
+) -> bytes:
     page_size = PAGE_SIZES.get(paper_format, PAGE_SIZES[DEFAULT_PAPER_FORMAT])
     page_width, page_height = page_size
     pdf_stream = io.BytesIO()
@@ -270,6 +333,7 @@ def create_multiple_labels(object_specifications, quantity=1, label_width=18, mi
             image.save(image_stream, format='png')
             image_stream.seek(0)
             qr_code_uri = 'data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
+        assert object_id is not None
 
         ghs_classes = [
             ghs_class if 0 < ghs_class < 10 else 0

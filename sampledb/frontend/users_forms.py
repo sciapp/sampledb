@@ -10,25 +10,25 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, Integ
 from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired, ValidationError
 
 
-class SigninForm(FlaskForm):
+class SigninForm(FlaskForm):  # type: ignore[misc]
     username = StringField(validators=[InputRequired()])
     password = PasswordField(validators=[InputRequired()])
     remember_me = BooleanField()
 
 
-class SignoutForm(FlaskForm):
+class SignoutForm(FlaskForm):  # type: ignore[misc]
     pass
 
 
-class InvitationForm(FlaskForm):
+class InvitationForm(FlaskForm):  # type: ignore[misc]
     email = StringField(validators=[InputRequired()])
 
 
-class RequestPasswordResetForm(FlaskForm):
+class RequestPasswordResetForm(FlaskForm):  # type: ignore[misc]
     email = StringField(validators=[InputRequired()])
 
 
-class RegistrationForm(FlaskForm):
+class RegistrationForm(FlaskForm):  # type: ignore[misc]
     email = StringField('Contact Email', validators=[
         InputRequired(message=_("Please enter your contact email.")),
         Email(message=_("Please enter your contact email."))
@@ -42,14 +42,14 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField('Confirm password', validators=[InputRequired()])
     submit = SubmitField('Register')
 
-    def validate_name(self, field):
+    def validate_name(self, field: StringField) -> None:
         if flask.current_app.config['ENFORCE_SPLIT_NAMES']:
             name = field.data
             if ', ' not in name[1:-1]:
                 raise ValidationError(_("Please enter your name as: surname, given names."))
 
 
-class PasswordForm(FlaskForm):
+class PasswordForm(FlaskForm):  # type: ignore[misc]
     password = PasswordField('New Password', validators=[
         InputRequired(),
         Length(min=3)
@@ -57,7 +57,7 @@ class PasswordForm(FlaskForm):
     submit = SubmitField('Change Password')
 
 
-class AuthenticationPasswordForm(FlaskForm):
+class AuthenticationPasswordForm(FlaskForm):  # type: ignore[misc]
     id = IntegerField('Authentication_method_id', validators=[DataRequired()])
     password = PasswordField('New Password', validators=[
         InputRequired(),

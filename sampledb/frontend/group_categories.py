@@ -11,16 +11,18 @@ from flask_babel import _
 
 from . import frontend
 from .. import logic
-from .utils import check_current_user_is_not_readonly, get_translated_text
+from .utils import check_current_user_is_not_readonly
+from ..utils import FlaskResponseT
+from ..logic.utils import get_translated_text
 
 
-class DeleteCategoryForm(FlaskForm):
+class DeleteCategoryForm(FlaskForm):  # type: ignore[misc]
     category_id = IntegerField(validators=[InputRequired()])
 
 
 @frontend.route('/group_categories/')
-@flask_login.login_required
-def group_categories():
+@flask_login.login_required  # type: ignore[misc]
+def group_categories() -> FlaskResponseT:
     group_categories = list(logic.group_categories.get_group_categories())
     group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
     group_categories_by_id = {
@@ -41,16 +43,16 @@ def group_categories():
 
 
 @frontend.route('/group_categories/new', methods=['GET', 'POST'])
-@flask_login.login_required
-def new_group_category():
+@flask_login.login_required  # type: ignore[misc]
+def new_group_category() -> FlaskResponseT:
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] and not flask_login.current_user.is_admin:
         return flask.abort(403)
     return _show_group_category_form(None)
 
 
 @frontend.route('/group_categories/<int:category_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def group_category(category_id):
+@flask_login.login_required  # type: ignore[misc]
+def group_category(category_id: int) -> FlaskResponseT:
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] and not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -69,11 +71,11 @@ def group_category(category_id):
     return _show_group_category_form(category_id)
 
 
-class GroupCategoryForm(FlaskForm):
+class GroupCategoryForm(FlaskForm):  # type: ignore[misc]
     parent_category_id = SelectField()
 
 
-def _show_group_category_form(category_id: typing.Optional[int]):
+def _show_group_category_form(category_id: typing.Optional[int]) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     group_category_form = GroupCategoryForm()
 
@@ -95,7 +97,7 @@ def _show_group_category_form(category_id: typing.Optional[int]):
     translation_language_ids = {english_id}
     translated_texts = {
         text_name: {
-            english_id: ''
+            'en': ''
         }
         for text_name in ('name',)
     }
@@ -120,11 +122,11 @@ def _show_group_category_form(category_id: typing.Optional[int]):
             # set default values
             group_category_form.parent_category_id.data = '-1'
     else:
-        translation_language_ids = flask.request.form.getlist('translation-languages')
+        translation_language_id_strs = flask.request.form.getlist('translation-languages')
         translation_language_ids = {
             language_id
             for language_id in language_id_by_lang_code.values()
-            if str(language_id) in translation_language_ids or language_id == english_id
+            if str(language_id) in translation_language_id_strs or language_id == english_id
         }
         # set translated texts from form
         for text_name in translated_texts:
