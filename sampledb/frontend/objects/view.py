@@ -37,10 +37,10 @@ from ...logic.components import get_component
 from ...logic.shares import get_shares_for_object
 from ...logic.notebook_templates import get_notebook_templates
 from ...logic.utils import get_translated_text
-from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm
+from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, GenerateLabelsForm
 from ...utils import object_permissions_required
 from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
-from ..labels import create_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
+from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
@@ -642,6 +642,146 @@ def print_object_label(object_id):
         mimetype='application/pdf',
         max_age=-1
     )
+
+
+@frontend.route("/multiselect_labels", methods=["GET"])
+def multiselect_labels():
+    generate_labels_form = GenerateLabelsForm(flask.request.args)
+
+    if not generate_labels_form.validate():
+        flask.abort(400)
+
+    label_variant = generate_labels_form.form_variant.data
+    object_ids = list(map(int, generate_labels_form.objects.data.split(',')))
+    paper_format = generate_labels_form.paper_size.data
+
+    for object_id in object_ids:
+        object = logic.objects.get_object(object_id)
+        if object_id is not None and logic.object_permissions.get_user_object_permissions(object_id, user_id=flask_login.current_user.id) >= Permissions.READ:
+            action = logic.actions.get_action(object.action_id)
+            if action.type is None or not action.type.enable_labels:
+                flask.abort(403)
+        else:
+            flask.abort(403)
+
+    if paper_format not in PAGE_SIZES:
+        paper_format = DEFAULT_PAPER_FORMAT
+
+    maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
+    maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
+
+    qr_code_width = 18
+    min_label_width = 0
+    min_label_height = 0
+    label_width = 0
+
+    centered = False
+    create_mixed_labels = False
+    create_long_labels = False
+    include_qrcode_in_long_labels = False
+    qr_ghs_side_by_side = False
+
+    try:
+        labels_per_object = int(generate_labels_form.labels_per_object.data)
+    except ValueError:
+        labels_per_object = 1
+    if labels_per_object < 1:
+        labels_per_object = 1
+
+    if label_variant == 'fixed-width':
+        min_label_height = generate_labels_form.min_label_height.data
+
+        qr_ghs_side_by_side = generate_labels_form.qr_ghs_side_by_side.data
+        centered = generate_labels_form.center_qr_ghs.data
+
+        label_minimum_width = 40 if qr_ghs_side_by_side else 20
+        try:
+            label_width = float(generate_labels_form.label_width.data)
+        except ValueError:
+            label_width = 0
+
+        if math.isnan(label_width):
+            label_width = 0
+        if label_width < label_minimum_width:
+            label_width = label_minimum_width
+        if label_width > maximum_width:
+            label_width = maximum_width
+
+        try:
+            min_label_height = float(min_label_height)
+        except ValueError:
+            min_label_height = 0
+        if math.isnan(min_label_height):
+            min_label_height = 0
+        if min_label_height < 0:
+            min_label_height = 0
+        if min_label_height > maximum_height:
+            min_label_height = maximum_height
+
+    elif label_variant == 'minimal-height':
+        create_long_labels = True
+        include_qrcode_in_long_labels = generate_labels_form.include_qr.data
+
+        try:
+            min_label_width = float(generate_labels_form.min_label_width.data)
+        except ValueError:
+            min_label_width = 0
+        if math.isnan(min_label_width):
+            min_label_width = 0
+        if min_label_width < 0:
+            min_label_width = 0
+        if min_label_width > maximum_width:
+            min_label_width = maximum_width
+
+    elif label_variant == 'mixed-formats':
+        create_mixed_labels = True
+
+    object_specifications = {}
+    for object_id in object_ids:
+        object = get_object(object_id=object_id)
+
+        object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
+        for object_log_entry in object_log_entries:
+            if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH):
+                creation_date = object_log_entry.utc_datetime.strftime("%Y-%m-%d")
+                creation_user = get_user(object_log_entry.user_id).name
+                break
+        else:
+            creation_date = _('Unknown')
+            creation_user = _('Unknown')
+
+        hazards = []
+        if object.data is not None:
+            if 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
+                creation_date = object.data['created']['utc_datetime'].split(' ')[0]
+
+            if 'hazards' in object.data and '_type' in object.data['hazards'] and object.data['hazards']['_type'] == 'hazards':
+                hazards = object.data['hazards']['hazards']
+
+        object_specifications[object_id] = {
+            "object_name": get_translated_text(object.name) if object.name else _('Unknown Object'),
+            "object_url": flask.url_for('.object', object_id=object_id, _external=True),
+            "creation_user": creation_user,
+            "creation_date": creation_date,
+            "ghs_classes": hazards
+        }
+
+    pdf_data = create_multiple_labels(
+        object_specifications=object_specifications,
+        quantity=labels_per_object,
+        label_width=label_width,
+        min_label_width=min_label_width,
+        min_label_height=min_label_height,
+        qr_code_width=qr_code_width,
+        paper_format=paper_format,
+        create_mixed_labels=create_mixed_labels,
+        create_long_labels=create_long_labels,
+        include_qrcode_in_long_labels=include_qrcode_in_long_labels,
+        ghs_classes_side_by_side=qr_ghs_side_by_side,
+        centered=centered
+    )
+
+    return flask.send_file(io.BytesIO(pdf_data), mimetype='application/pdf', max_age=-1)
 
 
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])

@@ -3,8 +3,9 @@
 
 """
 
+from flask_babel import lazy_gettext
 from flask_wtf import FlaskForm
-from wtforms import SelectField, IntegerField, TextAreaField, HiddenField, FileField, StringField, BooleanField
+from wtforms import SelectField, IntegerField, FloatField, TextAreaField, HiddenField, FileField, StringField, BooleanField
 from wtforms.validators import InputRequired, ValidationError
 
 from ...logic import errors
@@ -120,3 +121,16 @@ class UseInActionForm(FlaskForm):
     action_type_id = HiddenField()
     action_id = HiddenField()
     objects = HiddenField(validators=[InputRequired()])
+
+
+class GenerateLabelsForm(FlaskForm):
+    form_variant = SelectField(validators=[InputRequired()], choices=[('mixed-formats', lazy_gettext('Mixed label formats')), ('fixed-width', lazy_gettext('Fixed-width labels')), ('minimal-height', lazy_gettext('Minimal-height labels'))])
+    objects = HiddenField(validators=[InputRequired()])
+    paper_size = SelectField(validators=[InputRequired()], choices=[("DIN A4 (Portrait)", lazy_gettext('DIN A4 (Portrait)')), ("DIN A4 (Landscape)", lazy_gettext('DIN A4 (Landscape)')), ("Letter (Portrait)", lazy_gettext('Letter / ANSI A (Portrait)')), ("Letter (Landscape)", lazy_gettext('Letter / ANSI A (Landscape)'))])
+    label_width = FloatField()
+    min_label_width = FloatField()
+    min_label_height = FloatField()
+    labels_per_object = IntegerField()
+    center_qr_ghs = BooleanField()
+    qr_ghs_side_by_side = BooleanField()
+    include_qr = BooleanField()
