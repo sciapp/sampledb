@@ -23,7 +23,7 @@ from ...logic.languages import get_language, get_languages, Language
 from ...logic.errors import ValidationError
 from ...logic.components import get_component
 from .forms import ObjectForm
-from ..utils import default_format_datetime, custom_format_number
+from ..utils import default_format_datetime, custom_format_number, format_time
 from .object_form_parser import parse_form_data
 from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -346,11 +346,14 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                                 'type': subschema['properties'][property]['type']
                             }
                         elif subschema['properties'][property]['type'] == 'quantity':
+                            units = recipe['property_values'][property]['units'] if recipe['property_values'][property] is not None else None
+                            if units in ['min', 'h']:
+                                value = format_time(recipe['property_values'][property]['magnitude_in_base_units'], units)
+                            else:
+                                value = custom_format_number(recipe['property_values'][property]['magnitude']) if recipe['property_values'][property] is not None else None
                             subschema['recipes'][i]['property_values'][property] = {
-                                'value': custom_format_number(recipe['property_values'][property]['magnitude']) if
-                                recipe['property_values'][property] is not None else None,
-                                'units': custom_format_number(recipe['property_values'][property]['units']) if
-                                recipe['property_values'][property] is not None and not isinstance(subschema['properties'][property]['units'], str) else None,
+                                'value': value,
+                                'units': units,
                                 'type': subschema['properties'][property]['type']
                             }
                         elif subschema['properties'][property]['type'] == 'text' and 'choices' in \
