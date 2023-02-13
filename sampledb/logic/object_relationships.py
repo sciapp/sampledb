@@ -6,11 +6,14 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import datetime
 import itertools
 import typing
 
 import flask
 
+from .actions import get_action, Action
+from .files import get_files_for_object, File
 from .objects import get_object, find_object_references
 from .object_permissions import get_user_permissions_for_multiple_objects, get_objects_with_permissions
 from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions, Object
@@ -272,3 +275,121 @@ def _assemble_tree(
                     if referencing_object_id[0] in objects_by_id and (referencing_object_id[1] is None or referencing_object_id[1] == flask.current_app.config['FEDERATION_UUID'])
                 ]
     return tree
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkflowElement:
+    object_id: int
+    object: typing.Optional[Object]
+    action: typing.Optional[Action]
+    is_referencing: bool
+    is_referenced: bool
+    files: typing.List[File]
+
+
+def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.Optional[typing.Dict[int, Action]] = None) -> typing.List[WorkflowElement]:
+    """
+    Creates a list describing all direct object relations for a workflow view as configured in an object's schema.
+
+
+    :param object: The object for which the workflow view is to be created
+    :param user_id: User ID of the user viewing the workflow view taking into account the access permissions
+    :param actions_by_id: A dict containing cached actions by ID
+    :return: List of WorkflowElements containing, object ID, object data, action data and if the object is referenced
+            and/or referencing the object the view is created for
+    """
+    if object.schema is None or 'workflow_view' not in object.schema.keys():
+        return []
+
+    if actions_by_id is None:
+        actions_by_id = {}
+
+    referencing_objects = {obj[0] for obj in _get_referencing_object_ids({object.object_id})[object.object_id] if obj[1] is None}
+    referenced_objects = {obj[0] for obj in _get_referenced_object_ids({object.object_id})[object.object_id] if obj[1] is None}
+
+    referencing_workflow_action_ids = None if 'referencing_action_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referencing_action_id']] if isinstance(object.schema['workflow_view']['referencing_action_id'], int) else object.schema['workflow_view']['referencing_action_id']
+    referencing_workflow_action_type_ids = None if 'referencing_action_type_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referencing_action_type_id']] if isinstance(object.schema['workflow_view']['referencing_action_type_id'], int) else object.schema['workflow_view']['referencing_action_type_id']
+
+    referenced_workflow_action_ids = None if 'referenced_action_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referenced_action_id']] if isinstance(object.schema['workflow_view']['referenced_action_id'], int) else object.schema['workflow_view']['referenced_action_id']
+    referenced_workflow_action_type_ids = None if 'referenced_action_type_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referenced_action_type_id']] if isinstance(object.schema['workflow_view']['referenced_action_type_id'], int) else object.schema['workflow_view']['referenced_action_type_id']
+
+    object_ids = list(referencing_objects.union(referenced_objects))
+    objects = get_objects_with_permissions(user_id, Permissions.READ, object_ids=object_ids)
+    objects_by_id = {
+        object.object_id: object
+        for object in objects
+    }
+    initital_object_version_by_id = {}
+    for object_id in object_ids:
+        current_object_version = objects_by_id.get(object_id)
+        if current_object_version is not None and current_object_version.version_id == 0:
+            initital_object_version_by_id[object_id] = current_object_version
+        else:
+            initital_object_version_by_id[object_id] = get_object(object_id, version_id=0)
+
+    def creation_time_key(object_id: int) -> datetime.datetime:
+        initital_object_version = initital_object_version_by_id.get(object_id)
+        if initital_object_version is None or initital_object_version.utc_datetime is None:
+            return datetime.datetime.max
+        return initital_object_version.utc_datetime
+
+    object_ids.sort(key=creation_time_key)
+
+    workflow = []
+    for object_id in object_ids:
+        action_id = initital_object_version_by_id[object_id].action_id
+        if action_id:
+            if action_id in actions_by_id:
+                action = actions_by_id[action_id]
+            else:
+                action = get_action(action_id)
+                actions_by_id[action_id] = action
+        else:
+            action = None
+
+        if (
+            (referencing_workflow_action_ids is None and referenced_workflow_action_ids is None and referencing_workflow_action_type_ids is None and referenced_workflow_action_type_ids is None) or
+            (
+                object_id in referencing_objects and
+                (
+                    (referencing_workflow_action_ids is None or action_id in referencing_workflow_action_ids) and
+                    (
+                        referencing_workflow_action_type_ids is None or
+                        (
+                            action and action.type and (
+                                action.type.id in referencing_workflow_action_type_ids or
+                                (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in referencing_workflow_action_type_ids)
+                            )
+                        )
+                    )
+                )
+            ) or (
+                object_id in referenced_objects and
+                (
+                    (referenced_workflow_action_ids is None or action_id in referenced_workflow_action_ids) and
+                    (
+                        referenced_workflow_action_type_ids is None or
+                        (
+                            action and action.type and
+                            (
+                                action.type.id in referenced_workflow_action_type_ids or
+                                (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in referenced_workflow_action_type_ids)
+                            )
+                        )
+                    )
+                )
+            )
+        ):
+            if object_id in objects_by_id:
+                files = get_files_for_object(object_id)
+            else:
+                files = []
+            workflow.append(WorkflowElement(
+                object_id=object_id,
+                object=objects_by_id.get(object_id),
+                action=action,
+                is_referenced=object_id in referenced_objects,
+                is_referencing=object_id in referencing_objects,
+                files=files
+            ))
+    return workflow

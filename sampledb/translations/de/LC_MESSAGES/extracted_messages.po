@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-04-05 10:21+0200\n"
+"POT-Creation-Date: 2023-05-12 16:14+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5243,6 +5243,25 @@ msgstr "Notebook erstellen"
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
 
+msgid "Workflow"
+msgstr "Workflow"
+
+#, python-format
+msgid ""
+"Referenced by the metadata of %(object_name)s (#%(object_id)s) and "
+"references %(object_name)s (#%(object_id)s) in its metadata"
+msgstr ""
+"Referenziert in den Metadaten von %(object_name)s (#%(object_id)s) und "
+"referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
+#, python-format
+msgid "Referenced by the metadata of %(object_name)s (#%(object_id)s)"
+msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
+
+#, python-format
+msgid "References %(object_name)s (#%(object_id)s) in its metadata"
+msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
 
@@ -5801,14 +5820,6 @@ msgstr "Plot einblenden"
 #, python-format
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
-
-#, python-format
-msgid "Referenced by the metadata of %(object_name)s (#%(object_id)s)"
-msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
-
-#, python-format
-msgid "References %(object_name)s (#%(object_id)s) in its metadata"
-msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
 msgid "Time"
 msgstr "Zeit"

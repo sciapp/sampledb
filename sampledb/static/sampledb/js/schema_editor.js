@@ -58,7 +58,7 @@ function enableSchemaEditor() {
 
     var advanced_root_object_features = [
       'recipes', 'batch', 'batch_name_format', 'displayProperties',
-      'notebookTemplates', 'show_more', 'workflow_view'
+      'notebookTemplates', 'show_more', 'workflow_view', 'workflow_show_more'
     ]
 
     for (const name of advanced_root_object_features)

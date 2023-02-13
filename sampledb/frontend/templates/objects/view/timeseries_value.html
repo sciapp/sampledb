@@ -15,7 +15,12 @@
     {% endif %}
     <button type="button" class="btn btn-default btn-xs timeseries-chart-button" data-toggle="tooltip" data-placement="top" title="{{ _('View chart') }}"><i class="fa fa-line-chart fa-fw"></i></button>
     <button type="button" class="btn btn-default btn-xs timeseries-table-button" data-toggle="tooltip" data-placement="top" title="{{ _('View table') }}"><i class="fa fa-table fa-fw"></i></button>
-    <a href="{{ url_for('.download_timeseries_data', object_id=object_id, timeseries_id=id_prefix[:-1]) }}" class="btn btn-default btn-xs timeseries-download-button" data-toggle="tooltip" data-placement="top" title="{{ _('Download data') }}"><i class="fa fa-download fa-fw"></i></a>
+    <a href= {% if workflow_display_mode %}
+      {# remove workflow prefix #}
+      "{{ url_for('.download_timeseries_data', object_id=object_id, timeseries_id='object' + id_prefix[(('workflow_' + (object_id | string)) | length):-1]) }}"
+    {% else %}
+      "{{ url_for('.download_timeseries_data', object_id=object_id, timeseries_id=id_prefix[:-1]) }}"
+    {% endif -%} class="btn btn-default btn-xs timeseries-download-button" data-toggle="tooltip" data-placement="top" title="{{ _('Download data') }}"><i class="fa fa-download fa-fw"></i></a>
     <script type="application/json">{{ timeseries_data | tojson }}</script>
   </span>
 {% endif %}

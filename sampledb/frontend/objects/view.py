@@ -24,6 +24,7 @@ from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_user_action_permissions
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
+from ...logic.object_relationships import get_workflow_references
 from ...logic.users import get_user, get_users, User
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
@@ -140,9 +141,12 @@ def object(object_id: int) -> FlaskResponseT:
         "ENGLISH": english,
     })
 
+    actions_by_id = {}
+
     # basic object and action information
     if object.action_id is not None:
         action = get_action(object.action_id)
+        actions_by_id[action.id] = action
         action_type = get_action_type(action.type_id) if action.type_id is not None else None
         instrument = action.instrument
         object_type = get_translated_text(action_type.object_name) if action_type else None
@@ -417,6 +421,11 @@ def object(object_id: int) -> FlaskResponseT:
     template_kwargs.update({
         "fed_object_log_entries": fed_object_log_entries,
         "FedObjectLogEntryType": models.FedObjectLogEntryType,
+    })
+
+    workflow = get_workflow_references(object, flask_login.current_user.id, actions_by_id)
+    template_kwargs.update({
+        "workflow": workflow,
     })
 
     # related objects tree

@@ -1,6 +1,6 @@
 <!-- object start -->
     {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title)  and schema.title %}
-        <span style="font-size:1.5em; padding-left: 15px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
+        <span style="{% if workflow_display_mode %}font-weight: bold;{% else %}font-size: 1.5em;{% endif %} padding-left: 15px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
     {% endif %}
 {% if search_query_attribute %}
   {% set base_search_query_attribute = search_query_attribute %}
@@ -11,7 +11,7 @@
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}
     {% if data | are_conditions_fulfilled(property_schema) %}
-    {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
+    {% set hidden = (not (workflow_display_mode and 'workflow_show_more' in schema.keys()) and 'show_more' in schema.keys() and property_name in schema['show_more']) or (workflow_display_mode and 'workflow_show_more' in schema.keys() and property_name in schema['workflow_show_more']) %}
     {% set name = property_name %}
     {% set schema = property_schema %}
     {% set parent_id_prefix = id_prefix %}
@@ -31,7 +31,7 @@
     {% if base_search_query_attribute %}
       {% set search_query_attribute = base_search_query_attribute + "." + name %}
     {% else %}
-      {% set search_query_attribute = name %}
+      {% set search_query_attribute = property_name %}
     {% endif %}
     {% include "objects/view/any.html" %}
     {% endif %}
@@ -40,7 +40,7 @@
   {% for property_name in schema.propertyOrder %}
     {% if property_name in schema.properties %}
       {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
-      {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
+      {% set hidden = (not (workflow_display_mode and 'workflow_show_more' in schema.keys()) and 'show_more' in schema.keys() and property_name in schema['show_more']) or (workflow_display_mode and 'workflow_show_more' in schema.keys() and property_name in schema['workflow_show_more']) %}
       {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
       {% set parent_id_prefix = id_prefix %}
@@ -60,7 +60,7 @@
       {% if base_search_query_attribute %}
         {% set search_query_attribute = base_search_query_attribute + "." + name %}
       {% else %}
-        {% set search_query_attribute = name %}
+        {% set search_query_attribute = property_name %}
       {% endif %}
       {% include "objects/view/any.html" %}
       {% endif %}
@@ -69,7 +69,7 @@
   {% for property_name, property_schema in schema.properties.items() %}
     {% if property_name not in schema.propertyOrder %}
       {% if data | are_conditions_fulfilled(property_schema) %}
-      {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
+      {% set hidden = (not (workflow_display_mode and 'workflow_show_more' in schema.keys()) and 'show_more' in schema.keys() and property_name in schema['show_more']) or (workflow_display_mode and 'workflow_show_more' in schema.keys() and property_name in schema['workflow_show_more']) %}
       {% set name = property_name %}
       {% set schema = property_schema %}
       {% set parent_id_prefix = id_prefix %}
@@ -89,14 +89,14 @@
       {% if base_search_query_attribute %}
         {% set search_query_attribute = base_search_query_attribute + "." + name %}
       {% else %}
-        {% set search_query_attribute = name %}
+        {% set search_query_attribute = property_name %}
       {% endif %}
       {% include "objects/view/any.html" %}
       {% endif %}
     {% endif %}
   {% endfor %}
 {% endif %}
-{% if schema.get("show_more") %}
+{% if schema.get("show_more") or (workflow_display_mode and schema.get("workflow_show_more")) %}
   <div class="row">
     <div class="col-md-3" style="padding-rigth: 0px;"></div>
     <div class="col-md-9" style="padding-left: 5px;">

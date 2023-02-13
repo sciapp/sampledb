@@ -9,6 +9,7 @@ import pytest
 import sampledb
 import sampledb.logic
 import sampledb.models
+from sampledb.logic.object_relationships import WorkflowElement
 from sampledb.models import User, UserType
 
 
@@ -553,3 +554,273 @@ def test_get_referenced_object_ids(sample_action, user):
     assert set(sampledb.logic.object_relationships._get_referenced_object_ids({object3.id})[object3.id]) == {
         (object1.id, None), (object2.id, None), (42, component_uuid)
     }
+
+
+def test_get_workflow_references(sample_action, measurement_action, user):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        }
+    }
+    sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 3'
+        }
+    }
+    bidirectional_sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+
+    component = sampledb.logic.components.add_component(address=None, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example component', description='')#
+    object_permissions_data = sampledb.logic.federation.objects.ObjectPermissionsData(
+        users={user.id: sampledb.models.Permissions.READ},
+        groups={}, projects={}, all_users=sampledb.models.Permissions.NONE
+    )
+    object_version_data = sampledb.logic.federation.objects.ObjectVersionData(
+        fed_version_id=0, user=None, data=None, schema=None, utc_datetime=None, import_notes=[]
+    )
+    object_data = sampledb.logic.federation.objects.ObjectData(
+        fed_object_id=1, component_id=component.id,
+        action=None, versions=[object_version_data], comments=[], files=[], object_location_assignments=[],
+        permissions=object_permissions_data, sharing_user=None
+    )
+    import_status = {}
+    fed_no_data_sample = sampledb.logic.federation.objects.import_object(object_data, component, import_status=import_status)
+
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        }
+    }
+    no_permission_sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sampledb.logic.object_permissions.set_user_object_permissions(no_permission_sample.object_id, user.id, sampledb.models.Permissions.NONE)
+
+    workflow_schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Object Name',
+                'type': 'text'
+            },
+            'sample_1': {
+                'title': 'Sample 1',
+                'type': 'sample'
+            },
+            'sample_2': {
+                'title': 'Sample 2',
+                'type': 'sample'
+            },
+            'sample_3': {
+                'title': 'Sample 3',
+                'type': 'sample'
+            },
+            'sample_4': {
+                'title': 'Sample 4',
+                'type': 'object_reference'
+            }
+        },
+        'required': ['name'],
+        'workflow_view': {
+            'referencing_action_type_id': sampledb.models.ActionType.MEASUREMENT,
+            'referenced_action_id': sample_action.id
+        }
+    }
+    workflow_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=workflow_schema
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 2'
+        },
+        'sample_1': {
+            '_type': 'sample',
+            'object_id': sample.object_id
+        },
+        'sample_2': {
+            '_type': 'sample',
+            'object_id': bidirectional_sample.object_id
+        },
+        'sample_3': {
+            '_type': 'sample',
+            'object_id': no_permission_sample.object_id
+        },
+        'sample_4': {
+            '_type': 'object_reference',
+            'object_id': fed_no_data_sample.object_id
+        }
+    }
+    workflow_object = sampledb.logic.objects.create_object(workflow_action.id, data, user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 2'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': workflow_object.object_id
+        }
+    }
+    measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
+
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 3'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': workflow_object.object_id
+        }
+    }
+    sampledb.logic.objects.update_object(bidirectional_sample.object_id, data, user.id)
+    bidirectional_sample = sampledb.logic.objects.get_object(bidirectional_sample.object_id)
+    file = sampledb.logic.files.create_database_file(sample.object_id, user.id, 'test.txt', lambda f: f.write(b'test'))
+    sampledb.logic.files.create_database_file(no_permission_sample.object_id, user.id, 'test.txt', lambda f: f.write(b'test'))
+
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+            'referencing_action_type_id': sampledb.models.ActionType.MEASUREMENT,
+            'referencing_action_id': [],
+            'referenced_action_id': sample_action.id,
+            'referenced_action_type_id': []
+        }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert len(workflow) == 0
+
+    workflow_schema['workflow_view'] = {
+        'referencing_action_type_id': [],
+        'referencing_action_id': measurement_action.id,
+        'referenced_action_id': [],
+        'referenced_action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert len(workflow) == 0
+
+    workflow_schema['workflow_view'] = {
+        'referencing_action_id': measurement_action.id,
+        'referenced_action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+        'referencing_action_id': measurement_action.id,
+        'referenced_action_id': []
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+        'referencing_action_id': [measurement_action.id, sample_action.id],
+        'referenced_action_id': []
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema,
+                                         data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+        'referenced_action_type_id': sampledb.models.ActionType.SAMPLE_CREATION,
+        'referencing_action_id': []
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema,
+                                         data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+        'referencing_action_id': measurement_action.id
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[]),
+        WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+        'referenced_action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+    ]
+
+    workflow_schema['workflow_view'] = {
+        'referencing_action_type_id': sampledb.models.ActionType.SAMPLE_CREATION,
+        'referenced_action_id': measurement_action.id
+    }
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+    ]
+
+    workflow_schema['workflow_view'] = {}
+    sampledb.logic.actions.update_action(action_id=workflow_action.id, schema=workflow_schema)
+    sampledb.logic.objects.update_object(object_id=workflow_object.object_id, schema=workflow_schema, data=workflow_object.data, user_id=user.id)
+    workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[]),
+        WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, files=[])
+    ]
