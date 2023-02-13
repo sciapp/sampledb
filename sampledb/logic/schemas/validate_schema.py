@@ -437,6 +437,10 @@ def _validate_object_schema(
                     raise ValidationError('unsupported type in recipe', path + ['(recipes)', property_name])
                 if recipe['property_values'][property_name] is not None:
                     validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name], strict=strict)
+                    if recipe['property_values'][property_name]['_type'] == 'quantity' and \
+                       ((isinstance(schema['properties'][property_name]['units'], str) and recipe['property_values'][property_name]['units'] != schema['properties'][property_name]['units']) or
+                       (recipe['property_values'][property_name]['units'] not in schema['properties'][property_name]['units'])):
+                        raise ValidationError('Invalid unit {}, allowed unit(s): {}'.format(recipe['property_values'][property_name]['units'], schema['properties'][property_name]['units']), path + ['(recipes)', property_name])
                 elif schema['properties'][property_name]['type'] == 'bool':
                     raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
 

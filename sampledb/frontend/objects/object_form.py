@@ -347,9 +347,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             }
                         elif subschema['properties'][property]['type'] == 'quantity':
                             subschema['recipes'][i]['property_values'][property] = {
-                                'value': custom_format_number(
-                                    recipe['property_values'][property]['magnitude_in_base_units']) if
+                                'value': custom_format_number(recipe['property_values'][property]['magnitude']) if
                                 recipe['property_values'][property] is not None else None,
+                                'units': custom_format_number(recipe['property_values'][property]['units']) if
+                                recipe['property_values'][property] is not None and not isinstance(subschema['properties'][property]['units'], str) else None,
                                 'type': subschema['properties'][property]['type']
                             }
                         elif subschema['properties'][property]['type'] == 'text' and 'choices' in \
