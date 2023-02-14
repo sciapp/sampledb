@@ -61,7 +61,7 @@ def new_language() -> FlaskResponseT:
     return show_language_form(None)
 
 
-class LanguageForm(FlaskForm):  # type: ignore
+class LanguageForm(FlaskForm):
     name_english = StringField(validators=[InputRequired()])
     lang_code = StringField(validators=[InputRequired()])
     datetime_format_datetime = StringField(validators=[InputRequired()])

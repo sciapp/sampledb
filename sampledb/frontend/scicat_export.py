@@ -18,7 +18,7 @@ from ..utils import object_permissions_required, FlaskResponseT
 from ..models import Permissions, SciCatExportType
 
 
-class SciCatExportForm(FlaskForm):  # type: ignore[misc]
+class SciCatExportForm(FlaskForm):
     tags = SelectMultipleField()
     owner_group = SelectField(validators=[InputRequired()])
     access_groups = SelectMultipleField()
@@ -28,7 +28,7 @@ class SciCatExportForm(FlaskForm):  # type: ignore[misc]
     api_token = PasswordField()
 
 
-class SciCatAPITokenForm(FlaskForm):  # type: ignore[misc]
+class SciCatAPITokenForm(FlaskForm):
     api_token = PasswordField(validators=[InputRequired()])
     store_api_token = BooleanField()
 

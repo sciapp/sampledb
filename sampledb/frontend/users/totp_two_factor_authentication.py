@@ -21,7 +21,7 @@ from ..utils import generate_qrcode
 from ...utils import FlaskResponseT
 
 
-class TOTPForm(FlaskForm):  # type: ignore[misc]
+class TOTPForm(FlaskForm):
     code = StringField(validators=[InputRequired()])
 
 

@@ -21,7 +21,7 @@ from ..logic.components import get_component_or_none
 from ..models import SciCatExportType
 
 
-class ActionTypesSortingForm(FlaskForm):  # type: ignore[misc]
+class ActionTypesSortingForm(FlaskForm):
     encoded_order = StringField("Order-String", [DataRequired()])
 
     def validate_encoded_order(form, field: StringField) -> None:
@@ -100,7 +100,7 @@ def new_action_type() -> FlaskResponseT:
     return show_action_type_form(None)
 
 
-class ActionTypeForm(FlaskForm):  # type: ignore[misc]
+class ActionTypeForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
 
     admin_only = BooleanField()

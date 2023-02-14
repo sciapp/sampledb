@@ -66,7 +66,7 @@ def new_location_type() -> FlaskResponseT:
     return show_location_type_form(None)
 
 
-class LocationTypeForm(FlaskForm):  # type: ignore[misc]
+class LocationTypeForm(FlaskForm):
     admin_only = BooleanField()
     enable_parent_location = BooleanField()
     enable_sub_locations = BooleanField()

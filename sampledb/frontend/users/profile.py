@@ -18,22 +18,22 @@ from ..utils import validate_orcid
 from ...utils import FlaskResponseT
 
 
-class UserReadOnlyForm(FlaskForm):  # type: ignore[misc]
+class UserReadOnlyForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['toggle_read_only'])])
     should_be_read_only = BooleanField()
 
 
-class UserHiddenForm(FlaskForm):  # type: ignore[misc]
+class UserHiddenForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['toggle_hidden'])])
     should_be_hidden = BooleanField()
 
 
-class UserActiveForm(FlaskForm):  # type: ignore[misc]
+class UserActiveForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['toggle_active'])])
     should_be_active = BooleanField()
 
 
-class UserProfileForm(FlaskForm):  # type: ignore[misc]
+class UserProfileForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['edit_profile'])])
     orcid = StringField()
     affiliation = StringField()

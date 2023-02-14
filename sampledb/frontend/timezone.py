@@ -13,7 +13,7 @@ from ..logic import settings
 from ..utils import FlaskResponseT
 
 
-class TimezoneForm(flask_wtf.FlaskForm):  # type: ignore[misc]
+class TimezoneForm(flask_wtf.FlaskForm):
     timezone = wtforms.fields.StringField(
         validators=[
             wtforms.validators.InputRequired()

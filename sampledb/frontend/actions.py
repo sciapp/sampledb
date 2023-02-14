@@ -46,7 +46,7 @@ from ..models import Permissions
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class ActionForm(FlaskForm):  # type: ignore[misc]
+class ActionForm(FlaskForm):
     type = IntegerField()
     instrument = SelectField()
     schema = StringField(validators=[InputRequired()])

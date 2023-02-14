@@ -57,7 +57,7 @@ class MultipleIntegerField(SelectMultipleField):  # type: ignore[misc]
                     raise ValidationError("Invalid value")
 
 
-class InstrumentLogEntryForm(FlaskForm):  # type: ignore[misc]
+class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
     content_is_markdown = BooleanField()
     files = MultipleFileField()
@@ -84,7 +84,7 @@ class InstrumentLogEntryForm(FlaskForm):  # type: ignore[misc]
             field.data = None
 
 
-class InstrumentLogOrderForm(FlaskForm):  # type: ignore[misc]
+class InstrumentLogOrderForm(FlaskForm):
     ascending = BooleanField()
     attribute = StringField(validators=[DataRequired()])
 
@@ -354,7 +354,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
     )
 
 
-class InstrumentForm(FlaskForm):  # type: ignore[misc]
+class InstrumentForm(FlaskForm):
     instrument_responsible_users = SelectMultipleField()
     is_markdown = BooleanField(default=False)
     short_description_is_markdown = BooleanField(default=False)

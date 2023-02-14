@@ -16,7 +16,7 @@ from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 
 
-class DeleteCategoryForm(FlaskForm):  # type: ignore[misc]
+class DeleteCategoryForm(FlaskForm):
     category_id = IntegerField(validators=[InputRequired()])
 
 
@@ -71,7 +71,7 @@ def group_category(category_id: int) -> FlaskResponseT:
     return _show_group_category_form(category_id)
 
 
-class GroupCategoryForm(FlaskForm):  # type: ignore[misc]
+class GroupCategoryForm(FlaskForm):
     parent_category_id = SelectField()
 
 

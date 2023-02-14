@@ -32,12 +32,12 @@ from ..logic.utils import get_translated_text
 from ..models import Permissions, LocationLogEntryType
 
 
-class LocationCapacityForm(FlaskForm):  # type: ignore[misc]
+class LocationCapacityForm(FlaskForm):
     action_type_id = SelectField(validators=[DataRequired()], coerce=int, choices=[], validate_choice=False)
     capacity = IntegerField()
 
 
-class LocationForm(FlaskForm):  # type: ignore[misc]
+class LocationForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
     parent_location = SelectField()
     is_public = BooleanField(default=True)

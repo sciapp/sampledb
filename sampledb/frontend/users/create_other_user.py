@@ -17,7 +17,7 @@ from ...utils import FlaskResponseT
 from ...models import UserType
 
 
-class CreateOtherUserForm(FlaskForm):  # type: ignore[misc]
+class CreateOtherUserForm(FlaskForm):
     name = StringField(validators=[InputRequired()])
     email = StringField(validators=[Email()])
     password = PasswordField(validators=[Length(min=3)])

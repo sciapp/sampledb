@@ -17,7 +17,7 @@ from .pdfexport import create_pdfexport
 from ..utils import FlaskResponseT
 
 
-class CreateExportForm(FlaskForm):  # type: ignore[misc]
+class CreateExportForm(FlaskForm):
     file_extension = SelectField(
         choices=[],
         validators=[InputRequired()]

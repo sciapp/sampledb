@@ -12,38 +12,38 @@ from wtforms import StringField, IntegerField, SubmitField, SelectField, Boolean
 from wtforms.validators import Length, DataRequired, ValidationError, InputRequired
 
 
-class CreateAPITokenForm(FlaskForm):  # type: ignore[misc]
+class CreateAPITokenForm(FlaskForm):
     description = StringField('description', validators=[Length(min=1, max=100)])
 
 
-class AddOwnAPITokenForm(FlaskForm):  # type: ignore[misc]
+class AddOwnAPITokenForm(FlaskForm):
     token = StringField('token', validators=[Length(min=1, max=100)])
     description = StringField('description', validators=[Length(min=1, max=100)])
 
 
-class AuthenticationMethodForm(FlaskForm):  # type: ignore[misc]
+class AuthenticationMethodForm(FlaskForm):
     id = IntegerField('Authentication_method_id', validators=[DataRequired()])
     submit = SubmitField('Remove')
 
 
-class AddComponentForm(FlaskForm):  # type: ignore[misc]
+class AddComponentForm(FlaskForm):
     address = StringField(validators=[Length(min=0, max=100)])
     uuid = StringField(validators=[Length(min=1, max=100)])
     name = StringField(validators=[Length(min=0, max=100)])
     description = StringField()
 
 
-class EditComponentForm(FlaskForm):  # type: ignore[misc]
+class EditComponentForm(FlaskForm):
     address = StringField(validators=[Length(min=0, max=100)])
     name = StringField(validators=[Length(min=0, max=100)])
     description = StringField()
 
 
-class SyncComponentForm(FlaskForm):  # type: ignore[misc]
+class SyncComponentForm(FlaskForm):
     ignore_last_sync_time = BooleanField(default=False)
 
 
-class EditAliasForm(FlaskForm):  # type: ignore[misc]
+class EditAliasForm(FlaskForm):
     component = IntegerField('Component', validators=[InputRequired()])
     name = StringField('Full Name')
     use_real_name = BooleanField('Use real name')
@@ -62,7 +62,7 @@ class EditAliasForm(FlaskForm):  # type: ignore[misc]
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
 
-class AddAliasForm(FlaskForm):  # type: ignore[misc]
+class AddAliasForm(FlaskForm):
     component = SelectField('Database', validators=[InputRequired()])
     name = StringField('Full Name')
     use_real_name = BooleanField('Use real name')
@@ -81,5 +81,5 @@ class AddAliasForm(FlaskForm):  # type: ignore[misc]
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
 
-class DeleteAliasForm(FlaskForm):  # type: ignore[misc]
+class DeleteAliasForm(FlaskForm):
     component = IntegerField('Component', validators=[InputRequired()])

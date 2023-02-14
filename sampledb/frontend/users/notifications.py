@@ -21,19 +21,19 @@ from ...models import NotificationType, Permissions
 from ...utils import FlaskResponseT
 
 
-class DeleteAllNotificationsForm(FlaskForm):  # type: ignore[misc]
+class DeleteAllNotificationsForm(FlaskForm):
     delete_all_notifications_up_to_id = IntegerField(validators=[InputRequired()])
 
 
-class MarkAllNotificationsAsReadForm(FlaskForm):  # type: ignore[misc]
+class MarkAllNotificationsAsReadForm(FlaskForm):
     mark_all_notifications_as_read_up_to_id = IntegerField(validators=[InputRequired()])
 
 
-class DeleteNotificationForm(FlaskForm):  # type: ignore[misc]
+class DeleteNotificationForm(FlaskForm):
     delete_notification = IntegerField(validators=[InputRequired()])
 
 
-class MarkNotificationAsReadForm(FlaskForm):  # type: ignore[misc]
+class MarkNotificationAsReadForm(FlaskForm):
     mark_notification_read = IntegerField(validators=[InputRequired()])
 
 
