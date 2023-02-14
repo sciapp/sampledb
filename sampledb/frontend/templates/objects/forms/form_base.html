@@ -280,6 +280,9 @@
           break;
         case 'quantity':
           $('input[name="' + id_prefix + '_' + property + '__magnitude"]').val(value['value'] || '');
+          if (value['units']) {
+            $('select[name="' + id_prefix + '_' + property + '__units"]').selectpicker('val', value['units']);
+          }
           break;
         case 'bool':
           $('input[name="' + id_prefix + '_' + property + '__value"]').prop('checked', value['value']);
