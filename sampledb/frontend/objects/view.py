@@ -998,7 +998,7 @@ def export_data(object_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/objects/new', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_object() -> FlaskResponseT:
     check_current_user_is_not_readonly()
 

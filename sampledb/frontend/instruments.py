@@ -75,7 +75,7 @@ class InstrumentLogEntryForm(FlaskForm):  # type: ignore[misc]
                 language = get_user_language(flask_login.current_user)
                 parsed_datetime = datetime.datetime.strptime(field.data, language.datetime_format_datetime)
                 # convert datetime to utc
-                local_datetime = pytz.timezone(flask_login.current_user.timezone).localize(parsed_datetime)
+                local_datetime = pytz.timezone(flask_login.current_user.timezone or 'UTC').localize(parsed_datetime)
                 utc_datetime = local_datetime.astimezone(pytz.utc)
                 field.data = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
             except Exception:
@@ -94,7 +94,7 @@ class InstrumentLogOrderForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/instruments/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def instruments() -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
@@ -124,7 +124,7 @@ def instruments() -> FlaskResponseT:
 
 
 @frontend.route('/instruments/<int:instrument_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def instrument(instrument_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
@@ -369,7 +369,7 @@ class InstrumentForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_instrument() -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
@@ -533,7 +533,7 @@ def new_instrument() -> FlaskResponseT:
 
 
 @frontend.route('/instruments/<int:instrument_id>/edit', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def edit_instrument(instrument_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
@@ -776,7 +776,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/<int:log_entry_id>/file_attachments/<int:file_attachment_id>')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def instrument_log_file_attachment(instrument_id: int, log_entry_id: int, file_attachment_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
@@ -884,7 +884,7 @@ def post_instrument_log_mobile_file_upload(instrument_id: int, token: str) -> Fl
 
 
 @frontend.route('/users/me/settings/instrument_log_order', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def set_instrument_log_order() -> FlaskResponseT:
     form = InstrumentLogOrderForm()
     if not form.validate_on_submit():

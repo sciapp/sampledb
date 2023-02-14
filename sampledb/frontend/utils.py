@@ -234,7 +234,7 @@ def custom_format_datetime(
             return typing.cast(str, format_datetime(utc_datetime, format=format2))
         else:
             utc_datetime = pytz.utc.localize(utc_datetime)
-            local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone))
+            local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone or 'UTC'))
             return local_datetime.strftime(format)
     except ValueError:
         return utc_datetime

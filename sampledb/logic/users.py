@@ -153,7 +153,7 @@ class User:
         return typing.cast(typing.Optional[str], settings.get_user_setting(self.id, 'TIMEZONE'))
 
 
-class AnonymousUser(flask_login.AnonymousUserMixin):  # type: ignore
+class AnonymousUser(flask_login.AnonymousUserMixin):
     @property
     def id(self) -> typing.Optional[int]:
         return None

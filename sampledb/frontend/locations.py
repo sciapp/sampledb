@@ -48,7 +48,7 @@ class LocationForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/locations/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def locations() -> FlaskResponseT:
     locations_map, locations_tree = get_locations_tree()
     permissions_by_id = {
@@ -92,7 +92,7 @@ def _filter_location_tree_for_read_permissions(
 
 
 @frontend.route('/locations/<int:location_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def location(location_id: int) -> FlaskResponseT:
     try:
         location = get_location(location_id)
@@ -159,7 +159,7 @@ def location(location_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/locations/<int:location_id>/permissions', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def location_permissions(location_id: int) -> FlaskResponseT:
     try:
         location = get_location(location_id)
@@ -263,7 +263,7 @@ def location_permissions(location_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/locations/new/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_location() -> FlaskResponseT:
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
         flask.flash(_('Only administrators can create locations.'), 'error')
@@ -334,7 +334,7 @@ def _handle_object_location_assignment(
 
 
 @frontend.route('/locations/confirm_responsibility')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def accept_responsibility_for_object() -> FlaskResponseT:
     return _handle_object_location_assignment(
         token_salt='confirm_responsibility',
@@ -346,7 +346,7 @@ def accept_responsibility_for_object() -> FlaskResponseT:
 
 
 @frontend.route('/locations/decline_responsibility')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def decline_responsibility_for_object() -> FlaskResponseT:
     def _callback(object_location_assignment_id: int) -> None:
         decline_object_responsibility(object_location_assignment_id)

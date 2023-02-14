@@ -14,7 +14,7 @@ from ...utils import FlaskResponseT
 
 
 @frontend.route('/users/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def users() -> FlaskResponseT:
     return flask.render_template(
         'users.html',

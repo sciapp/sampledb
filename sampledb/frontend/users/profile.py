@@ -56,13 +56,13 @@ class UserProfileForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/users/me')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def current_user_profile() -> FlaskResponseT:
     return flask.redirect(flask.url_for('.user_profile', user_id=flask_login.current_user.id))
 
 
 @frontend.route('/users/<int:user_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def user_profile(user_id: int) -> FlaskResponseT:
     try:
         user = users.get_user(user_id)

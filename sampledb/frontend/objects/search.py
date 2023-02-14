@@ -17,7 +17,7 @@ from ...models import Permissions
 
 
 @frontend.route('/objects/search/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def search() -> FlaskResponseT:
     actions = get_sorted_actions_for_user(
         user_id=flask_login.current_user.id

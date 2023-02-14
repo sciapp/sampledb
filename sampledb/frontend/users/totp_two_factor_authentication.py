@@ -26,7 +26,7 @@ class TOTPForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/users/me/two_factor_authentication/totp/setup', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def setup_totp_two_factor_authentication() -> FlaskResponseT:
     active_method = authentication.get_active_two_factor_authentication_method(flask_login.current_user.id)
     if active_method is not None:

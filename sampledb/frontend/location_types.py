@@ -19,7 +19,7 @@ from ..logic.components import get_component_or_none
 
 
 @frontend.route('/location_types/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def location_types() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -32,7 +32,7 @@ def location_types() -> FlaskResponseT:
 
 
 @frontend.route('/location_types/<int(signed=True):type_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def location_type(type_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -59,7 +59,7 @@ def location_type(type_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/location_types/new', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_location_type() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)

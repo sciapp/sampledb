@@ -33,7 +33,7 @@ class CreateOtherUserForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/users/create_other_user', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def create_other_user() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(HTTPStatus.UNAUTHORIZED)

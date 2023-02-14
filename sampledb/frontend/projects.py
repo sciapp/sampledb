@@ -23,7 +23,7 @@ from ..logic.utils import get_translated_text
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def project(project_id: int) -> FlaskResponseT:
     if 'token' in flask.request.args:
         token = flask.request.args.get('token', '')
@@ -515,7 +515,7 @@ def project(project_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/projects/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def projects() -> FlaskResponseT:
     user_id = None
     if 'user_id' in flask.request.args:
@@ -632,7 +632,7 @@ def projects() -> FlaskResponseT:
 
 
 @frontend.route('/projects/<int:project_id>/permissions')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def project_permissions(project_id: int) -> FlaskResponseT:
     try:
         project = logic.projects.get_project(project_id)
@@ -674,7 +674,7 @@ def project_permissions(project_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/projects/<int:project_id>/permissions', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def update_project_permissions(project_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     try:
@@ -719,7 +719,7 @@ def update_project_permissions(project_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/projects/<int:project_id>/object_link', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def link_object(project_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object_link_form = ObjectLinkForm()
@@ -749,7 +749,7 @@ def link_object(project_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/projects/<int:project_id>/object_unlink', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def unlink_object(project_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object_link_form = ObjectLinkForm()

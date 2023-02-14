@@ -80,7 +80,7 @@ def get_fed_object_if_current_user_has_read_permissions(fed_object_id: int, comp
 
 
 @frontend.route('/objects/<int:object_id>/permissions/request', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def object_permissions_request(object_id: int) -> FlaskResponseT:
     current_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     if Permissions.READ in current_permissions:

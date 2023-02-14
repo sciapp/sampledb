@@ -40,7 +40,7 @@ class ActionTypesSortingForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/action_types/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def action_types() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -60,7 +60,7 @@ def action_types() -> FlaskResponseT:
 
 
 @frontend.route('/action_types/<int(signed=True):type_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def action_type(type_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -93,7 +93,7 @@ def action_type(type_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/action_types/new', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_action_type() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)

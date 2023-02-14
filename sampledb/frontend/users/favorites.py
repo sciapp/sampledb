@@ -15,7 +15,7 @@ from ...utils import FlaskResponseT
 
 
 @frontend.route('/users/me/favorite_actions/', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def toggle_favorite_action() -> FlaskResponseT:
     check_current_user_is_not_readonly()
     toggle_favorite_action_form = ToggleFavoriteActionForm()
@@ -38,7 +38,7 @@ def toggle_favorite_action() -> FlaskResponseT:
 
 
 @frontend.route('/users/me/favorite_instruments/', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def toggle_favorite_instrument() -> FlaskResponseT:
     check_current_user_is_not_readonly()
     toggle_favorite_instrument_form = ToggleFavoriteInstrumentForm()

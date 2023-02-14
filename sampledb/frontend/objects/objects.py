@@ -76,7 +76,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
 
 
 @frontend.route('/objects/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def objects() -> FlaskResponseT:
 
     user_settings = get_user_settings(user_id=flask_login.current_user.id)
@@ -976,7 +976,7 @@ def objects() -> FlaskResponseT:
 
 
 @frontend.route('/objects/referencable')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def referencable_objects() -> FlaskResponseT:
     required_perm = Permissions.READ
     if 'required_perm' in flask.request.args:
@@ -1371,7 +1371,7 @@ def _build_modified_url(
 
 
 @frontend.route('/objects/', methods=['POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def save_object_list_defaults() -> FlaskResponseT:
     if 'save_default_filters' in flask.request.form:
         all_locations = get_locations_with_user_permissions(

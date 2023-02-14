@@ -12,7 +12,7 @@ from ..utils import FlaskResponseT
 
 
 @frontend.route('/publications/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def publications() -> FlaskResponseT:
     return flask.render_template(
         'publications.html',
