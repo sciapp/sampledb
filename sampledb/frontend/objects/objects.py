@@ -82,9 +82,15 @@ def objects():
         display_property_titles = {}
 
     all_instruments = get_instruments()
-    all_actions = get_sorted_actions_for_user(
-        user_id=flask_login.current_user.id
+    all_actions_including_hidden = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id,
+        include_hidden_actions=True
     )
+    all_actions = [
+        action
+        for action in all_actions_including_hidden
+        if not action.is_hidden
+    ]
     all_action_types = logic.actions.get_action_types(
         filter_fed_defaults=True
     )
@@ -179,7 +185,7 @@ def objects():
         ]
         valid_action_ids = [
             action.id
-            for action in all_actions
+            for action in all_actions_including_hidden
         ]
         valid_instrument_ids = [
             instrument.id
@@ -1294,7 +1300,8 @@ def save_object_list_defaults():
             filter_fed_defaults=True
         )
         all_actions = get_sorted_actions_for_user(
-            user_id=flask_login.current_user.id
+            user_id=flask_login.current_user.id,
+            include_hidden_actions=True
         )
         all_instruments = get_instruments()
         (
