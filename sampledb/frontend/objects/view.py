@@ -586,11 +586,24 @@ def print_object_label(object_id):
     for object_log_entry in object_log_entries:
         if object_log_entry.type in (ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH):
             creation_date = object_log_entry.utc_datetime.strftime('%Y-%m-%d')
-            creation_user = get_user(object_log_entry.user_id).name
+            creation_user = get_user(object_log_entry.user_id).get_name(include_id=False)
             break
     else:
-        creation_date = _('Unknown')
-        creation_user = _('Unknown')
+        if object.version_id == 0:
+            original_object = object
+        else:
+            try:
+                original_object = get_object(object_id=object_id, version_id=0)
+            except errors.ObjectVersionDoesNotExistError:
+                original_object = object
+        if original_object.utc_datetime is not None:
+            creation_date = original_object.utc_datetime.strftime('%Y-%m-%d')
+        else:
+            creation_date = _('Unknown')
+        if original_object.user_id is not None:
+            creation_user = get_user(original_object.user_id).get_name(include_id=False)
+        else:
+            creation_user = _('Unknown')
     if 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
         creation_date = object.data['created']['utc_datetime'].split(' ')[0]
     object_name = get_translated_text(object.name)

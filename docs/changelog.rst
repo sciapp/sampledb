@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.21.4
+--------------
+
+Currently in development.
+
+- Fixed label generation for imported objects
+
 Version 0.21.3
 --------------
 
