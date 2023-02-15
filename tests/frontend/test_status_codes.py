@@ -385,6 +385,7 @@ def test_status_codes(flask_server, user):
         f'objects/new?previous_object_id={other_object_id}': 302,
         'objects/referencable': 200,
         'objects/search/': 200,
+        'multiselect_labels': 400,
         'other-databases/': 200,
         f'other-databases/{component_id}': 200,
         'other-databases/alias/': 200,

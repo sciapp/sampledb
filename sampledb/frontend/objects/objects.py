@@ -10,6 +10,7 @@ import flask
 import flask_login
 import werkzeug
 from flask_babel import _
+from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
@@ -34,8 +35,9 @@ from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
 from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for
 from ...logic.utils import get_translated_text
-from .forms import ObjectLocationAssignmentForm, UseInActionForm
+from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm
 from .permissions import get_object_if_current_user_has_read_permissions
+from .view import PAGE_SIZES, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -109,6 +111,7 @@ def objects():
     edit_location = flask.request.args.get('edit_location', default=False, type=lambda k: k.lower() == 'true')
     create_from_objects = flask.request.args.get('create_from_objects', default=False, type=lambda k: k.lower() == 'true')
     use_in_action_type_id = flask.request.args.get('use_in_action_type', default=None, type=int)
+    generate_labels = flask.request.args.get('generate_labels', default=False, type=lambda k: k.lower() == 'true')
 
     name_only = True
     implicit_action_type = None
@@ -804,6 +807,7 @@ def objects():
 
     location_form = None
     use_in_action_form = None
+    generate_labels_form = None
     user_is_fed = {}
     english = None
     all_languages = []
@@ -855,6 +859,12 @@ def objects():
         for action in actions:
             if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action.id not in favorite_actions:
                 favorite_actions.append(action)
+
+    elif generate_labels:
+        generate_labels_form = GenerateLabelsForm()
+        objects_allowed_to_select = [object['object_id']
+                                     for object in objects
+                                     if object['action'] is not None and object['action'].type is not None and object['action'].type.enable_labels]
 
     else:
         create_from_objects = None
@@ -945,7 +955,13 @@ def objects():
         available_action_types=available_action_types,
         use_in_action_type=use_in_action_type,
         favorite_actions=favorite_actions,
-        use_in_action_form=use_in_action_form
+        use_in_action_form=use_in_action_form,
+        generate_labels_form=generate_labels_form,
+        generate_labels=generate_labels,
+        PAGE_SIZES=PAGE_SIZES,
+        HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
+        VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
+        mm=mm
     )
 
 

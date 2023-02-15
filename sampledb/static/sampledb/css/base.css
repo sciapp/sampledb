@@ -1277,3 +1277,7 @@ code {
     border-top-left-radius: 5px;
     border-bottom-left-radius: 5px;
 }
+
+.multiselect-form-disabled {
+  display: none;
+}

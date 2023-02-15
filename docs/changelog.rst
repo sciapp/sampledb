@@ -8,6 +8,7 @@ Currently in development.
 
 - Implemented object storage capacities for locations
 - Applied admin permissions to managing groups
+- Added selection to generate labels for multiple objects
 
 Version 0.21.3
 --------------

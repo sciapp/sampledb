@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-01-25 08:55+0100\n"
+"POT-Creation-Date: 2023-02-14 10:40+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -892,6 +892,27 @@ msgstr "Der Link wurde erfolgreich eingetragen."
 msgid "Failed to post link."
 msgstr "Das Eintragen des Links ist fehlgeschlagen."
 
+msgid "Mixed label formats"
+msgstr "Gemischte Etikettenformate"
+
+msgid "Fixed-width labels"
+msgstr "Etiketten mit fester Breite"
+
+msgid "Minimal-height labels"
+msgstr "Etiketten mit minimaler Höhe"
+
+msgid "DIN A4 (Portrait)"
+msgstr "DIN A4 (Hochformat)"
+
+msgid "DIN A4 (Landscape)"
+msgstr "DIN A4 (Querformat)"
+
+msgid "Letter / ANSI A (Portrait)"
+msgstr "Letter / ANSI A (Hochformat)"
+
+msgid "Letter / ANSI A (Landscape)"
+msgstr "Letter / ANSI A (Querformat)"
+
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
@@ -1143,6 +1164,9 @@ msgstr "Die eingegebene Port-Nummer ist ungültig."
 
 msgid "Unknown"
 msgstr "Unbekannt"
+
+msgid "Unknown Object"
+msgstr "Unbekanntes Objekt"
 
 msgid "Commenting on imported objects is not yet supported."
 msgstr "Das Kommentieren importierter Objekte wird noch nicht unterstützt."
@@ -4317,6 +4341,24 @@ msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
 msgid "You have to select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
+msgid "You have unallowed values in the red marked fields."
+msgstr "Sie haben nicht erlaubte Werte in die rot markierten Felder eingetragen."
+
+msgid "Select a Paper Format"
+msgstr "Wählen Sie ein Papierformat aus"
+
+msgid "The quantity must be an integer value greater than 0."
+msgstr "Die Anzahl muss ein ganzzahliger Wert größer als 0 sein."
+
+msgid "The width must be a number between {minWidth} and {maxWidth}."
+msgstr "Die Breite muss eine Zahl zwischen {minWidth} und {maxWidth} sein."
+
+msgid "The minimum height must be a number between 0 and {maxHeight}."
+msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
+
+msgid "The minimum width must be a number greater or equal to 0."
+msgstr "Die Mindestbreite muss eine Zahl größer oder gleich 0 sein."
+
 msgid "Error:"
 msgstr "Fehler:"
 
@@ -4488,6 +4530,9 @@ msgstr "Mehrere Objekte"
 msgid "Assign Location"
 msgstr "Ort zuweisen"
 
+msgid "Generate Labels"
+msgstr "Etiketten generieren"
+
 msgid "Use in Action"
 msgstr "In Aktion nutzen"
 
@@ -4513,6 +4558,36 @@ msgstr "Favoriten"
 #, python-format
 msgid "See other %(action_type_name)s Actions..."
 msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
+
+msgid "Select objects for which you want to generate labels."
+msgstr "Wähle Objekte aus für die Sie Etiketten generieren wollen."
+
+msgid "Select a Label Variant:"
+msgstr "Wählen Sie eine Etikettenvariante:"
+
+msgid "Paper Size:"
+msgstr "Papierformat:"
+
+msgid "Labels per Object:"
+msgstr "Etikette pro Objekt:"
+
+msgid "Label Width:"
+msgstr "Breite:"
+
+msgid "Minimum Label Height:"
+msgstr "Mindesthöhe:"
+
+msgid "QR Code and GHS symbols side-by-side"
+msgstr "QR Code und GHS Symbole nebeneinander anzeigen"
+
+msgid "Center QR Code and GHS symbols"
+msgstr "QR Code und GHS Symbole zentrieren"
+
+msgid "Minimum Label Width:"
+msgstr "Mindestbreite:"
+
+msgid "Include QR Code"
+msgstr "QR Code einfügen"
 
 msgid "Created"
 msgstr "Erstellt"
@@ -4808,9 +4883,6 @@ msgstr ""
 msgid "Generate a PDF containing labels for this object."
 msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren."
 
-msgid "Generate Labels"
-msgstr "Etiketten generieren"
-
 msgid "Show a QR code for a link to this object."
 msgstr "QR Code mit einem Link zu diesem Objekt zeigen."
 
@@ -4990,9 +5062,6 @@ msgstr "Link eintragen"
 msgid "Submit"
 msgstr "Absenden"
 
-msgid "Mixed label formats"
-msgstr "Gemischte Etikettenformate"
-
 #, python-format
 msgid ""
 "This will generate labels in a selection of predefined formats. To "
@@ -5004,24 +5073,6 @@ msgstr ""
 "href=\"mailto:%(contact_email)s\">kontaktieren Sie einen "
 "Administrator</a>, um neue Formate anzufragen."
 
-msgid "Paper Size:"
-msgstr "Papierformat:"
-
-msgid "DIN A4 (Portrait)"
-msgstr "DIN A4 (Hochformat)"
-
-msgid "DIN A4 (Landscape)"
-msgstr "DIN A4 (Querformat)"
-
-msgid "Letter / ANSI A (Portrait)"
-msgstr "Letter / ANSI A (Hochformat)"
-
-msgid "Letter / ANSI A (Landscape)"
-msgstr "Letter / ANSI A (Querformat)"
-
-msgid "Fixed-width labels"
-msgstr "Etiketten mit fester Breite"
-
 msgid ""
 "This will generate vertically oriented labels with a fixed width and an "
 "optional minimum height."
@@ -5029,33 +5080,12 @@ msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer festen Breite und "
 "einer optionalen Mindesthöhe erstellen."
 
-msgid "Label Width:"
-msgstr "Breite:"
-
-msgid "Minimum Label Height:"
-msgstr "Mindesthöhe:"
-
-msgid "QR Code and GHS symbols side-by-side"
-msgstr "QR Code und GHS Symbole nebeneinander anzeigen"
-
-msgid "Center QR Code and GHS symbols"
-msgstr "QR Code und GHS Symbole zentrieren"
-
-msgid "Minimal-height labels"
-msgstr "Etiketten mit minimaler Höhe"
-
 msgid ""
 "This will generate vertically oriented labels with a height as low as "
 "possible and an optional minimum width."
 msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer minimalen Höhe und "
 "einer optionalen Mindestbreite erstellen."
-
-msgid "Minimum Label Width:"
-msgstr "Mindestbreite:"
-
-msgid "Include QR Code"
-msgstr "QR Code einfügen"
 
 msgid "Object QR Code"
 msgstr "Objekt QR Code"
