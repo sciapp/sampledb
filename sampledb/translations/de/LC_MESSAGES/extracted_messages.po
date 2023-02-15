@@ -6089,6 +6089,9 @@ msgstr "Datenbank #%(id)s"
 msgid "Unnamed Instrument (#%(instrument_id)s)"
 msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
+msgid "Imported User"
+msgstr "Importierter Nutzer"
+
 #, python-format
 msgid "Imported User (#%(user_id)s%(db_ref)s)"
 msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
