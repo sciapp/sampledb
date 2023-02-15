@@ -52,7 +52,7 @@ def scicat_export(object_id: int) -> FlaskResponseT:
     object = logic.objects.get_object(object_id)
 
     if object.component_id is not None or object.data is None or object.schema is None:
-        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+        flask.flash(_('Exporting imported objects is not supported.'), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))
 
     if object.action_id is not None:

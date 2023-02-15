@@ -4,6 +4,7 @@
 !.dockerignore
 _*
 !__init__.py
+!__init__.pyi
 !__main__.py
 ldapaccount.py
 local.py

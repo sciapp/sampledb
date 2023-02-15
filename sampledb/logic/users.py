@@ -127,11 +127,11 @@ class User:
             if db_ref:
                 db_ref = " (" + db_ref[2:] + ")"
             if self.name is None:
-                return gettext('Imported User') + db_ref  # type: ignore
+                return gettext('Imported User') + db_ref
             else:
                 return self.name + db_ref
         if self.name is None:
-            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)  # type: ignore
+            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
         else:
             return f'{self.name} (#{self.id}{db_ref})'
 
