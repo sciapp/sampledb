@@ -371,7 +371,7 @@ def test_status_codes(flask_server, user):
         f'objects/{other_object_id}/files/': 200,
         f'objects/{other_object_id}/files/{file_id}': 404,
         f'objects/{other_object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
-        f'objects/{other_object_id}/label': 200,
+        f'objects/{other_object_id}/label': 403,
         f'objects/{other_object_id}/permissions': 200,
         f'objects/{other_object_id}/scicat_export/': 302,
         f'objects/{other_object_id}/versions/': 200,
