@@ -509,6 +509,12 @@ def object_rdf(object_id, version_id=None):
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def print_object_label(object_id):
     mode = flask.request.args.get('mode', 'mixed')
+    action_id = get_object(object_id).action_id
+
+    action = get_action(action_id) if action_id else None
+    if not (action and action.type and action.type.enable_labels):
+        flask.abort(403)
+
     if mode == 'fixed-width':
         create_mixed_labels = False
         create_long_labels = False
