@@ -105,6 +105,7 @@ def objects():
             'sample',
             'measurement',
             'plotly_chart',
+            'timeseries',
         )
     )
 

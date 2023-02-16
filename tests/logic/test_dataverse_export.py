@@ -58,6 +58,11 @@ def action():
                             }
                         }
                     }
+                },
+                'timeseries': {
+                    'type': 'timeseries',
+                    'title': 'Timeseries Property',
+                    'units': 'kg'
                 }
             },
             'required': ['name']
@@ -222,7 +227,17 @@ def test_export(user, action, tmpdir, app):
                     'text': 'Text Value'
                 }
             }
-        ]
+        ],
+        'timeseries': {
+            '_type': 'timeseries',
+            'units': 'kg',
+            'dimensionality': '[mass]',
+            'data': [
+                ['2000-01-01 01:01:01.000000', 0],
+                ['2000-01-01 01:01:01.000001', 1],
+                ['2000-01-01 01:01:01.000002', 2]
+            ]
+        }
     }
     object = sampledb.logic.objects.create_object(user_id=user.id, action_id=action.id, data=data)
     example_file = sampledb.logic.files.create_local_file(object.id, user.id, 'example1.txt', lambda io: io.write(b'Example Content'))
@@ -363,3 +378,63 @@ def test_get_dataverse_info():
             'id': 'example_dataverse',
             'title': 'Example Dataverse'
         }
+
+def test_flatten_metadata():
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object'
+        },
+        'array': [
+            {
+                'text': {
+                    '_type': 'text',
+                    'text': 'Text Value'
+                }
+            }
+        ],
+        'timeseries': {
+            '_type': 'timeseries',
+            'units': 'kg',
+            'dimensionality': '[mass]',
+            'data': [
+                ['2000-01-01 01:01:01.000000', 0],
+                ['2000-01-01 01:01:01.000001', 1],
+                ['2000-01-01 01:01:01.000002', 2]
+            ]
+        }
+    }
+    assert list(sampledb.logic.dataverse_export.flatten_metadata(data)) == [
+        (data['name'], ['name'], ['name']),
+        (data['array'][0]['text'], ['array', 0, 'text'], ['array', 0, 'text']),
+        (
+            {
+                '_type': 'quantity',
+                'dimensionality': '[mass]',
+                'magnitude': 0,
+                'units': 'kg'
+             },
+            ['timeseries'],
+            ['timeseries', '2000-01-01 01:01:01.000000']
+        ),
+        (
+            {
+                '_type': 'quantity',
+                'dimensionality': '[mass]',
+                'magnitude': 1,
+                'units': 'kg'
+             },
+            ['timeseries'],
+            ['timeseries', '2000-01-01 01:01:01.000001']
+        ),
+        (
+            {
+                '_type': 'quantity',
+                'dimensionality': '[mass]',
+                'magnitude': 2,
+                'units': 'kg'
+             },
+            ['timeseries'],
+            ['timeseries', '2000-01-01 01:01:01.000002']
+        )
+    ]

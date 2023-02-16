@@ -111,11 +111,11 @@ def scicat_export(object_id):
             if instruments:
                 scicat_export_form.instrument.choices += instruments
 
-        properties = [
-            (metadata, path)
-            for metadata, path in logic.dataverse_export.flatten_metadata(object.data)
-            if not ('_type' in metadata and metadata['_type'] == 'tags') and all(c in string.ascii_letters + string.digits + '_' for c in ''.join(map(str, path)))
-        ]
+        properties = {
+            tuple(whitelist_path): metadata
+            for metadata, whitelist_path, title_path in logic.dataverse_export.flatten_metadata(object.data)
+            if not ('_type' in metadata and metadata['_type'] == 'tags') and all(c in string.ascii_letters + string.digits + '_' for c in ''.join(map(str, title_path)))
+        }
 
         if object_export_type in {logic.scicat_export.SciCatExportType.RAW_DATASET, logic.scicat_export.SciCatExportType.DERIVED_DATASET}:
             tags = set()
@@ -181,9 +181,9 @@ def scicat_export(object_id):
         property_whitelist = [
             ['name']
         ]
-        for metadata, path in properties:
-            if 'property,' + ','.join(map(str, path)) in flask.request.form:
-                property_whitelist.append(path)
+        for whitelist_path in properties:
+            if 'property,' + ','.join(map(str, whitelist_path)) in flask.request.form:
+                property_whitelist.append(whitelist_path)
 
         if 'do_export' in flask.request.form and scicat_export_form.validate_on_submit():
             tag_whitelist = set()

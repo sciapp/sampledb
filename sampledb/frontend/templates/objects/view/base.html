@@ -1414,6 +1414,8 @@
       </div>
     </div>
   {% endif %}
+
+  {% include "objects/view/timeseries_modals.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -1431,6 +1433,7 @@
     </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
   <script type="text/javascript">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}

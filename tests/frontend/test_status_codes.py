@@ -1,4 +1,5 @@
 import copy
+import datetime
 import secrets
 
 import flask
@@ -84,6 +85,11 @@ def test_status_codes(flask_server, user):
                     'name': {
                         'type': 'text',
                         'title': 'name'
+                    },
+                    'timeseries': {
+                        'type': 'timeseries',
+                        'title': 'timeseries',
+                        'units': 'm'
                     }
                 },
                 'required': ['name']
@@ -208,10 +214,18 @@ def test_status_codes(flask_server, user):
                 'name': {
                     '_type': 'text',
                     'text': 'test'
+                },
+                'timeseries': {
+                    '_type': 'timeseries',
+                    'units': 'm',
+                    'data': [
+                        (datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'), 0, 0)
+                    ]
                 }
             },
             user_id=user_id
         )
+        timeseries_id = 'object__timeseries'
         other_object_id = sampledb.logic.objects.create_object(
             action_id=other_action_id,
             data={
@@ -358,6 +372,7 @@ def test_status_codes(flask_server, user):
         f'objects/{object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
         f'objects/{object_id}/label': 200,
         f'objects/{object_id}/permissions': 200,
+        f'objects/{object_id}/timeseries_data/{timeseries_id}': 200,
         f'objects/{object_id}/scicat_export/': 200,
         f'objects/{object_id}/versions/': 200,
         f'objects/{object_id}/versions/0': 200,
@@ -373,6 +388,7 @@ def test_status_codes(flask_server, user):
         f'objects/{other_object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
         f'objects/{other_object_id}/label': 200,
         f'objects/{other_object_id}/permissions': 200,
+        f'objects/{other_object_id}/timeseries_data/{timeseries_id}': 404,
         f'objects/{other_object_id}/scicat_export/': 302,
         f'objects/{other_object_id}/versions/': 200,
         f'objects/{other_object_id}/versions/0': 200,
@@ -464,5 +480,6 @@ def test_status_codes(flask_server, user):
         'file_name': markdown_image_file_name,
         'token': token,
         'task_id': task_id,
+        'timeseries_id': timeseries_id,
         'error_code': 400,
     })

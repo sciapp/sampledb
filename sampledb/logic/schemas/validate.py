@@ -5,6 +5,7 @@ Implementation of validate(instance, schema)
 
 import re
 import datetime
+import decimal
 import string
 import typing
 import math
@@ -20,6 +21,7 @@ from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
 from .utils import units_are_valid
 from ..utils import get_translated_text
+from ..units import get_dimensionality_for_units, get_magnitude_in_base_units
 
 opt_federation_keys = {'export_edit_note', 'component_uuid'}
 
@@ -73,6 +75,8 @@ def validate(
         return _validate_user(instance, schema, path)
     elif schema['type'] == 'plotly_chart' and isinstance(instance, dict):
         return _validate_plotly_chart(instance, schema, path)
+    elif schema['type'] == 'timeseries' and isinstance(instance, dict):
+        return _validate_timeseries(instance, schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -688,3 +692,86 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
         plotly.io.from_json(json.dumps(instance['plotly']), 'Figure', False)
     except ValueError:
         raise ValidationError(_('The plotly data must be valid. Look up which schema is supported by plotly.'), path)
+
+
+def _validate_timeseries(
+        instance: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        path: typing.List[str]
+) -> None:
+    """
+    Validates the given instance using the given timeseries schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    required_keys = {'_type', 'data'}
+    valid_keys = required_keys.union({'units', 'dimensionality', 'data'})
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    if invalid_keys:
+        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+    if instance['_type'] != 'timeseries':
+        raise ValidationError('expected _type "timeseries"', path)
+    if 'units' not in instance:
+        instance['units'] = schema['units']
+    if not isinstance(instance['units'], str):
+        raise ValidationError('units must be str', path)
+    if not units_are_valid(instance['units']):
+        raise ValidationError('Invalid/Unknown units', path)
+    if isinstance(schema['units'], str) and instance['units'] != schema['units']:
+        raise ValidationError(f'Invalid units, expected {schema["units"]}', path)
+    if isinstance(schema['units'], list) and instance['units'] not in schema['units']:
+        raise ValidationError(f'Invalid units, expected one of {", ".join(schema["units"])}', path)
+
+    try:
+        if isinstance(schema['units'], str):
+            schema_units = schema['units']
+        else:
+            schema_units = schema['units'][0]
+        dimensionality_from_schema_units = get_dimensionality_for_units(schema_units)
+    except Exception:
+        raise ValidationError('Unable to determine dimensionality', path)
+    if 'dimensionality' in instance:
+        if not isinstance(instance['dimensionality'], str):
+            raise ValidationError('dimensionality must be str', path)
+        if instance['dimensionality'] != dimensionality_from_schema_units:
+            raise ValidationError('dimensionality must match units', path)
+    else:
+        instance['dimensionality'] = dimensionality_from_schema_units
+    if datatypes.Quantity(1, instance['units']).dimensionality != dimensionality_from_schema_units:
+        raise ValidationError(f'Invalid units, expected units for dimensionality "{str(dimensionality_from_schema_units)}"', path)
+
+    if not isinstance(instance['data'], list):
+        raise ValidationError('data must be list', path)
+    if not all(isinstance(entry, (list, tuple)) and len(entry) in (2, 3) and type(entry[0]) is str and all(type(value) in (int, float) for value in entry[1:]) for entry in instance['data']):
+        raise ValidationError('data must be list of lists containing a datetime string and 1 or 2 numbers ', path)
+
+    existing_times = set()
+    for i, entry in enumerate(instance['data']):
+        utc_datetime, magnitude = entry[:2]
+        if not math.isfinite(magnitude):
+            raise ValidationError('magnitude must be finite', path)
+        if utc_datetime in existing_times:
+            raise ValidationError('duplicate point in timeseries', path)
+        try:
+            datetime.datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S.%f')
+        except Exception:
+            raise ValidationError('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff', path)
+        existing_times.add(utc_datetime)
+        calculated_magnitude_in_base_units = get_magnitude_in_base_units(magnitude=decimal.Decimal(magnitude), units=instance['units'])
+        if len(entry) == 3:
+            magnitude_in_base_units = entry[2]
+            if not math.isfinite(magnitude_in_base_units):
+                raise ValidationError('magnitude_in_base_units must be finite', path)
+            if not math.isclose(float(calculated_magnitude_in_base_units), magnitude_in_base_units):
+                raise ValidationError('magnitude_in_base_units and magnitude do not match', path)
+        else:
+            instance['data'][i] = [utc_datetime, float(magnitude), float(calculated_magnitude_in_base_units)]

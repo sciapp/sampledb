@@ -1,0 +1,21 @@
+{% if not data or not data.data %}
+  &mdash;
+{% else %}
+  <span class="timeseries-container">
+    {% set timeseries_data = data | to_timeseries_data(schema) %}
+    {{ timeseries_data.magnitude_average | babel_format_number(schema.get('display_digits', 2)) }}{% if timeseries_data.magnitude_stddev is not none %} ± {{ timeseries_data.magnitude_stddev | babel_format_number(schema.get('display_digits', 2)) }}{% endif %}{{ timeseries_data.units }}
+    {% if timeseries_data.utc_datetimes | length > 1 %}
+      {% if timeseries_data.same_day %}
+        {{ _('between %(start_time)s and %(end_time)s on %(date)s', start_time=timeseries_data.utc_datetimes[0] | babel_format_time, end_time=timeseries_data.utc_datetimes[-1] | babel_format_time, date=timeseries_data.utc_datetimes[0] | babel_format_date) }}
+      {% else %}
+        {{ _('between %(start_datetime)s and %(end_datetime)s', start_datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime, end_datetime=timeseries_data.utc_datetimes[-1] | babel_format_datetime) }}
+      {% endif %}
+    {% else %}
+      {{ _('at %(datetime)s', datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime) }}
+    {% endif %}
+    <button type="button" class="btn btn-default btn-xs timeseries-chart-button" data-toggle="tooltip" data-placement="top" title="{{ _('View chart') }}"><i class="fa fa-line-chart fa-fw"></i></button>
+    <button type="button" class="btn btn-default btn-xs timeseries-table-button" data-toggle="tooltip" data-placement="top" title="{{ _('View table') }}"><i class="fa fa-table fa-fw"></i></button>
+    <a href="{{ url_for('.download_timeseries_data', object_id=object_id, timeseries_id=id_prefix[:-1]) }}" class="btn btn-default btn-xs timeseries-download-button" data-toggle="tooltip" data-placement="top" title="{{ _('Download data') }}"><i class="fa fa-download fa-fw"></i></a>
+    <script type="application/json">{{ timeseries_data | tojson }}</script>
+  </span>
+{% endif %}

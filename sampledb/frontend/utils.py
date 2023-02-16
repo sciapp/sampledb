@@ -2,7 +2,10 @@
 """
 
 """
+import copy
+import csv
 import dataclasses
+import io
 import json
 import base64
 import functools
@@ -24,6 +27,7 @@ import qrcode
 import qrcode.image.svg
 import plotly
 import pytz
+import numpy as np
 
 from ..logic import errors
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
@@ -227,6 +231,24 @@ def custom_format_date(date, format='%Y-%m-%d'):
     else:
         datetime_obj = datetime.strptime(date, format)
     return format_date(datetime_obj)
+
+
+@jinja_filter('babel_format_time')
+def custom_format_time(
+        utc_datetime: typing.Union[str, datetime]
+) -> str:
+    """
+    Return a formatted time.
+
+    :param utc_datetime: a datetime string or object in UTC
+    :return: the formatted time or utc_datetime in case of an error
+    """
+    try:
+        if not isinstance(utc_datetime, datetime):
+            utc_datetime = parse_datetime_string(utc_datetime)
+        return flask_babel.format_time(utc_datetime)
+    except ValueError:
+        return utc_datetime
 
 
 @jinja_filter('babel_format_number')
@@ -1111,3 +1133,79 @@ def get_project_group_name_prefixes(project_id: int) -> typing.List[str]:
         else:
             name_prefixes.append(parent_project_name + ' / ')
     return sorted(name_prefixes)
+
+
+@jinja_filter()
+def to_timeseries_data(data, schema):
+    entries = list(sorted(
+        (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
+        for entry in data['data']
+    ))
+    utc_datetimes = [
+        entry[0]
+        for entry in entries
+    ]
+    magnitudes = [
+        entry[1]
+        for entry in entries
+    ]
+    display_digits = schema.get('display_digits')
+    magnitude_strings = [
+        custom_format_number(magnitude, display_digits)
+        for magnitude in magnitudes
+    ]
+    if len(utc_datetimes) > 1:
+        # determine time-weighted average and standard deviation
+        time_weights = np.zeros(len(magnitudes))
+        time_weights[0] = (utc_datetimes[1] - utc_datetimes[0]).total_seconds() / 2
+        time_weights[-1] = (utc_datetimes[-1] - utc_datetimes[-2]).total_seconds() / 2
+        for i in range(1, len(utc_datetimes) - 1):
+            previous_utc_datetime = utc_datetimes[i - 1]
+            next_utc_datetime = utc_datetimes[i + 1]
+            time_weights[i] = (next_utc_datetime - previous_utc_datetime).total_seconds() / 2
+        magnitude_average = np.average(magnitudes, weights=time_weights)
+        magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+    else:
+        magnitude_average = magnitudes[0]
+        magnitude_stddev = None
+    # convert datetimes to local timezone
+    local_timezone = pytz.timezone(flask_login.current_user.timezone)
+    local_datetimes = [
+        pytz.utc.localize(utc_datetime).astimezone(local_timezone)
+        for utc_datetime in utc_datetimes
+    ]
+    local_datetimes_strings = [
+        local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+        for local_datetime in local_datetimes
+    ]
+    return {
+        'title': get_translated_text(schema.get('title')),
+        'units': ' ' + prettify_units(data['units']) if data['dimensionality'] != 'dimensionless' else '',
+        'utc_datetimes': utc_datetimes,
+        'local_datetimes_strings': local_datetimes_strings,
+        'magnitudes': magnitudes,
+        'magnitude_strings': magnitude_strings,
+        'magnitude_average': magnitude_average,
+        'magnitude_stddev': magnitude_stddev,
+        'same_day': utc_datetimes[0].date() == utc_datetimes[-1].date()
+    }
+
+
+@jinja_filter()
+def to_timeseries_csv(rows):
+    rows = copy.deepcopy(rows)
+    user_timezone = pytz.timezone(flask_login.current_user.timezone)
+    if user_timezone != pytz.utc:
+        # convert datetimes from UTC if necessary
+        for row in rows:
+            try:
+                parsed_datetime = datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                continue
+            local_datetime = pytz.utc.localize(parsed_datetime)
+            utc_datetime = local_datetime.astimezone(user_timezone)
+            row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+    csv_file = io.StringIO()
+    writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
+    writer.writerows(rows)
+    return csv_file.getvalue()

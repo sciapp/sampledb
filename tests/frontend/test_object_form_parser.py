@@ -18,6 +18,7 @@ def mock_current_user():
         def __init__(self):
             self.language_cache: typing.List[typing.Optional[sampledb.logic.languages.Language]] = [None]
             self.is_authenticated = True
+            self.timezone = 'UTC'
 
         def set_language_by_lang_code(self, lang_code):
             language = sampledb.logic.languages.get_language_by_lang_code(lang_code)
@@ -209,3 +210,110 @@ def test_parse_quantity_input(mock_current_user, lang_code, decimal_separator, g
     assert not errors
     assert data['magnitude'] == 1.1
     assert data['magnitude_in_base_units'] == 0.33528
+
+
+def test_parse_timeseries_form_data(mock_current_user):
+    id_prefix = 'object__timeseries'
+    schema = {
+        'type': 'timeseries',
+        'title': 'Time Series',
+        'units': ['g', 'kg']
+    }
+    form_data = {
+        id_prefix + '__units': ['g'],
+        id_prefix + '__data': ['']
+    }
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",1.0
+"2023-01-02 03:04:06.678900",2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert not errors
+    assert data['data'] == [
+        ["2023-01-02 03:04:05.678900", 1.0, 0.001],
+        ["2023-01-02 03:04:06.678900", 2.0, 0.002]
+    ]
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",3.0,0.003
+"2023-01-02 03:04:06.678900",4.0,0.004
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert not errors
+    assert data['data'] == [
+        ["2023-01-02 03:04:05.678900", 3.0, 0.003],
+        ["2023-01-02 03:04:06.678900", 4.0, 0.004]
+    ]
+
+    form_data[id_prefix + '__data'][0] = '''"utc_datetime","magnitude","magnitude_in_base_units"
+"2023-01-02 03:04:05.678900",5.0,0.005
+"2023-01-02 03:04:06.678900",6.0,0.006
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert not errors
+    assert data['data'] == [
+        ["2023-01-02 03:04:05.678900", 5.0, 0.005],
+        ["2023-01-02 03:04:06.678900", 6.0, 0.006]
+    ]
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",1.0
+"2023-01-02 03:04:06.678900",2.0
+'''
+    form_data[id_prefix + '__units'][0] = "invalid units"
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",1.0,0.001
+"2023-01-02 03:04:06.678900",2.0,0.003
+'''
+    form_data[id_prefix + '__units'][0] = "g"
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = ""
+    form_data[id_prefix + '__units'][0] = "g"
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=True)
+    assert not errors
+    assert data['data'] == []
+
+    form_data[id_prefix + '__data'][0] = ""
+    form_data[id_prefix + '__units'][0] = "g"
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=False)
+    assert not errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:0500",1.0
+"2023-01-02 03:04:06.678900",2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert errors
+    assert data is None
+
+    mock_current_user.timezone = 'Europe/Berlin'
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",1.0
+"2023-01-02 03:04:06.678900",2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert not errors
+    assert data['data'] == [
+        ["2023-01-02 02:04:05.678900", 1.0, 0.001],
+        ["2023-01-02 02:04:06.678900", 2.0, 0.002]
+    ]
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",1.0
+"2023-01-02 03:04:06.678900123",2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors)
+    assert errors
+    assert data is None

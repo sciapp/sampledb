@@ -1,7 +1,7 @@
 {% if hidden %}
     <div class="hidden show-more-{{ parent_id_prefix }}">
 {% endif %}
-{% if schema["type"] in ["object", "array", "text", "quantity", "bool", "datetime", "user", "object_reference", "sample", "measurement", "hazards", "tags"] %}
+{% if schema["type"] in ["object", "array", "text", "quantity", "bool", "datetime", "user", "object_reference", "sample", "measurement", "hazards", "tags", "timeseries"] %}
     {% include get_inline_edit_template(schema) %}
 {% else %}
     <div class="hidden">
