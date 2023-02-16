@@ -7,6 +7,7 @@ Version 0.21.4
 Currently in development.
 
 - Fixed label generation for imported objects
+- Show "Create Action" button for instrument scientists
 
 Version 0.21.3
 --------------
