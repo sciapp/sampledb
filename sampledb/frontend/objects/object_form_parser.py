@@ -516,6 +516,8 @@ def parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=Fa
         if user_timezone != pytz.utc:
             # convert datetimes to UTC if necessary
             for row in timeseries_data:
+                if len(row) not in [2, 3] or not isinstance(row[0], str) or not all(type(entry) in (float, int) for entry in row[1:]):
+                    raise ValueError(_('invalid timeseries CSV data, expected datetime string, magnitude and (optional) magnitude in base units'))
                 try:
                     parsed_datetime = datetime.datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
                 except ValueError as exc:

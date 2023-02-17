@@ -997,6 +997,13 @@ msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
 msgid ""
+"invalid timeseries CSV data, expected datetime string, magnitude and "
+"(optional) magnitude in base units"
+msgstr ""
+"Ungültige CSV-Daten für Zeitreihe, erwartet: Zeitpunkt als Zeichenkette, "
+"Größe und (optional) Größe in Basiseinheiten"
+
+msgid ""
 "invalid datetime in timeseries, expected format: YYYY-MM-DD "
 "hh:mm:ss.ffffff"
 msgstr ""
