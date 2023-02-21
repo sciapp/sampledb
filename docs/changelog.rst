@@ -11,6 +11,14 @@ Currently in development.
 - Added selection to generate labels for multiple objects
 - Added timeseries data type
 
+Version 0.21.4
+--------------
+
+Released on February 21st, 2023.
+
+- Fixed label generation for imported objects
+- Show "Create Action" button for instrument scientists
+
 Version 0.21.3
 --------------
 

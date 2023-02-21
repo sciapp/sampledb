@@ -448,3 +448,23 @@ def test_check_user_exists():
     sampledb.logic.users.check_user_exists(user.id)
     with pytest.raises(errors.UserDoesNotExistError):
         sampledb.logic.users.check_user_exists(user.id + 1)
+
+
+def test_get_name():
+    local_user = sampledb.logic.users.create_user(name="Local User", email="example@example.org", type=UserType.PERSON)
+    assert local_user.get_name() == f"Local User (#{local_user.id})"
+    assert local_user.get_name(include_ref=True, include_id=True) == f"Local User (#{local_user.id})"
+    assert local_user.get_name(include_ref=True, include_id=False) == "Local User"
+    assert local_user.get_name(include_ref=False, include_id=False) == "Local User"
+
+    component = add_component(address=None, uuid=UUID_1, name='Example Component', description='')
+    fed_user_without_name = sampledb.logic.users.create_user(name=None, email=None, type=UserType.FEDERATION_USER, component_id=component.id, fed_id=1)
+    assert fed_user_without_name.get_name() == f"Imported User (#{fed_user_without_name.id})"
+    assert fed_user_without_name.get_name(include_ref=True, include_id=True) == f"Imported User (#{fed_user_without_name.id}, #{fed_user_without_name.fed_id} @ Example Component)"
+    assert fed_user_without_name.get_name(include_ref=True, include_id=False) == f"Imported User (#{fed_user_without_name.fed_id} @ Example Component)"
+    assert fed_user_without_name.get_name(include_ref=False, include_id=False) == "Imported User"
+    fed_user_with_name = sampledb.logic.users.create_user(name="Federation User", email=None, type=UserType.FEDERATION_USER, component_id=component.id, fed_id=2)
+    assert fed_user_with_name.get_name() == f"Federation User (#{fed_user_with_name.id})"
+    assert fed_user_with_name.get_name(include_ref=True, include_id=True) == f"Federation User (#{fed_user_with_name.id}, #{fed_user_with_name.fed_id} @ Example Component)"
+    assert fed_user_with_name.get_name(include_ref=True, include_id=False) == f"Federation User (#{fed_user_with_name.fed_id} @ Example Component)"
+    assert fed_user_with_name.get_name(include_ref=False, include_id=False) == "Federation User"
