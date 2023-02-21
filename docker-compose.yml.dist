@@ -6,7 +6,7 @@ version: '3'
 
 services:
   web:
-    image: sciapp/sampledb:0.21.3
+    image: sciapp/sampledb:0.21.4
     restart: always
     container_name: sampledb
     # Note: this config option works with docker-compose version >1.27

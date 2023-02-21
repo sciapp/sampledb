@@ -4,7 +4,7 @@ Changelog
 Version 0.21.4
 --------------
 
-Currently in development.
+Released on February 21st, 2023.
 
 - Fixed label generation for imported objects
 - Show "Create Action" button for instrument scientists
