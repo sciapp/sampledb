@@ -402,10 +402,10 @@ def show_action_form(
                 schema = json.loads(schema_json)
             except json.JSONDecodeError as e:
                 error_lines = {e.lineno}
-                error_message = "Failed to parse as JSON: {}".format(e.msg)
+                error_message = f"Failed to parse as JSON: {e.msg}"
             except Exception as e:
                 error_lines = all_lines
-                error_message = "Failed to parse as JSON: {}".format(str(e))
+                error_message = f"Failed to parse as JSON: {str(e)}"
         if schema is not None:
             try:
                 invalid_template_paths = enforce_permissions(schema, flask_login.current_user.id)

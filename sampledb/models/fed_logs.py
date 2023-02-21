@@ -49,7 +49,7 @@ class FedUserLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -95,7 +95,7 @@ class FedObjectLogEntry(db.Model):  # type: ignore
         self.user_id = user_id
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, object_id={1.object_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_id={self.object_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -136,8 +136,7 @@ class FedLocationLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, location_id={1.location_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
-            type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, location_id={self.location_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -178,7 +177,7 @@ class FedLocationTypeLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, location_type_id={1.location_type_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, location_type_id={self.location_type_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -219,8 +218,7 @@ class FedActionLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, action_id={1.action_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
-            type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, action_id={self.action_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -261,8 +259,7 @@ class FedActionTypeLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, action_type_id={1.action_type_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
-            type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, action_type_id={self.action_type_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -303,8 +300,7 @@ class FedInstrumentLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, instrument_id={1.instrument_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
-            type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, instrument_id={self.instrument_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -345,8 +341,7 @@ class FedCommentLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, comment_id={1.comment_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
-            type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, comment_id={self.comment_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -394,8 +389,7 @@ class FedFileLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, file_id={1.file_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(
-            type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, file_id={self.file_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
 
 
 @enum.unique
@@ -436,4 +430,4 @@ class FedObjectLocationAssignmentLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, object_location_assignment_id={1.object_location_assignment_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_location_assignment_id={self.object_location_assignment_id}, utc_datetime={self.utc_datetime}, data={self.data})>'

@@ -64,7 +64,7 @@ class ActionTypeTranslation(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id!r}, name={1.name!r})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id!r}, name={self.name!r})>'
 
 
 class ActionTranslation(db.Model):  # type: ignore
@@ -116,4 +116,4 @@ class ActionTranslation(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id!r})>'

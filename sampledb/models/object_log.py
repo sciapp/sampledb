@@ -59,4 +59,4 @@ class ObjectLogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, object_id={1.object_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_id={self.object_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'

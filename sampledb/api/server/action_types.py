@@ -38,7 +38,7 @@ class ActionType(Resource):
             )
         except errors.ActionTypeDoesNotExistError:
             return {
-                "message": "action type {} does not exist".format(type_id)
+                "message": f"action type {type_id} does not exist"
             }, 404
         return action_type_to_json(action_type)
 

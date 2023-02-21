@@ -41,4 +41,4 @@ class SciCatExport(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(object_id={1.object_id}, scicat_url={1.scicat_url})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(object_id={self.object_id}, scicat_url={self.scicat_url})>'

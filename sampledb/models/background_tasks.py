@@ -37,4 +37,4 @@ class BackgroundTask(db.Model):  # type: ignore
         db.session.commit()
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, auto_delete={1.auto_delete}, data={1.data}, status={1.status})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, auto_delete={self.auto_delete}, data={self.data}, status={self.status})>'

@@ -29,7 +29,7 @@ def _generate_ghs_image_uris():
     ghs_image_uris = []
     GHS_IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'static', 'sampledb', 'img')
     for i in range(0, 10):
-        ghs_image = Image.open(os.path.join(GHS_IMAGE_DIR, 'ghs0{}.png'.format(i))).convert('RGBA')
+        ghs_image = Image.open(os.path.join(GHS_IMAGE_DIR, f'ghs0{i}.png')).convert('RGBA')
         ghs_background_image = Image.new('RGBA', ghs_image.size, (255, 255, 255, 255))
         ghs_image = Image.alpha_composite(ghs_background_image, ghs_image)
         image_stream = io.BytesIO()
@@ -94,9 +94,9 @@ def _draw_label(canvas, sample_name, sample_creator, sample_creation_date, sampl
 
     canvas.setFont("Helvetica", 6)
     if ghs_classes_side_by_side:
-        canvas.drawCentredString(left_offset + qrcode_width / 2, top_cursor + font_size * 1.2, "#{}".format(sample_id))
+        canvas.drawCentredString(left_offset + qrcode_width / 2, top_cursor + font_size * 1.2, f"#{sample_id}")
     else:
-        canvas.drawCentredString(left_offset / 2 + right_offset / 2, top_cursor + font_size * 1.2, "#{}".format(sample_id))
+        canvas.drawCentredString(left_offset / 2 + right_offset / 2, top_cursor + font_size * 1.2, f"#{sample_id}")
     if not ghs_classes_side_by_side:
         if ghs_classes:
             canvas.line(full_left_offset, top_cursor + font_size / 2 * 1.2, full_right_offset, top_cursor + font_size / 2 * 1.2)
@@ -152,13 +152,13 @@ def _draw_long_label(canvas: Canvas, sample_name, sample_creator, sample_creatio
     num_lines = 2
     if include_qrcode:
         upper_line_text1 = sample_name
-        upper_line_text2 = " • #{}".format(sample_id)
+        upper_line_text2 = f" • #{sample_id}"
         middle_line_text = sample_creator
         lower_line_text = sample_creation_date
         num_lines = 3
     else:
         upper_line_text1 = sample_name
-        upper_line_text2 = " • #{}".format(sample_id)
+        upper_line_text2 = f" • #{sample_id}"
         middle_line_text = sample_creator + " • " + sample_creation_date
         lower_line_text = ''
 

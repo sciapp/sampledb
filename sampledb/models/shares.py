@@ -41,4 +41,4 @@ class ObjectShare(db.Model):  # type: ignore
         self.user_id = user_id
 
     def __repr__(self) -> str:
-        return '<{0}(object_id={1.object_id}, component_id={1.component_id}, policy={1.policy}, utc_datetime={1.utc_datetime})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(object_id={self.object_id}, component_id={self.component_id}, policy={self.policy}, utc_datetime={self.utc_datetime})>'

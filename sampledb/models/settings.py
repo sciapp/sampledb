@@ -31,4 +31,4 @@ class Settings(db.Model):  # type: ignore
         self.data = data
 
     def __repr__(self) -> str:
-        return '<{0}(user_id={1.user_id}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(user_id={self.user_id}, data={self.data})>'

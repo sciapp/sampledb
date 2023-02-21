@@ -66,13 +66,13 @@ def _get_id(
                 # mypy type narrowing
                 assert type(id) is int
             except ValueError:
-                raise errors.InvalidDataExportError('ID "{}" could not be converted to an integer'.format(id))
+                raise errors.InvalidDataExportError(f'ID "{id}" could not be converted to an integer')
         else:
-            raise errors.InvalidDataExportError('ID "{}" is not an integer'.format(id))
+            raise errors.InvalidDataExportError(f'ID "{id}" is not an integer')
     if min is not None and id < min:
         if special_values is not None and id in special_values:
             return id
-        raise errors.InvalidDataExportError('Invalid ID "{}". Has to be greater than {}. Allowed special values: {}'.format(id, min, special_values))
+        raise errors.InvalidDataExportError(f'Invalid ID "{id}". Has to be greater than {min}. Allowed special values: {special_values}')
     return id
 
 
@@ -117,14 +117,14 @@ def _get_uuid(
             raise errors.InvalidDataExportError('Missing UUID')
         return default
     if type(uuid) is not str:
-        raise errors.InvalidDataExportError('UUID "{}" is not a string'.format(uuid))
+        raise errors.InvalidDataExportError(f'UUID "{uuid}" is not a string')
     try:
         uuid_obj = UUID(uuid)
         return str(uuid_obj)
     except ValueError:
-        raise errors.InvalidDataExportError('Invalid UUID "{}"'.format(uuid))
+        raise errors.InvalidDataExportError(f'Invalid UUID "{uuid}"')
     except TypeError:
-        raise errors.InvalidDataExportError('Invalid UUID "{}"'.format(uuid))
+        raise errors.InvalidDataExportError(f'Invalid UUID "{uuid}"')
 
 
 @typing.overload
@@ -168,7 +168,7 @@ def _get_bool(
             raise errors.InvalidDataExportError('Missing boolean')
         return default
     if type(bool_in) is not bool:
-        raise errors.InvalidDataExportError('Invalid boolean "{}"'.format(bool_in))
+        raise errors.InvalidDataExportError('Invalid boolean "{bool_in}"')
     return bool_in
 
 
@@ -185,10 +185,10 @@ def _get_translation(
     if isinstance(translation, dict):
         for key, item in translation.items():
             if type(key) is not str or type(item) is not str or key == '':
-                raise errors.InvalidDataExportError('Invalid translation dict "{}"'.format(translation))
+                raise errors.InvalidDataExportError(f'Invalid translation dict "{translation}"')
         return translation
     if type(translation) is not str:
-        raise errors.InvalidDataExportError('Text is neither a dictionary nor string "{}"'.format(translation))
+        raise errors.InvalidDataExportError(f'Text is neither a dictionary nor string "{translation}"')
     return {'en': translation}
 
 
@@ -233,7 +233,7 @@ def _get_dict(
             raise errors.InvalidDataExportError('Missing dict')
         return default
     if not isinstance(dict_in, dict):
-        raise errors.InvalidDataExportError('Invalid dict "{}"'.format(dict_in))
+        raise errors.InvalidDataExportError(f'Invalid dict "{dict_in}"')
     return dict_in
 
 
@@ -302,7 +302,7 @@ def _get_list(
             raise errors.InvalidDataExportError('Missing list')
         return default
     if not isinstance(list_in, list):
-        raise errors.InvalidDataExportError('Invalid list "{}"'.format(list_in))
+        raise errors.InvalidDataExportError(f'Invalid list "{list_in}"')
     return list_in
 
 
@@ -356,13 +356,13 @@ def _get_str(
         return default
     if type(str_in) is not str:
         if not convert:
-            raise errors.InvalidDataExportError('"{}" is not a string'.format(str_in))
+            raise errors.InvalidDataExportError(f'"{str_in}" is not a string')
         try:
             str_in = str(str_in)
             # mypy type narrowing
             assert type(str_in) is str
         except ValueError:
-            raise errors.InvalidDataExportError('Cannot convert "{}" to string'.format(str_in))
+            raise errors.InvalidDataExportError(f'Cannot convert "{str_in}" to string')
     if not allow_empty and str_in == '':
         raise errors.InvalidDataExportError('Empty string')
     return str_in
@@ -411,9 +411,9 @@ def _get_utc_datetime(
     try:
         dt = datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
         if dt > datetime.utcnow() + timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA']):
-            raise errors.InvalidDataExportError('Timestamp is in the future "{}"'.format(dt))
+            raise errors.InvalidDataExportError(f'Timestamp is in the future "{dt}"')
         return dt
     except ValueError:
-        raise errors.InvalidDataExportError('Invalid timestamp "{}"'.format(utc_datetime_str))
+        raise errors.InvalidDataExportError(f'Invalid timestamp "{utc_datetime_str}"')
     except TypeError:
-        raise errors.InvalidDataExportError('Invalid timestamp "{}"'.format(utc_datetime_str))
+        raise errors.InvalidDataExportError(f'Invalid timestamp "{utc_datetime_str}"')

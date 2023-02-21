@@ -34,7 +34,7 @@ class ObjectVersion(Resource):
             object = get_object(object_id=object_id, version_id=version_id)
         except errors.ObjectVersionDoesNotExistError:
             return {
-                "message": "version {} of object {} does not exist".format(version_id, object_id)
+                "message": f"version {version_id} of object {object_id} does not exist"
             }, 404
         object_version_json = {
             'object_id': object.object_id,
@@ -83,7 +83,7 @@ class ObjectVersions(Resource):
         for key in request_json:
             if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data'}:
                 return {
-                    "message": "invalid key '{}'".format(key)
+                    "message": f"invalid key '{key}'"
                 }, 400
         object = get_object(object_id=object_id)
         if object.action_id is None:
@@ -94,37 +94,37 @@ class ObjectVersions(Resource):
         if 'object_id' in request_json:
             if request_json['object_id'] != object.object_id:
                 return {
-                    "message": "object_id must be {}".format(object.object_id)
+                    "message": f"object_id must be {object.object_id}"
                 }, 400
         if 'component_id' in request_json:
             if request_json['component_id'] != object.component_id:
                 return {
-                    "message": "component_id must be {}".format(object.component_id)
+                    "message": f"component_id must be {object.component_id}"
                 }, 400
         if 'fed_version_id' in request_json:
             if request_json['fed_version_id'] != object.fed_version_id:
                 return {
-                    "message": "fed_version_id must be {}".format(object.fed_version_id)
+                    "message": f"fed_version_id must be {object.fed_version_id}"
                 }, 400
         if 'fed_object_id' in request_json:
             if request_json['fed_object_id'] != object.fed_object_id:
                 return {
-                    "message": "fed_object_id must be {}".format(object.fed_object_id)
+                    "message": f"fed_object_id must be {object.fed_object_id}"
                 }, 400
         if 'version_id' in request_json:
             if request_json['version_id'] != object.version_id + 1:
                 return {
-                    "message": "version_id must be {}".format(object.version_id + 1)
+                    "message": f"version_id must be {object.version_id + 1}"
                 }, 400
         if 'action_id' in request_json:
             if request_json['action_id'] != object.action_id:
                 return {
-                    "message": "action_id must be {}".format(object.action_id)
+                    "message": f"action_id must be {object.action_id}"
                 }, 400
         if 'schema' in request_json:
             if request_json['schema'] != object.schema and request_json['schema'] != action.schema:
                 return {
-                    "message": "schema must be either:\n{}\nor:\n{}".format(json.dumps(object.schema, indent=4), json.dumps(action.schema, indent=4))
+                    "message": f"schema must be either:\n{json.dumps(object.schema, indent=4)}\nor:\n{json.dumps(action.schema, indent=4)}"
                 }, 400
             schema = request_json['schema']
         else:
@@ -144,7 +144,7 @@ class ObjectVersions(Resource):
         except errors.ValidationError as e:
             messages = e.message.splitlines()
             return {
-                "message": "validation failed:\n - {}".format('\n - '.join(messages))
+                "message": "validation failed:\n - " + "\n - ".join(messages)
             }, 400
         except Exception:
             return {
@@ -239,7 +239,7 @@ class Objects(Resource):
         query_string = flask.request.args.get('q', '')
         if query_string:
             try:
-                unwrapped_filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, True)
+                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, True)
             except Exception:
                 # TODO: ensure that advanced search does not cause exceptions
                 def unwrapped_filter_func(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Any:
@@ -265,7 +265,7 @@ class Objects(Resource):
                 name_only=name_only
             )
         except Exception as e:
-            search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
+            search_notes.append(('error', f"Error during search: {e}", 0, 0))
             objects = []
         if any(search_note[0] == 'error' for search_note in search_notes):
             return {
@@ -304,7 +304,7 @@ class Objects(Resource):
         for key in request_json:
             if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data'}:
                 return {
-                    "message": "invalid key '{}'".format(key)
+                    "message": f"invalid key '{key}'"
                 }, 400
         if 'object_id' in request_json:
             return {
@@ -340,11 +340,11 @@ class Objects(Resource):
                 action = get_action(action_id=action_id)
             except errors.ActionDoesNotExistError:
                 return {
-                    "message": "action {} does not exist".format(action_id)
+                    "message": f"action {action_id} does not exist"
                 }, 400
             if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask.g.user.is_admin):
                 return {
-                    "message": "creating objects with action {} is disabled".format(action_id)
+                    "message": f"creating objects with action {action_id} is disabled"
                 }, 400
         else:
             return {
@@ -353,7 +353,7 @@ class Objects(Resource):
         if 'schema' in request_json:
             if request_json['schema'] != action.schema:
                 return {
-                    "message": "schema must be:\n{}".format(json.dumps(action.schema, indent=4))
+                    "message": "schema must be:\n" + json.dumps(action.schema, indent=4)
                 }, 400
         schema = action.schema
         if 'data' not in request_json:
@@ -371,7 +371,7 @@ class Objects(Resource):
         except errors.ValidationError as e:
             messages = e.message.splitlines()
             return {
-                "message": "validation failed:\n - {}".format('\n - '.join(messages))
+                "message": "validation failed:\n - " + "\n - ".join(messages)
             }, 400
         except Exception:
             return {

@@ -1242,11 +1242,11 @@ def transform_literal_to_query(
                 if i > 0:
                     jsonb_selector += " -> "
                 jsonb_selector += attribute
-            array_items = select(db.text('value FROM jsonb_array_elements_text((data -> {0})::jsonb)'.format(jsonb_selector)))
+            array_items = select(db.text(f'value FROM jsonb_array_elements_text((data -> {jsonb_selector})::jsonb)'))
             db_obj = db.literal_column('value').cast(postgresql.JSONB)
             for attribute in attributes[array_placeholder_index + 1:]:
                 db_obj = db_obj[attribute]
-            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text('jsonb_typeof(data -> {0}) = \'array\''.format(jsonb_selector)), filter)).exists()
+            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text(f'jsonb_typeof(data -> {jsonb_selector}) = \'array\''), filter)).exists()
         return Attribute(literal.input_text, literal.start_position, data[attributes]), None
 
     if isinstance(literal, object_search_parser.Null):

@@ -120,13 +120,13 @@ class User:
 
     def get_name(self, include_ref: bool = False) -> str:
         if include_ref and self.component_id is not None:
-            db_ref = ', #{} @ {}'.format(self.fed_id, typing.cast(Component, self.component).get_name())
+            db_ref = f', #{self.fed_id} @ {typing.cast(Component, self.component).get_name()}'
         else:
             db_ref = ''
         if self.name is None:
             return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)  # type: ignore
         else:
-            return '{} (#{}{})'.format(self.name, self.id, db_ref)
+            return f'{self.name} (#{self.id}{db_ref})'
 
     @property
     def has_admin_permissions(self) -> bool:

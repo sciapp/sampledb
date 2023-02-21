@@ -52,11 +52,11 @@ class ObjectFile(Resource):
                 raise errors.FileDoesNotExistError()
         except errors.FileDoesNotExistError:
             return {
-                "message": "file {} of object {} does not exist".format(file_id, object_id)
+                "message": f"file {file_id} of object {object_id} does not exist"
             }, 404
         if file_info.is_hidden:
             return {
-                "message": "file {} of object {} has been hidden".format(file_id, object_id)
+                "message": f"file {file_id} of object {object_id} has been hidden"
             }, 403
         return file_info_to_json(file_info)
 
@@ -79,7 +79,7 @@ class ObjectFiles(Resource):
         if 'object_id' in request_json:
             if request_json['object_id'] != object.object_id:
                 return {
-                    "message": "object_id must be {}".format(object.object_id)
+                    "message": f"object_id must be {object.object_id}"
                 }, 400
         if 'storage' not in request_json:
             return {
@@ -94,7 +94,7 @@ class ObjectFiles(Resource):
             for key in request_json:
                 if key not in {'object_id', 'storage', 'original_file_name', 'base64_content'}:
                     return {
-                        "message": "invalid key '{}'".format(key)
+                        "message": f"invalid key '{key}'"
                     }, 400
             if 'original_file_name' not in request_json or not request_json['original_file_name']:
                 return {
@@ -130,7 +130,7 @@ class ObjectFiles(Resource):
             for key in request_json:
                 if key not in {'object_id', 'storage', 'filepath'}:
                     return {
-                        "message": "invalid key '{}'".format(key)
+                        "message": f"invalid key '{key}'"
                     }, 400
             if 'filepath' not in request_json or not request_json['filepath']:
                 return {
@@ -150,7 +150,7 @@ class ObjectFiles(Resource):
             for key in request_json:
                 if key not in {'object_id', 'storage', 'url'}:
                     return {
-                        "message": "invalid key '{}'".format(key)
+                        "message": f"invalid key '{key}'"
                     }, 400
             if 'url' not in request_json:
                 return {

@@ -27,7 +27,7 @@ def main(arguments: typing.List[str]) -> None:
         instruments = get_instruments()
         for instrument in instruments:
             if instrument.name.get('en') == name:
-                print('Error: an instrument with this name already exists (#{})'.format(instrument.id), file=sys.stderr)
+                print(f'Error: an instrument with this name already exists (#{instrument.id})', file=sys.stderr)
                 sys.exit(1)
         instrument = create_instrument()
         set_instrument_translation(
@@ -36,4 +36,4 @@ def main(arguments: typing.List[str]) -> None:
             name=name,
             description=description
         )
-        print("Success: the instrument has been created in SampleDB (#{})".format(instrument.id))
+        print(f"Success: the instrument has been created in SampleDB (#{instrument.id})")

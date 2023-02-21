@@ -819,7 +819,7 @@ def post_object_location(object_id):
     ]
     possible_responsible_users = [('-1', '—')]
     for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
-        possible_responsible_users.append((str(user.id), '{} (#{})'.format(user.name, user.id)))
+        possible_responsible_users.append((str(user.id), f'{user.name} (#{user.id})'))
     location_form.responsible_user.choices = possible_responsible_users
     if location_form.validate_on_submit():
         location_id = int(location_form.location.data)

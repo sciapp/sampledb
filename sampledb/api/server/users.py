@@ -33,7 +33,7 @@ class User(Resource):
             user = users.get_user(user_id=user_id)
         except errors.UserDoesNotExistError:
             return {
-                "message": "user {} does not exist".format(user_id)
+                "message": f"user {user_id} does not exist"
             }, 404
         return user_to_json(user)
 

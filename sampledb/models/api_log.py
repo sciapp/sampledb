@@ -58,4 +58,4 @@ class APILogEntry(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, api_token_id={1.api_token_id}, method={1.method}, route={1.route}, utc_datetime={1.utc_datetime})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, api_token_id={self.api_token_id}, method={self.method}, route={self.route}, utc_datetime={self.utc_datetime})>'

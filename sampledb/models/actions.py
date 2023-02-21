@@ -63,7 +63,7 @@ class ActionType(db.Model):  # type: ignore
     order_index = db.Column(db.Integer, nullable=True)
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id!r})>'
 
     @property
     def name(self) -> typing.Dict[str, str]:
@@ -184,7 +184,7 @@ class Action(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id!r})>'
 
     @property
     def name(self) -> typing.Dict[str, str]:

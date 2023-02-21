@@ -261,10 +261,10 @@ def check_config(
                 admin_username = config.get('ADMIN_USERNAME', 'admin').lower()
                 admin_email = config.get('ADMIN_EMAIL', config['CONTACT_EMAIL']).lower()
                 print(
-                    'A new admin user with the username "{}", the email '
-                    'address "{}" and the given ADMIN_PASSWORD will be '
+                    f'A new admin user with the username "{admin_username}", the email '
+                    f'address "{admin_email}" and the given ADMIN_PASSWORD will be '
                     'created.'
-                    '\n'.format(admin_username, admin_email),
+                    '\n',
                     file=sys.stderr
                 )
                 internal_config['ADMIN_INFO'] = (
@@ -381,7 +381,7 @@ def check_config(
         test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
-        with open(test_file_path, 'a'):
+        with open(test_file_path, 'ab'):
             # open the file to check that it exists
             pass
     except Exception:

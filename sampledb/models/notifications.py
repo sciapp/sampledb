@@ -61,7 +61,7 @@ class Notification(db.Model):  # type: ignore
         self.utc_datetime = utc_datetime
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, data={self.data})>'
 
 
 class NotificationModeForType(db.Model):  # type: ignore
@@ -86,4 +86,4 @@ class NotificationModeForType(db.Model):  # type: ignore
         self.mode = mode
 
     def __repr__(self) -> str:
-        return '<{0}(type={1.type}, user_id={1.user_id}, mode={1.mode})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(type={self.type}, user_id={self.user_id}, mode={self.mode})>'

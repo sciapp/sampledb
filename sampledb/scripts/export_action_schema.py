@@ -33,6 +33,6 @@ def main(arguments: typing.List[str]) -> None:
             print('Error: no action with this id exists', file=sys.stderr)
             sys.exit(1)
         schema = action.schema
-    with open(schema_file_name, 'w') as schema_file:
+    with open(schema_file_name, 'w', encoding='utf-8') as schema_file:
         json.dump(schema, schema_file, indent=2)
-    print("Success: the action schema has been exported to {}".format(schema_file_name))
+    print(f"Success: the action schema has been exported to {schema_file_name}")

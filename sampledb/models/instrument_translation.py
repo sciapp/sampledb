@@ -62,4 +62,4 @@ class InstrumentTranslation(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name={1.language_id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name={self.language_id})>'

@@ -55,9 +55,6 @@ class EditAliasForm(FlaskForm):
     use_real_role = BooleanField('Use real role')
     submit = SubmitField('Change Alias')
 
-    def __init_(self, name=None, email=None):
-        super().__init__()
-
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
             name = field.data
@@ -76,9 +73,6 @@ class AddAliasForm(FlaskForm):
     role = StringField('Role')
     use_real_role = BooleanField('Use real role')
     submit = SubmitField('Add Alias')
-
-    def __init_(self, name=None, email=None):
-        super().__init__()
 
     def validate_name(self, field):
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":

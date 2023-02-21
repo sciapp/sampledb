@@ -24,9 +24,9 @@ def main(arguments: typing.List[str]) -> None:
         print("Error: email must be a valid email address", file=sys.stderr)
         sys.exit(1)
     password = ''.join([('00' + hex(c)[2:])[-2:] for c in os.urandom(16)])
-    print("Note: the user will receive the password '{}'".format(password))
+    print(f"Note: the user will receive the password '{password}'")
     app = create_app()
     with app.app_context():
         user = create_user(name, email, UserType.OTHER)
         add_other_authentication(user.id, name, password)
-        print("Success: the user has been created in SampleDB (#{})".format(user.id))
+        print(f"Success: the user has been created in SampleDB (#{user.id})")

@@ -144,17 +144,17 @@ def _validate_header(
 ) -> None:
     if header is not None:
         if header.get('db_uuid') != component.uuid:
-            raise errors.InvalidDataExportError('UUID of exporting database ({}) does not match expected UUID ({}).'.format(header.get('db_uuid'), component.uuid))
+            raise errors.InvalidDataExportError(f'UUID of exporting database ({header.get("db_uuid")}) does not match expected UUID ({component.uuid}).')
         protocol_version = header.get('protocol_version')
         if protocol_version is not None:
             if 'major' not in protocol_version or 'minor' not in protocol_version:
-                raise errors.InvalidDataExportError('Invalid protocol version \'{}\''.format(header.get('protocol_version')))
+                raise errors.InvalidDataExportError(f'Invalid protocol version \'{header.get("protocol_version")}\'')
             try:
                 major, minor = int(protocol_version['major']), int(protocol_version['minor'])
                 if major > PROTOCOL_VERSION_MAJOR or (major <= PROTOCOL_VERSION_MAJOR and minor > PROTOCOL_VERSION_MINOR):
-                    raise errors.InvalidDataExportError('Unsupported protocol version {}'.format(header.get('protocol_version')))
+                    raise errors.InvalidDataExportError(f'Unsupported protocol version {header.get("protocol_version")}')
             except ValueError:
-                raise errors.InvalidDataExportError('Invalid protocol version {}'.format(header.get('protocol_version')))
+                raise errors.InvalidDataExportError(f'Invalid protocol version {header.get("protocol_version")}')
         else:
             raise errors.InvalidDataExportError('Missing protocol_version.')
 

@@ -289,7 +289,7 @@ def parse_object(
                 try:
                     result['permissions']['users'][user_id] = Permissions.from_name(permission)
                 except ValueError:
-                    raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                    raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
         groups = _get_dict(permissions.get('groups'))
         if groups is not None:
             for group_id, permission in groups.items():
@@ -301,7 +301,7 @@ def parse_object(
                 try:
                     result['permissions']['groups'][group_id] = Permissions.from_name(permission)
                 except ValueError:
-                    raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                    raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
         projects = _get_dict(permissions.get('projects'))
         if projects is not None:
             for project_id, permission in projects.items():
@@ -313,14 +313,14 @@ def parse_object(
                 try:
                     result['permissions']['projects'][project_id] = Permissions.from_name(permission)
                 except ValueError:
-                    raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                    raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
         all_users = _get_str(permissions.get('all_users'))
         if all_users is not None:
             permission = all_users
             try:
                 result['permissions']['all_users'] = Permissions.from_name(permission)
             except ValueError:
-                raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
     return result
 
 
@@ -695,7 +695,7 @@ def parse_entry(
                     try:
                         user = get_user(user_id)
                     except errors.UserDoesNotExistError:
-                        raise errors.InvalidDataExportError('Local user #{} does not exist'.format(user_id))
+                        raise errors.InvalidDataExportError(f'Local user #{user_id} does not exist')
                     del entry_data['component_uuid']
                     entry_data['user_id'] = user.id
                 else:
@@ -719,7 +719,7 @@ def parse_entry(
                     try:
                         obj = get_object(data_obj_id)
                     except errors.ObjectDoesNotExistError:
-                        raise errors.InvalidDataExportError('Local object #{} does not exist'.format(data_obj_id))
+                        raise errors.InvalidDataExportError(f'Local object #{data_obj_id} does not exist')
                     del entry_data['component_uuid']
                     entry_data['object_id'] = obj.id
                 else:

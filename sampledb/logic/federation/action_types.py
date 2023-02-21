@@ -150,7 +150,7 @@ def parse_action_type(
     uuid = _get_uuid(action_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local action type {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local action type {fed_id}')
     result = ActionTypeData(
         fed_id=fed_id,
         component_uuid=uuid,

@@ -259,7 +259,7 @@ class VersionedJSONSerializableObjectTables:
             ).fetchone()
             if action is None:
                 if fed_object_id is None or fed_version_id is None or component_id is None:
-                    raise ValueError('Action with id {} not found'.format(action_id))
+                    raise ValueError(f'Action with id {action_id} not found')
                 else:
                     schema = None
             else:
@@ -444,7 +444,7 @@ class VersionedJSONSerializableObjectTables:
             ).fetchone()
             if action is None:
                 if fed_object_id is None or fed_version_id is None or component_id is None:
-                    raise ValueError('Action with id {} not found'.format(action_id))
+                    raise ValueError(f'Action with id {action_id} not found')
                 else:
                     schema = None
             else:

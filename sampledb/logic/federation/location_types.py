@@ -109,7 +109,7 @@ def parse_location_type(
     uuid = _get_uuid(location_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local location type {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local location type {fed_id}')
     return LocationTypeData(
         fed_id=fed_id,
         component_uuid=uuid,

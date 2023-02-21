@@ -413,7 +413,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
             if i not in item_indices:
                 items.append(None)
             else:
-                item_id_prefix = id_prefix + '__{}'.format(i)
+                item_id_prefix = f'{id_prefix}__{i}'
                 items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, True))
         if None in items:
             # use a placeholder if form_data had no (valid) information on an

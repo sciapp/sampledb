@@ -24,7 +24,7 @@ def main(arguments: typing.List[str]) -> None:
         print("Error: instrument_id must be an integer", file=sys.stderr)
         sys.exit(1)
     instrument_responsible_user_ids = []
-    for i, user_id_str in enumerate(arguments[1:]):
+    for user_id_str in arguments[1:]:
         try:
             user_id = int(user_id_str)
         except ValueError:
@@ -45,7 +45,7 @@ def main(arguments: typing.List[str]) -> None:
             try:
                 check_user_exists(user_id)
             except UserDoesNotExistError:
-                print('Error: no user with the id #{} exists'.format(user_id), file=sys.stderr)
+                print(f'Error: no user with the id #{user_id} exists', file=sys.stderr)
                 sys.exit(1)
         previous_instrument_responsible_user_ids = [user.id for user in instrument.responsible_users]
         for user_id in instrument_responsible_user_ids:
