@@ -118,11 +118,18 @@ class User:
             return NotImplemented
         return not equal
 
-    def get_name(self, include_ref: bool = False) -> str:
+    def get_name(self, include_ref: bool = False, include_id: bool = True) -> str:
         if include_ref and self.component_id is not None:
             db_ref = f', #{self.fed_id} @ {typing.cast(Component, self.component).get_name()}'
         else:
             db_ref = ''
+        if not include_id:
+            if db_ref:
+                db_ref = " (" + db_ref[2:] + ")"
+            if self.name is None:
+                return gettext('Imported User') + db_ref  # type: ignore
+            else:
+                return self.name + db_ref
         if self.name is None:
             return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)  # type: ignore
         else:

@@ -143,6 +143,9 @@ div.multiselect-actions li button.btn.btn-link:hover
 .bootstrap-tagsinput {
     width:100%;
 }
+.bootstrap-tagsinput > .twitter-typeahead {
+    display: inline !important;
+}
 .twitter-typeahead .tt-query,
 .twitter-typeahead .tt-hint {
     margin-bottom: 0;

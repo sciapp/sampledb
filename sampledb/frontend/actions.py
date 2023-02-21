@@ -75,6 +75,8 @@ def actions():
     action_type_id = flask.request.args.get('t', None)
     action_type = None
 
+    user_is_instrument_scientist = bool(get_user_instruments(flask_login.current_user.id, exclude_hidden=True))
+
     if action_type_id is not None:
         try:
             action_type_id = int(action_type_id)
@@ -132,6 +134,7 @@ def actions():
         actions=actions,
         action_type=action_type,
         action_permissions=action_permissions,
+        user_is_instrument_scientist=user_is_instrument_scientist,
         Permissions=Permissions,
         user_favorite_action_ids=user_favorite_action_ids,
         toggle_favorite_action_form=toggle_favorite_action_form,

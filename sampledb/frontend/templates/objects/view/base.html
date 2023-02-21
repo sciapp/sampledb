@@ -155,7 +155,7 @@
         {% endfor %}
       {% endif %}
     {% endif %}
-    {% if action is not none and action.type.enable_labels %}
+    {% if action is not none and action.type is not none and action.type.enable_labels %}
       <div class="form-group">
         <button type="button" class="btn btn-primary" id="button-show-object-label-modal" data-toggle="tooltip" data-placement="top" title="{{ _('Generate a PDF containing labels for this object.') }}"><i class="fa fa-tag" aria-hidden="true"></i> {{ _('Generate Labels') }}</button>
       </div>
