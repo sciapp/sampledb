@@ -214,7 +214,7 @@
   {{ super() }}
 
   {% if user_profile_form and request.form.get(user_profile_form.action.name) == 'edit_profile' %}
-    <script>
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       $('#editProfileModal').modal();
     </script>
   {% endif %}

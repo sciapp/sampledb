@@ -14,7 +14,7 @@
   <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     window.translations = [
       {% for translation in action_type_translations %}
         {

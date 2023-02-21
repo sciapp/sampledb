@@ -78,7 +78,12 @@
   <div class="row">
     <div class="col-md-3" style="padding-rigth: 0px;"></div>
     <div class="col-md-9" style="padding-left: 5px;">
-      <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs" onclick="toggleShowMore('{{id_prefix}}');">{{ _('Show more') }}</button>
+      <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs">{{ _('Show more') }}</button>
+      <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+        document.getElementById('show-more-{{ id_prefix }}-btn').addEventListener('click', function() {
+          toggleShowMore('{{id_prefix}}');
+        });
+      </script>
     </div>
   </div>
 {% endif %}

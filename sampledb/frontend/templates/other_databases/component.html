@@ -350,7 +350,7 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   {% if show_edit_form %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(document).ready(function() {
       var edit_modal = $('#editComponentModal');
       edit_modal.removeClass('fade');
@@ -361,7 +361,7 @@
   {% endif %}
 
   {% if created_api_token %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   $('#viewApiTokenModal').modal('show');
   $('#api-token button').bind('click', function() {
     var input = document.querySelector('#api-token input');
@@ -383,7 +383,7 @@
   });
   </script>
   {% endif %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     {% if create_api_token_form.description.errors %}
     $('#createApiTokenModal').modal('show');
     {% endif %}

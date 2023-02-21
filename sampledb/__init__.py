@@ -5,6 +5,7 @@ import subprocess
 import sys
 import typing
 
+import cherrypy
 import flask
 from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -28,6 +29,7 @@ import sampledb.logic
 import sampledb.models
 import sampledb.models.migrations
 import sampledb.config
+import sampledb.utils
 
 
 @babel.localeselector  # type: ignore
@@ -211,5 +213,24 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             sys.exit(0)
 
     signal.signal(signal.SIGTERM, signal_handler)
+
+    app.csp_reports = []  # type: ignore[attr-defined]
+
+    @app.route('/csp-violation-report', methods=['POST'])
+    def csp_report() -> str:
+        if app.config.get('TESTING', True):
+            app.csp_reports.append(flask.request.get_json(force=True))  # type: ignore[attr-defined]
+        elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):
+            cherrypy.log("CSP violation report: " + json.dumps(flask.request.get_json(force=True), indent=2))
+        return ''
+
+    @app.after_request
+    def set_csp_header(response: flask.Response) -> flask.Response:
+        content_security_policy = f"default-src 'self'; img-src 'self' https: http: blob: data:; script-src 'self' 'nonce-{sampledb.utils.generate_inline_script_nonce()}'; style-src 'self' 'unsafe-inline'; report-uri /csp-violation-report"
+        if app.config.get('TESTING', True):
+            response.headers["Content-Security-Policy-Report-Only"] = content_security_policy
+        elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):
+            response.headers["Content-Security-Policy"] = content_security_policy
+        return response
 
     return app

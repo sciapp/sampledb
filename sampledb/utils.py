@@ -8,6 +8,7 @@ import functools
 import json
 import os
 import typing
+import secrets
 
 import flask
 import flask_login
@@ -142,3 +143,11 @@ def empty_database(
         db.metadata.create_all(bind=engine)
         # run migrations
         migrations.run(db)
+
+
+def generate_inline_script_nonce() -> str:
+    nonce = getattr(flask.g, 'inline_script_nonce', None)
+    if nonce is None:
+        nonce = secrets.token_hex(32)
+        flask.g.inline_script_nonce = nonce
+    return nonce

@@ -1,13 +1,24 @@
 <div class="form-group row" style="padding-right: 0.75em">
   <div id="{{ id_prefix }}_recipe_div" class="col-lg-4 col-lg-offset-8 div-apply-recipe" data-toggle="tooltip" data-placement="top" title="">
-    <select class="selectpicker form-control" id="{{ id_prefix }}_recipe_input" data-width="100%" onchange='refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});'>
+    <select class="selectpicker form-control" id="{{ id_prefix }}_recipe_input" data-width="100%">
       {% for recipe in schema.recipes %}
         <option value="{{ loop.index0 }}">{{ recipe.name }}</option>
       {% endfor %}
     </select>
-    <button type="button" class="btn btn-primary input-group-button-for-selectpicker" onclick='applyRecipe("{{ id_prefix }}", {{ schema.recipes | tojson }}, false);'
+    <button type="button" class="btn btn-primary input-group-button-for-selectpicker" id="{{ id_prefix }}_recipe_button"
             aria-label="{{ _('Apply Recipe') }}" name="apply" value="Apply Recipe">
       <span aria-hidden="true">{{ _('Apply Recipe') }}</span>
     </button>
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+      document.getElementById('{{ id_prefix }}_recipe_input').addEventListener('change', function() {
+        refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});
+      });
+      window.addEventListener('load', function() {
+        refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});
+      });
+      document.getElementById('{{ id_prefix }}_recipe_button').addEventListener('click', function() {
+        applyRecipe("{{ id_prefix }}", {{ schema.recipes | tojson }}, false);
+      });
+    </script>
   </div>
 </div>

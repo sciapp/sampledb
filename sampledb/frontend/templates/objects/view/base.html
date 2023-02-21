@@ -29,7 +29,7 @@
   </div>
   {% endif %}
 
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.plotly_charts = [];
   </script>
   <h1>
@@ -240,15 +240,6 @@
             <th scope="col" style="white-space: nowrap;width: 1%;"></th>
             <th scope="col">{{ _('Title') }}</th>
             <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
-              <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
-                <label style='font-weight:400'><input type='checkbox' id='file_table_filter_notebooks' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;notebooks&quot;);'/> {{ _('Notebooks') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox' id='file_table_filter_other' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);' /> {{ _('Other Files') }}</label><br />
-                <script>
-                  window.update_file_table_filter_states();
-                </script>
-              " style="display: none">
-                <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
-              </button>
               <div class="form-group" style="display: inline-flex">
                 {% if show_download_service %}
                   <iframe id="download_frame" style="display:none"></iframe>
@@ -562,10 +553,10 @@
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title" id="objectLabelModalLabel">{{ _('Generate Labels') }}</h4>
           </div>
-          <form method="get" action="{{ url_for('.print_object_label', object_id=object_id) }}" class="form-horizontal" onsubmit="return validateLabelsForm()" id="form-generate-labels">
+          <form method="get" action="{{ url_for('.print_object_label', object_id=object_id) }}" class="form-horizontal" id="form-generate-labels">
           <div class="modal-body">
             <div class="radio">
-              <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" onchange="updateLabelsForm()"/>{{ _('Mixed label formats')}}</label>
+              <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" />{{ _('Mixed label formats')}}</label>
             </div>
             <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>.', contact_email=config['CONTACT_EMAIL']) }}.</span>
             <div class="form-group">
@@ -581,7 +572,7 @@
             </div>
             <hr />
             <div class="radio">
-              <label class="control-label"><input type="radio" name="mode" value="fixed-width" onchange="updateLabelsForm()"/>{{ _('Fixed-width labels')}}</label>
+              <label class="control-label"><input type="radio" name="mode" value="fixed-width" />{{ _('Fixed-width labels')}}</label>
             </div>
             <span class="help-block">{{ _('This will generate vertically oriented labels with a fixed width and an optional minimum height.') }}</span>
             <div class="form-group">
@@ -636,7 +627,7 @@
             </div>
             <hr />
             <div class="radio">
-              <label class="control-label"><input type="radio" name="mode" value="minimum-height" onchange="updateLabelsForm()"/>{{ _('Minimal-height labels')}}</label>
+              <label class="control-label"><input type="radio" name="mode" value="minimum-height" />{{ _('Minimal-height labels')}}</label>
             </div>
             <span class="help-block">{{ _('This will generate vertically oriented labels with a height as low as possible and an optional minimum width.') }}</span>
             <div class="form-group">
@@ -914,15 +905,36 @@
             <th scope="col"></th>
             <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
               <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
-                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;versions&quot;);'/> {{ _('Versions') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> {{ _('Measurements') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> {{ _('Comments') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> {{ _('Files') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;locations&quot;);' /> {{ _('Locations') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;references&quot;);' /> {{ _('References') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> {{ _('Other') }}</label>
-                <script>
+                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' /> {{ _('Versions') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' /> {{ _('Measurements') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' /> {{ _('Comments') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' /> {{ _('Files') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' /> {{ _('Locations') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' /> {{ _('References') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' /> {{ _('Other') }}</label>
+                <script type='text/javascript' nonce='{{ generate_inline_script_nonce() }}'>
                   window.update_activity_log_filter_states();
+                  document.getElementById('activity_log_filter_versions').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'versions');
+                  });
+                  document.getElementById('activity_log_filter_measurements').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'measurements');
+                  });
+                  document.getElementById('activity_log_filter_comments').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'comments');
+                  });
+                  document.getElementById('activity_log_filter_files').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'files');
+                  });
+                  document.getElementById('activity_log_filter_locations').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'locations');
+                  });
+                  document.getElementById('activity_log_filter_references').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'references');
+                  });
+                  document.getElementById('activity_log_filter_other').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'other');
+                  });
                 </script>
               ">
                 <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="activity_log_counter"></span>
@@ -1428,13 +1440,13 @@
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
-  <script type="text/javascript">
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
 
@@ -1449,6 +1461,11 @@
     {% endfor %}
   ]
     $(function () {
+      {% if action is not none and action.type.enable_labels %}
+      $('#form-generate-labels').on('submit', validateLabelsForm);
+      $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
+      {% endif %}
+
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
         $('#input-object_location-translations').val(translation_json);

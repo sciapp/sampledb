@@ -17,7 +17,7 @@
     </form>
   </div>
   <script src="{{ fingerprinted_static('jquery/js/jquery.min.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $('#input-file-upload').on('change', function() {
       var files = $(this).get(0).files;
       var submitButton = $('button[type=submit]');
