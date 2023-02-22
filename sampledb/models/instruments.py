@@ -5,6 +5,8 @@
 
 import typing
 
+from sqlalchemy.orm import relationship
+
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -24,7 +26,7 @@ class Instrument(db.Model):  # type: ignore
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name", lazy='selectin')
+    responsible_users = relationship("User", secondary=instrument_user_association_table, order_by="User.name", lazy='selectin')
     users_can_create_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     users_can_view_log_entries = db.Column(db.Boolean, nullable=False, default=False)
     create_log_entry_default = db.Column(db.Boolean, nullable=False, default=False)
@@ -34,10 +36,10 @@ class Instrument(db.Model):  # type: ignore
     short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
-    translations = db.relationship('InstrumentTranslation', lazy='selectin')
+    component = relationship('Component')
+    translations = relationship('InstrumentTranslation', lazy='selectin')
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
-    location = db.relationship('Location')
+    location = relationship('Location')
 
     def __init__(
             self,

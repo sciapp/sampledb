@@ -9,6 +9,8 @@ import enum
 import datetime
 import typing
 
+from sqlalchemy.orm import relationship
+
 from .. import db
 from .instruments import Instrument
 from .objects import Objects
@@ -64,7 +66,7 @@ class InstrumentLogEntry(db.Model):  # type: ignore
     id = db.Column(db.Integer, primary_key=True)
     instrument_id = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    author = db.relationship('User')
+    author = relationship('User')
 
     def __init__(
             self,
@@ -87,8 +89,8 @@ class InstrumentLogEntryVersion(db.Model):  # type: ignore
     utc_datetime = db.Column(db.DateTime, nullable=False)
     content_is_markdown = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     event_utc_datetime = db.Column(db.DateTime, nullable=True)
-    categories = db.relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
-    log_entry = db.relationship(InstrumentLogEntry, backref='versions')
+    categories = relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
+    log_entry = relationship(InstrumentLogEntry, backref='versions')
 
     def __init__(
             self,

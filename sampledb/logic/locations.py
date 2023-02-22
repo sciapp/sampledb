@@ -331,7 +331,7 @@ def check_location_exists(
     :raise errors.LocationDoesNotExistError: when no location with the given
         location ID exists
     """
-    if not db.session.query(db.exists().where(locations.Location.id == location_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(locations.Location.id == location_id)).scalar():
         raise errors.LocationDoesNotExistError()
 
 

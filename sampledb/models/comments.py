@@ -6,6 +6,8 @@
 import datetime
 import typing
 
+from sqlalchemy.orm import relationship
+
 from .. import db
 from .objects import Objects
 
@@ -27,7 +29,7 @@ class Comment(db.Model):  # type: ignore
     utc_datetime = db.Column(db.DateTime, nullable=True)
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
+    component = relationship('Component')
 
     def __init__(
             self,

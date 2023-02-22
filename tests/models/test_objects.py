@@ -345,3 +345,13 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
     object = objects.get_current_object(object.object_id)
     assert object.data == {'d': 0}
     assert object.schema == {'s': 0}
+
+
+def test_get_previous_subversion(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
+    v1_datetime = datetime.datetime.utcnow()
+    v2_datetime = v1_datetime + datetime.timedelta(seconds=10)
+    object = objects.create_object(action_id=None, data=None, schema=None, user_id=None, utc_datetime=v1_datetime, component_id=1, fed_object_id=1, fed_version_id=1)
+    objects.update_object_version(object_id=object.object_id, version_id=object.version_id, action_id=None, data=None, schema=None, user_id=None, utc_datetime=v2_datetime)
+    previous_subversion = objects.get_previous_subversion(object_id=object.object_id, version_id=object.version_id)
+    assert previous_subversion is not None
+    assert previous_subversion.utc_datetime == v1_datetime

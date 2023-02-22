@@ -268,7 +268,7 @@ def check_user_exists(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():
         raise errors.UserDoesNotExistError()
 
 

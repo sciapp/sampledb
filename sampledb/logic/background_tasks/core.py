@@ -207,8 +207,8 @@ def _claim_background_task(
                 status=BackgroundTaskStatus.CLAIMED
             )
         )
-        updated_rowcount = db.session.execute(stmt).rowcount
-        db.session.commit()
+        with db.engine.begin() as connection:
+            updated_rowcount = connection.execute(stmt).rowcount
         return bool(updated_rowcount == 1)
     except Exception:
         # database might be temporarily unavailable, assume task was not claimed

@@ -181,7 +181,7 @@ def check_instrument_exists(
     :raise errors.InstrumentDoesNotExistError: when no instrument with the given
         instrument ID exists
     """
-    if not db.session.query(db.exists().where(models.Instrument.id == instrument_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(models.Instrument.id == instrument_id)).scalar():
         raise errors.InstrumentDoesNotExistError()
 
 
@@ -364,7 +364,7 @@ def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.L
     users.check_user_exists(user_id)
     instrument_id_query = db.session.query(
         instrument_user_association_table.c.instrument_id
-    ).filter(instrument_user_association_table.c.user_id == user_id)  # type: ignore
+    ).filter(instrument_user_association_table.c.user_id == user_id)
     if exclude_hidden:
         instrument_id_query = instrument_id_query.join(
             models.Instrument,

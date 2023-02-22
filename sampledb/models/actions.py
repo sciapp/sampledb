@@ -6,6 +6,8 @@
 import enum
 import typing
 
+from sqlalchemy.orm import relationship
+
 from .. import db
 
 usable_in_action_types_table = db.Table(
@@ -54,12 +56,15 @@ class ActionType(db.Model):  # type: ignore
     is_template = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    usable_in_action_types = db.relationship('ActionType', secondary=usable_in_action_types_table,
-                                             primaryjoin=id == usable_in_action_types_table.c.owner_action_type,
-                                             secondaryjoin=id == usable_in_action_types_table.c.usable_in_action_types)
-    component = db.relationship('Component')
+    usable_in_action_types = relationship(
+        'ActionType',
+        secondary=usable_in_action_types_table,
+        primaryjoin=id == usable_in_action_types_table.c.owner_action_type,
+        secondaryjoin=id == usable_in_action_types_table.c.usable_in_action_types
+    )
+    component = relationship('Component')
     scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
-    translations = db.relationship('ActionTypeTranslation', lazy='selectin')
+    translations = relationship('ActionTypeTranslation', lazy='selectin')
     order_index = db.Column(db.Integer, nullable=True)
 
     def __repr__(self) -> str:
@@ -126,19 +131,19 @@ class Action(db.Model):  # type: ignore
 
     id = db.Column(db.Integer, primary_key=True)
     type_id = db.Column(db.Integer, db.ForeignKey("action_types.id"), nullable=True)
-    type = db.relationship(ActionType, lazy='selectin')
+    type = relationship(ActionType, lazy='selectin')
     instrument_id = db.Column(db.Integer, db.ForeignKey("instruments.id"), nullable=True)
-    instrument = db.relationship("Instrument", backref="actions", lazy='selectin')
+    instrument = relationship("Instrument", backref="actions", lazy='selectin')
     schema = db.Column(db.JSON, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-    user = db.relationship("User", backref="actions", lazy='selectin')
+    user = relationship("User", backref="actions", lazy='selectin')
     description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
     is_hidden = db.Column(db.Boolean, nullable=False, default=False)
     short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
-    translations = db.relationship('ActionTranslation', lazy='selectin')
+    component = relationship('Component')
+    translations = relationship('ActionTranslation', lazy='selectin')
     admin_only = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 

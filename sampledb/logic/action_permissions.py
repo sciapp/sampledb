@@ -147,7 +147,7 @@ def _is_user_responsible_for_actions_instruments(
         user_id: int,
         action_ids: typing.Sequence[int]
 ) -> typing.Mapping[int, bool]:
-    responsible_action_id_rows = db.session.query(models.Action.id).filter(  # type: ignore
+    responsible_action_id_rows = db.session.query(models.Action.id).filter(
         models.Action.id.in_(tuple(action_ids)),
         models.Action.instrument_id == instrument_user_association_table.c.instrument_id,
         instrument_user_association_table.c.user_id == user_id

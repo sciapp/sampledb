@@ -247,7 +247,7 @@ def check_action_exists(
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
-    if not db.session.query(db.exists().where(models.Action.id == action_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(models.Action.id == action_id)).scalar():
         raise errors.ActionDoesNotExistError()
 
 
@@ -263,7 +263,7 @@ def get_action_owner_id(
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
-    row_or_none: typing.Optional[typing.Tuple[int]] = db.session.query(models.Action.user_id).filter(models.Action.id == action_id).first()  # type: ignore
+    row_or_none: typing.Optional[typing.Tuple[int]] = db.session.query(models.Action.user_id).filter(models.Action.id == action_id).first()
     if row_or_none is None:
         raise errors.ActionDoesNotExistError()
     return row_or_none[0]

@@ -58,6 +58,7 @@ class User(db.Model):  # type: ignore
             component_id: typing.Optional[int] = None,
             last_modified: typing.Optional[datetime] = None
     ) -> None:
+        super().__init__()
         if extra_fields is None:
             extra_fields = {}
         self.name = name

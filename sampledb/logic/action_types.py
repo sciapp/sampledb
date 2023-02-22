@@ -107,7 +107,7 @@ def check_action_type_exists(
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     """
-    if not db.session.query(db.exists().where(models.ActionType.id == action_type_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(models.ActionType.id == action_type_id)).scalar():
         raise errors.ActionTypeDoesNotExistError()
 
 
@@ -349,7 +349,7 @@ def is_usable_in_action_types_table_empty() -> bool:
     """
     Check if the usable in action types table has entries.
     """
-    return db.session.query(models.actions.usable_in_action_types_table).first() is None  # type: ignore
+    return db.session.query(models.actions.usable_in_action_types_table).first() is None
 
 
 def set_action_types_order(index_list: typing.List[int]) -> None:

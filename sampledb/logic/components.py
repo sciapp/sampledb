@@ -35,7 +35,7 @@ class Component:
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
         import_token_available = False
-        if db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar():  # type: ignore
+        if db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar():
             import_token_available = True
         return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp, import_token_available=import_token_available)
 
@@ -149,7 +149,7 @@ def check_component_exists(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    if not db.session.query(db.exists().where(components.Component.id == component_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(components.Component.id == component_id)).scalar():
         raise errors.ComponentDoesNotExistError()
 
 
@@ -265,7 +265,7 @@ def get_object_ids_for_component_id(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    object_ids = db.session.query(  # type: ignore
+    object_ids = db.session.query(
         objects.Objects._current_table.c.object_id
     ).filter(
         objects.Objects._current_table.c.component_id == component_id
@@ -285,7 +285,7 @@ def get_object_ids_for_components() -> typing.Set[int]:
 
     :return: the set of object IDs
     """
-    object_ids = db.session.query(  # type: ignore
+    object_ids = db.session.query(
         objects.Objects._current_table.c.object_id
     ).filter(
         db.not_(objects.Objects._current_table.c.component_id.is_(db.null()))
@@ -302,7 +302,7 @@ def get_local_object_ids() -> typing.Set[int]:
 
     :return: the set of object IDs
     """
-    object_ids = db.session.query(  # type: ignore
+    object_ids = db.session.query(
         objects.Objects._current_table.c.object_id
     ).filter(
         objects.Objects._current_table.c.component_id.is_(db.null())

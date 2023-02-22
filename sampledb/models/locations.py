@@ -7,6 +7,7 @@ import datetime
 import typing
 
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import relationship
 
 from .. import db
 from .objects import Objects
@@ -50,7 +51,7 @@ class LocationType(db.Model):  # type: ignore
     show_location_log = db.Column(db.Boolean, nullable=False)
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
+    component = relationship('Component')
     enable_capacities = db.Column(db.Boolean, nullable=False)
 
     def __init__(
@@ -103,10 +104,10 @@ class Location(db.Model):  # type: ignore
     parent_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
+    component = relationship('Component')
     type_id = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
-    type = db.relationship('LocationType')
-    responsible_users = db.relationship("User", secondary=location_user_association_table, order_by="User.name")
+    type = relationship('LocationType')
+    responsible_users = relationship("User", secondary=location_user_association_table, order_by="User.name")
     is_hidden = db.Column(db.Boolean, default=False, nullable=False)
 
     def __init__(
@@ -151,10 +152,10 @@ class ObjectLocationAssignment(db.Model):  # type: ignore
     description = db.Column(postgresql.JSON, nullable=True)
     utc_datetime = db.Column(db.DateTime, nullable=True)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
-    location = db.relationship('Location')
+    location = relationship('Location')
     fed_id = db.Column(db.Integer, nullable=True)
     component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
+    component = relationship('Component')
     declined = db.Column(db.Boolean, nullable=False, default=False)
 
     def __init__(

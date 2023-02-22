@@ -86,7 +86,7 @@ def get_user_setting(
         return default_value
     # ensure the user exists
     users.get_user(user_id)
-    row: typing.Optional[typing.Tuple[typing.Any]] = db.session.query(Settings.data[setting_name]).filter(Settings.user_id == user_id).first()  # type: ignore
+    row: typing.Optional[typing.Tuple[typing.Any]] = db.session.query(Settings.data[setting_name]).filter(Settings.user_id == user_id).first()
     if row is not None and _verify_setting(setting_name, row[0]):
         return row[0]
     return default_value

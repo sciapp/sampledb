@@ -26,13 +26,13 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
         SELECT action_id
         FROM public_actions
     """)).fetchall()
-    all_user_action_permissions = db.session.execute(db.text("""
+    all_user_action_permissions_result = db.session.execute(db.text("""
         SELECT action_id, permissions
         FROM all_user_action_permissions
     """)).fetchall()
     all_user_action_permissions = {
         action_id: permissions
-        for action_id, permissions in all_user_action_permissions
+        for action_id, permissions in all_user_action_permissions_result
     }
     for action_id, in public_actions:
         if action_id not in all_user_action_permissions:

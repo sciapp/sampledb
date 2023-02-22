@@ -7,6 +7,7 @@ import typing
 import datetime
 
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import relationship
 
 from .. import db
 from .components import Component
@@ -20,9 +21,9 @@ class ObjectShare(db.Model):  # type: ignore
     component_id = db.Column(db.Integer, db.ForeignKey(Component.id), nullable=False, primary_key=True)
     policy = db.Column(postgresql.JSONB, nullable=False)
     utc_datetime = db.Column(db.DateTime, nullable=False)
-    component = db.relationship('Component')
+    component = relationship('Component')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    user = db.relationship('User')
+    user = relationship('User')
     import_status = db.Column(postgresql.JSONB)
 
     def __init__(
