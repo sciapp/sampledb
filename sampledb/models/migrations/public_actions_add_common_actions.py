@@ -49,7 +49,7 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
             action_id: permissions
             for action_id, permissions in all_user_action_permissions
         }
-        for action_id, in common_actions:
+        for action_id in common_actions:
             if action_id not in all_user_action_permissions:
                 db.session.execute(db.text("""
                     INSERT INTO public_actions
