@@ -8,6 +8,7 @@ import typing
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
 from ..actions import ActionType
 
 MIGRATION_INDEX = 30
@@ -15,12 +16,7 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
-    action_type_columns = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'action_types';
-        """)).fetchall()
-    pre_translation = ('name',) in action_type_columns
+    pre_translation = table_has_column('action_types', 'name')
 
     existing_action_type_ids = [
         action_type[0]

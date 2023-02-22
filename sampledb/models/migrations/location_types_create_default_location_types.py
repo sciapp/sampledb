@@ -7,6 +7,7 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
 from ..locations import LocationType
 
 MIGRATION_INDEX = 115
@@ -14,13 +15,8 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
-    location_types_column_names = db.session.execute(db.text("""
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'location_types'
-        """)).fetchall()
-    has_enable_instruments = ('enable_instruments',) in location_types_column_names
-    has_enable_capacities = ('enable_capacities',) in location_types_column_names
+    has_enable_instruments = table_has_column('location_types', 'enable_instruments')
+    has_enable_capacities = table_has_column('location_types', 'enable_capacities')
 
     existing_location_type_ids = [
         location_type[0]

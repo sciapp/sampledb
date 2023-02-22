@@ -7,18 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
+
 MIGRATION_INDEX = 26
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    client_column_names = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'actions'
-    """)).fetchall()
-    if ('is_hidden',) in client_column_names:
+    if table_has_column('actions', 'is_hidden'):
         return False
 
     # Perform migration

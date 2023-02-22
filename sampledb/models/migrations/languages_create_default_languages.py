@@ -8,6 +8,7 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
 from ..languages import Language
 
 MIGRATION_INDEX = 49
@@ -61,18 +62,13 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
            """), params=language)
         performed_migration = True
 
-    languages_column_names = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'languages'
-    """)).fetchall()
-    if ('enabled_for_user_interface',) in languages_column_names:
+    if table_has_column('languages', 'enabled_for_user_interface'):
         db.session.execute(db.text("""
             UPDATE languages
             SET enabled_for_user_interface = TRUE
             WHERE id < 0
         """))
-    if ('datetime_format_moment_output',) in languages_column_names:
+    if table_has_column('languages', 'datetime_format_moment_output'):
         db.session.execute(db.text("""
             UPDATE languages
             SET datetime_format_moment_output = 'MMM D, YYYY, h:mm:ss A'

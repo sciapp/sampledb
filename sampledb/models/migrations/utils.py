@@ -7,6 +7,8 @@ import importlib
 import os
 import typing
 
+from ... import db
+
 
 def should_skip_by_index(db: typing.Any, index: int) -> bool:
     """
@@ -93,3 +95,77 @@ def find_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typ
         name, function = migrations[index]
         sorted_migrations.append((index, name, function))
     return sorted_migrations
+
+
+def table_has_column(table_name: str, column_name: str) -> bool:
+    """
+    Return whether a table has a column with a given name.
+
+    :param table_name: the name of the table
+    :param column_name: the name of the column to check for
+    :return: whether the column exists
+    """
+    return bool(db.session.execute(
+        db.text("""
+            SELECT COUNT(*)
+            FROM information_schema.columns
+            WHERE table_name = :table_name AND column_name = :column_name
+        """),
+        params={
+            'table_name': table_name,
+            'column_name': column_name
+        }
+    ).scalar())
+
+
+def enum_has_value(enum_name: str, value_name: str) -> bool:
+    """
+    Return whether an enum has a value with a given name.
+
+    :param enum_name: the name of the enum
+    :param value_name: the name of the value to check for
+    :return: whether the value exists
+    """
+    return bool(db.session.execute(
+        db.text("""
+            SELECT COUNT(*)
+            FROM pg_type
+            JOIN pg_enum ON pg_enum.enumtypid = pg_type.oid
+            WHERE pg_type.typname = :enum_name AND pg_enum.enumlabel = :value_name
+        """),
+        params={
+            'enum_name': enum_name,
+            'value_name': value_name
+        }
+    ).scalar())
+
+
+def add_enum_value(enum_name: str, value_name: str) -> None:
+    """
+    Add a value to an enum.
+
+    :param enum_name: the name of the enum
+    :param value_name: the name of the value to add
+    """
+    # Use connection and run COMMIT as ALTER TYPE cannot run in a transaction (in PostgreSQL 11)
+    engine = db.engine.execution_options(autocommit=False)
+    with engine.connect() as connection:
+        connection.execute(db.text("COMMIT"))
+        connection.execute(db.text(f"""
+            ALTER TYPE {enum_name}
+            ADD VALUE '{value_name}'
+        """))
+
+
+def enum_value_migration(enum_name: str, value_name: str) -> bool:
+    """
+    Perform a migration for adding a value to an enum, if the value is missing.
+
+    :param enum_name: the name of the enum
+    :param value_name: the name of the value to add
+    :return: whether the migration was performed
+    """
+    if enum_has_value(enum_name, value_name):
+        return False
+    add_enum_value(enum_name, value_name)
+    return True
