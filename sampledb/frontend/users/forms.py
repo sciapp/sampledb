@@ -9,52 +9,52 @@ from wtforms import StringField, IntegerField, SelectMultipleField
 from wtforms.validators import InputRequired, Length, DataRequired
 
 
-class EditGroupForm(FlaskForm):
+class EditGroupForm(FlaskForm):  # type: ignore[misc]
     translations = StringField(validators=[DataRequired()])
     categories = SelectMultipleField()
 
 
-class CreateGroupForm(FlaskForm):
+class CreateGroupForm(FlaskForm):  # type: ignore[misc]
     translations = StringField(validators=[DataRequired()])
     categories = SelectMultipleField()
 
 
-class LeaveGroupForm(FlaskForm):
+class LeaveGroupForm(FlaskForm):  # type: ignore[misc]
     pass
 
 
-class DeleteGroupForm(FlaskForm):
+class DeleteGroupForm(FlaskForm):  # type: ignore[misc]
     pass
 
 
-class RemoveGroupMemberForm(FlaskForm):
+class RemoveGroupMemberForm(FlaskForm):  # type: ignore[misc]
     pass
 
 
-class InviteUserForm(FlaskForm):
+class InviteUserForm(FlaskForm):  # type: ignore[misc]
     user_id = IntegerField(validators=[InputRequired()])
 
 
-class ToggleFavoriteActionForm(FlaskForm):
+class ToggleFavoriteActionForm(FlaskForm):  # type: ignore[misc]
     action_id = IntegerField(validators=[InputRequired()])
 
 
-class ToggleFavoriteInstrumentForm(FlaskForm):
+class ToggleFavoriteInstrumentForm(FlaskForm):  # type: ignore[misc]
     instrument_id = IntegerField(validators=[InputRequired()])
 
 
-class NotificationModeForm(FlaskForm):
+class NotificationModeForm(FlaskForm):  # type: ignore[misc]
     pass
 
 
-class OtherSettingsForm(FlaskForm):
+class OtherSettingsForm(FlaskForm):  # type: ignore[misc]
     pass
 
 
-class CreateAPITokenForm(FlaskForm):
+class CreateAPITokenForm(FlaskForm):  # type: ignore[misc]
     description = StringField('description', validators=[Length(min=1, max=100)])
 
 
-class ManageTwoFactorAuthenticationMethodForm(FlaskForm):
+class ManageTwoFactorAuthenticationMethodForm(FlaskForm):  # type: ignore[misc]
     method_id = IntegerField(validators=[InputRequired()])
     action = StringField(validators=[InputRequired()])

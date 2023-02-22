@@ -667,14 +667,34 @@ def test_get_object_info_with_permissions(user, independent_action_object):
         user_id,
         permissions=Permissions.READ
     )
-    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.READ.value, None, None, None)]
+    assert object_infos == [
+        sampledb.logic.object_permissions.ObjectInfo(
+            object_id=independent_action_object.object_id,
+            name_json='Name',
+            action_id=independent_action_object.action_id,
+            max_permission=Permissions.READ.value,
+            tags=None,
+            fed_object_id=None,
+            component_name=None
+        )
+    ]
 
     object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
         user_id,
         permissions=Permissions.READ,
         action_id=independent_action_object.action_id
     )
-    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.READ.value, None, None, None)]
+    assert object_infos == [
+        sampledb.logic.object_permissions.ObjectInfo(
+            object_id=independent_action_object.object_id,
+            name_json='Name',
+            action_id=independent_action_object.action_id,
+            max_permission=Permissions.READ.value,
+            tags=None,
+            fed_object_id=None,
+            component_name=None
+        )
+    ]
 
     object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
         user_id,
@@ -688,7 +708,17 @@ def test_get_object_info_with_permissions(user, independent_action_object):
         permissions=Permissions.READ,
         object_ids=[independent_action_object.object_id]
     )
-    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.READ.value, None, None, None)]
+    assert object_infos == [
+        sampledb.logic.object_permissions.ObjectInfo(
+            object_id=independent_action_object.object_id,
+            name_json='Name',
+            action_id=independent_action_object.action_id,
+            max_permission=Permissions.READ.value,
+            tags=None,
+            fed_object_id=None,
+            component_name=None
+        )
+    ]
 
     object_infos = sampledb.logic.object_permissions.get_object_info_with_permissions(
         user_id,
@@ -702,4 +732,14 @@ def test_get_object_info_with_permissions(user, independent_action_object):
         user_id,
         permissions=Permissions.READ,
     )
-    assert object_infos == [(independent_action_object.object_id, 'Name', independent_action_object.action_id, Permissions.GRANT.value, None, None, None)]
+    assert object_infos ==[
+        sampledb.logic.object_permissions.ObjectInfo(
+            object_id=independent_action_object.object_id,
+            name_json='Name',
+            action_id=independent_action_object.action_id,
+            max_permission=Permissions.GRANT.value,
+            tags=None,
+            fed_object_id=None,
+            component_name=None
+        )
+    ]

@@ -11,11 +11,12 @@ from .. import frontend
 from .forms import ToggleFavoriteActionForm, ToggleFavoriteInstrumentForm
 from ...logic.favorites import add_favorite_action, remove_favorite_action, get_user_favorite_action_ids, add_favorite_instrument, remove_favorite_instrument, get_user_favorite_instrument_ids
 from ..utils import check_current_user_is_not_readonly
+from ...utils import FlaskResponseT
 
 
 @frontend.route('/users/me/favorite_actions/', methods=['POST'])
-@flask_login.login_required
-def toggle_favorite_action():
+@flask_login.login_required  # type: ignore[misc]
+def toggle_favorite_action() -> FlaskResponseT:
     check_current_user_is_not_readonly()
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     if toggle_favorite_action_form.validate():
@@ -37,8 +38,8 @@ def toggle_favorite_action():
 
 
 @frontend.route('/users/me/favorite_instruments/', methods=['POST'])
-@flask_login.login_required
-def toggle_favorite_instrument():
+@flask_login.login_required  # type: ignore[misc]
+def toggle_favorite_instrument() -> FlaskResponseT:
     check_current_user_is_not_readonly()
     toggle_favorite_instrument_form = ToggleFavoriteInstrumentForm()
     if toggle_favorite_instrument_form.validate():

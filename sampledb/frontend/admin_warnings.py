@@ -6,11 +6,12 @@ import flask_login
 
 from . import frontend
 from ..logic.utils import show_load_objects_in_background_warning, show_admin_local_storage_warning, show_numeric_tags_warning, do_numeric_tags_exist
+from ..utils import FlaskResponseT
 
 
 @frontend.route('/admin/warnings/')
-@flask_login.login_required
-def admin_warnings():
+@flask_login.login_required  # type: ignore[misc]
+def admin_warnings() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(HTTPStatus.FORBIDDEN)
     warnings = {}

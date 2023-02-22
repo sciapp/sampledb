@@ -1,6 +1,7 @@
 """
 
 """
+import typing
 
 import flask
 from flask import request
@@ -8,13 +9,12 @@ from flask import request
 from . import frontend
 from .objects.permissions import on_unauthorized
 from .. import db
-from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import generate_token
-from ..models import DownloadServiceJobFile
-from ..utils import object_permissions_required
+from ..models import DownloadServiceJobFile, Permissions
+from ..utils import object_permissions_required, FlaskResponseT
 
 
-def upload_file_list(object_id: int) -> int:
+def upload_file_list(object_id: int) -> typing.Optional[int]:
     job_id = None
     file_ids = request.args.getlist('file_ids', type=int)
     for file_id in file_ids:
@@ -28,7 +28,7 @@ def upload_file_list(object_id: int) -> int:
 
 @frontend.route('/objects/<int:object_id>/download_service/', methods=['GET'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def download_service(object_id: int):
+def download_service(object_id: int) -> FlaskResponseT:
     download_service_enabled = flask.current_app.config['DOWNLOAD_SERVICE_URL'] and flask.current_app.config['DOWNLOAD_SERVICE_SECRET']
     if not download_service_enabled:
         return flask.abort(404)

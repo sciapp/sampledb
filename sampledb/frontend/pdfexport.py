@@ -16,12 +16,13 @@ from weasyprint import default_url_fetcher, HTML
 
 from .. import logic
 from ..logic import object_log
+from ..logic.actions import Action
 from ..logic.objects import get_object
-from ..logic.object_log import ObjectLogEntryType
+from ..models import ObjectLogEntryType, Permissions
 from ..logic.users import get_user
 
 from .markdown_images import IMAGE_FORMATS
-from .objects.objects import get_object_if_current_user_has_read_permissions
+from .objects.permissions import get_object_if_current_user_has_read_permissions
 from .utils import custom_format_datetime, get_user_if_exists, get_location_name
 from ..logic.utils import get_translated_text
 
@@ -36,17 +37,17 @@ SECTIONS = frozenset({
 
 def create_pdfexport(
         object_ids: typing.Sequence[int],
-        sections: typing.Set[str] = SECTIONS,
+        sections: typing.Union[typing.Set[str], typing.FrozenSet[str]] = SECTIONS,
         lang_code: str = 'en'
-):
-    exported_files = {}
+) -> bytes:
+    exported_files: typing.Dict[typing.Tuple[int, int], logic.files.File] = {}
 
     flask.g.override_locale = lang_code
     refresh()
 
     base_url = flask.url_for('.index', _external=True)
 
-    def custom_url_fetcher(url):
+    def custom_url_fetcher(url: str) -> typing.Dict[str, bytes]:
         # replace URLs of markdown images with Data URLs
         if url.startswith(base_url + 'markdown_images/'):
             file_name = url[len(base_url + 'markdown_images/'):]
@@ -63,9 +64,9 @@ def create_pdfexport(
             object_id_file_id = url[len(base_url + 'object_files/'):]
             url = ''
             try:
-                object_id, file_id = object_id_file_id.split('/')
-                object_id = int(object_id)
-                file_id = int(file_id)
+                object_id_str, file_id_str = object_id_file_id.split('/')
+                object_id = int(object_id_str)
+                file_id = int(file_id_str)
                 file = exported_files[(object_id, file_id)]
                 if file.storage in {'local', 'database'} and not file.is_hidden:
                     for file_extension, mime_type in IMAGE_FORMATS.items():
@@ -78,7 +79,7 @@ def create_pdfexport(
         # only allow Data URLs and URLs via http or https
         if not (url.startswith('data:') or urllib.parse.urlparse(url).scheme in ('http', 'https')):
             url = ''
-        return default_url_fetcher(url)
+        return typing.cast(typing.Dict[str, bytes], default_url_fetcher(url))
 
     objects = []
     for object_id in object_ids:
@@ -109,25 +110,25 @@ def create_pdfexport(
                 elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
                     try:
                         measurement_id = int(object_log_entry.data['measurement_id'])
-                        object_url = markupsafe.escape(flask.url_for('.object', object_id=measurement_id, _external=True))
+                        escaped_object_url = markupsafe.escape(flask.url_for('.object', object_id=measurement_id, _external=True))
                         permissions = logic.object_permissions.get_user_object_permissions(measurement_id, flask_login.current_user.id)
-                        if logic.object_permissions.Permissions.READ in permissions:
+                        if Permissions.READ in permissions:
                             measurement_name = markupsafe.escape(get_translated_text(get_object(measurement_id).name))
-                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement %(measurement_name)s (#%(measurement_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, measurement_id=measurement_id, measurement_name=measurement_name)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement %(measurement_name)s (#%(measurement_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, measurement_id=measurement_id, measurement_name=measurement_name)
                         else:
-                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement #%(measurement_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, measurement_id=measurement_id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in <a href="%(object_url)s">measurement #%(measurement_id)s</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, measurement_id=measurement_id)
                     except Exception:
                         text += _('<a href="%(user_url)s">%(user_name)s</a> used this object in a measurement.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
                     try:
                         sample_id = int(object_log_entry.data['sample_id'])
-                        object_url = markupsafe.escape(flask.url_for('.object', object_id=sample_id, _external=True))
+                        escaped_object_url = markupsafe.escape(flask.url_for('.object', object_id=sample_id, _external=True))
                         permissions = logic.object_permissions.get_user_object_permissions(sample_id, flask_login.current_user.id)
-                        if logic.object_permissions.Permissions.READ in permissions:
+                        if Permissions.READ in permissions:
                             sample_name = markupsafe.escape(get_translated_text(get_object(sample_id).name))
-                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample %(sample_name)s (#%(sample_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, sample_id=sample_id, sample_name=sample_name)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample %(sample_name)s (#%(sample_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, sample_id=sample_id, sample_name=sample_name)
                         else:
-                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample #%(sample_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, sample_id=sample_id)
+                            text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create <a href="%(object_url)s">sample #%(sample_id)s</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, sample_id=sample_id)
                     except Exception:
                         text += _('<a href="%(user_url)s">%(user_name)s</a> used this object to create a sample.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION:
@@ -200,13 +201,13 @@ def create_pdfexport(
                     if object_log_entry.data['object_id'] is not None:
                         try:
                             other_object_id = int(object_log_entry.data['object_id'])
-                            object_url = markupsafe.escape(flask.url_for('.object', object_id=other_object_id, _external=True))
+                            escaped_object_url = markupsafe.escape(flask.url_for('.object', object_id=other_object_id, _external=True))
                             permissions = logic.object_permissions.get_user_object_permissions(object_log_entry.data['object_id'], flask_login.current_user.id)
-                            if logic.object_permissions.Permissions.READ in permissions:
+                            if Permissions.READ in permissions:
                                 object_name = markupsafe.escape(get_translated_text(get_object(object_log_entry.data['object_id']).name))
-                                text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object %(object_name)s (#%(other_object_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=object_url, object_name=object_name, other_object_id=other_object_id)
+                                text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object %(object_name)s (#%(other_object_id)s)</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, object_name=object_name, other_object_id=other_object_id)
                             else:
-                                text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object #%(other_object_id)s</a>.', user_url=user_url, user_name=user_name, object_url=object_url, other_object_id=other_object_id)
+                                text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of <a href="%(object_url)s">object #%(other_object_id)s</a>.', user_url=user_url, user_name=user_name, object_url=escaped_object_url, other_object_id=other_object_id)
                         except Exception:
                             text += _('<a href="%(user_url)s">%(user_name)s</a> referenced this object in the metadata of an unknown object.', user_url=user_url, user_name=user_name)
                     else:
@@ -242,7 +243,7 @@ def create_pdfexport(
                 locations_entries.append({
                     'utc_datetime': location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M'),
                     'assigning_user_id': location_assignment.user_id,
-                    'assigning_user_name': logic.users.get_user(location_assignment.user_id).get_name(),
+                    'assigning_user_name': logic.users.get_user(location_assignment.user_id).get_name() if location_assignment.user_id is not None else '',
                     'location_id': location_assignment.location_id,
                     'location_name': get_location_name(location_assignment.location_id, include_id=True, language_code=lang_code) if location_assignment.location_id else None,
                     'responsible_user_id': location_assignment.responsible_user_id,
@@ -284,9 +285,9 @@ def create_pdfexport(
             action = None
         objects.append((object, action, activity_log_entries, locations_entries, publications, comments, files, qrcode_url))
 
-    def get_object_type_name(action):
+    def get_object_type_name(action: Action) -> str:
         if action is None or action.type is None:
-            return _('Object')
+            return typing.cast(str, _('Object'))
         else:
             return get_translated_text(action.type.object_name, default=_('Object'))
 
@@ -304,8 +305,8 @@ def create_pdfexport(
     delattr(flask.g, 'override_locale')
     refresh()
 
-    return HTML(
+    return typing.cast(bytes, HTML(
         string=html,
         url_fetcher=custom_url_fetcher,
         base_url=base_url
-    ).write_pdf()
+    ).write_pdf())

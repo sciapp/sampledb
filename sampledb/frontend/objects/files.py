@@ -4,6 +4,7 @@
 """
 import io
 import os
+import typing
 import zipfile
 
 import flask
@@ -15,17 +16,17 @@ from flask_babel import _
 from .. import frontend
 from ... import logic
 from ...logic.objects import get_object
-from ...logic.object_permissions import Permissions
+from ...models import Permissions
 from ...logic.errors import UserDoesNotExistError, FederationFileNotAvailableError
 from .forms import FileForm, FileInformationForm, FileHidingForm, ExternalLinkForm
-from ...utils import object_permissions_required
+from ...utils import object_permissions_required, FlaskResponseT
 from ..utils import check_current_user_is_not_readonly
 from .permissions import on_unauthorized
 
 
 @frontend.route('/objects/<int:object_id>/files/')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_files(object_id):
+def object_files(object_id: int) -> FlaskResponseT:
     files = logic.files.get_files_for_object(object_id)
     zip_bytes = io.BytesIO()
     with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
@@ -51,7 +52,7 @@ def object_files(object_id):
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['GET'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_file(object_id, file_id):
+def object_file(object_id: int, file_id: int) -> FlaskResponseT:
     file = logic.files.get_file_for_object(object_id, file_id)
     if file is None:
         return flask.abort(404)
@@ -78,7 +79,7 @@ def object_file(object_id, file_id):
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
-def update_file_information(object_id, file_id):
+def update_file_information(object_id: int, file_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
     if object.fed_object_id is not None:
@@ -110,7 +111,7 @@ def update_file_information(object_id, file_id):
 
 @frontend.route('/objects/<int:object_id>/files/<int:file_id>/hide', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
-def hide_file(object_id, file_id):
+def hide_file(object_id: int, file_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     form = FileHidingForm()
     if not form.validate_on_submit():
@@ -130,7 +131,7 @@ def hide_file(object_id, file_id):
 
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['GET'])
-def mobile_file_upload(object_id: int, token: str):
+def mobile_file_upload(object_id: int, token: str) -> FlaskResponseT:
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
@@ -146,7 +147,7 @@ def mobile_file_upload(object_id: int, token: str):
 
 
 @frontend.route('/objects/<int:object_id>/files/mobile_upload/<token>', methods=['POST'])
-def post_mobile_file_upload(object_id: int, token: str):
+def post_mobile_file_upload(object_id: int, token: str) -> FlaskResponseT:
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
     try:
         user_id, object_id = serializer.loads(token, max_age=15 * 60)
@@ -168,14 +169,17 @@ def post_mobile_file_upload(object_id: int, token: str):
             )
         )
     for file_storage in files:
-        file_name = werkzeug.utils.secure_filename(file_storage.filename)
-        logic.files.create_database_file(object_id, user_id, file_name, lambda stream, file_storage=file_storage: file_storage.save(dst=stream))
+        if file_storage.filename is not None:
+            file_name = werkzeug.utils.secure_filename(file_storage.filename)
+        else:
+            file_name = 'file'
+        logic.files.create_database_file(object_id, user_id, file_name, typing.cast(typing.Callable[[typing.BinaryIO], None], lambda stream, file_storage=file_storage: file_storage.save(dst=stream)))
     return flask.render_template('mobile_upload_success.html')
 
 
 @frontend.route('/objects/<int:object_id>/files/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
-def post_object_files(object_id):
+def post_object_files(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     external_link_form = ExternalLinkForm()
     file_form = FileForm()
@@ -184,8 +188,11 @@ def post_object_files(object_id):
         if file_source == 'local':
             files = flask.request.files.getlist(file_form.local_files.name)
             for file_storage in files:
-                file_name = werkzeug.utils.secure_filename(file_storage.filename)
-                logic.files.create_database_file(object_id, flask_login.current_user.id, file_name, lambda stream, file_storage=file_storage: file_storage.save(dst=stream))
+                if file_storage.filename is not None:
+                    file_name = werkzeug.utils.secure_filename(file_storage.filename)
+                else:
+                    file_name = 'file'
+                logic.files.create_database_file(object_id, flask_login.current_user.id, file_name, typing.cast(typing.Callable[[typing.BinaryIO], None], lambda stream, file_storage=file_storage: file_storage.save(dst=stream)))
             flask.flash(_('Successfully uploaded files.'), 'success')
         else:
             flask.flash(_('Failed to upload files.'), 'error')

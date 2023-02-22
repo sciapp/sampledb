@@ -2,7 +2,7 @@
 """
 
 """
-
+import dataclasses
 import typing
 
 import flask
@@ -204,6 +204,17 @@ def set_initial_permissions(obj: Object) -> None:
     set_object_permissions_for_all_users(object_id=obj.object_id, permissions=permissions_for_all_users)
 
 
+@dataclasses.dataclass(frozen=True)
+class ObjectInfo:
+    object_id: int
+    name_json: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
+    action_id: typing.Optional[int]
+    max_permission: int
+    tags: typing.Optional[typing.Dict[str, typing.Any]]
+    fed_object_id: typing.Optional[int]
+    component_name: typing.Optional[str]
+
+
 def get_object_info_with_permissions(
         user_id: int,
         permissions: Permissions,
@@ -214,7 +225,7 @@ def get_object_info_with_permissions(
         action_ids: typing.Optional[typing.Sequence[int]] = None,
         action_type_id: typing.Optional[int] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None
-) -> typing.List[Object]:
+) -> typing.List[ObjectInfo]:
 
     user = get_user(user_id)
 
@@ -298,7 +309,18 @@ def get_object_info_with_permissions(
 
     object_infos = db.session.execute(stmt, parameters).fetchall()
 
-    return typing.cast(typing.List[Object], object_infos)
+    return [
+        ObjectInfo(
+            object_id=object_info.object_id,
+            name_json=object_info.name_json,
+            action_id=object_info.action_id,
+            max_permission=object_info.max_permission,
+            tags=object_info.tags,
+            fed_object_id=object_info.fed_object_id,
+            component_name=object_info.component_name
+        )
+        for object_info in object_infos
+    ]
 
 
 def get_objects_with_permissions(

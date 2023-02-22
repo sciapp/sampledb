@@ -127,8 +127,8 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         NotificationType=sampledb.models.NotificationType,
         get_user=sampledb.logic.users.get_user,
     )
-    app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)  # type: ignore
-    app.jinja_env.globals.update(sampledb.frontend.utils.jinja_function.functions)  # type: ignore
+    app.jinja_env.filters.update(sampledb.frontend.utils.JinjaFilter.filters)
+    app.jinja_env.globals.update(sampledb.frontend.utils.JinjaFunction.functions)
 
 
 def build_translations(pybabel_path: str) -> None:
@@ -178,7 +178,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
 
-    def custom_send_static_file(filename: str) -> flask.Response:
+    def custom_send_static_file(filename: str) -> sampledb.utils.FlaskResponseT:
         response = flask.make_response(
             flask.send_from_directory(app.static_folder, filename)  # type: ignore
         )
@@ -217,7 +217,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     app.csp_reports = []  # type: ignore[attr-defined]
 
     @app.route('/csp-violation-report', methods=['POST'])
-    def csp_report() -> str:
+    def csp_report() -> sampledb.utils.FlaskResponseT:
         if app.config.get('TESTING', True):
             app.csp_reports.append(flask.request.get_json(force=True))  # type: ignore[attr-defined]
         elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):

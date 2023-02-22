@@ -9,10 +9,11 @@ import flask
 from . import frontend
 from .. import db
 from .. import version
+from ..utils import FlaskResponseT
 
 
 @frontend.route('/status/')
-def status():
+def status() -> FlaskResponseT:
     status_info = {
         'sampledb_version': version.__version__,
         'flask_status': True

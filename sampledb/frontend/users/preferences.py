@@ -6,6 +6,7 @@
 import datetime
 import http
 import secrets
+import typing
 
 import flask
 from flask_babel import refresh, _, lazy_gettext
@@ -25,29 +26,30 @@ from ..utils import get_groups_form_data
 from ... import logic
 from ...logic import user_log
 from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method
-from ...logic.users import get_user, get_users
+from ...logic.users import get_user, get_users, User
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
 from ...logic.projects import get_project
 from ...logic.groups import get_group
-from ...logic.notifications import NotificationMode, NotificationType, get_notification_modes, set_notification_mode_for_type
+from ...logic.notifications import get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
-from ...models import Authentication, AuthenticationType, Permissions
+from ...models import Authentication, AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
+from ...utils import FlaskResponseT
 
 
 @frontend.route('/users/me/preferences', methods=['GET', 'POST'])
-def user_me_preferences():
+def user_me_preferences() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated:
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
     return email_for_resetting_password()
 
 
 @frontend.route('/users/<int:user_id>/preferences', methods=['GET', 'POST'])
-def user_preferences(user_id):
-    if 'token' in flask.request.args:
-        token = flask.request.args.get('token')
+def user_preferences(user_id: int) -> FlaskResponseT:
+    token = flask.request.args.get('token')
+    if token:
         data = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
         if data is not None:
             return reset_password()
@@ -65,10 +67,10 @@ def user_preferences(user_id):
             user = flask_login.current_user
             return change_preferences(user, user_id)
     else:
-        return flask.current_app.login_manager.unauthorized()
+        return typing.cast(flask_login.LoginManager, flask.current_app.login_manager).unauthorized()  # type: ignore[attr-defined, no-any-return]
 
 
-def change_preferences(user, user_id):
+def change_preferences(user: User, user_id: int) -> FlaskResponseT:
     two_factor_authentication_methods = get_two_factor_authentication_methods(user_id)
     manage_two_factor_authentication_method_form = ManageTwoFactorAuthenticationMethodForm()
 
@@ -255,7 +257,7 @@ def change_preferences(user, user_id):
                     user_id=user.id,
                     salt='edit_profile'
                 )[0]
-                if mail_send_status == mail_send_status.FAILED:
+                if mail_send_status == BackgroundTaskStatus.FAILED:
                     flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
                 else:
                     flask.flash(_("Please see your email to confirm this change."), 'success')
@@ -479,7 +481,7 @@ def change_preferences(user, user_id):
     confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
-        modified_settings = {
+        modified_settings: typing.Dict[str, typing.Any] = {
             'USE_SCHEMA_EDITOR': use_schema_editor
         }
         select_timezone = flask.request.form.get('select-timezone', '')
@@ -595,8 +597,10 @@ def change_preferences(user, user_id):
     )
 
 
-def confirm_email():
+def confirm_email() -> FlaskResponseT:
     token = flask.request.args.get('token')
+    if not token:
+        return flask.abort(404)
     data1 = verify_token(token, salt='edit_profile', secret_key=flask.current_app.config['SECRET_KEY'])
     data2 = verify_token(token, salt='add_login', secret_key=flask.current_app.config['SECRET_KEY'])
     if data1 is None and data2 is None:
@@ -634,7 +638,7 @@ def confirm_email():
         return flask.redirect(flask.url_for('.user_preferences', user_id=user_id))
 
 
-def email_for_resetting_password():
+def email_for_resetting_password() -> FlaskResponseT:
     request_password_reset_form = RequestPasswordResetForm()
     if flask.request.method == "GET":
         #  GET (email dialog )
@@ -649,8 +653,8 @@ def email_for_resetting_password():
             if '@' not in email:
                 has_error = True
             else:
-                mail_send_status = send_recovery_email(email)[0]
-                if mail_send_status == mail_send_status.FAILED:
+                mail_send_status_info = send_recovery_email(email)
+                if mail_send_status_info is not None and mail_send_status_info[0] == BackgroundTaskStatus.FAILED:
                     flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
                 else:
                     return flask.render_template(
@@ -666,8 +670,10 @@ def email_for_resetting_password():
     return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)
 
 
-def reset_password():
+def reset_password() -> FlaskResponseT:
     token = flask.request.args.get('token')
+    if not token:
+        return flask.abort(404)
     authentication_id = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
     if not authentication_id:
         return flask.abort(404)

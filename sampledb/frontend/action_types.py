@@ -3,6 +3,7 @@
 
 """
 import json
+import typing
 
 import flask
 import flask_login
@@ -13,15 +14,17 @@ from flask_babel import _
 
 from . import frontend
 from .. import logic
-from .utils import check_current_user_is_not_readonly, get_translated_text
-from ..logic.action_types import SciCatExportType
+from .utils import check_current_user_is_not_readonly
+from ..utils import FlaskResponseT
+from ..logic.utils import get_translated_text
 from ..logic.components import get_component_or_none
+from ..models import SciCatExportType
 
 
-class ActionTypesSortingForm(FlaskForm):
+class ActionTypesSortingForm(FlaskForm):  # type: ignore[misc]
     encoded_order = StringField("Order-String", [DataRequired()])
 
-    def validate_encoded_order(form, field):
+    def validate_encoded_order(form, field: StringField) -> None:
         valid_action_type_ids = [action_type.id for action_type in logic.action_types.get_action_types()]
 
         try:
@@ -37,8 +40,8 @@ class ActionTypesSortingForm(FlaskForm):
 
 
 @frontend.route('/action_types/', methods=['GET', 'POST'])
-@flask_login.login_required
-def action_types():
+@flask_login.login_required  # type: ignore[misc]
+def action_types() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -57,8 +60,8 @@ def action_types():
 
 
 @frontend.route('/action_types/<int(signed=True):type_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def action_type(type_id):
+@flask_login.login_required  # type: ignore[misc]
+def action_type(type_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -90,14 +93,14 @@ def action_type(type_id):
 
 
 @frontend.route('/action_types/new', methods=['GET', 'POST'])
-@flask_login.login_required
-def new_action_type():
+@flask_login.login_required  # type: ignore[misc]
+def new_action_type() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     return show_action_type_form(None)
 
 
-class ActionTypeForm(FlaskForm):
+class ActionTypeForm(FlaskForm):  # type: ignore[misc]
     translations = StringField(validators=[DataRequired()])
 
     admin_only = BooleanField()
@@ -121,7 +124,7 @@ class ActionTypeForm(FlaskForm):
         (SciCatExportType.DERIVED_DATASET.name.lower(), _('Derived Dataset')),
     ])
 
-    def set_select_usable_in_action_types_attributes(self):
+    def set_select_usable_in_action_types_attributes(self) -> None:
         self.select_usable_in_action_types.choices = [
             (action_type.id, get_translated_text(action_type.name, default=_('Unnamed Action Type')))
             for action_type in logic.action_types.get_action_types()
@@ -133,7 +136,7 @@ class ActionTypeForm(FlaskForm):
                                                                   if action_type.component_id is not None]
 
 
-def show_action_type_form(type_id):
+def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     action_type_translations = []
     action_type_language_ids = []
@@ -142,13 +145,13 @@ def show_action_type_form(type_id):
 
     english = logic.languages.get_language(logic.languages.Language.ENGLISH)
 
-    def validate_string(string):
+    def validate_string(string: str) -> bool:
         try:
             return 0 < len(string) < 100
         except Exception:
             return False
 
-    def validate_strings(strings):
+    def validate_strings(strings: typing.Sequence[str]) -> bool:
         try:
             result = [validate_string(string) for string in strings]
             for temp in result:

@@ -6,10 +6,12 @@
 import datetime
 import json
 import os
+import typing
 
 import itsdangerous
 import flask
 import flask_login
+import wtforms
 from flask_babel import _
 from flask_wtf import FlaskForm
 import pytz
@@ -20,7 +22,7 @@ from . import frontend
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
 from ..logic.actions import get_actions
@@ -30,19 +32,23 @@ from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
-from ..logic.object_permissions import Permissions, get_object_info_with_permissions
+from ..logic.object_permissions import get_object_info_with_permissions
 from ..logic.settings import get_user_settings, set_user_settings
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data
+from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
 
+from ..models.permissions import Permissions
+from ..models.instrument_log_entries import InstrumentLogCategoryTheme
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class MultipleIntegerField(SelectMultipleField):
-    def pre_validate(self, form):
+class MultipleIntegerField(SelectMultipleField):  # type: ignore[misc]
+    def pre_validate(self, form: wtforms.Form) -> None:
         if self.data:
             for d in self.data:
                 try:
@@ -51,22 +57,11 @@ class MultipleIntegerField(SelectMultipleField):
                     raise ValidationError("Invalid value")
 
 
-class SelectMultipleFieldFix(SelectMultipleField):
-    def pre_validate(self, form):
-        # TODO: use SelectMultipleField directly after wtforms release
-        # SelectMultipleField does not yet support the validate_choice flag
-        # used by SelectField. This is already fixed in master of wtforms, but
-        # until the new version is released, this adds support for the flag.
-        if self.validate_choice:
-            super().pre_validate(form)
-        return None
-
-
-class InstrumentLogEntryForm(FlaskForm):
+class InstrumentLogEntryForm(FlaskForm):  # type: ignore[misc]
     content = StringField()
     content_is_markdown = BooleanField()
     files = MultipleFileField()
-    objects = SelectMultipleFieldFix(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
+    objects = SelectMultipleField(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
     categories = SelectMultipleField()
     log_entry_id = IntegerField()
     existing_files = MultipleIntegerField()
@@ -74,7 +69,7 @@ class InstrumentLogEntryForm(FlaskForm):
     has_event_utc_datetime = BooleanField()
     event_utc_datetime = StringField()
 
-    def validate_event_utc_datetime(form, field):
+    def validate_event_utc_datetime(form, field: wtforms.BooleanField) -> None:
         if field.data:
             try:
                 language = get_user_language(flask_login.current_user)
@@ -89,18 +84,18 @@ class InstrumentLogEntryForm(FlaskForm):
             field.data = None
 
 
-class InstrumentLogOrderForm(FlaskForm):
+class InstrumentLogOrderForm(FlaskForm):  # type: ignore[misc]
     ascending = BooleanField()
     attribute = StringField(validators=[DataRequired()])
 
-    def validate_attribute(form, field):
+    def validate_attribute(form, field: wtforms.StringField) -> None:
         if field.data not in ('datetime', 'username'):
             raise ValidationError("invalid log order attribute")
 
 
 @frontend.route('/instruments/')
-@flask_login.login_required
-def instruments():
+@flask_login.login_required  # type: ignore[misc]
+def instruments() -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     all_instruments = get_instruments()
@@ -129,8 +124,8 @@ def instruments():
 
 
 @frontend.route('/instruments/<int:instrument_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def instrument(instrument_id):
+@flask_login.login_required  # type: ignore[misc]
+def instrument(instrument_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -359,7 +354,7 @@ def instrument(instrument_id):
     )
 
 
-class InstrumentForm(FlaskForm):
+class InstrumentForm(FlaskForm):  # type: ignore[misc]
     instrument_responsible_users = SelectMultipleField()
     is_markdown = BooleanField(default=False)
     short_description_is_markdown = BooleanField(default=False)
@@ -374,8 +369,8 @@ class InstrumentForm(FlaskForm):
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
-@flask_login.login_required
-def new_instrument():
+@flask_login.login_required  # type: ignore[misc]
+def new_instrument() -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     if not flask_login.current_user.is_admin:
@@ -426,8 +421,7 @@ def new_instrument():
                             flask.flash(_('Please enter an instrument name.'), 'error')
                             return flask.render_template('instruments/instrument_form.html',
                                                          submit_text='Create Instrument',
-                                                         instrument_log_category_themes=sorted(
-                                                             InstrumentLogCategoryTheme, key=lambda t: t.value),
+                                                         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                          ENGLISH=get_language(Language.ENGLISH),
                                                          languages=get_languages(only_enabled_for_input=True),
                                                          instrument_form=instrument_form
@@ -436,8 +430,7 @@ def new_instrument():
                         flask.flash(_('Please enter an instrument name.'), 'error')
                         return flask.render_template('instruments/instrument_form.html',
                                                      submit_text='Create Instrument',
-                                                     instrument_log_category_themes=sorted(
-                                                         InstrumentLogCategoryTheme, key=lambda t: t.value),
+                                                     instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                      ENGLISH=get_language(Language.ENGLISH),
                                                      languages=get_languages(only_enabled_for_input=True),
                                                      instrument_form=instrument_form
@@ -453,13 +446,13 @@ def new_instrument():
             )
 
             for translation in translation_data:
-                language_id = translation['language_id']
+                language_id = int(translation['language_id'])
                 name = translation['name'].strip()
                 description = translation['description'].strip()
                 short_description = translation['short_description'].strip()
                 notes = translation['notes'].strip()
 
-                if language_id not in map(str, allowed_language_ids):
+                if language_id not in allowed_language_ids:
                     continue
 
                 if instrument_form.is_markdown.data:
@@ -531,7 +524,7 @@ def new_instrument():
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text='Create Instrument',
-        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
+        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
         ENGLISH=get_language(Language.ENGLISH),
         languages=get_languages(only_enabled_for_input=True),
         instrument_form=instrument_form,
@@ -540,8 +533,8 @@ def new_instrument():
 
 
 @frontend.route('/instruments/<int:instrument_id>/edit', methods=['GET', 'POST'])
-@flask_login.login_required
-def edit_instrument(instrument_id):
+@flask_login.login_required  # type: ignore[misc]
+def edit_instrument(instrument_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -783,8 +776,8 @@ def edit_instrument(instrument_id):
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/<int:log_entry_id>/file_attachments/<int:file_attachment_id>')
-@flask_login.login_required
-def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_id):
+@flask_login.login_required  # type: ignore[misc]
+def instrument_log_file_attachment(instrument_id: int, log_entry_id: int, file_attachment_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -821,7 +814,7 @@ def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['GET'])
-def instrument_log_mobile_file_upload(instrument_id: int, token: str):
+def instrument_log_mobile_file_upload(instrument_id: int, token: str) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -845,7 +838,7 @@ def instrument_log_mobile_file_upload(instrument_id: int, token: str):
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['POST'])
-def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
+def post_instrument_log_mobile_file_upload(instrument_id: int, token: str) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -875,25 +868,24 @@ def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
             )
         )
     if files:
-        category_ids = []
         log_entry = create_instrument_log_entry(
             instrument_id=instrument_id,
             user_id=user_id,
             content='',
-            category_ids=category_ids
+            category_ids=[]
         )
         for file_storage in files:
             create_instrument_log_file_attachment(
                 instrument_log_entry_id=log_entry.id,
-                file_name=file_storage.filename,
+                file_name=file_storage.filename or '',
                 content=file_storage.stream.read()
             )
     return flask.render_template('mobile_upload_success.html')
 
 
-@flask_login.login_required
 @frontend.route('/users/me/settings/instrument_log_order', methods=['POST'])
-def set_instrument_log_order():
+@flask_login.login_required  # type: ignore[misc]
+def set_instrument_log_order() -> FlaskResponseT:
     form = InstrumentLogOrderForm()
     if not form.validate_on_submit():
         return flask.abort(400)

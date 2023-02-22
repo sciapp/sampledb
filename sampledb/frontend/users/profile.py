@@ -15,30 +15,31 @@ from .. import frontend
 from ...logic import users, errors, groups, projects, instruments
 from ...logic.components import get_component
 from ..utils import validate_orcid
+from ...utils import FlaskResponseT
 
 
-class UserReadOnlyForm(FlaskForm):
+class UserReadOnlyForm(FlaskForm):  # type: ignore[misc]
     action = StringField(validators=[validators.AnyOf(['toggle_read_only'])])
     should_be_read_only = BooleanField()
 
 
-class UserHiddenForm(FlaskForm):
+class UserHiddenForm(FlaskForm):  # type: ignore[misc]
     action = StringField(validators=[validators.AnyOf(['toggle_hidden'])])
     should_be_hidden = BooleanField()
 
 
-class UserActiveForm(FlaskForm):
+class UserActiveForm(FlaskForm):  # type: ignore[misc]
     action = StringField(validators=[validators.AnyOf(['toggle_active'])])
     should_be_active = BooleanField()
 
 
-class UserProfileForm(FlaskForm):
+class UserProfileForm(FlaskForm):  # type: ignore[misc]
     action = StringField(validators=[validators.AnyOf(['edit_profile'])])
     orcid = StringField()
     affiliation = StringField()
     role = StringField()
 
-    def validate_orcid(self, field):
+    def validate_orcid(self, field: StringField) -> None:
         orcid = field.data
         # accept empty ORCID iDs
         if orcid is None:
@@ -55,14 +56,14 @@ class UserProfileForm(FlaskForm):
 
 
 @frontend.route('/users/me')
-@flask_login.login_required
-def current_user_profile():
+@flask_login.login_required  # type: ignore[misc]
+def current_user_profile() -> FlaskResponseT:
     return flask.redirect(flask.url_for('.user_profile', user_id=flask_login.current_user.id))
 
 
 @frontend.route('/users/<int:user_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def user_profile(user_id):
+@flask_login.login_required  # type: ignore[misc]
+def user_profile(user_id: int) -> FlaskResponseT:
     try:
         user = users.get_user(user_id)
     except errors.UserDoesNotExistError:

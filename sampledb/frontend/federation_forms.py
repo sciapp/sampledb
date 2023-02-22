@@ -12,38 +12,38 @@ from wtforms import StringField, IntegerField, SubmitField, SelectField, Boolean
 from wtforms.validators import Length, DataRequired, ValidationError, InputRequired
 
 
-class CreateAPITokenForm(FlaskForm):
+class CreateAPITokenForm(FlaskForm):  # type: ignore[misc]
     description = StringField('description', validators=[Length(min=1, max=100)])
 
 
-class AddOwnAPITokenForm(FlaskForm):
+class AddOwnAPITokenForm(FlaskForm):  # type: ignore[misc]
     token = StringField('token', validators=[Length(min=1, max=100)])
     description = StringField('description', validators=[Length(min=1, max=100)])
 
 
-class AuthenticationMethodForm(FlaskForm):
+class AuthenticationMethodForm(FlaskForm):  # type: ignore[misc]
     id = IntegerField('Authentication_method_id', validators=[DataRequired()])
     submit = SubmitField('Remove')
 
 
-class AddComponentForm(FlaskForm):
+class AddComponentForm(FlaskForm):  # type: ignore[misc]
     address = StringField(validators=[Length(min=0, max=100)])
     uuid = StringField(validators=[Length(min=1, max=100)])
     name = StringField(validators=[Length(min=0, max=100)])
     description = StringField()
 
 
-class EditComponentForm(FlaskForm):
+class EditComponentForm(FlaskForm):  # type: ignore[misc]
     address = StringField(validators=[Length(min=0, max=100)])
     name = StringField(validators=[Length(min=0, max=100)])
     description = StringField()
 
 
-class SyncComponentForm(FlaskForm):
+class SyncComponentForm(FlaskForm):  # type: ignore[misc]
     ignore_last_sync_time = BooleanField(default=False)
 
 
-class EditAliasForm(FlaskForm):
+class EditAliasForm(FlaskForm):  # type: ignore[misc]
     component = IntegerField('Component', validators=[InputRequired()])
     name = StringField('Full Name')
     use_real_name = BooleanField('Use real name')
@@ -55,14 +55,14 @@ class EditAliasForm(FlaskForm):
     use_real_role = BooleanField('Use real role')
     submit = SubmitField('Change Alias')
 
-    def validate_name(self, field):
+    def validate_name(self, field: StringField) -> None:
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
             name = field.data
             if name and ', ' not in name[1:-1]:
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
 
-class AddAliasForm(FlaskForm):
+class AddAliasForm(FlaskForm):  # type: ignore[misc]
     component = SelectField('Database', validators=[InputRequired()])
     name = StringField('Full Name')
     use_real_name = BooleanField('Use real name')
@@ -74,12 +74,12 @@ class AddAliasForm(FlaskForm):
     use_real_role = BooleanField('Use real role')
     submit = SubmitField('Add Alias')
 
-    def validate_name(self, field):
+    def validate_name(self, field: StringField) -> None:
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
             name = field.data
             if name and ', ' not in name[1:-1]:
                 raise ValidationError(_('Please enter your name as: surname, given names.'))
 
 
-class DeleteAliasForm(FlaskForm):
+class DeleteAliasForm(FlaskForm):  # type: ignore[misc]
     component = IntegerField('Component', validators=[InputRequired()])

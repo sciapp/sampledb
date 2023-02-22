@@ -14,6 +14,7 @@ import flask
 import flask_login
 import itsdangerous
 from flask_babel import _
+from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
@@ -22,18 +23,16 @@ from ...logic import object_log, comments, errors
 from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
-from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
+from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
-from ...logic.users import get_user, get_users
+from ...logic.users import get_user, get_users, User
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
-from ...logic.object_log import ObjectLogEntryType
-from ...logic.projects import get_project
+from ...logic.projects import get_project, Project
 from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object
 from ...logic.locations import Location, get_location_capacities, get_assigned_object_count_by_action_types
 from ...logic.location_permissions import get_locations_with_user_permissions
 from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
-from ...logic.files import FileLogEntryType
 from ...logic.components import get_component
 from ...logic.shares import get_shares_for_object
 from ...logic.notebook_templates import get_notebook_templates
@@ -41,11 +40,14 @@ from ...logic.utils import get_translated_text, get_data_and_schema_by_id_path
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, GenerateLabelsForm
 from ...utils import object_permissions_required
 from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
-from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN, mm
+from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
 from .object_form import show_object_form
+from ...utils import FlaskResponseT
+from ...models import Permissions, ObjectLogEntryType
+from ...models.file_log import FileLogEntryType
 
 
 def build_object_location_assignment_confirmation_url(object_location_assignment_id: int) -> str:
@@ -74,7 +76,7 @@ def build_object_location_assignment_declination_url(object_location_assignment_
     return declination_url
 
 
-def get_project_if_it_exists(project_id):
+def get_project_if_it_exists(project_id: int) -> typing.Optional[Project]:
     try:
         return get_project(project_id)
     except errors.ProjectDoesNotExistError:
@@ -83,7 +85,7 @@ def get_project_if_it_exists(project_id):
 
 @frontend.route('/objects/<int:object_id>', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object(object_id):
+def object(object_id: int) -> FlaskResponseT:
     object = get_object(object_id=object_id)
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions and object.fed_object_id is None and object.action_id is not None
@@ -99,7 +101,9 @@ def object(object_id):
             return flask.abort(403)
     if mode in {'edit', 'upgrade'} or flask.request.method == 'POST':
         check_current_user_is_not_readonly()
-        action = get_action(object.action_id)
+        action = get_action(object.action_id) if object.action_id else None
+        if action is None:
+            return flask.abort(400)
         should_upgrade_schema = mode == 'upgrade'
         if should_upgrade_schema and (not action.schema or action.schema == object.schema):
             flask.flash(_('The schema for this object cannot be updated.'), 'error')
@@ -110,7 +114,7 @@ def object(object_id):
             should_upgrade_schema=should_upgrade_schema
         )
 
-    template_kwargs = {}
+    template_kwargs: typing.Dict[str, typing.Any] = {}
 
     # languages
     english = get_language(Language.ENGLISH)
@@ -119,10 +123,13 @@ def object(object_id):
         language.lang_code: language
         for language in all_languages
     }
-    object_languages = [
-        languages_by_lang_code.get(lang_code)
-        for lang_code in logic.languages.get_languages_in_object_data(object.data)
-    ]
+    if object.data:
+        object_languages = [
+            languages_by_lang_code.get(lang_code)
+            for lang_code in logic.languages.get_languages_in_object_data(object.data)
+        ]
+    else:
+        object_languages = []
     metadata_language = flask.request.args.get('language', None)
     if metadata_language not in languages_by_lang_code:
         metadata_language = None
@@ -253,7 +260,7 @@ def object(object_id):
 
                 favorite_actions_by_action_type_id[action_type.id].sort(
                     key=lambda action: (
-                        action.user.name.lower() if action.user else '',
+                        action.user.name.lower() if action.user and action.user.name else '',
                         get_translated_text(action.instrument.name).lower() if action.instrument else '',
                         get_translated_text(action.name).lower()
                     )
@@ -358,7 +365,7 @@ def object(object_id):
         all_choices, choices = get_locations_form_data(filter=location_filter)
         location_form.location.all_choices = all_choices
         location_form.location.choices = choices
-        possible_responsible_users = [('-1', None)]
+        possible_responsible_users: typing.List[typing.Tuple[str, typing.Optional[User]]] = [('-1', None)]
         user_is_fed = {}
         for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
             possible_responsible_users.append((str(user.id), user))
@@ -470,7 +477,7 @@ def object(object_id):
         action_type_id_by_action_id = {}
         for action in sorted_actions:
             if action.type is not None:
-                if action.type.component_id is not None and action.type.fed_id < 0:
+                if action.type.fed_id is not None and action.type.fed_id < 0:
                     action_type_id_by_action_id[action.id] = action.type.fed_id
                 else:
                     action_type_id_by_action_id[action.id] = action.type.id
@@ -515,7 +522,7 @@ def object(object_id):
 @frontend.route('/objects/<int:object_id>/dc.rdf')
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>/dc.rdf')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_rdf(object_id, version_id=None):
+def object_rdf(object_id: int, version_id: typing.Optional[int] = None) -> FlaskResponseT:
     rdf_xml = logic.rdf.generate_rdf(flask_login.current_user.id, object_id, version_id)
     return flask.Response(
         rdf_xml,
@@ -525,7 +532,7 @@ def object_rdf(object_id, version_id=None):
 
 @frontend.route('/objects/<int:object_id>/label')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def print_object_label(object_id):
+def print_object_label(object_id: int) -> FlaskResponseT:
     mode = flask.request.args.get('mode', 'mixed')
     action_id = get_object(object_id).action_id
 
@@ -536,14 +543,14 @@ def print_object_label(object_id):
     if mode == 'fixed-width':
         create_mixed_labels = False
         create_long_labels = False
-        include_qrcode_in_long_labels = None
+        include_qrcode_in_long_labels = False
         paper_format = flask.request.args.get('width-paper-format', '')
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
         maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
         maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
         ghs_classes_side_by_side = 'side-by-side' in flask.request.args
-        label_minimum_width = 20
+        label_minimum_width = 20.0
         if ghs_classes_side_by_side:
             label_minimum_width = 40
         try:
@@ -589,12 +596,12 @@ def print_object_label(object_id):
         if label_minimum_width > maximum_width:
             label_minimum_width = maximum_width
         qrcode_width = 0
-        ghs_classes_side_by_side = None
-        centered = None
+        ghs_classes_side_by_side = False
+        centered = False
     else:
         create_mixed_labels = True
-        create_long_labels = None
-        include_qrcode_in_long_labels = None
+        create_long_labels = False
+        include_qrcode_in_long_labels = False
         paper_format = flask.request.args.get('mixed-paper-format', '')
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
@@ -602,8 +609,8 @@ def print_object_label(object_id):
         label_minimum_height = 0
         qrcode_width = 0
         label_minimum_width = 0
-        ghs_classes_side_by_side = None
-        centered = None
+        ghs_classes_side_by_side = False
+        centered = False
 
     object = get_object(object_id=object_id)
     object_log_entries = object_log.get_object_log_entries(object_id=object_id, user_id=flask_login.current_user.id)
@@ -628,13 +635,13 @@ def print_object_label(object_id):
             creation_user = get_user(original_object.user_id).get_name(include_id=False)
         else:
             creation_user = _('Unknown')
-    if 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
+    if object.data is not None and 'created' in object.data and '_type' in object.data['created'] and object.data['created']['_type'] == 'datetime':
         creation_date = object.data['created']['utc_datetime'].split(' ')[0]
     object_name = get_translated_text(object.name)
 
     object_url = flask.url_for('.object', object_id=object_id, _external=True)
 
-    if 'hazards' in object.data and '_type' in object.data['hazards'] and object.data['hazards']['_type'] == 'hazards':
+    if object.data is not None and 'hazards' in object.data and '_type' in object.data['hazards'] and object.data['hazards']['_type'] == 'hazards':
         hazards = object.data['hazards']['hazards']
     else:
         hazards = []
@@ -665,7 +672,7 @@ def print_object_label(object_id):
 
 
 @frontend.route("/multiselect_labels", methods=["GET"])
-def multiselect_labels():
+def multiselect_labels() -> FlaskResponseT:
     generate_labels_form = GenerateLabelsForm(flask.request.args)
 
     if not generate_labels_form.validate():
@@ -678,8 +685,11 @@ def multiselect_labels():
     for object_id in object_ids:
         object = logic.objects.get_object(object_id)
         if object_id is not None and logic.object_permissions.get_user_object_permissions(object_id, user_id=flask_login.current_user.id) >= Permissions.READ:
-            action = logic.actions.get_action(object.action_id)
-            if action.type is None or not action.type.enable_labels:
+            if object.action_id:
+                action = logic.actions.get_action(object.action_id)
+            else:
+                action = None
+            if action is None or action.type is None or not action.type.enable_labels:
                 flask.abort(403)
         else:
             flask.abort(403)
@@ -690,10 +700,10 @@ def multiselect_labels():
     maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
     maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
 
-    qr_code_width = 18
-    min_label_width = 0
-    min_label_height = 0
-    label_width = 0
+    qr_code_width = 18.0
+    min_label_width = 0.0
+    min_label_height = 0.0
+    label_width = 0.0
 
     centered = False
     create_mixed_labels = False
@@ -819,7 +829,7 @@ def multiselect_labels():
 
 @frontend.route('/objects/<int:object_id>/comments/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
-def post_object_comments(object_id):
+def post_object_comments(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
     if object.fed_object_id is not None:
@@ -837,7 +847,7 @@ def post_object_comments(object_id):
 
 @frontend.route('/objects/<int:object_id>/locations/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
-def post_object_location(object_id):
+def post_object_location(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
     if object.fed_object_id is not None:
@@ -853,6 +863,8 @@ def post_object_location(object_id):
     for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
         possible_responsible_users.append((str(user.id), f'{user.name} (#{user.id})'))
     location_form.responsible_user.choices = possible_responsible_users
+    location_id: typing.Optional[int]
+    responsible_user_id: typing.Optional[int]
     if location_form.validate_on_submit():
         location_id = int(location_form.location.data)
         if location_id < 0:
@@ -893,7 +905,7 @@ def post_object_location(object_id):
 
 @frontend.route('/objects/<int:object_id>/publications/', methods=['POST'])
 @object_permissions_required(Permissions.WRITE)
-def post_object_publication(object_id):
+def post_object_publication(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
     if object.fed_object_id is not None:
@@ -912,11 +924,12 @@ def post_object_publication(object_id):
             object_name = object_name.strip()
         if not object_name:
             object_name = None
-        existing_publication = ([
-            publication
-            for publication in logic.publications.get_publications_for_object(object_id)
-            if publication.doi == doi
-        ] or [None])[0]
+
+        existing_publication: typing.Optional[logic.publications.Publication] = None
+        for publication in logic.publications.get_publications_for_object(object_id):
+            if publication.doi == doi:
+                existing_publication = publication
+                break
         if existing_publication is not None and existing_publication.title == title and existing_publication.object_name == object_name:
             flask.flash(_('This object has already been linked to this publication.'), 'info')
         else:
@@ -932,7 +945,7 @@ def post_object_publication(object_id):
 
 @frontend.route('/objects/<int:object_id>/export')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def export_data(object_id):
+def export_data(object_id: int) -> FlaskResponseT:
     object_ids = [object_id]
     file_extension = flask.request.args.get('format', '.pdf')
     if file_extension != '.pdf' and file_extension not in logic.export.FILE_FORMATS:
@@ -969,7 +982,7 @@ def export_data(object_id):
         pdf_data = pdfexport.create_pdfexport(object_ids, sections, lang_code)
         file_bytes = io.BytesIO(pdf_data)
     elif file_extension in logic.export.FILE_FORMATS:
-        file_bytes = logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids)
+        file_bytes = io.BytesIO(logic.export.FILE_FORMATS[file_extension][1](flask_login.current_user.id, object_ids=object_ids))
     else:
         file_bytes = None
     if file_bytes:
@@ -985,34 +998,36 @@ def export_data(object_id):
 
 
 @frontend.route('/objects/new', methods=['GET', 'POST'])
-@flask_login.login_required
-def new_object():
+@flask_login.login_required  # type: ignore[misc]
+def new_object() -> FlaskResponseT:
     check_current_user_is_not_readonly()
 
-    action_id = flask.request.args.get('action_id', None)
-    if action_id is not None:
+    action_id_str = flask.request.args.get('action_id', None)
+    if action_id_str is not None:
         try:
-            action_id = int(action_id)
+            action_id = int(action_id_str)
         except ValueError:
             action_id = None
+    else:
+        action_id = None
 
-    previous_object_id = flask.request.args.get('previous_object_id', None)
-    if previous_object_id is not None:
+    previous_object_id_str = flask.request.args.get('previous_object_id', None)
+    if previous_object_id_str is not None:
         try:
-            previous_object_id = int(previous_object_id)
+            previous_object_id = int(previous_object_id_str)
         except ValueError:
             previous_object_id = None
+    else:
+        previous_object_id = None
 
     if not action_id and not previous_object_id:
         return flask.abort(404)
 
     previous_object = None
-    action = None
     if previous_object_id:
         try:
             previous_object = get_object(previous_object_id)
         except errors.ObjectDoesNotExistError:
-            flask.flash(_("This object does not exist."), 'error')
             return flask.abort(404)
         if Permissions.READ not in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id):
             flask.flash(_("You do not have the required permissions to use this object as a template."), 'error')
@@ -1021,9 +1036,11 @@ def new_object():
             if action_id != previous_object.action_id:
                 flask.flash(_("This object was created with a different action."), 'error')
                 return flask.abort(400)
-            else:
-                action_id = previous_object.action_id
-    if action_id:
+        else:
+            action_id = previous_object.action_id
+    if action_id is None:
+        return flask.abort(404)
+    else:
         try:
             action = get_action(action_id)
         except errors.ActionDoesNotExistError:
@@ -1038,22 +1055,24 @@ def new_object():
 
     fields_selected = flask.request.args.get('fields_selected', None) is not None
 
-    placeholder_data = {}
-    possible_properties = {}
+    placeholder_data: typing.Optional[typing.Dict[typing.Sequence[typing.Union[int, str]], typing.Any]] = {}
+    possible_properties: typing.Dict[str, typing.Any] = {}
     previous_actions = []
 
-    passed_object_ids = flask.request.args.getlist('object_id')
-    if passed_object_ids:
+    passed_object_id_strs = flask.request.args.getlist('object_id')
+    if passed_object_id_strs:
         try:
             passed_object_ids = [
-                int(passed_object_id)
-                for passed_object_id in passed_object_ids
+                int(passed_object_id_str)
+                for passed_object_id_str in passed_object_id_strs
             ]
         except ValueError:
             passed_object_ids = []
         else:
             if any(passed_object_id <= 0 for passed_object_id in passed_object_ids):
                 passed_object_ids = []
+    else:
+        passed_object_ids = []
     if passed_object_ids:
         try:
             passed_objects = [
@@ -1067,19 +1086,27 @@ def new_object():
         passed_objects = []
     if passed_object_ids and passed_objects and action is not None and action.schema is not None:
         passed_object_actions = [
-            logic.actions.get_action(passed_object.action_id)
+            logic.actions.get_action(passed_object.action_id) if passed_object.action_id is not None else None
             for passed_object in passed_objects
+        ]
+        passed_object_action_types = [
+            passed_object_action.type if passed_object_action is not None else None
+            for passed_object_action in passed_object_actions
         ]
 
         allowed_types = ["object_reference"]
-        if all(passed_object_action.type for passed_object_action in passed_object_actions):
-            if all(models.ActionType.MEASUREMENT in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
+        if all(passed_object_action_types):
+            if all(passed_object_action_type is not None and models.ActionType.MEASUREMENT in [passed_object_action_type.id, passed_object_action_type.fed_id] for passed_object_action_type in passed_object_action_types):
                 allowed_types.append("measurement")
 
-            if all(models.ActionType.SAMPLE_CREATION in [passed_object_action.type_id, passed_object_action.type.fed_id] for passed_object_action in passed_object_actions):
+            if all(passed_object_action_type is not None and models.ActionType.SAMPLE_CREATION in [passed_object_action_type.id, passed_object_action_type.fed_id] for passed_object_action_type in passed_object_action_types):
                 allowed_types.append("sample")
 
-        def is_property_schema_compatible(property_schema, allowed_types, passed_object_actions):
+        def is_property_schema_compatible(
+                property_schema: typing.Dict[str, typing.Any],
+                allowed_types: typing.Sequence[str],
+                passed_object_actions: typing.Sequence[typing.Optional[logic.actions.Action]]
+        ) -> bool:
             property_type = property_schema.get('type', '')
             property_action_id = property_schema.get('action_id', None)
             property_action_type_id = property_schema.get('action_type_id', None)
@@ -1089,12 +1116,12 @@ def new_object():
 
             if property_action_id:
                 valid_action_ids = [property_action_id] if type(property_action_id) == int else property_action_id
-                if valid_action_ids and any(passed_object_action.id not in valid_action_ids for passed_object_action in passed_object_actions):
+                if valid_action_ids and any(passed_object_action is None or passed_object_action.id not in valid_action_ids for passed_object_action in passed_object_actions):
                     return False
 
             if property_action_type_id:
                 valid_action_type_ids = [property_action_type_id] if type(property_action_type_id) == int else property_action_type_id
-                if valid_action_type_ids and any(passed_object_action.type_id not in valid_action_type_ids for passed_object_action in passed_object_actions):
+                if valid_action_type_ids and any(passed_object_action is None or passed_object_action.type is None or passed_object_action.type_id not in valid_action_type_ids for passed_object_action in passed_object_actions):
                     return False
 
             return True
@@ -1107,7 +1134,7 @@ def new_object():
             if property_schema.get('type') == 'array' and is_property_schema_compatible(property_schema['items'], allowed_types, passed_object_actions):
                 possible_properties[property_name] = property_schema
 
-        passed_object_property_names = []
+        passed_object_property_names: typing.List[str] = []
 
         if len(possible_properties) == 0:
             flask.flash(_('The selected object cannot be used in this action.')
@@ -1123,57 +1150,67 @@ def new_object():
                         passed_object_property_names.append(property_key)
             else:
                 placeholder_data = None
-        for property_key in passed_object_property_names:
-            if possible_properties[property_key].get('type') == 'array':
-                placeholder_data[(property_key, )] = [
-                    {
-                        '_type': possible_properties[property_key].get('type', ''),
-                        'object_id': passed_object_id
-                    }
-                    for passed_object_id in passed_object_ids
-                ]
+        if placeholder_data is not None:
+            for property_key in passed_object_property_names:
                 if possible_properties[property_key].get('type') == 'array':
-                    num_min_items = possible_properties[property_key].get('minItems', 0)
-                    num_default_items = possible_properties[property_key].get('defaultItems', 0)
-                    num_passed_objects = len(passed_object_ids)
-                    if num_default_items > num_passed_objects:
-                        previous_actions.extend([f'action_object__{property_key}__{num_passed_objects}__remove'] * (num_default_items - num_passed_objects))
-                    if num_min_items > num_passed_objects:
-                        placeholder_data[(property_key,)].extend([None] * (num_min_items - num_passed_objects))
-                    if num_passed_objects > max(num_default_items, num_min_items):
-                        previous_actions.extend([f'action_object__{property_key}__?__add'] * (num_passed_objects - max(num_default_items, num_min_items)))
-            else:
-                placeholder_data[(property_key, )] = {
-                    '_type': possible_properties[property_key].get('type', ''),
-                    'object_id': passed_object_ids[0]
-                }
+                    placeholder_data[(property_key, )] = [
+                        {
+                            '_type': possible_properties[property_key].get('type', ''),
+                            'object_id': passed_object_id
+                        }
+                        for passed_object_id in passed_object_ids
+                    ]
+                    if possible_properties[property_key].get('type') == 'array':
+                        num_min_items = possible_properties[property_key].get('minItems', 0)
+                        num_default_items = possible_properties[property_key].get('defaultItems', 0)
+                        num_passed_objects = len(passed_object_ids)
+                        if num_default_items > num_passed_objects:
+                            previous_actions.extend([f'action_object__{property_key}__{num_passed_objects}__remove'] * (num_default_items - num_passed_objects))
+                        if num_min_items > num_passed_objects:
+                            placeholder_data[(property_key,)].extend([None] * (num_min_items - num_passed_objects))
+                        if num_passed_objects > max(num_default_items, num_min_items):
+                            previous_actions.extend([f'action_object__{property_key}__?__add'] * (num_passed_objects - max(num_default_items, num_min_items)))
+                else:
+                    placeholder_data[(property_key, )] = {
+                        '_type': possible_properties[property_key].get('type', ''),
+                        'object_id': passed_object_ids[0]
+                    }
 
     # TODO: check instrument permissions
-    return show_object_form(None, action, previous_object, placeholder_data=placeholder_data, possible_properties=possible_properties, passed_object_ids=passed_object_ids, show_selecting_modal=(not fields_selected), previous_actions=previous_actions)
+    return show_object_form(
+        None,
+        action,
+        previous_object,
+        placeholder_data=placeholder_data,
+        possible_object_id_properties=possible_properties,
+        passed_object_ids=passed_object_ids,
+        show_selecting_modal=(not fields_selected),
+        previous_data_actions=previous_actions
+    )
 
 
 @frontend.route('/objects/<int:object_id>/timeseries_data/<timeseries_id>')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def download_timeseries_data(object_id: int, timeseries_id: str):
+def download_timeseries_data(object_id: int, timeseries_id: str) -> FlaskResponseT:
     object = get_object(object_id)
     if object.data is None:
         return flask.abort(404)
     if not timeseries_id.startswith('object__') and not timeseries_id.startswith(f'object{object_id}__'):
         return flask.abort(404)
     id_path = timeseries_id.split('__')[1:]
-    data_and_schema = get_data_and_schema_by_id_path(object.data, object.schema, id_path, convert_id_path_elements=True)
+    data_and_schema = get_data_and_schema_by_id_path(object.data, object.schema, typing.cast(typing.List[typing.Union[str, int]], id_path), convert_id_path_elements=True)
     if data_and_schema is None:
         return flask.abort(404)
     data, schema = data_and_schema
-    if not isinstance(schema, dict) or schema['type'] != 'timeseries':
+    if not isinstance(schema, dict) or schema['type'] != 'timeseries' or not isinstance(data, dict):
         return flask.abort(404)
     csv_io = io.StringIO()
     writer = csv.writer(csv_io, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerow(['utc_datetime', 'magnitude in ' + str(data['units']), 'magnitude in base units'])
     writer.writerows(data['data'])
-    csv_io = io.BytesIO(csv_io.getvalue().encode('utf-8'))
+    binary_csv_io = io.BytesIO(csv_io.getvalue().encode('utf-8'))
     return flask.send_file(
-        csv_io,
+        binary_csv_io,
         as_attachment=True,
         download_name='timeseries.csv',
         mimetype='text/csv',

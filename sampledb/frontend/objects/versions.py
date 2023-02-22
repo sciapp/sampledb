@@ -11,7 +11,7 @@ from .. import frontend
 from ... import logic
 from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
-from ...logic.object_permissions import Permissions, get_user_object_permissions
+from ...logic.object_permissions import get_user_object_permissions
 from ...logic.settings import get_user_setting
 from ...logic.objects import get_object, get_object_versions, get_current_object_version_id
 from ...logic.languages import get_language_by_lang_code, get_languages_in_object_data, get_language, Language
@@ -19,14 +19,15 @@ from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
 from ...logic.utils import get_translated_text
 from .forms import ObjectVersionRestoreForm
-from ...utils import object_permissions_required
+from ...utils import object_permissions_required, FlaskResponseT
 from ..utils import get_user_if_exists
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions
+from ...models import Permissions
 
 
 @frontend.route('/objects/<int:object_id>/versions/')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_versions(object_id):
+def object_versions(object_id: int) -> FlaskResponseT:
     object = get_object(object_id=object_id)
     if object is None:
         return flask.abort(404)
@@ -37,7 +38,7 @@ def object_versions(object_id):
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
-def object_version(object_id, version_id):
+def object_version(object_id: int, version_id: int) -> FlaskResponseT:
     english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
     current_version_id = get_current_object_version_id(object_id=object_id)
@@ -48,11 +49,11 @@ def object_version(object_id, version_id):
         if current_object.version_id != version_id:
             form = ObjectVersionRestoreForm()
     user_may_grant = Permissions.GRANT in user_permissions
-    action = get_action(object.action_id)
-    action_type = get_action_type(action.type_id) if action.type_id else None
-    instrument = action.instrument
+    action = get_action(object.action_id) if object.action_id else None
+    action_type = get_action_type(action.type_id) if action and action.type_id else None
+    instrument = action.instrument if action else None
 
-    object_languages = get_languages_in_object_data(object.data)
+    object_languages = get_languages_in_object_data(object.data) if object.data else []
     languages = []
     for lang_code in object_languages:
         languages.append(get_language_by_lang_code(lang_code))
@@ -98,7 +99,7 @@ def object_version(object_id, version_id):
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>/restore', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.WRITE)
-def restore_object_version(object_id, version_id):
+def restore_object_version(object_id: int, version_id: int) -> FlaskResponseT:
     if version_id < 0 or object_id < 0:
         return flask.abort(404)
     try:

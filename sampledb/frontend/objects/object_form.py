@@ -2,6 +2,7 @@
 """
 
 """
+import typing
 from copy import deepcopy
 import datetime
 
@@ -12,10 +13,10 @@ from flask_babel import _
 
 from ... import logic
 from ... import models
-from ...logic.actions import get_actions, get_action
+from ...logic.actions import get_actions, get_action, Action
 from ...logic.action_types import get_action_type, get_action_types
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions
+from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
 from ...logic.users import get_users
 from ...logic.schemas import validate, generate_placeholder
 from ...logic.objects import create_object, create_object_batch, update_object
@@ -27,41 +28,72 @@ from ..utils import default_format_datetime, custom_format_number, format_time
 from .object_form_parser import parse_form_data
 from ...logic.utils import get_translated_text
 from .permissions import get_object_if_current_user_has_read_permissions
+from ...models import Permissions, Object
+from ...utils import FlaskResponseT
 
 
-def show_object_form(object, action, previous_object=None, should_upgrade_schema=False, placeholder_data=None, possible_properties=None, passed_object_ids=None, show_selecting_modal=False, previous_actions=None):
+def show_object_form(
+        object: typing.Optional[Object],
+        action: Action,
+        previous_object: typing.Optional[Object] = None,
+        should_upgrade_schema: bool = False,
+        placeholder_data: typing.Optional[typing.Dict[typing.Sequence[typing.Union[str, int]], typing.Any]] = None,
+        possible_object_id_properties: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        passed_object_ids: typing.Optional[typing.List[int]] = None,
+        show_selecting_modal: bool = False,
+        previous_data_actions: typing.Optional[typing.List[typing.Any]] = None
+) -> FlaskResponseT:
     if object is None and previous_object is None:
+        if action.schema is None:
+            return flask.abort(403)
         data = generate_placeholder(action.schema)
+        if not isinstance(data, dict):
+            return flask.abort(403)
         if placeholder_data:
             for path, value in placeholder_data.items():
                 try:
-                    sub_data = data
+                    sub_data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]] = data
                     for step in path[:-1]:
-                        sub_data = sub_data[step]
-                    sub_data[path[-1]] = value
+                        if isinstance(sub_data, list) and isinstance(step, int):
+                            sub_data = sub_data[step]
+                        elif isinstance(sub_data, dict) and isinstance(step, str):
+                            sub_data = sub_data[step]
+                        else:
+                            sub_data = None
+                            break
+                    step = path[-1]
+                    if isinstance(sub_data, list) and isinstance(step, int):
+                        sub_data[step] = value
+                    elif isinstance(sub_data, dict) and isinstance(step, str):
+                        sub_data[step] = value
                 except Exception:
                     # Ignore invalid placeholder data
                     pass
-    elif object is None and previous_object is not None:
+    elif object is None and previous_object is not None and previous_object.data is not None and previous_object.schema is not None:
         data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
-    else:
+    elif object is not None and object.data is not None and object.schema is not None:
         data = object.data
+    else:
+        return flask.abort(403)
     previous_object_schema = None
     mode = 'edit'
     if should_upgrade_schema and action.schema:
         mode = 'upgrade'
-        assert object is not None
+        if object is None or object.data is None or object.schema is None:
+            return flask.abort(403)
         schema = action.schema
         data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, object.schema, action.schema)
         for upgrade_warning in upgrade_warnings:
             flask.flash(upgrade_warning, 'warning')
-    elif object is not None:
+    elif object is not None and object.schema is not None:
         schema = object.schema
-    elif previous_object is not None:
+    elif previous_object is not None and previous_object.schema is not None:
         schema = previous_object.schema
         previous_object_schema = schema
-    else:
+    elif action.schema is not None:
         schema = action.schema
+    else:
+        return flask.abort(403)
 
     if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
         may_create_log_entry = True
@@ -88,10 +120,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     copy_permissions_object_id = None
     if object is None:
         if flask.request.form.get('permissions_method') == 'copy_permissions':
-            if flask.request.form.get('copy_permissions_object_id'):
-                copy_permissions_object_id = flask.request.form.get('copy_permissions_object_id')
+            copy_permissions_object_id_str = flask.request.form.get('copy_permissions_object_id')
+            if copy_permissions_object_id_str:
                 try:
-                    copy_permissions_object_id = int(copy_permissions_object_id)
+                    copy_permissions_object_id = int(copy_permissions_object_id_str)
                     if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
                         flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
                         copy_permissions_object_id = None
@@ -102,10 +134,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                 flask.flash(_("No object selected. Default permissions will be applied."), 'error')
                 copy_permissions_object_id = None
         elif flask.request.form.get('permissions_method') == 'permissions_for_group':
-            if flask.request.form.get('permissions_for_group_group_id'):
-                permissions_for_group_id = flask.request.form.get('permissions_for_group_group_id')
+            permissions_for_group_id_str = flask.request.form.get('permissions_for_group_group_id')
+            if permissions_for_group_id_str:
                 try:
-                    permissions_for_group_id = int(permissions_for_group_id)
+                    permissions_for_group_id = int(permissions_for_group_id_str)
                     if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
                         flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
                         permissions_for_group_id = None
@@ -116,10 +148,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                 flask.flash(_("No basic group selected. Default permissions will be applied."), 'error')
                 permissions_for_group_id = None
         elif flask.request.form.get('permissions_method') == 'permissions_for_project':
-            if flask.request.form.get('permissions_for_project_project_id'):
-                permissions_for_project_id = flask.request.form.get('permissions_for_project_project_id')
+            permissions_for_project_id_str = flask.request.form.get('permissions_for_project_project_id')
+            if permissions_for_project_id_str:
                 try:
-                    permissions_for_project_id = int(permissions_for_project_id)
+                    permissions_for_project_id = int(permissions_for_project_id_str)
                     if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
                         flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
                         permissions_for_project_id = None
@@ -138,11 +170,13 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         action_id = action.id
         previous_object_id = None
         has_grant_for_previous_object = False
+    if action_id is None:
+        return flask.abort(403)
     errors = {}
     form_data = {}
-    if not previous_actions:
+    if not previous_data_actions:
         override_previous_actions = False
-        previous_actions = []
+        previous_data_actions = []
     else:
         override_previous_actions = True
     serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
@@ -154,9 +188,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             try:
                 # The form allows notations like '1.2e1' for '12', however
                 # Python can only parse these as floats
-                num_objects_in_batch = float(form_data['input_num_batch_objects'])
-                if num_objects_in_batch == int(num_objects_in_batch):
-                    num_objects_in_batch = int(num_objects_in_batch)
+                num_objects_in_batch_float = float(form_data['input_num_batch_objects'])
+                if num_objects_in_batch_float == int(num_objects_in_batch_float):
+                    num_objects_in_batch = int(num_objects_in_batch_float)
                 else:
                     raise ValueError()
                 if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE'] or num_objects_in_batch <= 0:
@@ -174,9 +208,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
 
         if 'previous_actions' in flask.request.form:
             try:
-                previous_actions = serializer.loads(flask.request.form['previous_actions'])
+                previous_data_actions = serializer.loads(flask.request.form['previous_actions'])
             except itsdangerous.BadData:
-                flask.abort(400)
+                return flask.abort(400)
+        if not isinstance(previous_data_actions, list):
+            return flask.abort(400)
 
         if "action_submit" in form_data:
             # The object name might need the batch number to match the pattern
@@ -194,9 +230,11 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     batch_base_name = form_data['object__name__text']
                     raw_form_data['object__name__text'] = [batch_base_name + example_name_suffix]
                 else:
-                    enabled_languages = form_data.get('object__name__text_languages', [])
-                    if type(enabled_languages) is str:
-                        enabled_languages = [enabled_languages]
+                    enabled_languages_raw: typing.Union[str, typing.List[str]] = form_data.get('object__name__text_languages', [])
+                    if isinstance(enabled_languages_raw, str):
+                        enabled_languages = [enabled_languages_raw]
+                    else:
+                        enabled_languages = enabled_languages_raw
                     if 'en' not in enabled_languages:
                         enabled_languages.append('en')
                     for language_code in enabled_languages:
@@ -212,6 +250,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     'errors': errors
                 }), 400
             if object_data is not None and not errors:
+                assert isinstance(object_data, dict)
                 try:
                     validate(object_data, schema, strict=True)
                 except ValidationError:
@@ -244,9 +283,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             permissions_for_project_id=permissions_for_project_id
                         )
                         object_ids = [object.id for object in objects]
-                        if category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
+                        if action.instrument_id is not None and category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
-                                instrument_id=action.instrument.id,
+                                instrument_id=action.instrument_id,
                                 user_id=flask_login.current_user.id,
                                 content='',
                                 category_ids=category_ids
@@ -269,9 +308,9 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             permissions_for_group_id=permissions_for_group_id,
                             permissions_for_project_id=permissions_for_project_id
                         )
-                        if category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
+                        if action.instrument_id is not None and category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
-                                instrument_id=action.instrument.id,
+                                instrument_id=action.instrument_id,
                                 user_id=flask_login.current_user.id,
                                 content='',
                                 category_ids=category_ids
@@ -287,14 +326,14 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                     flask.flash(_('The object was updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
         elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
-            action = [name for name in form_data if name.startswith('action_')][0]
-            previous_actions.append(action)
+            data_action = [name for name in form_data if name.startswith('action_')][0]
+            previous_data_actions.append(data_action)
 
-    if previous_actions and not override_previous_actions:
+    if previous_data_actions and not override_previous_actions and isinstance(data, dict):
         try:
-            for action in previous_actions:
-                _apply_action_to_data(action, data, schema)
-            form_data = _apply_action_to_form_data(previous_actions[-1], form_data)
+            for data_action in previous_data_actions:
+                _apply_action_to_data(data_action, data, schema)
+            form_data = _apply_action_to_form_data(previous_data_actions[-1], form_data)
         except ValueError:
             flask.abort(400)
 
@@ -320,7 +359,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
     action_type_id_by_action_id = {}
     for action_type in get_action_types():
         for action in get_actions(action_type_id=action_type.id):
-            if action_type.component_id is not None and action_type.fed_id < 0:
+            if action_type.fed_id is not None and action_type.fed_id < 0:
                 action_type_id_by_action_id[action.id] = action_type.fed_id
             else:
                 action_type_id_by_action_id[action.id] = action_type.id
@@ -334,7 +373,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         flask.flash(_('Creating objects with this action has been disabled.'), 'error')
         return flask.redirect(flask.url_for('.action', action_id=action_id))
 
-    def insert_recipe_types(subschema):
+    def insert_recipe_types(subschema: typing.Dict[str, typing.Any]) -> None:
         if subschema['type'] == 'object':
             if 'recipes' in subschema:
                 for i, recipe in enumerate(subschema['recipes']):
@@ -349,8 +388,10 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
                             units = recipe['property_values'][property]['units'] if recipe['property_values'][property] is not None else None
                             if units in ['min', 'h']:
                                 value = format_time(recipe['property_values'][property]['magnitude_in_base_units'], units)
+                            elif recipe['property_values'][property] is not None:
+                                value = custom_format_number(recipe['property_values'][property]['magnitude'])
                             else:
-                                value = custom_format_number(recipe['property_values'][property]['magnitude']) if recipe['property_values'][property] is not None else None
+                                value = None
                             subschema['recipes'][i]['property_values'][property] = {
                                 'value': value,
                                 'units': units,
@@ -416,7 +457,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             data=data,
             errors=errors,
             form_data=form_data,
-            previous_actions=serializer.dumps(previous_actions),
+            previous_actions=serializer.dumps(previous_data_actions),
             form=form,
             can_copy_permissions=True,
             existing_objects=existing_objects,
@@ -438,7 +479,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             languages=get_languages(only_enabled_for_input=True),
             get_component=get_component,
             ENGLISH=english,
-            possible_properties=possible_properties,
+            possible_properties=possible_object_id_properties,
             passed_object_ids=passed_object_ids,
             show_selecting_modal=show_selecting_modal
         )
@@ -450,7 +491,7 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
             object_id=object.object_id,
             errors=errors,
             form_data=form_data,
-            previous_actions=serializer.dumps(previous_actions),
+            previous_actions=serializer.dumps(previous_data_actions),
             form=form,
             referencable_objects=referencable_objects,
             sorted_actions=sorted_actions,
@@ -468,10 +509,12 @@ def show_object_form(object, action, previous_object=None, should_upgrade_schema
         )
 
 
-def _get_sub_data_and_schema(data, schema, id_prefix):
+def _get_sub_data_and_schema(data: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], id_prefix: str) -> typing.Tuple[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]], typing.Dict[str, typing.Any]]:
+    sub_data: typing.Any
     sub_data = data
     sub_schema = schema
     try:
+        key: typing.Union[str, int]
         for key in id_prefix.split('__'):
             if sub_schema['type'] == 'array':
                 key = int(key)
@@ -488,25 +531,24 @@ def _get_sub_data_and_schema(data, schema, id_prefix):
             sub_data = sub_data[key]
         if sub_schema['type'] != 'array':
             raise ValueError('invalid type')
-    except (ValueError, KeyError, IndexError, TypeError):
-        # TODO: error handling/logging?
-        raise ValueError('invalid action')
+    except (ValueError, KeyError, IndexError, TypeError) as exc:
+        raise ValueError('invalid action') from exc
     return sub_data, sub_schema
 
 
-def _apply_action_to_form_data(action, form_data):
+def _apply_action_to_form_data(action: str, form_data: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     new_form_data = form_data
-    action_id_prefix, action_index, action_type = action[len('action_'):].rsplit('__', 2)
+    action_id_prefix, action_index_str, action_type = action[len('action_'):].rsplit('__', 2)
     if action_type == 'delete':
-        deleted_item_index = int(action_index)
+        deleted_item_index = int(action_index_str)
         parent_id_prefix = action_id_prefix
         new_form_data = {}
         for name in form_data:
             if not name.startswith(parent_id_prefix + '__') or '__' not in name[len(parent_id_prefix) + 2:]:
                 new_form_data[name] = form_data[name]
             else:
-                item_index, id_suffix = name[len(parent_id_prefix) + 2:].split('__', 1)
-                item_index = int(item_index)
+                item_index_str, id_suffix = name[len(parent_id_prefix) + 2:].split('__', 1)
+                item_index = int(item_index_str)
                 if item_index < deleted_item_index:
                     new_form_data[name] = form_data[name]
                 if item_index > deleted_item_index:
@@ -515,11 +557,13 @@ def _apply_action_to_form_data(action, form_data):
     return new_form_data
 
 
-def _apply_action_to_data(action, data, schema):
-    action_id_prefix, action_index, action_type = action[len('action_'):].rsplit('__', 2)
+def _apply_action_to_data(action: str, data: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any]) -> None:
+    action_id_prefix, action_index_str, action_type = action[len('action_'):].rsplit('__', 2)
     if action_type not in ('add', 'delete', 'addcolumn', 'deletecolumn'):
         raise ValueError('invalid action')
     sub_data, sub_schema = _get_sub_data_and_schema(data, schema, action_id_prefix.split('__', 1)[1])
+    if not isinstance(sub_data, list):
+        raise ValueError('invalid action')
     if action_type in ('addcolumn', 'deletecolumn') and (sub_schema["style"] != "table" or sub_schema["items"]["type"] != "array"):
         raise ValueError('invalid action')
     num_existing_items = len(sub_data)
@@ -533,7 +577,7 @@ def _apply_action_to_data(action, data, schema):
                 while len(sub_data[-1]) < num_existing_columns:
                     sub_data[-1].append(None)
     elif action_type == 'delete':
-        action_index = int(action_index)
+        action_index = int(action_index_str)
         if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
             del sub_data[action_index]
     else:
