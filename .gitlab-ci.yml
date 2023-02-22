@@ -1,6 +1,6 @@
 stages:
-  - test
   - build
+  - test
   - deploy
 
 variables:
@@ -11,6 +11,7 @@ variables:
 
 test:
   stage: test
+  needs: []
   image: python:3.11-slim-bullseye
   services:
     - name: postgres:12
@@ -50,6 +51,7 @@ test:
 
 analyze:
   stage: test
+  needs: []
   image: python:3.11-slim-bullseye
   script:
     - apt-get update
@@ -68,6 +70,7 @@ analyze:
 
 .template-check-migrations:
   stage: test
+  needs: []
   image: python:3.11-slim-bullseye
   script:
     # define environment variables needed for SampleDB demo
@@ -157,6 +160,7 @@ check-migrations-postgres-13:
 
 check-translations:
   stage: test
+  needs: []
   image: python:3.11-slim-bullseye
   script:
     - apt-get update
@@ -182,6 +186,7 @@ check-translations:
 
 documentation:
   stage: test
+  needs: []
   image: python:3.11-slim-bullseye
   services:
     - name: postgres:12
@@ -222,6 +227,49 @@ build:
         docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$VERSION;
         docker push $CI_REGISTRY_IMAGE:$VERSION;
       fi
+
+test-container-status:
+  stage: test
+  needs: ["build"]
+  image: docker:stable
+  tags:
+    - privileged-executor
+  variables:
+    CONTAINER_NAME: sampledb-$CI_COMMIT_SHA
+  script:
+    - docker run
+        -d
+        --name $CONTAINER_NAME-postgres
+        -e POSTGRES_DB=postgres
+        -e POSTGRES_USER=postgres
+        -e POSTGRES_PASSWORD=postgres
+        postgres:12
+    - sleep 5 # allow container to start
+    - docker ps
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker run
+        -d
+        --link $CONTAINER_NAME-postgres
+        --name $CONTAINER_NAME
+        -v $CI_PROJECT_DIR/files:/home/sampledb/files:rw
+        -e SAMPLEDB_MAIL_SERVER=example.org
+        -e SAMPLEDB_MAIL_SENDER=example@example.org
+        -e SAMPLEDB_CONTACT_EMAIL=example@example.org
+        -e SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:postgres@$CONTAINER_NAME-postgres:5432/postgres"
+        $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - sleep 5 # allow container to start
+    - docker ps
+    - docker logs $CONTAINER_NAME
+    - docker ps | grep $CONTAINER_NAME | grep '(health. starting)'
+    - sleep 90 # 60s health start period plus 30s buffer
+    - docker logs $CONTAINER_NAME
+    - docker ps | grep $CONTAINER_NAME | grep '(healthy)'
+  after_script:
+    - docker stop $CONTAINER_NAME || true
+    - docker rm -f $CONTAINER_NAME || true
+    - docker stop $CONTAINER_NAME-postgres || true
+    - docker rm -f $CONTAINER_NAME-postgres || true
 
 pages:
   stage: deploy
