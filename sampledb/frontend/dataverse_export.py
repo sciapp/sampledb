@@ -19,7 +19,7 @@ from ..models import Permissions, DataverseExportStatus, BackgroundTaskStatus
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class DataverseExportForm(FlaskForm):  # type: ignore[misc]
+class DataverseExportForm(FlaskForm):
     dataverse = SelectField(
         choices=[],
         validators=[InputRequired()]
@@ -29,7 +29,7 @@ class DataverseExportForm(FlaskForm):  # type: ignore[misc]
     api_token = PasswordField()
 
 
-class DataverseAPITokenForm(FlaskForm):  # type: ignore[misc]
+class DataverseAPITokenForm(FlaskForm):
     api_token = PasswordField(validators=[InputRequired()])
     store_api_token = BooleanField()
 
@@ -57,7 +57,7 @@ def dataverse_export(object_id: int) -> FlaskResponseT:
 
     object = logic.objects.get_object(object_id)
     if object.component_id is not None:
-        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+        flask.flash(_('Exporting imported objects is not supported.'), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))
 
     dataverse_export_form = DataverseExportForm()

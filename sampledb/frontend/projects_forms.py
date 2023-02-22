@@ -10,57 +10,57 @@ from wtforms.validators import InputRequired, NumberRange, DataRequired
 from ..models import Permissions
 
 
-class CreateProjectForm(FlaskForm):  # type: ignore[misc]
+class CreateProjectForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
     categories = SelectMultipleField()
 
 
-class EditProjectForm(FlaskForm):  # type: ignore[misc]
+class EditProjectForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
     categories = SelectMultipleField()
 
 
-class LeaveProjectForm(FlaskForm):  # type: ignore[misc]
+class LeaveProjectForm(FlaskForm):
     pass
 
 
-class DeleteProjectForm(FlaskForm):  # type: ignore[misc]
+class DeleteProjectForm(FlaskForm):
     pass
 
 
-class RemoveProjectMemberForm(FlaskForm):  # type: ignore[misc]
+class RemoveProjectMemberForm(FlaskForm):
     pass
 
 
-class RemoveProjectGroupForm(FlaskForm):  # type: ignore[misc]
+class RemoveProjectGroupForm(FlaskForm):
     pass
 
 
-class OtherProjectIdForm(FlaskForm):  # type: ignore[misc]
+class OtherProjectIdForm(FlaskForm):
     project_id = IntegerField(
         validators=[InputRequired()]
     )
     add_user = BooleanField(default=False)
 
 
-class InviteUserToProjectForm(FlaskForm):  # type: ignore[misc]
+class InviteUserToProjectForm(FlaskForm):
     user_id = IntegerField(validators=[InputRequired()])
     other_project_ids = FieldList(FormField(OtherProjectIdForm), min_entries=0)
     permissions = IntegerField(validators=[InputRequired(), NumberRange(min=Permissions.READ.value, max=Permissions.GRANT.value)])
 
 
-class InviteGroupToProjectForm(FlaskForm):  # type: ignore[misc]
+class InviteGroupToProjectForm(FlaskForm):
     group_id = IntegerField(validators=[InputRequired()])
 
 
-class AddSubprojectForm(FlaskForm):  # type: ignore[misc]
+class AddSubprojectForm(FlaskForm):
     child_project_id = IntegerField(validators=[InputRequired()])
     child_can_add_users_to_parent = BooleanField(default=False)
 
 
-class RemoveSubprojectForm(FlaskForm):  # type: ignore[misc]
+class RemoveSubprojectForm(FlaskForm):
     child_project_id = IntegerField(validators=[InputRequired()])
 
 
-class ObjectLinkForm(FlaskForm):  # type: ignore[misc]
+class ObjectLinkForm(FlaskForm):
     object_id = IntegerField(validators=[InputRequired()])

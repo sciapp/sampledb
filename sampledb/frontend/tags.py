@@ -12,7 +12,7 @@ from ..utils import FlaskResponseT
 
 
 @frontend.route('/tags/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def tags() -> FlaskResponseT:
     return flask.render_template(
         'tags.html',

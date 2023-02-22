@@ -44,7 +44,7 @@ class Component:
             if self.address is not None:
                 regex = re.compile(r"https?://(www\.)?")    # should usually be https
                 return regex.sub('', self.address).strip().strip('/')
-            return _('Database #%(id)s', id=self.id)  # type: ignore
+            return _('Database #%(id)s', id=self.id)
         else:
             return self.name
 

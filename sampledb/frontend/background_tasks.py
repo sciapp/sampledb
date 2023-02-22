@@ -10,7 +10,7 @@ from ..utils import FlaskResponseT
 
 
 @frontend.route('/admin/background_tasks/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def background_tasks() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(HTTPStatus.FORBIDDEN)

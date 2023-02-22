@@ -18,7 +18,7 @@ from ..utils import FlaskResponseT
 
 
 @frontend.route('/languages/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def languages() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -30,7 +30,7 @@ def languages() -> FlaskResponseT:
 
 
 @frontend.route('/languages/<int(signed=True):language_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def language(language_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -54,14 +54,14 @@ def language(language_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/language/new', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_language() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     return show_language_form(None)
 
 
-class LanguageForm(FlaskForm):  # type: ignore
+class LanguageForm(FlaskForm):
     name_english = StringField(validators=[InputRequired()])
     lang_code = StringField(validators=[InputRequired()])
     datetime_format_datetime = StringField(validators=[InputRequired()])

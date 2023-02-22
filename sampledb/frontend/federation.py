@@ -25,7 +25,7 @@ from ..utils import FlaskResponseT
 
 
 @frontend.route('/other-databases/<int:component_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def component(component_id: int) -> FlaskResponseT:
     try:
         component = get_component(component_id)
@@ -197,7 +197,7 @@ def component(component_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/other-databases/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def federation() -> FlaskResponseT:
     components = get_components()
     add_component_form = AddComponentForm()
@@ -245,7 +245,7 @@ def federation() -> FlaskResponseT:
 
 
 @frontend.route('/other-databases/alias/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def user_alias() -> FlaskResponseT:
     user = flask_login.current_user
     components = get_components()

@@ -18,22 +18,22 @@ from ..utils import validate_orcid
 from ...utils import FlaskResponseT
 
 
-class UserReadOnlyForm(FlaskForm):  # type: ignore[misc]
+class UserReadOnlyForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['toggle_read_only'])])
     should_be_read_only = BooleanField()
 
 
-class UserHiddenForm(FlaskForm):  # type: ignore[misc]
+class UserHiddenForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['toggle_hidden'])])
     should_be_hidden = BooleanField()
 
 
-class UserActiveForm(FlaskForm):  # type: ignore[misc]
+class UserActiveForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['toggle_active'])])
     should_be_active = BooleanField()
 
 
-class UserProfileForm(FlaskForm):  # type: ignore[misc]
+class UserProfileForm(FlaskForm):
     action = StringField(validators=[validators.AnyOf(['edit_profile'])])
     orcid = StringField()
     affiliation = StringField()
@@ -56,13 +56,13 @@ class UserProfileForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/users/me')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def current_user_profile() -> FlaskResponseT:
     return flask.redirect(flask.url_for('.user_profile', user_id=flask_login.current_user.id))
 
 
 @frontend.route('/users/<int:user_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def user_profile(user_id: int) -> FlaskResponseT:
     try:
         user = users.get_user(user_id)

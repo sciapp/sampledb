@@ -364,7 +364,7 @@ def parse_datetime_form_data(form_data: typing.Dict[str, typing.List[str]], sche
         language = languages.get_user_language(current_user)
         parsed_datetime = datetime.datetime.strptime(datetime_string, language.datetime_format_datetime)
         # convert datetime to utc
-        local_datetime = pytz.timezone(current_user.timezone).localize(parsed_datetime)
+        local_datetime = pytz.timezone(current_user.timezone or 'UTC').localize(parsed_datetime)
         utc_datetime = local_datetime.astimezone(pytz.utc)
         utc_datetime_str = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
     except Exception:
@@ -521,7 +521,7 @@ def parse_timeseries_form_data(form_data: typing.Dict[str, typing.List[str]], sc
         if timeseries_data and all(isinstance(value, str) for value in timeseries_data[0]):
             # skip header rows
             timeseries_data = timeseries_data[1:]
-        user_timezone = pytz.timezone(current_user.timezone)
+        user_timezone = pytz.timezone(current_user.timezone or 'UTC')
         if user_timezone != pytz.utc:
             # convert datetimes to UTC if necessary
             for row in timeseries_data:

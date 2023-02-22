@@ -10,25 +10,25 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, Integ
 from wtforms.validators import InputRequired, Email, Length, EqualTo, DataRequired, ValidationError
 
 
-class SigninForm(FlaskForm):  # type: ignore[misc]
+class SigninForm(FlaskForm):
     username = StringField(validators=[InputRequired()])
     password = PasswordField(validators=[InputRequired()])
     remember_me = BooleanField()
 
 
-class SignoutForm(FlaskForm):  # type: ignore[misc]
+class SignoutForm(FlaskForm):
     pass
 
 
-class InvitationForm(FlaskForm):  # type: ignore[misc]
+class InvitationForm(FlaskForm):
     email = StringField(validators=[InputRequired()])
 
 
-class RequestPasswordResetForm(FlaskForm):  # type: ignore[misc]
+class RequestPasswordResetForm(FlaskForm):
     email = StringField(validators=[InputRequired()])
 
 
-class RegistrationForm(FlaskForm):  # type: ignore[misc]
+class RegistrationForm(FlaskForm):
     email = StringField('Contact Email', validators=[
         InputRequired(message=_("Please enter your contact email.")),
         Email(message=_("Please enter your contact email."))
@@ -49,7 +49,7 @@ class RegistrationForm(FlaskForm):  # type: ignore[misc]
                 raise ValidationError(_("Please enter your name as: surname, given names."))
 
 
-class PasswordForm(FlaskForm):  # type: ignore[misc]
+class PasswordForm(FlaskForm):
     password = PasswordField('New Password', validators=[
         InputRequired(),
         Length(min=3)
@@ -57,7 +57,7 @@ class PasswordForm(FlaskForm):  # type: ignore[misc]
     submit = SubmitField('Change Password')
 
 
-class AuthenticationPasswordForm(FlaskForm):  # type: ignore[misc]
+class AuthenticationPasswordForm(FlaskForm):
     id = IntegerField('Authentication_method_id', validators=[DataRequired()])
     password = PasswordField('New Password', validators=[
         InputRequired(),

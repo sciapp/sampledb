@@ -24,7 +24,7 @@ F = typing.TypeVar('F', bound=typing.Callable[..., typing.Any])
 
 
 def _secure(func: F) -> F:
-    @flask_login.login_required  # type: ignore
+    @flask_login.login_required
     @functools.wraps(func)
     def wrapper(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         if not _is_admin():
@@ -50,7 +50,7 @@ def _on_logout() -> werkzeug.Response:
 
 def _get_current_user_id() -> typing.Optional[int]:
     if flask_login.current_user.is_authenticated:
-        return typing.cast(int, flask_login.current_user.get_id())
+        return flask_login.current_user.get_id()
     return None
 
 

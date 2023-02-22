@@ -17,19 +17,19 @@ from ..validators import ObjectIdValidator
 from ...logic.utils import parse_url
 
 
-class ObjectForm(FlaskForm):  # type: ignore[misc]
+class ObjectForm(FlaskForm):
     pass
 
 
-class ObjectVersionRestoreForm(FlaskForm):  # type: ignore[misc]
+class ObjectVersionRestoreForm(FlaskForm):
     pass
 
 
-class CommentForm(FlaskForm):  # type: ignore[misc]
+class CommentForm(FlaskForm):
     content = TextAreaField(validators=[InputRequired()])
 
 
-class FileForm(FlaskForm):  # type: ignore[misc]
+class FileForm(FlaskForm):
     file_source = HiddenField(validators=[InputRequired()])
     file_names = HiddenField()
     local_files = FileField()
@@ -52,14 +52,14 @@ def _validate_url(url: str) -> None:
         raise ValidationError(3)
 
 
-class ExternalLinkForm(FlaskForm):  # type: ignore[misc]
+class ExternalLinkForm(FlaskForm):
     url = StringField()
 
     def validate_url(form, field: StringField) -> None:
         _validate_url(field.data)
 
 
-class FileInformationForm(FlaskForm):  # type: ignore[misc]
+class FileInformationForm(FlaskForm):
     title = StringField()
     url = StringField()
     description = TextAreaField()
@@ -69,17 +69,17 @@ class FileInformationForm(FlaskForm):  # type: ignore[misc]
             _validate_url(field.data)
 
 
-class FileHidingForm(FlaskForm):  # type: ignore[misc]
+class FileHidingForm(FlaskForm):
     reason = TextAreaField()
 
 
-class ObjectLocationAssignmentForm(FlaskForm):  # type: ignore[misc]
+class ObjectLocationAssignmentForm(FlaskForm):
     location = SelectField(validators=[InputRequired()])
     responsible_user = SelectField(validators=[InputRequired()])
     description = StringField()
 
 
-class ObjectPublicationForm(FlaskForm):  # type: ignore[misc]
+class ObjectPublicationForm(FlaskForm):
     doi = StringField()
     title = StringField()
     object_name = StringField()
@@ -91,11 +91,11 @@ class ObjectPublicationForm(FlaskForm):  # type: ignore[misc]
             raise ValidationError('Please enter a valid DOI')
 
 
-class CopyPermissionsForm(FlaskForm):  # type: ignore[misc]
+class CopyPermissionsForm(FlaskForm):
     object_id = SelectField(validators=[ObjectIdValidator(Permissions.GRANT), InputRequired()], validate_choice=False)
 
 
-class ObjectNewShareAccessForm(FlaskForm):  # type: ignore[misc]
+class ObjectNewShareAccessForm(FlaskForm):
     component_id = IntegerField(validators=[InputRequired()])
 
     data = BooleanField()
@@ -106,7 +106,7 @@ class ObjectNewShareAccessForm(FlaskForm):  # type: ignore[misc]
     object_location_assignments = BooleanField()
 
 
-class ObjectEditShareAccessForm(FlaskForm):  # type: ignore[misc]
+class ObjectEditShareAccessForm(FlaskForm):
     component_id = IntegerField(validators=[InputRequired()])
 
     data = BooleanField()
@@ -117,13 +117,13 @@ class ObjectEditShareAccessForm(FlaskForm):  # type: ignore[misc]
     object_location_assignments = BooleanField()
 
 
-class UseInActionForm(FlaskForm):  # type: ignore[misc]
+class UseInActionForm(FlaskForm):
     action_type_id = HiddenField()
     action_id = HiddenField()
     objects = HiddenField(validators=[InputRequired()])
 
 
-class GenerateLabelsForm(FlaskForm):  # type: ignore[misc]
+class GenerateLabelsForm(FlaskForm):
     form_variant = SelectField(validators=[InputRequired()], choices=[('mixed-formats', lazy_gettext('Mixed label formats')), ('fixed-width', lazy_gettext('Fixed-width labels')), ('minimal-height', lazy_gettext('Minimal-height labels'))])
     objects = HiddenField(validators=[InputRequired()])
     paper_size = SelectField(validators=[InputRequired()], choices=[("DIN A4 (Portrait)", lazy_gettext('DIN A4 (Portrait)')), ("DIN A4 (Landscape)", lazy_gettext('DIN A4 (Landscape)')), ("Letter (Portrait)", lazy_gettext('Letter / ANSI A (Portrait)')), ("Letter (Landscape)", lazy_gettext('Letter / ANSI A (Landscape)'))])

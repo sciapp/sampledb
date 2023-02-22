@@ -17,7 +17,7 @@ from .pdfexport import create_pdfexport
 from ..utils import FlaskResponseT
 
 
-class CreateExportForm(FlaskForm):  # type: ignore[misc]
+class CreateExportForm(FlaskForm):
     file_extension = SelectField(
         choices=[],
         validators=[InputRequired()]
@@ -25,7 +25,7 @@ class CreateExportForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/users/me/export')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def export_self() -> FlaskResponseT:
     return flask.redirect(
         flask.url_for('.export', user_id=flask_login.current_user.id)
@@ -33,7 +33,7 @@ def export_self() -> FlaskResponseT:
 
 
 @frontend.route('/users/<int:user_id>/export', methods=['POST', 'GET'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def export(user_id: int) -> FlaskResponseT:
     if user_id != flask_login.current_user.id and not flask_login.current_user.is_admin:
         return flask.abort(403)

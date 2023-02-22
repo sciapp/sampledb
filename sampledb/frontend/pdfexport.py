@@ -287,7 +287,7 @@ def create_pdfexport(
 
     def get_object_type_name(action: Action) -> str:
         if action is None or action.type is None:
-            return typing.cast(str, _('Object'))
+            return _('Object')
         else:
             return get_translated_text(action.type.object_name, default=_('Object'))
 

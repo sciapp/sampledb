@@ -13,7 +13,7 @@ from ..logic import settings
 from ..utils import FlaskResponseT
 
 
-class TimezoneForm(flask_wtf.FlaskForm):  # type: ignore[misc]
+class TimezoneForm(flask_wtf.FlaskForm):
     timezone = wtforms.fields.StringField(
         validators=[
             wtforms.validators.InputRequired()
@@ -28,7 +28,7 @@ class TimezoneForm(flask_wtf.FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/set-timezone', methods=["POST"])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def set_timezone() -> FlaskResponseT:
     if not settings.get_user_setting(flask_login.current_user.id, 'AUTO_TZ'):
         return '', 200

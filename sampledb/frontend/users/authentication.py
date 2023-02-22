@@ -18,7 +18,7 @@ from ... import login_manager
 from ...utils import FlaskResponseT
 
 
-@login_manager.user_loader  # type: ignore[misc]
+@login_manager.user_loader
 def load_user(user_id: typing.Any) -> typing.Optional[User]:
     try:
         user_id = int(user_id)
@@ -135,7 +135,7 @@ def sign_in() -> FlaskResponseT:
 
 
 @frontend.route('/users/me/refresh_sign_in', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def refresh_sign_in() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated and flask_login.login_fresh():
         # if the login was already fresh, redirect to the next_url or index.
@@ -144,7 +144,7 @@ def refresh_sign_in() -> FlaskResponseT:
 
 
 @frontend.route('/users/me/sign_out', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def sign_out() -> FlaskResponseT:
     form = SignoutForm()
     if form.validate_on_submit():

@@ -231,10 +231,10 @@ def custom_format_datetime(
             utc_datetime = parse_datetime_string(utc_datetime)
         if format is None:
             format2 = 'medium'
-            return typing.cast(str, format_datetime(utc_datetime, format=format2))
+            return format_datetime(utc_datetime, format=format2)
         else:
             utc_datetime = pytz.utc.localize(utc_datetime)
-            local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone))
+            local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone or 'UTC'))
             return local_datetime.strftime(format)
     except ValueError:
         return utc_datetime
@@ -249,7 +249,7 @@ def custom_format_date(
         datetime_obj = date
     else:
         datetime_obj = datetime.strptime(date, format)
-    return typing.cast(str, format_date(datetime_obj))
+    return format_date(datetime_obj)
 
 
 @JinjaFilter('babel_format_time')
@@ -265,7 +265,7 @@ def custom_format_time(
     try:
         if not isinstance(utc_datetime, datetime):
             utc_datetime = parse_datetime_string(utc_datetime)
-        return typing.cast(str, flask_babel.format_time(utc_datetime))
+        return flask_babel.format_time(utc_datetime)
     except ValueError:
         return utc_datetime
 
@@ -488,19 +488,19 @@ def get_location_name(
         location = location_or_location_id
         location_id = location.id
     else:
-        return typing.cast(str, flask_babel.gettext("Unknown Location"))
+        return flask_babel.gettext("Unknown Location")
 
     if location is not None and has_read_permissions is None:
         has_read_permissions = Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id)
 
     if location is None or not has_read_permissions:
         # location ID is always included when the location cannot be accessed
-        location_name = typing.cast(str, flask_babel.gettext("Location")) + f' #{location_id}'
+        location_name = flask_babel.gettext("Location") + f' #{location_id}'
     else:
         location_name = get_translated_text(
             location.name,
             language_code=language_code,
-            default=typing.cast(str, flask_babel.gettext('Unnamed Location'))
+            default=flask_babel.gettext('Unnamed Location')
         )
         if include_id:
             location_name += f' (#{location_id})'
@@ -525,7 +525,7 @@ def get_full_location_name(
     else:
         location = None
     if location is None:
-        return typing.cast(str, flask_babel.gettext("Unknown Location"))
+        return flask_babel.gettext("Unknown Location")
 
     full_location_name = get_location_name(location, include_id=include_id, language_code=language_code)
     while location.parent_location_id is not None:
@@ -586,10 +586,27 @@ def get_inline_edit_template(schema: typing.Dict[str, typing.Any]) -> str:
 
 @JinjaFunction()
 def get_local_month_names() -> typing.List[str]:
-    return [
-        flask_babel.get_locale().months['format']['wide'][i]
-        for i in range(1, 13)
-    ]
+    locale = flask_babel.get_locale()
+    if locale is None:
+        return [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        ]
+    else:
+        return [
+            locale.months['format']['wide'][i]
+            for i in range(1, 13)
+        ]
 
 
 @JinjaFunction()
@@ -1228,7 +1245,7 @@ def to_timeseries_data(
         magnitude_average = magnitudes[0]
         magnitude_stddev = None
     # convert datetimes to local timezone
-    local_timezone = pytz.timezone(flask_login.current_user.timezone)
+    local_timezone = pytz.timezone(flask_login.current_user.timezone or 'UTC')
     local_datetimes = [
         pytz.utc.localize(utc_datetime).astimezone(local_timezone)
         for utc_datetime in utc_datetimes
@@ -1255,7 +1272,7 @@ def to_timeseries_csv(
         rows: typing.List[typing.List[typing.Union[str, float]]]
 ) -> str:
     rows = copy.deepcopy(rows)
-    user_timezone = pytz.timezone(flask_login.current_user.timezone)
+    user_timezone = pytz.timezone(flask_login.current_user.timezone or 'UTC')
     if user_timezone != pytz.utc:
         # convert datetimes from UTC if necessary
         for row in rows:

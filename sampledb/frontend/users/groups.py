@@ -21,7 +21,7 @@ from ...models import NotificationType
 
 
 @frontend.route('/groups/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def groups() -> FlaskResponseT:
     user_id = None
     allowed_language_ids = [
@@ -129,7 +129,7 @@ def groups() -> FlaskResponseT:
 
 
 @frontend.route('/groups/<int:group_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def group(group_id: int) -> FlaskResponseT:
     name_language_ids = []
     description_language_ids = []

@@ -16,12 +16,12 @@ from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 
 
-class DeleteCategoryForm(FlaskForm):  # type: ignore[misc]
+class DeleteCategoryForm(FlaskForm):
     category_id = IntegerField(validators=[InputRequired()])
 
 
 @frontend.route('/group_categories/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def group_categories() -> FlaskResponseT:
     group_categories = list(logic.group_categories.get_group_categories())
     group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
@@ -43,7 +43,7 @@ def group_categories() -> FlaskResponseT:
 
 
 @frontend.route('/group_categories/new', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_group_category() -> FlaskResponseT:
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] and not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -51,7 +51,7 @@ def new_group_category() -> FlaskResponseT:
 
 
 @frontend.route('/group_categories/<int:category_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def group_category(category_id: int) -> FlaskResponseT:
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES'] and not flask_login.current_user.is_admin:
         return flask.abort(403)
@@ -71,7 +71,7 @@ def group_category(category_id: int) -> FlaskResponseT:
     return _show_group_category_form(category_id)
 
 
-class GroupCategoryForm(FlaskForm):  # type: ignore[misc]
+class GroupCategoryForm(FlaskForm):
     parent_category_id = SelectField()
 
 

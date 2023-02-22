@@ -46,7 +46,7 @@ from ..models import Permissions
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class ActionForm(FlaskForm):  # type: ignore[misc]
+class ActionForm(FlaskForm):
     type = IntegerField()
     instrument = SelectField()
     schema = StringField(validators=[InputRequired()])
@@ -72,7 +72,7 @@ class ActionForm(FlaskForm):  # type: ignore[misc]
 
 
 @frontend.route('/actions/')
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def actions() -> FlaskResponseT:
     action_type_id_str = flask.request.args.get('t', None)
     action_type = None
@@ -152,7 +152,7 @@ def actions() -> FlaskResponseT:
 
 
 @frontend.route('/actions/<int:action_id>', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def action(action_id: int) -> FlaskResponseT:
     try:
         action = get_action(action_id)
@@ -197,7 +197,7 @@ def action(action_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/actions/new/', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def new_action() -> FlaskResponseT:
     check_current_user_is_not_readonly()
     action_type_id_str = flask.request.args.get('action_type_id')
@@ -661,7 +661,7 @@ def show_action_form(
 
 
 @frontend.route('/actions/<int:action_id>/permissions', methods=['GET', 'POST'])
-@flask_login.login_required  # type: ignore[misc]
+@flask_login.login_required
 def action_permissions(action_id: int) -> FlaskResponseT:
     try:
         action = get_action(action_id)

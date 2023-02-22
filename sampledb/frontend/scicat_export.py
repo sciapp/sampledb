@@ -18,7 +18,7 @@ from ..utils import object_permissions_required, FlaskResponseT
 from ..models import Permissions, SciCatExportType
 
 
-class SciCatExportForm(FlaskForm):  # type: ignore[misc]
+class SciCatExportForm(FlaskForm):
     tags = SelectMultipleField()
     owner_group = SelectField(validators=[InputRequired()])
     access_groups = SelectMultipleField()
@@ -28,7 +28,7 @@ class SciCatExportForm(FlaskForm):  # type: ignore[misc]
     api_token = PasswordField()
 
 
-class SciCatAPITokenForm(FlaskForm):  # type: ignore[misc]
+class SciCatAPITokenForm(FlaskForm):
     api_token = PasswordField(validators=[InputRequired()])
     store_api_token = BooleanField()
 
@@ -52,7 +52,7 @@ def scicat_export(object_id: int) -> FlaskResponseT:
     object = logic.objects.get_object(object_id)
 
     if object.component_id is not None or object.data is None or object.schema is None:
-        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+        flask.flash(_('Exporting imported objects is not supported.'), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))
 
     if object.action_id is not None:
