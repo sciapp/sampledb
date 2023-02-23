@@ -7,9 +7,13 @@ import enum
 import datetime
 import typing
 
-from .. import db
+from sqlalchemy.orm import relationship, Query, Mapped
 
-__author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .authentication import Authentication
 
 
 @enum.unique
@@ -33,15 +37,18 @@ class HTTPMethod(enum.Enum):
         return HTTPMethod.OTHER
 
 
-class APILogEntry(db.Model):  # type: ignore
+class APILogEntry(Model):
     __tablename__ = 'api_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    api_token_id = db.Column(db.Integer, db.ForeignKey('authentications.id'), nullable=False)
-    method = db.Column(db.Enum(HTTPMethod), nullable=False)
-    route = db.Column(db.String, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
-    api_token = db.relationship('Authentication', backref=db.backref("api_log_entries", cascade="all,delete"))
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    api_token_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('authentications.id'), nullable=False)
+    method: Mapped[HTTPMethod] = db.Column(db.Enum(HTTPMethod), nullable=False)
+    route: Mapped[str] = db.Column(db.String, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    api_token: Mapped['Authentication'] = relationship('Authentication', backref=db.backref("api_log_entries", cascade="all,delete"))
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["APILogEntry"]]
 
     def __init__(
             self,
@@ -50,12 +57,12 @@ class APILogEntry(db.Model):  # type: ignore
             route: str,
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.api_token_id = api_token_id
-        self.method = method
-        self.route = route
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            api_token_id=api_token_id,
+            method=method,
+            route=route,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, api_token_id={self.api_token_id}, method={self.method}, route={self.route}, utc_datetime={self.utc_datetime})>'

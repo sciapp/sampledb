@@ -111,7 +111,7 @@ class ObjectLocationAssignment:
     location_id: typing.Optional[int]
     user_id: typing.Optional[int]
     description: typing.Optional[typing.Dict[str, str]]
-    utc_datetime: datetime.datetime
+    utc_datetime: typing.Optional[datetime.datetime]
     responsible_user_id: typing.Optional[int]
     confirmed: bool
     fed_id: typing.Optional[int] = None
@@ -473,6 +473,8 @@ def assign_location_to_object(
             if action_id is None:
                 raise errors.ExceedingLocationCapacityError()
             action_type_id = actions.get_action(action_id).type_id
+            if action_type_id is None:
+                raise errors.ExceedingLocationCapacityError()
             capacity = get_location_capacities(location_id).get(action_type_id, 0)
             if capacity is not None:
                 if capacity == 0:
@@ -638,7 +640,23 @@ def get_current_object_location_assignments(
     return object_location_assignments
 
 
-def get_object_location_assignment(object_location_assignment_id: int) -> locations.ObjectLocationAssignment:
+def _get_mutable_object_location_assignment(object_location_assignment_id: int) -> locations.ObjectLocationAssignment:
+    """
+    Get a mutable object location assignment with a given ID.
+
+    :param object_location_assignment_id: the ID of an existing object location
+        assignment
+    :return: the mutable object location assignment
+    :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
+        location assignment with the given object location assignment ID exists
+    """
+    object_location_assignment = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
+    if object_location_assignment is None:
+        raise errors.ObjectLocationAssignmentDoesNotExistError()
+    return object_location_assignment
+
+
+def get_object_location_assignment(object_location_assignment_id: int) -> ObjectLocationAssignment:
     """
     Get an object location assignment with a given ID.
 
@@ -648,10 +666,7 @@ def get_object_location_assignment(object_location_assignment_id: int) -> locati
     :raise errors.ObjectLocationAssignmentDoesNotExistError: when no object
         location assignment with the given object location assignment ID exists
     """
-    object_location_assignment: typing.Optional[locations.ObjectLocationAssignment] = locations.ObjectLocationAssignment.query.filter_by(id=object_location_assignment_id).first()
-    if object_location_assignment is None:
-        raise errors.ObjectLocationAssignmentDoesNotExistError()
-    return object_location_assignment
+    return ObjectLocationAssignment.from_database(_get_mutable_object_location_assignment(object_location_assignment_id))
 
 
 def any_objects_at_location(location_id: int) -> bool:
@@ -706,7 +721,7 @@ def confirm_object_responsibility(object_location_assignment_id: int) -> None:
     :raise errors.ObjectLocationAssignmentAlreadyDeclinedError: when the
         object location assignment has already been declined
     """
-    object_location_assignment = get_object_location_assignment(object_location_assignment_id)
+    object_location_assignment = _get_mutable_object_location_assignment(object_location_assignment_id)
     if object_location_assignment.declined:
         raise errors.ObjectLocationAssignmentAlreadyDeclinedError()
     object_location_assignment.confirmed = True
@@ -725,7 +740,7 @@ def decline_object_responsibility(object_location_assignment_id: int) -> None:
     :raise errors.ObjectLocationAssignmentAlreadyConfirmedError: when the
         object location assignment has already been confirmed
     """
-    object_location_assignment = get_object_location_assignment(object_location_assignment_id)
+    object_location_assignment = _get_mutable_object_location_assignment(object_location_assignment_id)
     if object_location_assignment.confirmed:
         raise errors.ObjectLocationAssignmentAlreadyConfirmedError()
     object_location_assignment.declined = True

@@ -28,12 +28,9 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
         using_object_type = referenced_object_type_by_log_entry_type.get(object_log_entry.type)
         if using_object_type is not None:
             using_object_id = using_object_type + '_id'
-            object_id = object_log_entry.data.get(using_object_id)
-            if object_id is None:
-                # object ID was not set or has already been cleared
-                pass
-            else:
-                referenced_object_ids[object_log_entry.id] = object_id
+            object_id_value = object_log_entry.data.get(using_object_id)
+            if type(object_id_value) is int:
+                referenced_object_ids[object_log_entry.id] = object_id_value
         if object_log_entry.user_id not in users_by_id:
             users_by_id[object_log_entry.user_id] = users.get_user(object_log_entry.user_id)
         object_log_entry.user = users_by_id[object_log_entry.user_id]

@@ -5,28 +5,34 @@
 
 import typing
 
+from sqlalchemy.orm import Mapped, Query
+
 from .. import db
+from .utils import Model
 
 __author__ = 'Du Kim Nguyen <k.nguyen@fz-juelich.de>'
 
 
-class Language(db.Model):  # type: ignore
+class Language(Model):
     __tablename__ = 'languages'
 
     # default language IDs
     # offset to -100 to allow later addition of new default languages
     # see: migrations/languages_create_default_languages.py
-    ENGLISH = -100 + 1
-    GERMAN = -100 + 2
+    ENGLISH: int = -100 + 1
+    GERMAN: int = -100 + 2
 
-    id = db.Column(db.Integer, primary_key=True)
-    lang_code = db.Column(db.String, nullable=False, unique=True)
-    names = db.Column(db.JSON, nullable=False)
-    datetime_format_datetime = db.Column(db.String)
-    datetime_format_moment = db.Column(db.String)
-    enabled_for_input = db.Column(db.Boolean, nullable=False)
-    enabled_for_user_interface = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
-    datetime_format_moment_output = db.Column(db.String, nullable=False, default='lll', server_default='lll')
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    lang_code: Mapped[str] = db.Column(db.String, nullable=False, unique=True)
+    names: Mapped[typing.Dict[str, str]] = db.Column(db.JSON, nullable=False)
+    datetime_format_datetime: Mapped[str] = db.Column(db.String)  # TODO: should not be nullable
+    datetime_format_moment: Mapped[str] = db.Column(db.String)  # TODO: should not be nullable
+    enabled_for_input: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    enabled_for_user_interface: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
+    datetime_format_moment_output: Mapped[str] = db.Column(db.String, nullable=False, default='lll', server_default='lll')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Language"]]
 
     def __init__(
             self,
@@ -38,18 +44,20 @@ class Language(db.Model):  # type: ignore
             enabled_for_input: bool,
             enabled_for_user_interface: bool
     ) -> None:
-        self.names = names
-        self.lang_code = lang_code
-        self.datetime_format_datetime = datetime_format_datetime
-        self.datetime_format_moment = datetime_format_moment
-        self.datetime_format_moment_output = datetime_format_moment_output
-        self.enabled_for_input = enabled_for_input
-        self.enabled_for_user_interface = enabled_for_user_interface
+        super().__init__(
+            names=names,
+            lang_code=lang_code,
+            datetime_format_datetime=datetime_format_datetime,
+            datetime_format_moment=datetime_format_moment,
+            datetime_format_moment_output=datetime_format_moment_output,
+            enabled_for_input=enabled_for_input,
+            enabled_for_user_interface=enabled_for_user_interface
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, Language):
             return bool(
-                self.names == other.nams and
+                self.names == other.names and
                 self.lang_code == other.lang_code and
                 self.datetime_format_datetime == other.datetime_format_datetime and
                 self.datetime_format_moment == other.datetime_format_moment and

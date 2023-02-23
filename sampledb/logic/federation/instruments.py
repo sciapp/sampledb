@@ -238,7 +238,7 @@ def shared_instrument_preprocessor(
         translations_data = {}
     return SharedInstrumentData(
         instrument_id=instrument.id if instrument.fed_id is None else instrument.fed_id,
-        component_uuid=flask.current_app.config['FEDERATION_UUID'] if instrument.component_id is None else instrument.component.uuid,
+        component_uuid=flask.current_app.config['FEDERATION_UUID'] if instrument.component is None else instrument.component.uuid,
         description_is_markdown=instrument.description_is_markdown,
         notes_is_markdown=instrument.notes_is_markdown,
         is_hidden=instrument.is_hidden,

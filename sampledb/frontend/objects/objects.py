@@ -688,7 +688,7 @@ def objects() -> FlaskResponseT:
     elif implicit_action_type is not None:
         object_name_plural = get_translated_text(implicit_action_type.object_name_plural, default=_('Objects'))
 
-    filter_action_infos = []
+    filter_action_infos: typing.List[typing.Dict[str, typing.Any]] = []
     if filter_action_ids:
         for action_id in filter_action_ids:
             action = get_action(action_id)
@@ -700,9 +700,9 @@ def objects() -> FlaskResponseT:
                 'fed_id': action.fed_id,
                 'component_name': action.component.get_name() if action.component is not None else None
             })
-            if action.user:
+            if action.user is not None:
                 filter_action_infos[-1]['user'] = action.user
-            if action.instrument:
+            if action.instrument is not None:
                 filter_action_infos[-1]['instrument'] = action.instrument
             if action.component and action.component.address:
                 component_address = action.component.address

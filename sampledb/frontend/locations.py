@@ -351,7 +351,7 @@ def decline_responsibility_for_object() -> FlaskResponseT:
     def _callback(object_location_assignment_id: int) -> None:
         decline_object_responsibility(object_location_assignment_id)
         object_location_assignment = get_object_location_assignment(object_location_assignment_id)
-        if object_location_assignment.user_id != object_location_assignment.responsible_user_id:
+        if object_location_assignment.user_id != object_location_assignment.responsible_user_id and object_location_assignment.user_id is not None:
             # notify the assigning user that the assignment was declined
             create_notification_for_a_declined_responsibility_assignment(object_location_assignment.user_id, object_location_assignment_id)
         all_object_location_assignments = get_object_location_assignments(object_id=object_location_assignment.object_id)

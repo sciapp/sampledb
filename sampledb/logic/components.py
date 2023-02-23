@@ -53,6 +53,8 @@ class Component:
             last_sync_timestamp: datetime.datetime
     ) -> None:
         component = components.Component.query.filter_by(id=self.id).first()
+        if component is None:
+            raise errors.ComponentDoesNotExistError()
         component.last_sync_timestamp = last_sync_timestamp
         db.session.add(component)
         db.session.commit()
@@ -213,7 +215,7 @@ def get_component_id_by_uuid(
     component = components.Component.query.filter_by(uuid=component_uuid).first()
     if component is None:
         return None
-    return typing.cast(int, component.id)
+    return component.id
 
 
 def update_component(component_id: int, name: typing.Optional[str] = None, address: typing.Optional[str] = None, description: typing.Optional[str] = '') -> None:
@@ -249,7 +251,7 @@ def update_component(component_id: int, name: typing.Optional[str] = None, addre
 
     component.address = address
     component.name = name
-    component.description = description
+    component.description = description or ''
     db.session.add(component)
     db.session.commit()
 

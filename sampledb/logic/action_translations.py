@@ -33,9 +33,9 @@ class ActionTranslation:
         return ActionTranslation(
             action_id=action_translation.action_id,
             language_id=action_translation.language_id,
-            name=action_translation.name,
-            description=action_translation.description,
-            short_description=action_translation.short_description
+            name=action_translation.name or '',
+            description=action_translation.description or '',
+            short_description=action_translation.short_description or ''
         )
 
     @property

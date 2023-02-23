@@ -7,7 +7,7 @@ from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_bool, _get_utc_datetime, _get_translation, _get_dict
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from .locations import _get_or_create_location_id, _parse_location_ref, LocationRef
-from ..locations import create_fed_assignment, get_fed_object_location_assignment, ObjectLocationAssignment, get_object_location_assignment
+from ..locations import create_fed_assignment, get_fed_object_location_assignment, ObjectLocationAssignment, _get_mutable_object_location_assignment
 from ..components import Component
 from .. import errors, fed_logs
 from ...models import Object
@@ -35,7 +35,7 @@ def import_object_location_assignment(
     if component_id is not None:
         assignment = get_fed_object_location_assignment(assignment_data['fed_id'], component_id)
     else:
-        assignment = get_object_location_assignment(assignment_data['fed_id'])
+        assignment = _get_mutable_object_location_assignment(assignment_data['fed_id'])
 
     user_id = _get_or_create_user_id(assignment_data['user'])
     responsible_user_id = _get_or_create_user_id(assignment_data['responsible_user'])
@@ -56,7 +56,7 @@ def import_object_location_assignment(
         assignment.declined = assignment_data.get('declined', False)
         db.session.commit()
         fed_logs.update_object_location_assignment(assignment.id, component.id)
-    return assignment
+    return ObjectLocationAssignment.from_database(assignment)
 
 
 def parse_object_location_assignment(

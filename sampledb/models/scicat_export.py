@@ -6,21 +6,27 @@
 import datetime
 import typing
 
+from sqlalchemy.orm import Mapped, Query
+
 from .. import db
 from .actions import SciCatExportType
 from .objects import Objects
 from .users import User
+from .utils import Model
 
 
-class SciCatExport(db.Model):  # type: ignore
+class SciCatExport(Model):
     __tablename__ = 'scicat_exports'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
-    scicat_url = db.Column(db.String, nullable=False)
-    scicat_pid = db.Column(db.String, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    type = db.Column(db.Enum(SciCatExportType), nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
+    scicat_url: Mapped[str] = db.Column(db.String, nullable=False)
+    scicat_pid: Mapped[str] = db.Column(db.String, nullable=False)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    type: Mapped[SciCatExportType] = db.Column(db.Enum(SciCatExportType), nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["SciCatExport"]]
 
     def __init__(
             self,
@@ -31,14 +37,14 @@ class SciCatExport(db.Model):  # type: ignore
             type: SciCatExportType,
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.object_id = object_id
-        self.scicat_url = scicat_url
-        self.scicat_pid = scicat_pid
-        self.user_id = user_id
-        self.type = type
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            object_id=object_id,
+            scicat_url=scicat_url,
+            scicat_pid=scicat_pid,
+            user_id=user_id,
+            type=type,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(object_id={self.object_id}, scicat_url={self.scicat_url})>'

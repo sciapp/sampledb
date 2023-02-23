@@ -48,7 +48,7 @@ class File:
     """
     id: int
     object_id: int
-    user_id: int
+    user_id: typing.Optional[int]
     utc_datetime: typing.Optional[datetime.datetime] = None
     data: typing.Optional[typing.Dict[str, typing.Any]] = None
     binary_data: typing.Optional[bytes] = None
@@ -505,8 +505,9 @@ def _create_file_logs(file: File) -> None:
     file_id = file.id
     object_id = file.object_id
     user_id = file.user_id
-    object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
-    user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+    if user_id is not None:
+        object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+        user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
 
 
 def _create_db_file(

@@ -7,8 +7,13 @@ import enum
 import typing
 
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import relationship, Query, Mapped
 
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .users import User
 
 
 @enum.unique
@@ -19,15 +24,18 @@ class AuthenticationType(enum.Enum):
     API_TOKEN = 4
 
 
-class Authentication(db.Model):  # type: ignore
+class Authentication(Model):
     __tablename__ = "authentications"
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    login = db.Column(postgresql.JSONB)
-    type = db.Column(db.Enum(AuthenticationType))
-    confirmed = db.Column(db.Boolean, default=False, nullable=False)
-    user = db.relationship('User', backref="authentication_methods")
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'))  # TODO: should not be nullable
+    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB)  # TODO: should not be nullable
+    type: Mapped[AuthenticationType] = db.Column(db.Enum(AuthenticationType))  # TODO: should not be nullable
+    confirmed: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    user: Mapped['User'] = relationship('User', back_populates="authentication_methods")
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Authentication"]]
 
     def __init__(
             self,
@@ -36,19 +44,24 @@ class Authentication(db.Model):  # type: ignore
             confirmed: bool,
             user_id: int
     ) -> None:
-        self.login = login
-        self.type = authentication_type
-        self.confirmed = confirmed
-        self.user_id = user_id
+        super().__init__(
+            user_id=user_id,
+            login=login,
+            type=authentication_type,
+            confirmed=confirmed
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id})>'
 
 
-class TwoFactorAuthenticationMethod(db.Model):  # type: ignore
+class TwoFactorAuthenticationMethod(Model):
     __tablename__ = "two_factor_authentication_methods"
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    active = db.Column(db.Boolean, default=False, nullable=False)
-    data = db.Column(postgresql.JSONB)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'))  # TODO: should not be nullable
+    active: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB)  # TODO: should not be nullable
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["TwoFactorAuthenticationMethod"]]

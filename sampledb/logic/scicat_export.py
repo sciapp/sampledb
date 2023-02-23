@@ -31,7 +31,7 @@ def get_scicat_url(
     scicat_export: typing.Optional[SciCatExport] = SciCatExport.query.filter_by(object_id=object_id).first()
     if scicat_export is None:
         return None
-    return typing.cast(str, scicat_export.scicat_url)
+    return scicat_export.scicat_url
 
 
 def _convert_metadata(
@@ -480,7 +480,7 @@ def get_instruments(
 def get_scicat_export_for_object(
         object_id: int
 ) -> typing.Optional[SciCatExport]:
-    return typing.cast(typing.Optional[SciCatExport], SciCatExport.query.filter_by(object_id=object_id).first())
+    return SciCatExport.query.filter_by(object_id=object_id).first()
 
 
 def get_exported_referenced_objects(

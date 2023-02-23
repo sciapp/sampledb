@@ -5,18 +5,24 @@
 import datetime
 import typing
 
+from sqlalchemy.orm import Query, Mapped
+
 from .. import db
+from .utils import Model
 
 
-class Component(db.Model):  # type: ignore
+class Component(Model):
     __tablename__ = 'components'
 
-    id = db.Column(db.Integer, primary_key=True)
-    address = db.Column(db.Text, nullable=True)
-    uuid = db.Column(db.Text, nullable=False, unique=True)
-    name = db.Column(db.Text, nullable=True, unique=True)
-    description = db.Column(db.Text, nullable=False, default='')
-    last_sync_timestamp = db.Column(db.DateTime, nullable=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    address: Mapped[typing.Optional[str]] = db.Column(db.Text, nullable=True)
+    uuid: Mapped[str] = db.Column(db.Text, nullable=False, unique=True)
+    name: Mapped[typing.Optional[str]] = db.Column(db.Text, nullable=True, unique=True)
+    description: Mapped[str] = db.Column(db.Text, nullable=False, default='')
+    last_sync_timestamp: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Component"]]
 
     def __init__(
             self,
@@ -26,11 +32,13 @@ class Component(db.Model):  # type: ignore
             address: typing.Optional[str] = None,
             last_sync_timestamp: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.address = address
-        self.uuid = uuid
-        self.name = name
-        self.description = description
-        self.last_sync_timestamp = last_sync_timestamp
+        super().__init__(
+            address=address,
+            uuid=uuid,
+            name=name,
+            description=description,
+            last_sync_timestamp=last_sync_timestamp
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, address={self.address}, uuid={self.uuid}, name={self.name}, description={self.description})>'

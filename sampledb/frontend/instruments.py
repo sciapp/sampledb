@@ -644,22 +644,24 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
                         error = True
                     if error:
                         flask.flash(_('Please enter an english instrument name.'), 'error')
-                        instrument_translations = get_instrument_translations_for_instrument(instrument.id)
+                        instrument_translations_list = get_instrument_translations_for_instrument(instrument.id)
                         instrument_language_ids = [
                             translation.language_id
-                            for translation in instrument_translations
+                            for translation in instrument_translations_list
 
                         ]
                         instrument_translations = {
                             instrument_translation.language_id: instrument_translation
-                            for instrument_translation in instrument_translations
+                            for instrument_translation in instrument_translations_list
                         }
                         ENGLISH = get_language(Language.ENGLISH)
                         return flask.render_template(
                             'instruments/instrument_form.html',
                             submit_text=_('Save'),
-                            instrument_log_category_themes=sorted(InstrumentLogCategoryTheme,
-                                                                  key=lambda t: t.value),
+                            instrument_log_category_themes=sorted(
+                                InstrumentLogCategoryTheme,
+                                key=lambda t: int(t.value)
+                            ),
                             instrument_translations=instrument_translations,
                             instrument_language_ids=instrument_language_ids,
                             ENGLISH=ENGLISH,
@@ -754,17 +756,17 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
         flask.flash(_('The instrument was updated successfully.'), 'success')
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
 
-    instrument_translations = get_instrument_translations_for_instrument(instrument.id)
-    instrument_language_ids = [translation.language_id for translation in instrument_translations]
+    instrument_translations_list = get_instrument_translations_for_instrument(instrument.id)
+    instrument_language_ids = [translation.language_id for translation in instrument_translations_list]
     instrument_translations = {
         instrument_translation.language_id: instrument_translation
-        for instrument_translation in instrument_translations
+        for instrument_translation in instrument_translations_list
     }
     english = get_language(Language.ENGLISH)
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text=_('Save'),
-        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
+        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: int(t.value)),
         instrument_translations=instrument_translations,
         instrument_language_ids=instrument_language_ids,
         ENGLISH=english,

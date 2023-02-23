@@ -79,7 +79,7 @@ def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_
         return None
     if image.user_id != user_id and not image.permanent:
         return None
-    return typing.cast(bytes, image.content)
+    return image.content
 
 
 def mark_referenced_markdown_images_as_permanent(html_content: str) -> None:

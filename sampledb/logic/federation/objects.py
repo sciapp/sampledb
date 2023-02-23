@@ -94,7 +94,7 @@ class SharedObjectLocationAssignmentData(typing.TypedDict):
     responsible_user: typing.Optional[UserRef]
     user: typing.Optional[UserRef]
     description: typing.Optional[typing.Dict[str, str]]
-    utc_datetime: str
+    utc_datetime: typing.Optional[str]
     confirmed: bool
     declined: bool
 
@@ -398,8 +398,8 @@ def shared_object_preprocessor(
                         'component_uuid': comp.uuid
                     }
                 res_comment['content'] = comment.content
-                res_comment['utc_datetime'] = comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
-                if 'users' in policy['access'] and policy['access']['users']:
+                res_comment['utc_datetime'] = comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if comment.utc_datetime is not None else None
+                if 'users' in policy['access'] and policy['access']['users'] and comment.user_id is not None:
                     if ('users', comment.user_id) not in refs:
                         refs.append(('users', comment.user_id))
                     user = get_user(comment.user_id)
@@ -437,7 +437,7 @@ def shared_object_preprocessor(
                         'component_uuid': comp.uuid
                     }
                 res_file['utc_datetime'] = file.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if file.utc_datetime else None
-                if 'users' in policy['access'] and policy['access']['users']:
+                if 'users' in policy['access'] and policy['access']['users'] and file.user_id is not None:
                     if ('users', file.user_id) not in refs:
                         refs.append(('users', file.user_id))
                     user = get_user(file.user_id)
@@ -460,22 +460,26 @@ def shared_object_preprocessor(
                     ).order_by(FileLogEntry.utc_datetime.desc()).first()
                     res_file['hidden'] = {
                         'reason': file.hide_reason,
-                        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+                        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if log_entry is not None else None
                     }
-                    if ('users', log_entry.user_id) not in refs:
-                        refs.append(('users', log_entry.user_id))
-                    user = get_user(file.user_id)
-                    if user.fed_id is not None and user.component is not None:
-                        comp = user.component
-                        res_file['hidden']['user'] = {
-                            'user_id': user.fed_id,
-                            'component_uuid': comp.uuid
-                        }
+                    if log_entry is not None:
+                        if ('users', log_entry.user_id) not in refs:
+                            refs.append(('users', log_entry.user_id))
+                    if file.user_id:
+                        user = get_user(file.user_id)
+                        if user.fed_id is not None and user.component is not None:
+                            comp = user.component
+                            res_file['hidden']['user'] = {
+                                'user_id': user.fed_id,
+                                'component_uuid': comp.uuid
+                            }
+                        else:
+                            res_file['hidden']['user'] = {
+                                'user_id': file.user_id,
+                                'component_uuid': flask.current_app.config['FEDERATION_UUID']
+                            }
                     else:
-                        res_file['hidden']['user'] = {
-                            'user_id': file.user_id,
-                            'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                        }
+                        res_file['hidden']['user'] = None
                 else:
                     res_file['data'] = file.data
 
@@ -555,7 +559,7 @@ def shared_object_preprocessor(
                     responsible_user=responsible_user_ref,
                     user=c_user,
                     description=ola.description,
-                    utc_datetime=ola.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    utc_datetime=ola.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if ola.utc_datetime else None,
                     confirmed=ola.confirmed,
                     declined=ola.declined,
                 ))

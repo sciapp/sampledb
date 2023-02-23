@@ -293,7 +293,7 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
         if component_id is not None:
             check_component_exists(component_id)
         raise errors.UserDoesNotExistError()
-    return typing.cast(users.User, user)
+    return user
 
 
 def update_user(

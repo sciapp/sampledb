@@ -42,7 +42,7 @@ def get_log_entries_for_location(
             'location_id': log_entry.location_id,
             'data': log_entry.data
         })
-        if log_entry.user_id not in users_by_id:
+        if log_entry.user_id not in users_by_id and log_entry.user_id is not None:
             try:
                 users_by_id[log_entry.user_id] = users.get_user(log_entry.user_id)
             except errors.UserDoesNotExistError:
@@ -72,10 +72,12 @@ def get_log_entries_for_location(
                     new_location_id = object_location_assignment.location_id
                     log_entries[-1]['new_location_id'] = new_location_id
                     if new_location_id not in locations_by_id:
-                        try:
-                            new_location = locations.get_location(new_location_id)
-                        except errors.LocationDoesNotExistError:
-                            new_location = None
+                        new_location = None
+                        if new_location_id is not None:
+                            try:
+                                new_location = locations.get_location(new_location_id)
+                            except errors.LocationDoesNotExistError:
+                                pass
                         locations_by_id[new_location_id] = new_location
                     log_entries[-1]['new_location'] = locations_by_id[new_location_id]
     if not log_entries:

@@ -1,7 +1,11 @@
 import enum
-
 import datetime
+import typing
+
+from sqlalchemy.orm import Mapped, Query
+
 from .. import db
+from .utils import Model
 
 
 @enum.unique
@@ -18,16 +22,19 @@ class BackgroundTaskStatus(enum.Enum):
         }
 
 
-class BackgroundTask(db.Model):  # type: ignore
+class BackgroundTask(Model):
     __tablename__ = 'background_tasks'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Text, nullable=False)
-    auto_delete = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
-    data = db.Column(db.JSON, nullable=False)
-    status = db.Column(db.Enum(BackgroundTaskStatus), nullable=False)
-    result = db.Column(db.JSON, nullable=True)
-    expiration_date = db.Column(db.DateTime, nullable=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[str] = db.Column(db.Text, nullable=False)
+    auto_delete: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    status: Mapped[BackgroundTaskStatus] = db.Column(db.Enum(BackgroundTaskStatus), nullable=False)
+    result: Mapped[typing.Optional[typing.Dict[str, typing.Any]]] = db.Column(db.JSON, nullable=True)
+    expiration_date: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["BackgroundTask"]]
 
     @staticmethod
     def delete_expired_tasks() -> None:

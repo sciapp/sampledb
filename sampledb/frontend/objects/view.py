@@ -152,7 +152,7 @@ def object(object_id: int) -> FlaskResponseT:
         if logic.action_types.is_usable_in_action_types_table_empty() and not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT'] and action_type and action_type.id == models.ActionType.SAMPLE_CREATION:
             usable_in_action_types = [logic.action_types.get_action_type(models.ActionType.MEASUREMENT)]
         else:
-            usable_in_action_types = action_type.usable_in_action_types if action_type is not None else None
+            usable_in_action_types = action_type.usable_in_action_types if action_type is not None else []
     else:
         action = None
         action_type = None

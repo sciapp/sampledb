@@ -327,10 +327,10 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
         return NotificationMode.IGNORE
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
-        return typing.cast(NotificationMode, notification_mode_for_type.mode)
+        return notification_mode_for_type.mode
     notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
     if notification_mode_for_all_types is not None:
-        return typing.cast(NotificationMode, notification_mode_for_all_types.mode)
+        return notification_mode_for_all_types.mode
     if type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED:
         return NotificationMode.IGNORE
     return NotificationMode.WEBAPP
@@ -381,6 +381,8 @@ def create_notification_for_being_assigned_as_responsible_user(object_location_a
         location assignment with the given object location assignment ID exists
     """
     object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
+    if object_location_assignment.responsible_user_id is None:
+        return
     confirmation_url = flask.url_for(
         'frontend.accept_responsibility_for_object',
         t=logic.security_tokens.generate_token(

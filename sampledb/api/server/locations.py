@@ -39,7 +39,7 @@ def object_location_assignment_to_json(object_location_assignment: locations.Obj
         'responsible_user_id': object_location_assignment.responsible_user_id,
         'user_id': object_location_assignment.user_id,
         'description': utils.get_translated_text(object_location_assignment.description, 'en'),
-        'utc_datetime': object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        'utc_datetime': object_location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if object_location_assignment.utc_datetime is not None else None
     }
 
 

@@ -324,7 +324,7 @@ def get_two_factor_authentication_methods(
     :param user_id: the ID of an existing user
     :return: a list containing all methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()  # type: ignore
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
 
 
 def get_active_two_factor_authentication_method(
@@ -336,7 +336,7 @@ def get_active_two_factor_authentication_method(
     :param user_id: the ID of an existing user
     :return: the active method
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()  # type: ignore
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
 
 
 def activate_two_factor_authentication_method(

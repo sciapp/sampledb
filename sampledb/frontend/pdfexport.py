@@ -241,7 +241,7 @@ def create_pdfexport(
             location_assignments = logic.locations.get_object_location_assignments(object.id)
             for location_assignment in location_assignments:
                 locations_entries.append({
-                    'utc_datetime': location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M'),
+                    'utc_datetime': location_assignment.utc_datetime.strftime('%Y-%m-%d %H:%M') if location_assignment.utc_datetime is not None else '',
                     'assigning_user_id': location_assignment.user_id,
                     'assigning_user_name': logic.users.get_user(location_assignment.user_id).get_name() if location_assignment.user_id is not None else '',
                     'location_id': location_assignment.location_id,

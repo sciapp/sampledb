@@ -7,8 +7,14 @@ import enum
 import datetime
 import typing
 
+from sqlalchemy.orm import Mapped, Query
+
 from .. import db
 from .objects import Objects
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from ..logic.users import User
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -32,15 +38,18 @@ class ObjectLogEntryType(enum.Enum):
     UNLINK_PROJECT = 14
 
 
-class ObjectLogEntry(db.Model):  # type: ignore
+class ObjectLogEntry(Model):
     __tablename__ = 'object_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(ObjectLogEntryType), nullable=False)
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[ObjectLogEntryType] = db.Column(db.Enum(ObjectLogEntryType), nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ObjectLogEntry"]]
 
     def __init__(
             self,
@@ -50,13 +59,14 @@ class ObjectLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.object_id = object_id
-        self.user_id = user_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            object_id=object_id,
+            user_id=user_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
+        self.user: typing.Optional['User'] = None
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_id={self.object_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'

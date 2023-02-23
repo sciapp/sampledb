@@ -9,11 +9,15 @@ import enum
 import datetime
 import typing
 
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, Query
 
 from .. import db
 from .instruments import Instrument
 from .objects import Objects
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .users import User
 
 
 instrument_log_entry_category_association_table = db.Table(
@@ -38,13 +42,16 @@ class InstrumentLogCategoryTheme(enum.Enum):
     RED = 4
 
 
-class InstrumentLogCategory(db.Model):  # type: ignore
+class InstrumentLogCategory(Model):
     __tablename__ = 'instrument_log_categories'
 
-    id = db.Column(db.Integer, primary_key=True)
-    instrument_id = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
-    title = db.Column(db.String, nullable=False)
-    theme = db.Column(db.Enum(InstrumentLogCategoryTheme), nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
+    title: Mapped[str] = db.Column(db.String, nullable=False)
+    theme: Mapped[InstrumentLogCategoryTheme] = db.Column(db.Enum(InstrumentLogCategoryTheme), nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogCategory"]]
 
     def __init__(
             self,
@@ -52,45 +59,56 @@ class InstrumentLogCategory(db.Model):  # type: ignore
             title: str,
             theme: InstrumentLogCategoryTheme
     ) -> None:
-        self.instrument_id = instrument_id
-        self.title = title
-        self.theme = theme
+        super().__init__(
+            instrument_id=instrument_id,
+            title=title,
+            theme=theme
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, instrument_id={self.instrument_id}, title="{self.title}", theme={self.theme.name.lower()})>'
 
 
-class InstrumentLogEntry(db.Model):  # type: ignore
+class InstrumentLogEntry(Model):
     __tablename__ = 'instrument_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    instrument_id = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    author = relationship('User')
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    author: Mapped['User'] = relationship('User')
+    versions: Mapped[typing.List['InstrumentLogEntryVersion']] = relationship('InstrumentLogEntryVersion')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogEntry"]]
 
     def __init__(
             self,
             instrument_id: int,
             user_id: int
     ) -> None:
-        self.instrument_id = instrument_id
-        self.user_id = user_id
+        super().__init__(
+            instrument_id=instrument_id,
+            user_id=user_id
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, instrument_id={self.instrument_id}, user_id={self.user_id})>'
 
 
-class InstrumentLogEntryVersion(db.Model):  # type: ignore
+class InstrumentLogEntryVersion(Model):
     __tablename__ = 'instrument_log_entry_versions'
 
-    log_entry_id = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), primary_key=True)
-    version_id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
-    content_is_markdown = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
-    event_utc_datetime = db.Column(db.DateTime, nullable=True)
-    categories = relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
-    log_entry = relationship(InstrumentLogEntry, backref='versions')
+    log_entry_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), primary_key=True)
+    version_id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    content: Mapped[str] = db.Column(db.Text, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    content_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    event_utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    categories: Mapped[typing.List[InstrumentLogCategory]] = relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
+    log_entry: Mapped[InstrumentLogEntry] = relationship(InstrumentLogEntry, back_populates='versions')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogEntryVersion"]]
 
     def __init__(
             self,
@@ -101,27 +119,30 @@ class InstrumentLogEntryVersion(db.Model):  # type: ignore
             content_is_markdown: bool = False,
             event_utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.log_entry_id = log_entry_id
-        self.version_id = version_id
-        self.content = content
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
-        self.content_is_markdown = content_is_markdown
-        self.event_utc_datetime = event_utc_datetime
+        super().__init__(
+            log_entry_id=log_entry_id,
+            version_id=version_id,
+            content=content,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            content_is_markdown=content_is_markdown,
+            event_utc_datetime=event_utc_datetime
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(log_entry_id={self.log_entry_id}, version_id={self.version_id},  utc_datetime={self.utc_datetime}, content="{self.content}")>'
 
 
-class InstrumentLogFileAttachment(db.Model):  # type: ignore
+class InstrumentLogFileAttachment(Model):
     __tablename__ = 'instrument_log_file_attachments'
 
-    id = db.Column(db.Integer, primary_key=True)
-    log_entry_id = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), nullable=False)
-    file_name = db.Column(db.String, nullable=False)
-    content = db.Column(db.LargeBinary, nullable=False)
-    is_hidden = db.Column(db.Boolean, default=False, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    log_entry_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), nullable=False)
+    file_name: Mapped[str] = db.Column(db.String, nullable=False)
+    content: Mapped[bytes] = db.Column(db.LargeBinary, nullable=False)
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogFileAttachment"]]
 
     def __init__(
             self,
@@ -129,29 +150,36 @@ class InstrumentLogFileAttachment(db.Model):  # type: ignore
             file_name: str,
             content: bytes
     ) -> None:
-        self.log_entry_id = log_entry_id
-        self.file_name = file_name
-        self.content = content
+        super().__init__(
+            log_entry_id=log_entry_id,
+            file_name=file_name,
+            content=content
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, log_entry_id={self.log_entry_id}, file_name="{self.file_name}")>'
 
 
-class InstrumentLogObjectAttachment(db.Model):  # type: ignore
+class InstrumentLogObjectAttachment(Model):
     __tablename__ = 'instrument_log_object_attachments'
 
-    id = db.Column(db.Integer, primary_key=True)
-    log_entry_id = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), nullable=False)
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
-    is_hidden = db.Column(db.Boolean, default=False, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    log_entry_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogObjectAttachment"]]
 
     def __init__(
             self,
             log_entry_id: int,
             object_id: int
     ) -> None:
-        self.log_entry_id = log_entry_id
-        self.object_id = object_id
+        super().__init__(
+            log_entry_id=log_entry_id,
+            object_id=object_id
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, log_entry_id={self.log_entry_id}, object_id={self.object_id})>'

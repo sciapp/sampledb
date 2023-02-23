@@ -4,7 +4,7 @@ from .. import db
 from ..models import ComponentAuthentication, ComponentAuthenticationType, OwnComponentAuthentication
 from .errors import NoAuthenticationMethodError, InvalidTokenError, AuthenticationMethodDoesNotExistError, \
     TokenExistsError
-from .authentication import _hash_password, _validate_password_authentication
+from .authentication import _hash_password, _validate_password_hash
 from .components import Component
 
 
@@ -93,7 +93,7 @@ def login_via_component_token(
     ).all()
 
     for authentication_method in authentication_methods:
-        if _validate_password_authentication(authentication_method, password):
+        if _validate_password_hash(password, authentication_method.login['bcrypt_hash']):
             if authentication_method.component:
                 return Component.from_database(authentication_method.component)
     return None

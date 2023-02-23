@@ -25,7 +25,7 @@ def action_to_json(action: actions.Action) -> typing.Dict[str, typing.Any]:
             action_types.ActionType.SAMPLE_CREATION: 'sample',
             action_types.ActionType.MEASUREMENT: 'measurement',
             action_types.ActionType.SIMULATION: 'simulation'
-        }.get(action.type_id, 'custom'),
+        }.get(action.type_id, 'custom') if action.type_id is not None else 'custom',
         'type_id': action.type_id,
         'name': utils.get_translated_text(
             action.name,

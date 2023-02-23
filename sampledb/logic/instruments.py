@@ -39,10 +39,10 @@ class Instrument:
     description_is_markdown: bool
     short_description: typing.Dict[str, str]
     short_description_is_markdown: bool
-    fed_id: int
-    component_id: int
+    fed_id: typing.Optional[int]
+    component_id: typing.Optional[int]
     component: typing.Optional[components.Component]
-    location_id: int
+    location_id: typing.Optional[int]
     location: typing.Optional[locations.Location]
 
     @classmethod
@@ -59,11 +59,11 @@ class Instrument:
             is_hidden=instrument.is_hidden,
             name=instrument.name,
             notes=instrument.notes,
-            notes_is_markdown=instrument.notes_is_markdown,
+            notes_is_markdown=bool(instrument.notes_is_markdown),
             description=instrument.description,
-            description_is_markdown=instrument.description_is_markdown,
+            description_is_markdown=bool(instrument.description_is_markdown),
             short_description=instrument.short_description,
-            short_description_is_markdown=instrument.short_description_is_markdown,
+            short_description_is_markdown=bool(instrument.short_description_is_markdown),
             fed_id=instrument.fed_id,
             component_id=instrument.component_id,
             component=components.Component.from_database(instrument.component) if instrument.component is not None else None,

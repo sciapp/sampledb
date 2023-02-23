@@ -88,7 +88,7 @@ def get_export_infos(
                 'id': comment.id,
                 'author_id': comment.user_id,
                 'content': comment.content,
-                'utc_datetime': comment.utc_datetime.isoformat()
+                'utc_datetime': comment.utc_datetime.isoformat() if comment.utc_datetime is not None else None
             })
 
         for location_assignment in logic.locations.get_object_location_assignments(object.id):
@@ -111,7 +111,7 @@ def get_export_infos(
                 'assigning_user_id': location_assignment.user_id,
                 'responsible_user_id': location_assignment.responsible_user_id,
                 'location_id': location_assignment.location_id,
-                'utc_datetime': location_assignment.utc_datetime.isoformat(),
+                'utc_datetime': location_assignment.utc_datetime.isoformat() if location_assignment.utc_datetime is not None else None,
                 'status': status
             })
 
@@ -169,8 +169,10 @@ def get_export_infos(
             if action_info.id in relevant_action_ids:
                 action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
                 if Permissions.READ in action_permissions:
-                    relevant_user_ids.add(action_info.user_id)
-                    relevant_instrument_ids.add(action_info.instrument_id)
+                    if action_info.user_id is not None:
+                        relevant_user_ids.add(action_info.user_id)
+                    if action_info.instrument_id is not None:
+                        relevant_instrument_ids.add(action_info.instrument_id)
                     action_infos.append({
                         'id': action_info.id,
                         'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',

@@ -300,7 +300,7 @@ def get_user_project_permissions(project_id: int, user_id: int, include_groups: 
     """
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id, user_id=user_id).first()
     if user_permissions:
-        permissions = typing.cast(Permissions, user_permissions.permissions)
+        permissions = user_permissions.permissions
     else:
         # verify that project exists or raise error
         get_project(project_id)
@@ -458,8 +458,13 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
         include_expired_invitations=False,
         include_accepted_invitations=False
     )
-    for invitation in invitations:
-        mutable_invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
+    mutable_invitations = projects.ProjectInvitation.query.filter(
+        projects.ProjectInvitation.id.in_([
+            invitation.id
+            for invitation in invitations
+        ])
+    ).all()
+    for mutable_invitation in mutable_invitations:
         mutable_invitation.accepted = True
         db.session.add(mutable_invitation)
     db.session.commit()

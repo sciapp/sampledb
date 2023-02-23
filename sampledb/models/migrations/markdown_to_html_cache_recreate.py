@@ -25,6 +25,6 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     """))
     db.session.commit()
 
-    MarkdownToHTMLCacheEntry.__table__.create(bind=db.engine)
+    MarkdownToHTMLCacheEntry.__table__.create(bind=db.engine)  # type: ignore[attr-defined]
 
     return True
