@@ -18,22 +18,13 @@ login_manager = LoginManager()
 login_manager.session_protection = 'basic'
 
 mail = Mail()
-db = SQLAlchemy()
-babel = Babel()
+db = SQLAlchemy(
+    engine_options={'future': True},
+    session_options={'future': True}
+)
 
 
-import sampledb.dashboard
-import sampledb.frontend
-import sampledb.api
-import sampledb.logic
-import sampledb.models
-import sampledb.models.migrations
-import sampledb.config
-import sampledb.utils
-
-
-@babel.localeselector  # type: ignore
-def set_locale() -> str:
+def babel_locale_selector() -> str:
     if hasattr(flask.g, 'override_locale') and flask.g.override_locale in sampledb.logic.locale.get_allowed_language_codes():
         return typing.cast(str, flask.g.override_locale)
 
@@ -53,8 +44,7 @@ def set_locale() -> str:
     return request_locale
 
 
-@babel.timezoneselector  # type: ignore
-def set_timezone() -> typing.Optional[str]:
+def babel_timezone_selector() -> typing.Optional[str]:
     if flask.current_app.config['TIMEZONE']:
         return typing.cast(typing.Optional[str], flask.current_app.config['TIMEZONE'])
     if current_user.is_authenticated:
@@ -63,6 +53,18 @@ def set_timezone() -> typing.Optional[str]:
             return typing.cast(typing.Optional[str], flask.request.args.get('timezone', settings['TIMEZONE']))
         return typing.cast(typing.Optional[str], settings['TIMEZONE'])
     return flask.request.args.get('timezone', None)
+
+
+babel = Babel(locale_selector=babel_locale_selector, timezone_selector=babel_timezone_selector)
+
+
+import sampledb.dashboard
+import sampledb.frontend
+import sampledb.api
+import sampledb.logic
+import sampledb.models
+import sampledb.models.migrations
+import sampledb.config
 
 
 def setup_database(app: flask.Flask) -> None:

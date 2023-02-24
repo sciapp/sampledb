@@ -62,7 +62,10 @@ def refresh() -> None:
 class Babel:
     def __init__(
             self,
-            app: typing.Optional[flask.Flask] = None
+            app: typing.Optional[flask.Flask] = None,
+            *,
+            locale_selector: typing.Callable[[], str],
+            timezone_selector: typing.Callable[[], typing.Optional[str]],
     ) -> None:
         ...
 
