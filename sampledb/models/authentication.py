@@ -28,9 +28,9 @@ class Authentication(Model):
     __tablename__ = "authentications"
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'))  # TODO: should not be nullable
-    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB)  # TODO: should not be nullable
-    type: Mapped[AuthenticationType] = db.Column(db.Enum(AuthenticationType))  # TODO: should not be nullable
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
+    type: Mapped[AuthenticationType] = db.Column(db.Enum(AuthenticationType), nullable=False)
     confirmed: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
     user: Mapped['User'] = relationship('User', back_populates="authentication_methods")
 
@@ -59,9 +59,9 @@ class TwoFactorAuthenticationMethod(Model):
     __tablename__ = "two_factor_authentication_methods"
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'))  # TODO: should not be nullable
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     active: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
-    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB)  # TODO: should not be nullable
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["TwoFactorAuthenticationMethod"]]

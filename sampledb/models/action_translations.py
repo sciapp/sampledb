@@ -18,10 +18,10 @@ class ActionTypeTranslation(Model):
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
 
-    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'))  # TODO: should not be nullable
+    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'), nullable=False)
     language: Mapped['Language'] = relationship('Language')
 
-    action_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('action_types.id'))  # TODO: should not be nullable
+    action_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('action_types.id'), nullable=False)
 
     name: Mapped[str] = db.Column(db.String, nullable=False)
     description: Mapped[str] = db.Column(db.String, nullable=False)
@@ -84,10 +84,10 @@ class ActionTranslation(Model):
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
 
-    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'))  # TODO: should not be nullable
+    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'), nullable=False)
     language: Mapped['Language'] = relationship('Language')
 
-    action_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('actions.id'))  # TODO: should not be nullable
+    action_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('actions.id'), nullable=False)
 
     name: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
     description: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')

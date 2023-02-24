@@ -25,8 +25,8 @@ class Language(Model):
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     lang_code: Mapped[str] = db.Column(db.String, nullable=False, unique=True)
     names: Mapped[typing.Dict[str, str]] = db.Column(db.JSON, nullable=False)
-    datetime_format_datetime: Mapped[str] = db.Column(db.String)  # TODO: should not be nullable
-    datetime_format_moment: Mapped[str] = db.Column(db.String)  # TODO: should not be nullable
+    datetime_format_datetime: Mapped[str] = db.Column(db.String, nullable=False)
+    datetime_format_moment: Mapped[str] = db.Column(db.String, nullable=False)
     enabled_for_input: Mapped[bool] = db.Column(db.Boolean, nullable=False)
     enabled_for_user_interface: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
     datetime_format_moment_output: Mapped[str] = db.Column(db.String, nullable=False, default='lll', server_default='lll')

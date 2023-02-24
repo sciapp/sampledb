@@ -25,9 +25,9 @@ class ComponentAuthentication(Model):
     __tablename__ = "component_authentications"
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'))  # TODO: should not be nullable
-    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB)  # TODO: should not be nullable
-    type: Mapped[ComponentAuthenticationType] = db.Column(db.Enum(ComponentAuthenticationType))  # TODO: should not be nullable
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
+    type: Mapped[ComponentAuthenticationType] = db.Column(db.Enum(ComponentAuthenticationType), nullable=False)
     component: Mapped['Component'] = relationship('Component')
 
     if typing.TYPE_CHECKING:
@@ -53,9 +53,9 @@ class OwnComponentAuthentication(Model):
     __tablename__ = "own_component_authentications"
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'))  # TODO: should not be nullable
-    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB)  # TODO: should not be nullable
-    type: Mapped[ComponentAuthenticationType] = db.Column(db.Enum(ComponentAuthenticationType))  # TODO: should not be nullable
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    login: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
+    type: Mapped[ComponentAuthenticationType] = db.Column(db.Enum(ComponentAuthenticationType), nullable=False)
     component: Mapped['Component'] = relationship('Component')
 
     if typing.TYPE_CHECKING:

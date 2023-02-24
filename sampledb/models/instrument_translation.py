@@ -20,9 +20,9 @@ class InstrumentTranslation(Model):
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
 
-    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('instruments.id'))  # TODO: should not be nullable
+    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('instruments.id'), nullable=False)
 
-    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'))  # TODO: should not be nullable
+    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'), nullable=False)
     language: Mapped['Language'] = relationship('Language')
 
     name: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
