@@ -64,13 +64,16 @@ class Babel:
             self,
             app: typing.Optional[flask.Flask] = None,
             *,
-            locale_selector: typing.Callable[[], str],
-            timezone_selector: typing.Callable[[], typing.Optional[str]],
+            locale_selector: typing.Optional[typing.Callable[[], str]] = None,
+            timezone_selector: typing.Optional[typing.Callable[[], typing.Optional[str]]] = None,
     ) -> None:
         ...
 
     def init_app(
             self,
-            app: flask.Flask
+            app: flask.Flask,
+            *,
+            locale_selector: typing.Optional[typing.Callable[[], str]] = None,
+            timezone_selector: typing.Optional[typing.Callable[[], typing.Optional[str]]] = None,
     ) -> None:
         ...

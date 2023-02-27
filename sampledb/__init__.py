@@ -55,7 +55,7 @@ def babel_timezone_selector() -> typing.Optional[str]:
     return flask.request.args.get('timezone', None)
 
 
-babel = Babel(locale_selector=babel_locale_selector, timezone_selector=babel_timezone_selector)
+babel = Babel()
 
 
 import sampledb.dashboard
@@ -166,7 +166,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     login_manager.init_app(app)
     mail.init_app(app)
     db.init_app(app)
-    babel.init_app(app)
+    babel.init_app(app, locale_selector=babel_locale_selector, timezone_selector=babel_timezone_selector)
     if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
         sampledb.dashboard.init_app(app)
 
