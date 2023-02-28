@@ -510,7 +510,13 @@ class VersionedJSONSerializableObjectTables:
                 [{'oid': current.object_id}]
             )
         else:
-            max_version_id = connection.execute(db.select(db.func.max(self._previous_table.c.version_id)).where(db.and_(self._previous_table.c.object_id == current.object_id))).scalar()
+            max_version_id = connection.execute(
+                db.select(
+                    db.sql.func.max(self._previous_table.c.version_id)  # pylint: disable=not-callable
+                ).where(
+                    self._previous_table.c.object_id == current.object_id
+                )
+            ).scalar()
             if max_version_id is None:
                 max_version_id = -1
             if connection.execute(
@@ -620,7 +626,16 @@ class VersionedJSONSerializableObjectTables:
         if object_data.fed_object_id is None or object_data.fed_version_id is None or object_data.component_id is None:
             return None
 
-        previous_subversion_id = connection.execute(db.select(db.func.max(self._subversions_table.c.subversion_id)).where(db.and_(self._subversions_table.c.object_id == object_id, self._subversions_table.c.version_id == version_id))).scalar()
+        previous_subversion_id = connection.execute(
+            db.select(
+                db.sql.func.max(self._subversions_table.c.subversion_id)  # pylint: disable=not-callable
+            ).where(
+                db.and_(
+                    self._subversions_table.c.object_id == object_id,
+                    self._subversions_table.c.version_id == version_id
+                )
+            )
+        ).scalar()
         if previous_subversion_id is None:
             subversion_id = 0
         else:
@@ -769,9 +784,9 @@ class VersionedJSONSerializableObjectTables:
                 self._subversions_table.c.schema,
                 self._subversions_table.c.user_id,
                 self._subversions_table.c.utc_datetime,
-                None,
-                None,
-                None
+                db.null(),
+                db.null(),
+                db.null()
             )
             .where(
                 db.and_(
@@ -861,7 +876,7 @@ class VersionedJSONSerializableObjectTables:
             self,
             filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
             action_table: typing.Any = None,
-            action_filter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+            action_filter: typing.Optional[db.sql.ColumnElement[bool]] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             table: typing.Any = None,
             parameters: typing.Optional[typing.Dict[str, typing.Any]] = None,

@@ -3,9 +3,7 @@ mypy
 pycodestyle
 pyflakes
 pylint
-types-Flask-SQLAlchemy
 types-Markdown
-types-SQLAlchemy
 types-babel
 types-beautifulsoup4
 types-bleach

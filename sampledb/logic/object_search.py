@@ -156,7 +156,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(operand)), None  # type: ignore
+    return outer_filter(not_(operand)), None
 
 
 @binary_operator_handler(datatypes.Boolean, datatypes.Boolean, 'and')
@@ -684,7 +684,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.quantity_equals(right_operand, left_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.quantity_equals(right_operand, left_operand))), None
 
 
 @binary_operator_handler(Attribute, datatypes.Quantity, '!=')
@@ -697,7 +697,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.quantity_equals(left_operand, right_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.quantity_equals(left_operand, right_operand))), None
 
 
 @binary_operator_handler(datatypes.Text, Attribute, '==')
@@ -1197,7 +1197,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.reference_equals(left_operand, right_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.reference_equals(left_operand, right_operand))), None
 
 
 @binary_operator_handler(Reference, Attribute, '!=')
@@ -1210,7 +1210,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.reference_equals(right_operand, left_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.reference_equals(right_operand, left_operand))), None
 
 
 def transform_literal_to_query(

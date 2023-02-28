@@ -155,7 +155,7 @@ def get_background_task_result(task_id: int, delete_when_final: bool = True) -> 
     :param delete_when_final: if true, the task will be deleted if it is in an final state (done/failed)
     :return: returns the status and the result of an background task as a dictionary
     """
-    task: BackgroundTask = BackgroundTask.query.filter_by(id=task_id).first()
+    task: typing.Optional[BackgroundTask] = BackgroundTask.query.filter_by(id=task_id).first()
     if not task:
         return None
 
@@ -163,7 +163,12 @@ def get_background_task_result(task_id: int, delete_when_final: bool = True) -> 
 
     if task.status.is_final():
         if task.type == 'dataverse_export':
-            result["result"] = task.result["url" if task.status == BackgroundTaskStatus.DONE else "error_message"]
+            if task.result is None:
+                result["result"] = ""
+            elif task.status == BackgroundTaskStatus.DONE:
+                result = task.result.get("url", "")
+            else:
+                result = task.result.get("error_message", "")
 
         if delete_when_final:
             db.session.delete(task)
@@ -207,8 +212,8 @@ def _claim_background_task(
                 status=BackgroundTaskStatus.CLAIMED
             )
         )
-        updated_rowcount = db.session.execute(stmt).rowcount
-        db.session.commit()
+        with db.engine.begin() as connection:
+            updated_rowcount = connection.execute(stmt).rowcount
         return bool(updated_rowcount == 1)
     except Exception:
         # database might be temporarily unavailable, assume task was not claimed

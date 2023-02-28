@@ -830,7 +830,7 @@ def get_dataverse_export_state(object_id: int) -> typing.Optional[DataverseExpor
     dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
     if dataverse_export is None:
         return None
-    return dataverse_export.status  # type: ignore
+    return dataverse_export.status
 
 
 def get_dataverse_url(object_id: int) -> typing.Optional[str]:
@@ -843,7 +843,7 @@ def get_dataverse_url(object_id: int) -> typing.Optional[str]:
     dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
     if dataverse_export is None:
         return None
-    return dataverse_export.dataverse_url  # type: ignore
+    return dataverse_export.dataverse_url
 
 
 def get_user_valid_api_token(server_url: str, user_id: int) -> typing.Optional[str]:

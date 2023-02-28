@@ -37,7 +37,7 @@ def markdown_to_safe_html(markdown: str, use_cache: bool = True, anchor_prefix: 
             MarkdownToHTMLCacheEntry.parameters['anchor_prefix'].astext == anchor_prefix
         ).first()
         if cache_entry is not None and cache_entry.html is not None:
-            return cache_entry.html  # type: ignore
+            return cache_entry.html
 
     toc_extension = TocExtension(
         marker='',

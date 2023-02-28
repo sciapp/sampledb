@@ -36,12 +36,12 @@ class Action:
     This class provides an immutable wrapper around models.actions.Action.
     """
     id: int
-    type_id: int
+    type_id: typing.Optional[int]
     type: typing.Optional['ActionType']
-    instrument_id: int
+    instrument_id: typing.Optional[int]
     instrument: typing.Optional[instruments.Instrument]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
-    user_id: int
+    user_id: typing.Optional[int]
     user: typing.Optional[users.User]
     is_hidden: bool
     name: typing.Dict[str, str]
@@ -49,8 +49,8 @@ class Action:
     description_is_markdown: bool
     short_description: typing.Dict[str, str]
     short_description_is_markdown: bool
-    fed_id: int
-    component_id: int
+    fed_id: typing.Optional[int]
+    component_id: typing.Optional[int]
     component: typing.Optional[components.Component]
     admin_only: bool
     disable_create_objects: bool
@@ -247,7 +247,7 @@ def check_action_exists(
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
-    if not db.session.query(db.exists().where(models.Action.id == action_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(models.Action.id == action_id)).scalar():
         raise errors.ActionDoesNotExistError()
 
 
@@ -263,10 +263,10 @@ def get_action_owner_id(
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
     """
-    row_or_none: typing.Optional[typing.Tuple[int]] = db.session.query(models.Action.user_id).filter(models.Action.id == action_id).first()  # type: ignore
+    row_or_none = db.session.query(models.Action.user_id).filter(models.Action.id == action_id).first()
     if row_or_none is None:
         raise errors.ActionDoesNotExistError()
-    return row_or_none[0]
+    return typing.cast(typing.Optional[int], row_or_none[0])
 
 
 def get_mutable_action(

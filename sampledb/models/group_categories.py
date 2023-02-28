@@ -1,7 +1,14 @@
+import typing
+
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import Mapped, Query, relationship
 
 from .. import db
+from .utils import Model
 
+if typing.TYPE_CHECKING:
+    from .groups import Group
+    from .projects import Project
 
 basic_group_category_association_table = db.Table(
     "basic_group_category_association_table",
@@ -18,11 +25,14 @@ project_group_category_association_table = db.Table(
 )
 
 
-class GroupCategory(db.Model):  # type: ignore
+class GroupCategory(Model):
     __tablename__ = 'group_categories'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(postgresql.JSON, nullable=False)
-    parent_category_id = db.Column(db.Integer, db.ForeignKey('group_categories.id', ondelete="CASCADE"), nullable=True)
-    basic_groups = db.relationship("Group", secondary=basic_group_category_association_table, backref="categories")
-    project_groups = db.relationship("Project", secondary=project_group_category_association_table, backref="categories")
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    name: Mapped[typing.Dict[str, str]] = db.Column(postgresql.JSON, nullable=False)
+    parent_category_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('group_categories.id', ondelete="CASCADE"), nullable=True)
+    basic_groups: Mapped[typing.List['Group']] = relationship("Group", secondary=basic_group_category_association_table, back_populates="categories")
+    project_groups: Mapped[typing.List['Project']] = relationship("Project", secondary=project_group_category_association_table, back_populates="categories")
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["GroupCategory"]]

@@ -11,11 +11,6 @@ import os
 import random
 import threading
 import time
-import warnings
-
-# enable SQLAlchemy 2.0 warnings by setting this before importing sqlalchemy
-# see the handle_warnings fixture below for how these warnings are handled
-os.environ['SQLALCHEMY_WARN_20'] = '1'
 
 # enable Flask debug mode before importing flask
 os.environ['FLASK_DEBUG'] = '1'
@@ -60,14 +55,6 @@ sampledb.config.FEDERATION_UUID = 'aef05dbb-2763-49d1-964d-71205d8da0bf'
 
 # restore possibly overridden configuration data from environment variables
 sampledb.config.use_environment_configuration(env_prefix='SAMPLEDB_')
-
-
-@pytest.fixture(autouse=True)
-def handle_warnings():
-    with warnings.catch_warnings():
-        # raise SQLAlchemy 2.0 warnings as errors
-        warnings.simplefilter("error", category=sqlalchemy.exc.RemovedIn20Warning)
-        yield None
 
 
 def create_flask_server(app):

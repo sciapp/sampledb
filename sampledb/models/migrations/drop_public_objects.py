@@ -26,13 +26,13 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
         SELECT object_id
         FROM public_objects
     """)).fetchall()
-    all_user_object_permissions = db.session.execute(db.text("""
+    all_user_object_permissions_result = db.session.execute(db.text("""
         SELECT object_id, permissions
         FROM all_user_object_permissions
     """)).fetchall()
     all_user_object_permissions = {
         object_id: permissions
-        for object_id, permissions in all_user_object_permissions
+        for object_id, permissions in all_user_object_permissions_result
     }
     for object_id, in public_objects:
         if object_id not in all_user_object_permissions:

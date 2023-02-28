@@ -149,12 +149,15 @@ def get_user_object_permissions(
         FROM user_object_permissions_by_all
         WHERE (user_id = :user_id OR user_id IS NULL) AND (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (requires_instruments IS FALSE OR :enable_instruments IS TRUE)
         """)
-        permissions_int = db.session.execute(stmt, {
+        permissions_int_result = db.session.execute(stmt, {
             'user_id': user_id,
             'object_id': object_id,
             'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
             'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS']
-        }).fetchone()[0]
+        }).fetchone()
+        if permissions_int_result is None:
+            return Permissions.NONE
+        permissions_int = permissions_int_result[0]
         if permissions_int is None or permissions_int <= 0:
             return Permissions.NONE
         elif include_readonly and user.is_readonly and permissions_int in (1, 2, 3):

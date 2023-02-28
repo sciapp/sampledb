@@ -34,10 +34,10 @@ class InstrumentTranslation:
         return InstrumentTranslation(
             instrument_id=instrument_translation.instrument_id,
             language_id=instrument_translation.language_id,
-            name=instrument_translation.name,
-            description=instrument_translation.description,
-            short_description=instrument_translation.short_description,
-            notes=instrument_translation.notes
+            name=instrument_translation.name or '',
+            description=instrument_translation.description or '',
+            short_description=instrument_translation.short_description or '',
+            notes=instrument_translation.notes or ''
         )
 
     @property

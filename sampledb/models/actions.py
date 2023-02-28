@@ -6,7 +6,16 @@
 import enum
 import typing
 
+from sqlalchemy.orm import relationship, Query, Mapped
+
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .components import Component
+    from .action_translations import ActionTranslation, ActionTypeTranslation
+    from .instruments import Instrument
+    from .users import User
 
 usable_in_action_types_table = db.Table(
     'usable_in_action_types', db.metadata,
@@ -24,7 +33,7 @@ class SciCatExportType(enum.Enum):
     SAMPLE = 2
 
 
-class ActionType(db.Model):  # type: ignore
+class ActionType(Model):
     __tablename__ = 'action_types'
     __table_args__ = (
         db.UniqueConstraint('fed_id', 'component_id', name='action_types_fed_id_component_id_key'),
@@ -38,29 +47,35 @@ class ActionType(db.Model):  # type: ignore
     SIMULATION = -100 + 3
     TEMPLATE = -100 + 4
 
-    id = db.Column(db.Integer, primary_key=True)
-    admin_only = db.Column(db.Boolean, nullable=False, default=False)
-    show_on_frontpage = db.Column(db.Boolean, nullable=False, default=False)
-    show_in_navbar = db.Column(db.Boolean, nullable=False, default=False)
-    enable_labels = db.Column(db.Boolean, nullable=False, default=True)
-    enable_files = db.Column(db.Boolean, nullable=False, default=True)
-    enable_locations = db.Column(db.Boolean, nullable=False, default=True)
-    enable_publications = db.Column(db.Boolean, nullable=False, default=True)
-    enable_comments = db.Column(db.Boolean, nullable=False, default=True)
-    enable_activity_log = db.Column(db.Boolean, nullable=False, default=True)
-    enable_related_objects = db.Column(db.Boolean, nullable=False, default=True)
-    enable_project_link = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
-    disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
-    is_template = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    usable_in_action_types = db.relationship('ActionType', secondary=usable_in_action_types_table,
-                                             primaryjoin=id == usable_in_action_types_table.c.owner_action_type,
-                                             secondaryjoin=id == usable_in_action_types_table.c.usable_in_action_types)
-    component = db.relationship('Component')
-    scicat_export_type = db.Column(db.Enum(SciCatExportType), nullable=True)
-    translations = db.relationship('ActionTypeTranslation', lazy='selectin')
-    order_index = db.Column(db.Integer, nullable=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    admin_only: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    show_on_frontpage: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    show_in_navbar: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    enable_labels: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_files: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_locations: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_publications: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_comments: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_activity_log: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_related_objects: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    enable_project_link: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    disable_create_objects: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    is_template: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    usable_in_action_types: Mapped[typing.List['ActionType']] = relationship(
+        'ActionType',
+        secondary=usable_in_action_types_table,
+        primaryjoin=id == usable_in_action_types_table.c.owner_action_type,
+        secondaryjoin=id == usable_in_action_types_table.c.usable_in_action_types
+    )
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    scicat_export_type: Mapped[typing.Optional[SciCatExportType]] = db.Column(db.Enum(SciCatExportType), nullable=True)
+    translations: Mapped[typing.List['ActionTypeTranslation']] = relationship('ActionTypeTranslation', lazy='selectin')
+    order_index: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ActionType"]]
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id!r})>'
@@ -114,7 +129,7 @@ class ActionType(db.Model):  # type: ignore
         }
 
 
-class Action(db.Model):  # type: ignore
+class Action(Model):
     __tablename__ = 'actions'
     __table_args__ = (
         db.CheckConstraint(
@@ -124,23 +139,26 @@ class Action(db.Model):  # type: ignore
         db.UniqueConstraint('fed_id', 'component_id', name='actions_fed_id_component_id_key')
     )
 
-    id = db.Column(db.Integer, primary_key=True)
-    type_id = db.Column(db.Integer, db.ForeignKey("action_types.id"), nullable=True)
-    type = db.relationship(ActionType, lazy='selectin')
-    instrument_id = db.Column(db.Integer, db.ForeignKey("instruments.id"), nullable=True)
-    instrument = db.relationship("Instrument", backref="actions", lazy='selectin')
-    schema = db.Column(db.JSON, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
-    user = db.relationship("User", backref="actions", lazy='selectin')
-    description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
-    is_hidden = db.Column(db.Boolean, nullable=False, default=False)
-    short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
-    translations = db.relationship('ActionTranslation', lazy='selectin')
-    admin_only = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
-    disable_create_objects = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey("action_types.id"), nullable=True)
+    type: Mapped[typing.Optional[ActionType]] = relationship(ActionType, lazy='selectin')
+    instrument_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey("instruments.id"), nullable=True)
+    instrument: Mapped[typing.Optional['Instrument']] = relationship("Instrument", backref="actions", lazy='selectin')
+    schema: Mapped[typing.Optional[typing.Dict[str, typing.Any]]] = db.Column(db.JSON, nullable=True)
+    user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    user: Mapped[typing.Optional['User']] = relationship("User", backref="actions", lazy='selectin')
+    description_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    short_description_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    translations: Mapped[typing.List['ActionTranslation']] = relationship('ActionTranslation', lazy='selectin')
+    admin_only: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    disable_create_objects: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Action"]]
 
     def __init__(
             self,
@@ -156,17 +174,19 @@ class Action(db.Model):  # type: ignore
             admin_only: bool = False,
             disable_create_objects: bool = False
     ) -> None:
-        self.type_id = action_type_id
-        self.instrument_id = instrument_id
-        self.schema = schema
-        self.user_id = user_id
-        self.description_is_markdown = description_is_markdown
-        self.is_hidden = is_hidden
-        self.short_description_is_markdown = short_description_is_markdown
-        self.fed_id = fed_id
-        self.component_id = component_id
-        self.admin_only = admin_only
-        self.disable_create_objects = disable_create_objects
+        super().__init__(
+            type_id=action_type_id,
+            instrument_id=instrument_id,
+            schema=schema,
+            user_id=user_id,
+            description_is_markdown=description_is_markdown,
+            is_hidden=is_hidden,
+            short_description_is_markdown=short_description_is_markdown,
+            fed_id=fed_id,
+            component_id=component_id,
+            admin_only=admin_only,
+            disable_create_objects=disable_create_objects
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(Action, other):

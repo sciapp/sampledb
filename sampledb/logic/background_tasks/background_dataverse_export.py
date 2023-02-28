@@ -115,13 +115,12 @@ def handle_dataverse_export_task(
                 )
 
             expiration_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
-            row_update = {
+            BackgroundTask.query.filter_by(id=task_id).update({
                 "result": {
                     f"{result_key}": url_or_error
                 },
                 "expiration_date": expiration_date
-            }
-            BackgroundTask.query.filter_by(id=task_id).update(row_update)
+            })
             db.session.commit()
             return success, None
         else:

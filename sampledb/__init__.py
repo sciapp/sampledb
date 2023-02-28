@@ -165,7 +165,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     login_manager.init_app(app)
     mail.init_app(app)
-    db.init_app(app)  # type: ignore
+    db.init_app(app)
     babel.init_app(app)
     if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
         sampledb.dashboard.init_app(app)

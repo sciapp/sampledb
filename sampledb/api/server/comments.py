@@ -20,7 +20,7 @@ def comment_to_json(comment: Comment) -> typing.Dict[str, typing.Any]:
         'object_id': comment.object_id,
         'comment_id': comment.id,
         'user_id': comment.user_id,
-        'utc_datetime': comment.utc_datetime.isoformat(),
+        'utc_datetime': comment.utc_datetime.isoformat() if comment.utc_datetime is not None else None,
         'content': comment.content
     }
     return comment_json

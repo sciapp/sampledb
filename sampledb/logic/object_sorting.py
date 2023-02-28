@@ -59,7 +59,7 @@ def creation_date() -> typing.Callable[[typing.Any, typing.Any], typing.Any]:
     :return: the sorting function
     """
     def sorting_func(current_columns: typing.Any, original_columns: typing.Any) -> typing.Any:
-        return sqlalchemy.sql.func.coalesce(original_columns.utc_datetime, current_columns.utc_datetime)
+        return sqlalchemy.sql.func.coalesce(original_columns.utc_datetime, current_columns.utc_datetime)  # pylint: disable=not-callable
     setattr(sorting_func, 'require_original_columns', True)
     return sorting_func
 

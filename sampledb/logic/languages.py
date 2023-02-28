@@ -122,7 +122,8 @@ def update_language(
         exists for a different language or the current language code matches
         a supported locale language code
     :raise errors.LanguageDoesNotExistError: if the language name contains a
-        translation for an unknown language code
+        translation for an unknown language code or the language itself does
+        not exist
     """
 
     all_language_codes = {
@@ -132,6 +133,8 @@ def update_language(
     all_language_codes.add(lang_code)
 
     language = models.Language.query.filter_by(id=language_id).first()
+    if language is None:
+        raise errors.LanguageDoesNotExistError()
     if language.lang_code != lang_code:
         if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
             raise errors.LanguageAlreadyExistsError()

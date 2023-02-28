@@ -268,7 +268,7 @@ def check_user_exists(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():
         raise errors.UserDoesNotExistError()
 
 
@@ -293,7 +293,7 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
         if component_id is not None:
             check_component_exists(component_id)
         raise errors.UserDoesNotExistError()
-    return typing.cast(users.User, user)
+    return user
 
 
 def update_user(

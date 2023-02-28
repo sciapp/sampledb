@@ -32,7 +32,7 @@ class ActionType:
     enable_project_link: bool
     disable_create_objects: bool
     is_template: bool
-    order_index: int
+    order_index: typing.Optional[int]
     usable_in_action_types: typing.List['ActionType']
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -107,7 +107,7 @@ def check_action_type_exists(
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     """
-    if not db.session.query(db.exists().where(models.ActionType.id == action_type_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(models.ActionType.id == action_type_id)).scalar():
         raise errors.ActionTypeDoesNotExistError()
 
 
@@ -335,9 +335,14 @@ def update_action_type(
     action_type.enable_project_link = enable_project_link
     action_type.disable_create_objects = disable_create_objects
     action_type.is_template = is_template
-    action_type.usable_in_action_types = [
+    usable_in_action_types = [
         models.ActionType.query.filter_by(id=action_type_id).first()
         for action_type_id in usable_in_action_type_ids
+    ]
+    action_type.usable_in_action_types = [
+        other_action_type
+        for other_action_type in usable_in_action_types
+        if other_action_type is not None
     ]
     action_type.scicat_export_type = scicat_export_type
     db.session.add(action_type)
@@ -349,7 +354,7 @@ def is_usable_in_action_types_table_empty() -> bool:
     """
     Check if the usable in action types table has entries.
     """
-    return db.session.query(models.actions.usable_in_action_types_table).first() is None  # type: ignore
+    return db.session.query(models.actions.usable_in_action_types_table).first() is None
 
 
 def set_action_types_order(index_list: typing.List[int]) -> None:
@@ -360,5 +365,6 @@ def set_action_types_order(index_list: typing.List[int]) -> None:
     """
     for i, action_type_id in enumerate(index_list):
         action_type = models.ActionType.query.filter_by(id=action_type_id).first()
-        action_type.order_index = i
+        if action_type is not None:
+            action_type.order_index = i
     db.session.commit()

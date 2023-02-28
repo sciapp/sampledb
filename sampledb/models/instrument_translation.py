@@ -4,25 +4,34 @@
 """
 import typing
 
+from sqlalchemy.orm import relationship, Mapped, Query
+
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .languages import Language
 
 __author__ = 'Du Kim Nguyen <k.nguyen@fz-juelich.de>'
 
 
-class InstrumentTranslation(db.Model):  # type: ignore
+class InstrumentTranslation(Model):
     __tablename__ = 'instrument_translations'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
 
-    instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id'))
+    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('instruments.id'), nullable=False)
 
-    language_id = db.Column(db.Integer, db.ForeignKey('languages.id'))
-    language = db.relationship('Language')
+    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'), nullable=False)
+    language: Mapped['Language'] = relationship('Language')
 
-    name = db.Column(db.String, nullable=True, default='')
-    description = db.Column(db.String, nullable=True, default='')
-    notes = db.Column(db.String, nullable=True, default='')
-    short_description = db.Column(db.String, nullable=True, default='')
+    name: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
+    description: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
+    notes: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
+    short_description: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentTranslation"]]
 
     __table_args__ = (
         db.UniqueConstraint('language_id', 'instrument_id', name='_language_id_instrument_id_uc'),
@@ -41,12 +50,14 @@ class InstrumentTranslation(db.Model):  # type: ignore
             notes: str = '',
             short_description: str = ''
     ) -> None:
-        self.instrument_id = instrument_id
-        self.language_id = language_id
-        self.name = name
-        self.description = description
-        self.notes = notes
-        self.short_description = short_description
+        super().__init__(
+            instrument_id=instrument_id,
+            language_id=language_id,
+            name=name,
+            description=description,
+            notes=notes,
+            short_description=short_description
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, InstrumentTranslation):

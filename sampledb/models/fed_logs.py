@@ -7,8 +7,14 @@ import enum
 import datetime
 import typing
 
+from sqlalchemy.orm import Mapped, Query, relationship
+
 from .files import File
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .users import User
 
 
 @enum.unique
@@ -22,15 +28,18 @@ class FedUserLogEntryType(enum.Enum):
     CREATE_REF_USER = 6
 
 
-class FedUserLogEntry(db.Model):  # type: ignore
+class FedUserLogEntry(Model):
     __tablename__ = 'fed_user_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedUserLogEntryType), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedUserLogEntryType] = db.Column(db.Enum(FedUserLogEntryType), nullable=False)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedUserLogEntry"]]
 
     def __init__(
             self,
@@ -40,13 +49,13 @@ class FedUserLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.user_id = user_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            user_id=user_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -64,17 +73,20 @@ class FedObjectLogEntryType(enum.Enum):
     REMOTE_IMPORT_OBJECT = 7
 
 
-class FedObjectLogEntry(db.Model):  # type: ignore
+class FedObjectLogEntry(Model):
     __tablename__ = 'fed_object_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedObjectLogEntryType), nullable=False)
-    object_id = db.Column(db.Integer, db.ForeignKey('objects_current.object_id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    user = db.relationship('User')
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedObjectLogEntryType] = db.Column(db.Enum(FedObjectLogEntryType), nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('objects_current.object_id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user: Mapped[typing.Optional['User']] = relationship('User')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedObjectLogEntry"]]
 
     def __init__(
             self,
@@ -85,14 +97,14 @@ class FedObjectLogEntry(db.Model):  # type: ignore
             utc_datetime: typing.Optional[datetime.datetime] = None,
             user_id: typing.Optional[int] = None
     ) -> None:
-        self.type = type
-        self.object_id = object_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
-        self.user_id = user_id
+        super().__init__(
+            type=type,
+            object_id=object_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            user_id=user_id
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_id={self.object_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -109,15 +121,18 @@ class FedLocationLogEntryType(enum.Enum):
     CREATE_REF_LOCATION = 6
 
 
-class FedLocationLogEntry(db.Model):  # type: ignore
+class FedLocationLogEntry(Model):
     __tablename__ = 'fed_location_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedLocationLogEntryType), nullable=False)
-    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedLocationLogEntryType] = db.Column(db.Enum(FedLocationLogEntryType), nullable=False)
+    location_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedLocationLogEntry"]]
 
     def __init__(
             self,
@@ -127,13 +142,13 @@ class FedLocationLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.location_id = location_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            location_id=location_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, location_id={self.location_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -150,15 +165,18 @@ class FedLocationTypeLogEntryType(enum.Enum):
     CREATE_REF_LOCATION_TYPE = 6
 
 
-class FedLocationTypeLogEntry(db.Model):  # type: ignore
+class FedLocationTypeLogEntry(Model):
     __tablename__ = 'fed_location_type_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedLocationTypeLogEntryType), nullable=False)
-    location_type_id = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedLocationTypeLogEntryType] = db.Column(db.Enum(FedLocationTypeLogEntryType), nullable=False)
+    location_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedLocationTypeLogEntry"]]
 
     def __init__(
             self,
@@ -168,13 +186,13 @@ class FedLocationTypeLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.location_type_id = location_type_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            location_type_id=location_type_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, location_type_id={self.location_type_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -191,15 +209,18 @@ class FedActionLogEntryType(enum.Enum):
     CREATE_REF_ACTION = 6
 
 
-class FedActionLogEntry(db.Model):  # type: ignore
+class FedActionLogEntry(Model):
     __tablename__ = 'fed_action_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedActionLogEntryType), nullable=False)
-    action_id = db.Column(db.Integer, db.ForeignKey('actions.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedActionLogEntryType] = db.Column(db.Enum(FedActionLogEntryType), nullable=False)
+    action_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('actions.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedActionLogEntry"]]
 
     def __init__(
             self,
@@ -209,13 +230,13 @@ class FedActionLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.action_id = action_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            action_id=action_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, action_id={self.action_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -232,15 +253,18 @@ class FedActionTypeLogEntryType(enum.Enum):
     CREATE_REF_ACTION_TYPE = 6
 
 
-class FedActionTypeLogEntry(db.Model):  # type: ignore
+class FedActionTypeLogEntry(Model):
     __tablename__ = 'fed_action_type_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedActionTypeLogEntryType), nullable=False)
-    action_type_id = db.Column(db.Integer, db.ForeignKey('action_types.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedActionTypeLogEntryType] = db.Column(db.Enum(FedActionTypeLogEntryType), nullable=False)
+    action_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('action_types.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedActionTypeLogEntry"]]
 
     def __init__(
             self,
@@ -250,13 +274,13 @@ class FedActionTypeLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.action_type_id = action_type_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            action_type_id=action_type_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, action_type_id={self.action_type_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -273,15 +297,18 @@ class FedInstrumentLogEntryType(enum.Enum):
     CREATE_REF_INSTRUMENT = 6
 
 
-class FedInstrumentLogEntry(db.Model):  # type: ignore
+class FedInstrumentLogEntry(Model):
     __tablename__ = 'fed_instrument_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedInstrumentLogEntryType), nullable=False)
-    instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedInstrumentLogEntryType] = db.Column(db.Enum(FedInstrumentLogEntryType), nullable=False)
+    instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('instruments.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedInstrumentLogEntry"]]
 
     def __init__(
             self,
@@ -291,13 +318,13 @@ class FedInstrumentLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.instrument_id = instrument_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            instrument_id=instrument_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, instrument_id={self.instrument_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -314,15 +341,18 @@ class FedCommentLogEntryType(enum.Enum):
     CREATE_REF_COMMENT = 6
 
 
-class FedCommentLogEntry(db.Model):  # type: ignore
+class FedCommentLogEntry(Model):
     __tablename__ = 'fed_comment_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedCommentLogEntryType), nullable=False)
-    comment_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedCommentLogEntryType] = db.Column(db.Enum(FedCommentLogEntryType), nullable=False)
+    comment_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedCommentLogEntry"]]
 
     def __init__(
             self,
@@ -332,13 +362,13 @@ class FedCommentLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.comment_id = comment_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            comment_id=comment_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, comment_id={self.comment_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -355,16 +385,19 @@ class FedFileLogEntryType(enum.Enum):
     CREATE_REF_FILE = 6
 
 
-class FedFileLogEntry(db.Model):  # type: ignore
+class FedFileLogEntry(Model):
     __tablename__ = 'fed_file_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedFileLogEntryType), nullable=False)
-    object_id = db.Column(db.Integer, nullable=False)
-    file_id = db.Column(db.Integer, nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedFileLogEntryType] = db.Column(db.Enum(FedFileLogEntryType), nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, nullable=False)
+    file_id: Mapped[int] = db.Column(db.Integer, nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedFileLogEntry"]]
 
     __table_args__ = (
         db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]),
@@ -379,14 +412,14 @@ class FedFileLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.object_id = object_id
-        self.file_id = file_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            object_id=object_id,
+            file_id=file_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, file_id={self.file_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
@@ -403,15 +436,18 @@ class FedObjectLocationAssignmentLogEntryType(enum.Enum):
     CREATE_REF_OBJECT_LOCATION_ASSIGNMENT = 6
 
 
-class FedObjectLocationAssignmentLogEntry(db.Model):  # type: ignore
+class FedObjectLocationAssignmentLogEntry(Model):
     __tablename__ = 'fed_object_location_assignment_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FedObjectLocationAssignmentLogEntryType), nullable=False)
-    object_location_assignment_id = db.Column(db.Integer, db.ForeignKey('object_location_assignments.id'), nullable=False)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FedObjectLocationAssignmentLogEntryType] = db.Column(db.Enum(FedObjectLocationAssignmentLogEntryType), nullable=False)
+    object_location_assignment_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('object_location_assignments.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FedObjectLocationAssignmentLogEntry"]]
 
     def __init__(
             self,
@@ -421,13 +457,13 @@ class FedObjectLocationAssignmentLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.object_location_assignment_id = object_location_assignment_id
-        self.component_id = component_id
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            object_location_assignment_id=object_location_assignment_id,
+            component_id=component_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_location_assignment_id={self.object_location_assignment_id}, utc_datetime={self.utc_datetime}, data={self.data})>'

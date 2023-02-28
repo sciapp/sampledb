@@ -23,8 +23,8 @@ class Publication:
     This class provides an immutable wrapper around models.object_publications.ObjectPublication.
     """
     doi: str
-    title: str
-    object_name: str
+    title: typing.Optional[str]
+    object_name: typing.Optional[str]
 
     @classmethod
     def from_database(cls, publication: models.object_publications.ObjectPublication) -> 'Publication':

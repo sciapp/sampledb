@@ -14,7 +14,9 @@ the functions in this module should be called from within a Flask app context.
 
 import typing
 import datetime
+
 import flask
+import sqlalchemy
 
 from .components import get_component_by_uuid
 from ..models import Objects, Object, Action, ActionType, Permissions
@@ -399,7 +401,7 @@ def get_object_versions(object_id: int) -> typing.List[Object]:
 
 def get_objects(
         filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
-        action_filter: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        action_filter: typing.Optional[sqlalchemy.sql.ColumnElement[bool]] = None,
         **kwargs: typing.Any
 ) -> typing.List[Object]:
     """

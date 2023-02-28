@@ -147,7 +147,7 @@ def create_group(
     group.members.append(user)
     db.session.add(group)
     db.session.commit()
-    return group
+    return Group.from_database(group)
 
 
 def update_group(
@@ -355,8 +355,15 @@ def add_user_to_group(group_id: int, user_id: int) -> None:
         include_expired_invitations=False,
         include_accepted_invitations=False
     )
-    for invitation in invitations:
-        mutable_invitation = groups.GroupInvitation.query.filter_by(id=invitation.id).first()
+    mutable_invitations = groups.GroupInvitation.query.filter(
+        groups.GroupInvitation.id.in_(
+            [
+                invitation.id
+                for invitation in invitations
+            ]
+        )
+    ).all()
+    for mutable_invitation in mutable_invitations:
         mutable_invitation.accepted = True
         db.session.add(mutable_invitation)
     db.session.commit()

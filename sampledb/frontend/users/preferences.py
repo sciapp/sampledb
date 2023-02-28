@@ -627,8 +627,12 @@ def confirm_email() -> FlaskResponseT:
                 email=email
             )
         elif salt == 'add_login':
-            auth = Authentication.query.filter(Authentication.user_id == user_id,
-                                               Authentication.login['login'].astext == email).first()
+            auth = Authentication.query.filter(
+                Authentication.user_id == user_id,
+                Authentication.login['login'].astext == email
+            ).first()
+            if auth is None:
+                return flask.abort(400)
             auth.confirmed = True
             db.session.add(auth)
         else:
