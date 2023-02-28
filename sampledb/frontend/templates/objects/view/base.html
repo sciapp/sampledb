@@ -1054,11 +1054,11 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
               {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
-              {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
+              {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
               <td>
                   {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
-              {% elif object_location_assignment.location is not none %}
+              {% elif object_location_assignment.location_id is not none %}
               <td>
                 {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) }}
               </td>
