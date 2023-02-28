@@ -113,6 +113,16 @@ def start_handler_threads(app: flask.Flask) -> None:
         handler_thread.start()
         handler_threads.append(handler_thread)
 
+    if not daemon:
+        # create thread that takes care of stopping the background task threads if
+        # the main thread exits without stopping them, e.g. for scripts
+        # this is only necessary if the handler threads are not daemons
+        def cleanup_thread_function() -> None:
+            threading.main_thread().join()
+            stop_handler_threads(app)
+
+        threading.Thread(target=cleanup_thread_function).start()
+
 
 def stop_handler_threads(app: flask.Flask) -> None:
     """
