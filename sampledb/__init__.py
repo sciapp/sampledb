@@ -228,7 +228,39 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     @app.after_request
     def set_csp_header(response: flask.Response) -> flask.Response:
-        content_security_policy = f"default-src 'self'; img-src 'self' https: http: blob: data:; script-src 'self' 'nonce-{sampledb.utils.generate_inline_script_nonce()}'; style-src 'self' 'unsafe-inline'; report-uri /csp-violation-report"
+        default_sources = [
+            "'self'",
+        ]
+        image_sources = [
+            "'self'",
+            "https:",
+            "http:",
+            "blob:",
+            "data:",
+        ]
+        script_sources = [
+            "'self'",
+            f"'nonce-{sampledb.utils.generate_inline_script_nonce()}'",
+        ]
+        style_sources = [
+            "'self'",
+            "'unsafe-inline'",
+        ]
+        connect_sources = [
+            "'self'",
+        ]
+        if flask.request.blueprint == 'dashboard':
+            script_sources += [
+                "'unsafe-eval'",
+                "https://cdnjs.cloudflare.com/ajax/libs/d3/",
+                "https://ajax.googleapis.com/ajax/libs/angularjs/",
+                "https://cdnjs.cloudflare.com/ajax/libs/angular.js/",
+                "https://unpkg.com/sunburst-chart",
+            ]
+            connect_sources += [
+                "https://pypi.org/pypi/Flask-MonitoringDashboard/json",
+            ]
+        content_security_policy = f"default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; report-uri /csp-violation-report"
         if app.config.get('TESTING', True):
             response.headers["Content-Security-Policy-Report-Only"] = content_security_policy
         elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):
