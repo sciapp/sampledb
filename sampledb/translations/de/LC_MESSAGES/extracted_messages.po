@@ -84,6 +84,12 @@ msgstr "Die angefragte Aktion existiert nicht."
 msgid "Only administrators can create actions of this type."
 msgstr "Nur Administratoren können Aktionen diesen Typs erstellen."
 
+msgid "Tags"
+msgstr "Tags"
+
+msgid "GHS Hazards"
+msgstr "GHS Gefahren"
+
 msgid "Unnamed Instrument"
 msgstr "Unbenanntes Instrument"
 
@@ -1020,9 +1026,6 @@ msgid ""
 msgstr ""
 "Die erweiterte Suche wurde automatisch verwendet. Suchen Sie nach "
 "\"%(query_string)s\" um die einfache Suche zu verwenden."
-
-msgid "Tags"
-msgstr "Tags"
 
 msgid "Hazards"
 msgstr "Gefahren"

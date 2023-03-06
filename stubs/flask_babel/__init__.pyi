@@ -58,6 +58,9 @@ def lazy_gettext(
 def refresh() -> None:
     ...
 
+def force_locale(locale: str) -> typing.ContextManager[None]:
+    ...
+
 
 class Babel:
     def __init__(
@@ -76,4 +79,7 @@ class Babel:
             locale_selector: typing.Optional[typing.Callable[[], str]] = None,
             timezone_selector: typing.Optional[typing.Callable[[], typing.Optional[str]]] = None,
     ) -> None:
+        ...
+
+    def list_translations(self) -> typing.List[babel.Locale]:
         ...

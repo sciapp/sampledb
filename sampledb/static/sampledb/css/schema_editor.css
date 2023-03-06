@@ -83,14 +83,14 @@
     display: none;
 }
 
-.schema-editor-template-property-settings,
-.schema-editor-quantity-property-settings,
-.schema-editor-bool-property-settings,
-.schema-editor-text-property-settings,
-.schema-editor-multiline-property-settings,
-.schema-editor-markdown-property-settings,
-.schema-editor-choice-property-settings,
-.schema-editor-user-property-settings {
+.schema-editor-template-property-setting,
+.schema-editor-quantity-property-setting,
+.schema-editor-bool-property-setting,
+.schema-editor-text-property-setting,
+.schema-editor-multiline-property-setting,
+.schema-editor-markdown-property-setting,
+.schema-editor-choice-property-setting,
+.schema-editor-user-property-setting {
     display: none;
 }
 .schema-error-message {
