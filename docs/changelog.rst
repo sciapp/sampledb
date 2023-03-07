@@ -7,6 +7,7 @@ Version 0.21.5
 Currently in development.
 
 - Fixed object search filter by action or type
+- Fixed usage text in scripts
 
 Version 0.21.4
 --------------

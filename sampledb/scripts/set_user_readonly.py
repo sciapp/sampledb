@@ -2,7 +2,7 @@
 """
 Script for setting whether a user is limited to READ permissions or not.
 
-Usage: python -m sampledb set_user_readonly <user_id> <yes_or_no>
+Usage: sampledb set_user_readonly <user_id> <yes_or_no>
 """
 
 import sys
