@@ -170,6 +170,7 @@ def get_languages(
     language_query = models.Language.query
     if only_enabled_for_input:
         language_query = language_query.filter_by(enabled_for_input=True)
+    language_query = language_query.order_by(models.Language.id)
     return [
         Language.from_database(language)
         for language in language_query.all()

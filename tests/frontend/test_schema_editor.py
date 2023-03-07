@@ -36,6 +36,7 @@ def test_create_default_action(flask_server, driver, user):
     driver.get(flask_server.base_url + 'actions/new/')
 
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Test Schema', Keys.TAB)
 
     driver.find_element(By.NAME, 'action_submit').click()
 
@@ -46,11 +47,11 @@ def test_create_default_action(flask_server, driver, user):
     action_translation = sampledb.logic.action_translations.get_action_translation_for_action_in_language(action_id, sampledb.logic.languages.Language.ENGLISH)
     assert action_translation.name == 'Test Action'
     assert action.schema == {
-        'title': '',
+        'title': {'en': 'Test Schema'},
         'type': 'object',
         'properties': {
             'name': {
-                'title': 'Name',
+                'title': {'en': 'Name'},
                 'type': 'text'
             }
         },
@@ -72,7 +73,7 @@ def test_create_simple_action(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + 'actions/new/')
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action 2', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title"]').send_keys('Measurement Information', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Measurement Information', Keys.TAB)
     driver.find_element(By.NAME, 'is_public').click()
     driver.find_element(By.NAME, 'is_user_specific').click()
     driver.find_element(By.CSS_SELECTOR, '[data-id="input-type"]').click()
@@ -86,11 +87,11 @@ def test_create_simple_action(flask_server, driver, user):
     action_translation = sampledb.logic.action_translations.get_action_translation_for_action_in_language(action_id, sampledb.logic.languages.Language.ENGLISH)
     assert action_translation.name == 'Test Action 2'
     assert action.schema == {
-        'title': 'Measurement Information',
+        'title': {'en': 'Measurement Information'},
         'type': 'object',
         'properties': {
             'name': {
-                'title': 'Name',
+                'title': {'en': 'Name'},
                 'type': 'text'
             }
         },
@@ -104,6 +105,17 @@ def test_create_simple_action(flask_server, driver, user):
 
 def test_create_complex_action(flask_server, driver, user):
     with flask_server.app.app_context():
+        german_language = sampledb.logic.languages.get_language_by_lang_code('de')
+        sampledb.logic.languages.update_language(
+            language_id=german_language.id,
+            names=german_language.names,
+            lang_code=german_language.lang_code,
+            datetime_format_datetime=german_language.datetime_format_datetime,
+            datetime_format_moment=german_language.datetime_format_moment,
+            datetime_format_moment_output=german_language.datetime_format_moment_output,
+            enabled_for_input=True,
+            enabled_for_user_interface=True,
+        )
         template_action = sampledb.logic.actions.create_action(
             action_type_id=sampledb.models.ActionType.TEMPLATE,
             schema={
@@ -133,12 +145,14 @@ def test_create_complex_action(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + 'actions/new/')
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title"]').send_keys('Measurement Information', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Measurement Information', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (German)"]').send_keys('Messungsinformationen', Keys.TAB)
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_1-name-input').send_keys('text', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_1-title-input').send_keys('Example Text', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_1-title-input-en').send_keys('Example Text', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_1-title-input-de').send_keys('Beispieltext', Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-placeholder-checkbox"]/ancestor::label').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-placeholder-input"]').send_keys("Text Placeholder", Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-default-checkbox"]/ancestor::label').click()
@@ -148,12 +162,13 @@ def test_create_complex_action(flask_server, driver, user):
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-maxlength-checkbox"]/ancestor::label').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-maxlength-input"]').send_keys("10", Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-checkbox"]/ancestor::label').click()
-    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-input"]').send_keys("This is a Test", Keys.TAB)
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-input-en"]').send_keys("This is a Test", Keys.TAB)
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-input-de"]').send_keys("Dies ist ein Test", Keys.TAB)
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_2-name-input').send_keys('multiline_text', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_2-title-input').send_keys('Example Multiline Text', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_2-title-input-en').send_keys('Example Multiline Text', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_2-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_2-type-input"]/parent::div/descendant::span[contains(text(), "Text (Multiline)")]').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_2-required-input"]/following::div').click()
@@ -170,7 +185,7 @@ def test_create_complex_action(flask_server, driver, user):
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_3-name-input').send_keys('markdown_text', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_3-title-input').send_keys('Example Markdown Text', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_3-title-input-en').send_keys('Example Markdown Text', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_3-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_3-type-input"]/parent::div/descendant::span[contains(text(), "Text (Markdown)")]').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_3-markdown-placeholder-checkbox"]/ancestor::label').click()
@@ -186,7 +201,7 @@ def test_create_complex_action(flask_server, driver, user):
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_4-name-input').send_keys('choices_text', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_4-title-input').send_keys('Example Choices Text', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_4-title-input-en').send_keys('Example Choices Text', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_4-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_4-type-input"]/parent::div/descendant::span[contains(text(), "Text (Choice)")]').click()
     driver.find_element(By.XPATH, '//textarea[@id="schema-editor-object__new_property_4-choice-choices-input"]').send_keys("Choice 1", Keys.ENTER)
@@ -197,7 +212,7 @@ def test_create_complex_action(flask_server, driver, user):
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_5-name-input').send_keys('quantity', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_5-title-input').send_keys('Example Quantity', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_5-title-input-en').send_keys('Example Quantity', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_5-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_5-type-input"]/parent::div/descendant::span[contains(text(), "Quantity")]').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_5-quantity-placeholder-checkbox"]/ancestor::label').click()
@@ -209,7 +224,7 @@ def test_create_complex_action(flask_server, driver, user):
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_6-name-input').send_keys('boolean', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_6-title-input').send_keys('Example Boolean', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_6-title-input-en').send_keys('Example Boolean', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_6-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_6-type-input"]/parent::div/descendant::span[contains(text(), "Boolean")]').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_6-bool-default-checkbox"]/ancestor::label').click()
@@ -218,49 +233,49 @@ def test_create_complex_action(flask_server, driver, user):
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_7-name-input').send_keys('datetime', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_7-title-input').send_keys('Example Datetime', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_7-title-input-en').send_keys('Example Datetime', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_7-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_7-type-input"]/parent::div/descendant::span[contains(text(), "Datetime")]').click()
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_8-name-input').send_keys('sample', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_8-title-input').send_keys('Example Sample', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_8-title-input-en').send_keys('Example Sample', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_8-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_8-type-input"]/parent::div/descendant::span[contains(text(), "Sample")]').click()
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_9-name-input').send_keys('measurement', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_9-title-input').send_keys('Example Measurement', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_9-title-input-en').send_keys('Example Measurement', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_9-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_9-type-input"]/parent::div/descendant::span[contains(text(), "Measurement")]').click()
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_10-name-input').send_keys('user', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_10-title-input').send_keys('Example User', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_10-title-input-en').send_keys('Example User', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_10-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_10-type-input"]/parent::div/descendant::span[contains(text(), "User")]').click()
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_11-name-input').send_keys('object_reference', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_11-title-input').send_keys('Example Object Reference', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_11-title-input-en').send_keys('Example Object Reference', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_11-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_11-type-input"]/parent::div/descendant::span[contains(text(), "Object Reference")]').click()
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_12-name-input').send_keys('plotly_chart', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_12-title-input').send_keys('Example Plotly Chart', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_12-title-input-en').send_keys('Example Plotly Chart', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_12-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_12-type-input"]/parent::div/descendant::span[contains(text(), "Plotly Chart")]').click()
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_13-name-input').send_keys('schema_template', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_13-title-input').send_keys('Example Schema Template', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_13-title-input-en').send_keys('Example Schema Template', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_13-type-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_13-type-input"]/parent::div/descendant::span[contains(text(), "Schema Template")]').click()
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_13-template-id-input"]').click()
@@ -277,24 +292,33 @@ def test_create_complex_action(flask_server, driver, user):
     action_id = int(action_url[len(flask_server.base_url + 'actions/'):])
     action = sampledb.logic.actions.get_action(action_id)
     assert action.schema == {
-        'title': 'Measurement Information',
+        'title': {
+            'en': 'Measurement Information',
+            'de': 'Messungsinformationen'
+        },
         'type': 'object',
         'properties': {
             'name': {
-                'title': 'Name',
+                'title': {'en': 'Name'},
                 'type': 'text'
             },
             'text': {
-                'title': 'Example Text',
+                'title': {
+                    'en': 'Example Text',
+                    'de': 'Beispieltext'
+                },
                 'type': 'text',
                 'placeholder': 'Text Placeholder',
                 'default': 'Text Default',
-                'note': 'This is a Test',
+                'note': {
+                    'en': 'This is a Test',
+                    'de': 'Dies ist ein Test'
+                },
                 'minLength': 2,
                 'maxLength': 10
             },
             'multiline_text': {
-                'title': 'Example Multiline Text',
+                'title': {'en': 'Example Multiline Text'},
                 'type': 'text',
                 'multiline': True,
                 'placeholder': 'Multiline Placeholder',
@@ -303,7 +327,7 @@ def test_create_complex_action(flask_server, driver, user):
                 'maxLength': 20
             },
             'markdown_text': {
-                'title': 'Example Markdown Text',
+                'title': {'en': 'Example Markdown Text'},
                 'type': 'text',
                 'markdown': True,
                 'placeholder': 'Markdown Placeholder',
@@ -312,49 +336,49 @@ def test_create_complex_action(flask_server, driver, user):
                 'maxLength': 10
             },
             'choices_text': {
-                'title': 'Example Choices Text',
+                'title': {'en': 'Example Choices Text'},
                 'type': 'text',
                 'choices': ['Choice 1', 'Choice 2'],
                 'default': 'Choice 1'
             },
             'quantity': {
-                'title': 'Example Quantity',
+                'title': {'en': 'Example Quantity'},
                 'type': 'quantity',
                 'placeholder': 'Quantity Placeholder',
                 'units': 'm',
                 'default': 0.1
             },
             'boolean': {
-                'title': 'Example Boolean',
+                'title': {'en': 'Example Boolean'},
                 'type': 'bool',
                 'default': True
             },
             'datetime': {
-                'title': 'Example Datetime',
+                'title': {'en': 'Example Datetime'},
                 'type': 'datetime'
             },
             'sample': {
-                'title': 'Example Sample',
+                'title': {'en': 'Example Sample'},
                 'type': 'sample'
             },
             'measurement': {
-                'title': 'Example Measurement',
+                'title': {'en': 'Example Measurement'},
                 'type': 'measurement'
             },
             'user': {
-                'title': 'Example User',
+                'title': {'en': 'Example User'},
                 'type': 'user'
             },
             'plotly_chart': {
-                'title': 'Example Plotly Chart',
+                'title': {'en': 'Example Plotly Chart'},
                 'type': 'plotly_chart'
             },
             'object_reference': {
-                'title': 'Example Object Reference',
+                'title': {'en': 'Example Object Reference'},
                 'type': 'object_reference'
             },
             'schema_template': {
-                'title': 'Example Schema Template',
+                'title': {'en': 'Example Schema Template'},
                 'type': 'object',
                 'template': template_action.id,
                 'properties': {},
@@ -362,11 +386,17 @@ def test_create_complex_action(flask_server, driver, user):
                 'required': []
             },
             'tags': {
-                'title': 'Tags',
+                'title': {
+                    'en': 'Tags',
+                    'de': 'Tags'
+                },
                 'type': 'tags'
             },
             'hazards': {
-                'title': 'GHS Hazards',
+                'title': {
+                    'en': 'GHS Hazards',
+                    'de': 'GHS Gefahren'
+                },
                 'type': 'hazards'
             }
         },
@@ -401,12 +431,12 @@ def test_create_action_with_json_editor(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + 'actions/new/')
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action')
-    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title"]').send_keys('Measurement Information')
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Measurement Information')
 
     click_new_property_button(driver)
 
     driver.find_element(By.ID, 'schema-editor-object__new_property_1-name-input').send_keys('text', Keys.TAB)
-    driver.find_element(By.ID, 'schema-editor-object__new_property_1-title-input').send_keys('Example Text', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_1-title-input-en').send_keys('Example Text', Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-placeholder-checkbox"]/ancestor::label').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-placeholder-input"]').send_keys("Text Placeholder", Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-default-checkbox"]/ancestor::label').click()
@@ -416,7 +446,7 @@ def test_create_action_with_json_editor(flask_server, driver, user):
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-maxlength-checkbox"]/ancestor::label').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-text-maxlength-input"]').send_keys("10", Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-checkbox"]/ancestor::label').click()
-    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-input"]').send_keys("This is a Test", Keys.TAB)
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_1-generic-note-input-en"]').send_keys("This is a Test", Keys.TAB)
 
     driver.find_element(By.XPATH, '//input[@id="toggle-schema-editor"]/parent::div').click()
     schema_textarea = driver.find_element(By.ID, 'input-schema')
@@ -424,16 +454,24 @@ def test_create_action_with_json_editor(flask_server, driver, user):
 
     assert schema_text.strip() == """
 {
-    "title": "Measurement Information",
+    "title": {
+        "en": "Measurement Information"
+    },
     "type": "object",
     "properties": {
         "name": {
-            "title": "Name",
+            "title": {
+                "en": "Name"
+            },
             "type": "text"
         },
         "text": {
-            "title": "Example Text",
-            "note": "This is a Test",
+            "title": {
+                "en": "Example Text"
+            },
+            "note": {
+                "en": "This is a Test"
+            },
             "type": "text",
             "default": "Text Default",
             "placeholder": "Text Placeholder",
@@ -499,15 +537,15 @@ def test_create_action_with_json_editor(flask_server, driver, user):
     action_id = int(action_url[len(flask_server.base_url + 'actions/'):])
     action = sampledb.logic.actions.get_action(action_id)
     assert action.schema == {
-        "title": "Measurement Information",
+        "title": {"en": "Measurement Information"},
         "type": "object",
         "properties": {
             "name": {
-                "title": "Name",
+                "title": {"en": "Name"},
                 "type": "text"
             },
             "text": {
-                "title": "Example Text",
+                "title": {"en": "Example Text"},
                 "type": "text",
                 "default": "Text Default",
                 "placeholder": "Text Placeholder",
@@ -515,7 +553,7 @@ def test_create_action_with_json_editor(flask_server, driver, user):
                 "maxLength": 10
             },
             "user": {
-                "title": "Example User",
+                "title": {"en": "Example User"},
                 "type": "user"
             }
         },

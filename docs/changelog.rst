@@ -10,6 +10,7 @@ Currently in development.
 - Applied admin permissions to managing groups
 - Added selection to generate labels for multiple objects
 - Added timeseries data type
+- Added support for translated property titles and notes to the graphical schema editor
 
 Version 0.21.4
 --------------

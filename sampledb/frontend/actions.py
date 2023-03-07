@@ -14,7 +14,7 @@ from wtforms.validators import InputRequired, ValidationError, DataRequired
 import pygments
 import pygments.lexers.data
 import pygments.formatters
-from flask_babel import _
+from flask_babel import _, force_locale
 
 from . import frontend
 from .permission_forms import handle_permission_forms, set_up_permissions_forms
@@ -28,7 +28,7 @@ from ..logic.components import get_component
 from ..logic.favorites import get_user_favorite_action_ids
 from ..logic.instruments import get_user_instruments, get_instrument
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
-from ..logic import errors, users, languages
+from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.schemas.templates import reverse_substitute_templates, enforce_permissions
 from ..logic.settings import get_user_setting
@@ -40,7 +40,7 @@ from .utils import check_current_user_is_not_readonly, get_groups_form_data
 from ..utils import FlaskResponseT
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
-from .. import logic
+from .. import logic, babel
 from ..models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -300,10 +300,19 @@ def show_action_form(
     action_translations = []
     load_translations = False
 
+    languages = get_languages(only_enabled_for_input=True)
     allowed_language_ids = [
         language.id
-        for language in get_languages(only_enabled_for_input=True)
+        for language in languages
     ]
+    tags_translations = {}
+    hazards_translations = {}
+    translation_lang_codes = [locale.language for locale in babel.list_translations()]
+    for language in languages:
+        if language.lang_code in translation_lang_codes:
+            with force_locale(language.lang_code):
+                tags_translations[language.lang_code] = _('Tags')
+                hazards_translations[language.lang_code] = _('GHS Hazards')
 
     if action is not None:
         action_translations = get_action_translations_for_action(action.id, use_fallback=True)
@@ -317,11 +326,13 @@ def show_action_form(
         submit_text = "Create"
     else:
         schema_json = json.dumps({
-            'title': '',
+            'title': {'en': ''},
             'type': 'object',
             'properties': {
                 'name': {
-                    'title': 'Name',
+                    'title': {
+                        'en': 'Name'
+                    },
                     'type': 'text'
                 }
             },
@@ -480,7 +491,9 @@ def show_action_form(
                 may_change_type=action is None,
                 may_change_instrument=action is None,
                 may_set_user_specific=may_set_user_specific,
-                languages=get_languages(only_enabled_for_input=True),
+                languages=languages,
+                tags_translations=tags_translations,
+                hazards_translations=hazards_translations,
                 load_translations=load_translations,
                 ENGLISH=english,
                 instrument_is_fed=instrument_is_fed
@@ -529,7 +542,9 @@ def show_action_form(
                             may_change_type=action is None,
                             may_change_instrument=action is None,
                             may_set_user_specific=may_set_user_specific,
-                            languages=get_languages(only_enabled_for_input=True),
+                            languages=languages,
+                            tags_translations=tags_translations,
+                            hazards_translations=hazards_translations,
                             load_translations=load_translations,
                             ENGLISH=english,
                             instrument_is_fed=instrument_is_fed
@@ -628,7 +643,7 @@ def show_action_form(
             translation_data = json.loads(action_form.translations.data)
             for translation in translation_data:
                 translation['language_id'] = int(translation['language_id'])
-                translation['language'] = languages.get_language(translation['language_id'])
+                translation['language'] = get_language(translation['language_id'])
                 action_translations_by_id[translation['language_id']] = translation
                 if translation['language_id'] not in action_translations_by_id:
                     action_language_ids.append(translation['language_id'])
@@ -653,7 +668,9 @@ def show_action_form(
         may_change_type=action is None,
         may_change_instrument=action is None,
         may_set_user_specific=may_set_user_specific,
-        languages=get_languages(only_enabled_for_input=True),
+        languages=languages,
+        tags_translations=tags_translations,
+        hazards_translations=hazards_translations,
         load_translations=load_translations,
         ENGLISH=english,
         instrument_is_fed=instrument_is_fed
