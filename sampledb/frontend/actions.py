@@ -326,7 +326,9 @@ def show_action_form(
         submit_text = "Create"
     else:
         schema_json = json.dumps({
-            'title': {'en': ''},
+            'title': {
+                'en': 'Object Information'
+            },
             'type': 'object',
             'properties': {
                 'name': {

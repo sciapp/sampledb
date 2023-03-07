@@ -64,9 +64,20 @@ def validate_schema(
         for lang_code in schema['title'].keys():
             if lang_code not in all_language_codes:
                 raise ValidationError('title must only contain known languages', path)
-        for note_text in schema['title'].values():
-            if not isinstance(note_text, str):
+        for title_text in schema['title'].values():
+            if not isinstance(title_text, str):
                 raise ValidationError('title must only contain text', path)
+            if strict:
+                if not title_text:
+                    raise ValidationError('title must not be empty', path)
+                if re.match(r'^\s+$', title_text):
+                    raise ValidationError('title must not be whitespace only', path)
+    elif strict:
+        title_text = schema['title']
+        if not title_text:
+            raise ValidationError('title must not be empty', path)
+        if re.match(r'^\s+$', title_text):
+            raise ValidationError('title must not be whitespace only', path)
     if 'style' in schema and not isinstance(schema['style'], str):
         raise ValidationError('style must only contain text', path)
     if 'conditions' in schema:

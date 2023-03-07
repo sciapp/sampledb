@@ -106,6 +106,40 @@ def test_validate_schema_invalid_title():
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': {'en': b'Example'},
+        'type': 'bool'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': '',
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
+    schema = {
+        'title': {'en': ''},
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
+    schema = {
+        'title': ' ',
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
+    schema = {
+        'title': {'en': ' '},
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
 
 
 def test_validate_bool_schema():

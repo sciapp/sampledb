@@ -105,7 +105,7 @@ function enableSchemaEditor() {
         title_help.text(window.schema_editor_translations['title_must_not_be_whitespace']);
         title_group.addClass("has-error");
         has_error = true;
-      }else {
+      } else if (title !== "") {
         title_help.text("");
         title_group.removeClass("has-error");
         let schema = JSON.parse(input_schema.val());

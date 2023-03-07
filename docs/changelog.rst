@@ -11,6 +11,7 @@ Currently in development.
 - Added selection to generate labels for multiple objects
 - Added timeseries data type
 - Added support for translated property titles and notes to the graphical schema editor
+- Enforce that titles in schemas are not empty
 
 Version 0.21.4
 --------------
