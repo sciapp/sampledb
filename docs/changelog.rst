@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.21.5
+--------------
+
+Currently in development.
+
+- Fixed object search filter by action or type
+
 Version 0.21.4
 --------------
 
