@@ -2,7 +2,7 @@
 """
 Script for sending an announcement notification to all users.
 
-Usage: python -m sampledb send_announcement <text_file_name> <html_file_name>
+Usage: sampledb send_announcement <text_file_name> <html_file_name>
 """
 import typing
 

@@ -2,7 +2,7 @@
 """
 Script for running the SampleDB server.
 
-Usage: python -m sampledb run [<port>]
+Usage: sampledb run [<port>]
 """
 
 import sys

@@ -2,7 +2,7 @@
 """
 Scripts for administrating SampleDB
 
-Usage: python -m sampledb <script> [options]
+Usage: sampledb <script> [options]
 """
 
 import sys

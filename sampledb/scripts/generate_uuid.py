@@ -2,7 +2,7 @@
 """
 Script for generating an UUID to be used as database identifier in a federation.
 
-Usage: python -m sampledb generate_uuid
+Usage: sampledb generate_uuid
 """
 
 import typing

@@ -2,7 +2,7 @@
 """
 Script for listing all instruments in SampleDB.
 
-Usage: python -m sampledb list_instruments
+Usage: sampledb list_instruments
 """
 import typing
 
