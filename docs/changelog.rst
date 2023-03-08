@@ -4,7 +4,7 @@ Changelog
 Version 0.21.5
 --------------
 
-Currently in development.
+Released on March 10th, 2023.
 
 - Fixed object search filter by action or type
 - Fixed usage text in scripts
