@@ -13,6 +13,7 @@ Currently in development.
 - Added support for translated property titles and notes to the graphical schema editor
 - Enforce that titles in schemas are not empty
 - Allow using more than one LDAP server
+- Added optional checksum for file contents
 
 Version 0.21.5
 --------------

@@ -397,6 +397,12 @@
                     {% endwith %}
                   </div>
                   {% endif %}
+                  {% if file.hash is not none %}
+                  <div class="row">
+                    <div class="col-sm-3 text-right"><label>{{ _('Checksum (%(algorithm)s)', algorithm=file.hash.algorithm.upper()) }}:</label></div>
+                    <div class="col-sm-9 text-muted" style="word-break: break-all"><span>{{ file.hash.hexdigest }}</span></div>
+                  </div>
+                  {% endif %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('History') }}:</label></div>
                     <div class="col-sm-9"><a role="button" data-toggle="collapse" href="#fileInfoModalCollapse-{{ file.id }}" aria-expanded="false" aria-controls="fileInfoModalCollapse-{{ file.id }}">{{ _('Show/Hide') }}</a></div>

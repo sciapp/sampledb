@@ -1935,6 +1935,7 @@ Reading information for a file
     :>json string url: the URL of the file (for url storage)
     :>json string original_file_name: the original name of the file (for local or database storage)
     :>json string base64_content: the base64 encoded content of the file (for local or database storage)
+    :>json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or the file does not exist
@@ -1959,7 +1960,11 @@ Uploading a file
         {
             "storage": "database",
             "original_file_name": "test.txt",
-            "base64_content": "dGVzdA=="
+            "base64_content": "dGVzdA==",
+            "hash": {
+                "algorithm": "sha256",
+                "hexdigest": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+            }
         }
 
     **Example response**:
@@ -1973,6 +1978,7 @@ Uploading a file
     :<json string storage: how the file is stored (local)
     :<json string original_file_name: the original name of the file
     :<json string base64_content: the base64 encoded content of the file
+    :<json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
