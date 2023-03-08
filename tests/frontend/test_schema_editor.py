@@ -36,6 +36,7 @@ def test_create_default_action(flask_server, driver, user):
     driver.get(flask_server.base_url + 'actions/new/')
 
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').clear()
     driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Test Schema', Keys.TAB)
 
     driver.find_element(By.NAME, 'action_submit').click()
@@ -73,6 +74,7 @@ def test_create_simple_action(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + 'actions/new/')
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action 2', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').clear()
     driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Measurement Information', Keys.TAB)
     driver.find_element(By.NAME, 'is_public').click()
     driver.find_element(By.NAME, 'is_user_specific').click()
@@ -145,6 +147,7 @@ def test_create_complex_action(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + 'actions/new/')
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').clear()
     driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Measurement Information', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (German)"]').send_keys('Messungsinformationen', Keys.TAB)
 
@@ -431,6 +434,7 @@ def test_create_action_with_json_editor(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + 'actions/new/')
     driver.find_element(By.ID, 'input-name--99').send_keys('Test Action')
+    driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').clear()
     driver.find_element(By.CSS_SELECTOR, '[placeholder="Title (English)"]').send_keys('Measurement Information')
 
     click_new_property_button(driver)

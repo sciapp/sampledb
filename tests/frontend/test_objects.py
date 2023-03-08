@@ -1680,12 +1680,12 @@ def test_edit_empty_nested_array(flask_server, user):
                 "minItems": 0,
                 "items": {
                     "type": "array",
-                    "title": "Entry",
+                    "title": "Inner Array",
                     "maxItems": 5,
                     "minItems": 1,
                     "items": {
                         "type": "text",
-                        "title": "",
+                        "title": "Entry",
                         "minLength": 0,
                         "multiline": True
                     }
@@ -1737,12 +1737,12 @@ def test_edit_nested_array(flask_server, user):
                 "minItems": 0,
                 "items": {
                     "type": "array",
-                    "title": "Entry",
+                    "title": "Inner Array",
                     "maxItems": 5,
                     "minItems": 1,
                     "items": {
                         "type": "text",
-                        "title": "",
+                        "title": "Entry",
                         "minLength": 0,
                         "multiline": True
                     }
