@@ -175,7 +175,7 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
     """
     user = logic.users.get_user(user_id)
     if user.email is None:
-        return None
+        return
 
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Notification"
