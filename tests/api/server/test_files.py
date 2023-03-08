@@ -349,3 +349,64 @@ def test_get_nonexistent_file(flask_server, object, auth, user, tmpdir):
     assert r.json() == {
         "message": "file {} of object {} does not exist".format(0, object.object_id)
     }
+
+
+def test_create_local_reference_file(flask_server, object, auth, user):
+    flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
+        '/example/': [user.id]
+    }
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    data = {
+        'storage': 'local_reference',
+        'filepath': '/example/example.txt'
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 1
+    assert files[0].storage == 'local_reference'
+    assert files[0].filepath == '/example/example.txt'
+    flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
+        '/': [user.id]
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 2
+    assert files[1].storage == 'local_reference'
+    assert files[1].filepath == '/example/example.txt'
+
+
+def test_create_local_reference_file_without_permissions(flask_server, object, auth, user):
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    data = {
+        'storage': 'local_reference',
+        'filepath': '/example/example.txt'
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 403
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
+        '/example/': [user.id + 1]
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 403
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
+        '/example1': [user.id]
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 403
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    flask_server.app.config['DOWNLOAD_SERVICE_WHITELIST'] = {
+        '/': [user.id + 1]
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 403
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
