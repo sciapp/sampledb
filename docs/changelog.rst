@@ -12,6 +12,7 @@ Currently in development.
 - Added timeseries data type
 - Added support for translated property titles and notes to the graphical schema editor
 - Enforce that titles in schemas are not empty
+- Allow using more than one LDAP server
 
 Version 0.21.5
 --------------
