@@ -2,7 +2,7 @@
 """
 Script for setting whether a user is an administrator or not.
 
-Usage: python -m sampledb set_administrator <user_id> <yes_or_no>
+Usage: sampledb set_administrator <user_id> <yes_or_no>
 """
 
 import sys

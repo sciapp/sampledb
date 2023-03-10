@@ -2,7 +2,7 @@
 """
 Script for setting up demo data in a previously unused SampleDB installation.
 
-Usage: python -m sampledb set_up_demo
+Usage: sampledb set_up_demo
 """
 import datetime
 import json

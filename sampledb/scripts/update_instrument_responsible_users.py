@@ -2,7 +2,7 @@
 """
 Script for updating the users responsible for an instrument in SampleDB.
 
-Usage: python -m sampledb update_instrument_responsible_users <instrument_id> <instrument_reponsible_user_ids...>
+Usage: sampledb update_instrument_responsible_users <instrument_id> <instrument_reponsible_user_ids...>
 """
 
 import sys

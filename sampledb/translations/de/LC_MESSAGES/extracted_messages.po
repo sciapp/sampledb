@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-02-14 10:40+0100\n"
+"POT-Creation-Date: 2023-02-23 06:30+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5483,6 +5483,12 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 
 msgid "files selected"
 msgstr "Dateien ausgewählt"
+
+msgid "Please select a paper format."
+msgstr "Bitte wählen Sie ein Papierformat aus."
+
+msgid "Please enter a number between {minimum} and {maximum}."
+msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
 msgid "Show less"
 msgstr "Weniger anzeigen"

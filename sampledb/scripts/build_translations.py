@@ -7,7 +7,7 @@ value is unset/set to False. This script mostly exists so that the
 translations can be built once during testing instead of building them for
 each individual test.
 
-Usage: python -m sampledb build_translations
+Usage: sampledb build_translations
 """
 import sys
 import typing

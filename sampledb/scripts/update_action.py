@@ -2,7 +2,7 @@
 """
 Script for updating an action in SampleDB.
 
-Usage: python -m sampledb update_action <action_id> <name> <description> <schema_file_name>
+Usage: sampledb update_action <action_id> <name> <description> <schema_file_name>
 """
 
 import json

@@ -2,7 +2,7 @@
 """
 Script for setting whether a user should be hidden from user lists.
 
-Usage: python -m sampledb set_user_hidden <user_id> <yes_or_no>
+Usage: sampledb set_user_hidden <user_id> <yes_or_no>
 """
 
 import sys

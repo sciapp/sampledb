@@ -1068,6 +1068,8 @@ def _parse_filter_id_params(
     if any(id not in valid_ids for id in filter_ids):
         flask.flash(invalid_id_error, 'error')
         return False, None
+    if not filter_ids:
+        return True, None
     return True, list(filter_ids)
 
 

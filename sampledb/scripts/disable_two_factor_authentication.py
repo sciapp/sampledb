@@ -1,8 +1,8 @@
 # coding: utf-8
 """
-Script for disabling two factor authentication for a user.
+Script for disabling two-factor authentication for a user.
 
-Usage: python -m sampledb disable_two_factor_authentication <user_id>
+Usage: sampledb disable_two_factor_authentication <user_id>
 """
 
 import sys
