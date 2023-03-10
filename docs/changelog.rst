@@ -8,6 +8,7 @@ Currently in development.
 
 - Fixed object search filter by action or type
 - Fixed usage text in scripts
+- Fixed download service permission checks
 
 Version 0.21.4
 --------------
