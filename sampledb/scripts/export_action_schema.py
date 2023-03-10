@@ -2,7 +2,7 @@
 """
 Script for exporting the schema of an action in SampleDB to a JSON file.
 
-Usage: python -m sampledb export_action_schema <action_id> <schema_file_name>
+Usage: sampledb export_action_schema <action_id> <schema_file_name>
 """
 
 import json

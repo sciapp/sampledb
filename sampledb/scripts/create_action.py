@@ -2,7 +2,7 @@
 """
 Script for creating an action in SampleDB.
 
-Usage: python -m sampledb create_action <instrument_id> <type: sample or measurement > <name> <description> <schema_file_name>
+Usage: sampledb create_action <instrument_id> <type: sample or measurement > <name> <description> <schema_file_name>
 """
 
 import json

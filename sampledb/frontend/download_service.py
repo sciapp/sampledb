@@ -1,6 +1,7 @@
 """
 
 """
+import typing
 
 import flask
 from flask import request
@@ -8,16 +9,24 @@ from flask import request
 from . import frontend
 from .objects.permissions import on_unauthorized
 from .. import db
+from ..logic import errors
+from ..logic.files import get_file
 from ..logic.object_permissions import Permissions
 from ..logic.security_tokens import generate_token
 from ..models import DownloadServiceJobFile
 from ..utils import object_permissions_required
 
 
-def upload_file_list(object_id: int) -> int:
+def upload_file_list(object_id: int) -> typing.Optional[int]:
     job_id = None
     file_ids = request.args.getlist('file_ids', type=int)
     for file_id in file_ids:
+        try:
+            file = get_file(file_id=int(file_id), object_id=object_id)
+        except errors.FileDoesNotExistError:
+            continue
+        if file.storage != 'local_reference' or file.data is None or not file.data.get('valid'):
+            continue
         ds = DownloadServiceJobFile(job_id, object_id, int(file_id))
         db.session.add(ds)
         db.session.commit()
@@ -34,6 +43,8 @@ def download_service(object_id: int):
         return flask.abort(404)
 
     job_id = upload_file_list(object_id)
+    if job_id is None:
+        return flask.abort(404)
     signature = generate_token(
         job_id,
         'download_service_zipping',

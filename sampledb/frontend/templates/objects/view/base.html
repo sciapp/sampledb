@@ -114,7 +114,7 @@
           <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.object_name | get_translated_text(default=_('Object'))) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
       {% endif %}
-      {% if user_may_use_as_template and action.type_id is not none and not action.type.disable_create_objects %}
+      {% if user_may_use_as_template and action is not none and not action.disable_create_objects and (current_user.is_admin or not action.admin_only) and action.type_id is not none and not action.type.disable_create_objects %}
         <div class="form-group">
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
@@ -1891,7 +1891,7 @@
         if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
           var paper_format_group = labels_form.find('select[name="width-paper-format"]').closest('.form-group');
           paper_format_group.addClass('has-error');
-          paper_format_group.find('.help-block').text("Please select a paper format.");
+          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
           is_valid = false;
         } else {
           labels_form.find('select[name="width-paper-format"]').closest('.form-group').addClass('has-success');
@@ -1911,7 +1911,7 @@
             input_width.val(label_width);
           } else {
             input_width_group.addClass('has-error');
-            input_width_help.text("Please enter a number between " + minimum_width.toString() + " and " + maximum_width.toString() + ".");
+            input_width_help.text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", minimum_width.toString()).replace("{maximum}", maximum_width.toString()));
             input_width.closest('.form-group').addClass('has-error');
             is_valid = false;
           }
@@ -1924,7 +1924,7 @@
             input_minimum_height.val(label_minimum_height);
           } else {
             input_minimum_height_group.addClass('has-error');
-            input_minimum_height_help.text("Please enter number between 0 and " + maximum_height.toString() + ".");
+            input_minimum_height_help.text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "0").replace("{maximum}", maximum_height.toString()));
             is_valid = false;
           }
         }
@@ -1934,7 +1934,7 @@
         if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
           var paper_format_group = labels_form.find('select[name="height-paper-format"]').closest('.form-group');
           paper_format_group.addClass('has-error');
-          paper_format_group.find('.help-block').text("Please select a paper format.");
+          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
           is_valid = false;
         } else {
           labels_form.find('select[name="height-paper-format"]').closest('.form-group').addClass('has-success');
@@ -1948,7 +1948,7 @@
             input_minimum_width.val(label_minimum_width);
           } else {
             input_minimum_width_group.addClass('has-error');
-            input_minimum_width_help.text("Please enter a number between 0 and " + maximum_width.toString() + ".");
+            input_minimum_width_help.text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "0").replace("{maximum}", maximum_width.toString()));
             is_valid = false;
           }
         }
@@ -1958,7 +1958,7 @@
         if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
          var paper_format_group = labels_form.find('select[name="mixed-paper-format"]').closest('.form-group');
          paper_format_group.addClass('has-error');
-         paper_format_group.find('.help-block').text("Please select a paper format.");
+         paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
          is_valid = false;
         } else {
          labels_form.find('select[name="mixed-paper-format"]').closest('.form-group').addClass('has-success');
