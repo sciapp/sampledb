@@ -13,6 +13,16 @@ Currently in development.
 - Added support for translated property titles and notes to the graphical schema editor
 - Enforce that titles in schemas are not empty
 
+Version 0.21.5
+--------------
+
+Released on March 10th, 2023.
+
+- Fixed object search filter by action or type
+- Fixed usage text in scripts
+- Fixed download service permission checks
+- Fixed logic for displaying "Use as Template" button for objects
+
 Version 0.21.4
 --------------
 

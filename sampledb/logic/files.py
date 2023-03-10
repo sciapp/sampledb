@@ -336,17 +336,22 @@ def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> 
     user = get_user(user_id)
 
     filepath = os.path.normpath(filepath)
-    for path in path_permissions.keys():
-        if path.startswith(filepath + os.sep):
-            if not (user.is_admin or user_id in path_permissions[path]):
-                raise errors.UnauthorizedRequestError()
+    for path, user_ids in path_permissions.items():
+        if not path.endswith(os.sep):
+            path += os.sep
+        if filepath.startswith(path):
+            if user.is_admin or user_id in user_ids:
+                break
+    else:
+        raise errors.UnauthorizedRequestError()
 
     db_file = _create_db_file(
         object_id=object_id,
         user_id=user_id,
         data={
             'storage': 'local_reference',
-            'filepath': filepath
+            'filepath': filepath,
+            'valid': True  # to distinguish from local file references created before the whitelist was checked properly
         }
     )
     file = File.from_database(db_file)

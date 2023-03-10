@@ -2,7 +2,7 @@
 """
 Script for updating an instrument in SampleDB.
 
-Usage: python -m sampledb update_instrument <instrument_id> <name> <description>
+Usage: sampledb update_instrument <instrument_id> <name> <description>
 """
 
 import sys

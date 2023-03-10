@@ -2,7 +2,7 @@
 """
 Script for creating an instrument in SampleDB.
 
-Usage: python -m sampledb create_instrument <name> <description>
+Usage: sampledb create_instrument <name> <description>
 """
 
 import sys

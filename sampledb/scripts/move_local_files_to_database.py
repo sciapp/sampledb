@@ -4,7 +4,7 @@ Move all files that use local storage and are found in the file directory to
 the database. Files that use local storage but cannot be found will be left
 unchanged. The file directory will not be changed by this script.
 
-Usage: python -m sampledb move_local_files_to_database
+Usage: sampledb move_local_files_to_database
 """
 import sys
 import typing

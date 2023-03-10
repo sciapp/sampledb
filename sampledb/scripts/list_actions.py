@@ -2,7 +2,7 @@
 """
 Script for listing all actions in SampleDB.
 
-Usage: python -m sampledb list_actions
+Usage: sampledb list_actions
 """
 import sys
 import typing

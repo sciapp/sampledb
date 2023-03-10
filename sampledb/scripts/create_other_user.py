@@ -2,7 +2,7 @@
 """
 Script for creating a user of type OTHER in SampleDB.
 
-Usage: python -m sampledb create_other_user <name> <email>
+Usage: sampledb create_other_user <name> <email>
 """
 
 import os
