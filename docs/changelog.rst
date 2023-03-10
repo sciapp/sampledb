@@ -9,6 +9,7 @@ Currently in development.
 - Fixed object search filter by action or type
 - Fixed usage text in scripts
 - Fixed download service permission checks
+- Fixed logic for displaying "Use as Template" button for objects
 
 Version 0.21.4
 --------------
