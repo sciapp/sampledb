@@ -36,12 +36,12 @@
     {% for action_type in get_action_types() %}
       {% if action_type.show_on_frontpage and (action_type.fed_id is none or action_type.fed_id > 0) %}
       <div class="row">
-        {% if not current_user.is_readonly %}
+        {% if action_type.id in action_type_ids_with_usable_actions %}
         <div class="col-md-offset-2 col-md-4">
           <a href="{{ url_for('frontend.actions', t=action_type.id, can_create_objects='') }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
         </div>
         {% endif %}
-        <div class="{% if current_user.is_readonly %}col-md-offset-4{% endif %} col-md-4">
+        <div class="{% if action_type.id in action_type_ids_with_usable_actions %}col-md-4{% else %}col-md-offset-2 col-md-8{% endif %}">
           <a href="{{ url_for('frontend.objects', action_type_ids=action_type.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ action_type.view_text | get_translated_text(default=_('View Objects')) }}</a>
         </div>
       </div>
