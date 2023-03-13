@@ -475,6 +475,7 @@ LDAP_UID_FILTER = None
 LDAP_NAME_ATTRIBUTE = None
 LDAP_MAIL_ATTRIBUTE = None
 LDAP_OBJECT_DEF = None
+LDAP_CONNECT_TIMEOUT = 5
 # LDAP credentials, may both be None if anonymous access is enabled
 LDAP_USER_DN = None
 LDAP_PASSWORD = None
@@ -629,6 +630,7 @@ for config_name in [
     'VALID_TIME_DELTA',
     'DOWNLOAD_SERVICE_TIME_LIMIT',
     'TYPEAHEAD_OBJECT_LIMIT',
+    'LDAP_CONNECT_TIMEOUT',
 ]:
     value = globals().get(config_name)
     if isinstance(value, str):

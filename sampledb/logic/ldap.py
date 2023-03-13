@@ -28,16 +28,26 @@ def is_ldap_configured() -> bool:
     )
 
 
+def _get_ldap_server_pool() -> ldap3.ServerPool:
+    ldap_server_urls = flask.current_app.config['LDAP_SERVER']
+    connect_timeout = flask.current_app.config['LDAP_CONNECT_TIMEOUT']
+    servers = []
+    for ldap_server_url in ldap_server_urls.split(','):
+        ldap_server_url = ldap_server_url.strip()
+        if ldap_server_url:
+            servers.append(ldap3.Server(ldap_server_url, use_ssl=True, get_info=ldap3.ALL, connect_timeout=connect_timeout))
+    return ldap3.ServerPool(servers=servers, pool_strategy=ldap3.ROUND_ROBIN, active=True, exhaust=True)
+
+
 def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[str] = ()) -> typing.Optional[typing.Sequence[typing.Any]]:
-    ldap_host = flask.current_app.config['LDAP_SERVER']
     user_base_dn = flask.current_app.config['LDAP_USER_BASE_DN']
     uid_filter = flask.current_app.config['LDAP_UID_FILTER']
     object_def = flask.current_app.config['LDAP_OBJECT_DEF']
     user_dn = flask.current_app.config['LDAP_USER_DN']
     password = flask.current_app.config['LDAP_PASSWORD']
-    server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
     try:
-        connection = ldap3.Connection(server, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS)
+        server_pool = _get_ldap_server_pool()
+        connection = ldap3.Connection(server_pool, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS)
         object_def = ldap3.ObjectDef(object_def, connection)
         reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(ldap3.utils.conv.escape_filter_chars(user_ldap_uid)))
         reader.search(attributes)
@@ -80,11 +90,10 @@ def validate_user(user_ldap_uid: str, password: str) -> bool:
     user_dn, mail = user
     if mail is None:
         raise errors.NoEmailInLDAPAccountError('Email in LDAP-account missing, please contact your administrator')
-    ldap_host = flask.current_app.config['LDAP_SERVER']
     # try to bind with user credentials if a matching user exists
     try:
-        server = ldap3.Server(ldap_host, use_ssl=True, get_info=ldap3.ALL)
-        connection = ldap3.Connection(server, user=user_dn, password=password, raise_exceptions=False)
+        server_pool = _get_ldap_server_pool()
+        connection = ldap3.Connection(server_pool, user=user_dn, password=password, raise_exceptions=False)
         return bool(connection.bind())
     except ldap3.core.exceptions.LDAPException:
         return False
