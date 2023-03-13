@@ -1284,3 +1284,12 @@ code {
 .multiselect-form-disabled {
   display: none;
 }
+
+.permissions-table-head,
+.permissions-table-data{
+    text-align: center;
+}
+
+.permission-entry-disabled {
+    color: darkgray;
+}

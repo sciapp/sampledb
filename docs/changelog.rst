@@ -9,6 +9,7 @@ Currently in development.
 - Implemented object storage capacities for locations
 - Applied admin permissions to managing groups
 - Added selection to generate labels for multiple objects
+- Added selection to change the permission for multiple objects
 - Added timeseries data type
 - Added support for translated property titles and notes to the graphical schema editor
 - Enforce that titles in schemas are not empty
