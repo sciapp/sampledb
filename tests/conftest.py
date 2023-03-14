@@ -47,6 +47,7 @@ sampledb.config.MAIL_SERVER = 'mail.example.com'
 sampledb.config.CONTACT_EMAIL = 'sampledb@example.com'
 sampledb.config.JUPYTERHUB_URL = 'example.com'
 sampledb.config.LDAP_NAME = 'LDAP'
+sampledb.config.LDAP_CONNECT_TIMEOUT = 60  # ldap3 requires long timeout when tests are run in multiple threads
 
 sampledb.config.TESTING_LDAP_UNKNOWN_LOGIN = 'unknown-login-for-sampledb-tests'
 sampledb.config.TESTING_LDAP_WRONG_PASSWORD = 'wrong-password-for-sampledb-tests'

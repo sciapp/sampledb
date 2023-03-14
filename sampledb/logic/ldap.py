@@ -47,7 +47,7 @@ def _get_user_dn_and_attributes(user_ldap_uid: str, attributes: typing.Sequence[
     password = flask.current_app.config['LDAP_PASSWORD']
     try:
         server_pool = _get_ldap_server_pool()
-        connection = ldap3.Connection(server_pool, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS)
+        connection = ldap3.Connection(server_pool, user=user_dn, password=password, auto_bind=ldap3.AUTO_BIND_NO_TLS, client_strategy=ldap3.SAFE_SYNC)
         object_def = ldap3.ObjectDef(object_def, connection)
         reader = ldap3.Reader(connection, object_def, user_base_dn, uid_filter.format(ldap3.utils.conv.escape_filter_chars(user_ldap_uid)))
         reader.search(attributes)
@@ -93,8 +93,8 @@ def validate_user(user_ldap_uid: str, password: str) -> bool:
     # try to bind with user credentials if a matching user exists
     try:
         server_pool = _get_ldap_server_pool()
-        connection = ldap3.Connection(server_pool, user=user_dn, password=password, raise_exceptions=False)
-        return bool(connection.bind())
+        connection = ldap3.Connection(server_pool, user=user_dn, password=password, client_strategy=ldap3.SAFE_SYNC)
+        return bool(connection.bind()[0])
     except ldap3.core.exceptions.LDAPException:
         return False
 
