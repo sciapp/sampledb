@@ -49,6 +49,70 @@ def use_environment_configuration(env_prefix: str) -> None:
     config = load_environment_configuration(env_prefix)
     for name, value in config.items():
         globals()[name] = value
+    parse_configuration_values()
+
+
+def parse_configuration_values() -> None:
+    """
+    Convert configuration values from strings to integers, booleans or JSON objects.
+    """
+    # parse values as integers
+    for config_name in [
+        'INVITATION_TIME_LIMIT'
+        'MAX_CONTENT_LENGTH',
+        'MAX_BATCH_SIZE',
+        'VALID_TIME_DELTA',
+        'DOWNLOAD_SERVICE_TIME_LIMIT',
+        'TYPEAHEAD_OBJECT_LIMIT',
+        'LDAP_CONNECT_TIMEOUT',
+    ]:
+        value = globals().get(config_name)
+        if isinstance(value, str):
+            try:
+                globals()[config_name] = int(value)
+            except Exception:
+                pass
+
+    # parse values as json
+    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST']:
+        value = globals().get(config_name)
+        if isinstance(value, str) and value.startswith('{'):
+            try:
+                globals()[config_name] = json.loads(value)
+            except Exception:
+                pass
+
+    # parse boolean values
+    for config_name in [
+        'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
+        'ONLY_ADMINS_CAN_CREATE_GROUPS',
+        'ONLY_ADMINS_CAN_DELETE_GROUPS',
+        'ONLY_ADMINS_CAN_CREATE_PROJECTS',
+        'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
+        'DISABLE_USE_IN_MEASUREMENT',
+        'DISABLE_SUBPROJECTS',
+        'LOAD_OBJECTS_IN_BACKGROUND',
+        'ENFORCE_SPLIT_NAMES',
+        'BUILD_TRANSLATIONS',
+        'SHOW_PREVIEW_WARNING',
+        'SHOW_OBJECT_TITLE',
+        'FULL_WIDTH_OBJECTS_TABLE',
+        'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+        'DISABLE_INLINE_EDIT',
+        'ENABLE_BACKGROUND_TASKS',
+        'ENABLE_MONITORINGDASHBOARD',
+        'ENABLE_ANONYMOUS_USERS',
+        'ENABLE_NUMERIC_TAGS',
+        'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
+        'SHOW_LAST_PROFILE_UPDATE',
+        'USE_TYPEAHEAD_FOR_OBJECTS',
+        'DISABLE_INSTRUMENTS',
+        'ENABLE_FUNCTION_CACHES',
+        'ENABLE_CONTENT_SECURITY_POLICY',
+    ]:
+        value = globals().get(config_name)
+        if isinstance(value, str):
+            globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
 
 
 def is_download_service_whitelist_valid() -> bool:
@@ -616,69 +680,6 @@ use_environment_configuration(env_prefix='SAMPLEDB_')
 if SERVICE_IMPRINT and not SERVICE_LEGAL_NOTICE:
     # Support SERVICE_IMPRINT for downwards compatibility
     SERVICE_LEGAL_NOTICE = SERVICE_IMPRINT
-
-# convert INVITATION_TIME_LIMIT in case it was set as a string
-try:
-    INVITATION_TIME_LIMIT = int(INVITATION_TIME_LIMIT)
-except ValueError:
-    pass
-
-# parse values as integers
-for config_name in [
-    'MAX_CONTENT_LENGTH',
-    'MAX_BATCH_SIZE',
-    'VALID_TIME_DELTA',
-    'DOWNLOAD_SERVICE_TIME_LIMIT',
-    'TYPEAHEAD_OBJECT_LIMIT',
-    'LDAP_CONNECT_TIMEOUT',
-]:
-    value = globals().get(config_name)
-    if isinstance(value, str):
-        try:
-            globals()[config_name] = int(value)
-        except Exception:
-            pass
-
-# parse values as json
-for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST']:
-    value = globals().get(config_name)
-    if isinstance(value, str) and value.startswith('{'):
-        try:
-            globals()[config_name] = json.loads(value)
-        except Exception:
-            pass
-
-# parse boolean values
-for config_name in [
-    'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
-    'ONLY_ADMINS_CAN_CREATE_GROUPS',
-    'ONLY_ADMINS_CAN_DELETE_GROUPS',
-    'ONLY_ADMINS_CAN_CREATE_PROJECTS',
-    'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
-    'DISABLE_USE_IN_MEASUREMENT',
-    'DISABLE_SUBPROJECTS',
-    'LOAD_OBJECTS_IN_BACKGROUND',
-    'ENFORCE_SPLIT_NAMES',
-    'BUILD_TRANSLATIONS',
-    'SHOW_PREVIEW_WARNING',
-    'SHOW_OBJECT_TITLE',
-    'FULL_WIDTH_OBJECTS_TABLE',
-    'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
-    'DISABLE_INLINE_EDIT',
-    'ENABLE_BACKGROUND_TASKS',
-    'ENABLE_MONITORINGDASHBOARD',
-    'ENABLE_ANONYMOUS_USERS',
-    'ENABLE_NUMERIC_TAGS',
-    'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
-    'SHOW_LAST_PROFILE_UPDATE',
-    'USE_TYPEAHEAD_FOR_OBJECTS',
-    'DISABLE_INSTRUMENTS',
-    'ENABLE_FUNCTION_CACHES',
-    'ENABLE_CONTENT_SECURITY_POLICY',
-]:
-    value = globals().get(config_name)
-    if isinstance(value, str):
-        globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
 
 # remove trailing slashes from SciCat urls
 if isinstance(SCICAT_API_URL, str) and SCICAT_API_URL.endswith('/'):
