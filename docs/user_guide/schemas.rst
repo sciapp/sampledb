@@ -231,6 +231,7 @@ on the object page.
 By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. If both filters are set, both action and action type will have to match for an object to be included in the workflow view.
 
 The workflow view also allows setting a custom ``title`` for the object page section section, e.g. ``{"en": "Processing"}`` or ``"Measurements"``.
+By setting ``show_action_ínfo`` to ``false`` you can disable displaying action information, which is enabled by default.
 
 Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects' schemas to limit what object data will be shown as a preview.
 

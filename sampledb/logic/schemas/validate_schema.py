@@ -481,7 +481,7 @@ def _validate_object_schema(
 
     if 'workflow_view' in schema:
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
-        workflow_valid_keys = set(id_keys + ['title'])
+        workflow_valid_keys = set(id_keys + ['title', 'show_action_info'])
         if not isinstance(schema['workflow_view'], dict):
             raise ValidationError('workflow_view must be a dict', path)
         for key in schema['workflow_view'].keys():
@@ -497,6 +497,8 @@ def _validate_object_schema(
             ):
                 raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
         _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+        if 'show_action_info' in schema['workflow_view'] and not isinstance(schema['workflow_view']['show_action_info'], bool):
+            raise ValidationError('show_action_info must be bool', path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 

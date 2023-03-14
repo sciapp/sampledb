@@ -3070,7 +3070,8 @@ def test_validate_workflow_view():
             "referencing_action_id": [1],
             "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
             "referenced_action_id": 1,
-            "title": {"en": "Workflow", "de": "Prozessablauf"}
+            "title": {"en": "Workflow", "de": "Prozessablauf"},
+            "show_action_info": True
         }
     }
 
@@ -3113,5 +3114,9 @@ def test_validate_workflow_view():
         validate_schema(schema)
 
     schema['workflow_view']['title'] = {"de": "Prozessablauf"}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['show_action_info'] = 3515
     with pytest.raises(ValidationError):
         validate_schema(schema)

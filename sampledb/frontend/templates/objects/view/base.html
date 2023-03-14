@@ -289,29 +289,52 @@
             {{ import_information_symbol(elem.object) }}
           {% endif %}
         </h4>
-      {% if elem.object is none %}
-        <div class="row" style="padding-right:0.75em">
-          <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-          <div class="col-md-9">
-            {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
+        {% if elem.object is not none and elem.action and not ('show_action_info' in schema['workflow_view'] and not schema['workflow_view']['show_action_info']) %}
+          <div class="row" style="padding-right:0.75em">
+            <label class="col-md-3" style="text-align: right">{{ _('Action') }}
+              {% if elem.action %}
+                <a href="{{ url_for('.objects', action_ids=elem.action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
+              {% endif %}
+            </label>
+            <div class="col-md-9">
+              {% if elem.action %}
+                {% if elem.action.user is not none %}
+                  <a href="{{ url_for('.user_profile', user_id=elem.action.user_id) }}" title="{{ elem.action.user.get_name() }}">{{ elem.action.user.get_name() }}</a>
+                  {{ import_information_symbol(elem.action.user) }} /
+                {% endif %}
+                {% if not config['DISABLE_INSTRUMENTS'] and elem.action.instrument %}
+                  <a href="{{ url_for('frontend.instrument', instrument_id=elem.action.instrument.id) }}">{{ elem.action.instrument.name | get_translated_text }}</a>
+                  {{ import_information_symbol(elem.action.instrument) }} &mdash;
+                {% endif %}
+                <a href="{{ url_for('frontend.action', action_id=elem.action.id) }}">{{ elem.action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+                {{ import_information_symbol(elem.action) }}
+              {% else %}&mdash;{% endif %}
+            </div>
           </div>
-        </div>
-      {% elif elem.object.data is none or elem.object.schema is none %}
-        <div class="row" style="padding-right:0.75em">
-          <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-          <div class="col-md-9">
-            <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+        {% endif %}
+        {% if elem.object is none %}
+          <div class="row" style="padding-right:0.75em">
+            <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+            <div class="col-md-9">
+              {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
+            </div>
           </div>
-        </div>
-      {% elif object %}
-        {% set workflow_display_mode = True %}
-        {% set object_id = elem.object_id %}
-        {% set id_prefix = "workflow_" + (elem.object_id | string) + "_" %}
-        {% set data = elem.object.data %}
-        {% set schema = elem.object.schema %}
-        {% set files = elem.files %}
-        {% include "objects/view/any.html" %}
-      {% endif %}
+        {% elif elem.object.data is none or elem.object.schema is none %}
+          <div class="row" style="padding-right:0.75em">
+            <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+            <div class="col-md-9">
+              <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+            </div>
+          </div>
+        {% else %}
+          {% set workflow_display_mode = True %}
+          {% set object_id = elem.object_id %}
+          {% set id_prefix = "workflow_" + (elem.object_id | string) + "_" %}
+          {% set data = elem.object.data %}
+          {% set schema = elem.object.schema %}
+          {% set files = elem.files %}
+          {% include "objects/view/any.html" %}
+        {% endif %}
       </div>
     {% endfor %}
   {% endif %}
