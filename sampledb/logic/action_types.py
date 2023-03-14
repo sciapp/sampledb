@@ -156,6 +156,7 @@ def get_action_types(
 
 @typing.overload
 def create_action_type(
+        *,
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
@@ -179,6 +180,7 @@ def create_action_type(
 
 @typing.overload
 def create_action_type(
+        *,
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
@@ -193,7 +195,6 @@ def create_action_type(
         disable_create_objects: bool,
         is_template: bool,
         usable_in_action_type_ids: typing.Sequence[int] = (),
-        *,
         fed_id: int,
         component_id: int,
         scicat_export_type: typing.Optional[SciCatExportType] = None
@@ -202,6 +203,7 @@ def create_action_type(
 
 
 def create_action_type(
+        *,
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
@@ -278,6 +280,7 @@ def create_action_type(
 
 
 def update_action_type(
+        *,
         action_type_id: int,
         admin_only: bool,
         show_on_frontpage: bool,

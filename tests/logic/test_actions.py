@@ -157,7 +157,19 @@ def test_create_action_fed_missing_component():
 def test_create_action_type_fed(component):
     count = len(action_types.get_action_types())
     action_type = action_types.create_action_type(
-        False, True, True, True, True, True, True, True, True, True, True, False, False,
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False,
         fed_id=1,
         component_id=component.id
     )
@@ -169,7 +181,19 @@ def test_create_action_type_fed(component):
 def test_create_action_type_fed_missing_component():
     with pytest.raises(AssertionError):
         action_types.create_action_type(
-            False, True, True, True, True, True, True, True, True, True, True, False, False,
+            admin_only=False,
+            show_on_frontpage=True,
+            show_in_navbar=True,
+            enable_labels=True,
+            enable_files=True,
+            enable_locations=True,
+            enable_publications=True,
+            enable_comments=True,
+            enable_activity_log=True,
+            enable_related_objects=True,
+            enable_project_link=True,
+            disable_create_objects=False,
+            is_template=False,
             fed_id=1
         )
 
@@ -177,7 +201,19 @@ def test_create_action_type_fed_missing_component():
 def test_create_action_type_fed_missing_fed_id(component):
     with pytest.raises(AssertionError):
         action_types.create_action_type(
-            False, True, True, True, True, True, True, True, True, True, True, False, False,
+            admin_only=False,
+            show_on_frontpage=True,
+            show_in_navbar=True,
+            enable_labels=True,
+            enable_files=True,
+            enable_locations=True,
+            enable_publications=True,
+            enable_comments=True,
+            enable_activity_log=True,
+            enable_related_objects=True,
+            enable_project_link=True,
+            disable_create_objects=False,
+            is_template=False,
             component_id=component.id + 1
         )
 
@@ -185,7 +221,19 @@ def test_create_action_type_fed_missing_fed_id(component):
 def test_create_action_type_fed_invalid_component(component):
     with pytest.raises(errors.ComponentDoesNotExistError):
         action_types.create_action_type(
-            False, True, True, True, True, True, True, True, True, True, True, False, False,
+            admin_only=False,
+            show_on_frontpage=True,
+            show_in_navbar=True,
+            enable_labels=True,
+            enable_files=True,
+            enable_locations=True,
+            enable_publications=True,
+            enable_comments=True,
+            enable_activity_log=True,
+            enable_related_objects=True,
+            enable_project_link=True,
+            disable_create_objects=False,
+            is_template=False,
             fed_id=1,
             component_id=component.id + 1
         )
@@ -217,7 +265,19 @@ def test_get_missing_fed_action(component):
 
 def test_get_fed_action_type(component):
     action_type = action_types.create_action_type(
-        False, True, True, True, True, True, True, True, True, True, True, False, False,
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False,
         fed_id=1,
         component_id=component.id
     )

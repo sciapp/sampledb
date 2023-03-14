@@ -219,14 +219,56 @@ def locations(user, location_type):
 
 @pytest.fixture
 def action_type():
-    action_type = create_action_type(False, True, True, True, True, True, True, True, True, True, True, False, False)
+    action_type = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False
+    )
     return action_type
 
 
 @pytest.fixture
 def action_types():
-    action_type1 = create_action_type(False, True, True, True, True, True, True, True, True, True, True, False, False)
-    action_type2 = create_action_type(False, True, True, True, True, True, True, True, True, True, True, False, False)
+    action_type1 = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False
+    )
+    action_type2 = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        disable_create_objects=False,
+        is_template=False
+    )
     return action_type1, action_type2
 
 
