@@ -3,16 +3,21 @@
 
 """
 
+import flask
+import flask_login
 from flask_babel import lazy_gettext
 from flask_wtf import FlaskForm
-from wtforms import SelectField, IntegerField, FloatField, TextAreaField, HiddenField, FileField, StringField, BooleanField
-from wtforms.validators import InputRequired, ValidationError
+from wtforms import SelectField, IntegerField, FloatField, TextAreaField, HiddenField, FileField, StringField, BooleanField, RadioField
+from wtforms.validators import InputRequired, ValidationError, Optional
 
 from ...logic import errors
-from ...models import Permissions
+from ...models import Permissions, User
 from ...logic.publications import simplify_doi
 from ...logic.errors import InvalidDOIError
-
+from ...logic.utils import get_translated_text
+from ...logic.groups import get_groups
+from ...logic.users import get_users
+from ...logic.projects import get_projects
 from ..validators import ObjectIdValidator
 from ...logic.utils import parse_url
 
@@ -134,3 +139,34 @@ class GenerateLabelsForm(FlaskForm):
     center_qr_ghs = BooleanField()
     qr_ghs_side_by_side = BooleanField()
     include_qr = BooleanField()
+
+
+class EditPermissionsForm(FlaskForm):
+    objects = HiddenField(validators=[InputRequired()])
+    target_type = SelectField(validators=[InputRequired()])
+    update_mode = RadioField(validators=[InputRequired()], choices=[('set-min', lazy_gettext('Set minimum Permissions')), ('set-max', lazy_gettext('Set maximum Permissions'))])
+    groups = SelectField(validators=[Optional()])
+    project_groups = SelectField(validators=[Optional()])
+    users = SelectField(validators=[Optional()])
+    permission = RadioField(validators=[InputRequired()], choices=[
+                            (Permissions.NONE.name.lower(), lazy_gettext('None')),
+                            (Permissions.READ.name.lower(), lazy_gettext('Read')),
+                            (Permissions.WRITE.name.lower(), lazy_gettext('Write')),
+                            (Permissions.GRANT.name.lower(), lazy_gettext('Grant'))
+                            ])
+
+    def __init__(self) -> None:
+        super().__init__()
+        target_type_choices = [
+            ('signed-in-users', lazy_gettext('All Signed-In Users')),
+            ('group', lazy_gettext('Basic Group')),
+            ('project-group', lazy_gettext('Project Group')),
+            ('user', lazy_gettext('User'))
+        ]
+        if flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
+            target_type_choices.insert(1, ('anonymous', lazy_gettext('Anonymous Users')))
+
+        self.target_type.choices = target_type_choices
+        self.groups.choices = [(group.id, get_translated_text(group.name)) for group in get_groups()]
+        self.project_groups.choices = [(project.id, get_translated_text(project.name)) for project in get_projects()]
+        self.users.choices = [(user.id, f"{user.name} (#{user.id})") for user in get_users(order_by=User.id, exclude_fed=True, exclude_hidden=not flask_login.current_user.is_admin)]

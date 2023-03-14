@@ -34,9 +34,9 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
-from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for, get_groups_form_data
 from ...logic.utils import get_translated_text
-from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm
+from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
 from .permissions import get_object_if_current_user_has_read_permissions
 from ..labels import PAGE_SIZES, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
 from ...models import Permissions
@@ -119,6 +119,7 @@ def objects() -> FlaskResponseT:
 
     edit_location = flask.request.args.get('edit_location', default=False, type=lambda k: k.lower() == 'true')
     create_from_objects = flask.request.args.get('create_from_objects', default=False, type=lambda k: k.lower() == 'true')
+    edit_permissions = flask.request.args.get('edit_permissions', default=False, type=lambda k: k.lower() == 'true')
     use_in_action_type_id = flask.request.args.get('use_in_action_type', default=None, type=int)
     generate_labels = flask.request.args.get('generate_labels', default=False, type=lambda k: k.lower() == 'true')
 
@@ -622,8 +623,8 @@ def objects() -> FlaskResponseT:
     for property_name in display_properties:
         if display_property_titles.get(property_name) is None:
             property_titles = set()
-            for id in action_ids:
-                property_info = search_paths_by_action.get(id, {}).get(property_name)
+            for object_id in action_ids:
+                property_info = search_paths_by_action.get(object_id, {}).get(property_name)
                 if property_info is not None and 'titles' in property_info:
                     property_titles.update(property_info['titles'])
             if property_titles:
@@ -818,6 +819,7 @@ def objects() -> FlaskResponseT:
     location_form = None
     use_in_action_form = None
     generate_labels_form = None
+    edit_permissions_form = None
     user_is_fed: typing.Dict[str, bool] = {}
     english = None
     all_languages = []
@@ -825,6 +827,12 @@ def objects() -> FlaskResponseT:
     available_action_types = []
     favorite_actions = []
     use_in_action_type = None
+    special_groups = ['signed-in-users', 'anonymous']
+    disabled_special_group_permissions = [Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+    current_permissions_special_groups: typing.Dict[str, typing.Dict[int, str]] = {}
+    current_permissions_normal_entities: typing.Dict[str, typing.Dict[int, typing.Dict[int, str]]] = {}
+    groups_treepicker_info = None
+    projects_treepicker_info = None
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
         all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
@@ -875,6 +883,46 @@ def objects() -> FlaskResponseT:
         objects_allowed_to_select = [object['object_id']
                                      for object in objects
                                      if object['action'] is not None and object['action'].type is not None and object['action'].type.enable_labels]
+
+    elif edit_permissions:
+        edit_permissions_form = EditPermissionsForm()
+
+        current_permissions_special_groups = {'signed-in-users': {}}
+        current_permissions_normal_entities = {'user': {}, 'project-group': {}, 'group': {}}
+
+        if flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
+            current_permissions_special_groups['anonymous'] = {}
+
+        for object in objects:
+            object_id = object['object_id']
+
+            if logic.object_permissions.get_user_object_permissions(object_id, user_id=flask_login.current_user.id) < Permissions.GRANT:
+                continue
+
+            objects_allowed_to_select.append(object_id)
+
+            current_permissions_special_groups['signed-in-users'][object_id] = logic.object_permissions.get_object_permissions_for_all_users(object_id).name.lower()
+
+            if flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
+                current_permissions_special_groups['anonymous'][object_id] = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id).name.lower()
+
+            for group_id, permission in logic.object_permissions.get_object_permissions_for_groups(object_id).items():
+                if group_id not in current_permissions_normal_entities['group']:
+                    current_permissions_normal_entities['group'][group_id] = {}
+                current_permissions_normal_entities['group'][group_id][object_id] = permission.name.lower()
+
+            for project_id, permission in logic.object_permissions.get_object_permissions_for_projects(object_id).items():
+                if project_id not in current_permissions_normal_entities['project-group']:
+                    current_permissions_normal_entities['project-group'][project_id] = {}
+                current_permissions_normal_entities['project-group'][project_id][object_id] = permission.name.lower()
+
+            for user_id, permission in logic.object_permissions.get_object_permissions_for_users(object_id).items():
+                if user_id not in current_permissions_normal_entities['user']:
+                    current_permissions_normal_entities['user'][user_id] = {}
+                current_permissions_normal_entities['user'][user_id][object_id] = permission.name.lower()
+
+        groups_treepicker_info = get_groups_form_data(basic_group_filter=lambda group: True)[1]
+        projects_treepicker_info = get_groups_form_data(project_group_filter=lambda project: True)[1]
 
     else:
         create_from_objects = False
@@ -971,7 +1019,15 @@ def objects() -> FlaskResponseT:
         PAGE_SIZES=PAGE_SIZES,
         HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
         VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
-        mm=mm
+        mm=mm,
+        edit_permissions=edit_permissions,
+        edit_permissions_form=edit_permissions_form,
+        current_permissions_special_groups=current_permissions_special_groups,
+        current_permissions_normal_entities=current_permissions_normal_entities,
+        special_groups=special_groups,
+        disabled_special_group_permissions=disabled_special_group_permissions,
+        groups_treepicker_info=groups_treepicker_info,
+        projects_treepicker_info=projects_treepicker_info
     )
 
 
@@ -1491,6 +1547,7 @@ def save_object_list_defaults() -> FlaskResponseT:
 
 
 @frontend.route("/edit_locations", methods=["POST"])
+@flask_login.login_required
 def edit_multiple_locations() -> FlaskResponseT:
     location_form = ObjectLocationAssignmentForm()
     selected_object_ids_str = flask.request.form["selected_objects"]
@@ -1583,6 +1640,7 @@ def edit_multiple_locations() -> FlaskResponseT:
 
 
 @frontend.route("/multiselect_action", methods=["POST"])
+@flask_login.login_required
 def multiselect_action() -> FlaskResponseT:
     use_in_action_form = UseInActionForm()
 
@@ -1595,3 +1653,80 @@ def multiselect_action() -> FlaskResponseT:
         return flask.redirect(flask.url_for('.new_object', action_id=use_in_action_form.action_id.data, object_id=object_ids))
 
     return flask.redirect(flask.url_for('.actions', t=use_in_action_form.action_type_id.data, object_id=object_ids))
+
+
+@frontend.route("/multiselect_permissions", methods=["POST"])
+@flask_login.login_required
+def multiselect_permissions() -> FlaskResponseT:
+    edit_permissions_form = EditPermissionsForm()
+
+    if edit_permissions_form.validate_on_submit():
+        object_ids = list(map(int, edit_permissions_form.objects.data.split(',')))
+        permission = Permissions.from_name(edit_permissions_form.permission.data)
+        update_mode = edit_permissions_form.update_mode.data
+        current_permission: typing.Optional[Permissions] = None
+
+        for object_id in object_ids:
+            if logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id) < Permissions.GRANT:
+                flask.abort(403)
+
+        if edit_permissions_form.target_type.data == 'anonymous':
+            if permission > Permissions.READ:
+                flask.flash(_('It is not allowed to use permissions higher than read for special groups.'), 'error')
+                return flask.redirect(flask.url_for('.objects'))
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_object_permissions_for_anonymous_users(object_id, permission)
+
+        elif edit_permissions_form.target_type.data == 'signed-in-users':
+            if permission > Permissions.READ:
+                flask.flash(_('It is not allowed to use permissions higher than read for special groups.'), 'error')
+                return flask.redirect(flask.url_for('.objects'))
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_all_users(object_id)
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_object_permissions_for_all_users(object_id, permission)
+
+        elif edit_permissions_form.target_type.data == 'group':
+            try:
+                group_id = int(edit_permissions_form.groups.data)
+            except ValueError:
+                flask.abort(400)
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_groups(object_id).get(group_id)
+                if current_permission is None:
+                    current_permission = Permissions.NONE
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_group_object_permissions(object_id, group_id, permission)
+
+        elif edit_permissions_form.target_type.data == 'project-group':
+            try:
+                project_id = int(edit_permissions_form.project_groups.data)
+            except ValueError:
+                flask.abort(400)
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id)
+                if current_permission is None:
+                    current_permission = Permissions.NONE
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_project_object_permissions(object_id, project_id, permission)
+        elif edit_permissions_form.target_type.data == 'user':
+            try:
+                user_id = int(edit_permissions_form.users.data)
+            except ValueError:
+                flask.abort(400)
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_users(object_id).get(user_id)
+                if current_permission is None:
+                    current_permission = Permissions.NONE
+                if (update_mode == 'set-min' and current_permission < permission) or (update_mode == 'set-max' and current_permission > permission):
+                    logic.object_permissions.set_user_object_permissions(object_id, user_id, permission)
+
+        flask.flash(_('Updated permissions successfully.'), 'success')
+        return flask.redirect(flask.url_for('.objects', ids=edit_permissions_form.objects.data))
+    return flask.redirect(flask.url_for('.objects'))

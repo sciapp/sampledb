@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import pypdf
 import pytest
 import requests
+from flask import current_app
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
@@ -456,3 +457,342 @@ def test_object_list_generate_multiple_labels_minimal_height(object, flask_serve
         assert reader.pages[0].extract_text().count(object.name) == 5
         assert float(reader.pages[0].mediabox.width) == round(LETTER[0], 4)
         assert float(reader.pages[0].mediabox.height) == round(LETTER[1], 4)
+
+
+def test_object_list_change_signed_in_min_permission(object, flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['edit_permissions'] == ['True']
+    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='read']").click()
+
+    assert not driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='write']").is_enabled()
+    assert not driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='grant']").is_enabled()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'All Signed-In Users'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
+
+    driver.find_element(By.ID, 'multiselect-submit').click()
+    assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
+
+
+def test_object_list_change_signed_in_max_permission(object, flask_server, driver, user):
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object_id=object.id, permissions=sampledb.models.Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.models.Permissions.WRITE
+
+    driver.get(flask_server.base_url + f"users/{user.id}/autologin")
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params["edit_permissions"] == ["True"]
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    driver.find_element(By.XPATH, "//label/input[@name='update_mode' and @value='set-max']").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='none']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'All Signed-In Users'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
+
+    driver.find_element(By.ID, 'multiselect-submit').click()
+
+    assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
+
+
+def test_object_list_change_anonymous_min_permission(object, flask_server, driver, user):
+    flask_server.app.config["ENABLE_ANONYMOUS_USERS"] = True
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['edit_permissions'] == ['True']
+    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Anonymous Users']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='read']").click()
+
+    assert not driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='write']").is_enabled()
+    assert not driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='grant']").is_enabled()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'Anonymous Users'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
+
+    driver.find_element(By.ID, 'multiselect-submit').click()
+    assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
+
+
+def test_object_list_change_anonymous_max_permission(object, flask_server, driver, user):
+    flask_server.app.config["ENABLE_ANONYMOUS_USERS"] = True
+    sampledb.logic.object_permissions.set_object_permissions_for_all_users(object_id=object.id, permissions=sampledb.models.Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.models.Permissions.WRITE
+
+    driver.get(flask_server.base_url + f"users/{user.id}/autologin")
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params["edit_permissions"] == ["True"]
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    driver.find_element(By.XPATH, "//label/input[@name='update_mode' and @value='set-max']").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Anonymous Users']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='none']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'Anonymous Users'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
+
+    driver.find_element(By.ID, 'multiselect-submit').click()
+
+    assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
+
+
+def test_object_list_change_user_min_permission(object, flask_server, driver, user):
+    with flask_server.app.app_context():
+        test_user = sampledb.models.User(name="Test User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(test_user)
+        sampledb.db.session.commit()
+        assert test_user.id is not None
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['edit_permissions'] == ['True']
+    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='User']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-users']").click()
+    driver.find_element(By.XPATH, f"//select[@id='edit-permissions-users']/following-sibling::div/div/ul/li/a/span[text()='{test_user.name} (#{test_user.id})']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='write']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'User'
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-users']/div/div/div").text == f'{test_user.name} (#{test_user.id})'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
+
+    assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
+    driver.find_element(By.ID, 'multiselect-submit').click()
+    assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.WRITE
+
+
+def test_object_list_change_user_max_permission(object, flask_server, driver, user):
+    with flask_server.app.app_context():
+        test_user = sampledb.models.User(name="Test User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+        sampledb.db.session.add(test_user)
+        sampledb.db.session.commit()
+        assert test_user.id is not None
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id=object.id, user_id=test_user.id, permissions=sampledb.models.Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.models.Permissions.WRITE
+
+    driver.get(flask_server.base_url + f"users/{user.id}/autologin")
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params["edit_permissions"] == ["True"]
+
+    driver.find_element(By.ID, "checkbox-select-overall").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='User']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-users']").click()
+    driver.find_element(By.XPATH, f"//select[@id='edit-permissions-users']/following-sibling::div/div/ul/li/a/span[text()='{test_user.name} (#{test_user.id})']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='update_mode' and @value='set-max']").click()
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='read']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'User'
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-users']/div/div/div").text == f'{test_user.name} (#{test_user.id})'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
+
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    driver.find_element(By.ID, 'multiselect-submit').click()
+    assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.READ
+
+
+def test_object_list_change_group_min_permission(object, flask_server, driver, user):
+    test_group = sampledb.logic.groups.create_group(name="Test Group", description="", initial_user_id=user.id)
+    assert test_group.id is not None
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['edit_permissions'] == ['True']
+    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, "checkbox-select-overall").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Basic Group']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-groups']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-groups']/following-sibling::div//button[text()='Expand All']").click()
+    driver.find_element(By.XPATH, "//span[text()='Test Group']/parent::span/parent::a").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='write']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'Basic Group'
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-groups']/div/div/div").text == 'Test Group'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
+
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    driver.find_element(By.ID, 'multiselect-submit').click()
+    assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.WRITE
+
+
+def test_object_list_change_group_max_permission(object, flask_server, driver, user):
+    test_group = sampledb.logic.groups.create_group(name="Test Group", description="", initial_user_id=user.id)
+    assert test_group.id is not None
+    sampledb.logic.object_permissions.set_group_object_permissions(object_id=object.id, group_id=test_group.id, permissions=sampledb.models.permissions.Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.models.permissions.Permissions.WRITE
+
+    driver.get(flask_server.base_url + f"users/{user.id}/autologin")
+    driver.get(flask_server.base_url + "objects/")
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params["edit_permissions"] == ["True"]
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Basic Group']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-groups']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-groups']/following-sibling::div//button[text()='Expand All']").click()
+    driver.find_element(By.XPATH, "//span[text()='Test Group']/parent::span/parent::a").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='update_mode' and @value='set-max']").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='read']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'Basic Group'
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-groups']/div/div/div").text == 'Test Group'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
+
+    assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+    driver.find_element(By.ID, 'multiselect-submit').click()
+    assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.READ
+
+
+def test_object_list_change_project_group_min_permission(object, flask_server, driver, user):
+    test_project = sampledb.logic.projects.create_project(name="Test Project", description="", initial_user_id=user.id)
+    assert test_project.id is not None
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'objects/')
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params['edit_permissions'] == ['True']
+    assert not driver.find_element(By.ID, 'multiselect-submit').is_enabled()
+
+    driver.find_element(By.ID, 'checkbox-select-overall').click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Project Group']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-project-groups']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-project-groups']/following-sibling::div//button[text()='Expand All']").click()
+    driver.find_element(By.XPATH, "//span[text()='Test Project']/parent::span/parent::a").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='write']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'Project Group'
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-project-groups']/div/div/div").text == 'Test Project'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
+
+    assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
+    driver.find_element(By.ID, "multiselect-submit").click()
+    assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.WRITE
+
+
+def test_object_list_change_project_group_max_permission(object, flask_server, driver, user):
+    test_project = sampledb.logic.projects.create_project(name="Test Project", description="", initial_user_id=user.id)
+    assert test_project.id is not None
+    sampledb.logic.object_permissions.set_project_object_permissions(object_id=object.id, project_id=test_project.id, permissions=sampledb.models.Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.WRITE
+
+    driver.get(flask_server.base_url + f"users/{user.id}/autologin")
+    driver.get(flask_server.base_url + "objects/")
+
+    driver.find_element(By.ID, 'multiselect-dropdown').click()
+    driver.find_element(By.XPATH, '//a[contains(text(), "Edit Permissions")]').click()
+
+    query_params = parse_qs(urlparse(driver.current_url).query)
+    assert query_params["edit_permissions"] == ["True"]
+
+    driver.find_element(By.ID, "checkbox-select-overall").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-target-type']/following-sibling::div/div/ul/li/a/span[text()='Project Group']/parent::a/parent::li").click()
+
+    driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-project-groups']").click()
+    driver.find_element(By.XPATH, "//select[@id='edit-permissions-project-groups']/following-sibling::div//button[text()='Expand All']").click()
+    driver.find_element(By.XPATH, "//span[text()='Test Project']/parent::span/parent::a").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='update_mode' and @value='set-max']").click()
+
+    driver.find_element(By.XPATH, "//label/input[@name='permission' and @value='read']").click()
+
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-target-type']/div/div/div").text == 'Project Group'
+    assert driver.find_element(By.XPATH, "//button[@data-id='edit-permissions-project-groups']/div/div/div").text == 'Test Project'
+    assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
+    assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
+
+    assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
+    driver.find_element(By.ID, "multiselect-submit").click()
+    assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.READ

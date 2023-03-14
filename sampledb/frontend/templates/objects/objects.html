@@ -21,6 +21,12 @@
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }};
+    const available_permissions = ['none', 'read', 'write', 'grant'];
+    const special_groups = {{ special_groups | tojson }};
+    const disabled_special_group_permissions = {{ disabled_special_group_permissions | tojson }};
+    let active_permissions;
+    const current_permissions_special_groups = {{ current_permissions_special_groups | tojson }};
+    const current_permissions_normal_entities = {{ current_permissions_normal_entities | tojson }};
     let selected_object_ids = [];
 
     $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover' });
@@ -96,6 +102,9 @@
       });
 
       checkSubmittable();
+      {% if edit_permissions %}
+        updateActivePermissionData();
+      {% endif %}
 
       $("#object-location").selectpicker('val', '-1');
       $("#object-responsible-user").selectpicker('val', '-1');
@@ -124,6 +133,7 @@
       let submit_button = $('#multiselect-submit');
       const isInputValid = checkLabelFormSubmittable();
       let has_invalid_ids = selected_object_ids.some(id => !objects_allowed_to_select.includes(id));
+
       if(selected_object_ids.length === 0) {
         submit_tooltip.attr("data-original-title", "{{ _('You have to select at least one object.') }}").tooltip("setContent").tooltip("enable");
         submit_button.prop('disabled', true)
@@ -148,6 +158,45 @@
           submit_button.prop('disabled', true);
           return false;
         }
+      {% elif edit_permissions %}
+        const target_type = $('#edit-permissions-target-type').val();
+        const update_mode = $('input:radio[name="update_mode"]:checked').val();
+        const permission = $("input:radio[name='permission']:checked").val();
+
+        if(target_type === null) {
+          submit_tooltip.attr("data-original-title", "{{ _('You have to select a target type.') }}").tooltip("setContent").tooltip("enable");
+          submit_button.prop('disabled', true);
+          return false;
+        } else if(target_type === 'group' && $('#edit-permissions-groups').val() === null) {
+            submit_tooltip.attr("data-original-title", "{{ _('You have to select a group.') }}").tooltip("setContent").tooltip("enable");
+            submit_button.prop('disabled', true);
+            return false;
+        } else if(target_type === 'project-group' && $('#edit-permissions-project-groups').val() === null) {
+            submit_tooltip.attr("data-original-title", "{{ _('You have to select a project group.') }}").tooltip("setContent").tooltip("enable");
+            submit_button.prop('disabled', true);
+            return false;
+        } else if(target_type === 'user' && $('#edit-permissions-users').val() === null) {
+            submit_tooltip.attr("data-original-title", "{{ _('You have to select a user.') }}").tooltip("setContent").tooltip("enable");
+            submit_button.prop('disabled', true);
+            return false;
+        }
+
+        if(update_mode === undefined) {
+            submit_tooltip.attr("data-original-title", "{{ _('You have to select how you want to update the permissions.') }}").tooltip("setContent").tooltip("enable");
+            submit_button.prop('disabled', true);
+            return false;
+        }
+
+        if(permission === undefined) {
+            submit_tooltip.attr("data-original-title", "{{ _('You have to select a permission.') }}").tooltip("setContent").tooltip("enable");
+            submit_button.prop('disabled', true);
+            return false;
+        } else if(special_groups.includes($('#edit-permissions-target-type')) && disabled_special_group_permissions.includes($("input:radio[name='permission']:checked").val())) {
+            submit_tooltip.attr("data-original-title", "{{ _('You have selected write/grant permissions for a special group.') }}").tooltip("setContent").tooltip("enable");
+            submit_button.prop('disabled', true);
+            return false;
+        }
+
       {% endif %}
       submit_tooltip.tooltip('disable');
       submit_button.prop('disabled', false);
@@ -172,11 +221,11 @@
       let submit_button = $('#multiselect-submit');
       let submittable = true;
       let shortform;
-      if (labelVariant == 'mixed-formats') {
+      if (labelVariant === 'mixed-formats') {
         shortform = 'mf';
-      } else if(labelVariant == 'fixed-width') {
+      } else if(labelVariant === 'fixed-width') {
         shortform = 'fw';
-      } else if(labelVariant == 'minimal-height') {
+      } else if(labelVariant === 'minimal-height') {
         shortform = 'mh';
       }
 
@@ -253,6 +302,121 @@
       checkSubmittable();
     }
 
+    function updateActivePermissionData() {
+      const target_type = $('#edit-permissions-target-type').val();
+      let permission_radio_buttons = $("input:radio[name='permission']");
+
+      if(target_type === 'group') {
+        const group_id = $('#edit-permissions-groups').val();
+        active_permissions = current_permissions_normal_entities[target_type].hasOwnProperty(group_id) ? current_permissions_normal_entities[target_type][group_id] : {};
+      } else if(target_type === 'project-group') {
+        const project_group_id = $('#edit-permissions-project-groups').val();
+        active_permissions = current_permissions_normal_entities[target_type].hasOwnProperty(project_group_id) ? current_permissions_normal_entities[target_type][project_group_id] : {};
+      } else if(target_type === 'user') {
+        const user_id = $('#edit-permissions-users').val();
+        active_permissions = current_permissions_normal_entities[target_type].hasOwnProperty(user_id) ? current_permissions_normal_entities[target_type][user_id] : {};
+      } else {
+        active_permissions = current_permissions_special_groups[target_type];
+      }
+
+      if(special_groups.includes(target_type)) {
+
+        for(const permission of disabled_special_group_permissions) {
+          if(permission === $(permission_radio_buttons).filter(":checked").val()) $(permission_radio_buttons).filter("[value='none']").prop("checked", true);
+          $(permission_radio_buttons).filter(`[value='${permission}']`).prop('disabled', true).parent().addClass("permission-entry-disabled");
+        }
+
+      } else {
+        for(const permission of disabled_special_group_permissions) {
+          $(permission_radio_buttons).filter(`[value='${permission}']`).prop('disabled', false).parent().removeClass("permission-entry-disabled");
+        }
+      }
+    }
+
+    function updatePermissionForm() {
+      let type = $('#edit-permissions-target-type').val();
+      if(type === 'group') {
+        $('#edit-permissions-groups-container').removeAttr('hidden');
+        $('#edit-permissions-groups').prop('disabled', false);
+      } else {
+        $('#edit-permissions-groups-container').attr('hidden', 'hidden');
+        $('#edit-permissions-groups').prop('disabled', true);
+      }
+
+      if(type === 'user') {
+        $('#edit-permissions-users-container').removeAttr('hidden');
+        $('#edit-permissions-users').prop('disabled', false);
+      } else {
+        $('#edit-permissions-users-container').attr('hidden', 'hidden')
+        $('#edit-permissions-users').prop('disabled', true);
+      }
+
+      if(type === 'project-group') {
+        $('#edit-permissions-project-groups-container').removeAttr('hidden');
+        $('#edit-permissions-project-groups').prop('disabled', false);
+      } else {
+        $('#edit-permissions-project-groups-container').attr('hidden', 'hidden');
+        $('#edit-permissions-project-groups').prop('disabled', true);
+      }
+
+      $("#edit-permissions-groups").selectpicker('refresh');
+      $("#edit-permissions-users").selectpicker('refresh');
+      $("#edit-permissions-project-groups").selectpicker('refresh');
+    }
+
+    function updatePermissionsTable() {
+      for(const object_id of objects_allowed_to_select) {
+        updatePermissionsTableRow(object_id);
+      }
+    }
+
+    function updatePermissionsTableRow(object_id) {
+      const update_mode = $("input:radio[name='update_mode']:checked").val();
+      const new_permission = $("input:radio[name='permission']:checked").val();
+      const new_permission_index = available_permissions.indexOf(new_permission);
+      let current_permission = active_permissions.hasOwnProperty(object_id) ? active_permissions[object_id] : 'none';
+      const current_permission_index = available_permissions.indexOf(current_permission);
+
+      const cell_id = "permission-" + object_id + "-";
+
+      if(((update_mode === 'set-min' && current_permission_index <= new_permission_index) || (update_mode === 'set-max' && current_permission_index >= new_permission_index)) && selected_object_ids.indexOf(object_id) >= 0) {
+        for(const available_permission of available_permissions) {
+          if(available_permission === new_permission) {
+            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-check');
+          } else {
+            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-times');
+          }
+        }
+      } else {
+        for(const available_permission of available_permissions) {
+          if(available_permission === current_permission) {
+            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-check');
+          } else {
+            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-times');
+          }
+        }
+      }
+
+      if(selected_object_ids.indexOf(object_id) < 0) {
+        $(`.permissions-entry-${object_id}`).addClass("permission-entry-disabled");
+      } else {
+        $(`.permissions-entry-${object_id}`).removeClass("permission-entry-disabled");
+      }
+    }
+
+    $('#edit-permissions-target-type').on('change', function() {
+      updatePermissionForm();
+      updateActivePermissionData();
+    });
+    $('#edit-permissions-groups-container').on('change', updateActivePermissionData);
+    $('#edit-permissions-users').on('change', updateActivePermissionData);
+    $('#edit-permissions-project-groups').on('change', updateActivePermissionData);
+    $('#edit-permissions-form').on('change', function() {
+      updatePermissionsTable();
+      checkSubmittable();
+    });
+
+
     $(function() {
       const select_label_options = ['mixed-formats', 'fixed-width', 'minimal-height'];
       let checkboxSelectOverall = $('#checkbox-select-overall');
@@ -266,7 +430,12 @@
           }
         });
         checkboxSelectOverall.prop('indeterminate', false);
+        {% if edit_permissions %}
+        updatePermissionsTable();
+        {% endif %}
       });
+
+      checkboxSelectChilds.on('change', updatePermissionsTable);
 
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
@@ -297,6 +466,10 @@
           }
         }
         $('.selectpicker').selectpicker('refresh');
+      });
+
+      $('form#edit-permissions-form').on('submit', function() {
+        $('form#edit-permissions-form input#object-selection').val(selected_object_ids.join(','));
       });
 
       $("#object-location").on("change", () => checkSubmittable());
@@ -832,7 +1005,7 @@
     {{ _('Search') }}
   </a>
 
-  {% if not edit_location and not create_from_objects and not generate_labels %}
+  {% if not edit_location and not create_from_objects and not generate_labels and not edit_permissions %}
     <div class="btn-group" style="margin-bottom: 8px;">
       <button class="btn btn-default dropdown-toggle" type="button" id="multiselect-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         {{ _('Multiple Objects') }}&hellip; <span class="caret"></span>
@@ -840,6 +1013,7 @@
       <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="multiselect-dropdown">
         <li><a href="{{ build_modified_url(edit_location=True) }}" class="dropdown-item"> <i class="fa fa-map-marker" aria-hidden="true"></i> {{ _('Assign Location') }}</a></li>
         <li><a href="{{ build_modified_url(generate_labels=True) }}" class="dropdown-item"><i class="fa fa-tag" aria-hidden="true"></i> {{ _('Generate Labels') }}</a></li>
+        <li><a href="{{ build_modified_url(edit_permissions=True) }}" class="dropdown-item"><i class="fa fa-lock" aria-hidden="true"></i> {{ _('Edit Permissions') }}</a></li>
         {% if available_action_types|length > 0 %}
           <h6 class="dropdown-header"> {{ _('Use in Action') }} </h6>
           {% for action_type in available_action_types %}
@@ -849,7 +1023,7 @@
       </ul>
     </div>
 
-  {% elif edit_location and not create_from_objects and not generate_labels %}
+  {% elif edit_location and not create_from_objects and not generate_labels and not edit_permissions %}
   {% set allowed_language_ids = [] %}
   {% for language in all_languages %}
     {% if language.enabled_for_input %}
@@ -911,7 +1085,7 @@
         </div>
     </div>
   </form>
-  {% elif create_from_objects and not edit_location %}
+  {% elif create_from_objects and not edit_location and not edit_permissions %}
   <form id="create-object-form" method="post" action="{{ url_for('.multiselect_action') }}">
     {{ use_in_action_form.csrf_token }}
     <input type="hidden" id="action-type-id-selection" name="{{ use_in_action_form.action_type_id.name }}" value="{{ use_in_action_type.id }}" />
@@ -972,7 +1146,7 @@
       {% endif %}
     </div>
   </form>
-  {% elif generate_labels and not create_from_objects and not edit_location %}
+  {% elif generate_labels and not create_from_objects and not edit_location and not edit_permissions %}
     <form id="generate-labels-form" method="get" action="{{ url_for('.multiselect_labels') }}">
       {{ generate_labels_form.csrf_token }}
       <input type="hidden" id="object-selection" name="{{ generate_labels_form.objects.name }}"/>
@@ -1097,6 +1271,89 @@
         </span>
       </div>
     </form>
+  {% elif not create_from_objects and not edit_location and not generate_labels and edit_permissions %}
+  <form id="edit-permissions-form" method="post" action="{{ url_for('.multiselect_permissions') }}" style="margin-bottom: 10px;">
+    {{ edit_permissions_form.csrf_token }}
+    <span class="text-muted">{{ _('Select objects for which you want to change the permissions.') }}</span>
+    <input type="hidden" id="object-selection" name="{{ edit_permissions_form.objects.name }}" value="" />
+    <div class="row">
+      <div class="col-sm-6 col-sm-offset-3" style="margin-top: 15px;">
+        <div class="row">
+          <div class="form-group col-sm-6">
+            <label for="edit-permissions-target-type" class="control-label">{{ _('Select the target type:') }}</label>
+            <select id="edit-permissions-target-type" name="{{ edit_permissions_form.target_type.name }}" class="selectpicker form-control">
+              {% for key, label in edit_permissions_form.target_type.choices %}objects.html
+                <option value="{{key}}" {% if loop.first %} selected="selected" {% endif %} {% if (key == 'group' and edit_permissions_form.groups.choices|length == 0) or (key == 'project-group' and edit_permissions_form.project_groups.choices|length == 0) %} disabled="disabled" {% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group col-sm-6" id="edit-permissions-groups-container" hidden="hidden">
+            <label for="edit-permissions-groups" class="control-label">{{ _('Select a Group:') }}</label>
+            <select id="edit-permissions-groups" class="treepicker selectpicker form-control" name="{{ edit_permissions_form.groups.name }}" data-live-search="true" disabled="disabled">
+            {% for group_info in groups_treepicker_info %}
+              <option value="{{ group_info.id }}" {% if group_info.is_disabled %} disabled="disabled" {% endif %} data-content="<span class='{% if group_info.has_subtree %}option-group-{{group_info.id}}-header {% endif %} closed {% for id in group_info.id_path[:-1] %} option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left: {{1.5 * (group_info.id_path | length - 1)}}em'>{% if group_info.has_subtree %} <span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'> {{ group_info.name_prefix }}</span>{{ group_info.name }}</span>">
+                {{ group_info.full_name }}
+              </option>
+            {% endfor %}
+            </select>
+          </div>
+          <div class="form-group col-sm-6" id="edit-permissions-users-container" hidden="hidden">
+            <label for="edit-permissions-users" class="control-label">{{ _('Select an User:') }}</label>
+            <select id="edit-permissions-users" class="selectpicker form-control" name="{{ edit_permissions_form.users.name }}" data-live-search="true" disabled="disabled">
+              {% for user_id, user_name in edit_permissions_form.users.choices %}
+                <option value="{{ user_id }}" {% if loop.first %} selected="selected" {% endif %}>{{ user_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group col-sm-6" id="edit-permissions-project-groups-container" hidden="hidden">
+            <label for="edit-permissions-project-groups" class="control-label">{{ _('Select a Project Group:') }}</label>
+            <select id="edit-permissions-project-groups" class="treepicker selectpicker form-control" name="{{ edit_permissions_form.project_groups.name }}" data-live-search="true" disabled="disabled">
+              {% for project_info in projects_treepicker_info %}
+                <option value="{{ project_info.id }}" {% if project_info.is_disabled %} disabled="disabled" {% endif %} data-content="<span class='{% if project_info.has_subtree %} option-group-{{ project_info.id }}-header{% endif %} closed {% for id in project_info.id_path[:-1] %} option-group-{{ id }}-member option-group-{{ id }}-closed {% endfor %}' style='padding-left: {{1.5 * (project_info.id_path | length - 1) }}em'>{% if project_info.has_subtree %}<span class='selectpicker-collapsible-menu'><i class='fa'></i></span> {% endif %}<span class='location_path'> {{ project_info.name_prefix }}</span>{{ project_info.name }}</span>">
+                  {{ project_info.full_name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-permissions-update-mode" class="control-label">{{ _('Select how to edit the permissions:') }}</label>
+          <div class="row">
+            {% for key, label in edit_permissions_form.update_mode.choices %}
+              <div class="col-sm-6">
+                <label style="font-weight: normal;">
+                  <input type="radio" name="{{ edit_permissions_form.update_mode.name }}" value="{{ key }}" {% if loop.first %} checked="checked" {% endif %}>
+                  {{ label }}
+                  {% if key == 'set-max' %}
+                    <i class="fa fa-exclamation-circle" data-toggle="tooltip" data-placement="top" title="{{ _('Note that after setting the maximum permission, a user can still have a higher permission, for example by a group/project group.') }}"></i>
+                  {% endif %}
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-permissions-permission" class="control-label">{{ _('Select a Permission:') }}</label>
+          <div class="row">
+            {% for key, label in edit_permissions_form.permission.choices %}
+              <div class="col-sm-3">
+                <label style="font-weight: normal;">
+                  <input type="radio" name="{{ edit_permissions_form.permission.name }}" value="{{ key }}" {% if loop.first %} checked="checked" {% endif %}>
+                  {{ label}}
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-right row">
+      <a href="{{ build_modified_url(blocked_parameters=['edit_permissions']) }}" class="btn btn-default">{{ _('Cancel') }}</a>
+      <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _('You have to select at least one object.') }}">
+        <button type="submit" id="multiselect-submit" class="btn btn-primary" disabled>{{ _('Save permissions') }}</button>
+      </span>
+    </div>
+  </form>
   {% endif %}
 
   {% if objects %}
@@ -1106,162 +1363,238 @@
   <table class="table" id="table-objects">
   <thead>
     <tr>
-      {% if edit_location or create_from_objects or generate_labels %}
+      {% if edit_location or create_from_objects or generate_labels or edit_permissions %}
         <th scope="col" rowspan="2">
           <input id="checkbox-select-overall" type="checkbox" value="state" />
         </th>
       {% endif %}
       <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('ID') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_object_id', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_object_id' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_object_id', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_object_id' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
       <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Name') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='name', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == 'name' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='name', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == 'name' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
-      {% if creation_info %}
-        <th scope="col" {% if 'user' in creation_info and 'date' in creation_info %}colspan="2"{% endif %}>{{ _('Created') }}</th>
+      {% if not edit_permissions %}
+        {% if creation_info %}
+          <th scope="col" {% if 'user' in creation_info and 'date' in creation_info %}colspan="2"{% endif %}>{{ _('Created') }}</th>
+        {% endif %}
+        {% if last_edit_info %}
+          <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
+        {% endif %}
+        {% if other_databases_info %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Other Databases') }}</th>
+        {% endif %}
+        {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Instrument') }}</th>
+        {% endif %}
+        {% if 'action' in action_info %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Action') }}</th>
+        {% endif %}
+        {% if 'location' in location_info %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Location') }}</th>
+        {% endif %}
+        {% if 'responsible_user' in location_info %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Responsible User') }}</th>
+        {% endif %}
+        {% for property_name in display_properties %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
+        {% endfor %}
+      </tr>
+      {% if creation_info or last_edit_info %}
+      <tr>
+        {% if 'date' in creation_info %}
+          <th scope="col">{{ _('Date') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_creation_date', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_creation_date' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_creation_date', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_creation_date' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
+        {% endif %}
+        {% if 'user' in creation_info %}
+          <th scope="col">{{ _('User') }}</th>
+        {% endif %}
+        {% if 'date' in last_edit_info %}
+          <th scope="col">{{ _('Date') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_last_modification_date', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_last_modification_date' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_last_modification_date', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_last_modification_date' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
+        {% endif %}
+        {% if 'user' in last_edit_info %}
+          <th scope="col">{{ _('User') }}</th>
+        {% endif %}
+      </tr>
       {% endif %}
-      {% if last_edit_info %}
-        <th scope="col"  {% if 'user' in last_edit_info and 'date' in last_edit_info %}colspan="2"{% endif %}>{{ _('Last modified') }}</th>
-      {% endif %}
-      {% if other_databases_info %}
-        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Other Databases') }}</th>
-      {% endif %}
-      {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
-        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Instrument') }}</th>
-      {% endif %}
-      {% if 'action' in action_info %}
-        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Action') }}</th>
-      {% endif %}
-      {% if 'location' in location_info %}
-        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Location') }}</th>
-      {% endif %}
-      {% if 'responsible_user' in location_info %}
-        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Responsible User') }}</th>
-      {% endif %}
-      {% for property_name in display_properties %}
-        <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} <span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}</th>
-      {% endfor %}
-    </tr>
-    {% if creation_info or last_edit_info %}
-    <tr>
-      {% if 'date' in creation_info %}
-        <th scope="col">{{ _('Date') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_creation_date', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_creation_date' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_creation_date', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_creation_date' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
-      {% endif %}
-      {% if 'user' in creation_info %}
-        <th scope="col">{{ _('User') }}</th>
-      {% endif %}
-      {% if 'date' in last_edit_info %}
-        <th scope="col">{{ _('Date') }} <span class="icons-sorting"><a href="{{ build_modified_url(sortby='_last_modification_date', order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == '_last_modification_date' and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby='_last_modification_date', order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == '_last_modification_date' and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span></th>
-      {% endif %}
-      {% if 'user' in last_edit_info %}
-        <th scope="col">{{ _('User') }}</th>
-      {% endif %}
-    </tr>
+    {% else %}
+      {% set read_permissions_description = _("Permission to view objects and their properties, files and comments.") %}
+      {% set write_permissions_description = _("Permission to edit objects and their properties and add files and comments. Includes Read permissions.") %}
+      {% set grant_permissions_description = _("Permission to grant permissions to other users. Includes Write permissions.") %}
+      <tr>
+        <th scope="col" class="permissions-table-head">{{ _('None') }}</th>
+        <th scope="col" class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ read_permissions_description }}">{{ _('Read') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ write_permissions_description }}">{{ _('Write') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+        <th scope="col" class="permissions-table-head"><span data-toggle="tooltip" data-placement="top" title="{{ grant_permissions_description }}">{{ _('Grant') }} <i class="fa fa-question-circle" aria-hidden="true"></i></span></th>
+      </tr>
     {% endif %}
   </thead>
   <tbody>
   {% for object in objects %}
     <tr>
-      {% if edit_location or create_from_objects or generate_labels %}
-      <td><input type="checkbox" name="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{% if edit_location %} {{ _('You need at least write permission to change the location of an object.') }} {% elif create_from_objects %} {{ _('The object cannot be used in a %(action_type_name)s Action.', action_type_name=use_in_action_type.name|get_translated_text) }} {% endif %}" {% endif %}/> </td>
+      {% if edit_location or create_from_objects or generate_labels or edit_permissions %}
+        {% if edit_location %}
+          {% set disabled_checkbox_reason =  _('You need at least write permission to change the location of an object.')  %}
+        {% elif create_from_objects %}
+          {% set disabled_checkbox_reason = _('The object cannot be used in a %(action_type_name)s Action.', action_type_name=use_in_action_type.name|get_translated_text) %}
+        {% elif generate_labels %}
+          {% set disabled_checkbox_reason = _('Labels are disabled for the action type of this object.') %}
+        {% elif edit_permissions %}
+          {% set disabled_checkbox_reason =  _('You need grant permission to change the permissions for this object.')  %}
+        {% endif %}
+        <td><input type="checkbox" name="cb-{{object.object_id}}" id="cb-{{object.object_id}}" class="checkbox-select-child" value="{{object.object_id}}" {% if (edit_location or create_from_objects or generate_labels or edit_permissions) and object.object_id not in objects_allowed_to_select %} disabled="disabled" data-toggle="tooltip" data-placement="right" title="{{ disabled_checkbox_reason }}" {% endif %}/> </td>
+        {% if (edit_location or create_from_objects or generate_labels or edit_permissions) and object.object_id not in objects_allowed_to_select %}
+        {% endif %}
       {% endif %}
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>
         <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
         {{ import_information_symbol(FederationObjectRef(fed_id=object.fed_id, component_uuid=object.component.uuid)) }}
       </td>
-      {% if 'date' in creation_info %}
-      <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
-      {% endif %}
-      {% if 'user' in creation_info %}
-      <td>
-        {{ user_reference(object.created_by) }}
-      </td>
-      {% endif %}
-      {% if 'date' in last_edit_info %}
-      <td class="nowrap">{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
-      {% endif %}
-      {% if 'user' in last_edit_info %}
-      <td>
-        {{ user_reference(object.modified_by) }}
-      </td>
-      {% endif %}
-      {% if other_databases_info %}
-        <td>
-        {% set shares = get_shares_for_object(object.object_id) %}
-        {% set components = [] %}
-        {% if object.component is not none %}
-          {{ components.append(object.component) or '' }}
-          <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared by %(component_name)s', component_name=object.component.get_name()) }}">
-            <i class="fa fa-arrow-left"></i>&nbsp;<a href="{{ url_for('.component', component_id=object.component_id) }}">{{ object.component.get_name() }}</a>
-          </span>
+      {% if not edit_permissions %}
+        {% if 'date' in creation_info %}
+        <td class="nowrap">{{ object.created_at | babel_format_date }}</td>
         {% endif %}
-        {% for share in shares %}
-          {% if share.component is not none %}
-            {{ components.append(share.component) or '' }}
-            <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared with %(component_name)s', component_name=share.component.get_name()) }}">
-              <i class="fa fa-arrow-right"></i>&nbsp;<a href="{{ url_for('.component', component_id=share.component_id) }}">{{ share.component.get_name() }}</a>
+        {% if 'user' in creation_info %}
+        <td>
+          {{ user_reference(object.created_by) }}
+        </td>
+        {% endif %}
+        {% if 'date' in last_edit_info %}
+        <td class="nowrap">{% if object.last_modified_at is not none %}{{ object.last_modified_at | babel_format_date }}{% else %}&mdash;{% endif %}</td>
+        {% endif %}
+        {% if 'user' in last_edit_info %}
+        <td>
+          {{ user_reference(object.modified_by) }}
+        </td>
+        {% endif %}
+        {% if other_databases_info %}
+          <td>
+          {% set shares = get_shares_for_object(object.object_id) %}
+          {% set components = [] %}
+          {% if object.component is not none %}
+            {{ components.append(object.component) or '' }}
+            <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared by %(component_name)s', component_name=object.component.get_name()) }}">
+              <i class="fa fa-arrow-left"></i>&nbsp;<a href="{{ url_for('.component', component_id=object.component_id) }}">{{ object.component.get_name() }}</a>
             </span>
           {% endif %}
-        {% endfor %}
-        {% if not components %}
-          &mdash;
-        {% endif %}
-        </td>
-      {% endif %}
-      {% if object.action is not none %}
-        {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
-        {% if object.action.instrument is not none %}
-          <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
-            {{ import_information_symbol(object.action.instrument) }}
+          {% for share in shares %}
+            {% if share.component is not none %}
+              {{ components.append(share.component) or '' }}
+              <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared with %(component_name)s', component_name=share.component.get_name()) }}">
+                <i class="fa fa-arrow-right"></i>&nbsp;<a href="{{ url_for('.component', component_id=share.component_id) }}">{{ share.component.get_name() }}</a>
+              </span>
+            {% endif %}
+          {% endfor %}
+          {% if not components %}
+            &mdash;
+          {% endif %}
           </td>
-        {% else %}
-          <td>&mdash;</td>
         {% endif %}
-        {% endif %}
-        {% if 'action' in action_info %}
-        <td>
-          <a href="{{ url_for('.action', action_id=object.action.id) }}">
-            {{ object.action.name | get_translated_text(default=_('Unnamed Action')) }}
-          </a>
-          {{ import_information_symbol(object.action) }}
-        </td>
-        {% endif %}
-      {% endif %}
-      {% if 'location' in location_info %}
-        <td>
-          {% if object.location_id is none %}
-            &mdash;
+        {% if object.action is not none %}
+          {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
+          {% if object.action.instrument is not none %}
+            <td><a href="{{ url_for('.instrument', instrument_id=object.action.instrument_id) }}">{{ object.action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
+              {{ import_information_symbol(object.action.instrument) }}
+            </td>
           {% else %}
-            {% with location = get_location(object.location_id) %}
-              <a href="{{ url_for('frontend.location', location_id=location.id) }}">
-                {{ location | get_location_name(True) }}
-              </a>
-              {{ import_information_symbol(location) }}
-            {% endwith %}
+            <td>&mdash;</td>
           {% endif %}
-        </td>
-      {% endif %}
-      {% if 'responsible_user' in location_info %}
-        <td>
-          {% if object.responsible_user_id is none %}
-            &mdash;
-          {% else %}
-            {{ user_reference(object.responsible_user_id) }}
           {% endif %}
-        </td>
-      {% endif %}
-      {% for property_name in display_properties %}
-        {% if object.display_properties[property_name] is not none %}
-          {% set metadata_language = none %}
-          {% set object_id = object.object_id %}
-          {% set id_prefix = 'object' + (object_id | string) + '__' + property_name + '_' %}
-          {% set data = object.display_properties[property_name][0] %}
-          {% set schema = object.display_properties[property_name][1] %}
-          {% set z = schema.update({'parent_style': 'table'}) %}
+          {% if 'action' in action_info %}
           <td>
-          {% include "objects/view/any.html" %}
+            <a href="{{ url_for('.action', action_id=object.action.id) }}">
+              {{ object.action.name | get_translated_text(default=_('Unnamed Action')) }}
+            </a>
+            {{ import_information_symbol(object.action) }}
           </td>
-        {% else %}
-          <td> &mdash; </td>
+          {% endif %}
         {% endif %}
-      {% endfor %}
+        {% if 'location' in location_info %}
+          <td>
+            {% if object.location_id is none %}
+              &mdash;
+            {% else %}
+              {% with location = get_location(object.location_id) %}
+                <a href="{{ url_for('frontend.location', location_id=location.id) }}">
+                  {{ location | get_location_name(True) }}
+                </a>
+                {{ import_information_symbol(location) }}
+              {% endwith %}
+            {% endif %}
+          </td>
+        {% endif %}
+        {% if 'responsible_user' in location_info %}
+          <td>
+            {% if object.responsible_user_id is none %}
+              &mdash;
+            {% else %}
+              {{ user_reference(object.responsible_user_id) }}
+            {% endif %}
+          </td>
+        {% endif %}
+        {% for property_name in display_properties %}
+          {% if object.display_properties[property_name] is not none %}
+            {% set metadata_language = none %}
+            {% set data = object.display_properties[property_name][0] %}
+            {% set schema = object.display_properties[property_name][1] %}
+            {% set z = schema.update({'parent_style': 'table'}) %}
+            <td>
+            {% include "objects/view/any.html" %}
+            </td>
+          {% else %}
+            <td> &mdash; </td>
+          {% endif %}
+        {% endfor %}
+        {% if 'location' in location_info %}
+          <td>
+            {% if object.location_id is none %}
+              &mdash;
+            {% else %}
+              {% with location = get_location(object.location_id) %}
+                <a href="{{ url_for('frontend.location', location_id=location.id) }}">
+                  {{ location | get_location_name(True) }}
+                </a>
+                {{ import_information_symbol(location) }}
+              {% endwith %}
+            {% endif %}
+          </td>
+        {% endif %}
+        {% if 'responsible_user' in location_info %}
+          <td>
+            {% if object.responsible_user_id is none %}
+              &mdash;
+            {% else %}
+              {{ user_reference(object.responsible_user_id) }}
+            {% endif %}
+          </td>
+        {% endif %}
+        {% for property_name in display_properties %}
+          {% if object.display_properties[property_name] is not none %}
+            {% set metadata_language = none %}
+            {% set object_id = object.object_id %}
+            {% set id_prefix = 'object' + (object_id | string) + '__' + property_name + '_' %}
+            {% set data = object.display_properties[property_name][0] %}
+            {% set schema = object.display_properties[property_name][1] %}
+            {% set z = schema.update({'parent_style': 'table'}) %}
+            <td>
+            {% include "objects/view/any.html" %}
+            </td>
+          {% else %}
+            <td> &mdash; </td>
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        {% if object["object_id"] in objects_allowed_to_select %}
+          {% for available_permission in ['none', 'read', 'write', 'grant'] %}
+            {% if available_permission == current_permissions_special_groups["signed-in-users"][object["object_id"]] %}
+              <td id="permission-{{ object["object_id"] }}-{{ available_permission }}" class="permission-entry-disabled permissions-table-data permissions-entry-{{ object['object_id'] }}"><i class="fa fa-check" aria-hidden="true"></i></td>
+            {% else %}
+              <td id="permission-{{ object["object_id"] }}-{{ available_permission }}" class="permission-entry-disabled permissions-table-data permissions-entry-{{ object['object_id'] }}"><i class="fa fa-times" aria-hidden="true"></i></td>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <td class="permissions-table-data" class="permission-entry-disabled">&mdash;</td>
+          <td class="permissions-table-data" class="permission-entry-disabled">&mdash;</td>
+          <td class="permissions-table-data" class="permission-entry-disabled">&mdash;</td>
+          <td class="permissions-table-data" class="permission-entry-disabled">&mdash;</td>
+        {% endif %}
+      {% endif %}
     </tr>
   {% endfor %}
   </tbody>

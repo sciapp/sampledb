@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-03-10 16:46+0100\n"
+"POT-Creation-Date: 2023-03-14 13:21+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -919,6 +919,33 @@ msgstr "Letter / ANSI A (Hochformat)"
 msgid "Letter / ANSI A (Landscape)"
 msgstr "Letter / ANSI A (Querformat)"
 
+msgid "Set minimum Permissions"
+msgstr "Setze minimale Berechtigungen"
+
+msgid "Set maximum Permissions"
+msgstr "Setze maximale Berechtigungen"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Read"
+msgstr "Lesen"
+
+msgid "Write"
+msgstr "Schreiben"
+
+msgid "Grant"
+msgstr "Rechtevergabe"
+
+msgid "All Signed-In Users"
+msgstr "Alle angemeldeten Nutzer"
+
+msgid "User"
+msgstr "Nutzer"
+
+msgid "Anonymous Users"
+msgstr "Anonyme Nutzer"
+
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
@@ -1119,6 +1146,14 @@ msgstr "Der neue Ort wurde erfolgreich den Objekten zugewiesen."
 
 msgid "Please select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
+
+msgid "It is not allowed to use permissions higher than read for special groups."
+msgstr ""
+"Es ist nicht erlaubt Berechtigungen größer als Lesen für Sondergruppen zu"
+" verwenden."
+
+msgid "Updated permissions successfully."
+msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
@@ -2200,9 +2235,6 @@ msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
-
-msgid "User"
-msgstr "Nutzer"
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -4260,15 +4292,6 @@ msgstr "Kommentare"
 msgid "Special Groups"
 msgstr "Sondergruppen"
 
-msgid "Read"
-msgstr "Lesen"
-
-msgid "Write"
-msgstr "Schreiben"
-
-msgid "Grant"
-msgstr "Rechtevergabe"
-
 msgid "Administrators"
 msgstr "Administratoren"
 
@@ -4356,6 +4379,29 @@ msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
 msgid "You have unallowed values in the red marked fields."
 msgstr "Sie haben nicht erlaubte Werte in die rot markierten Felder eingetragen."
+
+msgid "You have to select a target type."
+msgstr "Sie müssen einen Zieltypen auswählen."
+
+msgid "You have to select a group."
+msgstr "Sie müssen eine Gruppe auswählen."
+
+msgid "You have to select a project group."
+msgstr "Sie müssen eine Projektgruppe auswählen."
+
+msgid "You have to select a user."
+msgstr "Sie müssen einen Nutzer auswählen"
+
+msgid "You have to select how you want to update the permissions."
+msgstr "Sie müssen auswählen, wie Sie die Berechtigungen verändern wollen."
+
+msgid "You have to select a permission."
+msgstr "Sie müssen eine Berechtigung auswählen."
+
+msgid "You have selected write/grant permissions for a special group."
+msgstr ""
+"Sie haben Schreib/Rechtevergabe-Berechtigungen für eine Sondergruppe "
+"ausgewählt."
 
 msgid "Select a Paper Format"
 msgstr "Wählen Sie ein Papierformat aus"
@@ -4602,6 +4648,38 @@ msgstr "Mindestbreite:"
 msgid "Include QR Code"
 msgstr "QR Code einfügen"
 
+msgid "Select objects for which you want to change the permissions."
+msgstr "Wähle Sie Objekte aus bei denen Sie die Berechtigung ändern wollen."
+
+msgid "Select the target type:"
+msgstr "Wählen Sie den Zieltyp:"
+
+msgid "Select a Group:"
+msgstr "Wählen Sie eine Gruppe:"
+
+msgid "Select an User:"
+msgstr "Wählen Sie einen Nutzer:"
+
+msgid "Select a Project Group:"
+msgstr "Wählen Sie eine Projektgruppe:"
+
+msgid "Select how to edit the permissions:"
+msgstr "Wählen Sie aus, wie die Berechtigungen geändert werden sollen:"
+
+msgid ""
+"Note that after setting the maximum permission, a user can still have a "
+"higher permission, for example by a group/project group."
+msgstr ""
+"Beachten Sie, dass ein Benutzer nach setzen der maximalen Berechtigung "
+"immer noch eine höhere Berechtigung, beispielsweise durch eine "
+"Gruppe/Projektgruppe, besitzen kann."
+
+msgid "Select a Permission:"
+msgstr "Wählen Sie eine Berechtigung:"
+
+msgid "Save permissions"
+msgstr "Berechtigungen speichern"
+
 msgid "Created"
 msgstr "Erstellt"
 
@@ -4618,6 +4696,14 @@ msgid "The object cannot be used in a %(action_type_name)s Action."
 msgstr ""
 "Das ausgewählte Objekt kann nicht in einer %(action_type_name)s-Aktion "
 "genutzt werden."
+
+msgid "Labels are disabled for the action type of this object."
+msgstr "Etiketten sind für den Aktionstyp dieses Objekts deaktiviert."
+
+msgid "You need grant permission to change the permissions for this object."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Objekts zu verändern."
 
 #, python-format
 msgid "Shared by %(component_name)s"
@@ -5749,15 +5835,6 @@ msgstr "Exportiert&nbsp;am %(export_date)s"
 
 msgid "File"
 msgstr "Datei"
-
-msgid "None"
-msgstr "Keine"
-
-msgid "Anonymous Users"
-msgstr "Anonyme Nutzer"
-
-msgid "All Signed-In Users"
-msgstr "Alle angemeldeten Nutzer"
 
 msgid "Unnamed Basic Group"
 msgstr "Unbenannte einfache Gruppe"
