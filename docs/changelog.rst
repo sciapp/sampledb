@@ -15,6 +15,7 @@ Currently in development.
 - Enforce that titles in schemas are not empty
 - Allow using more than one LDAP server
 - Added optional checksum for file contents
+- Allow viewing differences between object versions
 
 Version 0.21.5
 --------------

@@ -1293,3 +1293,105 @@ code {
 .permission-entry-disabled {
     color: darkgray;
 }
+
+.data-diff-before {
+    background-color: #fff3f3;
+}
+
+.data-diff-after {
+    background-color: #f3fff3;
+}
+
+.data-diff-before .object-user-content,
+.data-diff-after .object-user-content,
+.data-diff-before pre,
+.data-diff-after pre {
+    background-color: rgba(245, 245, 245, 0.5);
+}
+
+.diff-modal-button {
+    margin: 3px;
+}
+
+/* styles definition for Python difflib.HtmlDiff */
+table.diff {
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+    font-size:0.8em;
+    border: none;
+    border-collapse: collapse;
+}
+
+table.diff .diff_add {
+    background-color: #f3fff3;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    color: #335533;
+}
+
+table.diff .diff_chg {
+    background-color: #fff7ee;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    color: #554a33;
+}
+
+table.diff .diff_sub {
+    background-color: #fff3f3;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    color: #553333;
+}
+
+table.diff td.diff_header {
+    color: #777777;
+    width: 1%;
+}
+
+table.diff th {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1.25em;
+}
+
+table.diff thead {
+    border-top: none;
+    border-bottom: 2px solid #dddddd;
+}
+table.diff tbody,
+table.diff colgroup,
+table.diff th,
+table.diff tr,
+table.diff td {
+    border: none;
+}
+
+table.diff th,
+table.diff td {
+    padding-left: 5px;
+    padding-right: 5px;
+    width: 110px;
+    word-wrap: break-word;
+}
+
+table.diff tr th:nth-of-type(3n + 0),
+table.diff tr td:nth-of-type(3n + 1),
+table.diff colgroup:nth-of-type(3n + 1) {
+    display: none;
+}
+
+table.diff tr {
+    border-top: 1px solid #dddddd;
+}
+table.diff tr:last-of-type {
+    border-bottom: 1px solid #dddddd;
+}
+table.diff tr:first-of-type {
+    border-top: none;
+}
+
+table.diff tr.noborder {
+    border-top: none;
+}
+
+table.diff tr.striped {
+    background-color: #f9f9f9;
+}
