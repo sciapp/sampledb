@@ -272,7 +272,9 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
                         view_text=view_text,
                         perform_text=perform_text
                     )
-
+                # load action type with new translations
+                action_type = logic.action_types.get_action_type(action_type.id)
+                logic.action_types.add_action_type_to_order(action_type)
         else:
 
             action_type = logic.action_types.update_action_type(
