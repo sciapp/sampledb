@@ -22,6 +22,7 @@ def test_set_action_type_translation():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -102,6 +103,7 @@ def test_get_action_translations_for_action():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -156,6 +158,7 @@ def test_delete_action_translation():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=True,
         is_template=True
     )

@@ -17,6 +17,7 @@ Currently in development.
 - Added optional checksum for file contents
 - Allow viewing differences between object versions
 - Fixed configuration of action types linkable to project groups
+- Allow linking an object to an instrument to provide additional information
 
 Version 0.21.5
 --------------

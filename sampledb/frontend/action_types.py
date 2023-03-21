@@ -114,6 +114,7 @@ class ActionTypeForm(FlaskForm):
     enable_activity_log = BooleanField()
     enable_related_objects = BooleanField()
     enable_project_link = BooleanField()
+    enable_instrument_link = BooleanField()
     disable_create_objects = BooleanField()
     is_template = BooleanField()
     select_usable_in_action_types = SelectMultipleField(coerce=int)
@@ -181,6 +182,7 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
             action_type_form.enable_activity_log.data = action_type.enable_activity_log
             action_type_form.enable_related_objects.data = action_type.enable_related_objects
             action_type_form.enable_project_link.data = action_type.enable_project_link
+            action_type_form.enable_instrument_link.data = action_type.enable_instrument_link
             action_type_form.disable_create_objects.data = action_type.disable_create_objects
             action_type_form.select_usable_in_action_types.data = [element.id for element in action_type.usable_in_action_types]
             action_type_form.is_template.data = action_type.is_template
@@ -240,6 +242,7 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
                     enable_activity_log=action_type_form.enable_activity_log.data,
                     enable_related_objects=action_type_form.enable_related_objects.data,
                     enable_project_link=action_type_form.enable_project_link.data,
+                    enable_instrument_link=action_type_form.enable_instrument_link.data,
                     disable_create_objects=action_type_form.disable_create_objects.data,
                     is_template=action_type_form.is_template.data,
                     usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,
@@ -290,6 +293,7 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
                 enable_activity_log=action_type_form.enable_activity_log.data,
                 enable_related_objects=action_type_form.enable_related_objects.data,
                 enable_project_link=action_type_form.enable_project_link.data,
+                enable_instrument_link=action_type_form.enable_instrument_link.data,
                 disable_create_objects=action_type_form.disable_create_objects.data,
                 is_template=action_type_form.is_template.data,
                 usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,

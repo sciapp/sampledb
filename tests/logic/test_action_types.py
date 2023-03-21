@@ -19,6 +19,7 @@ def test_check_action_type_exists():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -44,6 +45,7 @@ def test_add_action_type_to_order():
             enable_activity_log=True,
             enable_related_objects=True,
             enable_project_link=True,
+            enable_instrument_link=False,
             disable_create_objects=False,
             is_template=False
         )
@@ -62,6 +64,7 @@ def test_add_action_type_to_order():
             enable_activity_log=True,
             enable_related_objects=True,
             enable_project_link=True,
+            enable_instrument_link=False,
             disable_create_objects=False,
             is_template=False,
             fed_id=i,
@@ -125,6 +128,7 @@ def test_add_action_type_to_order():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -166,6 +170,7 @@ def test_add_action_type_to_order():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False,
         fed_id=100,

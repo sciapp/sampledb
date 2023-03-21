@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-03-15 15:17+0100\n"
+"POT-Creation-Date: 2023-03-22 16:44+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -280,6 +280,36 @@ msgstr "Bitte geben Sie einen englischen Instrumentnamen ein."
 
 msgid "The instrument was updated successfully."
 msgstr "Das Instrument wurde erfolgreich aktualisiert."
+
+msgid "Missing or invalid object ID."
+msgstr "Fehlende oder ungültige Objekt-ID."
+
+msgid "You do not have GRANT permissions for this object."
+msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+
+msgid "This object cannot be linked to an instrument."
+msgstr "Dieses Objekt kann nicht mit einem Instrument verknüpft werden."
+
+msgid "Object does not exist."
+msgstr "Dieses Objekt existiert nicht."
+
+msgid ""
+"The instrument is already linked to an object or the object is already "
+"linked to an instrument."
+msgstr ""
+"Das Instrument ist bereits mit einem anderen Objekt verknüpft oder das "
+"Objekt ist bereits mit einem anderen Instrument verknüpft."
+
+msgid "Successfully linked the object to the instrument."
+msgstr "Das Objekt wurde erfolgreich mit einem Instrument verknüpft."
+
+msgid "This instrument is not linked to this object."
+msgstr "Das Instrument ist nicht mit diesem Objekt verknüpft."
+
+msgid "Successfully unlinked the object from the instrument."
+msgstr ""
+"Die Verknüpfung zwischen dem Objekt und dem Instrument wurde erfolgreich "
+"aufgehoben."
 
 msgid "This language code is already in use."
 msgstr "Dieses Sprachkürzel wird bereits verwendet."
@@ -794,14 +824,8 @@ msgstr ""
 "Beim Ändern der Berechtigungen dieser Projektgruppe ist ein Problem "
 "aufgetreten. Bitte versuchen Sie es später erneut."
 
-msgid "Missing or invalid object ID."
-msgstr "Fehlende oder ungültige Objekt-ID."
-
 msgid "You do not have GRANT permissions for this project group."
 msgstr "Sie haben keine Rechtevergabe-Berechtigungen für diese Projektgruppe."
-
-msgid "You do not have GRANT permissions for this object."
-msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
 
 msgid "This object cannot be linked to a project group."
 msgstr "Dieses Objekt kann nicht mit einer Projektgruppe verknüpft werden."
@@ -815,9 +839,6 @@ msgstr ""
 
 msgid "Project group does not exist."
 msgstr "Diese Projektgruppe existiert nicht."
-
-msgid "Object does not exist."
-msgstr "Dieses Objekt existiert nicht."
 
 msgid "Successfully linked the object to a project group."
 msgstr "Das Objekt wurde erfolgreich mit der Projektgruppe verknüpft."
@@ -1391,6 +1412,12 @@ msgid ""
 msgstr ""
 "PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
 "button objectpicker-button-show-all\">Alle anzeigen</span>"
+
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
+msgid "Show less"
+msgstr "Weniger anzeigen"
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
@@ -2765,6 +2792,23 @@ msgstr ""
 "Nein, Objekte die mit Aktionen diesen Typs erstellt wurden können nicht "
 "als Projekt-Metadaten mit einer Projektgruppe verknüpft werden"
 
+msgid "Enable Linking to Instrument"
+msgstr "Verknüpfen mit Instrument aktivieren"
+
+msgid ""
+"Yes, objects created with actions of this type can be linked to an "
+"instrument as instrument metadata"
+msgstr ""
+"Ja, Objekte die mit Aktionen diesen Typs erstellt wurden können als "
+"Instrument-Informationen mit einem Instrument verknüpft werden"
+
+msgid ""
+"No, objects created with actions of this type cannot be linked to an "
+"instrument as instrument metadata"
+msgstr ""
+"Nein, Objekte die mit Aktionen diesen Typs erstellt wurden können nicht "
+"als Instrument-Informationen mit einem Instrument verknüpft werden"
+
 msgid "Usable in"
 msgstr "Verwendbar in"
 
@@ -2882,6 +2926,11 @@ msgstr ""
 msgid "Enable linking objects created with actions of this type to project groups"
 msgstr ""
 "Verknüpfen mit Projektgruppen für Objekte aktivieren, die mit Aktionen "
+"dieses Typs erstellt wurden"
+
+msgid "Enable linking objects created with actions of this type to instruments"
+msgstr ""
+"Verknüpfen mit Instrumenten für Objekte aktivieren, die mit Aktionen "
 "dieses Typs erstellt wurden"
 
 msgid "Nothing selected"
@@ -3460,8 +3509,35 @@ msgstr "Gruppen-Kategorien verwalten"
 msgid "This instrument has been hidden from instrument lists."
 msgstr "Dieses Instrument wurde aus Instrumentlisten versteckt."
 
+msgid "Information"
+msgstr "Informationen"
+
 msgid "Edit Instrument"
 msgstr "Instrument bearbeiten"
+
+msgid "Unlink Object"
+msgstr "Objektverknüpfung trennen"
+
+msgid "Are you certain you want to unlink the object from this instrument?"
+msgstr ""
+"Sind Sie sich sicher, dass Sie die Verknüpfung zwischen diesem Instrument"
+" und dem Objekt trennen wollen?"
+
+msgid "Link Object"
+msgstr "Objekt verknüpfen"
+
+msgid "Select an object to link this instrument to:"
+msgstr ""
+"Wählen Sie ein Objekt aus, mit dem dieses Instrument verknüpft werden "
+"soll:"
+
+#, python-format
+msgid ""
+"<a href=\"%(object_url)s\">Object #%(object_id)s</a> contains additional "
+"information for this instrument."
+msgstr ""
+"<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> enthält weitere "
+"Informationen zu diesem Instrument."
 
 msgid "Instrument Scientist Notes"
 msgstr "Notizen für Instrumentverantwortliche"
@@ -3733,6 +3809,9 @@ msgstr ""
 
 msgid "Hide this instrument from instrument lists"
 msgstr "Dieses Instrument nicht in Instrumentlisten anzeigen"
+
+msgid "Show the information for the linked object"
+msgstr "Zeige die Informationen des verknüpften Objekts"
 
 msgid "Instrument Scientists:"
 msgstr "Instrumentverantwortliche:"
@@ -4946,9 +5025,6 @@ msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 msgid "Unsupported item type for horizontal_table style."
 msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
-msgid "Show more"
-msgstr "Mehr anzeigen"
-
 #, python-format
 msgid ""
 "Changes between version #%(previous_version_id)s and version "
@@ -4991,9 +5067,6 @@ msgid ""
 msgstr ""
 "Die stets aktuellen Informationen finden Sie <a "
 "href=\"%(latest_version_url)s\">hier</a>."
-
-msgid "Information"
-msgstr "Informationen"
 
 msgid "This object has been imported without data."
 msgstr "Dieses Objekt wurde ohne Daten importiert."
@@ -5638,9 +5711,6 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
-msgid "Show less"
-msgstr "Weniger anzeigen"
-
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
@@ -5927,12 +5997,6 @@ msgstr "Kind-Projektgruppe hinzufügen"
 
 msgid "Remove Child Project Group"
 msgstr "Kind-Projektgruppe entfernen"
-
-msgid "Link Object"
-msgstr "Objekt verknüpfen"
-
-msgid "Unlink Object"
-msgstr "Objektverknüpfung trennen"
 
 msgid "Leave Project Group"
 msgstr "Projektgruppe verlassen"

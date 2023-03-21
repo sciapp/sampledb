@@ -47,6 +47,8 @@ class Instrument(Model):
     translations: Mapped[typing.List['InstrumentTranslation']] = relationship('InstrumentTranslation', lazy='selectin')
     location_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
     location: Mapped[typing.Optional['Location']] = relationship('Location')
+    object_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('objects_current.object_id'), nullable=True)
+    show_linked_object_data: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Instrument"]]
@@ -61,7 +63,8 @@ class Instrument(Model):
             create_log_entry_default: bool = False,
             is_hidden: bool = False,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            show_linked_object_data: bool = True
     ) -> None:
         super().__init__(
             description_is_markdown=description_is_markdown,
@@ -73,6 +76,7 @@ class Instrument(Model):
             is_hidden=is_hidden,
             fed_id=fed_id,
             component_id=component_id,
+            show_linked_object_data=show_linked_object_data,
         )
 
     def __eq__(self, other: typing.Any) -> bool:

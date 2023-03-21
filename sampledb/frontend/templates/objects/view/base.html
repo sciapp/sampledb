@@ -1463,6 +1463,7 @@
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}"></script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
@@ -2028,24 +2029,7 @@
     updateLabelsForm();
     {% endif %}
   {% endif %}
-
-    function toggleShowMore(prefix) {
-      let properties = $('.show-more-' + prefix);
-      let btn = $('#show-more-' + prefix + '-btn');
-      if (properties.hasClass('hidden')) {
-        properties.addClass('show').removeClass('hidden');
-        btn.text('{{ _("Show less") }}');
-      } else {
-        properties.addClass('hidden').removeClass('show');
-        btn.text('{{ _("Show more") }}');
-      }
-    }
-
-    $( document ).ready(function() {
-      $(plotly_charts).each(function(index, element) {
-        Plotly.newPlot(element[0], element[1]);
-      });
-
+   $( document ).ready(function() {
       $('.modal-body table.diff').each(function(_, table) {
         let skipped_rows = 0;
         $(table).find('tr').each(function(index, row) {

@@ -73,6 +73,7 @@ class ActionType(Model):
     scicat_export_type: Mapped[typing.Optional[SciCatExportType]] = db.Column(db.Enum(SciCatExportType), nullable=True)
     translations: Mapped[typing.List['ActionTypeTranslation']] = relationship('ActionTypeTranslation', lazy='selectin')
     order_index: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    enable_instrument_link: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ActionType"]]

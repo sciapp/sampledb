@@ -312,6 +312,7 @@ def complex_action(instrument, user):
         enable_related_objects=True,
         enable_activity_log=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )

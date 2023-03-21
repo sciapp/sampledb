@@ -345,6 +345,8 @@ def test_status_codes(flask_server, user, driver):
         f'instruments/{instrument_id}/edit': 200,
         f'instruments/{instrument_id}/log/{instrument_log_entry_id}/file_attachments/{instrument_log_file_attachment_id}': 200,
         f'instruments/{instrument_id}/log/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
+        f'instruments/{instrument_id}/link_object': 302,
+        f'instruments/{instrument_id}/unlink_object': 302,
         'instruments/new': 200,
         'language/new': 200,
         'languages/': 200,

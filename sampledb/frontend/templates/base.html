@@ -42,6 +42,8 @@
     window.object_picker_all_results_text_template_no_query = '{{ _('PLACEHOLDER2 results') }}';
     window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button objectpicker-button-show-all">Show all</span>') }}';
     window.object_picker_limit = {{ config.get('TYPEAHEAD_OBJECT_LIMIT') | tojson }};
+    window.show_more_text = "{{ _('Show more') }}";
+    window.show_less_text = "{{ _('Show less') }}";
   </script>
 {% endblock %}
 </head>

@@ -9,6 +9,8 @@ Either generic or associated with an :ref:`Instrument <instruments>`, each actio
 
 You can view a list of actions at |service_actions_url|. Similar to instruments, users can select **favorites** by clicking the star next to an action's name.
 
+.. _action_types:
+
 Action Types
 ------------
 
