@@ -27,6 +27,9 @@
       {% endif %}
     {% endif %}
   {% endfor %}
+  {% if valid_action_ids | length == 0 %}
+    {{ valid_action_ids.append(-100) or '' }}
+  {% endif %}
 {% endif %}
 
 {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
