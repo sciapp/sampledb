@@ -734,6 +734,16 @@ def link_object(project_id: int) -> FlaskResponseT:
         if Permissions.GRANT not in logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id) and not flask_login.current_user.has_admin_permissions:
             flask.flash(_("You do not have GRANT permissions for this object."), 'error')
             return flask.redirect(flask.url_for('.project', project_id=project_id))
+        object = logic.objects.get_object(object_id)
+        object_is_valid = False
+        if object.action_id is not None:
+            action = logic.actions.get_action(object.action_id)
+            if action.type_id is not None:
+                action_type = logic.action_types.get_action_type(action.type_id)
+                object_is_valid = action_type.enable_project_link
+        if not object_is_valid:
+            flask.flash(_("This object cannot be linked to a project group."), 'error')
+            return flask.redirect(flask.url_for('.project', project_id=project_id))
         logic.projects.link_project_and_object(project_id, object_id, flask_login.current_user.id)
     except logic.errors.ProjectObjectLinkAlreadyExistsError:
         flask.flash(_("Project group is already linked to an object or object is already linked to a project group."), 'error')
