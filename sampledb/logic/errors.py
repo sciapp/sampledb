@@ -444,3 +444,7 @@ class ExceedingLocationCapacityError(Exception):
 
 class InvalidUnitsError(Exception):
     pass
+
+
+class DiffMismatchError(Exception):
+    pass

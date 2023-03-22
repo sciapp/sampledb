@@ -18,6 +18,7 @@ from ...logic.languages import get_language_by_lang_code, get_languages_in_objec
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
 from ...logic.utils import get_translated_text
+from ...logic.schemas.data_diffs import calculate_diff
 from .forms import ObjectVersionRestoreForm
 from ...utils import object_permissions_required, FlaskResponseT
 from ..utils import get_user_if_exists
@@ -41,6 +42,17 @@ def object_versions(object_id: int) -> FlaskResponseT:
 def object_version(object_id: int, version_id: int) -> FlaskResponseT:
     english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
+    previous_version_data_diff = None
+    previous_version_schema = None
+    if 'diff' in flask.request.args and object.data is not None:
+        if version_id > 0:
+            try:
+                previous_version_object = get_object(object_id=object_id, version_id=version_id - 1)
+            except logic.errors.ObjectVersionDoesNotExistError:
+                previous_version_object = None
+            if previous_version_object is not None and previous_version_object.data is not None and previous_version_object.schema is not None:
+                previous_version_data_diff = calculate_diff(previous_version_object.data, object.data)
+                previous_version_schema = previous_version_object.schema
     current_version_id = get_current_object_version_id(object_id=object_id)
     form = None
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
@@ -85,6 +97,8 @@ def object_version(object_id: int, version_id: int) -> FlaskResponseT:
         object_id=object_id,
         version_id=version_id,
         current_version_id=current_version_id,
+        previous_version_data_diff=previous_version_data_diff,
+        previous_version_schema=previous_version_schema,
         link_version_specific_rdf=True,
         restore_form=form,
         get_user=get_user_if_exists,

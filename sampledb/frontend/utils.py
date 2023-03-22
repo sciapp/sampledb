@@ -5,6 +5,7 @@
 import copy
 import csv
 import dataclasses
+import difflib
 import io
 import json
 import base64
@@ -1287,3 +1288,13 @@ def to_timeseries_csv(
     writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(rows)
     return csv_file.getvalue()
+
+
+@JinjaFunction()
+def to_diff_table(
+        lines_before: str,
+        lines_after: str,
+        label_before: str = '',
+        label_after: str = ''
+) -> str:
+    return difflib.HtmlDiff(wrapcolumn=55).make_table(fromlines=lines_before.splitlines(), tolines=lines_after.splitlines(), fromdesc=label_before, todesc=label_after)

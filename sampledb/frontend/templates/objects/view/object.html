@@ -21,6 +21,13 @@
     {% else %}
       {% set data = none %}
     {% endif %}
+    {% if diff is not none and previous_schema is not none and property_name in diff %}
+      {% set diff = diff[property_name] %}
+      {% set previous_schema = previous_schema['properties'][property_name] %}
+    {% else %}
+      {% set diff = none %}
+      {% set previous_schema = none %}
+    {% endif %}
     {% if base_search_query_attribute %}
       {% set search_query_attribute = base_search_query_attribute + "." + name %}
     {% else %}
@@ -43,6 +50,13 @@
       {% else %}
         {% set data = none %}
       {% endif %}
+      {% if diff is not none and previous_schema is not none and property_name in diff %}
+        {% set diff = diff[property_name] %}
+        {% set previous_schema = previous_schema['properties'][property_name] %}
+      {% else %}
+        {% set diff = none %}
+        {% set previous_schema = none %}
+      {% endif %}
       {% if base_search_query_attribute %}
         {% set search_query_attribute = base_search_query_attribute + "." + name %}
       {% else %}
@@ -64,6 +78,13 @@
         {% set data = data[property_name] %}
       {% else %}
         {% set data = none %}
+      {% endif %}
+      {% if diff is not none and previous_schema is not none and not ('_before' in diff or '_after' in diff) and property_name in diff %}
+        {% set diff = diff[property_name] %}
+        {% set previous_schema = previous_schema['properties'][property_name] %}
+      {% else %}
+        {% set diff = none %}
+        {% set previous_schema = none %}
       {% endif %}
       {% if base_search_query_attribute %}
         {% set search_query_attribute = base_search_query_attribute + "." + name %}
