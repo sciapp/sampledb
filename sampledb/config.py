@@ -58,7 +58,7 @@ def parse_configuration_values() -> None:
     """
     # parse values as integers
     for config_name in [
-        'INVITATION_TIME_LIMIT'
+        'INVITATION_TIME_LIMIT',
         'MAX_CONTENT_LENGTH',
         'MAX_BATCH_SIZE',
         'VALID_TIME_DELTA',
