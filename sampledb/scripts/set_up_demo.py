@@ -1005,4 +1005,71 @@ This example shows how Markdown can be used for instrument Notes.
         }
         sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
 
+        combined_conditions_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'choice': {
+                        'title': 'Choice',
+                        'type': 'text',
+                        'choices': ['A', 'B']
+                    },
+                    'checkbox_a': {
+                        'title': 'Checkbox A',
+                        'type': 'bool',
+                        'conditions': [
+                            {
+                                'type': 'choice_equals',
+                                'property_name': 'choice',
+                                'choice': 'A'
+                            }
+                        ]
+                    },
+                    'checkbox_b': {
+                        'title': 'Checkbox B',
+                        'type': 'bool',
+                        'conditions': [
+                            {
+                                'type': 'choice_equals',
+                                'property_name': 'choice',
+                                'choice': 'B'
+                            }
+                        ]
+                    },
+                    'text_a': {
+                        'title': 'Text A',
+                        'type': 'text',
+                        'conditions': [
+                            {
+                                'type': 'bool_equals',
+                                'property_name': 'checkbox_a',
+                                'value': True
+                            }
+                        ]
+                    },
+                    'text_b': {
+                        'title': 'Text B',
+                        'type': 'text',
+                        'conditions': [
+                            {
+                                'type': 'bool_equals',
+                                'property_name': 'checkbox_b',
+                                'value': True
+                            }
+                        ]
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, combined_conditions_action.id, name="Combined Conditions Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(combined_conditions_action.id, sampledb.models.Permissions.READ)
+
     print("Success: set up demo data", flush=True)
