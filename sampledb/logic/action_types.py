@@ -360,14 +360,89 @@ def is_usable_in_action_types_table_empty() -> bool:
     return db.session.query(models.actions.usable_in_action_types_table).first() is None
 
 
-def set_action_types_order(index_list: typing.List[int]) -> None:
+def set_action_types_order(action_type_id_list: typing.List[int]) -> None:
     """
     Sets the `order_index` for all action types in the index_list, therefore the order in the list is used.
 
-    :param index_list: list of action type ids
+    :param action_type_id_list: list of action type ids
     """
-    for i, action_type_id in enumerate(index_list):
+    for i, action_type_id in enumerate(action_type_id_list):
         action_type = models.ActionType.query.filter_by(id=action_type_id).first()
         if action_type is not None:
             action_type.order_index = i
     db.session.commit()
+
+
+def add_action_type_to_order(action_type: ActionType) -> None:
+    """
+    Insert an action type into the current sort order.
+
+    :param action_type: the action type to insert
+    """
+    if action_type.order_index is not None:
+        # action type already has a place in the current sort order
+        return
+    action_types_before: typing.List[ActionType] = []
+    action_types_after: typing.List[ActionType] = []
+    action_types = [
+        ActionType.from_database(other_action_type)
+        for other_action_type in models.ActionType.query.filter(models.ActionType.order_index != db.null()).order_by(models.ActionType.order_index).all()
+    ]
+    if action_types:
+        # check if local action types are listed before imported action types
+        local_action_types = [
+            other_action_type
+            for other_action_type in action_types
+            if (other_action_type.fed_id is None)
+        ]
+        imported_action_types = [
+            other_action_type
+            for other_action_type in action_types
+            if (other_action_type.fed_id is not None)
+        ]
+        local_before_imported = max(
+            typing.cast(int, other_action_type.order_index)
+            for other_action_type in local_action_types
+        ) < min(
+            typing.cast(int, other_action_type.order_index)
+            for other_action_type in imported_action_types
+        )
+        if local_before_imported:
+            if action_type.fed_id is None:
+                action_types = local_action_types
+                action_types_after = imported_action_types + action_types_after
+            else:
+                action_types_before = action_types_before + local_action_types
+                action_types = imported_action_types
+    if action_types:
+        # check if action types are listed in order of their english names
+        english_names = [
+            other_action_type.name.get('en', '').lower()
+            for other_action_type in action_types
+        ]
+        english_lexicographical_order = english_names == sorted(english_names)
+        if english_lexicographical_order:
+            english_name = action_type.name.get('en', '').lower()
+            action_types_before = action_types_before + [
+                other_action_type
+                for other_action_type in action_types
+                if other_action_type.name.get('en', '').lower() < english_name
+            ]
+            action_types_after = [
+                other_action_type
+                for other_action_type in action_types
+                if other_action_type.name.get('en', '').lower() > english_name
+            ] + action_types_after
+            action_types = [
+                other_action_type
+                for other_action_type in action_types
+                if other_action_type.name.get('en', '').lower() == english_name
+            ]
+    # update order indices
+    index_list = [
+        other_action_type.id
+        for other_action_type in (
+            action_types_before + action_types + [action_type] + action_types_after
+        )
+    ]
+    set_action_types_order(index_list)
