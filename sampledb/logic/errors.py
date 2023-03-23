@@ -448,3 +448,7 @@ class InvalidUnitsError(Exception):
 
 class DiffMismatchError(Exception):
     pass
+
+
+class InstrumentObjectLinkAlreadyExistsError(Exception):
+    pass

@@ -432,6 +432,11 @@
           <input type="checkbox" id="input-is_hidden" name="{{ instrument_form.is_hidden.name }}" {% if instrument_form.is_hidden.data %}checked="checked"{% endif %}> {{ _('Hide this instrument from instrument lists') }}
         </label>
       </div>
+      <div class="checkbox">
+        <label for="input-show_linked_object_data">
+          <input type="checkbox" id="input-show_linked_object_data" name="{{ instrument_form.show_linked_object_data.name }}" {% if instrument_form.show_linked_object_data.data %}checked="checked"{% endif %}> {{ _('Show the information for the linked object') }}
+        </label>
+      </div>
     </div>
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-3 col-md-offset-6">

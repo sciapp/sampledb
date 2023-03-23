@@ -16,24 +16,29 @@ from flask_babel import _
 from flask_wtf import FlaskForm
 import pytz
 from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField, SelectField
-from wtforms.validators import DataRequired, ValidationError
+from wtforms.validators import DataRequired, ValidationError, InputRequired
 
 from . import frontend
+from .objects.permissions import get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
+from .objects.view import get_project_if_it_exists
+from .utils import get_user_if_exists
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
-from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location
+from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location, get_instrument_object_links, set_instrument_object
 from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
-from ..logic.actions import get_actions
-from ..logic.action_types import ActionType
-from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
+from ..logic.actions import get_actions, get_action
+from ..logic.action_types import ActionType, get_action_types, get_action_type
+from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError, InstrumentObjectLinkAlreadyExistsError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
-from ..logic.object_permissions import get_object_info_with_permissions
+from ..logic.object_permissions import get_object_info_with_permissions, get_user_object_permissions
 from ..logic.settings import get_user_settings, set_user_settings
+from ..logic.shares import get_shares_for_object
+from ..logic.locations import get_location, get_object_location_assignment
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data
 from ..utils import FlaskResponseT
@@ -93,6 +98,10 @@ class InstrumentLogOrderForm(FlaskForm):
             raise ValidationError("invalid log order attribute")
 
 
+class ObjectLinkForm(FlaskForm):
+    object_id = IntegerField(validators=[InputRequired()])
+
+
 @frontend.route('/instruments/')
 @flask_login.login_required
 def instruments() -> FlaskResponseT:
@@ -138,6 +147,49 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         responsible_user.id == flask_login.current_user.id
         for responsible_user in instrument.responsible_users
     )
+    already_linked_object_ids = []
+    linkable_action_ids = []
+    linkable_objects = []
+    if is_instrument_responsible_user and not flask_login.current_user.is_readonly:
+        object_link_form = ObjectLinkForm()
+        if instrument.object_id is None:
+            already_linked_object_ids = [link[1] for link in get_instrument_object_links()]
+            for action_type in get_action_types():
+                if action_type.enable_instrument_link:
+                    linkable_action_ids.extend([
+                        action.id
+                        for action in get_actions(action_type_id=action_type.id)
+                    ])
+                    if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
+                        for object_info in get_object_info_with_permissions(flask_login.current_user.id, Permissions.GRANT, action_type_id=action_type.id):
+                            if object_info.object_id not in already_linked_object_ids:
+                                linkable_objects.append((object_info.object_id, get_translated_text(object_info.name_json)))
+    else:
+        object_link_form = None
+
+    template_kwargs = {
+        "get_user": get_user_if_exists,
+        "get_component": get_component,
+    }
+    linked_object = None
+    show_object_title = False
+    if instrument.object_id is not None:
+        linked_object_permissions = get_user_object_permissions(object_id=instrument.object_id, user_id=flask_login.current_user.id)
+        if Permissions.READ in linked_object_permissions:
+            linked_object = get_object(instrument.object_id)
+            if linked_object.data and linked_object.schema:
+                show_object_title = get_user_settings(flask_login.current_user.id)['SHOW_OBJECT_TITLE']
+                # various getters used by object view
+                template_kwargs.update({
+                    "get_object": get_object,
+                    "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
+                    "get_fed_object_if_current_user_has_read_permissions": get_fed_object_if_current_user_has_read_permissions,
+                    "get_location": get_location,
+                    "get_object_location_assignment": get_object_location_assignment,
+                    "get_project": get_project_if_it_exists,
+                    "get_action_type": get_action_type,
+                    "get_shares_for_object": get_shares_for_object,
+                })
 
     if is_instrument_responsible_user or instrument.users_can_view_log_entries:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
@@ -347,10 +399,15 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         mobile_upload_qrcode=mobile_upload_qrcode,
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
+        linked_object=linked_object,
+        object_link_form=object_link_form,
+        linkable_action_ids=linkable_action_ids,
+        linkable_objects=linkable_objects,
+        already_linked_object_ids=already_linked_object_ids,
+        show_object_title=show_object_title,
         languages=get_languages(),
         ActionType=ActionType,
-        get_user=get_user,
-        get_component=get_component
+        **template_kwargs
     )
 
 
@@ -366,6 +423,7 @@ class InstrumentForm(FlaskForm):
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
     location = SelectField()
+    show_linked_object_data = BooleanField(default=True)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -443,6 +501,7 @@ def new_instrument() -> FlaskResponseT:
                 users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
                 create_log_entry_default=instrument_form.create_log_entry_default.data,
                 is_hidden=instrument_form.is_hidden.data,
+                show_linked_object_data=instrument_form.show_linked_object_data.data,
             )
 
             for translation in translation_data:
@@ -582,6 +641,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
         instrument_form.is_hidden.data = instrument.is_hidden
         instrument_form.location.data = instrument_form.location.default
+        instrument_form.show_linked_object_data.data = instrument.show_linked_object_data
     location_is_invalid = instrument_form.location.data not in {
         location_id_str
         for location_id_str, location_name in choices
@@ -595,7 +655,8 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data
+            is_hidden=instrument_form.is_hidden.data,
+            show_linked_object_data=instrument_form.show_linked_object_data.data
         )
         instrument_responsible_user_ids = [
             int(user_id)
@@ -898,3 +959,80 @@ def set_instrument_log_order() -> FlaskResponseT:
         'INSTRUMENT_LOG_ORDER_ATTRIBUTE': attribute
     })
     return "", 200
+
+
+@frontend.route('/instruments/<int:instrument_id>/link_object', methods=['GET', 'POST'])
+@flask_login.login_required
+def instrument_link_object(instrument_id: int) -> FlaskResponseT:
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
+    try:
+        instrument = get_instrument(instrument_id)
+    except InstrumentDoesNotExistError:
+        return flask.abort(404)
+
+    is_instrument_responsible_user = any(
+        responsible_user.id == flask_login.current_user.id
+        for responsible_user in instrument.responsible_users
+    )
+    if not is_instrument_responsible_user:
+        return flask.abort(403)
+    check_current_user_is_not_readonly()
+    object_link_form = ObjectLinkForm()
+    if not object_link_form.validate_on_submit():
+        flask.flash(_("Missing or invalid object ID."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    object_id = object_link_form.object_id.data
+    try:
+        if Permissions.GRANT not in get_user_object_permissions(object_id, flask_login.current_user.id) and not flask_login.current_user.has_admin_permissions:
+            flask.flash(_("You do not have GRANT permissions for this object."), 'error')
+            return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+        object = get_object(object_id)
+        object_is_valid = False
+        if object.action_id is not None:
+            action = get_action(object.action_id)
+            if action.type_id is not None:
+                action_type = get_action_type(action.type_id)
+                object_is_valid = action_type.enable_instrument_link
+        if not object_is_valid:
+            flask.flash(_("This object cannot be linked to an instrument."), 'error')
+            return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+        set_instrument_object(instrument_id, object_id)
+    except ObjectDoesNotExistError:
+        flask.flash(_("Object does not exist."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    except InstrumentObjectLinkAlreadyExistsError:
+        flask.flash(_("The instrument is already linked to an object or the object is already linked to an instrument."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    flask.flash(_("Successfully linked the object to the instrument."), 'success')
+    return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+
+
+@frontend.route('/instruments/<int:instrument_id>/unlink_object', methods=['GET', 'POST'])
+@flask_login.login_required
+def instrument_unlink_object(instrument_id: int) -> FlaskResponseT:
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
+    try:
+        instrument = get_instrument(instrument_id)
+    except InstrumentDoesNotExistError:
+        return flask.abort(404)
+
+    is_instrument_responsible_user = any(
+        responsible_user.id == flask_login.current_user.id
+        for responsible_user in instrument.responsible_users
+    )
+    if not is_instrument_responsible_user:
+        return flask.abort(403)
+    check_current_user_is_not_readonly()
+    object_link_form = ObjectLinkForm()
+    if not object_link_form.validate_on_submit():
+        flask.flash(_("Missing or invalid object ID."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    object_id = object_link_form.object_id.data
+    if instrument.object_id != object_id:
+        flask.flash(_('This instrument is not linked to this object.'), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    set_instrument_object(instrument_id=instrument_id, object_id=None)
+    flask.flash(_("Successfully unlinked the object from the instrument."), 'success')
+    return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))

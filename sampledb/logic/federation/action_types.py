@@ -38,6 +38,7 @@ class ActionTypeData(typing.TypedDict):
     enable_activity_log: bool
     enable_related_objects: bool
     enable_project_link: bool
+    enable_instrument_link: bool
     disable_create_objects: bool
     is_template: bool
     translations: typing.List[ActionTypeTranslationData]
@@ -64,6 +65,7 @@ class SharedActionTypeData(typing.TypedDict):
     enable_activity_log: bool
     enable_related_objects: bool
     enable_project_link: bool
+    enable_instrument_link: bool
     disable_create_objects: bool
     is_template: bool
     translations: typing.Optional[typing.Dict[str, SharedActionTypeTranslationData]]
@@ -103,6 +105,7 @@ def import_action_type(
                 enable_activity_log=action_type_data['enable_activity_log'],
                 enable_related_objects=action_type_data['enable_related_objects'],
                 enable_project_link=action_type_data['enable_project_link'],
+                enable_instrument_link=action_type_data['enable_instrument_link'],
                 disable_create_objects=action_type_data['disable_create_objects'],
                 is_template=action_type_data['is_template'],
                 scicat_export_type=None
@@ -123,6 +126,7 @@ def import_action_type(
             enable_activity_log=action_type_data['enable_activity_log'],
             enable_related_objects=action_type_data['enable_related_objects'],
             enable_project_link=action_type_data['enable_project_link'],
+            enable_instrument_link=action_type_data['enable_instrument_link'],
             disable_create_objects=action_type_data['disable_create_objects'],
             is_template=action_type_data['is_template'],
             scicat_export_type=None
@@ -163,6 +167,7 @@ def parse_action_type(
         enable_activity_log=_get_bool(action_type_data.get('enable_activity_log'), default=False),
         enable_related_objects=_get_bool(action_type_data.get('enable_related_objects'), default=False),
         enable_project_link=_get_bool(action_type_data.get('enable_project_link'), default=False),
+        enable_instrument_link=_get_bool(action_type_data.get('enable_instrument_link'), default=False),
         disable_create_objects=_get_bool(action_type_data.get('disable_create_objects'), default=False),
         is_template=_get_bool(action_type_data.get('is_template'), default=False),
         translations=[]
@@ -241,6 +246,7 @@ def _get_or_create_action_type_id(
             enable_activity_log=False,
             enable_related_objects=False,
             enable_project_link=False,
+            enable_instrument_link=False,
             disable_create_objects=False,
             is_template=False,
             fed_id=action_type_data['action_type_id'],
@@ -287,6 +293,7 @@ def shared_action_type_preprocessor(
         enable_activity_log=action_type.enable_activity_log,
         enable_related_objects=action_type.enable_related_objects,
         enable_project_link=action_type.enable_project_link,
+        enable_instrument_link=action_type.enable_instrument_link,
         disable_create_objects=action_type.disable_create_objects,
         is_template=action_type.is_template,
         translations=translations_data if translations_data else None

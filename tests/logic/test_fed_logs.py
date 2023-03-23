@@ -231,6 +231,7 @@ def action_type():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -251,6 +252,7 @@ def action_types():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -266,6 +268,7 @@ def action_types():
         enable_activity_log=True,
         enable_related_objects=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )

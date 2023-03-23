@@ -30,6 +30,7 @@ class ActionType:
     enable_activity_log: bool
     enable_related_objects: bool
     enable_project_link: bool
+    enable_instrument_link: bool
     disable_create_objects: bool
     is_template: bool
     order_index: typing.Optional[int]
@@ -72,6 +73,7 @@ class ActionType:
             enable_activity_log=action_type.enable_activity_log,
             enable_related_objects=action_type.enable_related_objects,
             enable_project_link=action_type.enable_project_link,
+            enable_instrument_link=action_type.enable_instrument_link,
             disable_create_objects=action_type.disable_create_objects,
             is_template=action_type.is_template,
             order_index=action_type.order_index,
@@ -168,6 +170,7 @@ def create_action_type(
         enable_activity_log: bool,
         enable_related_objects: bool,
         enable_project_link: bool,
+        enable_instrument_link: bool,
         disable_create_objects: bool,
         is_template: bool,
         usable_in_action_type_ids: typing.Sequence[int] = (),
@@ -192,6 +195,7 @@ def create_action_type(
         enable_activity_log: bool,
         enable_related_objects: bool,
         enable_project_link: bool,
+        enable_instrument_link: bool,
         disable_create_objects: bool,
         is_template: bool,
         usable_in_action_type_ids: typing.Sequence[int] = (),
@@ -215,6 +219,7 @@ def create_action_type(
         enable_activity_log: bool,
         enable_related_objects: bool,
         enable_project_link: bool,
+        enable_instrument_link: bool,
         disable_create_objects: bool,
         is_template: bool,
         usable_in_action_type_ids: typing.Sequence[int] = (),
@@ -236,6 +241,7 @@ def create_action_type(
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
     :param enable_project_link: whether objects created with actions of this type can be linked to a project group
+    :param enable_instrument_link: objects created with actions of this type can be linked to an instrument
     :param disable_create_objects: whether the creation of objects with this action type is enabled
     :param is_template: whether this action type can be embedded as a template in actions of other types
     :param usable_in_action_type_ids: sequence of all action types for which objects created with this action type
@@ -263,6 +269,7 @@ def create_action_type(
         enable_activity_log=enable_activity_log,
         enable_related_objects=enable_related_objects,
         enable_project_link=enable_project_link,
+        enable_instrument_link=enable_instrument_link,
         disable_create_objects=disable_create_objects,
         is_template=is_template,
         order_index=None,
@@ -293,6 +300,7 @@ def update_action_type(
         enable_activity_log: bool,
         enable_related_objects: bool,
         enable_project_link: bool,
+        enable_instrument_link: bool,
         disable_create_objects: bool,
         is_template: bool,
         usable_in_action_type_ids: typing.Sequence[int] = (),
@@ -313,6 +321,7 @@ def update_action_type(
     :param enable_activity_log: whether the activity log should be enabled for actions of this type
     :param enable_related_objects: whether showing related objects should be enabled for actions of this type
     :param enable_project_link: objects created with actions of this type can be linked to a project group
+    :param enable_instrument_link: objects created with actions of this type can be linked to an instrument
     :param disable_create_objects: whether the creation of objects with this action type is enabled
     :param is_template: whether this action type can be embedded as a template in actions of other types
     :param usable_in_action_type_ids: sequence of all action types for which objects created with this action type
@@ -336,6 +345,7 @@ def update_action_type(
     action_type.enable_activity_log = enable_activity_log
     action_type.enable_related_objects = enable_related_objects
     action_type.enable_project_link = enable_project_link
+    action_type.enable_instrument_link = enable_instrument_link
     action_type.disable_create_objects = disable_create_objects
     action_type.is_template = is_template
     usable_in_action_types = [
