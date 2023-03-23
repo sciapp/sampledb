@@ -70,7 +70,7 @@
     {% endif %}
   {% endfor %}
 {% endif %}
-{% if 'recipes' in schema %}
+{% if 'recipes' in schema and schema['recipes'] | length > 0 %}
   {% include "objects/forms/form_recipe.html" %}
 {% endif %}
 </div>
