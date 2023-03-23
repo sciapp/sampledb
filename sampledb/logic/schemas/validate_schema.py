@@ -427,6 +427,8 @@ def _validate_object_schema(
         _validate_notebook_templates(schema['notebookTemplates'])
 
     if 'recipes' in schema:
+        if not isinstance(schema['recipes'], list):
+            raise ValidationError('recipes must be list', path)
         for recipe in schema['recipes']:
             if 'name' not in recipe:
                 raise ValidationError('missing recipe name', path + ['(recipes)'])

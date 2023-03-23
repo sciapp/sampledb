@@ -2522,6 +2522,24 @@ def test_validate_recipe():
     validate_schema(schema)
 
 
+def test_validate_recipe_invalid_type():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": {},
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
 def test_validate_recipe_invalid_name():
     schema = {
         "title": "Recipe",
