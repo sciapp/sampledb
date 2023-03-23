@@ -16,6 +16,7 @@ Currently in development.
 - Allow using more than one LDAP server
 - Added optional checksum for file contents
 - Allow viewing differences between object versions
+- Fixed configuration of action types linkable to project groups
 
 Version 0.21.5
 --------------

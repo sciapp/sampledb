@@ -803,6 +803,9 @@ msgstr "Sie haben keine Rechtevergabe-Berechtigungen für diese Projektgruppe."
 msgid "You do not have GRANT permissions for this object."
 msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
 
+msgid "This object cannot be linked to a project group."
+msgstr "Dieses Objekt kann nicht mit einer Projektgruppe verknüpft werden."
+
 msgid ""
 "Project group is already linked to an object or object is already linked "
 "to a project group."
@@ -2745,6 +2748,23 @@ msgstr ""
 "Nein, verhindere das Einbinden von Aktionen dieses Typs als Schema-"
 "Vorlage in anderen Aktionen"
 
+msgid "Enable Linking to Project Group"
+msgstr "Verknüpfen mit Projektgruppe aktivieren"
+
+msgid ""
+"Yes, objects created with actions of this type can be linked to a project"
+" group as project metadata"
+msgstr ""
+"Ja, Objekte die mit Aktionen diesen Typs erstellt wurden können als "
+"Projekt-Metadaten mit einer Projektgruppe verknüpft werden"
+
+msgid ""
+"No, objects created with actions of this type cannot be linked to a "
+"project group as project metadata"
+msgstr ""
+"Nein, Objekte die mit Aktionen diesen Typs erstellt wurden können nicht "
+"als Projekt-Metadaten mit einer Projektgruppe verknüpft werden"
+
 msgid "Usable in"
 msgstr "Verwendbar in"
 
@@ -2858,6 +2878,11 @@ msgid "Allow actions of this type as schema templates in other actions"
 msgstr ""
 "Erlaube das Einbinden von Aktionen dieses Typs als Schema-Vorlage in "
 "anderen Aktionen"
+
+msgid "Enable linking objects created with actions of this type to project groups"
+msgstr ""
+"Verknüpfen mit Projektgruppen für Objekte aktivieren, die mit Aktionen "
+"dieses Typs erstellt wurden"
 
 msgid "Nothing selected"
 msgstr "Nichts ausgewählt"

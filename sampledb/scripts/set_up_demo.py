@@ -700,7 +700,7 @@ This example shows how Markdown can be used for instrument Notes.
             'enable_comments': True,
             'enable_activity_log': True,
             'enable_related_objects': True,
-            'enable_project_link': True,
+            'enable_project_link': False,
             'translations': {'en': {'name': 'Sample Creation',
                                     'description': 'These Actions represent processes which create a sample.',
                                     'object_name': 'Sample',

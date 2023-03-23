@@ -342,6 +342,12 @@
                  {% if action_type_form.is_template.data %}checked="checked"{% endif %}> {{ _('Allow actions of this type as schema templates in other actions') }}
           </label>
         </div>
+        <div class="checkbox">
+          <label for="input-enable_project_link" style="font-weight:400">
+            <input type="checkbox" id="input-enable_project_link" name="{{ action_type_form.enable_project_link.name }}"
+                   {% if action_type_form.enable_project_link.data %}checked="checked"{% endif %}> {{ _('Enable linking objects created with actions of this type to project groups') }}
+          </label>
+        </div>
         <div class="form-group">
           <div class="form-group" style="margin-bottom: 0">
               <label for="select-usable_in_action_types-input" class="control-label">{{ _("Usable in")}}</label>
