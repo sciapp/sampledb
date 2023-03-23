@@ -1,6 +1,13 @@
 FROM python:3.11-slim-bullseye
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
+LABEL org.opencontainers.image.source=https://github.com/sciapp/sampledb
+LABEL org.opencontainers.image.url=https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/
+LABEL org.opencontainers.image.documentation=https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/
+LABEL org.opencontainers.image.title="SampleDB"
+LABEL org.opencontainers.image.description="A web-based electronic lab notebook with a focus on sample and measurement metadata"
+LABEL org.opencontainers.image.licenses=MIT
+
 
 # Install required system packages
 # GCC is required to build python dependencies on ARM architectures
