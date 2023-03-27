@@ -244,7 +244,7 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json = {}
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'data must be set'
+    assert r.json()['message'] == 'data or data_diff must be set'
 
     object_json = {
         'object_id': object.object_id,
@@ -255,6 +255,115 @@ def test_post_object_version(flask_server, auth, user, action):
             }
         }
     }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == flask_server.base_url + 'api/v1/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id,
+        'data_diff': {
+            'name': {
+                '_before': {
+                    '_type': 'text',
+                    'text': 'Wrong Object Name',
+                },
+                '_after': {
+                    '_type': 'text',
+                    'text': 'Example Object (Diff)'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['message'] == 'failed to apply diff'
+
+    object_json = {
+        'object_id': object.object_id,
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+    result_object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (Diff)'
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == flask_server.base_url + 'api/v1/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == result_object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (data and data_diff)'
+            }
+        },
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (inconsistent)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['message'] == 'data and data_diff are conflicting'
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (data and data_diff)'
+            }
+        },
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (data and data_diff)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == flask_server.base_url + 'api/v1/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)

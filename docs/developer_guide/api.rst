@@ -274,7 +274,8 @@ Updating an object / Creating a new object version
     :<json number version_id: the object version's ID (optional, must equal new version's ID)
     :<json number action_id: the action's ID (optional, must equal previous `action_id`)
     :<json object schema: the object's schema (optional, must equal previous `schema` or current action's schema)
-    :<json object data: the object's data
+    :<json object data: the object's data (either `data` or `data_diff` must be set)
+    :<json object data_diff: the difference between the previous version and the new one (either `data` or `data_diff` must be set)
     :statuscode 201: no error
     :statuscode 400: invalid data
     :statuscode 403: the user does not have WRITE permissions for this object
