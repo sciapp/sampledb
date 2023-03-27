@@ -418,6 +418,8 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
     if 'units' not in instance:
+        if not isinstance(schema['units'], str):
+            raise ValidationError('missing unambiguous units for quantity property with multiple possible units', path)
         instance['units'] = schema['units']
     if not isinstance(instance['units'], str):
         raise ValidationError('units must be str', path)
