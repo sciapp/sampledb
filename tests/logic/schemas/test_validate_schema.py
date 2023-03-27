@@ -594,6 +594,14 @@ def test_validate_quantity_schema_default():
     }
     validate_schema(wrap_into_basic_schema(schema))
 
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': 15
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
 
 def test_validate_quantity_schema_invalid_default():
     schema = {
@@ -601,6 +609,72 @@ def test_validate_quantity_schema_invalid_default():
         'type': 'quantity',
         'units': 'm',
         'default': '1.5'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_default_dict():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {
+            'magnitude': 1.5,
+            'units': 'km'
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {
+            'magnitude': 1.5,
+            'units': 'm'
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {
+            'magnitude_in_base_units': 1.5
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_default_invalid_dict():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {}
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['default'] = {
+        'magnitude': float('inf'),
+        'units': 'km'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['default'] = {
+        'magnitude': 1.5,
+        'units': 's'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['default'] = {
+        'magnitude_in_base_units': 1.5,
+        'magnitude': 7
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))

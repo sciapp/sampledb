@@ -2,8 +2,7 @@
 """
 Implementation of validate_schema(schema)
 """
-
-
+import copy
 import datetime
 import math
 import string
@@ -704,24 +703,31 @@ def _validate_quantity_schema(
     else:
         raise ValidationError('units must be string or list of strings', path)
 
-    if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
-        raise ValidationError('default must be float or int', path)
     if 'min_magnitude' in schema and not isinstance(schema['min_magnitude'], float) and not isinstance(schema['min_magnitude'], int):
         raise ValidationError('min_magnitude must be float or int', path)
     if 'max_magnitude' in schema and not isinstance(schema['max_magnitude'], float) and not isinstance(schema['max_magnitude'], int):
         raise ValidationError('max_magnitude must be float or int', path)
-    if 'default' in schema and not math.isfinite(schema['default']):
-        raise ValidationError('default must be a finite number', path)
     if 'min_magnitude' in schema and not math.isfinite(schema['min_magnitude']):
         raise ValidationError('min_magnitude must be a finite number', path)
     if 'max_magnitude' in schema and not math.isfinite(schema['max_magnitude']):
         raise ValidationError('max_magnitude must be a finite number', path)
     if 'min_magnitude' in schema and 'max_magnitude' in schema and schema['min_magnitude'] > schema['max_magnitude']:
         raise ValidationError('max_magnitude must be greater than or equal to min_magnitude', path)
-    if 'min_magnitude' in schema and 'default' in schema and schema['min_magnitude'] > schema['default']:
-        raise ValidationError('default must be greater than or equal to min_magnitude', path)
-    if 'max_magnitude' in schema and 'default' in schema and schema['max_magnitude'] < schema['default']:
-        raise ValidationError('default must be less than or equal to max_magnitude', path)
+    if 'default' in schema:
+        if isinstance(schema['default'], (float, int)):
+            if not math.isfinite(schema['default']):
+                raise ValidationError('default must be a finite number', path)
+            if 'min_magnitude' in schema and schema['min_magnitude'] > schema['default']:
+                raise ValidationError('default must be greater than or equal to min_magnitude', path)
+            if 'max_magnitude' in schema and schema['max_magnitude'] < schema['default']:
+                raise ValidationError('default must be less than or equal to max_magnitude', path)
+        elif isinstance(schema['default'], dict):
+            _default_quantity = copy.deepcopy(schema['default'])
+            if '_type' not in _default_quantity:
+                _default_quantity['_type'] = 'quantity'
+            validate(_default_quantity, schema, path + ['(default)'])
+        else:
+            raise ValidationError('default must be float, int or dict', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
