@@ -17,6 +17,7 @@ from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
 from ...logic.object_relationships import get_related_object_ids
+from ...logic.schemas.data_diffs import apply_diff
 from ...logic import errors, users
 from ... import models
 from ...models import Permissions
@@ -81,7 +82,7 @@ class ObjectVersions(Resource):
                 "message": "JSON object body required"
             }, 400
         for key in request_json:
-            if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data'}:
+            if key not in {'object_id', 'fed_object_id', 'fed_version_id', 'component_id', 'version_id', 'action_id', 'schema', 'data', 'data_diff'}:
                 return {
                     "message": f"invalid key '{key}'"
                 }, 400
@@ -129,33 +130,48 @@ class ObjectVersions(Resource):
             schema = request_json['schema']
         else:
             schema = object.schema
-        if 'data' not in request_json:
-            return {
-                "message": "data must be set"
-            }, 400
-        data = request_json['data']
+
+        data = request_json.get('data')
+        data_diff = request_json.get('data_diff')
         try:
+            if data is not None and data_diff is not None:
+                if apply_diff(object.data, data_diff) != data:
+                    return {
+                        "message": "data and data_diff are conflicting"
+                    }, 400
+            elif data is None and data_diff is None:
+                return {
+                    "message": "data or data_diff must be set"
+                }, 400
+
             update_object(
-                object_id=object.object_id,
-                data=data,
+                object_id=object.id,
+                data=data if data is not None else apply_diff(object.data, data_diff),
                 user_id=flask.g.user.id,
                 schema=schema
             )
+
         except errors.ValidationError as e:
             messages = e.message.splitlines()
             return {
                 "message": "validation failed:\n - " + "\n - ".join(messages)
             }, 400
+        except errors.DiffMismatchError:
+            return {
+                "message": "failed to apply diff"
+            }, 400
         except Exception:
             return {
                 "message": "failed to update object"
             }, 400
+
         object_version_url = flask.url_for(
             'api.object_version',
             object_id=object.object_id,
             version_id=object.version_id + 1,
             _external=True
         )
+
         return flask.redirect(object_version_url, code=201)
 
 
