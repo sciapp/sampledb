@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-03-22 16:44+0100\n"
+"POT-Creation-Date: 2023-03-29 13:11+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1418,6 +1418,9 @@ msgstr "Mehr anzeigen"
 
 msgid "Show less"
 msgstr "Weniger anzeigen"
+
+msgid "Please select at least one timeseries."
+msgstr "Bitte wählen Sie mindestens eine Zeitreihe aus."
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
