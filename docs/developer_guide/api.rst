@@ -236,6 +236,8 @@ Creating a new object
     :statuscode 400: invalid data
 
 
+.. _api_post_object_version:
+
 Updating an object / Creating a new object version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -275,7 +277,7 @@ Updating an object / Creating a new object version
     :<json number action_id: the action's ID (optional, must equal previous `action_id`)
     :<json object schema: the object's schema (optional, must equal previous `schema` or current action's schema)
     :<json object data: the object's data (either `data` or `data_diff` must be set)
-    :<json object data_diff: the difference between the previous version and the new one (either `data` or `data_diff` must be set)
+    :<json object data_diff: the :ref:`difference <data_diffs>` between the previous version and the new one (either `data` or `data_diff` must be set)
     :statuscode 201: no error
     :statuscode 400: invalid data
     :statuscode 403: the user does not have WRITE permissions for this object
@@ -2135,3 +2137,71 @@ Posting a comment
     :statuscode 201: the comment has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
+
+.. _data_diffs:
+
+Object Data Diff Syntax
+-----------------------
+
+When :ref:`updating object data <api_post_object_version>`, instead of providing the full object data a diff can be provided instead. This is an alternative to downloading the current object version, performing the change locally and then uploading the data again, and can be useful in scripts, e.g. to update the status of an object.
+
+The syntax for these diffs is specific to SampleDB data entries, but fairly simple:
+
+- When comparing arrays, the diff is a list that contains the diff item by item, or ``null`` if the items are the same.
+- When comparing objects, the diff is a dictionary mapping each key to the diff of the values, if they have changed.
+- Otherwise, the diff is a dictionary mapping the key ``_before`` to the value before the change (if there was any data there before) and mapping the key ``_after`` to the value after the change (unless there is no value afterwards).
+
+As an example, considering the following data before:
+
+.. code-block:: json
+
+    {
+      "name": {
+          "_type": "text",
+          "text": {
+              "en": "Example Measurement"
+          }
+      },
+      "measurement_complete": {
+          "_type": "bool",
+          "value": false
+      },
+      "mass_list": [
+        {
+          "_type": "quantity",
+          "magnitude": 10,
+          "magnitude_in_base_units": 0.01,
+          "units": "g",
+          "dimensionality": "[mass]"
+        }
+      ]
+    }
+
+The following diff would add a value of 11g to ``mass_list`` and set ``measurement_complete`` to ``True``:
+
+.. code-block:: json
+
+    {
+      "measurement_complete": {
+        "_before": {
+          "_type": "bool",
+          "value": false
+        },
+        "_after": {
+          "_type": "bool",
+          "value": true
+        }
+      },
+      "mass_list": [
+        null,
+        {
+          "_after": {
+            "_type": "quantity",
+            "magnitude": 11,
+            "magnitude_in_base_units": 0.011,
+            "units": "g",
+            "dimensionality": "[mass]"
+          }
+        }
+      ]
+    }
