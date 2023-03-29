@@ -1531,42 +1531,6 @@
         {% for property_name in display_properties %}
           {% if object.display_properties[property_name] is not none %}
             {% set metadata_language = none %}
-            {% set data = object.display_properties[property_name][0] %}
-            {% set schema = object.display_properties[property_name][1] %}
-            {% set z = schema.update({'parent_style': 'table'}) %}
-            <td>
-            {% include "objects/view/any.html" %}
-            </td>
-          {% else %}
-            <td> &mdash; </td>
-          {% endif %}
-        {% endfor %}
-        {% if 'location' in location_info %}
-          <td>
-            {% if object.location_id is none %}
-              &mdash;
-            {% else %}
-              {% with location = get_location(object.location_id) %}
-                <a href="{{ url_for('frontend.location', location_id=location.id) }}">
-                  {{ location | get_location_name(True) }}
-                </a>
-                {{ import_information_symbol(location) }}
-              {% endwith %}
-            {% endif %}
-          </td>
-        {% endif %}
-        {% if 'responsible_user' in location_info %}
-          <td>
-            {% if object.responsible_user_id is none %}
-              &mdash;
-            {% else %}
-              {{ user_reference(object.responsible_user_id) }}
-            {% endif %}
-          </td>
-        {% endif %}
-        {% for property_name in display_properties %}
-          {% if object.display_properties[property_name] is not none %}
-            {% set metadata_language = none %}
             {% set object_id = object.object_id %}
             {% set id_prefix = 'object' + (object_id | string) + '__' + property_name + '_' %}
             {% set data = object.display_properties[property_name][0] %}
