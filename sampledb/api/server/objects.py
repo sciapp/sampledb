@@ -134,19 +134,30 @@ class ObjectVersions(Resource):
         data = request_json.get('data')
         data_diff = request_json.get('data_diff')
         try:
+            if data_diff is not None:
+                if object.data is None or object.schema is None:
+                    return {
+                        "message": "previous object version must contain data and schema"
+                    }, 400
+                data_from_diff = apply_diff(object.data, data_diff, object.schema)
+            else:
+                data_from_diff = None
             if data is not None and data_diff is not None:
-                if apply_diff(object.data, data_diff) != data:
+                if data_from_diff != data:
                     return {
                         "message": "data and data_diff are conflicting"
                     }, 400
-            elif data is None and data_diff is None:
-                return {
-                    "message": "data or data_diff must be set"
-                }, 400
+            if data is None:
+                if data_from_diff is None:
+                    return {
+                        "message": "data or data_diff must be set"
+                    }, 400
+                else:
+                    data = data_from_diff
 
             update_object(
                 object_id=object.id,
-                data=data if data is not None else apply_diff(object.data, data_diff),
+                data=data,
                 user_id=flask.g.user.id,
                 schema=schema
             )
