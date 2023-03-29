@@ -1395,3 +1395,9 @@ table.diff tr.noborder {
 table.diff tr.striped {
     background-color: #f9f9f9;
 }
+
+.timeseries-picker-wrapper {
+    float: left;
+    width: calc(100% - 20px);
+    margin: -7px;
+}

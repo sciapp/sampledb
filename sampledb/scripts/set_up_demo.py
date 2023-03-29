@@ -971,6 +971,11 @@ This example shows how Markdown can be used for instrument Notes.
                         'title': 'Temperature Series',
                         'type': 'timeseries',
                         'units': ['degC', 'K'], 'display_digits': 2
+                    },
+                    'pressure_series': {
+                        'title': 'Pressure Series',
+                        'type': 'timeseries',
+                        'units': 'bar', 'display_digits': 2
                     }
                 },
                 'required': ['name']
@@ -978,19 +983,28 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, timeseries_action.id, name="Timeseries Demo Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(timeseries_action.id, sampledb.models.Permissions.READ)
-        timeseries_data: typing.List[typing.Tuple[str, float, float]] = []
+        temperature_data: typing.List[typing.Tuple[str, float, float]] = []
+        pressure_data: typing.List[typing.Tuple[str, float]] = []
         random.seed(0)
         for i in range(1000):
             utc_datetime_string = (datetime.datetime.utcnow() + datetime.timedelta(milliseconds=i * 30)).strftime('%Y-%m-%d %H:%M:%S.%f')
             if i == 0:
-                magnitude = 20.0
+                temperature_magnitude = 20.0
             else:
-                magnitude = timeseries_data[-1][1] + random.uniform(-1, 1)
-            magnitude_in_base_units = magnitude + 273.15
-            timeseries_data.append((
+                temperature_magnitude = temperature_data[-1][1] + random.uniform(-1, 1)
+            temperature_magnitude_in_base_units = temperature_magnitude + 273.15
+            temperature_data.append((
                 utc_datetime_string,
-                magnitude,
-                magnitude_in_base_units
+                temperature_magnitude,
+                temperature_magnitude_in_base_units
+            ))
+            if i == 0:
+                pressure_magnitude = 2.0
+            else:
+                pressure_magnitude = pressure_data[-1][1] + random.uniform(-0.1, 0.1)
+            pressure_data.append((
+                utc_datetime_string,
+                pressure_magnitude
             ))
         data = {
             'name': {
@@ -1000,7 +1014,12 @@ This example shows how Markdown can be used for instrument Notes.
             'temperature_series': {
                 '_type': 'timeseries',
                 'units': 'degC',
-                'data': timeseries_data
+                'data': temperature_data
+            },
+            'pressure_series': {
+                '_type': 'timeseries',
+                'units': 'bar',
+                'data': pressure_data
             }
         }
         sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
