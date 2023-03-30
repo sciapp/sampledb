@@ -58,6 +58,7 @@ def calculate_diff(data_before: typing.Any, data_after: typing.Any) -> typing.Op
         data_diff['_before'] = data_before
     if data_after != VALUE_NOT_SET:
         data_diff['_after'] = data_after
+    print("TEST")
     return data_diff
 
 
