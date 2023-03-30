@@ -41,6 +41,9 @@ test:
     - export SAMPLEDB_BUILD_TRANSLATIONS=
     # run tests and gather coverage data
     - python3 -m pytest -x -s -n=4 --cov=sampledb/ --cov-report=term --cov-report=xml --junitxml=pytest.xml tests
+    - mv coverage.xml coverage_pytest.xml
+    - coverage report
+    - diff coverage.xml coverage_pytest.xml
     - coverage xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
