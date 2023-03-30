@@ -511,6 +511,23 @@ def test_validate_quantity_min_and_max_magnitude():
     with pytest.raises(ValidationError):
         validate(instance, schema)
 
+    del instance['magnitude_in_base_units']
+    instance['magnitude'] = 1
+    validate(instance, schema)
+    del instance['magnitude_in_base_units']
+    instance['magnitude'] = -1
+    validate(instance, schema)
+    del instance['magnitude_in_base_units']
+    instance['magnitude'] = 2
+    validate(instance, schema)
+    del instance['magnitude_in_base_units']
+    instance['magnitude'] = -2
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+    instance['magnitude'] = 3
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
 
 def test_validate_datetime():
     schema = {
