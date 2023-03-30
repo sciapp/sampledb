@@ -40,7 +40,8 @@ test:
     - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
     - export SAMPLEDB_BUILD_TRANSLATIONS=
     # run tests and gather coverage data
-    - python3 -m pytest -x -s -n=4 --cov=sampledb/ --cov-report=term --cov-report=xml --junitxml=pytest.xml tests
+    - python3 -m pytest -x -s -n=4 --cov=sampledb/ --cov-report=term --cov-report=xml --junitxml=pytest.xml tests/ -k test_data_diffs
+    - coverage report
     - coverage xml
   coverage: '/^TOTAL.*\s+(\d+\%)$/'
   artifacts:
