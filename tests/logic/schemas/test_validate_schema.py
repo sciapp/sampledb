@@ -2881,3 +2881,55 @@ def test_validate_show_more():
     schema['show_more'] = ['quant']
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_file_schema():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'preview': True
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_invalid_property():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'extension': '.txt'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_extensions():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'extensions': ['.txt']
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_invalid_extensions():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'extensions': [1]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_invalid_preview():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'preview': 'small'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))

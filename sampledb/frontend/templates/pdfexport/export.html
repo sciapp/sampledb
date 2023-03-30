@@ -183,7 +183,7 @@
         {% else %}
           {{ user_reference(file.uploader, external=True, text=true) }}:
         {% endif %}
-        {% if file.is_hidden %}({{ _('hidden') }}){% else %}{{ file.title }} ({{ file.id }}){% endif %}</li>
+        {% if file.is_hidden %}({{ _('hidden') }}){% else %}{{ file.title }} (#{{ file.id }}){% endif %}</li>
     {% endfor %}
     </ul>
 

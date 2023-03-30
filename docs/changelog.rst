@@ -7,6 +7,7 @@ Version 0.23
 Currently in development.
 
 - Added support for short-lived API access tokens
+- Added file datatype
 
 Version 0.22.1
 --------------

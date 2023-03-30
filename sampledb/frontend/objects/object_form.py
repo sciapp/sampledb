@@ -2,6 +2,7 @@
 """
 
 """
+import secrets
 import typing
 from copy import deepcopy
 import datetime
@@ -114,6 +115,31 @@ def show_object_form(
         category_ids = None
         create_log_entry_default = None
         may_create_log_entry = False
+
+    context_id_serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
+    if 'context_id_token' in flask.request.form:
+        context_id_token = flask.request.form.get('context_id_token', '')
+        try:
+            user_id, context_id = context_id_serializer.loads(context_id_token, max_age=15 * 60)
+        except itsdangerous.BadSignature:
+            return flask.abort(400)
+        if user_id != flask_login.current_user.id:
+            return flask.abort(400)
+    else:
+        context_id = secrets.token_hex(32)
+        context_id_token = typing.cast(str, context_id_serializer.dumps((flask_login.current_user.id, context_id)))
+
+    if object is not None:
+        file_names_by_id = logic.files.get_file_names_by_id_for_object(object.object_id)
+    else:
+        file_names_by_id = {}
+    temporary_files = logic.temporary_files.get_files_for_context_id(context_id=context_id)
+    for temporary_file in temporary_files:
+        file_names_by_id[-temporary_file.id] = temporary_file.file_name, temporary_file.file_name
+    actual_file_names_by_id = {
+        file_id: file_names[0]
+        for file_id, file_names in file_names_by_id.items()
+    }
 
     permissions_for_group_id = None
     permissions_for_project_id = None
@@ -243,7 +269,7 @@ def show_object_form(
             else:
                 batch_base_name = None
                 name_suffix_format = None
-            object_data, parsing_errors = parse_form_data(raw_form_data, schema)
+            object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id)
             errors.update(parsing_errors)
             if form_data['action_submit'] == 'inline_edit' and errors:
                 return flask.jsonify({
@@ -252,7 +278,7 @@ def show_object_form(
             if object_data is not None and not errors:
                 assert isinstance(object_data, dict)
                 try:
-                    validate(object_data, schema, strict=True)
+                    validate(object_data, schema, strict=True, file_names_by_id=actual_file_names_by_id)
                 except ValidationError:
                     # TODO: proper logging
                     print('object schema validation failed')
@@ -261,7 +287,14 @@ def show_object_form(
                 for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
                     markdown_as_html = logic.markdown_to_html.markdown_to_safe_html(markdown)
                     logic.markdown_images.mark_referenced_markdown_images_as_permanent(markdown_as_html)
+                referenced_temporary_file_ids = sorted(logic.temporary_files.get_referenced_temporary_file_ids(object_data))
                 if object is None:
+                    permanent_file_names_by_id = {}
+                    permanent_file_map = {}
+                    for ind, file_id in enumerate(referenced_temporary_file_ids):
+                        permanent_file_map[file_id] = ind
+                        permanent_file_names_by_id[ind] = actual_file_names_by_id[-file_id]
+                    logic.temporary_files.replace_file_reference_ids(object_data, permanent_file_map)
                     if schema.get('batch', False) and num_objects_in_batch is not None:
                         if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
                             data_sequence = []
@@ -280,7 +313,8 @@ def show_object_form(
                             user_id=flask_login.current_user.id,
                             copy_permissions_object_id=copy_permissions_object_id,
                             permissions_for_group_id=permissions_for_group_id,
-                            permissions_for_project_id=permissions_for_project_id
+                            permissions_for_project_id=permissions_for_project_id,
+                            data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
                         )
                         object_ids = [object.id for object in objects]
                         if action.instrument_id is not None and category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
@@ -295,6 +329,8 @@ def show_object_form(
                                     instrument_log_entry_id=log_entry.id,
                                     object_id=object_id
                                 )
+                        logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=object_ids)
+                        logic.temporary_files.delete_temporary_files(context_id=context_id)
                         flask.flash(_('The objects were created successfully.'), 'success')
                         return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
                     else:
@@ -306,7 +342,8 @@ def show_object_form(
                             schema=previous_object_schema,
                             copy_permissions_object_id=copy_permissions_object_id,
                             permissions_for_group_id=permissions_for_group_id,
-                            permissions_for_project_id=permissions_for_project_id
+                            permissions_for_project_id=permissions_for_project_id,
+                            data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
                         )
                         if action.instrument_id is not None and category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
                             log_entry = logic.instrument_log_entries.create_instrument_log_entry(
@@ -319,9 +356,14 @@ def show_object_form(
                                 instrument_log_entry_id=log_entry.id,
                                 object_id=object.id
                             )
+                        logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
+                        logic.temporary_files.delete_temporary_files(context_id=context_id)
                         flask.flash(_('The object was created successfully.'), 'success')
                 else:
                     if object_data != object.data or schema != object.schema:
+                        actual_temporary_file_id_map = logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
+                        logic.temporary_files.delete_temporary_files(context_id=context_id)
+                        logic.temporary_files.replace_file_reference_ids(object_data, actual_temporary_file_id_map)
                         update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
                     flask.flash(_('The object was updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
@@ -481,7 +523,9 @@ def show_object_form(
             ENGLISH=english,
             possible_properties=possible_object_id_properties,
             passed_object_ids=passed_object_ids,
-            show_selecting_modal=show_selecting_modal
+            show_selecting_modal=show_selecting_modal,
+            context_id_token=context_id_token,
+            file_names_by_id=file_names_by_id,
         )
     else:
         return flask.render_template(
@@ -505,7 +549,9 @@ def show_object_form(
             languages=get_languages(),
             get_component=get_component,
             ENGLISH=english,
-            possible_properties=None
+            possible_properties=None,
+            context_id_token=context_id_token,
+            file_names_by_id=file_names_by_id,
         )
 
 

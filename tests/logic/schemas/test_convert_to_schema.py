@@ -501,7 +501,6 @@ def test_convert_timeseries_schema():
     assert new_data == data
     assert not warnings
 
-
 def test_convert_timeseries_schema_changed_dimensionality():
     data = {
         "data": [
@@ -541,3 +540,32 @@ def test_convert_timeseries_schema_changed_dimensionality():
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
     assert new_data is None
     assert warnings == ["Unable to convert timeseries 'Test Title' to different dimensionality: [length] -> [time]"]
+
+
+def test_convert_file_schema():
+    data = {
+        '_type': 'file',
+        'file_id': 0
+    }
+    previous_schema = {
+        'type': 'file',
+        'title': 'Example File'
+    }
+    new_schema = {
+        'type': 'file',
+        'title': 'Example File'
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+    new_schema = {
+        'type': 'file',
+        'title': 'Example File',
+        'extensions': ['.txt']
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings

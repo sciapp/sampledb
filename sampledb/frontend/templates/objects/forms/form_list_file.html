@@ -1,0 +1,4 @@
+<div class="form-group{% if id_prefix+'_file_id' in errors %} has-error{% elif id_prefix+'_file_id' in form_data %} has-success{% endif %} row" style="padding-right:0.75em; flex-grow: 1">
+  {% include "objects/forms/form_file_field.html" %}
+  {% if id_prefix+'_file_id' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_file_id'] }}</span>{% endif %}
+</div>

@@ -33,6 +33,7 @@
   {% endif %}
   <form class="form-horizontal" method="post" action="{% if previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
     {{ form.csrf_token() }}
+    <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
     {% if 'batch' in schema and schema['batch'] %}
     <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ _('Batch Information') }}</strong>

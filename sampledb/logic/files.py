@@ -27,6 +27,7 @@ import typing
 
 import flask
 import requests
+from flask_babel import gettext
 
 from . import components, errors, object_log, objects, user_log, users
 from .components import get_component
@@ -745,3 +746,19 @@ def get_files_for_object(object_id: int) -> typing.List[File]:
         # ensure that the object exists
         objects.check_object_exists(object_id)
     return [File.from_database(db_file) for db_file in db_files]
+
+
+def get_file_names_by_id_for_object(
+        object_id: int
+) -> typing.Dict[int, typing.Tuple[str, str]]:
+    files = get_files_for_object(object_id)
+    file_names_by_id = {}
+    for file in files:
+        if file.storage in {'database', 'federation'}:
+            actual_name = file.original_file_name
+            if file.is_hidden:
+                display_name = gettext('Hidden File') + f' #{file.id}'
+            else:
+                display_name = actual_name
+            file_names_by_id[file.id] = (actual_name, display_name)
+    return file_names_by_id

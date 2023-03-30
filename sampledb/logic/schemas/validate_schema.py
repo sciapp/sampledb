@@ -121,6 +121,8 @@ def validate_schema(
         return _validate_plotly_chart_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'timeseries':
         return _validate_timeseries_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+    elif schema['type'] == 'file':
+        return _validate_file_schema(schema, path, all_language_codes=all_language_codes)
     else:
         raise ValidationError('invalid type', path)
 
@@ -1014,4 +1016,35 @@ def _validate_timeseries_schema(
     if strict:
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+
+
+def _validate_file_schema(
+        schema: typing.Dict[str, typing.Any],
+        path: typing.List[str],
+        *,
+        all_language_codes: typing.Set[str]
+) -> None:
+    """
+    Validates the given file object schema and raises a ValidationError if it is invalid.
+
+    :param schema: the sampledb file object schema
+    :param path: the path to this subschema
+    :param all_language_codes: the set of existing language codes
+    :raise ValidationError: if the schema is invalid.
+    """
+    valid_keys = {'type', 'title', 'note', 'conditions', 'style', 'extensions', 'preview'}
+    required_keys = {'type', 'title'}
+    schema_keys = set(schema.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
+    if 'extensions' in schema:
+        if not isinstance(schema['extensions'], list) or not schema['extensions'] or not all(isinstance(extension, str) and len(extension) > 1 and extension.startswith('.') for extension in schema['extensions']):
+            raise ValidationError('extensions must be a list of file extensions', path)
+    if 'preview' in schema and not isinstance(schema['preview'], bool):
+        raise ValidationError('preview must be a list of file extensions', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)

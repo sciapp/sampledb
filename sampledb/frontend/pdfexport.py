@@ -291,6 +291,9 @@ def create_pdfexport(
         else:
             return get_translated_text(action.type.object_name, default=_('Object'))
 
+    files_by_object_id = {}
+    for object_tuple in objects:
+        files_by_object_id[object_tuple[0].object_id] = logic.files.get_files_for_object(object_tuple[0].object_id)
     html = flask.render_template(
         'pdfexport/export.html',
         get_object_type_name=get_object_type_name,
@@ -298,7 +301,8 @@ def create_pdfexport(
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         objects=objects,
         get_user=get_user_if_exists,
-        metadata_language=lang_code
+        metadata_language=lang_code,
+        files_by_object_id=files_by_object_id,
     )
 
     # use regular user language again

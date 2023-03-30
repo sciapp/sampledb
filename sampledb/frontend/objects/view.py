@@ -6,6 +6,7 @@ import csv
 import datetime
 import io
 import json
+import secrets
 import typing
 
 import math
@@ -506,6 +507,33 @@ def object(object_id: int) -> FlaskResponseT:
         users.sort(key=lambda user: user.id)
         template_kwargs.update({
             "users": users,
+        })
+
+        # temporary file upload for file fields
+        context_id_serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
+        if 'context_id_token' in flask.request.form:
+            context_id_token = flask.request.form.get('context_id_token', '')
+            try:
+                user_id, context_id = context_id_serializer.loads(context_id_token, max_age=15 * 60)
+            except itsdangerous.BadSignature:
+                return flask.abort(400)
+            if user_id != flask_login.current_user.id:
+                return flask.abort(400)
+        else:
+            context_id = secrets.token_hex(32)
+            context_id_token = typing.cast(str, context_id_serializer.dumps((flask_login.current_user.id, context_id)))
+
+        if object is not None:
+            file_names_by_id = logic.files.get_file_names_by_id_for_object(object.object_id)
+        else:
+            file_names_by_id = {}
+        temporary_files = logic.temporary_files.get_files_for_context_id(context_id=context_id)
+        for temporary_file in temporary_files:
+            file_names_by_id[-temporary_file.id] = temporary_file.file_name, temporary_file.file_name
+
+        template_kwargs.update({
+            "context_id_token": context_id_token,
+            "file_names_by_id": file_names_by_id,
         })
 
         return flask.render_template(

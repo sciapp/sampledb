@@ -29,7 +29,7 @@ def convert_to_schema(
     """
     result: typing.Optional[typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[str]]], typing.Sequence[str]]]
 
-    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'object_reference', 'quantity', 'array', 'objects', 'hazards', 'timeseries'):
+    if new_schema == previous_schema and new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'object_reference', 'quantity', 'array', 'objects', 'hazards', 'timeseries', 'file'):
         return data, []
 
     if new_schema['type'] == 'tags' and previous_schema['type'] == 'text' and isinstance(data, dict):
@@ -50,7 +50,7 @@ def convert_to_schema(
         result = _try_convert_text_to_choices(data, new_schema)
         if result:
             return result
-    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user', 'plotly_chart'):
+    if new_schema['type'] in ('bool', 'text', 'datetime', 'tags', 'sample', 'measurement', 'hazards', 'user', 'plotly_chart', 'file'):
         return data, []
     if new_schema['type'] == 'object_reference':
         result = _try_convert_object_reference_to_object_reference(data, new_schema, previous_schema)
