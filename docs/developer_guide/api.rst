@@ -178,6 +178,7 @@ Reading an object version
     :>json string utc_datetime: the time and date when this version was created in UTC
     :>json object schema: the object's schema
     :>json object data: the object's data
+    :>json object data_diff: the :ref:`data difference <data_diffs>` between the specified and the previous version (if the parameter include_diff is set to a non-empty value)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object/version combination does not exist

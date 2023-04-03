@@ -17,7 +17,7 @@ from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
 from ...logic.object_relationships import get_related_object_ids
-from ...logic.schemas.data_diffs import apply_diff
+from ...logic.schemas.data_diffs import apply_diff, calculate_diff
 from ...logic import errors, users
 from ... import models
 from ...models import Permissions
@@ -37,7 +37,7 @@ class ObjectVersion(Resource):
             return {
                 "message": f"version {version_id} of object {object_id} does not exist"
             }, 404
-        object_version_json = {
+        object_version_json: typing.Dict[str, typing.Any] = {
             'object_id': object.object_id,
             'version_id': object.version_id,
             'action_id': object.action_id,
@@ -70,6 +70,11 @@ class ObjectVersion(Resource):
                     object_version_json['user'] = user_to_json(user)
                 except errors.UserDoesNotExistError:
                     pass
+        include_diff = bool(flask.request.args.get('include_diff'))
+        if include_diff and object.version_id > 0:
+            previous_object_version = get_object(object_id=object.object_id, version_id=object.version_id - 1)
+            data_diff = calculate_diff(previous_object_version.data, object.data)
+            object_version_json['data_diff'] = data_diff
         return object_version_json
 
 

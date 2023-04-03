@@ -6,6 +6,8 @@
 import requests
 import pytest
 import json
+import uuid
+import datetime
 
 import sampledb
 import sampledb.logic
@@ -182,6 +184,171 @@ def test_get_object_version(flask_server, auth, user, action):
         "fed_object_id": object.fed_object_id,
         "fed_version_id": object.fed_version_id,
         "component_id": object.component_id
+    }
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/0?include_diff=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": 0,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "data": object.data
+    }
+
+    object_json = {
+        "data": {
+            "name": {
+                '_type': 'text',
+                'text': 'Example2',
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id, version_id=object.version_id + 1)
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(object.object_id, new_object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": new_object.object_id,
+        "version_id": new_object.version_id,
+        "action_id": new_object.action_id,
+        "user_id": user.id,
+        "utc_datetime": new_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": new_object.schema,
+        "fed_object_id": new_object.fed_object_id,
+        "fed_version_id": new_object.fed_version_id,
+        "component_id": new_object.component_id,
+        "data": new_object.data,
+        "data_diff": {
+            "name": {
+                "_before": {
+                    "_type": "text",
+                    "text": "Example"
+                },
+                "_after": {
+                    "_type": "text",
+                    "text": "Example2"
+                }
+            }
+        }
+    }
+
+    component = sampledb.logic.components.add_component(str(uuid.uuid4()))
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(imported_object.object_id, user.id, sampledb.models.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 0), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 0,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 1,
+        "component_id": component.id,
+        "data": None
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=2,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 1), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 1,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 2,
+        "component_id": component.id,
+        "data": None,
+        "data_diff": None
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=3,
+        component_id=component.id,
+        action_id=None,
+        schema=object.schema,
+        data=object.data,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 2), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 2,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "fed_object_id": 1,
+        "fed_version_id": 3,
+        "component_id": component.id,
+        "data": object.data,
+        "data_diff": {
+            '_before': None,
+            '_after': object.data
+        }
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=4,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 3), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 3,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 4,
+        "component_id": component.id,
+        "data": None,
+        "data_diff": {
+            '_before': object.data,
+            '_after': None
+        }
     }
 
 

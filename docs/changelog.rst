@@ -18,6 +18,7 @@ Currently in development.
 - Allow viewing differences between object versions
 - Fixed configuration of action types linkable to project groups
 - Allow linking an object to an instrument to provide additional information
+- Added data differences between object versions to the version api
 
 Version 0.21.5
 --------------
