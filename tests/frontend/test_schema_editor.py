@@ -284,6 +284,14 @@ def test_create_complex_action(flask_server, driver, user):
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_13-template-id-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_13-template-id-input"]/parent::div/descendant::span[contains(text(), "Example Schema Template Action")]').click()
 
+    click_new_property_button(driver)
+
+    driver.find_element(By.ID, 'schema-editor-object__new_property_14-name-input').send_keys('timeseries', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_14-title-input-en').send_keys('Example Time Series', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_14-type-input"]').click()
+    driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_14-type-input"]/parent::div/descendant::span[contains(text(), "Time Series")]').click()
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_14-timeseries-units-input"]').send_keys("m", Keys.TAB)
+
     driver.find_element(By.XPATH, '//input[@id="schema-editor-root-object-tags-input"]/parent::div').click()
 
     driver.find_element(By.XPATH, '//input[@id="schema-editor-root-object-hazards-input"]/parent::div').click()
@@ -388,6 +396,11 @@ def test_create_complex_action(flask_server, driver, user):
                 'propertyOrder': [],
                 'required': []
             },
+            'timeseries': {
+                'title': {'en': 'Example Time Series'},
+                'type': 'timeseries',
+                'units': 'm'
+            },
             'tags': {
                 'title': {
                     'en': 'Tags',
@@ -424,6 +437,7 @@ def test_create_complex_action(flask_server, driver, user):
             'object_reference',
             'plotly_chart',
             'schema_template',
+            'timeseries',
             'tags',
             'hazards'
         ]

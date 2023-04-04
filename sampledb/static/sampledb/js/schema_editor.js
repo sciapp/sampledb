@@ -377,6 +377,8 @@ function enableSchemaEditor() {
       type = "plotly_chart";
     } else if (schema['type'] === 'object' && 'template' in schema) {
       type = 'template';
+    } else if (schema['type'] === 'timeseries') {
+      type = "timeseries";
     } else {
       window.schema_editor_missing_type_support = true;
       return null;
@@ -417,6 +419,8 @@ function enableSchemaEditor() {
         updatePlotlyChartProperty(path, real_path);
       } else if (type === 'template') {
         updateTemplateObjectProperty(path, real_path);
+      } else if (type === "timeseries") {
+        updateTimeseriesProperty(path, real_path);
       }
       globallyValidateSchema();
     }
@@ -1027,6 +1031,38 @@ function enableSchemaEditor() {
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
+    function updateTimeseriesProperty(path, real_path) {
+      let has_error = false;
+      updateGenericProperty(path, real_path);
+      let schema = JSON.parse(input_schema.val());
+      let property_schema = schema['properties'][real_path[real_path.length - 1]];
+      property_schema["type"] = "timeseries";
+
+      let units_input = getElementForProperty(path, 'timeseries-units-input');
+      let units = units_input.val();
+      let units_group = units_input.parent();
+      let units_help = units_group.find('.help-block');
+      // TODO: validate units
+      if (units.length > 0) {
+        // allow multiple units separated by a comma
+        if (units.split(',').length > 1) {
+          units = units.split(',');
+          units = units.map(function(unit) {
+            return unit.trim();
+          });
+        }
+        property_schema['units'] = units;
+        units_help.text("");
+        units_group.removeClass("has-error");
+      } else {
+        units_help.text(window.schema_editor_translations['enter_units']);
+        units_group.addClass("has-error");
+        has_error = true;
+      }
+
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
+    }
+
     var required_label = node.find('.schema-editor-generic-property-required-label');
     var required_input = node.find('.schema-editor-generic-property-required-input');
     required_input.attr('id', 'schema-editor-object__' + path.join('__') + '-required-input');
@@ -1184,21 +1220,23 @@ function enableSchemaEditor() {
     setupValueFromSchema(path, 'quantity', 'default', schema, type === 'quantity', false);
     setupValueFromSchema(path, 'quantity', 'placeholder', schema, type === 'quantity', false);
 
-    var units_label = node.find('.schema-editor-quantity-property-units-label');
-    var units_input = node.find('.schema-editor-quantity-property-units-input');
-    units_input.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-units-input');
-    units_label.attr('for', units_input.attr('id'));
-    if (type === 'quantity' && 'units' in schema) {
-      units_input.val(schema['units']);
-    } else {
-      units_input.val("");
-    }
-    units_input.on('change', updateProperty.bind(path));
-    if (window.schema_editor_error_message !== null && window.schema_editor_error_message === ("invalid units (at " + path[0] + ")")) {
-      var units_group = units_input.parent();
-      units_group.addClass("has-error");
-      units_group.find('.help-block').text(window.schema_editor_translations['enter_valid_units']);
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
+    for (const property_type of ["quantity", "timeseries"]) {
+      let units_label = node.find('.schema-editor-' + property_type + '-property-units-label');
+      let units_input = node.find('.schema-editor-' + property_type + '-property-units-input');
+      units_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + property_type + '-units-input');
+      units_label.attr('for', units_input.attr('id'));
+      if (type === property_type && 'units' in schema) {
+        units_input.val(schema['units']);
+      } else {
+        units_input.val("");
+      }
+      units_input.on('change', updateProperty.bind(path));
+      if (window.schema_editor_error_message !== null && window.schema_editor_error_message === ("invalid units (at " + path[0] + ")")) {
+        let units_group = units_input.parent();
+        units_group.addClass("has-error");
+        units_group.find('.help-block').text(window.schema_editor_translations['enter_valid_units']);
+        window.schema_editor_errors[path.join('__') + '__specific'] = true;
+      }
     }
 
     var default_checkbox = node.find('.schema-editor-user-property-default-checkbox');

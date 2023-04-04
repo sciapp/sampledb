@@ -450,6 +450,7 @@
             <option value="measurement">{{ measurement_action_type.object_name | get_translated_text(default=_('Object')) }}</option>
             <option value="user">{{ _('User') }}</option>
             <option value="object_reference">{{ _('Object Reference') }}</option>
+            <option value="timeseries">{{ _('Time Series') }}</option>
             <option value="plotly_chart">{{ _('Plotly Chart') }}</option>
             <option value="template">{{ _('Schema Template') }}</option>
           </select>
@@ -560,12 +561,18 @@
         </div>
         <div class="schema-editor-form-group schema-editor-property-setting schema-editor-quantity-property-setting">
           <label class="control-label schema-editor-quantity-property-units-label" data-toggle="tooltip" data-placement="top" title="{{ _('Unit or a list of units the user can choose from, separated by commas.') }}">{{ _('Units') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
-          <input type="text" class="form-control schema-editor-quantity-property-units-input" id="input-schema-name-text-default" placeholder="{{ _('Units') }}" value="">
+          <input type="text" class="form-control schema-editor-quantity-property-units-input" placeholder="{{ _('Units') }}" value="">
           <span class="help-block"></span>
         </div>
         <div class="schema-editor-form-group schema-editor-property-setting schema-editor-quantity-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-quantity-property-default-checkbox"></label><label class="control-label schema-editor-quantity-property-default-label" data-toggle="tooltip" data-placement="top" title="{{ _('Standard magnitude in base units.') }}">{{ _('Default') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
           <input type="text" class="form-control schema-editor-quantity-property-default-input" placeholder="{{ _('Default') }}" value="">
+          <span class="help-block"></span>
+        </div>
+
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-timeseries-property-setting">
+          <label class="control-label schema-editor-timeseries-property-units-label" data-toggle="tooltip" data-placement="top" title="{{ _('Unit or a list of units the user can choose from, separated by commas.') }}">{{ _('Units') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
+          <input type="text" class="form-control schema-editor-timeseries-property-units-input" placeholder="{{ _('Units') }}" value="">
           <span class="help-block"></span>
         </div>
 
