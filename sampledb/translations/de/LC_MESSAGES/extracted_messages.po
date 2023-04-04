@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-03-29 13:11+0200\n"
+"POT-Creation-Date: 2023-04-04 13:58+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3051,6 +3051,9 @@ msgstr "Bitte geben Sie gültige Einheiten ein"
 msgid "Schema Template input must not be empty"
 msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
 
+msgid "Please enter a positive number or 0."
+msgstr "Bitte geben Sie eine positive Zahl oder 0 ein."
+
 #, python-format
 msgid ""
 "<strong>Warning:</strong> Custom Actions are an advanced feature that "
@@ -3182,6 +3185,9 @@ msgstr "Text (Auswahl)"
 msgid "Boolean"
 msgstr "Wahrheitswert"
 
+msgid "Time Series"
+msgstr "Zeitreihe"
+
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
 
@@ -3239,6 +3245,12 @@ msgstr "Einheiten"
 
 msgid "Standard magnitude in base units."
 msgstr "Standardwert in Basiseinheiten."
+
+msgid "Number of decimal digits to display."
+msgstr "Anzahl der anzuzeigenden Nachkommastellen."
+
+msgid "Decimal Digits"
+msgstr "Nachkommastellen"
 
 msgid "Schema Editor Warning"
 msgstr "Schema Editor Warnung"

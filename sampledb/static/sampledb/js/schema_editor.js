@@ -999,6 +999,27 @@ function enableSchemaEditor() {
         has_error = true;
       }
 
+      let has_display_digits = getElementForProperty(path, 'quantity-display_digits-checkbox').prop('checked');
+      let display_digits_input = getElementForProperty(path, 'quantity-display_digits-input');
+      let display_digits_value = display_digits_input.val();
+      let display_digits_group = display_digits_input.parent();
+      let display_digits_help = display_digits_group.find('.help-block');
+      if (has_display_digits) {
+        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0) {
+          display_digits_help.text(window.schema_editor_translations['enter_display_digits']);
+          display_digits_group.addClass("has-error");
+          has_error = true;
+        } else {
+          display_digits_value = Number.parseInt(display_digits_value);
+          property_schema['display_digits'] = display_digits_value;
+          display_digits_help.text("");
+          display_digits_group.removeClass("has-error");
+        }
+      } else {
+        display_digits_help.text("");
+        display_digits_group.removeClass("has-error");
+      }
+
       var has_default = getElementForProperty(path, 'quantity-default-checkbox').prop('checked');
       var default_input = getElementForProperty(path, 'quantity-default-input');
       var default_value = default_input.val();
@@ -1058,6 +1079,27 @@ function enableSchemaEditor() {
         units_help.text(window.schema_editor_translations['enter_units']);
         units_group.addClass("has-error");
         has_error = true;
+      }
+
+      let has_display_digits = getElementForProperty(path, 'timeseries-display_digits-checkbox').prop('checked');
+      let display_digits_input = getElementForProperty(path, 'timeseries-display_digits-input');
+      let display_digits_value = display_digits_input.val();
+      let display_digits_group = display_digits_input.parent();
+      let display_digits_help = display_digits_group.find('.help-block');
+      if (has_display_digits) {
+        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0) {
+          display_digits_help.text(window.schema_editor_translations['enter_display_digits']);
+          display_digits_group.addClass("has-error");
+          has_error = true;
+        } else {
+          display_digits_value = Number.parseInt(display_digits_value);
+          property_schema['display_digits'] = display_digits_value;
+          display_digits_help.text("");
+          display_digits_group.removeClass("has-error");
+        }
+      } else {
+        display_digits_help.text("");
+        display_digits_group.removeClass("has-error");
       }
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
@@ -1219,6 +1261,7 @@ function enableSchemaEditor() {
 
     setupValueFromSchema(path, 'quantity', 'default', schema, type === 'quantity', false);
     setupValueFromSchema(path, 'quantity', 'placeholder', schema, type === 'quantity', false);
+    setupValueFromSchema(path, 'quantity', 'display_digits', schema, type === 'quantity', false);
 
     for (const property_type of ["quantity", "timeseries"]) {
       let units_label = node.find('.schema-editor-' + property_type + '-property-units-label');
@@ -1239,6 +1282,8 @@ function enableSchemaEditor() {
       }
     }
 
+    setupValueFromSchema(path, 'timeseries', 'display_digits', schema, type === 'timeseries', false);
+
     var default_checkbox = node.find('.schema-editor-user-property-default-checkbox');
     default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-checkbox');
     if (type === 'user' && 'default' in schema) {
@@ -1256,7 +1301,7 @@ function enableSchemaEditor() {
 
     var advanced_schema_features = [
         'conditions', 'action_type_id', 'action_id',
-        'may_copy', 'dataverse_export', 'languages', 'display_digits',
+        'may_copy', 'dataverse_export', 'languages',
         'min_magnitude', 'max_magnitude'
     ]
 
