@@ -1279,6 +1279,9 @@ function enableSchemaEditor() {
         units_group.addClass("has-error");
         units_group.find('.help-block').text(window.schema_editor_translations['enter_valid_units']);
         window.schema_editor_errors[path.join('__') + '__specific'] = true;
+        units_input.on('change', function() {
+          window.schema_editor_error_message = null;
+        });
       }
     }
 
