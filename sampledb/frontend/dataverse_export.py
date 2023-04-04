@@ -6,6 +6,7 @@ import typing
 
 import flask
 import flask_login
+import itsdangerous
 from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, PasswordField, SelectField, SelectMultipleField
@@ -184,7 +185,9 @@ def dataverse_export(object_id: int) -> FlaskResponseT:
             tag_whitelist=tag_whitelist
         )
         if task:
-            return flask.redirect(flask.url_for(".dataverse_export_loading", task_id=task.id))
+            serializer = itsdangerous.URLSafeSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='dataverse-export-task')
+            token = serializer.dumps((flask_login.current_user.id, task.id))
+            return flask.redirect(flask.url_for(".dataverse_export_loading", task_id=task.id, token=token))
         else:
             success, export_result = typing.cast(typing.Tuple[bool, dict[str, typing.Any]], task_status_or_result)
             if success:
@@ -207,7 +210,15 @@ def dataverse_export(object_id: int) -> FlaskResponseT:
 
 
 @frontend.route("/objects/<int:task_id>/dataverse_export_loading/", methods=['GET'])
+@flask_login.login_required
 def dataverse_export_loading(task_id: int) -> FlaskResponseT:
+    serializer = itsdangerous.URLSafeSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='dataverse-export-task')
+    token = flask.request.args.get('token', '')
+    try:
+        if serializer.loads(token) != [flask_login.current_user.id, task_id]:
+            return flask.abort(403)
+    except itsdangerous.BadData:
+        return flask.abort(403)
     task_result = logic.background_tasks.get_background_task_result(task_id, False)
     if task_result:
         if task_result["status"].is_final():
@@ -216,13 +227,21 @@ def dataverse_export_loading(task_id: int) -> FlaskResponseT:
             else:
                 return flask.render_template('objects/dataverse_export_loading.html', polling=False, error_message=task_result['result'])
         else:
-            return flask.render_template('objects/dataverse_export_loading.html', task_id=task_id, polling=True), 202
+            return flask.render_template('objects/dataverse_export_loading.html', task_id=task_id, polling=True, token=token), 202
     else:
         return flask.abort(404)
 
 
 @frontend.route("/objects/<int:task_id>/dataverse_export_status/", methods=['GET'])
+@flask_login.login_required
 def dataverse_export_status(task_id: int) -> FlaskResponseT:
+    serializer = itsdangerous.URLSafeSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='dataverse-export-task')
+    token = flask.request.args.get('token', '')
+    try:
+        if serializer.loads(token) != [flask_login.current_user.id, task_id]:
+            return flask.abort(403)
+    except itsdangerous.BadData:
+        return flask.abort(403)
     task_result = logic.background_tasks.get_background_task_result(task_id, False)
     if task_result:
         if task_result["status"].is_final():
@@ -232,7 +251,7 @@ def dataverse_export_status(task_id: int) -> FlaskResponseT:
                 })
             else:
                 return flask.jsonify({
-                    "url": flask.url_for(".dataverse_export_loading", task_id=task_id),
+                    "url": flask.url_for(".dataverse_export_loading", task_id=task_id, token=token),
                     "error_message": task_result["result"]
                 }), 406
 
@@ -240,6 +259,6 @@ def dataverse_export_status(task_id: int) -> FlaskResponseT:
             return flask.jsonify({}), 202
     else:
         return flask.jsonify({
-            "url": flask.url_for(".dataverse_export_loading", task_id=task_id),
+            "url": flask.url_for(".dataverse_export_loading", task_id=task_id, token=token),
             "error_message": "task_id not found"
         }), 404
