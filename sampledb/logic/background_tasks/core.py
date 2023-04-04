@@ -176,9 +176,9 @@ def get_background_task_result(task_id: int, delete_when_final: bool = True) -> 
             if task.result is None:
                 result["result"] = ""
             elif task.status == BackgroundTaskStatus.DONE:
-                result = task.result.get("url", "")
+                result["result"] = task.result.get("url", "")
             else:
-                result = task.result.get("error_message", "")
+                result["result"] = task.result.get("error_message", "")
 
         if delete_when_final:
             db.session.delete(task)
