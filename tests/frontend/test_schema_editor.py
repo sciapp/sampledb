@@ -223,6 +223,8 @@ def test_create_complex_action(flask_server, driver, user):
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_5-quantity-default-checkbox"]/ancestor::label').click()
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_5-quantity-default-input"]').send_keys("0.1", Keys.TAB)
     driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_5-quantity-units-input"]').send_keys("m", Keys.TAB)
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_5-quantity-display_digits-checkbox"]/ancestor::label').click()
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_5-quantity-display_digits-input"]').send_keys("2", Keys.TAB)
 
     click_new_property_button(driver)
 
@@ -283,6 +285,16 @@ def test_create_complex_action(flask_server, driver, user):
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_13-type-input"]/parent::div/descendant::span[contains(text(), "Schema Template")]').click()
     driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_13-template-id-input"]').click()
     driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_13-template-id-input"]/parent::div/descendant::span[contains(text(), "Example Schema Template Action")]').click()
+
+    click_new_property_button(driver)
+
+    driver.find_element(By.ID, 'schema-editor-object__new_property_14-name-input').send_keys('timeseries', Keys.TAB)
+    driver.find_element(By.ID, 'schema-editor-object__new_property_14-title-input-en').send_keys('Example Time Series', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[data-id="schema-editor-object__new_property_14-type-input"]').click()
+    driver.find_element(By.XPATH, '//select[@id="schema-editor-object__new_property_14-type-input"]/parent::div/descendant::span[contains(text(), "Time Series")]').click()
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_14-timeseries-units-input"]').send_keys("m", Keys.TAB)
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_14-timeseries-display_digits-checkbox"]/ancestor::label').click()
+    driver.find_element(By.XPATH, '//input[@id="schema-editor-object__new_property_14-timeseries-display_digits-input"]').send_keys("3", Keys.TAB)
 
     driver.find_element(By.XPATH, '//input[@id="schema-editor-root-object-tags-input"]/parent::div').click()
 
@@ -349,7 +361,8 @@ def test_create_complex_action(flask_server, driver, user):
                 'type': 'quantity',
                 'placeholder': 'Quantity Placeholder',
                 'units': 'm',
-                'default': 0.1
+                'default': 0.1,
+                'display_digits': 2
             },
             'boolean': {
                 'title': {'en': 'Example Boolean'},
@@ -388,6 +401,12 @@ def test_create_complex_action(flask_server, driver, user):
                 'propertyOrder': [],
                 'required': []
             },
+            'timeseries': {
+                'title': {'en': 'Example Time Series'},
+                'type': 'timeseries',
+                'units': 'm',
+                'display_digits': 3
+            },
             'tags': {
                 'title': {
                     'en': 'Tags',
@@ -424,6 +443,7 @@ def test_create_complex_action(flask_server, driver, user):
             'object_reference',
             'plotly_chart',
             'schema_template',
+            'timeseries',
             'tags',
             'hazards'
         ]
