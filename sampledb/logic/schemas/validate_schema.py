@@ -104,7 +104,7 @@ def validate_schema(
     elif schema['type'] == 'bool':
         return _validate_bool_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'quantity':
-        return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'sample':
         return _validate_sample_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'measurement':
@@ -120,7 +120,7 @@ def validate_schema(
     elif schema['type'] == 'plotly_chart':
         return _validate_plotly_chart_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'timeseries':
-        return _validate_timeseries_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_timeseries_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     else:
         raise ValidationError('invalid type', path)
 
@@ -657,7 +657,8 @@ def _validate_quantity_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool = False
 ) -> None:
     """
     Validates the given quantity object schema and raises a ValidationError if it is invalid.
@@ -665,6 +666,7 @@ def _validate_quantity_schema(
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :param all_language_codes: the set of existing language codes
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits', 'min_magnitude', 'max_magnitude'}
@@ -735,6 +737,9 @@ def _validate_quantity_schema(
                 raise ValidationError('placeholder must only contain text', path)
     if 'display_digits' in schema and (type(schema['display_digits']) is not int or schema['display_digits'] < 0):
         raise ValidationError('display_digits must be a non-negative int', path)
+    if strict:
+        if 'display_digits' in schema and schema['display_digits'] > 15:
+            raise ValidationError('display_digits must be at most 15', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
 
@@ -955,7 +960,8 @@ def _validate_timeseries_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool = False
 ) -> None:
     """
     Validates the given timeseries schema and raises a ValidationError if it is invalid.
@@ -963,6 +969,7 @@ def _validate_timeseries_schema(
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :param all_language_codes: the set of existing language codes
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'units', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits'}
@@ -1004,4 +1011,7 @@ def _validate_timeseries_schema(
         raise ValidationError('scicat_export must be True or False', path)
     if 'display_digits' in schema and (type(schema['display_digits']) is not int or schema['display_digits'] < 0):
         raise ValidationError('display_digits must be a non-negative int', path)
+    if strict:
+        if 'display_digits' in schema and schema['display_digits'] > 15:
+            raise ValidationError('display_digits must be at most 15', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)

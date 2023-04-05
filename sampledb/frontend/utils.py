@@ -303,12 +303,11 @@ def custom_format_number(
         number = round(number, display_digits)
 
     locale = get_locale()
+    if number == 0:
+        exponent = 0
+    else:
+        exponent = int(floor(log10(abs(number))))
     if not disable_scientific_format:
-        if number == 0:
-            exponent = 0
-        else:
-            exponent = int(floor(log10(abs(number))))
-
         # for very small or very large absolute numbers, the exponential format should be used
         use_exponential_format = not -5 < exponent < 6
     else:
@@ -322,11 +321,14 @@ def custom_format_number(
     if display_digits is not None:
         if use_exponential_format:
             display_digits += exponent
-
-        if display_digits < 0:
-            display_digits = 0
-        if display_digits > 27:
-            display_digits = 27
+            if display_digits > 15:
+                display_digits = 15
+        else:
+            internal_integral_digits = max(0, exponent + 1)
+            if display_digits + internal_integral_digits > 15:
+                display_digits = 15 - internal_integral_digits
+            if display_digits < 0:
+                display_digits = 0
 
         positive_format = positive_format + '.' + '0' * display_digits
     else:
