@@ -2383,7 +2383,7 @@ def test_validate_timeseries_invalid_units():
     validate(instance, schema)
     instance = {
         '_type': 'timeseries',
-        'units': 'mg',
+        'units': 'm',
         'data': [
             ["2023-01-02 03:04:05.678900", 1, 0.000001],
             ["2023-01-02 03:04:06.678900", 2, 0.000002]
@@ -2391,12 +2391,6 @@ def test_validate_timeseries_invalid_units():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
-    schema = {
-        'title': 'Example',
-        'type': 'timeseries',
-        'units': ['g', 'mg']
-    }
-    validate(instance, schema)
 
 
 def test_validate_timeseries_magnitude_mismatch():

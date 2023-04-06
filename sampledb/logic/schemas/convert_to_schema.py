@@ -9,6 +9,7 @@ from flask_babel import _
 
 from .generate_placeholder import generate_placeholder
 from .utils import get_dimensionality_for_units
+from ..utils import get_translated_text
 from ...models import ActionType
 from .. import actions, errors, objects
 
@@ -44,7 +45,7 @@ def convert_to_schema(
         if result:
             return result
     if previous_schema['type'] != new_schema['type']:
-        return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' from type '%(type1)s' to type '%(type2)s'.", title=new_schema['title'], type1=previous_schema['type'], type2=new_schema['type'])]
+        return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' from type '%(type1)s' to type '%(type2)s'.", title=get_translated_text(new_schema['title']), type1=previous_schema['type'], type2=new_schema['type'])]
     if new_schema['type'] == 'text' and 'choices' in new_schema and isinstance(data, dict):
         result = _try_convert_text_to_choices(data, new_schema)
         if result:
@@ -59,6 +60,10 @@ def convert_to_schema(
         result = _try_convert_quantity_to_quantity(data, new_schema, previous_schema)
         if result:
             return result
+    if previous_schema['type'] == 'timeseries':
+        result = _try_convert_timeseries_to_timeseries(data, new_schema, previous_schema)
+        if result:
+            return result
     if new_schema['type'] == 'object':
         result = _try_convert_object_to_object(data, new_schema, previous_schema)
         if result:
@@ -67,7 +72,7 @@ def convert_to_schema(
         result = _try_convert_array_to_array(data, new_schema, previous_schema)
         if result:
             return result
-    return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' of type '%(type)s'.", title=new_schema['title'], type=new_schema['type'])]
+    return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' of type '%(type)s'.", title=get_translated_text(new_schema['title']), type=new_schema['type'])]
 
 
 def _try_convert_text_to_tags(
@@ -153,7 +158,19 @@ def _try_convert_quantity_to_quantity(
     new_dimensionality = get_dimensionality_for_units(new_schema['units'])
     if new_dimensionality == previous_dimensionality:
         return data, []
-    return generate_placeholder(new_schema), [_("Unable to convert quantity '%(title)s' to different dimensionality: %(dimensionality1)s -> %(dimensionality2)s", title=new_schema['title'], dimensionality1=previous_dimensionality, dimensionality2=new_dimensionality)]
+    return generate_placeholder(new_schema), [_("Unable to convert quantity '%(title)s' to different dimensionality: %(dimensionality1)s -> %(dimensionality2)s", title=get_translated_text(new_schema['title']), dimensionality1=previous_dimensionality, dimensionality2=new_dimensionality)]
+
+
+def _try_convert_timeseries_to_timeseries(
+        data: typing.Dict[str, typing.Any],
+        new_schema: typing.Dict[str, typing.Any],
+        previous_schema: typing.Dict[str, typing.Any]
+) -> typing.Optional[typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[str]]], typing.Sequence[str]]]:
+    previous_dimensionality = get_dimensionality_for_units(previous_schema['units'])
+    new_dimensionality = get_dimensionality_for_units(new_schema['units'])
+    if new_dimensionality == previous_dimensionality:
+        return data, []
+    return generate_placeholder(new_schema), [_("Unable to convert timeseries '%(title)s' to different dimensionality: %(dimensionality1)s -> %(dimensionality2)s", title=get_translated_text(new_schema['title']), dimensionality1=previous_dimensionality, dimensionality2=new_dimensionality)]
 
 
 def _try_convert_object_reference_to_object_reference(
