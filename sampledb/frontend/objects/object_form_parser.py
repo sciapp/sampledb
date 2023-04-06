@@ -521,6 +521,8 @@ def parse_timeseries_form_data(form_data: typing.Dict[str, typing.List[str]], sc
         if timeseries_data and all(isinstance(value, str) for value in timeseries_data[0]):
             # skip header rows
             timeseries_data = timeseries_data[1:]
+        if not timeseries_data:
+            raise ValueError(_('invalid timeseries CSV data, expected datetime string, magnitude and (optional) magnitude in base units'))
         user_timezone = pytz.timezone(current_user.timezone or 'UTC')
         if user_timezone != pytz.utc:
             # convert datetimes to UTC if necessary

@@ -49,17 +49,26 @@ def test_custom_format_number():
     assert utils.custom_format_number(0.000001, 8) == "1.00E-6"
     assert utils.custom_format_number(123456789, 2) == "1.2345678900E8"
     assert utils.custom_format_number(1E27) == "1E27"
-    assert utils.custom_format_number(1E27, 0) == "1.000000000000000000000000000E27"
-    # 27 display digits is the maximum, independent of the exponent
-    assert utils.custom_format_number(1E27, 1) == "1.000000000000000000000000000E27"
-    assert utils.custom_format_number(1E25, 5) == "1.000000000000000000000000000E25"
-    assert utils.custom_format_number(1E-127, 154) == "1.000000000000000000000000000E-127"
-    assert utils.custom_format_number(1E-127, 155) == "1.000000000000000000000000000E-127"
+    assert utils.custom_format_number(1E14, 0) == "1.00000000000000E14"
+    assert utils.custom_format_number(1E14, 1) == "1.000000000000000E14"
+    assert utils.custom_format_number(1E15, 0) == "1.000000000000000E15"
+    # 15 display digits is the maximum, independent of the exponent
+    assert utils.custom_format_number(1E15, 1) == "1.000000000000000E15"
+    assert utils.custom_format_number(1E27, 1) == "1.000000000000000E27"
+    assert utils.custom_format_number(1E25, 5) == "1.000000000000000E25"
+    assert utils.custom_format_number(1E-127, 154) == "1.000000000000000E-127"
+    assert utils.custom_format_number(1E-127, 155) == "1.000000000000000E-127"
 
     assert utils.custom_format_number(0, None, 2) == "00"
     assert utils.custom_format_number(1, None, 2) == "01"
     assert utils.custom_format_number(123, None, 2) == "123"
     assert utils.custom_format_number(10, 2, 3) == "010.00"
+
+    for integer_digits in range(5):
+        number = 1/3 + (10**integer_digits - 1) / 3
+        assert utils.custom_format_number(number, 0) == ("0" if integer_digits == 0 else "3" * integer_digits)
+        for display_digits in range(1, 28):
+            assert utils.custom_format_number(number, display_digits) == ("0" if integer_digits == 0 else "3" * integer_digits) + "." + "3" * max(0, min(15, display_digits + integer_digits) - integer_digits)
 
 
 def test_custom_format_quantity():

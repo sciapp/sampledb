@@ -586,7 +586,7 @@ A JSON array of strings or a single string containing the units for this propert
 display_digits
 ^^^^^^^^^^^^^^
 
-This attribute is the number of decimal places to be shown when displaying the magnitude, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitude will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
+This attribute is the number of decimal places to be shown when displaying the magnitude, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitude will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 15 decimal places can be displayed.
 
 min_magnitude
 ^^^^^^^^^^^^^

@@ -1005,7 +1005,7 @@ function enableSchemaEditor() {
       let display_digits_group = display_digits_input.parent();
       let display_digits_help = display_digits_group.find('.help-block');
       if (has_display_digits) {
-        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0) {
+        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0 || Number.parseInt(display_digits_value) > 15) {
           display_digits_help.text(window.schema_editor_translations['enter_display_digits']);
           display_digits_group.addClass("has-error");
           has_error = true;
@@ -1087,7 +1087,7 @@ function enableSchemaEditor() {
       let display_digits_group = display_digits_input.parent();
       let display_digits_help = display_digits_group.find('.help-block');
       if (has_display_digits) {
-        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0) {
+        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0 || Number.parseInt(display_digits_value) > 15) {
           display_digits_help.text(window.schema_editor_translations['enter_display_digits']);
           display_digits_group.addClass("has-error");
           has_error = true;
