@@ -169,6 +169,41 @@
     </table>
   </div>
 
+  {% if api_access_tokens %}
+  <h3>{{ _('API Access Tokens')}}</h3>
+  <div>
+    <p>
+      <strong>{{ _('Note:')}}</strong> {{ _('API access tokens are short-lived tokens for the use by interactive applications or scripts to authenticate with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
+    </p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ _('Description') }}</th>
+          <th>{{ _('Expiration Datetime') }}</th>
+          <th style="width:1%"></th>
+          <th style="width:1%"></th>
+        </tr>
+      </thead>
+      <tbody>
+       {% for authentication in api_access_tokens %}
+       <tr>
+         <td>{{ authentication.login['description'] }}</td>
+         <td>{{ authentication.login['expiration_utc_datetime'] | babel_format_datetime }}</td>
+         <td style="white-space: nowrap"><a href="{{ url_for('.current_user_api_log', api_token_id=authentication.id) }}">{{ _('View Log')}}</a></td>
+         <td class="text-right">
+           <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+             {{ authentication_method_form.csrf_token() }}
+             <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
+             <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+           </form>
+         </td>
+       </tr>
+       {% endfor %}
+     </tbody>
+    </table>
+  </div>
+  {% endif %}
+
   <h3>{{ _('Two Factor Authentication') }}</h3>
   {% if two_factor_authentication_methods %}
   <table class="table">

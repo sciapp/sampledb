@@ -98,7 +98,7 @@ def send_recovery_email(
     password_reset_urls = {}
     for user in users:
         for authentication_method in user.authentication_methods:
-            if authentication_method.type not in {AuthenticationType.LDAP, AuthenticationType.API_TOKEN}:
+            if authentication_method.type not in {AuthenticationType.LDAP, AuthenticationType.API_TOKEN, AuthenticationType.API_ACCESS_TOKEN}:
                 password_reset_urls[authentication_method] = build_confirm_url(authentication_method)
 
     def filter_printable_authentication_methods(authentication_methods: typing.Iterable[Authentication]) -> typing.List[Authentication]:

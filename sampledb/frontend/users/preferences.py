@@ -117,9 +117,10 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
     api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
-    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
+    api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
+    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     authentication_method_form = AuthenticationMethodForm()
@@ -228,7 +229,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     two_factor_authentication_methods=two_factor_authentication_methods,
                     manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
                 )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -343,7 +345,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     two_factor_authentication_methods=two_factor_authentication_methods,
                     manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
                 )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -404,9 +407,10 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     two_factor_authentication_methods=two_factor_authentication_methods,
                     manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
                 )
-            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
+            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
         else:
             flask.flash(_("Failed to add an authentication method."), 'error')
     if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
@@ -456,7 +460,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 two_factor_authentication_methods=two_factor_authentication_methods,
                 manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                 has_active_method=any(method.active for method in two_factor_authentication_methods),
-                api_tokens=api_tokens
+                api_tokens=api_tokens,
+                api_access_tokens=api_access_tokens,
             )
     if handle_permission_forms(
         default_permissions,
@@ -478,7 +483,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                         break
         flask.flash(_("Successfully updated your notification settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         modified_settings: typing.Dict[str, typing.Any] = {
@@ -593,7 +598,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         two_factor_authentication_methods=two_factor_authentication_methods,
         manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
         has_active_method=any(method.active for method in two_factor_authentication_methods),
-        api_tokens=api_tokens
+        api_tokens=api_tokens,
+        api_access_tokens=api_access_tokens,
     )
 
 

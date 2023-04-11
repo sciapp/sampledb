@@ -12,6 +12,8 @@ Authentication
 
 The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`. If you have a two factor authentication method enabled, you cannot use your user credentials to use the API and will have to use an API token instead.
 
+You can use these authentication methods to create a short-lived :ref:`access token <access_tokens>`_, along with a refresh token to generate new access tokens.
+
 Please make sure to use HTTPS when accessing the API.
 
 Objects
@@ -2206,3 +2208,48 @@ The following diff would add a value of 11g to ``mass_list`` and set ``measureme
         }
       ]
     }
+
+.. _access_tokens:
+
+Access Tokens
+-------------
+
+In some situations, e.g. for interactive applications that use the API, users may want to authenticate with their username and password, but these should not be stored. In these situations, access tokens are a short-lived and more convenient alternative to having the users create API tokens. An access token can be used with Bearer authentication, just like an API token. After a given time this access token will expire automatically, so that there won't be any cleanup needed by the user. When creating an access token, the expiration date and time (in UTC) will be returned along with a refresh token, which can be used to create a new access token to avoid expiry, as long as the access token is needed.
+
+.. http:post:: /api/v1/access_tokens/
+
+    Create a new access token.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/access_tokens/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "description": "Access Token for Instrument Control"
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 201 Created
+        Content-Type: application/json
+
+        {
+            "access_token": "d0305fdf89d737dfa3062569022ef38be363b8fdf3d4137d26674809e34eac5a",
+            "refresh_token": "b6f6d66d6ee92b4bc38857aabab793c2eb1e982941fa576b02b0535c280498c3",
+            "expiration_utc_datetime": "2023-04-05 06:07:08"
+            "description": "Access Token for Instrument Control"
+        }
+
+    :<json string description: a description for the access token
+    :>json string access_token: the created access token
+    :>json string refresh_token: the accompanying refresh token
+    :>json string expiration_utc_datetime: the expiration date and time (in UTC)
+    :>json string description: the given description
+    :statuscode 201: the access token has been created successfully
