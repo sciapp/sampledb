@@ -6439,6 +6439,14 @@ msgstr ""
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
 
 #, python-format
+msgid ""
+"Unable to convert timeseries '%(title)s' to different dimensionality: "
+"%(dimensionality1)s -> %(dimensionality2)s"
+msgstr ""
+"Konnte Zeitreihe '%(title)s' nicht von Dimensionalität "
+"%(dimensionality1)s nach %(dimensionality2)s konvertieren."
+
+#, python-format
 msgid "The text must be one of %(choices)s."
 msgstr "Der Text muss einer der folgenden sein: %(choices)s."
 

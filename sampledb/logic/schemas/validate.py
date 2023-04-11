@@ -728,11 +728,6 @@ def _validate_timeseries(
         raise ValidationError('units must be str', path)
     if not units_are_valid(instance['units']):
         raise ValidationError('Invalid/Unknown units', path)
-    if isinstance(schema['units'], str) and instance['units'] != schema['units']:
-        raise ValidationError(f'Invalid units, expected {schema["units"]}', path)
-    if isinstance(schema['units'], list) and instance['units'] not in schema['units']:
-        raise ValidationError(f'Invalid units, expected one of {", ".join(schema["units"])}', path)
-
     try:
         if isinstance(schema['units'], str):
             schema_units = schema['units']
@@ -741,6 +736,12 @@ def _validate_timeseries(
         dimensionality_from_schema_units = get_dimensionality_for_units(schema_units)
     except Exception:
         raise ValidationError('Unable to determine dimensionality', path)
+    if isinstance(schema['units'], str) and instance['units'] != schema['units']:
+        if dimensionality_from_schema_units != get_dimensionality_for_units(instance['units']):
+            raise ValidationError(f'Invalid units, expected {schema["units"]}', path)
+    if isinstance(schema['units'], list) and instance['units'] not in schema['units']:
+        if dimensionality_from_schema_units != get_dimensionality_for_units(instance['units']):
+            raise ValidationError(f'Invalid units, expected one of {", ".join(schema["units"])}', path)
     if 'dimensionality' in instance:
         if not isinstance(instance['dimensionality'], str):
             raise ValidationError('dimensionality must be str', path)
@@ -748,8 +749,6 @@ def _validate_timeseries(
             raise ValidationError('dimensionality must match units', path)
     else:
         instance['dimensionality'] = dimensionality_from_schema_units
-    if datatypes.Quantity(1, instance['units']).dimensionality != dimensionality_from_schema_units:
-        raise ValidationError(f'Invalid units, expected units for dimensionality "{str(dimensionality_from_schema_units)}"', path)
 
     if not isinstance(instance['data'], list):
         raise ValidationError('data must be list', path)

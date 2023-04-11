@@ -459,3 +459,85 @@ def test_convert_schema_missing_values():
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
     assert new_data == data
     assert not warnings
+
+
+def test_convert_timeseries_schema():
+    data = {
+        "data": [
+            [
+                "2020-01-02 03:04:05.678910",
+                1,
+                1
+            ]
+        ],
+        "_type": "timeseries",
+        "units": "m",
+        "dimensionality": "[length]"
+    }
+    previous_schema = {
+        "type": "timeseries",
+        "title": {
+            "en": "Test Title"
+        },
+        "units": [
+            "m",
+            "km"
+        ],
+        "display_digits": 15
+    }
+    new_schema = {
+        "title": {
+            "en": "Test Title"
+        },
+        "note": {
+            "en": ""
+        },
+        "type": "timeseries",
+        "units": "m",
+        "display_digits": 3
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == data
+    assert not warnings
+
+
+def test_convert_timeseries_schema_changed_dimensionality():
+    data = {
+        "data": [
+            [
+                "2020-01-02 03:04:05.678910",
+                1,
+                1
+            ]
+        ],
+        "_type": "timeseries",
+        "units": "m",
+        "dimensionality": "[length]"
+    }
+    previous_schema = {
+        "type": "timeseries",
+        "title": {
+            "en": "Test Title"
+        },
+        "units": [
+            "m",
+            "km"
+        ],
+        "display_digits": 15
+    }
+    new_schema = {
+        "title": {
+            "en": "Test Title"
+        },
+        "note": {
+            "en": ""
+        },
+        "type": "timeseries",
+        "units": "min",
+        "display_digits": 3
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data is None
+    assert warnings == ["Unable to convert timeseries 'Test Title' to different dimensionality: [length] -> [time]"]
