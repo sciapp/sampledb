@@ -11,7 +11,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   $(function() {
     $('.dataverse-export-select-all').click(function() {
       $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', true);
@@ -37,7 +37,7 @@
       <span class="btn btn-default dataverse-export-select-none" style="width:8em">{{ _('Unselect all') }}</span>
     </div>
     <div class="form-group">
-    {% for value, path in properties %}
+    {% for path in properties %}
       <label style="font-weight: normal"><input type="checkbox" class="dataverse-export-property" {% if get_property_export_default(path) or path in export_properties %}checked="checked"{% endif %} {% if path == ['name'] %}disabled="disabled"{% endif %} name="property,{{ path | join(',') }}"/> {{ get_title_for_property(path) }}</label><br />
     {% endfor %}
     </div>

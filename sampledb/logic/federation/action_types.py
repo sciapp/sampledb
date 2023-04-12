@@ -5,7 +5,7 @@ import flask
 from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_bool, _get_str, _get_dict
 from ..languages import get_languages, get_language, get_language_by_lang_code
-from ..actions import get_action_type, update_action_type, create_action_type, ActionType
+from ..action_types import ActionType, get_action_type, create_action_type, update_action_type
 from ..action_type_translations import set_action_type_translation, get_action_type_translations_for_action_type
 from ..components import Component
 from .. import errors, fed_logs
@@ -38,6 +38,7 @@ class ActionTypeData(typing.TypedDict):
     enable_activity_log: bool
     enable_related_objects: bool
     enable_project_link: bool
+    enable_instrument_link: bool
     disable_create_objects: bool
     is_template: bool
     translations: typing.List[ActionTypeTranslationData]
@@ -64,6 +65,7 @@ class SharedActionTypeData(typing.TypedDict):
     enable_activity_log: bool
     enable_related_objects: bool
     enable_project_link: bool
+    enable_instrument_link: bool
     disable_create_objects: bool
     is_template: bool
     translations: typing.Optional[typing.Dict[str, SharedActionTypeTranslationData]]
@@ -74,6 +76,8 @@ def import_action_type(
         component: Component
 ) -> ActionType:
     component_id = _get_or_create_component_id(action_type_data['component_uuid'])
+    # component_id will only be None if this would import a local action type
+    assert component_id is not None
 
     try:
         action_type = get_action_type(action_type_data['fed_id'], component_id)
@@ -101,6 +105,7 @@ def import_action_type(
                 enable_activity_log=action_type_data['enable_activity_log'],
                 enable_related_objects=action_type_data['enable_related_objects'],
                 enable_project_link=action_type_data['enable_project_link'],
+                enable_instrument_link=action_type_data['enable_instrument_link'],
                 disable_create_objects=action_type_data['disable_create_objects'],
                 is_template=action_type_data['is_template'],
                 scicat_export_type=None
@@ -121,6 +126,7 @@ def import_action_type(
             enable_activity_log=action_type_data['enable_activity_log'],
             enable_related_objects=action_type_data['enable_related_objects'],
             enable_project_link=action_type_data['enable_project_link'],
+            enable_instrument_link=action_type_data['enable_instrument_link'],
             disable_create_objects=action_type_data['disable_create_objects'],
             is_template=action_type_data['is_template'],
             scicat_export_type=None
@@ -148,7 +154,7 @@ def parse_action_type(
     uuid = _get_uuid(action_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local action type {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local action type {fed_id}')
     result = ActionTypeData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -161,6 +167,7 @@ def parse_action_type(
         enable_activity_log=_get_bool(action_type_data.get('enable_activity_log'), default=False),
         enable_related_objects=_get_bool(action_type_data.get('enable_related_objects'), default=False),
         enable_project_link=_get_bool(action_type_data.get('enable_project_link'), default=False),
+        enable_instrument_link=_get_bool(action_type_data.get('enable_instrument_link'), default=False),
         disable_create_objects=_get_bool(action_type_data.get('disable_create_objects'), default=False),
         is_template=_get_bool(action_type_data.get('is_template'), default=False),
         translations=[]
@@ -239,6 +246,7 @@ def _get_or_create_action_type_id(
             enable_activity_log=False,
             enable_related_objects=False,
             enable_project_link=False,
+            enable_instrument_link=False,
             disable_create_objects=False,
             is_template=False,
             fed_id=action_type_data['action_type_id'],
@@ -285,6 +293,7 @@ def shared_action_type_preprocessor(
         enable_activity_log=action_type.enable_activity_log,
         enable_related_objects=action_type.enable_related_objects,
         enable_project_link=action_type.enable_project_link,
+        enable_instrument_link=action_type.enable_instrument_link,
         disable_create_objects=action_type.disable_create_objects,
         is_template=action_type.is_template,
         translations=translations_data if translations_data else None

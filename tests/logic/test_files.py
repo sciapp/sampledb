@@ -110,7 +110,7 @@ def test_file_exists(user: User, object: Object, tmpdir):
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
     tmpdir.join(str(object.action_id)).join(str(object.id)).join("0000_test.png").write("", ensure=True)
 
-    with pytest.raises(FileExistsError):
+    with pytest.raises(errors.FileCreationError):
         files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: None)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
 

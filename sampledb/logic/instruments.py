@@ -17,7 +17,7 @@ from .components import check_component_exists
 from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
-from . import users, errors, components, locations
+from . import users, errors, components, locations, objects
 from .utils import cache
 
 
@@ -39,11 +39,13 @@ class Instrument:
     description_is_markdown: bool
     short_description: typing.Dict[str, str]
     short_description_is_markdown: bool
-    fed_id: int
-    component_id: int
+    fed_id: typing.Optional[int]
+    component_id: typing.Optional[int]
     component: typing.Optional[components.Component]
-    location_id: int
+    location_id: typing.Optional[int]
     location: typing.Optional[locations.Location]
+    object_id: typing.Optional[int]
+    show_linked_object_data: bool
 
     @classmethod
     def from_database(cls, instrument: models.Instrument) -> 'Instrument':
@@ -59,20 +61,56 @@ class Instrument:
             is_hidden=instrument.is_hidden,
             name=instrument.name,
             notes=instrument.notes,
-            notes_is_markdown=instrument.notes_is_markdown,
+            notes_is_markdown=bool(instrument.notes_is_markdown),
             description=instrument.description,
-            description_is_markdown=instrument.description_is_markdown,
+            description_is_markdown=bool(instrument.description_is_markdown),
             short_description=instrument.short_description,
-            short_description_is_markdown=instrument.short_description_is_markdown,
+            short_description_is_markdown=bool(instrument.short_description_is_markdown),
             fed_id=instrument.fed_id,
             component_id=instrument.component_id,
             component=components.Component.from_database(instrument.component) if instrument.component is not None else None,
             location_id=instrument.location_id,
             location=locations.Location.from_database(instrument.location) if instrument.location is not None else None,
+            object_id=instrument.object_id,
+            show_linked_object_data=instrument.show_linked_object_data,
         )
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}(id={self.id!r})>"
+
+
+@typing.overload
+def create_instrument(
+        *,
+        description_is_markdown: bool = False,
+        users_can_create_log_entries: bool = False,
+        users_can_view_log_entries: bool = False,
+        notes_is_markdown: bool = False,
+        create_log_entry_default: bool = False,
+        is_hidden: bool = False,
+        short_description_is_markdown: bool = False,
+        fed_id: None = None,
+        component_id: None = None,
+        show_linked_object_data: bool = True,
+) -> Instrument:
+    ...
+
+
+@typing.overload
+def create_instrument(
+        *,
+        description_is_markdown: bool = False,
+        users_can_create_log_entries: bool = False,
+        users_can_view_log_entries: bool = False,
+        notes_is_markdown: bool = False,
+        create_log_entry_default: bool = False,
+        is_hidden: bool = False,
+        short_description_is_markdown: bool = False,
+        fed_id: int,
+        component_id: int,
+        show_linked_object_data: bool = True,
+) -> Instrument:
+    ...
 
 
 def create_instrument(
@@ -85,7 +123,8 @@ def create_instrument(
         is_hidden: bool = False,
         short_description_is_markdown: bool = False,
         fed_id: typing.Optional[int] = None,
-        component_id: typing.Optional[int] = None
+        component_id: typing.Optional[int] = None,
+        show_linked_object_data: bool = True,
 ) -> Instrument:
     """
     Creates a new instrument.
@@ -103,11 +142,11 @@ def create_instrument(
         contains Markdown
     :param fed_id: the ID of the related instrument at the exporting component
     :param component_id: the ID of the exporting component
+    :param show_linked_object_data: whether the data for a linked object
+        should be shown
     :return: the new instrument
     """
-
-    if (component_id is None) != (fed_id is None):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
 
     if component_id is not None:
         check_component_exists(component_id)
@@ -121,7 +160,8 @@ def create_instrument(
         is_hidden=is_hidden,
         short_description_is_markdown=short_description_is_markdown,
         fed_id=fed_id,
-        component_id=component_id
+        component_id=component_id,
+        show_linked_object_data=show_linked_object_data,
     )
     db.session.add(instrument)
     db.session.commit()
@@ -151,7 +191,7 @@ def check_instrument_exists(
     :raise errors.InstrumentDoesNotExistError: when no instrument with the given
         instrument ID exists
     """
-    if not db.session.query(db.exists().where(models.Instrument.id == instrument_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(models.Instrument.id == instrument_id)).scalar():
         raise errors.InstrumentDoesNotExistError()
 
 
@@ -205,7 +245,8 @@ def update_instrument(
         notes_is_markdown: typing.Optional[bool] = None,
         create_log_entry_default: typing.Optional[bool] = None,
         is_hidden: typing.Optional[bool] = None,
-        short_description_is_markdown: typing.Optional[bool] = None
+        short_description_is_markdown: typing.Optional[bool] = None,
+        show_linked_object_data: typing.Optional[bool] = None
 ) -> None:
     """
     Updates the instrument.
@@ -222,6 +263,8 @@ def update_instrument(
         entry should be created during object creation by instrument
         scientists, or None
     :param is_hidden: whether or not this instrument is hidden, or None
+    :param show_linked_object_data: whether the data for a linked object
+        should be shown, or None
     :param short_description_is_markdown: whether the short description
         contains Markdown, or None
     :raise errors.InstrumentDoesNotExistError: when no instrument with the
@@ -244,6 +287,8 @@ def update_instrument(
         instrument.short_description_is_markdown = short_description_is_markdown
     if is_hidden is not None:
         instrument.is_hidden = is_hidden
+    if show_linked_object_data is not None:
+        instrument.show_linked_object_data = show_linked_object_data
     db.session.add(instrument)
     db.session.commit()
 
@@ -334,7 +379,7 @@ def get_user_instruments(user_id: int, exclude_hidden: bool = False) -> typing.L
     users.check_user_exists(user_id)
     instrument_id_query = db.session.query(
         instrument_user_association_table.c.instrument_id
-    ).filter(instrument_user_association_table.c.user_id == user_id)  # type: ignore
+    ).filter(instrument_user_association_table.c.user_id == user_id)
     if exclude_hidden:
         instrument_id_query = instrument_id_query.join(
             models.Instrument,
@@ -367,3 +412,48 @@ def set_instrument_location(instrument_id: int, location_id: typing.Optional[int
     instrument.location_id = location_id
     db.session.add(instrument)
     db.session.commit()
+
+
+def set_instrument_object(instrument_id: int, object_id: typing.Optional[int]) -> None:
+    """
+    Set the object containing the metadata for an instrument.
+
+    :param instrument_id: the ID of an existing instrument
+    :param object_id: the ID of an existing object, or None
+    :raise errors.InstrumentDoesNotExistError: when no instrument with the
+        given instrument ID exists
+    :raise errors.ObjectDoesNotExistError: when no object with the
+        given object ID exists
+    :raise errors.InstrumentObjectLinkAlreadyExistsError: if the object is
+        already linked to an instrument or the instrument is already linked to
+        an object
+    """
+    if object_id is not None:
+        # ensure the object exists
+        objects.check_object_exists(object_id)
+    instrument = models.Instrument.query.filter_by(id=instrument_id).first()
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    if object_id is not None:
+        if instrument.object_id is not None:
+            raise errors.InstrumentObjectLinkAlreadyExistsError()
+        linked_instrument = models.Instrument.query.filter_by(object_id=object_id).first()
+        if linked_instrument is not None:
+            raise errors.InstrumentObjectLinkAlreadyExistsError()
+    instrument.object_id = object_id
+    db.session.add(instrument)
+    db.session.commit()
+
+
+def get_instrument_object_links() -> typing.Sequence[typing.Tuple[int, int]]:
+    """
+    Get the list of linked instrument and object ID pairs.
+
+    :return: a list of tuples containing the instrument ID and object ID of
+        each linked instrument and object pair
+    """
+    instruments = models.Instrument.query.filter(models.Instrument.object_id != db.null()).all()
+    return [
+        (instrument.id, typing.cast(int, instrument.object_id))
+        for instrument in instruments
+    ]

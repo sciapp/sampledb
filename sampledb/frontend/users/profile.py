@@ -15,6 +15,7 @@ from .. import frontend
 from ...logic import users, errors, groups, projects, instruments
 from ...logic.components import get_component
 from ..utils import validate_orcid
+from ...utils import FlaskResponseT
 
 
 class UserReadOnlyForm(FlaskForm):
@@ -38,7 +39,7 @@ class UserProfileForm(FlaskForm):
     affiliation = StringField()
     role = StringField()
 
-    def validate_orcid(self, field):
+    def validate_orcid(self, field: StringField) -> None:
         orcid = field.data
         # accept empty ORCID iDs
         if orcid is None:
@@ -56,13 +57,13 @@ class UserProfileForm(FlaskForm):
 
 @frontend.route('/users/me')
 @flask_login.login_required
-def current_user_profile():
+def current_user_profile() -> FlaskResponseT:
     return flask.redirect(flask.url_for('.user_profile', user_id=flask_login.current_user.id))
 
 
 @frontend.route('/users/<int:user_id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def user_profile(user_id):
+def user_profile(user_id: int) -> FlaskResponseT:
     try:
         user = users.get_user(user_id)
     except errors.UserDoesNotExistError:

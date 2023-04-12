@@ -1,5 +1,6 @@
-import bcrypt
 import typing
+
+import bcrypt
 import flask
 
 from .. import logic, db
@@ -61,6 +62,8 @@ def add_email_authentication(user_id: int, email: str, password: str, confirmed:
     :param email: the email to use during authentication
     :param password: the password
     :param confirmed: whether the authentication method has been confirmed already
+    :raise errors.AuthenticationMethodWrong: when email is no valid email
+        address
     """
     email = email.lower().strip()
     if '@' not in email[1:-1]:
@@ -82,6 +85,12 @@ def add_ldap_authentication(user_id: int, ldap_uid: str, password: str, confirme
     :param ldap_uid: the LDAP uid to use during authentication
     :param password: the LDAP password
     :param confirmed: whether the authentication method has been confirmed already
+    :raise errors.AuthenticationMethodAlreadyExists: when an LDAP authentication
+        method with the given UID already exists
+    :raise errors.LDAPAccountAlreadyExistError: when an LDAP authentication
+        method already exists for this user
+    :raise errors.LDAPAccountOrPasswordWrongError: when the UID and password
+        combination could not be validated
     """
     ldap_uid = ldap_uid.lower().strip()
     if Authentication.query.filter(Authentication.login['login'].astext == ldap_uid).first():
@@ -209,7 +218,7 @@ def add_authentication_method(user_id: int, login: str, password: str, authentic
     :param login: the name, email or LDAP uid to use
     :param password: the password
     :param authentication_type: the type of authentication
-    :return: whether or not the authentication method was added
+    :return: whether the authentication method was added
     :raise errors.AuthenticationMethodAlreadyExists: if the authentication method exists already
     :raise errors.AuthenticationMethodWrong: if the authentication method was used in a wrong way
     :raise errors.LdapAccountAlreadyExist: if a user with this LDAP account already exists
@@ -236,7 +245,8 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     Remove an authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
-    :return:
+    :raise errors.OnlyOneAuthenticationMethod: when this would remove the only
+        authentication method for this user
     """
     authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
     if authentication_method is None:
@@ -314,7 +324,7 @@ def get_two_factor_authentication_methods(
     :param user_id: the ID of an existing user
     :return: a list containing all methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()  # type: ignore
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
 
 
 def get_active_two_factor_authentication_method(
@@ -326,7 +336,7 @@ def get_active_two_factor_authentication_method(
     :param user_id: the ID of an existing user
     :return: the active method
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()  # type: ignore
+    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
 
 
 def activate_two_factor_authentication_method(
@@ -335,7 +345,6 @@ def activate_two_factor_authentication_method(
     """
     Activate a two factor authentication method and deactivate all others.
 
-    :rtype: object
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
     """

@@ -47,7 +47,7 @@ from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .instrument_translation import InstrumentTranslation
 from .languages import Language
-from .locations import Location, ObjectLocationAssignment, LocationType
+from .locations import Location, ObjectLocationAssignment, LocationType, LocationCapacity
 from .location_log import LocationLogEntry, LocationLogEntryType
 from .location_permissions import AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
 from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
@@ -119,6 +119,7 @@ __all__ = [
     'InstrumentLogEntry',
     'Language',
     'Location',
+    'LocationCapacity',
     'LocationType',
     'LocationLogEntry',
     'LocationLogEntryType',

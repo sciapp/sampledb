@@ -7,18 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
+
 MIGRATION_INDEX = 63
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute(db.text("""
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'instruments'
-        """)).fetchall()
-    if ('description_as_html',) not in column_names:
+    if not table_has_column('instruments', 'description_as_html'):
         return False
 
     # Perform migration

@@ -22,10 +22,10 @@ class Comment:
     """
     id: int
     object_id: int
-    user_id: int
+    user_id: typing.Optional[int]
     author: typing.Optional[users.User]
     content: str
-    utc_datetime: datetime.datetime
+    utc_datetime: typing.Optional[datetime.datetime]
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
     component: typing.Optional[components.Component] = None
@@ -43,6 +43,31 @@ class Comment:
             component_id=comment.component_id,
             component=components.Component.from_database(comment.component) if comment.component is not None else None
         )
+
+
+@typing.overload
+def create_comment(
+        object_id: int,
+        user_id: int,
+        content: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        fed_id: None = None,
+        component_id: None = None
+) -> int:
+    ...
+
+
+@typing.overload
+def create_comment(
+        object_id: int,
+        user_id: typing.Optional[int],
+        content: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        *,
+        fed_id: int,
+        component_id: int
+) -> int:
+    ...
 
 
 def create_comment(
@@ -69,8 +94,8 @@ def create_comment(
         exists
     """
 
-    if (component_id is None) != (fed_id is None) or (component_id is None and user_id is None):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
+    assert component_id is not None or user_id is not None
 
     # ensure that the object exists
     objects.check_object_exists(object_id)
@@ -114,10 +139,6 @@ def get_comment(comment_id: int, component_id: typing.Optional[int] = None) -> C
         comment = models.Comment.query.filter_by(fed_id=comment_id, component_id=component_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()
-    if comment.user_id is None:
-        comment.author = None
-    else:
-        comment.author = users.get_user(comment.user_id)
     return Comment.from_database(comment)
 
 
@@ -138,8 +159,8 @@ def update_comment(
     comment = models.Comment.query.filter_by(id=comment_id).first()
     if comment is None:
         raise errors.CommentDoesNotExistError()
-    if comment.component_id is None and user_id is None:
-        raise ValueError('user_id must not be None for local comments.')
+    # user_id must not be None for local comments
+    assert comment.component_id is not None or user_id is not None
     comment.user_id = user_id
     comment.content = content
     comment.utc_datetime = utc_datetime
@@ -160,11 +181,6 @@ def get_comments_for_object(object_id: int) -> typing.List[Comment]:
     if not comments:
         # ensure that the object exists
         objects.check_object_exists(object_id)
-    for comment in comments:
-        if comment.user_id is None:
-            comment.author = None
-        else:
-            comment.author = users.get_user(comment.user_id)
     return [
         Comment.from_database(comment)
         for comment in comments
@@ -188,8 +204,4 @@ def get_comment_for_object(object_id: int, comment_id: int) -> Comment:
         # ensure that the object exists
         objects.check_object_exists(object_id)
         raise errors.CommentDoesNotExistError()
-    if comment.user_id is None:
-        comment.author = None
-    else:
-        comment.author = users.get_user(comment.user_id)
     return Comment.from_database(comment)

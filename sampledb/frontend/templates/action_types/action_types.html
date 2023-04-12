@@ -6,8 +6,7 @@
     {{ super() }}
     <script src="{{ fingerprinted_static('sortable/js/Sortable.min.js') }}"></script>
     {% if current_user.is_admin and not current_user.is_readonly %}
-        <script>
-            let sortable;
+        <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
             $(document).ready(function() {
                 let elem = document.getElementById('actionTypesModalList');
                 let options = {
@@ -15,12 +14,11 @@
                     animation: 150,
                     dataIdAttr: 'data-id'
                 }
-                sortable = new Sortable(elem, options);
-            })
-
-            function store_order() {
-                document.getElementById('encoded_order').value = sortable.toArray().join();
-            }
+                let sortable = new Sortable(elem, options);
+                $('#form-sort-order').on('submit', function() {
+                    document.getElementById('encoded_order').value = sortable.toArray().join();
+                });
+            });
         </script>
     {% endif %}
 {% endblock %}
@@ -35,7 +33,7 @@
     </button>
     <div class="modal fade" id="sortingModal" tabindex="-1" role="dialog" aria-labelledby="sortingModalLabel">
         <div class="modal-dialog" role="document">
-            <form method="post" class="form" onsubmit="store_order()">
+            <form method="post" class="form" id="form-sort-order">
                 {{ sorting_form.csrf_token }}
                 <div class="modal-content">
                     <div class="modal-header">

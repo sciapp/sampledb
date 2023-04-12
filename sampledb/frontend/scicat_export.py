@@ -3,6 +3,7 @@
 
 """
 import string
+import typing
 
 import flask
 import flask_login
@@ -13,7 +14,8 @@ from wtforms.validators import InputRequired
 
 from . import frontend
 from .. import logic
-from .. utils import object_permissions_required, Permissions
+from ..utils import object_permissions_required, FlaskResponseT
+from ..models import Permissions, SciCatExportType
 
 
 class SciCatExportForm(FlaskForm):
@@ -33,7 +35,7 @@ class SciCatAPITokenForm(FlaskForm):
 
 @frontend.route('/objects/<int:object_id>/scicat_export/', methods=['GET', 'POST'])
 @object_permissions_required(Permissions.GRANT)
-def scicat_export(object_id):
+def scicat_export(object_id: int) -> FlaskResponseT:
     existing_scicat_url = logic.scicat_export.get_scicat_url(object_id)
     if existing_scicat_url:
         return flask.render_template(
@@ -49,12 +51,15 @@ def scicat_export(object_id):
 
     object = logic.objects.get_object(object_id)
 
-    if object.component_id is not None:
-        flask.flash(_('Exporting imported objects is not supported.', 'error'))
+    if object.component_id is not None or object.data is None or object.schema is None:
+        flask.flash(_('Exporting imported objects is not supported.'), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))
 
-    action = logic.actions.get_action(object.action_id)
-    object_export_type = action.type.scicat_export_type if action.type_id is not None else None
+    if object.action_id is not None:
+        action = logic.actions.get_action(object.action_id)
+        object_export_type = action.type.scicat_export_type if action.type is not None else None
+    else:
+        object_export_type = None
     if object_export_type is None:
         flask.flash(_("The SciCat export type is not set for objects of this type."), 'error')
         return flask.redirect(flask.url_for('.object', object_id=object_id))
@@ -69,9 +74,10 @@ def scicat_export(object_id):
 
         if not api_token:
             if scicat_api_token_form.validate_on_submit():
-                api_token = scicat_api_token_form.api_token.data.strip()
-                api_token_valid = logic.scicat_export.is_api_token_valid(api_url, api_token)
+                form_api_token = scicat_api_token_form.api_token.data.strip()
+                api_token_valid = logic.scicat_export.is_api_token_valid(api_url, form_api_token)
                 if api_token_valid:
+                    api_token = form_api_token
                     if scicat_api_token_form.store_api_token.data:
                         logic.settings.set_user_settings(user_id, {'SCICAT_API_TOKEN': api_token})
                     else:
@@ -80,9 +86,11 @@ def scicat_export(object_id):
                     had_invalid_api_token = True
                     api_token = None
             elif scicat_export_form.validate_on_submit():
-                api_token = scicat_export_form.api_token.data.strip()
-                api_token_valid = logic.scicat_export.is_api_token_valid(api_url, api_token)
-                if not api_token_valid:
+                form_api_token = scicat_export_form.api_token.data.strip()
+                api_token_valid = logic.scicat_export.is_api_token_valid(api_url, form_api_token)
+                if api_token_valid:
+                    api_token = form_api_token
+                else:
                     had_invalid_api_token = True
                     api_token = None
 
@@ -106,24 +114,24 @@ def scicat_export(object_id):
             scicat_export_form.access_groups.choices = []
 
         scicat_export_form.instrument.choices = [('-', '—')]
-        if object_export_type == logic.scicat_export.SciCatExportType.RAW_DATASET:
+        if object_export_type == SciCatExportType.RAW_DATASET:
             instruments = logic.scicat_export.get_instruments(api_url, api_token)
             if instruments:
                 scicat_export_form.instrument.choices += instruments
 
-        properties = [
-            (metadata, path)
-            for metadata, path in logic.dataverse_export.flatten_metadata(object.data)
-            if not ('_type' in metadata and metadata['_type'] == 'tags') and all(c in string.ascii_letters + string.digits + '_' for c in ''.join(map(str, path)))
-        ]
+        properties = {
+            tuple(whitelist_path): metadata
+            for metadata, whitelist_path, title_path in logic.dataverse_export.flatten_metadata(object.data)
+            if not ('_type' in metadata and metadata['_type'] == 'tags') and all(c in string.ascii_letters + string.digits + '_' for c in ''.join(map(str, title_path)))
+        }
 
-        if object_export_type in {logic.scicat_export.SciCatExportType.RAW_DATASET, logic.scicat_export.SciCatExportType.DERIVED_DATASET}:
-            tags = set()
+        if object_export_type in {SciCatExportType.RAW_DATASET, SciCatExportType.DERIVED_DATASET}:
+            tags_set = set()
             for property in object.data.values():
                 if '_type' in property and property['_type'] == 'tags':
                     for tag in property['tags']:
-                        tags.add(tag)
-            tags = list(tags)
+                        tags_set.add(tag)
+            tags = list(tags_set)
             tags.sort()
 
             scicat_export_form.tags.choices = [
@@ -135,12 +143,12 @@ def scicat_export(object_id):
             scicat_export_form.tags.choices = []
 
         scicat_export_form.sample.choices = [('-', '—')]
-        if object_export_type == logic.scicat_export.SciCatExportType.RAW_DATASET:
+        if object_export_type == SciCatExportType.RAW_DATASET:
             exported_referenced_objects = logic.scicat_export.get_exported_referenced_objects(object.data, object.schema, user_id)
             exported_referenced_samples = {
                 export
                 for export in exported_referenced_objects
-                if export.type == logic.scicat_export.SciCatExportType.SAMPLE
+                if export.type == SciCatExportType.SAMPLE
             }
             for export in exported_referenced_samples:
                 if Permissions.READ in logic.object_permissions.get_user_object_permissions(object_id=export.object_id, user_id=user_id):
@@ -157,12 +165,12 @@ def scicat_export(object_id):
                 scicat_export_form.sample.choices.append((export.scicat_pid, object_name))
 
         scicat_export_form.input_datasets.choices = []
-        if object_export_type == logic.scicat_export.SciCatExportType.DERIVED_DATASET:
+        if object_export_type == SciCatExportType.DERIVED_DATASET:
             exported_referenced_objects = logic.scicat_export.get_exported_referenced_objects(object.data, object.schema, user_id)
             exported_referenced_datasets = {
                 export
                 for export in exported_referenced_objects
-                if export.type in {logic.scicat_export.SciCatExportType.RAW_DATASET, logic.scicat_export.SciCatExportType.DERIVED_DATASET}
+                if export.type in {SciCatExportType.RAW_DATASET, SciCatExportType.DERIVED_DATASET}
             }
             for export in exported_referenced_datasets:
                 if Permissions.READ in logic.object_permissions.get_user_object_permissions(object_id=export.object_id, user_id=user_id):
@@ -178,19 +186,19 @@ def scicat_export(object_id):
                     object_name = f"Object #{export.object_id}"
                 scicat_export_form.input_datasets.choices.append(('PID/' + export.scicat_pid, object_name))
 
-        property_whitelist = [
+        property_whitelist: typing.List[typing.List[typing.Union[str, int]]] = [
             ['name']
         ]
-        for metadata, path in properties:
-            if 'property,' + ','.join(map(str, path)) in flask.request.form:
-                property_whitelist.append(path)
+        for whitelist_path in properties:
+            if 'property,' + ','.join(map(str, whitelist_path)) in flask.request.form:
+                property_whitelist.append(list(whitelist_path))
 
         if 'do_export' in flask.request.form and scicat_export_form.validate_on_submit():
-            tag_whitelist = set()
+            tag_whitelist_set = set()
             for tag in scicat_export_form.tags.data:
                 if tag in tags:
-                    tag_whitelist.add(tag)
-            tag_whitelist = list(tag_whitelist)
+                    tag_whitelist_set.add(tag)
+            tag_whitelist = list(tag_whitelist_set)
             tag_whitelist.sort()
             scicat_url = logic.scicat_export.upload_object(
                 object_id=object_id,

@@ -39,7 +39,7 @@
         <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
     {% endif %}
 
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
         window.mde_fields = [];
 
         $(function () {
@@ -47,7 +47,9 @@
                 $(this).datetimepicker({
                     locale: "{{ get_user_language(current_user).lang_code }}",
                     format: "{{ get_user_language(current_user).datetime_format_moment }}",
-                    date: $(this).attr('data-datetime')
+                    date: $(this).attr('data-datetime'),
+                    timeZone: "{{ current_user.timezone }}",
+                    showTodayButton: true
                 });
             });
 

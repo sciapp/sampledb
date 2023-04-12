@@ -61,10 +61,14 @@ def create_language(
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
     :param datetime_format_moment_output: output format for moment
-    :param enabled_for_input: whether or not the language is enabled for input
-    :param enabled_for_user_interface: whether or not the language is enabled
+    :param enabled_for_input: whether the language is enabled for input
+    :param enabled_for_user_interface: whether the language is enabled
         for the user interface
     :return: the new language
+    :raise errors.LanguageAlreadyExistsError: if another language with this
+        language code already exists
+    :raise errors.LanguageDoesNotExistError: if the language name contains a
+        translation for an unknown language code
     """
     if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
         raise errors.LanguageAlreadyExistsError()
@@ -114,10 +118,12 @@ def update_language(
     :param enabled_for_input: whether the language is enabled for input
     :param enabled_for_user_interface: whether the language is enabled
         for the user interface
-    :return: the language
     :raise errors.LanguageAlreadyExistsError: when the language code already
         exists for a different language or the current language code matches
         a supported locale language code
+    :raise errors.LanguageDoesNotExistError: if the language name contains a
+        translation for an unknown language code or the language itself does
+        not exist
     """
 
     all_language_codes = {
@@ -127,6 +133,8 @@ def update_language(
     all_language_codes.add(lang_code)
 
     language = models.Language.query.filter_by(id=language_id).first()
+    if language is None:
+        raise errors.LanguageDoesNotExistError()
     if language.lang_code != lang_code:
         if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
             raise errors.LanguageAlreadyExistsError()
@@ -162,6 +170,7 @@ def get_languages(
     language_query = models.Language.query
     if only_enabled_for_input:
         language_query = language_query.filter_by(enabled_for_input=True)
+    language_query = language_query.order_by(models.Language.id)
     return [
         Language.from_database(language)
         for language in language_query.all()

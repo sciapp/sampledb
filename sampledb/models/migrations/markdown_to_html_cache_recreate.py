@@ -7,6 +7,7 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
 from ..markdown_to_html_cache import MarkdownToHTMLCacheEntry
 
 MIGRATION_INDEX = 42
@@ -15,12 +16,7 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'markdown_to_html_cache_entries'
-    """)).fetchall()
-    if ('parameters',) in column_names:
+    if table_has_column('markdown_to_html_cache_entries', 'parameters'):
         return False
 
     # Perform migration
@@ -29,6 +25,6 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     """))
     db.session.commit()
 
-    MarkdownToHTMLCacheEntry.__table__.create(bind=db.engine)
+    MarkdownToHTMLCacheEntry.__table__.create(bind=db.engine)  # type: ignore[attr-defined]
 
     return True

@@ -44,7 +44,7 @@ def parse_location(
     uuid = _get_uuid(location_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local location {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local location {fed_id}')
     responsible_users = []
     for responsible_user_data in _get_list(location_data.get('responsible_users'), default=[]):
         responsible_user_ref = _parse_user_ref(_get_dict(responsible_user_data))
@@ -68,6 +68,8 @@ def import_location(
         users: typing.List[UserData]
 ) -> Location:
     component_id = _get_or_create_component_id(location_data['component_uuid'])
+    # component_id will only be None if this would import a local location
+    assert component_id is not None
 
     parent = _parse_location_ref(location_data.get('parent_location'))
     if parent is None:
@@ -262,7 +264,7 @@ def locations_check_for_cyclic_dependencies(
     ) -> None:
         if (location_data['fed_id'], location_data['component_uuid']) in path:
             # cyclic parent-location-chain
-            raise errors.InvalidDataExportError('Cyclic parent location chain. Location: #{} @ {} Path: {}'.format(location_data['fed_id'], location_data['component_uuid'], path))
+            raise errors.InvalidDataExportError(f'Cyclic parent location chain. Location: #{location_data["fed_id"]} @ {location_data["component_uuid"]} Path: {path}')
         if location_data['parent_location'] is not None:
             if (location_data['parent_location']['location_id'], location_data['parent_location']['component_uuid']) in locations.keys():
                 _location_check_for_cyclic_dependencies(

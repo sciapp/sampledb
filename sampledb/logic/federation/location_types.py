@@ -71,6 +71,7 @@ def import_location_type(
                 enable_object_assignments=location_type_data['enable_object_assignments'],
                 enable_responsible_users=location_type_data['enable_responsible_users'],
                 enable_instruments=False,
+                enable_capacities=False,
                 show_location_log=location_type_data['show_location_log'],
             )
             fed_logs.update_location_type(location_type.id, component.id)
@@ -85,6 +86,7 @@ def import_location_type(
             enable_object_assignments=location_type_data['enable_object_assignments'],
             enable_responsible_users=location_type_data['enable_responsible_users'],
             enable_instruments=False,
+            enable_capacities=False,
             show_location_log=location_type_data['show_location_log'],
             fed_id=location_type_data['fed_id'],
             component_id=component_id,
@@ -107,7 +109,7 @@ def parse_location_type(
     uuid = _get_uuid(location_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local location type {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local location type {fed_id}')
     return LocationTypeData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -170,6 +172,7 @@ def _get_or_create_location_type_id(
             enable_object_assignments=False,
             enable_responsible_users=False,
             enable_instruments=False,
+            enable_capacities=False,
             show_location_log=False,
             fed_id=location_type_data['location_type_id'],
             component_id=component_id

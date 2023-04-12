@@ -12,7 +12,7 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(function(){
       const language_picker = $('#select-languages');
       function updateEnabledLanguages() {
@@ -136,6 +136,11 @@
     <div class="checkbox">
       <label for="input-enable_responsible_users" style="font-weight:400">
         <input type="checkbox" id="input-enable_responsible_users" name="{{ location_type_form.enable_responsible_users.name }}" {% if location_type_form.enable_responsible_users.data %}checked="checked"{% endif %}> {{ _('Locations of this type may have responsible users') }}
+      </label>
+    </div>
+    <div class="checkbox">
+      <label for="input-enable_capacities" style="font-weight:400">
+        <input type="checkbox" id="input-enable_capacities" name="{{ location_type_form.enable_capacities.name }}" {% if location_type_form.enable_capacities.data %}checked="checked"{% endif %}> {{ _('Locations of this type have a limited storage capacity') }}
       </label>
     </div>
     <div class="checkbox">

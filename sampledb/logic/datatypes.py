@@ -23,7 +23,7 @@ import typing
 
 import pint
 
-from .units import ureg, int_ureg
+from .units import ureg, int_ureg, get_dimensionality_for_units
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -34,12 +34,12 @@ class _ReducingEncoder(json.JSONEncoder):
 
     This class is used for the _contains_type(obj) function and should not be re-used for other purposes.
     """
-    def default(self, obj: typing.Any) -> typing.Any:
-        for type_name, cls in JSONEncoder.serializable_types.items():
-            if isinstance(obj, cls):
+    def default(self, o: typing.Any) -> typing.Any:
+        for cls in JSONEncoder.serializable_types.values():
+            if isinstance(o, cls):
                 return {}
         # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, o)
 
 
 def _contains_type(obj: typing.Any) -> bool:
@@ -64,21 +64,21 @@ class JSONEncoder(json.JSONEncoder):
     STRICT: bool = False
     serializable_types: typing.Dict[str, typing.Any] = {}
 
-    def encode(self, obj: typing.Any) -> typing.Any:
+    def encode(self, o: typing.Any) -> typing.Any:
         if JSONEncoder.STRICT:
             # Create a version of the object without any objects that are instances of the serializable types
-            reduced_obj = json.loads(json.dumps(obj, cls=_ReducingEncoder))
+            reduced_obj = json.loads(json.dumps(o, cls=_ReducingEncoder))
             assert not _contains_type(reduced_obj)
-        return super(JSONEncoder, self).encode(obj)
+        return super().encode(o)
 
-    def default(self, obj: typing.Any) -> typing.Any:
+    def default(self, o: typing.Any) -> typing.Any:
         for type_name, cls in JSONEncoder.serializable_types.items():
-            if isinstance(obj, cls):
-                obj = obj.to_json()
-                obj['_type'] = type_name
-                return obj
+            if isinstance(o, cls):
+                o = o.to_json()
+                o['_type'] = type_name
+                return o
         # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, o)
 
     @classmethod
     def object_hook(cls, obj: typing.Any) -> typing.Any:
@@ -110,7 +110,7 @@ class JSONEncoder(json.JSONEncoder):
 
 
 @JSONEncoder.serializable_type('datetime')
-class DateTime(object):
+class DateTime:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -134,7 +134,7 @@ class DateTime(object):
         self.utc_datetime = utc_datetime.replace(microsecond=0)
 
     def __repr__(self) -> str:
-        return '<{0}(utc_datetime={1})>'.format(type(self).__name__, self.utc_datetime.strftime(self.FORMAT_STRING))
+        return f'<{type(self).__name__}(utc_datetime={self.utc_datetime.strftime(self.FORMAT_STRING)})>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -150,7 +150,7 @@ class DateTime(object):
 
 
 @JSONEncoder.serializable_type('quantity')
-class Quantity(object):
+class Quantity:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -198,7 +198,7 @@ class Quantity(object):
                 try:
                     self.pint_units = ureg.Unit(self.units)
                 except (pint.errors.UndefinedUnitError, AttributeError):
-                    raise ValueError("Invalid units '{}'".format(self.units))
+                    raise ValueError(f"Invalid units '{self.units}'")
             if already_in_base_units is False:
                 self.magnitude = magnitude
                 self.magnitude_in_base_units = ureg.Quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
@@ -213,7 +213,7 @@ class Quantity(object):
         self.dimensionality = str(int_ureg.Unit(self.pint_units).dimensionality)
 
     def __repr__(self) -> str:
-        return '<{0}(magnitude={1.magnitude}, units="{1.units}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(magnitude={self.magnitude}, units="{self.units}")>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -237,7 +237,7 @@ class Quantity(object):
             try:
                 pint_units = ureg.Unit(units)
             except (pint.errors.UndefinedUnitError, AttributeError):
-                raise ValueError("Invalid units '{}'".format(units))
+                raise ValueError(f"Invalid units '{units}'")
 
         if 'magnitude' in obj:
             magnitude = obj['magnitude']
@@ -255,7 +255,7 @@ class Quantity(object):
 
 
 @JSONEncoder.serializable_type('bool')
-class Boolean(object):
+class Boolean:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -274,7 +274,7 @@ class Boolean(object):
         self.value = bool(value)
 
     def __repr__(self) -> str:
-        return '<{0}(value={1.value})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(value={self.value})>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -290,7 +290,7 @@ class Boolean(object):
 
 
 @JSONEncoder.serializable_type('text')
-class Text(object):
+class Text:
     JSON_SCHEMA = {
         'type': 'object',
         'properties': {
@@ -312,7 +312,7 @@ class Text(object):
         self.text = text
 
     def __repr__(self) -> str:
-        return '<{0}(text="{1.text}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(text="{self.text}")>'
 
     def __eq__(self, other: typing.Any) -> bool:
         if not isinstance(other, type(self)):
@@ -325,3 +325,70 @@ class Text(object):
     @classmethod
     def from_json(cls, obj: typing.Dict[str, typing.Union[str, typing.Dict[str, str]]]) -> 'Text':
         return cls(obj['text'])
+
+
+@JSONEncoder.serializable_type('timeseries')
+class Timeseries:
+    JSON_SCHEMA = {
+        'type': 'object',
+        'properties': {
+            '_type': {
+                'enum': ['timeseries']
+            },
+            'dimensionality': {
+                'type': 'string'
+            },
+            'data': {
+                'type': 'array',
+                'items': {
+                    'type': 'array',
+                    'items': {
+                        'anyOf': [
+                            {'type': 'number'},
+                            {'type': 'string'}
+                        ]
+                    }
+                }
+            },
+            'units': {
+                'anyOf': [
+                    {'type': 'null'},
+                    {'type': 'string'}
+                ]
+            }
+        },
+        'required': ['_type', 'dimensionality', 'data', 'units'],
+        'additionalProperties': False
+    }
+    DATETIME_FORMAT_STRING = '%Y-%m-%d %H:%M:%S.%f'
+
+    def __init__(
+            self,
+            data: typing.List[typing.List[typing.Union[int, float]]],
+            units: typing.Optional[str]
+    ) -> None:
+        self.data = data
+        if units is None:
+            self.units = None
+        else:
+            self.units = str(units)
+        self.dimensionality = get_dimensionality_for_units(units)
+
+    def __repr__(self) -> str:
+        return f'<{type(self).__name__}(length={len(self.data)}, units="{self.units}")>'
+
+    def __eq__(self, other: typing.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return self.units == other.units and self.data == other.data
+
+    def to_json(self) -> typing.Dict[str, typing.Any]:
+        return {
+            'data': self.data,
+            'units': self.units,
+            'dimensionality': self.dimensionality
+        }
+
+    @classmethod
+    def from_json(cls, obj: typing.Dict[str, typing.Any]) -> 'Timeseries':
+        return cls(obj['data'], obj['units'])

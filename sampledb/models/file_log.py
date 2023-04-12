@@ -7,8 +7,14 @@ import enum
 import datetime
 import typing
 
+from sqlalchemy.orm import Mapped, Query
+
 from .. import db
 from .files import File
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from ..logic.users import User
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -23,16 +29,19 @@ class FileLogEntryType(enum.Enum):
     EDIT_URL = 5
 
 
-class FileLogEntry(db.Model):  # type: ignore
+class FileLogEntry(Model):
     __tablename__ = 'file_log_entries'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(FileLogEntryType), nullable=False)
-    object_id = db.Column(db.Integer, nullable=False)
-    file_id = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[FileLogEntryType] = db.Column(db.Enum(FileLogEntryType), nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, nullable=False)
+    file_id: Mapped[int] = db.Column(db.Integer, nullable=False)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FileLogEntry"]]
 
     __table_args__ = (
         db.ForeignKeyConstraint([object_id, file_id], [File.object_id, File.id]),
@@ -47,14 +56,15 @@ class FileLogEntry(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.object_id = object_id
-        self.file_id = file_id
-        self.user_id = user_id
-        self.type = type
-        self.data = data
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            object_id=object_id,
+            file_id=file_id,
+            user_id=user_id,
+            data=data,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
+        self.user: typing.Optional['User'] = None
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, file_id={1.file_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, file_id={self.file_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'

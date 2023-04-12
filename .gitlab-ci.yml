@@ -1,21 +1,25 @@
 stages:
-  - test
   - build
+  - test
   - deploy
 
 variables:
-  POSTGRES_HOST: postgres
   POSTGRES_DB: postgres
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ""
-  SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres:5432/postgres"
   POSTGRES_HOST_AUTH_METHOD: trust
 
 test:
   stage: test
-  image: python:3.10-slim-bullseye
+  needs: []
+  image: python:3.11-slim-bullseye
   services:
-    - postgres:12
+    - name: postgres:12
+      alias: postgres-test
+      variables:
+        POSTGRES_HOST: postgres-test
+  variables:
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres-test:5432/postgres"
   tags:
     - kubernetes-executor
   script:
@@ -29,36 +33,44 @@ test:
       done
     # install dependencies
     - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements.test.txt
     # build translations once instead of with each test
     - python3 -m sampledb build_translations
     # set up configuration values for testing
     - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
     - export SAMPLEDB_BUILD_TRANSLATIONS=
     # run tests and gather coverage data
-    - python3 -m pytest -x -s -n=4 --cov=sampledb/ --junitxml=pytest.xml tests
+    - python3 -m pytest -x -s -n=4 --cov=sampledb/ --cov-report=term --cov-report=xml --junitxml=pytest.xml tests
+    - coverage xml
+  coverage: '/^TOTAL.*\s+(\d+\%)$/'
   artifacts:
     reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
       junit: pytest.xml
 
 analyze:
   stage: test
-  image: python:3.10-slim-bullseye
+  needs: []
+  image: python:3.11-slim-bullseye
   script:
     - apt-get update
     # set up Python 3
     - apt-get install -y git python3-pip
-    # install static analysis packages
-    - python3 -m pip install pycodestyle pyflakes mypy pylint
-    # install library stub files
-    - python3 -m pip install types-babel types-beautifulsoup4 types-bleach types-Flask-SQLAlchemy types-Markdown types-requests types-SQLAlchemy types-ldap3 flask-httpauth-stubs
+    # install static analysis packages and library stub files
+    - python3 -m pip install -r requirements.analyze.txt
     - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
     - python3 -m pyflakes sampledb
-    - python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent --exclude sampledb/frontend sampledb/
-    - python -m pylint sampledb --disable=R,C,W,E --enable=W9015 --load-plugins=pylint.extensions.docparams
+    # install requirements to allow pylint and mypy to import them
+    - python3 -m pip install -r requirements.txt
+    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213  --load-plugins=pylint.extensions.docparams sampledb/
+    - MYPYPATH=./stubs python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/
 
 .template-check-migrations:
   stage: test
-  image: python:3.10-slim-bullseye
+  needs: []
+  image: python:3.11-slim-bullseye
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -71,13 +83,13 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_without_upgrade.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_without_upgrade.sql
     # re-create database to ensure it is entirely empty
-    - dropdb -h postgres -U postgres postgres
-    - createdb -h postgres -U postgres postgres
-    # check out old stable version
+    - dropdb -h $POSTGRES_HOST -U postgres postgres
+    - createdb -h $POSTGRES_HOST -U postgres postgres
+    # check out stable version
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
-    - git fetch upstream v0.20.0
+    - git fetch upstream master
     - git checkout FETCH_HEAD
     # set up database with stable version
     - python3 -m pip install -r requirements.txt
@@ -88,30 +100,12 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_v0.20.0.sql
-    # ensure both backups yield identical backups
-    - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_v0.20.0.sql
-    # re-create database to ensure it is entirely empty
-    - dropdb -h postgres -U postgres postgres
-    - createdb -h postgres -U postgres postgres
-    # check out development version
-    - git fetch upstream master
-    - git checkout FETCH_HEAD
-    # set up database with development version
-    - python3 -m pip install -r requirements.txt
-    - python3 -m sampledb list_actions
-    # check out current version again
-    - git checkout $CI_COMMIT_SHA
-    # upgrade database using migrations
-    - python3 -m pip install -r requirements.txt
-    - python3 -m sampledb list_actions
-    # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_with_upgrade_from_master.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_master.sql
     # re-create database to ensure it is entirely empty
-    - dropdb -h postgres -U postgres postgres
-    - createdb -h postgres -U postgres postgres
+    - dropdb -h $POSTGRES_HOST -U postgres postgres
+    - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out development version
     - git fetch upstream develop
     - git checkout FETCH_HEAD
@@ -126,34 +120,53 @@ analyze:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # create backup for comparison
-    - pg_dump -h postgres -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
+    - pg_dump -h $POSTGRES_HOST -U postgres --schema-only postgres > postgres_with_upgrade_from_develop.sql
     # ensure both backups yield identical backups
     - diff --color=always --context postgres_without_upgrade.sql postgres_with_upgrade_from_develop.sql
 
 check-migrations-postgres-11:
   extends: .template-check-migrations
   services:
-    - postgres:11
+    - name: postgres:11
+      alias: postgres11
+      variables:
+        POSTGRES_HOST: postgres11
+  variables:
+    POSTGRES_HOST: postgres11
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres11:5432/postgres"
 
 check-migrations-postgres-12:
   extends: .template-check-migrations
   services:
-    - postgres:12
+    - name: postgres:12
+      alias: postgres12
+      variables:
+        POSTGRES_HOST: postgres12
+  variables:
+    POSTGRES_HOST: postgres12
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres12:5432/postgres"
 
 check-migrations-postgres-13:
   extends: .template-check-migrations
   services:
-    - postgres:13
+    - name: postgres:13
+      alias: postgres13
+      variables:
+        POSTGRES_HOST: postgres13
+  variables:
+    POSTGRES_HOST: postgres13
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres13:5432/postgres"
 
 check-translations:
   stage: test
-  image: python:3.10-slim-bullseye
+  needs: []
+  image: python:3.11-slim-bullseye
   script:
     - apt-get update
     # set up Python 3
     - apt-get install -y git python3-pip
     # install Flask-Babel
-    - python3 -m pip install  flask-babel
+    - python3 -m pip install flask-babel
     # create a copy of the current extracted messages
     - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_current_de.po
     # ensure there are no fuzzy translations
@@ -172,9 +185,15 @@ check-translations:
 
 documentation:
   stage: test
-  image: python:3.10-slim-bullseye
+  needs: []
+  image: python:3.11-slim-bullseye
   services:
-    - postgres:latest
+    - name: postgres:12
+      alias: postgres-documentation
+      variables:
+        POSTGRES_HOST: postgres-documentation
+  variables:
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres-documentation:5432/postgres"
   tags:
     - kubernetes-executor
   script:
@@ -183,6 +202,7 @@ documentation:
     - apt-get install -y git python3-pip libpython3-dev chromium libpangocairo-1.0-0 gettext
     # install dependencies
     - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements.documentation.txt
     # generate documentation images using current version
     - python3 docs/utils/generate_images.py
     # build documentation
@@ -207,6 +227,49 @@ build:
         docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$VERSION;
         docker push $CI_REGISTRY_IMAGE:$VERSION;
       fi
+
+test-container-status:
+  stage: test
+  needs: ["build"]
+  image: docker:stable
+  tags:
+    - privileged-executor
+  variables:
+    CONTAINER_NAME: sampledb-$CI_COMMIT_SHA
+  script:
+    - docker run
+        -d
+        --name $CONTAINER_NAME-postgres
+        -e POSTGRES_DB=postgres
+        -e POSTGRES_USER=postgres
+        -e POSTGRES_PASSWORD=postgres
+        postgres:12
+    - sleep 5 # allow container to start
+    - docker ps
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker run
+        -d
+        --link $CONTAINER_NAME-postgres
+        --name $CONTAINER_NAME
+        -v $CI_PROJECT_DIR/files:/home/sampledb/files:rw
+        -e SAMPLEDB_MAIL_SERVER=example.org
+        -e SAMPLEDB_MAIL_SENDER=example@example.org
+        -e SAMPLEDB_CONTACT_EMAIL=example@example.org
+        -e SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:postgres@$CONTAINER_NAME-postgres:5432/postgres"
+        $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - sleep 5 # allow container to start
+    - docker ps
+    - docker logs $CONTAINER_NAME
+    - docker ps | grep $CONTAINER_NAME | grep '(health. starting)'
+    - sleep 90 # 60s health start period plus 30s buffer
+    - docker logs $CONTAINER_NAME
+    - docker ps | grep $CONTAINER_NAME | grep '(healthy)'
+  after_script:
+    - docker stop $CONTAINER_NAME || true
+    - docker rm -f $CONTAINER_NAME || true
+    - docker stop $CONTAINER_NAME-postgres || true
+    - docker rm -f $CONTAINER_NAME-postgres || true
 
 pages:
   stage: deploy
@@ -257,6 +320,30 @@ deploy-to-github:
     - chmod 400 ~/.ssh/*
     - git clone --mirror "$CI_REPOSITORY_URL" repo
     - cd repo && git push --mirror git@github.com:sciapp/sampledb.git && cd -
+
+deploy-to-github-container-registry:
+  stage: deploy
+  image: docker:stable
+  tags:
+    - privileged-executor
+  only:
+    - tags@Scientific-IT-Systems/SampleDB
+    - develop@Scientific-IT-Systems/SampleDB
+  script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  - echo $CR_PAT | docker login ghcr.io --username USERNAME --password-stdin
+  - if [ "$CI_COMMIT_REF_NAME" = "develop" ]; then
+      docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA ghcr.io/sciapp/sampledb:develop;
+      docker push ghcr.io/sciapp/sampledb:develop;
+    fi
+  - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+      export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
+      docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA ghcr.io/sciapp/sampledb:$VERSION;
+      docker push ghcr.io/sciapp/sampledb:$VERSION;
+      docker tag sciapp/sampledb:$VERSION ghcr.io/sciapp/sampledb:latest;
+      docker push ghcr.io/sciapp/sampledb:latest;
+    fi
 
 deploy-to-dockerhub:
   stage: deploy

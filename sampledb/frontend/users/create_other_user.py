@@ -13,6 +13,8 @@ from wtforms.validators import Email, Length, InputRequired, ValidationError, Eq
 
 from .. import frontend
 from ...logic import users, authentication
+from ...utils import FlaskResponseT
+from ...models import UserType
 
 
 class CreateOtherUserForm(FlaskForm):
@@ -21,7 +23,7 @@ class CreateOtherUserForm(FlaskForm):
     password = PasswordField(validators=[Length(min=3)])
     password_confirmation = PasswordField(validators=[EqualTo('password', message='Please enter the same password as above.')])
 
-    def validate_name(form, field):
+    def validate_name(form, field: StringField) -> None:
         if len(field.data) < 1:
             raise ValidationError(_('Please enter a valid user name.'))
         if not all(c in 'abcdefghijklmnopqrstuvwxyz0123456789_' for c in field.data):
@@ -32,7 +34,7 @@ class CreateOtherUserForm(FlaskForm):
 
 @frontend.route('/users/create_other_user', methods=['GET', 'POST'])
 @flask_login.login_required
-def create_other_user():
+def create_other_user() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(HTTPStatus.UNAUTHORIZED)
     create_other_user_form = CreateOtherUserForm()
@@ -40,7 +42,7 @@ def create_other_user():
         user = users.create_user(
             name=create_other_user_form.name.data,
             email=create_other_user_form.email.data,
-            type=users.UserType.OTHER
+            type=UserType.OTHER
         )
         authentication.add_other_authentication(
             user_id=user.id,

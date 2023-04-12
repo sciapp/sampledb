@@ -17,7 +17,7 @@
   {% block head_scripts %}
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}"></script>
   {% endblock %}
-  <script type="text/javascript">
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     window.application_root_path = '{{ url_for('frontend.index') }}';
     window.treepicker_expand_all_text = '{{ _('Expand All') }}';
     window.treepicker_collapse_all_text = '{{ _('Collapse All') }}';
@@ -35,13 +35,16 @@
     };
     window.object_picker_select_text = "{{ _('Please select an object.') }}";
     window.object_picker_clear_text = "{{ _('Clear') }}";
-    window.object_picker_no_results_text_template = '{{ _('No results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
-    window.object_picker_all_results_text_template = '{{ _('PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
-    window.object_picker_some_results_text_template = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button" onclick="objectpicker_show_all(this, event)">Show all</span> — <span class="objectpicker-button" onclick="objectpicker_clear(this, event)">Clear</span>') }}';
+    window.object_picker_no_results_text_template = '{{ _('No results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-clear">Clear</span>') }}';
+    window.object_picker_all_results_text_template = '{{ _('PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-clear">Clear</span>') }}';
+    window.object_picker_some_results_text_template = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-show-all">Show all</span> — <span class="objectpicker-button objectpicker-button-clear">Clear</span>') }}';
     window.object_picker_no_results_text_template_no_query = '{{ _('No results') }}';
     window.object_picker_all_results_text_template_no_query = '{{ _('PLACEHOLDER2 results') }}';
-    window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button" onclick="objectpicker_show_all(this, event)">Show all</span>') }}';
+    window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button objectpicker-button-show-all">Show all</span>') }}';
     window.object_picker_limit = {{ config.get('TYPEAHEAD_OBJECT_LIMIT') | tojson }};
+    window.show_more_text = "{{ _('Show more') }}";
+    window.show_less_text = "{{ _('Show less') }}";
+    window.select_timeseries_text = "{{ _('Please select at least one timeseries.') }}";
   </script>
 {% endblock %}
 </head>
@@ -104,55 +107,7 @@
             <ul class="dropdown-menu">
               <li><a><label id="button-search-advanced" style="font-weight: normal; margin: 0; cursor:pointer"><input type="checkbox" id="input-search-advanced" name="advanced" style="margin-right: 2px;" {% if must_use_advanced_search %}checked="checked"{% endif %}> {{ _('Advanced Search') }}</label></a></li>
               <li><a href="{{ url_for("frontend.search", _anchor='{"v": [0]}') }}">{{ _('Build Search Query') }}</a></li>
-            {% if action_type or project_id %}
-              <li class="divider"></li>
-              {% if project_id %}
-                <li>
-                  <a class="button-search-filter">
-                    <label>
-                      <input type="radio" name="search-filter-selection" id="button-search-project-id">
-                      {% if action_type %}
-                        {{ _('Search %(objects)s from this project group', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }}
-                      {% else %}
-                        {{ _('Search objects from this project group') }}
-                      {% endif %}
-                    </label>
-                  </a>
-                </li>
-              {% endif %}
-              {% if action_id %}
-                <li>
-                  <a class="button-search-filter">
-                    <label>
-                      <input type="radio" name="search-filter-selection" id="button-search-action-id">
-                      {% if action_type %}
-                        {{ _('Search %(objects)s from this action', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }}
-                      {% else %}
-                        {{ _('Search objects from this action') }}
-                      {% endif %}
-                    </label>
-                  </a>
-                </li>
-              {% endif %}
-              {% if action_type %}
-              <li>
-                <a class="button-search-filter">
-                  <label>
-                    <input type="radio" name="search-filter-selection" id="button-search-action-type">
-                    {{ _('Search all %(objects)s', objects=action_type.object_name_plural | get_translated_text(default=_('Objects'))) }} {{ import_information_symbol(action_type, nolink=true) }}
-                  </label>
-                </a>
-              </li>
-              {% endif %}
-              <li>
-                <a class="button-search-filter">
-                  <label>
-                    <input type="radio" name="search-filter-selection" id="button-search-all" checked>
-                    {{ _('Search all objects') }}
-                  </label>
-                </a>
-              </li>
-            {% endif %}
+
             </ul>
           </span>
         </div>
@@ -165,7 +120,7 @@
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types() %}
-              {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              {% if action_type.show_in_navbar and not (action_type.disable_create_objects and action_type.is_template) and (action_type.fed_id is none or action_type.fed_id > 0) %}
               <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
@@ -175,7 +130,7 @@
           <a href="{{ url_for('frontend.objects') }}" style="display:inline-block; padding-right: 0;">{{ _('Objects') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types() %}
-              {% if action_type.show_in_navbar and not action_type.disable_create_objects and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              {% if action_type.show_in_navbar and not (action_type.disable_create_objects and action_type.is_template) and (action_type.fed_id is none or action_type.fed_id > 0) %}
               <li><a href="{{ url_for('frontend.objects', action_type_ids=action_type.id) }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
@@ -201,8 +156,8 @@
             {% endif %}
             <li role="separator" class="divider template-separator" style="display: none"></li>
             {% for action_type in get_action_types() %}
-              {% if action_type.show_in_navbar and action_type.disable_create_objects and ((not action_type.fed_id) or action_type.fed_id > 0) %}
-                <script type="text/javascript">
+              {% if action_type.show_in_navbar and action_type.is_template and (action_type.fed_id is none or action_type.fed_id > 0) %}
+                <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
                     window.onload = function() {
                         $('.template-separator').css('display', 'block');
                     }
@@ -354,7 +309,7 @@
   <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
   <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
 
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $('[data-toggle="tooltip"]').tooltip();
     {% if current_user.is_authenticated %}
       {% with user_settings = get_user_settings() %}
@@ -389,70 +344,13 @@
           dropdown_menu.parent().toggleClass("open");
         }
       });
-
-      $('#button-search-all').on('click', function () {
-        $('#input-search-action-type').attr('name', 't_');
-        $('#input-search-action-id').attr('name', 'action_');
-        $('#input-search-project-id').attr('name', 'project_');
-        if ($('#input-search-advanced')[0].checked) {
+      $('#input-search-advanced').on('change', function () {
+        if (this.checked) {
           $('#input-search').attr('placeholder', '{{ _('Advanced Search…') }}');
         } else {
           $('#input-search').attr('placeholder', '{{ _('Search…') }}');
         }
-      });
-      $('#button-search-action-id').on('click', function () {
-        $('#input-search-action-type').attr('name', 't');
-        $('#input-search-action-id').attr('name', 'action');
-        $('#input-search-project-id').attr('name', 'project_');
-        if ($('#input-search-advanced')[0].checked) {
-          $('#input-search').attr('placeholder', '{{ _('Advanced Search (by action)…') }}');
-        } else {
-          $('#input-search').attr('placeholder', '{{ _('Search (by action)…') }}');
-        }
-      });
-      $('#button-search-project-id').on('click', function () {
-        $('#input-search-action-type').attr('name', 't');
-        $('#input-search-action-id').attr('name', 'action_');
-        $('#input-search-project-id').attr('name', 'project');
-        if ($('#input-search-advanced')[0].checked) {
-          $('#input-search').attr('placeholder', '{{ _('Advanced Search (by project group)…') }}');
-        } else {
-          $('#input-search').attr('placeholder', '{{ _('Search (by project group)…') }}');
-        }
-      });
-      $('#button-search-action-type').on('click', function () {
-        $('#input-search-action-type').attr('name', 't');
-        $('#input-search-action-id').attr('name', 'action_');
-        $('#input-search-project-id').attr('name', 'project_');
-        if ($('#input-search-advanced')[0].checked) {
-          $('#input-search').attr('placeholder', '{{ _('Advanced Search (by type)…') }}');
-        } else {
-          $('#input-search').attr('placeholder', '{{ _('Search (by type)…') }}');
-        }
-      });
-      $('#input-search-advanced').on('change', function () {
-        var current_placeholder = $('#input-search').attr('placeholder');
-        if ($('#input-search-advanced')[0].checked) {
-          if (!current_placeholder.startsWith('{{ _('Advanced ') }}')) {
-            $('#input-search').attr('placeholder', '{{ _('Advanced ') }}' + current_placeholder);
-          }
-        } else {
-          if (current_placeholder.startsWith('{{ _('Advanced ') }}')) {
-            $('#input-search').attr('placeholder', current_placeholder.substring('{{ _('Advanced ') }}'.length, current_placeholder.length));
-          }
-        }
-      });
-      /* don't limit search by default*/
-      $('#input-search-action-type').attr('name', 't_');
-      $('#input-search-action-id').attr('name', 'action_');
-      $('#input-search-project-id').attr('name', 'project_');
-      $('#button-search-all').prop('checked', true);
-      var search_advanced = $('#input-search-advanced');
-      if (search_advanced.length > 0 && search_advanced[0].checked) {
-        $('#input-search').attr('placeholder', '{{ _('Advanced Search…') }}');
-      } else {
-        $('#input-search').attr('placeholder', '{{ _('Search…') }}');
-      }
+      }).change();
       $('.fullscreen-image-preview').on('click', function (e) {
         $(this).hide();
       });

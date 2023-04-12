@@ -20,7 +20,7 @@ def comment_to_json(comment: Comment) -> typing.Dict[str, typing.Any]:
         'object_id': comment.object_id,
         'comment_id': comment.id,
         'user_id': comment.user_id,
-        'utc_datetime': comment.utc_datetime.isoformat(),
+        'utc_datetime': comment.utc_datetime.isoformat() if comment.utc_datetime is not None else None,
         'content': comment.content
     }
     return comment_json
@@ -33,7 +33,7 @@ class ObjectComment(Resource):
             comment = get_comment_for_object(object_id=object_id, comment_id=comment_id)
         except errors.CommentDoesNotExistError:
             return {
-                "message": "comment {} of object {} does not exist".format(comment_id, object_id)
+                "message": f"comment {comment_id} of object {object_id} does not exist"
             }, 404
         return comment_to_json(comment)
 
@@ -49,7 +49,7 @@ class ObjectComments(Resource):
         if 'object_id' in request_json:
             if request_json['object_id'] != object_id:
                 return {
-                    "message": "object_id must be {}".format(object_id)
+                    "message": f"object_id must be {object_id}"
                 }, 400
         if 'content' not in request_json:
             return {

@@ -12,10 +12,11 @@ import pytest
 
 import sampledb.logic.components
 from sampledb import logic, db
-from sampledb.logic import errors, actions, instruments, object_permissions
+from sampledb.logic import errors, actions, instruments, object_permissions, action_types
 from sampledb.logic.action_translations import get_action_translations_for_action, set_action_translation, get_action_translation_for_action_in_language
 from sampledb.logic.action_type_translations import get_action_type_translations_for_action_type
-from sampledb.logic.actions import get_action, get_action_type, create_action_type, create_action
+from sampledb.logic.actions import get_action, create_action
+from sampledb.logic.action_types import get_action_type, create_action_type
 from sampledb.logic.comments import get_comment, create_comment, get_comments_for_object
 from sampledb.logic.components import get_component_by_uuid, add_component, get_component, Component
 from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_location_type_log_entries_for_location_type, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
@@ -51,9 +52,9 @@ UUID_2 = '1e59c517-bd11-4390-aeb4-971f20b06612'
 
 POLICY: typing.Dict[typing.Any, typing.Any] = {'access': {'data': True, 'action': True, 'users': True, 'files': True, 'comments': True, 'object_location_assignments': True}, 'permissions': {'users': {'1': 'read', '2': 'grant'}, 'groups': {'4': 'read', '5': 'grant'}, 'projects': {'1': 'read', '3': 'grant'}}}
 OBJECT_DATA: typing.Dict[typing.Any, typing.Any] = {'object_id': 1, 'versions': [{'version_id': 0, 'data': {'name': {'_type': 'text', 'text': 'Example'}}, 'schema': {'title': 'Example Action', 'type': 'object', 'properties': {'name': {'title': 'Example Attribute', 'type': 'text'}}, 'required': ['name']}, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'utc_datetime': '2021-05-03 05:04:54.514236'}], 'action': {'action_id': 2, 'component_uuid': UUID_1}, 'policy': POLICY}
-ARRAY_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "array": {"title": "Array", "type": "array", "items": {"title": "Subarray", "type": "array", "items": {"type": "text", "title": "Text"}}}}, "required": ["name"]}
+ARRAY_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "Object Information", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "array": {"title": "Array", "type": "array", "items": {"title": "Subarray", "type": "array", "items": {"type": "text", "title": "Text"}}}}, "required": ["name"]}
 ARRAY_DATA: typing.Dict[typing.Any, typing.Any] = {"name": {"text": {"en": ""}, "_type": "text"}, "array": [[{"text": {"en": "Entry 1.1"}, "_type": "text"}, {"text": {"en": "Entry 1.2"}, "_type": "text"}, {"text": {"en": "Entry 1.3"}, "_type": "text"}], [{"text": {"en": "Entry 2.1"}, "_type": "text"}, {"text": {"en": "Entry 2.2"}, "_type": "text"}], [{"text": {"en": "Entry 3.1"}, "_type": "text"}]]}
-ARRAY_OBJECT_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "object": {"title": "Object", "type": "object", "properties": {"object_name": {"title": "Name", "type": "text"}, "text_array": {"type": "array", "title": "Text Array", "items": {"type": "text", "title": "Text"}}, "array": {"type": "array", "title": "Object Array", "items": {"type": "object", "title": "Object", "properties": {"subobject_name": {"title": "Name", "type": "text"}}}}}}}, "required": ["name"]}
+ARRAY_OBJECT_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "Object Information", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "object": {"title": "Object", "type": "object", "properties": {"object_name": {"title": "Name", "type": "text"}, "text_array": {"type": "array", "title": "Text Array", "items": {"type": "text", "title": "Text"}}, "array": {"type": "array", "title": "Object Array", "items": {"type": "object", "title": "Object", "properties": {"subobject_name": {"title": "Name", "type": "text"}}}}}}}, "required": ["name"]}
 ARRAY_OBJECT_DATA: typing.Dict[typing.Any, typing.Any] = {"name": {"text": {"en": "Name"}, "_type": "text"}, "object": {"array": [{"subobject_name": {"text": {"en": "Subobject Name"}, "_type": "text"}}], "text_array": [{"text": {"en": "Text 1"}, "_type": "text"}, {"text": {"en": "Text 2"}, "_type": "text"}], "object_name": {"text": {"en": "Object Name"}, "_type": "text"}}}
 ACTION_DATA: typing.Dict[typing.Any, typing.Any] = {'action_id': 2, 'component_uuid': UUID_1, 'action_type': {'action_type_id': -96, 'component_uuid': UUID_1}, 'description_is_markdown': False, 'short_description_is_markdown': False, 'instrument': {'instrument_id': 4, 'component_uuid': UUID_1}, 'schema': {'title': 'Example Action', 'type': 'object', 'properties': {'name': {'title': 'Example Attribute', 'type': 'text'}}, 'required': ['name']}, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'is_hidden': False, 'translations': {'en': {'name': 'Example Action', 'description': 'Test Action', 'short_description': ''}, 'de': {'name': 'Beispielaktion', 'description': 'Aktion für Tests', 'short_description': ''}}}
 ACTION_TYPE_DATA: typing.Dict[typing.Any, typing.Any] = {'action_type_id': 1, 'component_uuid': UUID_1, 'admin_only': False, 'enable_labels': True, 'enable_files': True, 'enable_locations': True, 'enable_publications': False, 'enable_comments': True, 'enable_activity_log': True, 'enable_related_objects': True, 'enable_project_link': False, 'translations': {'en': {'name': 'Action Type', 'description': 'Description', 'object_name': 'Action Object', 'object_name_plural': 'Action Objects', 'view_text': 'Show Action Objects', 'perform_text': 'Perform Action Type Action'}, 'de': {'name': 'Aktionstyp', 'description': 'Beschreibung', 'object_name': 'Aktionsobjekt', 'object_name_plural': 'Aktionsobjekte', 'view_text': 'Zeige Aktionsobjekte', 'perform_text': 'Führe Aktionstyp-Aktion aus'}}}
@@ -311,6 +312,7 @@ def complex_action(instrument, user):
         enable_related_objects=True,
         enable_activity_log=True,
         enable_project_link=True,
+        enable_instrument_link=False,
         disable_create_objects=False,
         is_template=False
     )
@@ -1850,13 +1852,13 @@ def test_import_action_no_translations(component):
 
 def test_import_action_type(component):
     # default action_types
-    num_types = len(actions.get_action_types())
+    num_types = len(action_types.get_action_types())
     action_type_data = deepcopy(ACTION_TYPE_DATA)
     start_datetime = datetime.datetime.utcnow()
     action_type = parse_import_action_type(action_type_data, component)
     _check_action_type(action_type_data)
 
-    assert len(actions.get_action_types()) == num_types + 1
+    assert len(action_types.get_action_types()) == num_types + 1
 
     log_entries = get_fed_action_type_log_entries_for_action_type(action_type.id)
     assert len(FedActionTypeLogEntry.query.all()) == 1
@@ -1870,14 +1872,14 @@ def test_import_action_type(component):
 
 def test_import_default_action_type(component):
     for i, action_type_id in enumerate([ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION]):
-        num_types = len(actions.get_action_types())
+        num_types = len(action_types.get_action_types())
         action_type_data = deepcopy(ACTION_TYPE_DATA)
         action_type_data['action_type_id'] = action_type_id
         start_datetime = datetime.datetime.utcnow()
         action_type = parse_import_action_type(action_type_data, component)
         _check_action_type(action_type_data)
 
-        assert len(actions.get_action_types()) == num_types + 1
+        assert len(action_types.get_action_types()) == num_types + 1
 
         log_entries = get_fed_action_type_log_entries_for_action_type(action_type.id)
         assert len(FedActionTypeLogEntry.query.all()) == 1 + i
@@ -1891,7 +1893,7 @@ def test_import_default_action_type(component):
 
 def test_update_action_type(component):
     # default action_types
-    num_types = len(actions.get_action_types())
+    num_types = len(action_types.get_action_types())
 
     old_action_type_data = deepcopy(ACTION_TYPE_DATA)
     start_datetime = datetime.datetime.utcnow()
@@ -1923,7 +1925,7 @@ def test_update_action_type(component):
     action_type = parse_import_action_type(action_type_data, component)
     _check_action_type(action_type_data)
 
-    assert len(actions.get_action_types()) == num_types + 1
+    assert len(action_types.get_action_types()) == num_types + 1
     assert old_action_type.id == action_type.id
 
     log_entries = get_fed_action_type_log_entries_for_action_type(action_type.id)
@@ -1944,7 +1946,7 @@ def test_update_action_type(component):
 
 def test_parse_action_type_invalid_data(component):
     # default action_types
-    num_types = len(actions.get_action_types())
+    num_types = len(action_types.get_action_types())
     num_translations = len(ActionTypeTranslation.query.all())
 
     _invalid_id_test(ACTION_TYPE_DATA, 'action_type_id', parse_action_type)
@@ -1969,7 +1971,7 @@ def test_parse_action_type_invalid_data(component):
         _invalid_translation_str_test(ACTION_TYPE_DATA, lang, 'view_text', parse_action_type)
         _invalid_translation_str_test(ACTION_TYPE_DATA, lang, 'perform_text', parse_action_type)
 
-    assert len(actions.get_action_types()) == num_types
+    assert len(action_types.get_action_types()) == num_types
     assert len(FedActionTypeLogEntry.query.all()) == 0
     assert len(ActionTypeTranslation.query.all()) == num_translations
 

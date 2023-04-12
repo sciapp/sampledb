@@ -95,11 +95,11 @@ class ImportStatus(Resource):
             get_share(object_id, component_id)
         except errors.ObjectDoesNotExistError:
             return {
-                "message": "object {} does not exist".format(object_id)
+                "message": f"object {object_id} does not exist"
             }, 404
         except errors.ShareDoesNotExistError:
             return {
-                "message": "object {} is not shared".format(object_id)
+                "message": f"object {object_id} is not shared"
             }, 403
         import_status = flask.request.json
         if not import_status:
@@ -220,22 +220,22 @@ class File(Resource):
             share = get_share(object_id, component.id)
             if 'access' not in share.policy or not share.policy['access'].get('files'):
                 return {
-                    "message": "files linked to object {} are not shared".format(object_id)
+                    "message": f"files linked to object {object_id} are not shared"
                 }, 403
         except errors.ObjectDoesNotExistError:
             return {
-                "message": "object {} does not exist".format(object_id)
+                "message": f"object {object_id} does not exist"
             }, 404
         except errors.ShareDoesNotExistError:
             return {
-                "message": "object {} is not shared".format(object_id)
+                "message": f"object {object_id} is not shared"
             }, 403
 
         try:
             file = get_file(file_id, object_id)
         except errors.FileDoesNotExistError:
             return {
-                "message": "file {} of object {} does not exist".format(file_id, object_id)
+                "message": f"file {file_id} of object {object_id} does not exist"
             }, 404
 
         if file.storage in {'database', 'local'}:
@@ -246,7 +246,7 @@ class File(Resource):
                     return response
             except Exception:
                 return {
-                    "message": "file {} of object {} could not be read".format(file_id, object_id)
+                    "message": f"file {file_id} of object {object_id} could not be read"
                 }, 404
         elif file.storage == 'url':
             file_json = {
@@ -259,5 +259,5 @@ class File(Resource):
             return file_json, 200
 
         return {
-            "message": "file {} of object {} is not shareable".format(file_id, object_id)
+            "message": f"file {file_id} of object {object_id} is not shareable"
         }, 403

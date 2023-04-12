@@ -3,10 +3,13 @@
 
 """
 
+import csv
 import datetime
 import decimal
 import functools
+import io
 import re
+import typing
 
 import babel
 from flask_babel import _
@@ -21,9 +24,14 @@ from ...logic.errors import ValidationError
 from ...logic.schemas.generate_placeholder import generate_placeholder
 
 
-def form_data_parser(func):
+class FormParserT(typing.Protocol):
+    def __call__(self, form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
+        ...
+
+
+def form_data_parser(func: FormParserT) -> FormParserT:
     @functools.wraps(func)
-    def wrapper(form_data, schema, id_prefix, errors, required=False):
+    def wrapper(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
         try:
             return func(form_data, schema, id_prefix, errors, required=required)
         except ValueError as e:
@@ -40,7 +48,7 @@ def form_data_parser(func):
 
 
 @form_data_parser
-def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_any_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     if schema.get('type') == 'object':
         return parse_object_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'array':
@@ -67,14 +75,17 @@ def parse_any_form_data(form_data, schema, id_prefix, errors, required=False):
         return parse_user_form_data(form_data, schema, id_prefix, errors, required=required)
     elif schema.get('type') == 'plotly_chart':
         return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required)
+    elif schema.get('type') == 'timeseries':
+        return parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=required)
     raise ValueError('invalid schema')
 
 
 @form_data_parser
-def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_text_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys == [id_prefix + '__text']:
-        text = form_data.get(id_prefix + '__text', [None])[0]
+        text_list = form_data.get(id_prefix + '__text', [])
+        text = text_list[0] if text_list else None
         if not text and not required:
             return None
         # an empty text should get a min length error from validation, but a
@@ -83,7 +94,7 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
             return None
         if text is None:
             text = ""
-        data = {
+        data: typing.Dict[str, typing.Any] = {
             '_type': 'text',
             'text': str(text)
         }
@@ -105,7 +116,8 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
             'text': {}
         }
         for language in enabled_languages:
-            text = form_data.get(id_prefix + '__text_' + language, [None])[0]
+            text_list = form_data.get(id_prefix + '__text_' + language, [])
+            text = text_list[0] if text_list else None
             if not text and not required:
                 continue
             if text is None and schema.get('minLength', 0) > 0:
@@ -122,14 +134,14 @@ def parse_text_form_data(form_data, schema, id_prefix, errors, required=False):
 
 
 @form_data_parser
-def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_hazards_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if id_prefix + '__hasnohazards' not in keys:
         raise ValueError(_('Please select at least one hazard or confirm that the object poses no hazards.'))
-    hasnohazards = form_data.get(id_prefix + '__hasnohazards', [''])[0]
-    if hasnohazards == 'true':
+    hasnohazards_str = form_data.get(id_prefix + '__hasnohazards', [''])[0]
+    if hasnohazards_str == 'true':
         hasnohazards = True
-    elif hasnohazards == 'false':
+    elif hasnohazards_str == 'false':
         hasnohazards = False
     else:
         raise ValueError('invalid hazards form data')
@@ -157,7 +169,7 @@ def parse_hazards_form_data(form_data, schema, id_prefix, errors, required=False
 
 
 @form_data_parser
-def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_tags_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__tags']:
         raise ValueError('invalid tags form data')
@@ -180,18 +192,18 @@ def parse_tags_form_data(form_data, schema, id_prefix, errors, required=False):
 
 
 @form_data_parser
-def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_sample_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid sample form data')
-    object_id = form_data.get(id_prefix + '__oid', [''])[0]
-    if not object_id:
+    object_id_str = form_data.get(id_prefix + '__oid', [''])[0]
+    if not object_id_str:
         if not required:
             return None
         else:
             raise ValueError(_('Please select a sample.'))
     try:
-        object_id = int(object_id)
+        object_id = int(object_id_str)
     except ValueError:
         raise ValueError('object_id must be int')
     data = {
@@ -203,18 +215,18 @@ def parse_sample_form_data(form_data, schema, id_prefix, errors, required=False)
 
 
 @form_data_parser
-def parse_measurement_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_measurement_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid measurement form data')
-    object_id = form_data.get(id_prefix + '__oid', [''])[0]
-    if not object_id:
+    object_id_str = form_data.get(id_prefix + '__oid', [''])[0]
+    if not object_id_str:
         if not required:
             return None
         else:
             raise ValueError(_('Please select a measurement.'))
     try:
-        object_id = int(object_id)
+        object_id = int(object_id_str)
     except ValueError:
         raise ValueError('object_id must be int')
     data = {
@@ -226,18 +238,18 @@ def parse_measurement_form_data(form_data, schema, id_prefix, errors, required=F
 
 
 @form_data_parser
-def parse_object_reference_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_object_reference_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid object reference form data')
-    object_id = form_data.get(id_prefix + '__oid', [''])[0]
-    if not object_id:
+    object_id_str = form_data.get(id_prefix + '__oid', [''])[0]
+    if not object_id_str:
         if not required:
             return None
         else:
             raise ValueError(_('Please select an object reference.'))
     try:
-        object_id = int(object_id)
+        object_id = int(object_id_str)
     except ValueError:
         raise ValueError('object_id must be int')
     data = {
@@ -249,13 +261,14 @@ def parse_object_reference_form_data(form_data, schema, id_prefix, errors, requi
 
 
 @form_data_parser
-def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_quantity_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if set(keys) != {id_prefix + '__magnitude', id_prefix + '__units'} and keys != [id_prefix + '__magnitude']:
         raise ValueError('invalid quantity form data')
-    magnitude = form_data[id_prefix + '__magnitude'][0].strip()
-    if not magnitude:
+    magnitude_str = form_data[id_prefix + '__magnitude'][0].strip()
+    magnitude = None
+    if not magnitude_str:
         if not required:
             return None
         else:
@@ -272,18 +285,18 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         pint_units = ureg.Unit('1')
     dimensionality = str(int_ureg.Unit(pint_units).dimensionality)
     user_locale = languages.get_user_language(current_user).lang_code
-    if units in ['min', 'h'] and ':' in magnitude:
+    if units in ['min', 'h'] and ':' in magnitude_str:
         if units == 'min':
             match = re.match(re.compile(
                 r'^(?P<minutes>[0-9]+):'
                 r'(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?)$'
-            ), magnitude)
+            ), magnitude_str)
         else:
             match = re.match(re.compile(
                 r'^(?P<hours>([0-9]+)):'
                 r'(?P<minutes>[0-5][0-9])'
                 r'(:(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?))?$'
-            ), magnitude)
+            ), magnitude_str)
         if match is None:
             raise ValueError(_('Unable to parse time.'))
 
@@ -297,7 +310,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
             if match_dict['seconds']:
                 seconds = parse_decimal(match_dict['seconds'], locale=user_locale, strict=True)
             else:
-                seconds = 0
+                seconds = decimal.Decimal(0)
         except ValueError:
             raise ValueError(_('Unable to parse time.'))
         magnitude_in_base_units = float(hours * 3600 + minutes * 60 + seconds)
@@ -309,19 +322,18 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
         }
     else:
         try:
-            if isinstance(magnitude, str) and re.fullmatch('[-]?[0-9]+', magnitude):
+            if magnitude is None and re.fullmatch('[-]?[0-9]+', magnitude_str):
                 try:
-                    magnitude = int(magnitude)
+                    magnitude = decimal.Decimal(int(magnitude_str))
                 except ValueError:
                     pass
-            if isinstance(magnitude, str):
+            if magnitude is None:
                 try:
-                    magnitude = parse_decimal(magnitude, locale=user_locale, strict=True)
+                    magnitude = parse_decimal(magnitude_str, locale=user_locale, strict=True)
                 except Exception:
                     pass
-            if isinstance(magnitude, str):
+            if magnitude is None:
                 raise ValueError(_('Unable to parse magnitude.'))
-            magnitude = decimal.Decimal(magnitude)
         except ValueError:
             raise ValueError(_('The magnitude must be a number.'))
         magnitude_in_base_units = ureg.Quantity(magnitude, pint_units).to_base_units().magnitude
@@ -337,7 +349,7 @@ def parse_quantity_form_data(form_data, schema, id_prefix, errors, required=Fals
 
 
 @form_data_parser
-def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_datetime_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if keys != [id_prefix + '__datetime']:
@@ -352,21 +364,21 @@ def parse_datetime_form_data(form_data, schema, id_prefix, errors, required=Fals
         language = languages.get_user_language(current_user)
         parsed_datetime = datetime.datetime.strptime(datetime_string, language.datetime_format_datetime)
         # convert datetime to utc
-        local_datetime = pytz.timezone(current_user.timezone).localize(parsed_datetime)
+        local_datetime = pytz.timezone(current_user.timezone or 'UTC').localize(parsed_datetime)
         utc_datetime = local_datetime.astimezone(pytz.utc)
-        utc_datetime = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        utc_datetime_str = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
     except Exception:
         raise ValueError(_('Please enter a valid datetime.'))
     data = {
         '_type': 'datetime',
-        'utc_datetime': utc_datetime
+        'utc_datetime': utc_datetime_str
     }
     schemas.validate(data, schema, strict=True)
     return data
 
 
 @form_data_parser
-def parse_boolean_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_boolean_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if set(keys) == {id_prefix + '__hidden', id_prefix + '__value'}:
@@ -382,7 +394,7 @@ def parse_boolean_form_data(form_data, schema, id_prefix, errors, required=False
 
 
 @form_data_parser
-def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_array_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.List[typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if not keys:
         return None
@@ -402,14 +414,14 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
         except ValueError:
             raise ValueError('invalid array form data')
         item_indices.add(item_index)
-    items = []
+    items: typing.List[typing.Any] = []
     if item_indices:
-        num_items = max([i for i in item_indices]) + 1
+        num_items = max(item_indices) + 1
         for i in range(num_items):
             if i not in item_indices:
                 items.append(None)
             else:
-                item_id_prefix = id_prefix + '__{}'.format(i)
+                item_id_prefix = f'{id_prefix}__{i}'
                 items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, True))
         if None in items:
             # use a placeholder if form_data had no (valid) information on an
@@ -433,7 +445,7 @@ def parse_array_form_data(form_data, schema, id_prefix, errors, required=False):
 
 
 @form_data_parser
-def parse_object_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_object_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     assert schema['type'] == 'object'
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if not keys:
@@ -441,7 +453,7 @@ def parse_object_form_data(form_data, schema, id_prefix, errors, required=False)
     data = {}
     for property_name, property_schema in schema['properties'].items():
         property_id_prefix = id_prefix + '__' + property_name
-        property_required = (property_name in schema.get('required', []))
+        property_required = property_name in schema.get('required', [])
         property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
         if property is not None:
             data[property_name] = property
@@ -450,18 +462,18 @@ def parse_object_form_data(form_data, schema, id_prefix, errors, required=False)
 
 
 @form_data_parser
-def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
+def parse_user_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__uid']:
         raise ValueError('invalid user form data')
-    user_id = form_data.get(id_prefix + '__uid', [''])[0]
-    if not user_id:
+    user_id_str = form_data.get(id_prefix + '__uid', [''])[0]
+    if not user_id_str:
         if not required:
             return None
         else:
             raise ValueError(_('Please select a user.'))
     try:
-        user_id = int(user_id)
+        user_id = int(user_id_str)
     except ValueError:
         raise ValueError('user_id must be int')
     data = {
@@ -473,8 +485,9 @@ def parse_user_form_data(form_data, schema, id_prefix, errors, required=False):
 
 
 @form_data_parser
-def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=False):
-    plotly_chart_data = form_data.get(id_prefix + '__plotly', [None])[0]
+def parse_plotly_chart_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    plotly_chart_data_list = form_data.get(id_prefix + '__plotly', [])
+    plotly_chart_data: typing.Optional[typing.Union[str, typing.Dict[str, typing.Any]]] = plotly_chart_data_list[0] if plotly_chart_data_list else None
     if plotly_chart_data is None and not required:
         plotly_chart_data = {}
     data = {
@@ -486,8 +499,61 @@ def parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=
     return data
 
 
-def parse_form_data(form_data, schema):
+@form_data_parser
+def parse_timeseries_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if set(keys) != {id_prefix + '__data', id_prefix + '__units'}:
+        raise ValueError('invalid timeseries form data')
+    units = form_data[id_prefix + '__units'][0]
+    try:
+        ureg.Unit(units)
+    except pint.UndefinedUnitError:
+        raise ValueError('invalid units')
+    timeseries_data_str = form_data.get(id_prefix + '__data', [''])[0]
+    if not timeseries_data_str and not required:
+        return None
+    if not timeseries_data_str:
+        timeseries_data = []
+    else:
+        csv_file = io.StringIO(timeseries_data_str)
+        reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC)
+        timeseries_data = list(reader)
+        if timeseries_data and all(isinstance(value, str) for value in timeseries_data[0]):
+            # skip header rows
+            timeseries_data = timeseries_data[1:]
+        if not timeseries_data:
+            raise ValueError(_('invalid timeseries CSV data, expected datetime string, magnitude and (optional) magnitude in base units'))
+        user_timezone = pytz.timezone(current_user.timezone or 'UTC')
+        if user_timezone != pytz.utc:
+            # convert datetimes to UTC if necessary
+            for row in timeseries_data:
+                if len(row) not in [2, 3] or not isinstance(row[0], str) or not all(type(entry) in (float, int) for entry in row[1:]):
+                    raise ValueError(_('invalid timeseries CSV data, expected datetime string, magnitude and (optional) magnitude in base units'))
+                try:
+                    parsed_datetime = datetime.datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
+                except ValueError as exc:
+                    raise ValueError(_('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff')) from exc
+                try:
+                    local_datetime = user_timezone.localize(parsed_datetime)
+                    utc_datetime = local_datetime.astimezone(pytz.utc)
+                except Exception as exc:
+                    raise ValueError(_('unable to convert datetime from your timezone to UTC')) from exc
+                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+    data = {
+        '_type': 'timeseries',
+        'data': timeseries_data,
+        'units': units
+    }
+    schemas.validate(data, schema, strict=True)
+
+    return data
+
+
+def parse_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]], typing.Dict[str, str]]:
     id_prefix = 'object'
-    errors = {}
+    errors: typing.Dict[str, str] = {}
     data = parse_object_form_data(form_data, schema, id_prefix, errors)
     return data, errors

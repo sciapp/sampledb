@@ -120,20 +120,20 @@ class User:
 
     def get_name(self, include_ref: bool = False, include_id: bool = True) -> str:
         if include_ref and self.component_id is not None:
-            db_ref = ', #{} @ {}'.format(self.fed_id, typing.cast(Component, self.component).get_name())
+            db_ref = f', #{self.fed_id} @ {typing.cast(Component, self.component).get_name()}'
         else:
             db_ref = ''
         if not include_id:
             if db_ref:
                 db_ref = " (" + db_ref[2:] + ")"
             if self.name is None:
-                return gettext('Imported User') + db_ref  # type: ignore
+                return gettext('Imported User') + db_ref
             else:
                 return self.name + db_ref
         if self.name is None:
-            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)  # type: ignore
+            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
         else:
-            return '{} (#{}{})'.format(self.name, self.id, db_ref)
+            return f'{self.name} (#{self.id}{db_ref})'
 
     @property
     def has_admin_permissions(self) -> bool:
@@ -153,7 +153,7 @@ class User:
         return typing.cast(typing.Optional[str], settings.get_user_setting(self.id, 'TIMEZONE'))
 
 
-class AnonymousUser(flask_login.AnonymousUserMixin):  # type: ignore
+class AnonymousUser(flask_login.AnonymousUserMixin):
     @property
     def id(self) -> typing.Optional[int]:
         return None
@@ -268,7 +268,7 @@ def check_user_exists(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(users.User.id == user_id)).scalar():
         raise errors.UserDoesNotExistError()
 
 
@@ -285,8 +285,6 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    if user_id is None:
-        raise TypeError("user_id must be int")
     if component_id is None or component_id == 0:
         user = users.User.query.filter_by(id=user_id).first()
     else:
@@ -295,7 +293,7 @@ def get_mutable_user(user_id: int, component_id: typing.Optional[int] = None) ->
         if component_id is not None:
             check_component_exists(component_id)
         raise errors.UserDoesNotExistError()
-    return typing.cast(users.User, user)
+    return user
 
 
 def update_user(
@@ -413,6 +411,37 @@ def get_users_by_name(name: str) -> typing.List[User]:
     ]
 
 
+@typing.overload
+def create_user(
+        name: str,
+        email: str,
+        type: UserType,
+        orcid: typing.Optional[str] = None,
+        affiliation: typing.Optional[str] = None,
+        role: typing.Optional[str] = None,
+        extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        fed_id: None = None,
+        component_id: None = None
+) -> User:
+    ...
+
+
+@typing.overload
+def create_user(
+        name: typing.Optional[str],
+        email: typing.Optional[str],
+        type: UserType,
+        orcid: typing.Optional[str] = None,
+        affiliation: typing.Optional[str] = None,
+        role: typing.Optional[str] = None,
+        extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        *,
+        fed_id: int,
+        component_id: int
+) -> User:
+    ...
+
+
 def create_user(
         name: typing.Optional[str],
         email: typing.Optional[str],
@@ -442,8 +471,8 @@ def create_user(
     :return: the newly created user
     """
 
-    if (component_id is None) != (fed_id is None) or (component_id is None and (name is None or email is None)):
-        raise TypeError('Invalid parameter combination.')
+    assert (component_id is None) == (fed_id is None)
+    assert component_id is not None or (name is not None and email is not None)
 
     if component_id is not None:
         check_component_exists(component_id)

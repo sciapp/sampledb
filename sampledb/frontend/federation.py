@@ -3,6 +3,7 @@
 
 """
 import secrets
+
 import flask
 import flask_login
 import requests.exceptions
@@ -20,11 +21,12 @@ from ..logic.federation.update import import_updates
 from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, \
     get_user_alias
 from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication
+from ..utils import FlaskResponseT
 
 
 @frontend.route('/other-databases/<int:component_id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def component(component_id):
+def component(component_id: int) -> FlaskResponseT:
     try:
         component = get_component(component_id)
     except errors.ComponentDoesNotExistError:
@@ -196,7 +198,7 @@ def component(component_id):
 
 @frontend.route('/other-databases/', methods=['GET', 'POST'])
 @flask_login.login_required
-def federation():
+def federation() -> FlaskResponseT:
     components = get_components()
     add_component_form = AddComponentForm()
     if add_component_form.address.data is None:
@@ -244,14 +246,14 @@ def federation():
 
 @frontend.route('/other-databases/alias/', methods=['GET', 'POST'])
 @flask_login.login_required
-def user_alias():
+def user_alias() -> FlaskResponseT:
     user = flask_login.current_user
     components = get_components()
     aliases = get_user_aliases_for_user(user.id)
     added_components = [alias.component_id for alias in aliases]
     addable_components = [comp for comp in components if comp.id not in added_components]
     try:
-        add_alias_component = int(flask.request.args.get('add_alias_component'))
+        add_alias_component = int(flask.request.args.get('add_alias_component', ''))
         check_component_exists(add_alias_component)
     except ValueError:
         add_alias_component = None
@@ -324,16 +326,12 @@ def user_alias():
                 flask.flash(_('User alias updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.user_alias'))
 
-    if len(addable_components) == 0:
-        add_alias_form = None
-    else:
-        if add_alias_form.name.data is None:
-            add_alias_form.name.data = user.name
-        if add_alias_form.affiliation.data is None:
-            add_alias_form.affiliation.data = user.affiliation
-        if add_alias_form.role.data is None:
-            add_alias_form.role.data = user.role
-
+    if add_alias_form.name.data is None:
+        add_alias_form.name.data = user.name
+    if add_alias_form.affiliation.data is None:
+        add_alias_form.affiliation.data = user.affiliation
+    if add_alias_form.role.data is None:
+        add_alias_form.role.data = user.role
     if add_alias_component and not add_alias_form.is_submitted():
         add_alias_form.component.data = add_alias_component
 
@@ -367,7 +365,7 @@ def user_alias():
         user=user,
         addable_components=addable_components,
         aliases=aliases,
-        add_alias_form=add_alias_form,
+        add_alias_form=add_alias_form if addable_components else None,
         edit_alias_form=edit_alias_form,
         delete_alias_form=delete_alias_form,
         aliases_by_component=aliases_by_component,

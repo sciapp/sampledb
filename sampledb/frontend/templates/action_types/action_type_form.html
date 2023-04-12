@@ -14,7 +14,7 @@
   <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
 
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     window.translations = [
       {% for translation in action_type_translations %}
         {
@@ -340,6 +340,18 @@
           <label for="input-is_template" style="font-weight:400">
             <input type="checkbox" id="input-is_template" name="{{ action_type_form.is_template.name }}"
                  {% if action_type_form.is_template.data %}checked="checked"{% endif %}> {{ _('Allow actions of this type as schema templates in other actions') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_project_link" style="font-weight:400">
+            <input type="checkbox" id="input-enable_project_link" name="{{ action_type_form.enable_project_link.name }}"
+                   {% if action_type_form.enable_project_link.data %}checked="checked"{% endif %}> {{ _('Enable linking objects created with actions of this type to project groups') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-enable_instrument_link" style="font-weight:400">
+            <input type="checkbox" id="input-enable_instrument_link" name="{{ action_type_form.enable_instrument_link.name }}"
+                   {% if action_type_form.enable_instrument_link.data %}checked="checked"{% endif %}> {{ _('Enable linking objects created with actions of this type to instruments') }}
           </label>
         </div>
         <div class="form-group">

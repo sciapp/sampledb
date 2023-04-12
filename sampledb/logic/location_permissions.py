@@ -76,7 +76,7 @@ def get_user_permissions_for_multiple_locations(
 
     for location_id in location_ids:
         # apply responsible user permissions
-        if bool(db.session.query(db.exists().where(location_user_association_table.c.location_id == location_id, location_user_association_table.c.user_id == user_id)).scalar()):  # type: ignore
+        if bool(db.session.query(db.exists().where(location_user_association_table.c.location_id == location_id, location_user_association_table.c.user_id == user_id)).scalar()):
             additional_permissions[location_id] = min(Permissions.GRANT, max_permissions)
 
     # resource independent permissions

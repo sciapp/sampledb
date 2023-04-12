@@ -9,7 +9,7 @@ import sampledb
 from sampledb.logic import actions, action_translations, errors
 
 ACTION_SCHEMA = {
-    'title': '',
+    'title': 'Object Information',
     'type': 'object',
     'properties': {
         'name': {

@@ -5,6 +5,7 @@ import subprocess
 import sys
 import typing
 
+import cherrypy
 import flask
 from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -17,21 +18,13 @@ login_manager = LoginManager()
 login_manager.session_protection = 'basic'
 
 mail = Mail()
-db = SQLAlchemy()
-babel = Babel()
+db = SQLAlchemy(
+    engine_options={'future': True},
+    session_options={'future': True}
+)
 
 
-import sampledb.dashboard
-import sampledb.frontend
-import sampledb.api
-import sampledb.logic
-import sampledb.models
-import sampledb.models.migrations
-import sampledb.config
-
-
-@babel.localeselector  # type: ignore
-def set_locale() -> str:
+def babel_locale_selector() -> str:
     if hasattr(flask.g, 'override_locale') and flask.g.override_locale in sampledb.logic.locale.get_allowed_language_codes():
         return typing.cast(str, flask.g.override_locale)
 
@@ -51,8 +44,7 @@ def set_locale() -> str:
     return request_locale
 
 
-@babel.timezoneselector  # type: ignore
-def set_timezone() -> typing.Optional[str]:
+def babel_timezone_selector() -> typing.Optional[str]:
     if flask.current_app.config['TIMEZONE']:
         return typing.cast(typing.Optional[str], flask.current_app.config['TIMEZONE'])
     if current_user.is_authenticated:
@@ -61,6 +53,18 @@ def set_timezone() -> typing.Optional[str]:
             return typing.cast(typing.Optional[str], flask.request.args.get('timezone', settings['TIMEZONE']))
         return typing.cast(typing.Optional[str], settings['TIMEZONE'])
     return flask.request.args.get('timezone', None)
+
+
+babel = Babel()
+
+
+import sampledb.dashboard
+import sampledb.frontend
+import sampledb.api
+import sampledb.logic
+import sampledb.models
+import sampledb.models.migrations
+import sampledb.config
 
 
 def setup_database(app: flask.Flask) -> None:
@@ -114,7 +118,7 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         service_accessibility=app.config['SERVICE_ACCESSIBILITY'],
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
-        get_action_types=sampledb.logic.actions.get_action_types,
+        get_action_types=sampledb.logic.action_types.get_action_types,
         get_translated_text=sampledb.logic.utils.get_translated_text,
         BeautifulSoup=BeautifulSoup,
         json=json,
@@ -125,8 +129,8 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         NotificationType=sampledb.models.NotificationType,
         get_user=sampledb.logic.users.get_user,
     )
-    app.jinja_env.filters.update(sampledb.frontend.utils.jinja_filter.filters)  # type: ignore
-    app.jinja_env.globals.update(sampledb.frontend.utils.jinja_function.functions)  # type: ignore
+    app.jinja_env.filters.update(sampledb.frontend.utils.JinjaFilter.filters)
+    app.jinja_env.globals.update(sampledb.frontend.utils.JinjaFunction.functions)
 
 
 def build_translations(pybabel_path: str) -> None:
@@ -161,8 +165,8 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     login_manager.init_app(app)
     mail.init_app(app)
-    db.init_app(app)  # type: ignore
-    babel.init_app(app)
+    db.init_app(app)
+    babel.init_app(app, locale_selector=babel_locale_selector, timezone_selector=babel_timezone_selector)
     if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
         sampledb.dashboard.init_app(app)
 
@@ -176,7 +180,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
 
-    def custom_send_static_file(filename: str) -> flask.Response:
+    def custom_send_static_file(filename: str) -> sampledb.utils.FlaskResponseT:
         response = flask.make_response(
             flask.send_from_directory(app.static_folder, filename)  # type: ignore
         )
@@ -211,5 +215,56 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             sys.exit(0)
 
     signal.signal(signal.SIGTERM, signal_handler)
+
+    app.csp_reports = []  # type: ignore[attr-defined]
+
+    @app.route('/csp-violation-report', methods=['POST'])
+    def csp_report() -> sampledb.utils.FlaskResponseT:
+        if app.config.get('TESTING', True):
+            app.csp_reports.append(flask.request.get_json(force=True))  # type: ignore[attr-defined]
+        elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):
+            cherrypy.log("CSP violation report: " + json.dumps(flask.request.get_json(force=True), indent=2))
+        return ''
+
+    @app.after_request
+    def set_csp_header(response: flask.Response) -> flask.Response:
+        default_sources = [
+            "'self'",
+        ]
+        image_sources = [
+            "'self'",
+            "https:",
+            "http:",
+            "blob:",
+            "data:",
+        ]
+        script_sources = [
+            "'self'",
+            f"'nonce-{sampledb.utils.generate_inline_script_nonce()}'",
+        ]
+        style_sources = [
+            "'self'",
+            "'unsafe-inline'",
+        ]
+        connect_sources = [
+            "'self'",
+        ]
+        if flask.request.blueprint == 'dashboard':
+            script_sources += [
+                "'unsafe-eval'",
+                "https://cdnjs.cloudflare.com/ajax/libs/d3/",
+                "https://ajax.googleapis.com/ajax/libs/angularjs/",
+                "https://cdnjs.cloudflare.com/ajax/libs/angular.js/",
+                "https://unpkg.com/sunburst-chart",
+            ]
+            connect_sources += [
+                "https://pypi.org/pypi/Flask-MonitoringDashboard/json",
+            ]
+        content_security_policy = f"default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; report-uri /csp-violation-report"
+        if app.config.get('TESTING', True):
+            response.headers["Content-Security-Policy-Report-Only"] = content_security_policy
+        elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):
+            response.headers["Content-Security-Policy"] = content_security_policy
+        return response
 
     return app

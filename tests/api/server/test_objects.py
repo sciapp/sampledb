@@ -6,6 +6,8 @@
 import requests
 import pytest
 import json
+import uuid
+import datetime
 
 import sampledb
 import sampledb.logic
@@ -184,6 +186,171 @@ def test_get_object_version(flask_server, auth, user, action):
         "component_id": object.component_id
     }
 
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/0?include_diff=1'.format(object.object_id, object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": object.object_id,
+        "version_id": 0,
+        "action_id": object.action_id,
+        "user_id": user.id,
+        "utc_datetime": object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "fed_object_id": object.fed_object_id,
+        "fed_version_id": object.fed_version_id,
+        "component_id": object.component_id,
+        "data": object.data
+    }
+
+    object_json = {
+        "data": {
+            "name": {
+                '_type': 'text',
+                'text': 'Example2',
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id, version_id=object.version_id + 1)
+
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(object.object_id, new_object.version_id), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": new_object.object_id,
+        "version_id": new_object.version_id,
+        "action_id": new_object.action_id,
+        "user_id": user.id,
+        "utc_datetime": new_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": new_object.schema,
+        "fed_object_id": new_object.fed_object_id,
+        "fed_version_id": new_object.fed_version_id,
+        "component_id": new_object.component_id,
+        "data": new_object.data,
+        "data_diff": {
+            "name": {
+                "_before": {
+                    "_type": "text",
+                    "text": "Example"
+                },
+                "_after": {
+                    "_type": "text",
+                    "text": "Example2"
+                }
+            }
+        }
+    }
+
+    component = sampledb.logic.components.add_component(str(uuid.uuid4()))
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=1,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(imported_object.object_id, user.id, sampledb.models.Permissions.READ)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 0), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 0,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 1,
+        "component_id": component.id,
+        "data": None
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=2,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 1), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 1,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 2,
+        "component_id": component.id,
+        "data": None,
+        "data_diff": None
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=3,
+        component_id=component.id,
+        action_id=None,
+        schema=object.schema,
+        data=object.data,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 2), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 2,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": object.schema,
+        "fed_object_id": 1,
+        "fed_version_id": 3,
+        "component_id": component.id,
+        "data": object.data,
+        "data_diff": {
+            '_before': None,
+            '_after': object.data
+        }
+    }
+
+    imported_object = sampledb.logic.objects.insert_fed_object_version(
+        fed_object_id=1,
+        fed_version_id=4,
+        component_id=component.id,
+        action_id=None,
+        schema=None,
+        data=None,
+        user_id=None,
+        utc_datetime=datetime.datetime.utcnow()
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/versions/{}?include_diff=1'.format(imported_object.object_id, 3), auth=auth)
+    assert r.status_code == 200
+    assert json.loads(r.content.decode('utf-8')) == {
+        "object_id": imported_object.object_id,
+        "version_id": 3,
+        "action_id": None,
+        "user_id": None,
+        "utc_datetime": imported_object.utc_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "schema": None,
+        "fed_object_id": 1,
+        "fed_version_id": 4,
+        "component_id": component.id,
+        "data": None,
+        "data_diff": {
+            '_before': object.data,
+            '_after': None
+        }
+    }
+
 
 def test_get_object(flask_server, auth, user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/1', auth=auth)
@@ -244,7 +411,7 @@ def test_post_object_version(flask_server, auth, user, action):
     object_json = {}
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 400
-    assert r.json()['message'] == 'data must be set'
+    assert r.json()['message'] == 'data or data_diff must be set'
 
     object_json = {
         'object_id': object.object_id,
@@ -255,6 +422,115 @@ def test_post_object_version(flask_server, auth, user, action):
             }
         }
     }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == flask_server.base_url + 'api/v1/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id,
+        'data_diff': {
+            'name': {
+                '_before': {
+                    '_type': 'text',
+                    'text': 'Wrong Object Name',
+                },
+                '_after': {
+                    '_type': 'text',
+                    'text': 'Example Object (Diff)'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['message'] == 'failed to apply diff'
+
+    object_json = {
+        'object_id': object.object_id,
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+    result_object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (Diff)'
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    assert r.headers['Location'] == flask_server.base_url + 'api/v1/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)
+    new_object = sampledb.logic.objects.get_object(object_id=object.object_id)
+    assert new_object.version_id == object.version_id + 1
+    assert new_object.data == result_object_json['data']
+    object = new_object
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (data and data_diff)'
+            }
+        },
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (inconsistent)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json()['message'] == 'data and data_diff are conflicting'
+
+    object_json = {
+        'object_id': object.object_id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example Object (data and data_diff)'
+            }
+        },
+        'data_diff': {
+            'name': {
+                '_before': {
+                    'text': 'Example Object (Diff)',
+                    '_type': 'text'
+                },
+                '_after': {
+                    'text': 'Example Object (data and data_diff)',
+                    '_type': 'text'
+                }
+            }
+        }
+    }
+
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/versions/'.format(object.object_id), json=object_json, auth=auth, allow_redirects=False)
     assert r.status_code == 201
     assert r.headers['Location'] == flask_server.base_url + 'api/v1/objects/{}/versions/{}'.format(object.object_id, object.version_id + 1)

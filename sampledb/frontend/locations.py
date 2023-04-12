@@ -9,7 +9,7 @@ import flask
 import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SelectMultipleField, BooleanField
+from wtforms import StringField, SelectField, SelectMultipleField, BooleanField, IntegerField, FormField, FieldList
 from wtforms.validators import DataRequired
 
 from . import frontend
@@ -17,8 +17,8 @@ from .permission_forms import set_up_permissions_forms, handle_permission_forms
 from .. import logic
 from ..logic import errors
 from ..logic.components import get_component
-from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility, get_object_location_assignments
-from ..logic.location_log import get_log_entries_for_location, LocationLogEntryType
+from ..logic.locations import Location, create_location, get_location, get_locations_tree, update_location, get_object_location_assignment, confirm_object_responsibility, decline_object_responsibility, get_object_location_assignments, get_location_capacities, get_assigned_object_count_by_action_types
+from ..logic.location_log import get_log_entries_for_location
 from ..logic.languages import Language, get_language, get_languages, get_language_by_lang_code
 from ..logic.security_tokens import verify_token
 from ..logic.notifications import mark_notification_for_being_assigned_as_responsible_user_as_read, create_notification_for_a_declined_responsibility_assignment
@@ -27,8 +27,14 @@ from ..logic.users import get_user, get_users
 from ..logic.groups import get_group
 from ..logic.projects import get_project
 from .utils import check_current_user_is_not_readonly, get_location_name, get_groups_form_data
+from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
-from ..models import Permissions
+from ..models import Permissions, LocationLogEntryType
+
+
+class LocationCapacityForm(FlaskForm):
+    action_type_id = SelectField(validators=[DataRequired()], coerce=int, choices=[], validate_choice=False)
+    capacity = IntegerField()
 
 
 class LocationForm(FlaskForm):
@@ -38,11 +44,12 @@ class LocationForm(FlaskForm):
     type = SelectField(validators=[DataRequired()])
     responsible_users = SelectMultipleField()
     is_hidden = BooleanField(default=False)
+    capacities = FieldList(FormField(LocationCapacityForm))
 
 
 @frontend.route('/locations/')
 @flask_login.login_required
-def locations():
+def locations() -> FlaskResponseT:
     locations_map, locations_tree = get_locations_tree()
     permissions_by_id = {
         location_id: get_user_location_permissions(location_id, flask_login.current_user.id)
@@ -86,7 +93,7 @@ def _filter_location_tree_for_read_permissions(
 
 @frontend.route('/locations/<int:location_id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def location(location_id):
+def location(location_id: int) -> FlaskResponseT:
     try:
         location = get_location(location_id)
     except errors.LocationDoesNotExistError:
@@ -109,7 +116,7 @@ def location(location_id):
         flask.flash(_('You do not have permissions to view this location.'), 'error')
         return flask.abort(403)
     locations_map, locations_tree = get_locations_tree()
-    ancestors = []
+    ancestors: typing.List[Location] = []
     parent_location = location
     while parent_location.parent_location_id is not None:
         parent_location = get_location(parent_location.parent_location_id)
@@ -122,6 +129,14 @@ def location(location_id):
         for location_id in locations_map
     }
     descendent_location_ids = logic.locations.get_descendent_location_ids(locations_tree)
+    if location.type.enable_capacities:
+        capacities = get_location_capacities(location.id)
+        stored_objects = get_assigned_object_count_by_action_types(location.id)
+        action_types = logic.action_types.get_action_types(filter_fed_defaults=True)
+    else:
+        capacities = None
+        stored_objects = None
+        action_types = None
     return flask.render_template(
         'locations/location.html',
         locations_map=locations_map,
@@ -135,6 +150,9 @@ def location(location_id):
         Permissions=Permissions,
         location_log_entries=get_log_entries_for_location(location.id, flask_login.current_user.id) if location.type.show_location_log else None,
         LocationLogEntryType=LocationLogEntryType,
+        capacities=capacities,
+        stored_objects=stored_objects,
+        action_types=action_types,
         get_component=get_component,
         get_user=get_user
     )
@@ -142,7 +160,7 @@ def location(location_id):
 
 @frontend.route('/locations/<int:location_id>/permissions', methods=['GET', 'POST'])
 @flask_login.login_required
-def location_permissions(location_id):
+def location_permissions(location_id: int) -> FlaskResponseT:
     try:
         location = get_location(location_id)
     except errors.LocationDoesNotExistError:
@@ -189,21 +207,8 @@ def location_permissions(location_id):
         show_projects_form, projects_treepicker_info = get_groups_form_data(
             project_group_filter=lambda group: group.id not in project_permissions
         )
-    else:
-        permissions_form = None
-        users = None
-        add_user_permissions_form = None
-        add_group_permissions_form = None
-        add_project_permissions_form = None
-        show_groups_form = False
-        groups_treepicker_info = None
-        show_projects_form = False
-        projects_treepicker_info = None
 
-    if flask.request.method.lower() == 'post':
-        if not user_may_edit:
-            flask.flash(_('You need GRANT permissions to edit the permissions for this location.'), 'error')
-        else:
+        if flask.request.method.lower() == 'post':
             if handle_permission_forms(
                 logic.location_permissions.location_permissions,
                 location_id,
@@ -218,7 +223,20 @@ def location_permissions(location_id):
                 flask.flash(_('Successfully updated location permissions.'), 'success')
             else:
                 flask.flash(_('Failed to update location permissions.'), 'error')
-        return flask.redirect(flask.url_for('.location_permissions', location_id=location_id))
+            return flask.redirect(flask.url_for('.location_permissions', location_id=location_id))
+    else:
+        permissions_form = None
+        users = None
+        add_user_permissions_form = None
+        add_group_permissions_form = None
+        add_project_permissions_form = None
+        show_groups_form = False
+        groups_treepicker_info = None
+        show_projects_form = False
+        projects_treepicker_info = None
+        if flask.request.method.lower() == 'post':
+            flask.flash(_('You need GRANT permissions to edit the permissions for this location.'), 'error')
+            return flask.redirect(flask.url_for('.location_permissions', location_id=location_id))
 
     return flask.render_template(
         'locations/location_permissions.html',
@@ -246,18 +264,20 @@ def location_permissions(location_id):
 
 @frontend.route('/locations/new/', methods=['GET', 'POST'])
 @flask_login.login_required
-def new_location():
+def new_location() -> FlaskResponseT:
     if flask.current_app.config['ONLY_ADMINS_CAN_MANAGE_LOCATIONS'] and not flask_login.current_user.is_admin:
         flask.flash(_('Only administrators can create locations.'), 'error')
         return flask.abort(403)
     check_current_user_is_not_readonly()
     parent_location = None
-    parent_location_id = flask.request.args.get('parent_location_id', None)
-    if parent_location_id is not None:
+    parent_location_id_str = flask.request.args.get('parent_location_id', None)
+    if parent_location_id_str is not None:
         try:
-            parent_location_id = int(parent_location_id)
+            parent_location_id = int(parent_location_id_str)
         except ValueError:
             parent_location_id = None
+    else:
+        parent_location_id = None
     if parent_location_id:
         try:
             parent_location = get_location(parent_location_id)
@@ -277,7 +297,7 @@ def _handle_object_location_assignment(
         invalid_token_text: str,
         success_text: str,
         callback: typing.Callable[[int], None]
-) -> typing.Any:
+) -> FlaskResponseT:
     token = flask.request.args.get('t', None)
     if token is None:
         flask.flash(missing_token_text, 'error')
@@ -315,7 +335,7 @@ def _handle_object_location_assignment(
 
 @frontend.route('/locations/confirm_responsibility')
 @flask_login.login_required
-def accept_responsibility_for_object():
+def accept_responsibility_for_object() -> FlaskResponseT:
     return _handle_object_location_assignment(
         token_salt='confirm_responsibility',
         missing_token_text=_('The confirmation token is missing.'),
@@ -327,11 +347,11 @@ def accept_responsibility_for_object():
 
 @frontend.route('/locations/decline_responsibility')
 @flask_login.login_required
-def decline_responsibility_for_object():
+def decline_responsibility_for_object() -> FlaskResponseT:
     def _callback(object_location_assignment_id: int) -> None:
         decline_object_responsibility(object_location_assignment_id)
         object_location_assignment = get_object_location_assignment(object_location_assignment_id)
-        if object_location_assignment.user_id != object_location_assignment.responsible_user_id:
+        if object_location_assignment.user_id != object_location_assignment.responsible_user_id and object_location_assignment.user_id is not None:
             # notify the assigning user that the assignment was declined
             create_notification_for_a_declined_responsibility_assignment(object_location_assignment.user_id, object_location_assignment_id)
         all_object_location_assignments = get_object_location_assignments(object_id=object_location_assignment.object_id)
@@ -343,6 +363,7 @@ def decline_responsibility_for_object():
         else:
             current_responsible_user_id = None
         if current_responsible_user_id not in (None, object_location_assignment.responsible_user_id, object_location_assignment.user_id):
+            assert current_responsible_user_id is not None  # needed by mypy but guaranteed by the surrounding if
             # notify the currently responsible user that the assignment was declined
             create_notification_for_a_declined_responsibility_assignment(current_responsible_user_id, object_location_assignment_id)
     return _handle_object_location_assignment(
@@ -360,11 +381,22 @@ def _sort_location_ids_by_name(location_ids: typing.Iterable[int], location_map:
     return location_ids
 
 
-def _show_location_form(location: typing.Optional[Location], parent_location: typing.Optional[Location], has_grant_permissions):
+def _show_location_form(
+        location: typing.Optional[Location],
+        parent_location: typing.Optional[Location],
+        has_grant_permissions: bool
+) -> FlaskResponseT:
     english = get_language(Language.ENGLISH)
-    name_language_ids = []
-    description_language_ids = []
-    location_translations = []
+    name_language_ids: typing.List[int] = []
+    description_language_ids: typing.List[int] = []
+
+    class LanguageTranslation(typing.TypedDict):
+        language_id: int
+        lang_name: str
+        name: str
+        description: str
+
+    location_translations: typing.List[LanguageTranslation] = []
     if location is not None:
         submit_text = "Save"
         may_change_hidden = flask_login.current_user.is_admin
@@ -378,7 +410,7 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
     invalid_location_ids = []
     if location is not None:
         invalid_location_ids.append(location.id)
-        ancestor_ids = []
+        ancestor_ids: typing.List[int] = []
         _parent_location = location
         while _parent_location.parent_location_id is not None:
             _parent_location = get_location(_parent_location.parent_location_id)
@@ -406,6 +438,12 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         for location_id in locations_map
         if location_id not in invalid_location_ids and locations_map[location_id].type.enable_sub_locations
     ]
+    action_types = logic.action_types.get_action_types(filter_fed_defaults=True)
+    valid_action_types = [
+        action_type
+        for action_type in action_types
+        if action_type.enable_locations and not action_type.disable_create_objects
+    ]
     if has_grant_permissions:
         users = [
             user
@@ -418,6 +456,7 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         ]
     else:
         location_form.responsible_users.choices = []
+        users = []
     # filter permitted location types
     location_types = [
         location_type
@@ -438,6 +477,10 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
     }
     location_type_enable_responsible_users = {
         str(location_type.id): location_type.enable_responsible_users
+        for location_type in location_types
+    }
+    location_type_enable_capacities = {
+        str(location_type.id): location_type.enable_capacities
         for location_type in location_types
     }
     location_is_fed = {
@@ -473,41 +516,59 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         else:
             location_form.is_hidden.data = False
 
+        if location is not None:
+            capacities = get_location_capacities(location.id)
+            for action_type_id, capacity in capacities.items():
+                location_form.capacities.append_entry({
+                    'action_type_id': action_type_id,
+                    'capacity': capacity
+                })
+
     form_is_valid = False
     if location_form.validate_on_submit():
         form_is_valid = True
 
-    if location is not None:
-        name_language_ids = []
-        description_language_ids = []
-        for language_code, name in location.name.items():
-            language = get_language_by_lang_code(language_code)
-            if not language.enabled_for_input:
-                continue
-            name_language_ids.append(language.id)
-            location_translations.append({
-                'language_id': language.id,
-                'lang_name': get_translated_text(language.names),
-                'name': name,
-                'description': ''
+    for action_type in valid_action_types:
+        for entry in location_form.capacities.entries:
+            if entry.action_type_id.data == action_type.id:
+                break
+        else:
+            location_form.capacities.append_entry({
+                'action_type_id': action_type.id,
+                'capacity': 0
             })
 
-        for language_code, description in location.description.items():
-            language = get_language_by_lang_code(language_code)
-            if not language.enabled_for_input:
-                continue
-            description_language_ids.append(language.id)
-            for translation in location_translations:
-                if language.id == translation['language_id']:
-                    translation['description'] = description
-                    break
-            else:
+    if location is not None:
+        if location.name is not None:
+            for language_code, name in location.name.items():
+                language = get_language_by_lang_code(language_code)
+                if not language.enabled_for_input:
+                    continue
+                name_language_ids.append(language.id)
                 location_translations.append({
                     'language_id': language.id,
                     'lang_name': get_translated_text(language.names),
-                    'name': '',
-                    'description': description
+                    'name': name,
+                    'description': ''
                 })
+
+        if location.description is not None:
+            for language_code, description in location.description.items():
+                language = get_language_by_lang_code(language_code)
+                if not language.enabled_for_input:
+                    continue
+                description_language_ids.append(language.id)
+                for translation in location_translations:
+                    if language.id == translation['language_id']:
+                        translation['description'] = description
+                        break
+                else:
+                    location_translations.append({
+                        'language_id': language.id,
+                        'lang_name': get_translated_text(language.names),
+                        'name': '',
+                        'description': description
+                    })
 
     if form_is_valid:
         try:
@@ -568,6 +629,11 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             location_type = None
             form_is_valid = False
             location_form.type.errors.append(_('Please select a valid location type.'))
+    else:
+        location_type = None
+        location_type_id = None
+    if location_type is None or location_type_id is None:
+        form_is_valid = False
     responsible_user_ids = []
     if form_is_valid and has_grant_permissions:
         valid_user_ids = [
@@ -582,6 +648,7 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             if user_id not in responsible_user_ids and user_id in valid_user_ids:
                 responsible_user_ids.append(user_id)
     if form_is_valid:
+        assert location_type is not None  # mypy does not infer this, but it is guaranteed by the code above
         if location_type.admin_only and not flask_login.current_user.is_admin and location is None:
             location_form.type.errors.append(_('Only administrators may create locations of this type.'))
             form_is_valid = False
@@ -596,6 +663,25 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             location_form.responsible_users.errors.append(_('This location may not have responsible users.'))
             form_is_valid = False
     if form_is_valid:
+        assert location_type is not None  # mypy does not infer this, but it is guaranteed by the code above
+        if location_type.enable_capacities:
+            valid_action_type_ids = {
+                action_type.id
+                for action_type in valid_action_types
+            }
+            handled_action_types = set()
+            for entry in location_form.capacities.entries:
+                if entry.action_type_id.data not in valid_action_type_ids:
+                    form_is_valid = False
+                elif entry.action_type_id.data in handled_action_types:
+                    form_is_valid = False
+                else:
+                    handled_action_types.add(entry.action_type_id.data)
+                if entry.capacity.data is not None and not 0 <= entry.capacity.data <= 1000000000:
+                    form_is_valid = False
+    if form_is_valid:
+        assert location_type is not None  # mypy does not infer this, but it is guaranteed by the code above
+        assert location_type_id is not None  # mypy does not infer this, but it is guaranteed by the code above
         if location is None:
             location = create_location(
                 name=names,
@@ -622,6 +708,11 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
             flask.flash(_('The location was updated successfully.'), 'success')
         if has_grant_permissions:
             logic.locations.set_location_responsible_users(location.id, responsible_user_ids)
+        if location_type.enable_capacities:
+            for entry in location_form.capacities.entries:
+                logic.locations.set_location_capacity(location.id, entry.action_type_id.data, entry.capacity.data)
+        else:
+            logic.locations.clear_location_capacities(location.id)
         return flask.redirect(flask.url_for('.location', location_id=location.id))
     if english.id not in description_language_ids:
         description_language_ids.append(english.id)
@@ -640,6 +731,8 @@ def _show_location_form(location: typing.Optional[Location], parent_location: ty
         location_type_is_fed=location_type_is_fed,
         location_type_enable_parent_location=location_type_enable_parent_location,
         location_type_enable_responsible_users=location_type_enable_responsible_users,
+        location_type_enable_capacities=location_type_enable_capacities,
+        valid_action_types=valid_action_types,
         previous_parent_location_is_invalid=previous_parent_location_is_invalid,
         has_grant_permissions=has_grant_permissions,
         may_change_hidden=may_change_hidden,

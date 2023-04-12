@@ -43,7 +43,9 @@ LDAP
    * - SAMPLEDB_LDAP_NAME
      - The name of the LDAP server shown to the users
    * - SAMPLEDB_LDAP_SERVER
-     - The ldaps-URL of the LDAP server
+     - The ldaps-URL of the LDAP server, or a comma separated list of ldaps-URLs to use more than one LDAP server
+   * - SAMPLEDB_LDAP_CONNECT_TIMEOUT
+     - The timeout to use for connecting to the LDAP server(s)
    * - SAMPLEDB_LDAP_USER_BASE_DN
      - The LDAP base DN to search users with
    * - SAMPLEDB_LDAP_UID_FILTER

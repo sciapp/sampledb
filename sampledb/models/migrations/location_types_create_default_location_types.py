@@ -7,6 +7,7 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
 from ..locations import LocationType
 
 MIGRATION_INDEX = 115
@@ -14,12 +15,8 @@ MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
-    location_types_column_names = db.session.execute(db.text("""
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_name = 'location_types'
-        """)).fetchall()
-    has_enable_instruments = ('enable_instruments',) in location_types_column_names
+    has_enable_instruments = table_has_column('location_types', 'enable_instruments')
+    has_enable_capacities = table_has_column('location_types', 'enable_capacities')
 
     existing_location_type_ids = [
         location_type[0]
@@ -42,7 +39,8 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
             'enable_object_assignments': True,
             'enable_responsible_users': False,
             'show_location_log': False,
-            'enable_instruments': True
+            'enable_instruments': True,
+            'enable_capacities': False
         }
     ]
 
@@ -53,7 +51,14 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
             continue
 
         # Perform migration
-        if has_enable_instruments:
+        if has_enable_capacities:
+            # enable_instruments was added before enable_capacities
+            assert has_enable_instruments
+            db.session.execute(db.text("""
+                INSERT INTO location_types (id, name, location_name_singular, location_name_plural, admin_only, enable_parent_location, enable_sub_locations, enable_object_assignments, enable_responsible_users, show_location_log, enable_instruments, enable_capacities)
+                VALUES (:id, :name, :location_name_singular, :location_name_plural, :admin_only, :enable_parent_location, :enable_sub_locations, :enable_object_assignments, :enable_responsible_users, :show_location_log, :enable_instruments, :enable_capacities)
+            """), params=location_type)
+        elif has_enable_instruments:
             db.session.execute(db.text("""
                 INSERT INTO location_types (id, name, location_name_singular, location_name_plural, admin_only, enable_parent_location, enable_sub_locations, enable_object_assignments, enable_responsible_users, show_location_log, enable_instruments)
                 VALUES (:id, :name, :location_name_singular, :location_name_plural, :admin_only, :enable_parent_location, :enable_sub_locations, :enable_object_assignments, :enable_responsible_users, :show_location_log, :enable_instruments)

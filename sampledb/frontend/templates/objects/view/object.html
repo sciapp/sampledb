@@ -21,6 +21,13 @@
     {% else %}
       {% set data = none %}
     {% endif %}
+    {% if diff is not none and previous_schema is not none and property_name in diff %}
+      {% set diff = diff[property_name] %}
+      {% set previous_schema = previous_schema['properties'][property_name] %}
+    {% else %}
+      {% set diff = none %}
+      {% set previous_schema = none %}
+    {% endif %}
     {% if base_search_query_attribute %}
       {% set search_query_attribute = base_search_query_attribute + "." + name %}
     {% else %}
@@ -42,6 +49,13 @@
         {% set data = data[property_name] %}
       {% else %}
         {% set data = none %}
+      {% endif %}
+      {% if diff is not none and previous_schema is not none and property_name in diff %}
+        {% set diff = diff[property_name] %}
+        {% set previous_schema = previous_schema['properties'][property_name] %}
+      {% else %}
+        {% set diff = none %}
+        {% set previous_schema = none %}
       {% endif %}
       {% if base_search_query_attribute %}
         {% set search_query_attribute = base_search_query_attribute + "." + name %}
@@ -65,6 +79,13 @@
       {% else %}
         {% set data = none %}
       {% endif %}
+      {% if diff is not none and previous_schema is not none and not ('_before' in diff or '_after' in diff) and property_name in diff %}
+        {% set diff = diff[property_name] %}
+        {% set previous_schema = previous_schema['properties'][property_name] %}
+      {% else %}
+        {% set diff = none %}
+        {% set previous_schema = none %}
+      {% endif %}
       {% if base_search_query_attribute %}
         {% set search_query_attribute = base_search_query_attribute + "." + name %}
       {% else %}
@@ -79,7 +100,12 @@
   <div class="row">
     <div class="col-md-3" style="padding-rigth: 0px;"></div>
     <div class="col-md-9" style="padding-left: 5px;">
-      <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs" onclick="toggleShowMore('{{id_prefix}}');">{{ _('Show more') }}</button>
+      <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs">{{ _('Show more') }}</button>
+      <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+        document.getElementById('show-more-{{ id_prefix }}-btn').addEventListener('click', function() {
+          toggleShowMore('{{id_prefix}}');
+        });
+      </script>
     </div>
   </div>
 {% endif %}

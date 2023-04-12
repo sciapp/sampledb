@@ -83,7 +83,7 @@
 
 {% block scripts %}
   {{ super() }}
-  <script>
+  <script nonce="{{ generate_inline_script_nonce() }}">
     {% if show_add_form %}
     $(document).ready(function() {
       var add_modal = $('#addComponentModal');

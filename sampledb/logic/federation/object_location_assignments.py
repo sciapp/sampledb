@@ -7,7 +7,7 @@ from .components import _get_or_create_component_id
 from .utils import _get_id, _get_uuid, _get_bool, _get_utc_datetime, _get_translation, _get_dict
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from .locations import _get_or_create_location_id, _parse_location_ref, LocationRef
-from ..locations import create_fed_assignment, get_fed_object_location_assignment, ObjectLocationAssignment, get_object_location_assignment
+from ..locations import create_fed_assignment, get_fed_object_location_assignment, ObjectLocationAssignment, _get_mutable_object_location_assignment
 from ..components import Component
 from .. import errors, fed_logs
 from ...models import Object
@@ -35,7 +35,7 @@ def import_object_location_assignment(
     if component_id is not None:
         assignment = get_fed_object_location_assignment(assignment_data['fed_id'], component_id)
     else:
-        assignment = get_object_location_assignment(assignment_data['fed_id'])
+        assignment = _get_mutable_object_location_assignment(assignment_data['fed_id'])
 
     user_id = _get_or_create_user_id(assignment_data['user'])
     responsible_user_id = _get_or_create_user_id(assignment_data['responsible_user'])
@@ -56,7 +56,7 @@ def import_object_location_assignment(
         assignment.declined = assignment_data.get('declined', False)
         db.session.commit()
         fed_logs.update_object_location_assignment(assignment.id, component.id)
-    return assignment
+    return ObjectLocationAssignment.from_database(assignment)
 
 
 def parse_object_location_assignment(
@@ -66,13 +66,13 @@ def parse_object_location_assignment(
     fed_id = _get_id(assignment_data.get('id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local object location assignment {} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'Invalid update for local object location assignment {fed_id} @ {uuid}')
 
     responsible_user_data = _get_dict(assignment_data.get('responsible_user'))
     location_data = _get_dict(assignment_data.get('location'))
     description = _get_translation(assignment_data.get('description'))
     if responsible_user_data is None and location_data is None and description is None:
-        raise errors.InvalidDataExportError('Empty object location assignment {} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'Empty object location assignment {fed_id} @ {uuid}')
 
     return ObjectLocationAssignmentData(
         fed_id=fed_id,

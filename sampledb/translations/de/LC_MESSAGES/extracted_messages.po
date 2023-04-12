@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-02-23 06:30+0100\n"
+"POT-Creation-Date: 2023-04-05 10:21+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -84,6 +84,12 @@ msgstr "Die angefragte Aktion existiert nicht."
 msgid "Only administrators can create actions of this type."
 msgstr "Nur Administratoren können Aktionen diesen Typs erstellen."
 
+msgid "Tags"
+msgstr "Tags"
+
+msgid "GHS Hazards"
+msgstr "GHS Gefahren"
+
 msgid "Unnamed Instrument"
 msgstr "Unbenanntes Instrument"
 
@@ -102,16 +108,16 @@ msgstr "Bitte geben Sie einen Namen mit 1 bis 100 Zeichen ein."
 msgid "The action was updated successfully."
 msgstr "Die Aktion wurde erfolgreich aktualisiert."
 
-msgid "You need GRANT permissions to edit the permissions for this action."
-msgstr ""
-"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
-"Aktion zu bearbeiten."
-
 msgid "Successfully updated action permissions."
 msgstr "Die Aktionsberechtigungen wurden erfolgreich aktualisiert."
 
 msgid "Failed to update action permissions."
 msgstr "Das Bearbeiten der Aktionsberechtigungen ist fehlgeschlagen."
+
+msgid "You need GRANT permissions to edit the permissions for this action."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
+"Aktion zu bearbeiten."
 
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
@@ -275,6 +281,36 @@ msgstr "Bitte geben Sie einen englischen Instrumentnamen ein."
 msgid "The instrument was updated successfully."
 msgstr "Das Instrument wurde erfolgreich aktualisiert."
 
+msgid "Missing or invalid object ID."
+msgstr "Fehlende oder ungültige Objekt-ID."
+
+msgid "You do not have GRANT permissions for this object."
+msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+
+msgid "This object cannot be linked to an instrument."
+msgstr "Dieses Objekt kann nicht mit einem Instrument verknüpft werden."
+
+msgid "Object does not exist."
+msgstr "Dieses Objekt existiert nicht."
+
+msgid ""
+"The instrument is already linked to an object or the object is already "
+"linked to an instrument."
+msgstr ""
+"Das Instrument ist bereits mit einem anderen Objekt verknüpft oder das "
+"Objekt ist bereits mit einem anderen Instrument verknüpft."
+
+msgid "Successfully linked the object to the instrument."
+msgstr "Das Objekt wurde erfolgreich mit einem Instrument verknüpft."
+
+msgid "This instrument is not linked to this object."
+msgstr "Das Instrument ist nicht mit diesem Objekt verknüpft."
+
+msgid "Successfully unlinked the object from the instrument."
+msgstr ""
+"Die Verknüpfung zwischen dem Objekt und dem Instrument wurde erfolgreich "
+"aufgehoben."
+
 msgid "This language code is already in use."
 msgstr "Dieses Sprachkürzel wird bereits verwendet."
 
@@ -310,16 +346,16 @@ msgstr "Ihnen fehlen die Berechtigungen um diesen Ort zu bearbeiten."
 msgid "You do not have permissions to view this location."
 msgstr "Ihnen fehlen die Berechtigungen um diesen Ort anzuzeigen."
 
-msgid "You need GRANT permissions to edit the permissions for this location."
-msgstr ""
-"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
-"Orts zu bearbeiten."
-
 msgid "Successfully updated location permissions."
 msgstr "Die Ortsberechtigungen wurden erfolgreich aktualisiert."
 
 msgid "Failed to update location permissions."
 msgstr "Das Bearbeiten der Ortsberechtigungen ist fehlgeschlagen."
+
+msgid "You need GRANT permissions to edit the permissions for this location."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Orts zu bearbeiten."
 
 msgid "Only administrators can create locations."
 msgstr "Nur Administratoren können Orte erstellen."
@@ -621,6 +657,11 @@ msgstr ""
 "Ungültiges Projektgruppen-Einladungstoken. Bitte fragen Sie nach einer "
 "neuen Einladung."
 
+msgid "Unknown project group invitation. Please request a new invitation."
+msgstr ""
+"Unbekannte Projektgruppen-Einladung. Bitte fragen Sie nach einer neuen "
+"Einladung."
+
 msgid ""
 "This invitation token has already been used. Please request a new "
 "invitation."
@@ -783,14 +824,11 @@ msgstr ""
 "Beim Ändern der Berechtigungen dieser Projektgruppe ist ein Problem "
 "aufgetreten. Bitte versuchen Sie es später erneut."
 
-msgid "Missing or invalid object ID."
-msgstr "Fehlende oder ungültige Objekt-ID."
-
 msgid "You do not have GRANT permissions for this project group."
 msgstr "Sie haben keine Rechtevergabe-Berechtigungen für diese Projektgruppe."
 
-msgid "You do not have GRANT permissions for this object."
-msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+msgid "This object cannot be linked to a project group."
+msgstr "Dieses Objekt kann nicht mit einer Projektgruppe verknüpft werden."
 
 msgid ""
 "Project group is already linked to an object or object is already linked "
@@ -801,9 +839,6 @@ msgstr ""
 
 msgid "Project group does not exist."
 msgstr "Diese Projektgruppe existiert nicht."
-
-msgid "Object does not exist."
-msgstr "Dieses Objekt existiert nicht."
 
 msgid "Successfully linked the object to a project group."
 msgstr "Das Objekt wurde erfolgreich mit der Projektgruppe verknüpft."
@@ -886,6 +921,54 @@ msgstr "Der Link wurde erfolgreich eingetragen."
 
 msgid "Failed to post link."
 msgstr "Das Eintragen des Links ist fehlgeschlagen."
+
+msgid "Mixed label formats"
+msgstr "Gemischte Etikettenformate"
+
+msgid "Fixed-width labels"
+msgstr "Etiketten mit fester Breite"
+
+msgid "Minimal-height labels"
+msgstr "Etiketten mit minimaler Höhe"
+
+msgid "DIN A4 (Portrait)"
+msgstr "DIN A4 (Hochformat)"
+
+msgid "DIN A4 (Landscape)"
+msgstr "DIN A4 (Querformat)"
+
+msgid "Letter / ANSI A (Portrait)"
+msgstr "Letter / ANSI A (Hochformat)"
+
+msgid "Letter / ANSI A (Landscape)"
+msgstr "Letter / ANSI A (Querformat)"
+
+msgid "Set minimum Permissions"
+msgstr "Setze minimale Berechtigungen"
+
+msgid "Set maximum Permissions"
+msgstr "Setze maximale Berechtigungen"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Read"
+msgstr "Lesen"
+
+msgid "Write"
+msgstr "Schreiben"
+
+msgid "Grant"
+msgstr "Rechtevergabe"
+
+msgid "All Signed-In Users"
+msgstr "Alle angemeldeten Nutzer"
+
+msgid "User"
+msgstr "Nutzer"
+
+msgid "Anonymous Users"
+msgstr "Anonyme Nutzer"
 
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
@@ -970,6 +1053,23 @@ msgstr "Bitte geben Sie einen gültigen Zeitpunkt ein."
 msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
+msgid ""
+"invalid timeseries CSV data, expected datetime string, magnitude and "
+"(optional) magnitude in base units"
+msgstr ""
+"Ungültige CSV-Daten für Zeitreihe, erwartet: Zeitpunkt als Zeichenkette, "
+"Größe und (optional) Größe in Basiseinheiten"
+
+msgid ""
+"invalid datetime in timeseries, expected format: YYYY-MM-DD "
+"hh:mm:ss.ffffff"
+msgstr ""
+"Ungültiger Zeitpunkt in Zeitreihe, erwartetes Format: JJJJ-MM-TT "
+"hh:mm:ss.ffffff"
+
+msgid "unable to convert datetime from your timezone to UTC"
+msgstr "Zeitpunkt konnte nicht von Ihrer Zeitzone in UTC umgewandelt werden"
+
 #, python-format
 msgid ""
 "The advanced search was used automatically. Search for "
@@ -977,9 +1077,6 @@ msgid ""
 msgstr ""
 "Die erweiterte Suche wurde automatisch verwendet. Suchen Sie nach "
 "\"%(query_string)s\" um die einfache Suche zu verwenden."
-
-msgid "Tags"
-msgstr "Tags"
 
 msgid "Hazards"
 msgstr "Gefahren"
@@ -1063,11 +1160,24 @@ msgstr "Ungültige Datenbank-ID."
 msgid "Unable to parse origin ID."
 msgstr "Quell-ID konnte nicht geparst werden."
 
+msgid "The selected location does not have the capacity to store these objects."
+msgstr ""
+"Der ausgewählte Ort hat nicht die nötigen Kapazitäten um diese Objekte zu"
+" lagern."
+
 msgid "Successfully assigned a new location to objects."
 msgstr "Der neue Ort wurde erfolgreich den Objekten zugewiesen."
 
 msgid "Please select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
+
+msgid "It is not allowed to use permissions higher than read for special groups."
+msgstr ""
+"Es ist nicht erlaubt Berechtigungen größer als Lesen für Sondergruppen zu"
+" verwenden."
+
+msgid "Updated permissions successfully."
+msgstr "Die Berechtigungen wurden erfolgreich aktualisiert."
 
 msgid "You already have permissions to access this object."
 msgstr "Sie haben bereits Berechtigungen für dieses Objekt."
@@ -1134,6 +1244,9 @@ msgstr "Die eingegebene Port-Nummer ist ungültig."
 msgid "Unknown"
 msgstr "Unbekannt"
 
+msgid "Unknown Object"
+msgstr "Unbekanntes Objekt"
+
 msgid "Commenting on imported objects is not yet supported."
 msgstr "Das Kommentieren importierter Objekte wird noch nicht unterstützt."
 
@@ -1145,6 +1258,11 @@ msgstr "Bitte geben Sie einen Kommentartext ein."
 
 msgid "Assigning locations to imported objects is not yet supported."
 msgstr "Das Zuweisen importierter Objekte zu Orten wird noch nicht unterstützt."
+
+msgid "The selected location does not have the capacity to store this object."
+msgstr ""
+"Der ausgewählte Ort hat nicht die nötige Kapazität um dieses Objekt zu "
+"lagern."
 
 msgid "Successfully assigned a new location to this object."
 msgstr "Der neue Ort wurde erfolgreich dem Objekt zugewiesen."
@@ -1167,9 +1285,6 @@ msgid ""
 "Please enter a valid DOI for the publication you want to link this object"
 " to."
 msgstr "Bitte geben Sie eine gültige DOI für die zu verknüpfende Publikation an."
-
-msgid "This object does not exist."
-msgstr "Dieses Objekt existiert nicht."
 
 msgid "You do not have the required permissions to use this object as a template."
 msgstr "Ihnen fehlen die Berechtigungen um dieses Objekt als Schablone zu nutzen."
@@ -1259,34 +1374,31 @@ msgstr "Leeren"
 
 msgid ""
 "No results for \"<span class=\"query-container\">QUERY</span>\" — <span "
-"class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
-"event)\">Clear</span>"
+"class=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
 msgstr ""
 "Keine Ergebnisse für „<span class=\"query-container\">QUERY</span>“ — "
-"<span class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
-"event)\">Leeren</span>"
+"<span class=\"objectpicker-button objectpicker-button-"
+"clear\">Leeren</span>"
 
 msgid ""
 "PLACEHOLDER2 results for \"<span class=\"query-container\">QUERY</span>\""
-" — <span class=\"objectpicker-button\" onclick=\"objectpicker_clear(this,"
-" event)\">Clear</span>"
+" — <span class=\"objectpicker-button objectpicker-button-"
+"clear\">Clear</span>"
 msgstr ""
 "PLACEHOLDER2 Ergebnisse für „<span class=\"query-"
-"container\">QUERY</span>“ — <span class=\"objectpicker-button\" "
-"onclick=\"objectpicker_clear(this, event)\">Leeren</span>"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button "
+"objectpicker-button-clear\">Leeren</span>"
 
 msgid ""
 "PLACEHOLDER1 of PLACEHOLDER2 results for \"<span class=\"query-"
-"container\">QUERY</span>\" — <span class=\"objectpicker-button\" "
-"onclick=\"objectpicker_show_all(this, event)\">Show all</span> — <span "
-"class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
-"event)\">Clear</span>"
+"container\">QUERY</span>\" — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Show all</span> — <span class"
+"=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
 msgstr ""
 "PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen für „<span class=\"query-"
-"container\">QUERY</span>“ — <span class=\"objectpicker-button\" "
-"onclick=\"objectpicker_show_all(this, event)\">Alle anzeigen</span> — "
-"<span class=\"objectpicker-button\" onclick=\"objectpicker_clear(this, "
-"event)\">Leeren</span>"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Alle anzeigen</span> — <span class"
+"=\"objectpicker-button objectpicker-button-clear\">Leeren</span>"
 
 msgid "No results"
 msgstr "Keine Ergebnisse"
@@ -1295,12 +1407,20 @@ msgid "PLACEHOLDER2 results"
 msgstr "PLACEHOLDER2 Ergebnisse"
 
 msgid ""
-"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-"
-"button\" onclick=\"objectpicker_show_all(this, event)\">Show all</span>"
+"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Show all</span>"
 msgstr ""
 "PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
-"button\" onclick=\"objectpicker_show_all(this, event)\">Alle "
-"anzeigen</span>"
+"button objectpicker-button-show-all\">Alle anzeigen</span>"
+
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
+msgid "Show less"
+msgstr "Weniger anzeigen"
+
+msgid "Please select at least one timeseries."
+msgstr "Bitte wählen Sie mindestens eine Zeitreihe aus."
 
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
@@ -1322,27 +1442,6 @@ msgstr "Erweiterte Suche"
 
 msgid "Build Search Query"
 msgstr "Suchanfrage erstellen"
-
-#, python-format
-msgid "Search %(objects)s from this project group"
-msgstr "Suche in allen %(objects)s dieser Projektgruppe"
-
-msgid "Search objects from this project group"
-msgstr "Suche in allen Objekten dieser Projektgruppe"
-
-#, python-format
-msgid "Search %(objects)s from this action"
-msgstr "Suche in allen %(objects)s dieser Aktion"
-
-msgid "Search objects from this action"
-msgstr "Suche in allen Objekten dieser Aktion"
-
-#, python-format
-msgid "Search all %(objects)s"
-msgstr "Suche in allen %(objects)s"
-
-msgid "Search all objects"
-msgstr "Suche in allen Objekten"
 
 msgid "Instruments"
 msgstr "Instrumente"
@@ -1499,27 +1598,6 @@ msgstr "In 1 Stunde erinnern"
 
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
-
-msgid "Advanced Search (by action)…"
-msgstr "Erweiterte Suche (nach Aktion)…"
-
-msgid "Search (by action)…"
-msgstr "Suche (nach Aktion)…"
-
-msgid "Advanced Search (by project group)…"
-msgstr "Erweiterte Suche (nach Projektgruppe)…"
-
-msgid "Search (by project group)…"
-msgstr "Suche (nach Projektgruppe)…"
-
-msgid "Advanced Search (by type)…"
-msgstr "Erweiterte Suche (nach Typ)…"
-
-msgid "Search (by type)…"
-msgstr "Suche (nach Typ)…"
-
-msgid "Advanced "
-msgstr "Erweiterte "
 
 msgid "Create Bot User"
 msgstr "Botnutzer erstellen"
@@ -2191,9 +2269,6 @@ msgstr "Kopiert!"
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
 
-msgid "User"
-msgstr "Nutzer"
-
 msgid "User Profile"
 msgstr "Nutzerprofil"
 
@@ -2703,6 +2778,40 @@ msgstr ""
 "Nein, verhindere das Einbinden von Aktionen dieses Typs als Schema-"
 "Vorlage in anderen Aktionen"
 
+msgid "Enable Linking to Project Group"
+msgstr "Verknüpfen mit Projektgruppe aktivieren"
+
+msgid ""
+"Yes, objects created with actions of this type can be linked to a project"
+" group as project metadata"
+msgstr ""
+"Ja, Objekte die mit Aktionen diesen Typs erstellt wurden können als "
+"Projekt-Metadaten mit einer Projektgruppe verknüpft werden"
+
+msgid ""
+"No, objects created with actions of this type cannot be linked to a "
+"project group as project metadata"
+msgstr ""
+"Nein, Objekte die mit Aktionen diesen Typs erstellt wurden können nicht "
+"als Projekt-Metadaten mit einer Projektgruppe verknüpft werden"
+
+msgid "Enable Linking to Instrument"
+msgstr "Verknüpfen mit Instrument aktivieren"
+
+msgid ""
+"Yes, objects created with actions of this type can be linked to an "
+"instrument as instrument metadata"
+msgstr ""
+"Ja, Objekte die mit Aktionen diesen Typs erstellt wurden können als "
+"Instrument-Informationen mit einem Instrument verknüpft werden"
+
+msgid ""
+"No, objects created with actions of this type cannot be linked to an "
+"instrument as instrument metadata"
+msgstr ""
+"Nein, Objekte die mit Aktionen diesen Typs erstellt wurden können nicht "
+"als Instrument-Informationen mit einem Instrument verknüpft werden"
+
 msgid "Usable in"
 msgstr "Verwendbar in"
 
@@ -2816,6 +2925,16 @@ msgid "Allow actions of this type as schema templates in other actions"
 msgstr ""
 "Erlaube das Einbinden von Aktionen dieses Typs als Schema-Vorlage in "
 "anderen Aktionen"
+
+msgid "Enable linking objects created with actions of this type to project groups"
+msgstr ""
+"Verknüpfen mit Projektgruppen für Objekte aktivieren, die mit Aktionen "
+"dieses Typs erstellt wurden"
+
+msgid "Enable linking objects created with actions of this type to instruments"
+msgstr ""
+"Verknüpfen mit Instrumenten für Objekte aktivieren, die mit Aktionen "
+"dieses Typs erstellt wurden"
 
 msgid "Nothing selected"
 msgstr "Nichts ausgewählt"
@@ -2931,6 +3050,9 @@ msgstr "Bitte geben Sie gültige Einheiten ein"
 
 msgid "Schema Template input must not be empty"
 msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
+
+msgid "Please enter a number between 0 and 15."
+msgstr "Bitte geben Sie eine Zahl zwischen 0 und 15 ein."
 
 #, python-format
 msgid ""
@@ -3063,6 +3185,9 @@ msgstr "Text (Auswahl)"
 msgid "Boolean"
 msgstr "Wahrheitswert"
 
+msgid "Time Series"
+msgstr "Zeitreihe"
+
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
 
@@ -3120,6 +3245,12 @@ msgstr "Einheiten"
 
 msgid "Standard magnitude in base units."
 msgstr "Standardwert in Basiseinheiten."
+
+msgid "Number of decimal digits to display."
+msgstr "Anzahl der anzuzeigenden Nachkommastellen."
+
+msgid "Decimal Digits"
+msgstr "Nachkommastellen"
 
 msgid "Schema Editor Warning"
 msgstr "Schema Editor Warnung"
@@ -3393,8 +3524,35 @@ msgstr "Gruppen-Kategorien verwalten"
 msgid "This instrument has been hidden from instrument lists."
 msgstr "Dieses Instrument wurde aus Instrumentlisten versteckt."
 
+msgid "Information"
+msgstr "Informationen"
+
 msgid "Edit Instrument"
 msgstr "Instrument bearbeiten"
+
+msgid "Unlink Object"
+msgstr "Objektverknüpfung trennen"
+
+msgid "Are you certain you want to unlink the object from this instrument?"
+msgstr ""
+"Sind Sie sich sicher, dass Sie die Verknüpfung zwischen diesem Instrument"
+" und dem Objekt trennen wollen?"
+
+msgid "Link Object"
+msgstr "Objekt verknüpfen"
+
+msgid "Select an object to link this instrument to:"
+msgstr ""
+"Wählen Sie ein Objekt aus, mit dem dieses Instrument verknüpft werden "
+"soll:"
+
+#, python-format
+msgid ""
+"<a href=\"%(object_url)s\">Object #%(object_id)s</a> contains additional "
+"information for this instrument."
+msgstr ""
+"<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> enthält weitere "
+"Informationen zu diesem Instrument."
 
 msgid "Instrument Scientist Notes"
 msgstr "Notizen für Instrumentverantwortliche"
@@ -3667,6 +3825,9 @@ msgstr ""
 msgid "Hide this instrument from instrument lists"
 msgstr "Dieses Instrument nicht in Instrumentlisten anzeigen"
 
+msgid "Show the information for the linked object"
+msgstr "Zeige die Informationen des verknüpften Objekts"
+
 msgid "Instrument Scientists:"
 msgstr "Instrumentverantwortliche:"
 
@@ -3805,6 +3966,15 @@ msgstr "Ja, Orte dieses Typs dürfen verantwortliche Nutzer haben"
 msgid "No, locations of this type may not have responsible users"
 msgstr "Nein, Orte dieses Typs dürfen keine verantwortlichen Nutzer haben"
 
+msgid "Enable Object Capacities"
+msgstr "Objektkapazität aktivieren"
+
+msgid "Yes, locations of this type have limited storage capacities"
+msgstr "Ja, Orte dieses Typs haben eine beschränkte Lagerkapazität"
+
+msgid "No, locations of this type can store an unlimited amount of objects"
+msgstr "Nein, an Orten dieses Typs können unbegrenzt Objekte gelagert werden"
+
 msgid "Show Location Log"
 msgstr "Zeige Orts-Log"
 
@@ -3838,6 +4008,9 @@ msgstr "Instrumente dürfen Orten dieses Typs zugewiesen werden"
 msgid "Locations of this type may have responsible users"
 msgstr "Orte dieses Typs dürfen verantwortliche Nutzer haben"
 
+msgid "Locations of this type have a limited storage capacity"
+msgstr "Orte dieses Typs haben eine beschränkte Lagerkapazität"
+
 msgid "Show a log for locations of this type"
 msgstr "Zeige ein Log für Orte dieses Typs"
 
@@ -3867,6 +4040,12 @@ msgstr "Unter-Orte"
 #, python-format
 msgid "Created on <a href=\"%(component_url)s\">%(component_name)s</a>"
 msgstr "Erstellt auf <a href=\"%(component_url)s\">%(component_name)s</a>"
+
+msgid "Capacity"
+msgstr "Kapazität"
+
+msgid "No storage capacity has been configured for this location."
+msgstr "Für diesen Ort wurde keine Lagerkapazität konfiguriert."
 
 msgid "… at this location"
 msgstr "… an diesem Ort"
@@ -4014,6 +4193,15 @@ msgstr "Eltern-Ort"
 
 msgid "The previous parent location may not have any sub-locations."
 msgstr "Der bisherige Eltern-Ort darf keine Unter-Orte haben."
+
+msgid "Storage Capacities"
+msgstr "Lagerkapazitäten"
+
+msgid "Unlimited"
+msgstr "Unbegrenzt"
+
+msgid "Limited"
+msgstr "Begrenzt"
 
 msgid "Responsible Users"
 msgstr "Verantwortliche Nutzer"
@@ -4223,15 +4411,6 @@ msgstr "Kommentare"
 msgid "Special Groups"
 msgstr "Sondergruppen"
 
-msgid "Read"
-msgstr "Lesen"
-
-msgid "Write"
-msgstr "Schreiben"
-
-msgid "Grant"
-msgstr "Rechtevergabe"
-
 msgid "Administrators"
 msgstr "Administratoren"
 
@@ -4311,11 +4490,52 @@ msgstr "Versionen"
 msgid "You have to select at least one object."
 msgstr "Sie müssen mindestens ein Objekt auswählen."
 
+msgid "You do not have write permissions for at least one object."
+msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+
 msgid "You have to select a location or a responsible user."
 msgstr "Bitte wählen Sie einen Ort oder einen verantwortlichen Nutzer aus."
 
-msgid "You do not have write permissions for at least one object."
-msgstr "Sie haben keine Rechtevergabe-Berechtigungen für dieses Objekt."
+msgid "You have unallowed values in the red marked fields."
+msgstr "Sie haben nicht erlaubte Werte in die rot markierten Felder eingetragen."
+
+msgid "You have to select a target type."
+msgstr "Sie müssen einen Zieltypen auswählen."
+
+msgid "You have to select a group."
+msgstr "Sie müssen eine Gruppe auswählen."
+
+msgid "You have to select a project group."
+msgstr "Sie müssen eine Projektgruppe auswählen."
+
+msgid "You have to select a user."
+msgstr "Sie müssen einen Nutzer auswählen"
+
+msgid "You have to select how you want to update the permissions."
+msgstr "Sie müssen auswählen, wie Sie die Berechtigungen verändern wollen."
+
+msgid "You have to select a permission."
+msgstr "Sie müssen eine Berechtigung auswählen."
+
+msgid "You have selected write/grant permissions for a special group."
+msgstr ""
+"Sie haben Schreib/Rechtevergabe-Berechtigungen für eine Sondergruppe "
+"ausgewählt."
+
+msgid "Select a Paper Format"
+msgstr "Wählen Sie ein Papierformat aus"
+
+msgid "The quantity must be an integer value greater than 0."
+msgstr "Die Anzahl muss ein ganzzahliger Wert größer als 0 sein."
+
+msgid "The width must be a number between {minWidth} and {maxWidth}."
+msgstr "Die Breite muss eine Zahl zwischen {minWidth} und {maxWidth} sein."
+
+msgid "The minimum height must be a number between 0 and {maxHeight}."
+msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
+
+msgid "The minimum width must be a number greater or equal to 0."
+msgstr "Die Mindestbreite muss eine Zahl größer oder gleich 0 sein."
 
 msgid "Error:"
 msgstr "Fehler:"
@@ -4482,11 +4702,102 @@ msgstr "Nach Quelle filtern"
 msgid "All origins"
 msgstr "Alle Quellen"
 
+msgid "Multiple Objects"
+msgstr "Mehrere Objekte"
+
 msgid "Assign Location"
 msgstr "Ort zuweisen"
 
+msgid "Generate Labels"
+msgstr "Etiketten generieren"
+
+msgid "Use in Action"
+msgstr "In Aktion nutzen"
+
+#, python-format
+msgid "Use in %(action_type_name)s"
+msgstr "In %(action_type_name)s nutzen"
+
+msgid "Select objects for which you want to change the location."
+msgstr "Wähle Objekte aus bei denen Sie den Ort ändern wollen."
+
 msgid "Responsible User"
 msgstr "Verantwortlicher Nutzer"
+
+#, python-format
+msgid "Select objects that can be used in %(action_type_name)s Actions."
+msgstr ""
+"Wählen Sie Objekte aus, die in einer %(action_type_name)s-Aktion genutzt "
+"werden können."
+
+msgid "Favorites"
+msgstr "Favoriten"
+
+#, python-format
+msgid "See other %(action_type_name)s Actions..."
+msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
+
+msgid "Select objects for which you want to generate labels."
+msgstr "Wähle Objekte aus für die Sie Etiketten generieren wollen."
+
+msgid "Select a Label Variant:"
+msgstr "Wählen Sie eine Etikettenvariante:"
+
+msgid "Paper Size:"
+msgstr "Papierformat:"
+
+msgid "Labels per Object:"
+msgstr "Etikette pro Objekt:"
+
+msgid "Label Width:"
+msgstr "Breite:"
+
+msgid "Minimum Label Height:"
+msgstr "Mindesthöhe:"
+
+msgid "QR Code and GHS symbols side-by-side"
+msgstr "QR Code und GHS Symbole nebeneinander anzeigen"
+
+msgid "Center QR Code and GHS symbols"
+msgstr "QR Code und GHS Symbole zentrieren"
+
+msgid "Minimum Label Width:"
+msgstr "Mindestbreite:"
+
+msgid "Include QR Code"
+msgstr "QR Code einfügen"
+
+msgid "Select objects for which you want to change the permissions."
+msgstr "Wähle Sie Objekte aus bei denen Sie die Berechtigung ändern wollen."
+
+msgid "Select the target type:"
+msgstr "Wählen Sie den Zieltyp:"
+
+msgid "Select a Group:"
+msgstr "Wählen Sie eine Gruppe:"
+
+msgid "Select an User:"
+msgstr "Wählen Sie einen Nutzer:"
+
+msgid "Select a Project Group:"
+msgstr "Wählen Sie eine Projektgruppe:"
+
+msgid "Select how to edit the permissions:"
+msgstr "Wählen Sie aus, wie die Berechtigungen geändert werden sollen:"
+
+msgid ""
+"Note that after setting the maximum permission, a user can still have a "
+"higher permission, for example by a group/project group."
+msgstr ""
+"Beachten Sie, dass ein Benutzer nach setzen der maximalen Berechtigung "
+"immer noch eine höhere Berechtigung, beispielsweise durch eine "
+"Gruppe/Projektgruppe, besitzen kann."
+
+msgid "Select a Permission:"
+msgstr "Wählen Sie eine Berechtigung:"
+
+msgid "Save permissions"
+msgstr "Berechtigungen speichern"
 
 msgid "Created"
 msgstr "Erstellt"
@@ -4498,6 +4809,20 @@ msgid "You need at least write permission to change the location of an object."
 msgstr ""
 "Sie brauchen mindestens Schreib-Berechtigung um den Ort eines Objekts zu "
 "ändern."
+
+#, python-format
+msgid "The object cannot be used in a %(action_type_name)s Action."
+msgstr ""
+"Das ausgewählte Objekt kann nicht in einer %(action_type_name)s-Aktion "
+"genutzt werden."
+
+msgid "Labels are disabled for the action type of this object."
+msgstr "Etiketten sind für den Aktionstyp dieses Objekts deaktiviert."
+
+msgid "You need grant permission to change the permissions for this object."
+msgstr ""
+"Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
+"Objekts zu verändern."
 
 #, python-format
 msgid "Shared by %(component_name)s"
@@ -4692,6 +5017,16 @@ msgstr "Feld %(index)s"
 msgid "The following languages have been disabled for input:"
 msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
 
+msgid "Data (as CSV)"
+msgstr "Daten (als CSV)"
+
+msgid ""
+"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) and "
+"magnitude"
+msgstr ""
+"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) und "
+"Wert"
+
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
 " this change."
@@ -4705,8 +5040,32 @@ msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 msgid "Unsupported item type for horizontal_table style."
 msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
 
-msgid "Show more"
-msgstr "Mehr anzeigen"
+#, python-format
+msgid ""
+"Changes between version #%(previous_version_id)s and version "
+"#%(version_id)s"
+msgstr ""
+"Änderungen zwischen Version #%(previous_version_id)s und Version "
+"#%(version_id)s"
+
+#, python-format
+msgid "Version #%(version_id)s"
+msgstr "Version #%(version_id)s"
+
+msgid "Show Changes"
+msgstr "Änderungen anzeigen"
+
+#, python-format
+msgid ""
+"This page shows the changes between version #%(previous_version_id)s and "
+"version #%(version_id)s."
+msgstr ""
+"Diese Seite zeigt die Änderungen zwischen Version "
+"#%(previous_version_id)s und Version #%(version_id)s"
+
+#, python-format
+msgid "Version #%(version_id)s did not change the data of this object."
+msgstr "Version #%(version_id)s hat die Daten dieses Objekts nicht geändert."
 
 msgid "This page contains an archived version of the current object information."
 msgstr ""
@@ -4723,9 +5082,6 @@ msgid ""
 msgstr ""
 "Die stets aktuellen Informationen finden Sie <a "
 "href=\"%(latest_version_url)s\">hier</a>."
-
-msgid "Information"
-msgstr "Informationen"
 
 msgid "This object has been imported without data."
 msgstr "Dieses Objekt wurde ohne Daten importiert."
@@ -4773,22 +5129,8 @@ msgstr ""
 "Aus dieser %(current_object_name_singular)s eine neue "
 "%(new_object_name_singular)s erstellen."
 
-#, python-format
-msgid "Use in %(action_type_name)s"
-msgstr "In %(action_type_name)s nutzen"
-
-msgid "Favorites"
-msgstr "Favoriten"
-
-#, python-format
-msgid "See other %(action_type_name)s Actions..."
-msgstr "Andere %(action_type_name)s-Aktionen anzeigen..."
-
 msgid "Generate a PDF containing labels for this object."
 msgstr "Eine PDF Datei mit Etiketten für dieses Objekt generieren."
-
-msgid "Generate Labels"
-msgstr "Etiketten generieren"
 
 msgid "Show a QR code for a link to this object."
 msgstr "QR Code mit einem Link zu diesem Objekt zeigen."
@@ -4834,12 +5176,6 @@ msgstr "Notebook erstellen"
 
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
-
-msgid "Notebooks"
-msgstr "Notebooks"
-
-msgid "Other Files"
-msgstr "Andere Dateien"
 
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
@@ -4903,6 +5239,10 @@ msgid ""
 msgstr ""
 "Diese Datei wurde als Datei #%(fed_id)s in der Datenbank <a "
 "href=\"%(component_url)s\">%(component_name)s</a> erstellt"
+
+#, python-format
+msgid "Checksum (%(algorithm)s)"
+msgstr "Prüfsumme (%(algorithm)s)"
 
 msgid "History"
 msgstr "Verlauf"
@@ -4969,9 +5309,6 @@ msgstr "Link eintragen"
 msgid "Submit"
 msgstr "Absenden"
 
-msgid "Mixed label formats"
-msgstr "Gemischte Etikettenformate"
-
 #, python-format
 msgid ""
 "This will generate labels in a selection of predefined formats. To "
@@ -4983,24 +5320,6 @@ msgstr ""
 "href=\"mailto:%(contact_email)s\">kontaktieren Sie einen "
 "Administrator</a>, um neue Formate anzufragen."
 
-msgid "Paper Size:"
-msgstr "Papierformat:"
-
-msgid "DIN A4 (Portrait)"
-msgstr "DIN A4 (Hochformat)"
-
-msgid "DIN A4 (Landscape)"
-msgstr "DIN A4 (Querformat)"
-
-msgid "Letter / ANSI A (Portrait)"
-msgstr "Letter / ANSI A (Hochformat)"
-
-msgid "Letter / ANSI A (Landscape)"
-msgstr "Letter / ANSI A (Querformat)"
-
-msgid "Fixed-width labels"
-msgstr "Etiketten mit fester Breite"
-
 msgid ""
 "This will generate vertically oriented labels with a fixed width and an "
 "optional minimum height."
@@ -5008,33 +5327,12 @@ msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer festen Breite und "
 "einer optionalen Mindesthöhe erstellen."
 
-msgid "Label Width:"
-msgstr "Breite:"
-
-msgid "Minimum Label Height:"
-msgstr "Mindesthöhe:"
-
-msgid "QR Code and GHS symbols side-by-side"
-msgstr "QR Code und GHS Symbole nebeneinander anzeigen"
-
-msgid "Center QR Code and GHS symbols"
-msgstr "QR Code und GHS Symbole zentrieren"
-
-msgid "Minimal-height labels"
-msgstr "Etiketten mit minimaler Höhe"
-
 msgid ""
 "This will generate vertically oriented labels with a height as low as "
 "possible and an optional minimum width."
 msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer minimalen Höhe und "
 "einer optionalen Mindestbreite erstellen."
-
-msgid "Minimum Label Width:"
-msgstr "Mindestbreite:"
-
-msgid "Include QR Code"
-msgstr "QR Code einfügen"
 
 msgid "Object QR Code"
 msgstr "Objekt QR Code"
@@ -5120,6 +5418,12 @@ msgstr ""
 #, python-format
 msgid "%(user_ref)s edited the object."
 msgstr "%(user_ref)s hat das Objekt bearbeitet."
+
+msgid "View&nbsp;Version"
+msgstr "Version&nbsp;anzeigen"
+
+msgid "View&nbsp;Changes"
+msgstr "Änderungen&nbsp;anzeigen"
 
 #, python-format
 msgid ""
@@ -5422,9 +5726,6 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
-msgid "Show less"
-msgstr "Weniger anzeigen"
-
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
@@ -5442,6 +5743,33 @@ msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
 #, python-format
 msgid "References %(object_name)s (#%(object_id)s) in its metadata"
 msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
+msgid "Time"
+msgstr "Zeit"
+
+msgid "Value"
+msgstr "Wert"
+
+#, python-format
+msgid "between %(start_time)s and %(end_time)s on %(date)s"
+msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
+
+#, python-format
+msgid "between %(start_datetime)s and %(end_datetime)s"
+msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
+
+#, python-format
+msgid "at %(datetime)s"
+msgstr "am %(datetime)s"
+
+msgid "View chart"
+msgstr "Graph anzeigen"
+
+msgid "View table"
+msgstr "Tabelle anzeigen"
+
+msgid "Download data"
+msgstr "Daten herunterladen"
 
 msgid "Address"
 msgstr "Adresse"
@@ -5651,15 +5979,6 @@ msgstr "Exportiert&nbsp;am %(export_date)s"
 msgid "File"
 msgstr "Datei"
 
-msgid "None"
-msgstr "Keine"
-
-msgid "Anonymous Users"
-msgstr "Anonyme Nutzer"
-
-msgid "All Signed-In Users"
-msgstr "Alle angemeldeten Nutzer"
-
 msgid "Unnamed Basic Group"
 msgstr "Unbenannte einfache Gruppe"
 
@@ -5693,12 +6012,6 @@ msgstr "Kind-Projektgruppe hinzufügen"
 
 msgid "Remove Child Project Group"
 msgstr "Kind-Projektgruppe entfernen"
-
-msgid "Link Object"
-msgstr "Objekt verknüpfen"
-
-msgid "Unlink Object"
-msgstr "Objektverknüpfung trennen"
 
 msgid "Leave Project Group"
 msgstr "Projektgruppe verlassen"
@@ -5916,6 +6229,9 @@ msgstr ""
 "Ungültiges Gruppen-Einladungstoken. Bitte fragen Sie nach einer neuen "
 "Einladung."
 
+msgid "Unknown basic group invitation. Please request a new invitation."
+msgstr "Unbekannte Gruppen-Einladung. Bitte fragen Sie nach einer neuen Einladung."
+
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."
 
@@ -6120,6 +6436,14 @@ msgid ""
 "%(dimensionality1)s -> %(dimensionality2)s"
 msgstr ""
 "Konnte physikalische Größe '%(title)s' nicht von Dimensionalität "
+"%(dimensionality1)s nach %(dimensionality2)s konvertieren."
+
+#, python-format
+msgid ""
+"Unable to convert timeseries '%(title)s' to different dimensionality: "
+"%(dimensionality1)s -> %(dimensionality2)s"
+msgstr ""
+"Konnte Zeitreihe '%(title)s' nicht von Dimensionalität "
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
 
 #, python-format

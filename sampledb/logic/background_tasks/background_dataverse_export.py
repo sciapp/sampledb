@@ -18,7 +18,7 @@ def post_dataverse_export_task(
     property_whitelist: typing.Optional[typing.Sequence[typing.List[typing.Union[str, int]]]],
     file_id_whitelist: typing.Sequence[int] = (),
     tag_whitelist: typing.Sequence[str] = ()
-) -> typing.Tuple[BackgroundTaskStatus | typing.Tuple[bool, dict[str, typing.Any]], typing.Optional[BackgroundTask]]:
+) -> typing.Tuple[typing.Union[BackgroundTaskStatus, typing.Tuple[bool, dict[str, typing.Any]]], typing.Optional[BackgroundTask]]:
     data = {
         'object_id': object_id,
         'user_id': user_id,
@@ -115,13 +115,12 @@ def handle_dataverse_export_task(
                 )
 
             expiration_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
-            row_update = {
+            BackgroundTask.query.filter_by(id=task_id).update({
                 "result": {
                     f"{result_key}": url_or_error
                 },
                 "expiration_date": expiration_date
-            }
-            BackgroundTask.query.filter_by(id=task_id).update(row_update)
+            })
             db.session.commit()
             return success, None
         else:

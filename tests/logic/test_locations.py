@@ -54,6 +54,23 @@ def object(user: User, action: Action):
     return objects.create_object(user_id=user.id, action_id=action.id, data=data)
 
 
+@pytest.fixture
+def object2(user: User, action: Action):
+    data = {'name': {'_type': 'text', 'text': 'Object 2'}}
+    return objects.create_object(user_id=user.id, action_id=action.id, data=data)
+
+
+@pytest.fixture
+def location(user: User):
+    return locations.create_location(
+        name={'en': "Example Location"},
+        description={'en': "This is an example location"},
+        parent_location_id=None,
+        user_id=user.id,
+        type_id=locations.LocationType.LOCATION
+    )
+
+
 def test_create_location(user: User):
     assert len(locations.get_locations()) == 0
     locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
@@ -115,15 +132,15 @@ def test_create_location_fed(user, component):
 
 
 def test_create_location_invalid_parameters(user, component):
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location(None, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, None, None, user.id, locations.LocationType.LOCATION)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, None, locations.LocationType.LOCATION)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION, fed_id=1, component_id=None)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         locations.create_location({'en': "Example Location"}, {'en': "This is an example location"}, None, user.id, locations.LocationType.LOCATION, fed_id=None, component_id=component.id)
 
 
@@ -597,6 +614,7 @@ def test_create_location_type():
         enable_object_assignments=True,
         enable_responsible_users=True,
         enable_instruments=False,
+        enable_capacities=False,
         show_location_log=True,
     ).id
     location_type = sampledb.models.locations.LocationType.query.filter_by(id=location_type_id).first()
@@ -610,6 +628,7 @@ def test_create_location_type():
     assert location_type.enable_object_assignments
     assert location_type.enable_responsible_users
     assert not location_type.enable_instruments
+    assert not location_type.enable_capacities
     assert location_type.show_location_log
 
 
@@ -625,6 +644,7 @@ def test_update_location_type():
         enable_object_assignments=True,
         enable_responsible_users=True,
         enable_instruments=False,
+        enable_capacities=False,
         show_location_log=True,
     )
     location_type = sampledb.models.locations.LocationType.query.filter_by(id=locations.LocationType.LOCATION).first()
@@ -638,6 +658,7 @@ def test_update_location_type():
     assert location_type.enable_object_assignments
     assert location_type.enable_responsible_users
     assert not location_type.enable_instruments
+    assert not location_type.enable_capacities
 
 
 def test_get_location_type(component):
@@ -651,6 +672,7 @@ def test_get_location_type(component):
         enable_object_assignments=True,
         enable_responsible_users=True,
         enable_instruments=True,
+        enable_capacities=False,
         show_location_log=True,
     ).id
     location_type = locations.get_location_type(location_type_id=location_type_id)
@@ -675,6 +697,7 @@ def test_get_location_type(component):
         enable_object_assignments=False,
         enable_responsible_users=False,
         enable_instruments=False,
+        enable_capacities=False,
         show_location_log=True,
         fed_id=1,
         component_id=component.id
@@ -703,6 +726,7 @@ def test_get_location_types():
         enable_object_assignments=True,
         enable_responsible_users=True,
         enable_instruments=True,
+        enable_capacities=False,
         show_location_log=True,
     ).id
 
@@ -788,3 +812,99 @@ def test_get_current_object_location_assignments(user: User, object: Object):
         object1.id: object1_assignment,
         object2.id: object2_assignment
     }
+
+
+def test_get_and_set_location_capacities(user, location):
+    with pytest.raises(errors.LocationDoesNotExistError):
+        locations.get_location_capacities(location.id + 1)
+    with pytest.raises(errors.LocationDoesNotExistError):
+        locations.set_location_capacity(location.id + 1, sampledb.models.ActionType.SAMPLE_CREATION, 1)
+    with pytest.raises(errors.ActionTypeDoesNotExistError):
+        locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION - 1000, 1)
+    with pytest.raises(errors.LocationDoesNotExistError):
+        locations.clear_location_capacities(location.id + 1)
+    location_type = locations.get_location_type(locations.LocationType.LOCATION)
+    locations.update_location_type(
+        location_type_id=locations.LocationType.LOCATION,
+        name=location_type.name,
+        location_name_singular=location_type.location_name_singular,
+        location_name_plural=location_type.location_name_plural,
+        admin_only=location_type.admin_only,
+        enable_parent_location=location_type.enable_parent_location,
+        enable_sub_locations=location_type.enable_sub_locations,
+        enable_object_assignments=location_type.enable_object_assignments,
+        enable_responsible_users=location_type.enable_responsible_users,
+        enable_instruments=location_type.enable_instruments,
+        enable_capacities=True,
+        show_location_log=location_type.show_location_log
+    )
+    assert locations.get_location_capacities(location.id) == {}
+    locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION, 5)
+    assert locations.get_location_capacities(location.id) == {sampledb.models.ActionType.SAMPLE_CREATION: 5}
+    locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION, 15)
+    assert locations.get_location_capacities(location.id) == {sampledb.models.ActionType.SAMPLE_CREATION: 15}
+    locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION, None)
+    assert locations.get_location_capacities(location.id) == {sampledb.models.ActionType.SAMPLE_CREATION: None}
+    locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION, 0)
+    assert locations.get_location_capacities(location.id) == {}
+    locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION, 1)
+    locations.set_location_capacity(location.id, sampledb.models.ActionType.MEASUREMENT, None)
+    assert locations.get_location_capacities(location.id) == {
+        sampledb.models.ActionType.SAMPLE_CREATION: 1,
+        sampledb.models.ActionType.MEASUREMENT: None
+    }
+    locations.clear_location_capacities(location.id)
+    assert locations.get_location_capacities(location.id) == {}
+
+
+def test_get_assigned_object_count_by_action_types(user, object, object2, location):
+    with pytest.raises(errors.LocationDoesNotExistError):
+        locations.get_assigned_object_count_by_action_types(location.id + 1)
+    assert locations.get_assigned_object_count_by_action_types(location.id) == {}
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, None)
+    assert locations.get_assigned_object_count_by_action_types(location.id) == {
+        sampledb.models.ActionType.SAMPLE_CREATION: 1
+    }
+    sampledb.logic.locations.assign_location_to_object(object2.id, location.id, None, user.id, None)
+    assert locations.get_assigned_object_count_by_action_types(location.id) == {
+        sampledb.models.ActionType.SAMPLE_CREATION: 2
+    }
+    assert locations.get_assigned_object_count_by_action_types(location.id, ignored_object_ids=[object.id]) == {
+        sampledb.models.ActionType.SAMPLE_CREATION: 1
+    }
+    sampledb.logic.locations.assign_location_to_object(object.id, None, user.id, user.id, None)
+    assert locations.get_assigned_object_count_by_action_types(location.id) == {
+        sampledb.models.ActionType.SAMPLE_CREATION: 1
+    }
+    assert locations.get_assigned_object_count_by_action_types(location.id, ignored_object_ids=[object2.id]) == {}
+    sampledb.logic.locations.assign_location_to_object(object2.id, None, user.id, user.id, None)
+    assert locations.get_assigned_object_count_by_action_types(location.id) == {}
+
+
+def test_assigned_object_to_location_with_capacity(user, object, location):
+    location_type = locations.get_location_type(locations.LocationType.LOCATION)
+    locations.update_location_type(
+        location_type_id=locations.LocationType.LOCATION,
+        name=location_type.name,
+        location_name_singular=location_type.location_name_singular,
+        location_name_plural=location_type.location_name_plural,
+        admin_only=location_type.admin_only,
+        enable_parent_location=location_type.enable_parent_location,
+        enable_sub_locations=location_type.enable_sub_locations,
+        enable_object_assignments=location_type.enable_object_assignments,
+        enable_responsible_users=location_type.enable_responsible_users,
+        enable_instruments=location_type.enable_instruments,
+        enable_capacities=True,
+        show_location_log=location_type.show_location_log
+    )
+    assert sampledb.logic.locations.get_current_object_location_assignment(object.id) is None
+    with pytest.raises(errors.ExceedingLocationCapacityError):
+        sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, None)
+    assert sampledb.logic.locations.get_current_object_location_assignment(object.id) is None
+    sampledb.logic.locations.set_location_capacity(location.id, sampledb.models.ActionType.SAMPLE_CREATION, 1)
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, None, user.id, None)
+    assert sampledb.logic.locations.get_current_object_location_assignment(object.id).location_id == location.id
+    assert sampledb.logic.locations.get_current_object_location_assignment(object.id).responsible_user_id is None
+    sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, None)
+    assert sampledb.logic.locations.get_current_object_location_assignment(object.id).location_id == location.id
+    assert sampledb.logic.locations.get_current_object_location_assignment(object.id).responsible_user_id == user.id

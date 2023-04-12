@@ -64,7 +64,7 @@ def parse_instrument(
     uuid = _get_uuid(instrument_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local instrument {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local instrument {fed_id}')
     result = InstrumentData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -106,6 +106,8 @@ def import_instrument(
         component: Component
 ) -> Instrument:
     component_id = _get_or_create_component_id(instrument_data['component_uuid'])
+    # component_id will only be None if this would import a local instrument
+    assert component_id is not None
     try:
         mutable_instrument = get_mutable_instrument(instrument_data['fed_id'], component_id)
 
@@ -236,7 +238,7 @@ def shared_instrument_preprocessor(
         translations_data = {}
     return SharedInstrumentData(
         instrument_id=instrument.id if instrument.fed_id is None else instrument.fed_id,
-        component_uuid=flask.current_app.config['FEDERATION_UUID'] if instrument.component_id is None else instrument.component.uuid,
+        component_uuid=flask.current_app.config['FEDERATION_UUID'] if instrument.component is None else instrument.component.uuid,
         description_is_markdown=instrument.description_is_markdown,
         notes_is_markdown=instrument.notes_is_markdown,
         is_hidden=instrument.is_hidden,

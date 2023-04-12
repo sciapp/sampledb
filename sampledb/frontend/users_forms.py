@@ -42,7 +42,7 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField('Confirm password', validators=[InputRequired()])
     submit = SubmitField('Register')
 
-    def validate_name(self, field):
+    def validate_name(self, field: StringField) -> None:
         if flask.current_app.config['ENFORCE_SPLIT_NAMES']:
             name = field.data
             if ', ' not in name[1:-1]:

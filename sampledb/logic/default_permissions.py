@@ -30,7 +30,7 @@ def get_default_permissions_for_users(creator_id: int) -> typing.Dict[int, Permi
 def set_default_permissions_for_user(creator_id: int, user_id: int, permissions: Permissions) -> None:
     if user_id == creator_id:
         if permissions == Permissions.GRANT:
-            return
+            return None
         else:
             raise InvalidDefaultPermissionsError("creator will always get GRANT permissions")
     return default_permissions.set_permissions_for_user(

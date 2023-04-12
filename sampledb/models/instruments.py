@@ -5,7 +5,16 @@
 
 import typing
 
+from sqlalchemy.orm import relationship, Mapped, Query
+
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .components import Component
+    from .locations import Location
+    from .instrument_translation import InstrumentTranslation
+    from .users import User
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -17,27 +26,32 @@ instrument_user_association_table = db.Table(
 )
 
 
-class Instrument(db.Model):  # type: ignore
+class Instrument(Model):
     __tablename__ = 'instruments'
     __table_args__ = (
         db.UniqueConstraint('fed_id', 'component_id', name='instruments_fed_id_component_id_key'),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
-    responsible_users = db.relationship("User", secondary=instrument_user_association_table, order_by="User.name", lazy='selectin')
-    users_can_create_log_entries = db.Column(db.Boolean, nullable=False, default=False)
-    users_can_view_log_entries = db.Column(db.Boolean, nullable=False, default=False)
-    create_log_entry_default = db.Column(db.Boolean, nullable=False, default=False)
-    is_hidden = db.Column(db.Boolean, nullable=False, default=False)
-    notes_is_markdown = db.Column(db.Boolean, nullable=True, default=False)
-    description_is_markdown = db.Column(db.Boolean, nullable=True, default=False)
-    short_description_is_markdown = db.Column(db.Boolean, nullable=False, default=False)
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
-    translations = db.relationship('InstrumentTranslation', lazy='selectin')
-    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
-    location = db.relationship('Location')
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    responsible_users: Mapped[typing.List['User']] = relationship("User", secondary=instrument_user_association_table, order_by="User.name", lazy='selectin')
+    users_can_create_log_entries: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    users_can_view_log_entries: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    create_log_entry_default: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    notes_is_markdown: Mapped[typing.Optional[bool]] = db.Column(db.Boolean, nullable=True, default=False)
+    description_is_markdown: Mapped[typing.Optional[bool]] = db.Column(db.Boolean, nullable=True, default=False)
+    short_description_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    translations: Mapped[typing.List['InstrumentTranslation']] = relationship('InstrumentTranslation', lazy='selectin')
+    location_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    location: Mapped[typing.Optional['Location']] = relationship('Location')
+    object_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('objects_current.object_id'), nullable=True)
+    show_linked_object_data: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Instrument"]]
 
     def __init__(
             self,
@@ -49,17 +63,21 @@ class Instrument(db.Model):  # type: ignore
             create_log_entry_default: bool = False,
             is_hidden: bool = False,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            show_linked_object_data: bool = True
     ) -> None:
-        self.description_is_markdown = description_is_markdown
-        self.short_description_is_markdown = short_description_is_markdown
-        self.notes_is_markdown = notes_is_markdown
-        self.users_can_create_log_entries = users_can_create_log_entries
-        self.users_can_view_log_entries = users_can_view_log_entries
-        self.create_log_entry_default = create_log_entry_default
-        self.is_hidden = is_hidden
-        self.fed_id = fed_id
-        self.component_id = component_id
+        super().__init__(
+            description_is_markdown=description_is_markdown,
+            short_description_is_markdown=short_description_is_markdown,
+            notes_is_markdown=notes_is_markdown,
+            users_can_create_log_entries=users_can_create_log_entries,
+            users_can_view_log_entries=users_can_view_log_entries,
+            create_log_entry_default=create_log_entry_default,
+            is_hidden=is_hidden,
+            fed_id=fed_id,
+            component_id=component_id,
+            show_linked_object_data=show_linked_object_data,
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, Instrument):
@@ -79,7 +97,7 @@ class Instrument(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id})>'
 
     @property
     def name(self) -> typing.Dict[str, str]:

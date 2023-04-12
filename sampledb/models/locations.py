@@ -6,11 +6,17 @@
 import datetime
 import typing
 
-from .. import db
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import relationship, Mapped, Query
 
+from .. import db
 from .objects import Objects
 from .users import User
-import sqlalchemy.dialects.postgresql as postgresql
+from .actions import ActionType
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .components import Component
 
 
 location_user_association_table = db.Table(
@@ -21,7 +27,7 @@ location_user_association_table = db.Table(
 )
 
 
-class LocationType(db.Model):  # type: ignore
+class LocationType(Model):
     __tablename__ = 'location_types'
     __table_args__ = (
         db.CheckConstraint(
@@ -34,22 +40,26 @@ class LocationType(db.Model):  # type: ignore
     # default location type IDs
     # offset to -100 to allow later addition of new default location types
     # see: migrations/location_types_create_default_location_types.py
-    LOCATION = -100 + 1
+    LOCATION: int = -100 + 1
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(postgresql.JSON, nullable=True)
-    location_name_singular = db.Column(postgresql.JSON, nullable=True)
-    location_name_plural = db.Column(postgresql.JSON, nullable=True)
-    admin_only = db.Column(db.Boolean, nullable=False)
-    enable_parent_location = db.Column(db.Boolean, nullable=False)
-    enable_sub_locations = db.Column(db.Boolean, nullable=False)
-    enable_object_assignments = db.Column(db.Boolean, nullable=False)
-    enable_responsible_users = db.Column(db.Boolean, nullable=False)
-    enable_instruments = db.Column(db.Boolean, nullable=False)
-    show_location_log = db.Column(db.Boolean, nullable=False)
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    name: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
+    location_name_singular: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
+    location_name_plural: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
+    admin_only: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    enable_parent_location: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    enable_sub_locations: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    enable_object_assignments: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    enable_responsible_users: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    enable_instruments: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    show_location_log: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    enable_capacities: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["LocationType"]]
 
     def __init__(
             self,
@@ -62,28 +72,32 @@ class LocationType(db.Model):  # type: ignore
             enable_object_assignments: bool,
             enable_responsible_users: bool,
             enable_instruments: bool,
+            enable_capacities: bool,
             show_location_log: bool,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
     ) -> None:
-        self.name = name
-        self.location_name_singular = location_name_singular
-        self.location_name_plural = location_name_plural
-        self.admin_only = admin_only
-        self.enable_parent_location = enable_parent_location
-        self.enable_sub_locations = enable_sub_locations
-        self.enable_object_assignments = enable_object_assignments
-        self.enable_responsible_users = enable_responsible_users
-        self.enable_instruments = enable_instruments
-        self.show_location_log = show_location_log
-        self.fed_id = fed_id
-        self.component_id = component_id
+        super().__init__(
+            name=name,
+            location_name_singular=location_name_singular,
+            location_name_plural=location_name_plural,
+            admin_only=admin_only,
+            enable_parent_location=enable_parent_location,
+            enable_sub_locations=enable_sub_locations,
+            enable_object_assignments=enable_object_assignments,
+            enable_responsible_users=enable_responsible_users,
+            enable_instruments=enable_instruments,
+            show_location_log=show_location_log,
+            fed_id=fed_id,
+            component_id=component_id,
+            enable_capacities=enable_capacities
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name="{1.name}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name="{self.name}")>'
 
 
-class Location(db.Model):  # type: ignore
+class Location(Model):
     __tablename__ = 'locations'
     __table_args__ = (
         db.CheckConstraint(
@@ -93,17 +107,20 @@ class Location(db.Model):  # type: ignore
         db.UniqueConstraint('fed_id', 'component_id', name='locations_fed_id_component_id_key'),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(postgresql.JSON, nullable=True)
-    description = db.Column(postgresql.JSON, nullable=True)
-    parent_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
-    type_id = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
-    type = db.relationship('LocationType')
-    responsible_users = db.relationship("User", secondary=location_user_association_table, order_by="User.name")
-    is_hidden = db.Column(db.Boolean, default=False, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    name: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
+    description: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
+    parent_location_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
+    type: Mapped[LocationType] = relationship('LocationType')
+    responsible_users: Mapped[typing.List['User']] = relationship("User", secondary=location_user_association_table, order_by="User.name")
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Location"]]
 
     def __init__(
             self,
@@ -112,20 +129,23 @@ class Location(db.Model):  # type: ignore
             parent_location_id: typing.Optional[int] = None,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
-            type_id: typing.Optional[int] = None
+            *,
+            type_id: int
     ) -> None:
-        self.name = name
-        self.description = description
-        self.parent_location_id = parent_location_id
-        self.fed_id = fed_id
-        self.component_id = component_id
-        self.type_id = type_id
+        super().__init__(
+            name=name,
+            description=description,
+            parent_location_id=parent_location_id,
+            fed_id=fed_id,
+            component_id=component_id,
+            type_id=type_id
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name="{1.name}", description="{1.description}", parent_location_id={1.parent_location_id})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name="{self.name}", description="{self.description}", parent_location_id={self.parent_location_id})>'
 
 
-class ObjectLocationAssignment(db.Model):  # type: ignore
+class ObjectLocationAssignment(Model):
     __tablename__ = 'object_location_assignments'
     __table_args__ = (
         db.CheckConstraint(
@@ -139,19 +159,22 @@ class ObjectLocationAssignment(db.Model):  # type: ignore
         db.UniqueConstraint('fed_id', 'component_id', name='object_location_assignments_fed_id_component_id_key'),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
-    location_id = db.Column(db.Integer, db.ForeignKey(Location.id), nullable=True)
-    responsible_user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
-    description = db.Column(postgresql.JSON, nullable=True)
-    utc_datetime = db.Column(db.DateTime, nullable=True)
-    confirmed = db.Column(db.Boolean, nullable=False, default=False)
-    location = db.relationship('Location')
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
-    declined = db.Column(db.Boolean, nullable=False, default=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    location_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey(Location.id), nullable=True)
+    responsible_user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
+    user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
+    description: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
+    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    confirmed: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    location: Mapped[typing.Optional['Location']] = relationship('Location')
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    declined: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ObjectLocationAssignment"]]
 
     def __init__(
             self,
@@ -166,18 +189,29 @@ class ObjectLocationAssignment(db.Model):  # type: ignore
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
     ) -> None:
-        self.object_id = object_id
-        self.location_id = location_id
-        self.user_id = user_id
-        self.description = description
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
-        self.responsible_user_id = responsible_user_id
-        self.confirmed = confirmed
-        self.declined = declined
-        self.fed_id = fed_id
-        self.component_id = component_id
+        super().__init__(
+            object_id=object_id,
+            location_id=location_id,
+            responsible_user_id=responsible_user_id,
+            user_id=user_id,
+            description=description,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            confirmed=confirmed,
+            fed_id=fed_id,
+            component_id=component_id,
+            declined=declined
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, object_id={1.object_id}, location_id={1.location_id}, user_id={1.user_id}, responsible_user_id={1.responsible_user_id}, utc_datetime={1.utc_datetime}, description="{1.description}", confirmed={1.confirmed}, declined={1.declined})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, object_id={self.object_id}, location_id={self.location_id}, user_id={self.user_id}, responsible_user_id={self.responsible_user_id}, utc_datetime={self.utc_datetime}, description="{self.description}", confirmed={self.confirmed}, declined={self.declined})>'
+
+
+class LocationCapacity(Model):
+    __tablename__ = 'location_capacities'
+
+    location_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Location.id), primary_key=True)
+    action_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(ActionType.id), primary_key=True)
+    capacity: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["LocationCapacity"]]

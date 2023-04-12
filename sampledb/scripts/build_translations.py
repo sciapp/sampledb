@@ -9,6 +9,7 @@ each individual test.
 
 Usage: sampledb build_translations
 """
+import sys
 import typing
 
 import sampledb
@@ -17,6 +18,6 @@ import sampledb
 def main(arguments: typing.List[str]) -> None:
     if arguments:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     sampledb.build_translations(sampledb.config.PYBABEL_PATH)
     print("Success: the translations have been built")

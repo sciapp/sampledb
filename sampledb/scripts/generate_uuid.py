@@ -5,6 +5,7 @@ Script for generating an UUID to be used as database identifier in a federation.
 Usage: sampledb generate_uuid
 """
 
+import sys
 import typing
 import uuid
 
@@ -12,5 +13,5 @@ import uuid
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     print(uuid.uuid4())

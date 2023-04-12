@@ -7,7 +7,7 @@ import pytest
 
 from sampledb import db, models
 from sampledb.logic import fed_logs, errors
-from sampledb.logic.actions import create_action_type
+from sampledb.logic.action_types import create_action_type
 from sampledb.logic.comments import create_comment, get_comment
 from sampledb.logic.components import add_component
 from sampledb.logic.files import create_url_file
@@ -169,6 +169,7 @@ def location_type():
         enable_object_assignments=True,
         enable_responsible_users=True,
         enable_instruments=False,
+        enable_capacities=False,
         show_location_log=True
     )
 
@@ -218,14 +219,59 @@ def locations(user, location_type):
 
 @pytest.fixture
 def action_type():
-    action_type = create_action_type(False, True, True, True, True, True, True, True, True, True, True, False, False)
+    action_type = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        enable_instrument_link=False,
+        disable_create_objects=False,
+        is_template=False
+    )
     return action_type
 
 
 @pytest.fixture
 def action_types():
-    action_type1 = create_action_type(False, True, True, True, True, True, True, True, True, True, True, False, False)
-    action_type2 = create_action_type(False, True, True, True, True, True, True, True, True, True, True, False, False)
+    action_type1 = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        enable_instrument_link=False,
+        disable_create_objects=False,
+        is_template=False
+    )
+    action_type2 = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        enable_instrument_link=False,
+        disable_create_objects=False,
+        is_template=False
+    )
     return action_type1, action_type2
 
 

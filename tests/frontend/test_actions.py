@@ -83,6 +83,9 @@ def test_edit_action_using_template(flask_server, user: User):
 
     # simulate a template action not existing, e.g. if action was imported
     # via federation but the template action was not
+    mutable_template_action_translations = sampledb.models.ActionTranslation.query.filter_by(action_id=template_action.id).all()
+    for mutable_template_action_translation in mutable_template_action_translations:
+        sampledb.db.session.delete(mutable_template_action_translation)
     mutable_template_action = sampledb.models.Action.query.filter_by(id=template_action.id).first()
     sampledb.db.session.delete(mutable_template_action)
     sampledb.db.session.commit()

@@ -35,7 +35,7 @@ class Component:
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
         import_token_available = False
-        if db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar():  # type: ignore
+        if db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar():
             import_token_available = True
         return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp, import_token_available=import_token_available)
 
@@ -44,7 +44,7 @@ class Component:
             if self.address is not None:
                 regex = re.compile(r"https?://(www\.)?")    # should usually be https
                 return regex.sub('', self.address).strip().strip('/')
-            return _('Database #%(id)s', id=self.id)  # type: ignore
+            return _('Database #%(id)s', id=self.id)
         else:
             return self.name
 
@@ -53,6 +53,8 @@ class Component:
             last_sync_timestamp: datetime.datetime
     ) -> None:
         component = components.Component.query.filter_by(id=self.id).first()
+        if component is None:
+            raise errors.ComponentDoesNotExistError()
         component.last_sync_timestamp = last_sync_timestamp
         db.session.add(component)
         db.session.commit()
@@ -149,7 +151,7 @@ def check_component_exists(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    if not db.session.query(db.exists().where(components.Component.id == component_id)).scalar():  # type: ignore
+    if not db.session.query(db.exists().where(components.Component.id == component_id)).scalar():
         raise errors.ComponentDoesNotExistError()
 
 
@@ -213,7 +215,7 @@ def get_component_id_by_uuid(
     component = components.Component.query.filter_by(uuid=component_uuid).first()
     if component is None:
         return None
-    return typing.cast(int, component.id)
+    return component.id
 
 
 def update_component(component_id: int, name: typing.Optional[str] = None, address: typing.Optional[str] = None, description: typing.Optional[str] = '') -> None:
@@ -249,7 +251,7 @@ def update_component(component_id: int, name: typing.Optional[str] = None, addre
 
     component.address = address
     component.name = name
-    component.description = description
+    component.description = description or ''
     db.session.add(component)
     db.session.commit()
 
@@ -265,7 +267,7 @@ def get_object_ids_for_component_id(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    object_ids = db.session.query(  # type: ignore
+    object_ids = db.session.query(
         objects.Objects._current_table.c.object_id
     ).filter(
         objects.Objects._current_table.c.component_id == component_id
@@ -285,7 +287,7 @@ def get_object_ids_for_components() -> typing.Set[int]:
 
     :return: the set of object IDs
     """
-    object_ids = db.session.query(  # type: ignore
+    object_ids = db.session.query(
         objects.Objects._current_table.c.object_id
     ).filter(
         db.not_(objects.Objects._current_table.c.component_id.is_(db.null()))
@@ -302,7 +304,7 @@ def get_local_object_ids() -> typing.Set[int]:
 
     :return: the set of object IDs
     """
-    object_ids = db.session.query(  # type: ignore
+    object_ids = db.session.query(
         objects.Objects._current_table.c.object_id
     ).filter(
         objects.Objects._current_table.c.component_id.is_(db.null())

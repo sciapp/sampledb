@@ -13,12 +13,12 @@ the Markdown content that it was uploaded for.
 """
 
 import binascii
+import datetime
 import os
 import typing
 
-from bs4 import BeautifulSoup
-import datetime
 import flask
+from bs4 import BeautifulSoup
 
 from .components import check_component_exists
 from .users import check_user_exists
@@ -37,6 +37,7 @@ def store_temporary_markdown_image(content: bytes, image_file_extension: str, us
     :param user_id: the ID of the user who uploaded the file
     :return: the generated file name to identify the image
     :raise errors.UserDoesNotExistError: if no user with the given ID exists
+    :raise RuntimeError: if the function fails to generate a file name
     """
     # ensure the user exists
     check_user_exists(user_id)
@@ -78,7 +79,7 @@ def get_markdown_image(file_name: str, user_id: typing.Optional[int], component_
         return None
     if image.user_id != user_id and not image.permanent:
         return None
-    return typing.cast(bytes, image.content)
+    return image.content
 
 
 def mark_referenced_markdown_images_as_permanent(html_content: str) -> None:

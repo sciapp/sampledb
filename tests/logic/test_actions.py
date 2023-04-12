@@ -5,7 +5,7 @@
 
 import pytest
 import sampledb
-from sampledb.logic import actions, errors, instruments, components
+from sampledb.logic import actions, errors, instruments, components, action_types
 
 SCHEMA = {
     'title': 'Example Action',
@@ -137,7 +137,7 @@ def test_create_action_fed_invalid_component(component):
 
 
 def test_create_action_fed_missing_fed_id(component):
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         actions.create_action(
             action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
             schema=SCHEMA,
@@ -146,7 +146,7 @@ def test_create_action_fed_missing_fed_id(component):
 
 
 def test_create_action_fed_missing_component():
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         actions.create_action(
             action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
             schema=SCHEMA,
@@ -155,37 +155,89 @@ def test_create_action_fed_missing_component():
 
 
 def test_create_action_type_fed(component):
-    count = len(actions.get_action_types())
-    action_type = actions.create_action_type(
-        False, True, True, True, True, True, True, True, True, True, True, False, False,
+    count = len(action_types.get_action_types())
+    action_type = action_types.create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        enable_instrument_link=False,
+        disable_create_objects=False,
+        is_template=False,
         fed_id=1,
         component_id=component.id
     )
-    assert len(actions.get_action_types()) == count + 1
+    assert len(action_types.get_action_types()) == count + 1
     assert action_type.fed_id == 1
     assert action_type.component_id == component.id
 
 
 def test_create_action_type_fed_missing_component():
-    with pytest.raises(TypeError):
-        actions.create_action_type(
-            False, True, True, True, True, True, True, True, True, True, True, False, False,
+    with pytest.raises(AssertionError):
+        action_types.create_action_type(
+            admin_only=False,
+            show_on_frontpage=True,
+            show_in_navbar=True,
+            enable_labels=True,
+            enable_files=True,
+            enable_locations=True,
+            enable_publications=True,
+            enable_comments=True,
+            enable_activity_log=True,
+            enable_related_objects=True,
+            enable_project_link=True,
+            enable_instrument_link=False,
+            disable_create_objects=False,
+            is_template=False,
             fed_id=1
         )
 
 
 def test_create_action_type_fed_missing_fed_id(component):
-    with pytest.raises(TypeError):
-        actions.create_action_type(
-            False, True, True, True, True, True, True, True, True, True, True, False, False,
+    with pytest.raises(AssertionError):
+        action_types.create_action_type(
+            admin_only=False,
+            show_on_frontpage=True,
+            show_in_navbar=True,
+            enable_labels=True,
+            enable_files=True,
+            enable_locations=True,
+            enable_publications=True,
+            enable_comments=True,
+            enable_activity_log=True,
+            enable_related_objects=True,
+            enable_project_link=True,
+            enable_instrument_link=False,
+            disable_create_objects=False,
+            is_template=False,
             component_id=component.id + 1
         )
 
 
 def test_create_action_type_fed_invalid_component(component):
     with pytest.raises(errors.ComponentDoesNotExistError):
-        actions.create_action_type(
-            False, True, True, True, True, True, True, True, True, True, True, False, False,
+        action_types.create_action_type(
+            admin_only=False,
+            show_on_frontpage=True,
+            show_in_navbar=True,
+            enable_labels=True,
+            enable_files=True,
+            enable_locations=True,
+            enable_publications=True,
+            enable_comments=True,
+            enable_activity_log=True,
+            enable_related_objects=True,
+            enable_project_link=True,
+            enable_instrument_link=False,
+            disable_create_objects=False,
+            is_template=False,
             fed_id=1,
             component_id=component.id + 1
         )
@@ -216,22 +268,35 @@ def test_get_missing_fed_action(component):
 
 
 def test_get_fed_action_type(component):
-    action_type = actions.create_action_type(
-        False, True, True, True, True, True, True, True, True, True, True, False, False,
+    action_type = action_types.create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=True,
+        enable_instrument_link=True,
+        disable_create_objects=False,
+        is_template=False,
         fed_id=1,
         component_id=component.id
     )
-    assert action_type == actions.get_action_type(1, component.id)
+    assert action_type == action_types.get_action_type(1, component.id)
 
 
 def test_get_fed_action_type_missing_component(component):
     with pytest.raises(errors.ComponentDoesNotExistError):
-        assert actions.get_action_type(1, component.id + 1)
+        assert action_types.get_action_type(1, component.id + 1)
 
 
 def test_get_missing_fed_action_type(component):
     with pytest.raises(errors.ActionTypeDoesNotExistError):
-        assert actions.get_action_type(1, component.id)
+        assert action_types.get_action_type(1, component.id)
 
 
 def test_update_action():
@@ -330,12 +395,3 @@ def test_get_action_owner_id():
     assert actions.get_action_owner_id(action2.id) == user.id
     with pytest.raises(errors.ActionDoesNotExistError):
         actions.get_action_owner_id(action2.id + 1)
-
-
-def test_check_action_type_exists():
-    action_type = actions.create_action_type(
-        False, True, True, True, True, True, True, True, True, True, True, False, False
-    )
-    actions.check_action_type_exists(action_type.id)
-    with pytest.raises(errors.ActionTypeDoesNotExistError):
-        actions.check_action_type_exists(action_type.id + 1)

@@ -194,7 +194,7 @@
             <p>
             {{ _('Select an object to link this project group to:') }}
             </p>
-            <select class="selectpicker" name="{{ object_link_form.object_id.name }}" data-live-search="true" data-width="100%" data-sampledb-remove="{% for object_id in already_linked_object_ids %}{{ object_id }},{% endfor %}" data-sampledb-valid-action-ids=",{% for action_id in linkable_action_ids %}{{ action_id }},{% endfor %}" data-sampledb-required-perm="3" data-sampledb-empty-disable="#linkObjectButton" data-sampledb-nonempty-enable="#linkObjectButton">
+            <select class="selectpicker" name="{{ object_link_form.object_id.name }}" data-live-search="true" data-width="100%" data-sampledb-remove="{% for object_id in already_linked_object_ids %}{{ object_id }},{% endfor %}" data-sampledb-valid-action-ids="{% if not linkable_action_ids %}-100{% endif %},{% for action_id in linkable_action_ids %}{{ action_id }},{% endfor %}" data-sampledb-required-perm="3" data-sampledb-empty-disable="#linkObjectButton" data-sampledb-nonempty-enable="#linkObjectButton">
               {% for object_id, object_name in linkable_objects %}
                 <option value="{{ object_id }}">{{ object_name }} (#{{ object_id }})</option>
               {% endfor %}
@@ -521,7 +521,7 @@
     <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-<script>
+<script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
 window.translations = {{ translations | tojson }};
 
@@ -569,7 +569,7 @@ $(function (){
 
 </script>
   {% if show_edit_form %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(document).ready(function() {
       var edit_modal = $('#editProjectModal');
       edit_modal.removeClass('fade');

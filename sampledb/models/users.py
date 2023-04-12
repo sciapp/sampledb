@@ -7,7 +7,16 @@ import enum
 import typing
 from datetime import datetime
 
+from sqlalchemy.orm import Mapped, Query, relationship
+
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .authentication import Authentication
+    from .components import Component
+    from .groups import Group
+    from .user_log import UserLogEntry
 
 
 @enum.unique
@@ -17,7 +26,7 @@ class UserType(enum.Enum):
     FEDERATION_USER = 3
 
 
-class User(db.Model):  # type: ignore
+class User(Model):
     __tablename__ = 'users'
     __table_args__ = (
         db.CheckConstraint(
@@ -27,23 +36,29 @@ class User(db.Model):  # type: ignore
         db.UniqueConstraint('fed_id', 'component_id', name='users_fed_id_component_id_key'),
     )
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=True)
-    email = db.Column(db.String, nullable=True)
-    type = db.Column(db.Enum(UserType), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False, nullable=False)
-    is_readonly = db.Column(db.Boolean, default=False, nullable=False)
-    is_hidden = db.Column(db.Boolean, default=False, nullable=False)
-    orcid = db.Column(db.String, nullable=True)
-    affiliation = db.Column(db.String, nullable=True)
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
-    role = db.Column(db.String, nullable=True)
-    extra_fields = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    last_modified = db.Column(db.DateTime, nullable=False)
-    component = db.relationship('Component')
-    last_modified_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    name: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    email: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    type: Mapped[UserType] = db.Column(db.Enum(UserType), nullable=False)
+    is_admin: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    is_readonly: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    orcid: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    affiliation: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    is_active: Mapped[bool] = db.Column(db.Boolean, default=True, nullable=False)
+    role: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    extra_fields: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    last_modified: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+    last_modified_by_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    groups: Mapped[typing.List['Group']] = relationship('Group', secondary='user_group_memberships', back_populates='members')
+    log_entries: Mapped[typing.List['UserLogEntry']] = relationship('UserLogEntry', back_populates="user")
+    authentication_methods: Mapped[typing.List['Authentication']] = relationship('Authentication', back_populates='user')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["User"]]
 
     def __init__(
             self,
@@ -58,21 +73,18 @@ class User(db.Model):  # type: ignore
             component_id: typing.Optional[int] = None,
             last_modified: typing.Optional[datetime] = None
     ) -> None:
-        if extra_fields is None:
-            extra_fields = {}
-        self.name = name
-        self.email = email
-        self.type = type
-        self.orcid = orcid
-        self.affiliation = affiliation
-        self.role = role
-        self.extra_fields = extra_fields
-        self.fed_id = fed_id
-        self.component_id = component_id
-        if last_modified is None:
-            self.last_modified = datetime.utcnow()
-        else:
-            self.last_modified = last_modified
+        super().__init__(
+            name=name,
+            email=email,
+            type=type,
+            orcid=orcid,
+            affiliation=affiliation,
+            role=role,
+            extra_fields=extra_fields if extra_fields is not None else {},
+            fed_id=fed_id,
+            component_id=component_id,
+            last_modified=last_modified if last_modified is not None else datetime.utcnow()
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, User):
@@ -93,37 +105,43 @@ class User(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, name={1.name})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, name={self.name})>'
 
 
-class UserInvitation(db.Model):  # type: ignore
+class UserInvitation(Model):
     __tablename__ = 'user_invitations'
 
-    id = db.Column(db.Integer, primary_key=True)
-    inviter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
-    accepted = db.Column(db.Boolean, nullable=False, default=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    inviter_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    utc_datetime: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    accepted: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["UserInvitation"]]
 
 
-class UserFederationAlias(db.Model):  # type: ignore
+class UserFederationAlias(Model):
     __tablename__ = 'fed_user_aliases'
 
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'))
-    name = db.Column(db.String, nullable=True)
-    use_real_name = db.Column(db.Boolean, nullable=False, default=False)
-    email = db.Column(db.String, nullable=True)
-    use_real_email = db.Column(db.Boolean, nullable=False, default=False)
-    orcid = db.Column(db.String, nullable=True)
-    use_real_orcid = db.Column(db.Boolean, nullable=False, default=False)
-    affiliation = db.Column(db.String, nullable=True)
-    use_real_affiliation = db.Column(db.Boolean, nullable=False, default=False)
-    role = db.Column(db.String, nullable=True)
-    use_real_role = db.Column(db.Boolean, nullable=False, default=False)
-    extra_fields = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
-    last_modified = db.Column(db.DateTime, nullable=False)
-    user = db.relationship('User')
-    component = db.relationship('Component')
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
+    name: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    use_real_name: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    email: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    use_real_email: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    orcid: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    use_real_orcid: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    affiliation: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    use_real_affiliation: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    role: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    use_real_role: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    extra_fields: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
+    last_modified: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    user: Mapped[User] = relationship('User')
+    component: Mapped['Component'] = relationship('Component')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["UserFederationAlias"]]
 
     __table_args__ = (
         db.PrimaryKeyConstraint(user_id, component_id),
@@ -145,25 +163,22 @@ class UserFederationAlias(db.Model):  # type: ignore
             use_real_role: bool = False,
             extra_fields: typing.Optional[typing.Dict[str, str]] = None,
             last_modified: typing.Optional[datetime] = None):
-        if extra_fields is None:
-            extra_fields = {}
-        self.user_id = user_id
-        self.component_id = component_id
-        self.name = name
-        self.use_real_name = use_real_name
-        self.email = email
-        self.use_real_email = use_real_email
-        self.orcid = orcid
-        self.use_real_orcid = use_real_orcid
-        self.affiliation = affiliation
-        self.use_real_affiliation = use_real_affiliation
-        self.role = role
-        self.use_real_role = use_real_role
-        self.extra_fields = extra_fields
-        if last_modified is None:
-            self.last_modified = datetime.utcnow()
-        else:
-            self.last_modified = last_modified
+        super().__init__(
+            user_id=user_id,
+            component_id=component_id,
+            name=name,
+            use_real_name=use_real_name,
+            email=email,
+            use_real_email=use_real_email,
+            orcid=orcid,
+            use_real_orcid=use_real_orcid,
+            affiliation=affiliation,
+            use_real_affiliation=use_real_affiliation,
+            role=role,
+            use_real_role=use_real_role,
+            extra_fields=extra_fields if extra_fields is not None else {},
+            last_modified=last_modified if last_modified is not None else datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(user_id={1.user_id}, component_id={1.component_id}; name={1.name})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(user_id={self.user_id}, component_id={self.component_id}; name={self.name})>'

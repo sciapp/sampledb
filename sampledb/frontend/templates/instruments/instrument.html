@@ -20,10 +20,76 @@
       <b>{{ _('Location') }}:</b> <a href="{{ url_for('.location', location_id=instrument.location_id) }}">{{ instrument.location | get_full_location_name(include_id=true) }}</a>
     </div>
   {% endif %}
+  {% if instrument.object_id is not none and not instrument.show_linked_object_data %}
+    <div>
+      <b>{{ _('Information') }}:</b> <a href="{{ url_for('.object', object_id=instrument.object_id) }}">
+      {% if linked_object and linked_object.data %}
+        {{ linked_object.data['name']['text'] | get_translated_text(_('Object') + ' #' + (instrument.object_id | string)) }}
+      {% else %}
+        {{ _('Object') }} #{{ instrument.object_id }}
+      {% endif %}
+      </a>
+    </div>
+  {% endif %}
   {% include "instruments/instrument_scientists.html" %}
   {% if not current_user.is_readonly %}
     {% if (current_user.is_admin or current_user in instrument.responsible_users) and instrument.fed_id is none %}
       <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">{{ _('Edit Instrument') }}</a>
+    {% endif %}
+  {% endif %}
+  {% if not current_user.is_readonly and is_instrument_responsible_user and object_link_form %}
+    {% if instrument.object_id %}
+      <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#unlinkObjectModal">{{ _('Unlink Object') }}</button>
+      <div class="modal fade" id="unlinkObjectModal" tabindex="-1" role="dialog" aria-labelledby="unlinkObjectModalLabel">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="unlinkObjectModalLabel">{{ _('Unlink Object') }}</h4>
+            </div>
+            <form method="post" action="{{ url_for('.instrument_unlink_object', instrument_id=instrument.id) }}" class="form-horizontal">
+              {{ object_link_form.csrf_token() }}
+              <input type="hidden" name="{{ object_link_form.object_id.name }}" value="{{ instrument.object_id }}">
+              <div class="modal-body">
+                {{ _('Are you certain you want to unlink the object from this instrument?') }}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-danger" name="delete" value="delete">{{ _('Unlink Object') }}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <button type="button" class="btn btn-default" data-toggle="modal" data-target="#linkObjectModal" id="linkObjectButton" {% if not linkable_objects %}disabled=""{% endif %}>{{ _('Link Object') }}</button>
+      <div class="modal fade" id="linkObjectModal" tabindex="-1" role="dialog" aria-labelledby="linkObjectModalLabel">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title" id="linkObjectModalLabel">{{ _('Link Object') }}</h4>
+            </div>
+            <form method="post" action="{{ url_for('.instrument_link_object', instrument_id=instrument.id) }}" class="form-horizontal">
+              {{ object_link_form.csrf_token() }}
+              <div class="modal-body">
+                <p>
+                {{ _('Select an object to link this instrument to:') }}
+                </p>
+                <select class="selectpicker" name="{{ object_link_form.object_id.name }}" data-live-search="true" data-width="100%" data-sampledb-remove="{% for object_id in already_linked_object_ids %}{{ object_id }},{% endfor %}" data-sampledb-valid-action-ids="{% if not linkable_action_ids %}-100{% endif %},{% for action_id in linkable_action_ids %}{{ action_id }},{% endfor %}" data-sampledb-required-perm="3" data-sampledb-empty-disable="#linkObjectButton" data-sampledb-nonempty-enable="#linkObjectButton">
+                  {% for object_id, object_name in linkable_objects %}
+                    <option value="{{ object_id }}">{{ object_name }} (#{{ object_id }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary" name="delete" value="delete">{{ _('Link Object') }}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     {% endif %}
   {% endif %}
   {% if instrument_actions %}
@@ -39,10 +105,28 @@
         </div>
       {% endif %}
       <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) }}</a>
-      {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
+      {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.type.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
         <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
       {% endif %}
   {% endfor %}
+  {% endif %}
+  {% if instrument.object_id and instrument.show_linked_object_data %}
+    <h2>{{ _('Information') }}</h2>
+    {% if linked_object and linked_object.schema and linked_object.data %}
+      {% set id_prefix = "object_" %}
+      {# counter for plotly_chart_plots #}
+      {% set object_id = instrument.object_id %}
+      {% set schema = linked_object.schema %}
+      {% set data = linked_object.data %}
+      {% set plot_counter = namespace(value=0) %}
+      <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+        window.plotly_charts = [];
+      </script>
+      {% include "objects/view/object.html" %}
+      {% include "objects/view/timeseries_modals.html" %}
+    {% else %}
+      {{ _('<a href="%(object_url)s">Object #%(object_id)s</a> contains additional information for this instrument.', object_id=instrument.object_id, object_url=url_for('.object', object_id=instrument.object_id)) }}
+    {% endif %}
   {% endif %}
   {% if is_instrument_responsible_user %}
   <h2>{{ _('Instrument Scientist Notes')}}</h2>
@@ -128,9 +212,9 @@
           </form>
           <button type="button" id="button-instrument-log-list-filter" class="btn btn-sm btn-primary" style="height:32px" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
             {% for category in instrument_log_categories %}
-              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' onclick='update_instrument_log_filter_states();'/> {{ category.title }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_{{ category.id }}' /> {{ category.title }}</label><br />
             {% endfor %}
-              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' onclick='update_instrument_log_filter_states();'/> {{ _('Uncategorized') }}</label><br />
+              <label style='font-weight:400'><input type='checkbox' id='instrument_log_filter_none' /> {{ _('Uncategorized') }}</label><br />
               <hr />
               <div class='input-group date'>
                 <input type='text' class='form-control' id='input-instrument-log-filter-date'/>
@@ -147,8 +231,16 @@
               {% endfor %}
               </select>
               </div>
-              <script>
+              <script type='text/javascript' nonce='{{ generate_inline_script_nonce() }}'>
                 setup_instrument_log_filter_states();
+                document.getElementById('instrument_log_filter_none').addEventListener('click', function() {
+                  update_instrument_log_filter_states();
+                });
+                {% for category in instrument_log_categories %}
+                  document.getElementById('instrument_log_filter_{{ category.id }}').addEventListener('click', function() {
+                    update_instrument_log_filter_states();
+                  });
+                {% endfor %}
               </script>
             ">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
@@ -497,7 +589,17 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   {% endif %}
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
-  <script type="text/javascript">
+  <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
+  {% if get_user_language(current_user).lang_code == 'de' %}
+    <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+      Plotly.setPlotConfig({locale: 'de'})
+    </script>
+  {% endif %}
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}"></script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+
     window.categoriesShown = {
       {% for category in instrument_log_categories %}
       '{{ category.id }}': true,
@@ -599,6 +701,7 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
             hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
             showIcons: ["code", "table"],
             minHeight: '100px',
+            autoDownloadFontAwesome: false,
           });
           setupImageDragAndDrop(window.new_log_entry);
         } else {
@@ -650,6 +753,7 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
               hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
               showIcons: ["code", "table"],
               minHeight: '100px',
+              autoDownloadFontAwesome: false,
             });
             setupImageDragAndDrop(window.log_entry_{{ log_entry.id }});
           } else {

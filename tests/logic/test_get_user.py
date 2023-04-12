@@ -27,9 +27,6 @@ def test_get_user(users):
 
 
 def test_get_user_failed():
-    with pytest.raises(TypeError):
-        sampledb.logic.users.get_user(None)
-
     # user.id 10 doesn't exists in db
     with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
         sampledb.logic.users.get_user(10)

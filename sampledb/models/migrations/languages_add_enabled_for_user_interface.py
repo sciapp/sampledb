@@ -7,18 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
+
 MIGRATION_INDEX = 59
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    languages_column_names = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'languages'
-    """)).fetchall()
-    if ('enabled_for_user_interface',) in languages_column_names:
+    if table_has_column('languages', 'enabled_for_user_interface'):
         return False
 
     # Perform migration

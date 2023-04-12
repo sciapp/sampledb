@@ -5,6 +5,7 @@ Implementation of validate(instance, schema)
 
 import re
 import datetime
+import decimal
 import string
 import typing
 import math
@@ -20,6 +21,7 @@ from ...models import ActionType
 from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
 from .utils import units_are_valid
 from ..utils import get_translated_text
+from ..units import get_dimensionality_for_units, get_magnitude_in_base_units
 
 opt_federation_keys = {'export_edit_note', 'component_uuid'}
 
@@ -73,6 +75,8 @@ def validate(
         return _validate_user(instance, schema, path)
     elif schema['type'] == 'plotly_chart' and isinstance(instance, dict):
         return _validate_plotly_chart(instance, schema, path)
+    elif schema['type'] == 'timeseries' and isinstance(instance, dict):
+        return _validate_timeseries(instance, schema, path)
     else:
         raise ValidationError('invalid type', path)
 
@@ -95,9 +99,9 @@ def _validate_array(
     if not isinstance(instance, list):
         raise ValidationError('instance must be list', path)
     if 'minItems' in schema and len(instance) < schema['minItems']:
-        raise ValidationError('expected at least {} items'.format(schema['minItems']), path)
+        raise ValidationError(f'expected at least {schema["minItems"]} items', path)
     if 'maxItems' in schema and len(instance) > schema['maxItems']:
-        raise ValidationError('expected at most {} items'.format(schema['maxItems']), path)
+        raise ValidationError(f'expected at most {schema["maxItems"]} items', path)
     errors = []
     for index, item in enumerate(instance):
         try:
@@ -128,10 +132,10 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'hazards':
         raise ValidationError('expected _type "hazards"', path)
     if not isinstance(instance['hazards'], list):
@@ -140,11 +144,11 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
     hazards = []
     for index, item in enumerate(instance['hazards']):
         if not isinstance(item, int):
-            errors.append(ValidationError('invalid hazard index type: {}'.format(type(item)), path + ['hazards', str(index)]))
+            errors.append(ValidationError(f'invalid hazard index type: {type(item)}', path + ['hazards', str(index)]))
         elif item in hazards:
-            errors.append(ValidationError('duplicate hazard index: {}'.format(item), path + ['hazards', str(index)]))
+            errors.append(ValidationError(f'duplicate hazard index: {item}', path + ['hazards', str(index)]))
         elif item < 1 or item > 9:
-            errors.append(ValidationError('invalid hazard index: {}'.format(item), path + ['hazards', str(index)]))
+            errors.append(ValidationError(f'invalid hazard index: {item}', path + ['hazards', str(index)]))
         else:
             hazards.append(item)
 
@@ -175,10 +179,10 @@ def _validate_tags(
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'tags':
         raise ValidationError('expected _type "tags"', path)
     if not isinstance(instance['tags'], list):
@@ -187,13 +191,13 @@ def _validate_tags(
     tags = []
     for index, item in enumerate(instance['tags']):
         if not isinstance(item, str):
-            errors.append(ValidationError('invalid tag type: {}'.format(type(item)), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'invalid tag type: {type(item)}', path + ['tags', str(index)]))
         elif item in tags:
-            errors.append(ValidationError('duplicate tag: {}'.format(item), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'duplicate tag: {item}', path + ['tags', str(index)]))
         elif item.lower() != item:
-            errors.append(ValidationError('tag not lowercase: {}'.format(item), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'tag not lowercase: {item}', path + ['tags', str(index)]))
         elif any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in item):
-            errors.append(ValidationError('tag contains invalid character: {}'.format(item), path + ['tags', str(index)]))
+            errors.append(ValidationError(f'tag contains invalid character: {item}', path + ['tags', str(index)]))
         elif strict and all(c in string.digits for c in item) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
             errors.append(ValidationError('numeric tags are not supported', path + ['tags', str(index)]))
         else:
@@ -230,7 +234,7 @@ def _validate_object(
         if not are_conditions_fulfilled(property_schema.get('conditions'), instance):
             properties_with_unfulfilled_conditions.append(property_name)
             if property_name in instance or (property_name == 'name' and not path):
-                errors.append(ValidationError('conditions for property "{}" not fulfilled'.format(property_name), path + [property_name]))
+                errors.append(ValidationError(f'conditions for property "{property_name}" not fulfilled', path + [property_name]))
 
     if 'required' in schema:
         for property_name in schema['required']:
@@ -238,11 +242,11 @@ def _validate_object(
                 # this property must not be included, as its conditions are not fulfilled
                 continue
             if property_name not in instance:
-                errors.append(ValidationError('missing required property "{}"'.format(property_name), path + [property_name]))
+                errors.append(ValidationError(f'missing required property "{property_name}"', path + [property_name]))
     for property_name, property_value in instance.items():
         try:
             if property_name not in schema['properties']:
-                raise ValidationError('unknown property "{}"'.format(property_name), path + [property_name])
+                raise ValidationError(f'unknown property "{property_name}"', path + [property_name])
             else:
                 validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict)
         except ValidationError as e:
@@ -271,10 +275,10 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'text':
         raise ValidationError('expected _type "text"', path)
     if not isinstance(instance['text'], str) and not isinstance(instance['text'], dict):
@@ -351,10 +355,10 @@ def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Di
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'datetime':
         raise ValidationError('expected _type "datetime"', path)
     if not isinstance(instance['utc_datetime'], str):
@@ -381,10 +385,10 @@ def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'bool':
         raise ValidationError('expected _type "bool"', path)
     if not isinstance(instance['value'], bool):
@@ -407,13 +411,15 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'quantity':
         raise ValidationError('expected _type "quantity"', path)
     if 'units' not in instance:
+        if not isinstance(schema['units'], str):
+            raise ValidationError('missing unambiguous units for quantity property with multiple possible units', path)
         instance['units'] = schema['units']
     if not isinstance(instance['units'], str):
         raise ValidationError('units must be str', path)
@@ -451,23 +457,23 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
         except Exception:
             raise ValidationError('Unable to create quantity based on given magnitude_in_base_units', path)
 
-    if 'min_magnitude' in schema and quantity_magnitude_in_base_units is not None and quantity_magnitude_in_base_units.magnitude_in_base_units < schema['min_magnitude']:
-        min_magnitude = datatypes.Quantity(schema["min_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
-        min_value = f'{min_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
-        raise ValidationError(_('Must be greater than or equal to %(value)s', value=min_value), path)
-
-    if 'max_magnitude' in schema and quantity_magnitude_in_base_units is not None and quantity_magnitude_in_base_units.magnitude_in_base_units > schema['max_magnitude']:
-        max_magnitude = datatypes.Quantity(schema["max_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
-        max_value = f'{max_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
-        raise ValidationError(_('Must be less than or equal to %(value)s', value=max_value), path)
-
-    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None and not math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
+    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None and not math.isclose(
+            quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
         raise ValidationError('magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
     if quantity_magnitude is None:
         if quantity_magnitude_in_base_units is None:
             raise ValidationError('missing keys in schema: either magnitude or magnitude_in_base_units has to be given', path)
-        else:
-            quantity_magnitude = quantity_magnitude_in_base_units
+        quantity_magnitude = quantity_magnitude_in_base_units
+
+    if 'min_magnitude' in schema and quantity_magnitude.magnitude_in_base_units < schema['min_magnitude']:
+        min_magnitude = datatypes.Quantity(schema["min_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
+        min_value = f'{min_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
+        raise ValidationError(_('Must be greater than or equal to %(value)s', value=min_value), path)
+
+    if 'max_magnitude' in schema and quantity_magnitude.magnitude_in_base_units > schema['max_magnitude']:
+        max_magnitude = datatypes.Quantity(schema["max_magnitude"], units=schema['units'], already_in_base_units=True).magnitude
+        max_value = f'{max_magnitude}{" " + schema["units"] if schema["units"] != "1" else ""}'
+        raise ValidationError(_('Must be less than or equal to %(value)s', value=max_value), path)
 
     # automatically add dimensionality and either magnitude oder magnitude_in_base_units, if they haven't been given yet
     for key, value in quantity_magnitude.to_json().items():
@@ -477,9 +483,9 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     if not isinstance(instance['dimensionality'], str):
         raise ValidationError('dimensionality must be str', path)
     if quantity_magnitude.dimensionality != schema_quantity.dimensionality:
-        raise ValidationError('Invalid units, expected units for dimensionality "{}"'.format(str(schema_quantity.dimensionality)), path)
+        raise ValidationError(f'Invalid units, expected units for dimensionality "{str(schema_quantity.dimensionality)}"', path)
     if str(quantity_magnitude.dimensionality) != instance['dimensionality']:
-        raise ValidationError('Invalid dimensionality, expected "{}"'.format(str(schema_quantity.dimensionality)), path)
+        raise ValidationError(f'Invalid dimensionality, expected "{str(schema_quantity.dimensionality)}"', path)
 
 
 def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
@@ -498,10 +504,10 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'sample':
         raise ValidationError('expected _type "sample"', path)
     if not isinstance(instance['object_id'], int):
@@ -518,7 +524,7 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
         action = actions.get_action(sample.action_id)
         if action.type is None:
             raise ValidationError('object must be sample', path)
-        if action.type_id != ActionType.SAMPLE_CREATION and action.type.fed_id != ActionType.SAMPLE_CREATION:
+        if ActionType.SAMPLE_CREATION not in {action.type_id, action.type.fed_id}:
             raise ValidationError('object must be sample', path)
 
 
@@ -538,10 +544,10 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'measurement':
         raise ValidationError('expected _type "measurement"', path)
     if not isinstance(instance['object_id'], int):
@@ -558,7 +564,7 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
         action = actions.get_action(measurement.action_id)
         if action.type is None:
             raise ValidationError('object must be measurement', path)
-        if action.type_id != ActionType.MEASUREMENT and action.type.fed_id != ActionType.MEASUREMENT:
+        if ActionType.MEASUREMENT not in {action.type_id, action.type.fed_id}:
             raise ValidationError('object must be measurement', path)
 
 
@@ -578,10 +584,10 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'user':
         raise ValidationError('expected _type "user"', path)
     if not isinstance(instance['user_id'], int):
@@ -611,10 +617,10 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
     schema_keys = set(instance.keys())
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'object_reference':
         raise ValidationError('expected _type "object_reference"', path)
     if not isinstance(instance['object_id'], int):
@@ -667,10 +673,10 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
     schema_keys = instance.keys()
     invalid_keys = schema_keys - valid_keys - opt_federation_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if instance['_type'] != 'plotly_chart':
         raise ValidationError('expected _type "plotly_chart"', path)
     if isinstance(instance['plotly'], str):
@@ -688,3 +694,85 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
         plotly.io.from_json(json.dumps(instance['plotly']), 'Figure', False)
     except ValueError:
         raise ValidationError(_('The plotly data must be valid. Look up which schema is supported by plotly.'), path)
+
+
+def _validate_timeseries(
+        instance: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        path: typing.List[str]
+) -> None:
+    """
+    Validates the given instance using the given timeseries schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb object
+    :param schema: the valid sampledb object schema
+    :param path: the path to this subinstance / subschema
+    :raise ValidationError: if the schema is invalid.
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    required_keys = {'_type', 'data'}
+    valid_keys = required_keys.union({'units', 'dimensionality', 'data'})
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    if invalid_keys:
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
+    if instance['_type'] != 'timeseries':
+        raise ValidationError('expected _type "timeseries"', path)
+    if 'units' not in instance:
+        instance['units'] = schema['units']
+    if not isinstance(instance['units'], str):
+        raise ValidationError('units must be str', path)
+    if not units_are_valid(instance['units']):
+        raise ValidationError('Invalid/Unknown units', path)
+    try:
+        if isinstance(schema['units'], str):
+            schema_units = schema['units']
+        else:
+            schema_units = schema['units'][0]
+        dimensionality_from_schema_units = get_dimensionality_for_units(schema_units)
+    except Exception:
+        raise ValidationError('Unable to determine dimensionality', path)
+    if isinstance(schema['units'], str) and instance['units'] != schema['units']:
+        if dimensionality_from_schema_units != get_dimensionality_for_units(instance['units']):
+            raise ValidationError(f'Invalid units, expected {schema["units"]}', path)
+    if isinstance(schema['units'], list) and instance['units'] not in schema['units']:
+        if dimensionality_from_schema_units != get_dimensionality_for_units(instance['units']):
+            raise ValidationError(f'Invalid units, expected one of {", ".join(schema["units"])}', path)
+    if 'dimensionality' in instance:
+        if not isinstance(instance['dimensionality'], str):
+            raise ValidationError('dimensionality must be str', path)
+        if instance['dimensionality'] != dimensionality_from_schema_units:
+            raise ValidationError('dimensionality must match units', path)
+    else:
+        instance['dimensionality'] = dimensionality_from_schema_units
+
+    if not isinstance(instance['data'], list):
+        raise ValidationError('data must be list', path)
+    if not all(isinstance(entry, (list, tuple)) and len(entry) in (2, 3) and type(entry[0]) is str and all(type(value) in (int, float) for value in entry[1:]) for entry in instance['data']):
+        raise ValidationError('data must be list of lists containing a datetime string and 1 or 2 numbers ', path)
+
+    existing_times = set()
+    for i, entry in enumerate(instance['data']):
+        utc_datetime, magnitude = entry[:2]
+        if not math.isfinite(magnitude):
+            raise ValidationError('magnitude must be finite', path)
+        if utc_datetime in existing_times:
+            raise ValidationError('duplicate point in timeseries', path)
+        try:
+            datetime.datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S.%f')
+        except Exception:
+            raise ValidationError('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff', path)
+        existing_times.add(utc_datetime)
+        calculated_magnitude_in_base_units = get_magnitude_in_base_units(magnitude=decimal.Decimal(magnitude), units=instance['units'])
+        if len(entry) == 3:
+            magnitude_in_base_units = entry[2]
+            if not math.isfinite(magnitude_in_base_units):
+                raise ValidationError('magnitude_in_base_units must be finite', path)
+            if not math.isclose(float(calculated_magnitude_in_base_units), magnitude_in_base_units):
+                raise ValidationError('magnitude_in_base_units and magnitude do not match', path)
+        else:
+            instance['data'][i] = [utc_datetime, float(magnitude), float(calculated_magnitude_in_base_units)]

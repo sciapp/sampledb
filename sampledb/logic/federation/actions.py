@@ -59,8 +59,8 @@ class SharedActionTranslationData(typing.TypedDict):
 class SharedActionData(typing.TypedDict):
     action_id: int
     component_uuid: str
-    action_type: ActionTypeRef
-    schema: typing.Dict[str, typing.Any]
+    action_type: typing.Optional[ActionTypeRef]
+    schema: typing.Optional[typing.Dict[str, typing.Any]]
     instrument: typing.Optional[InstrumentRef]
     user: typing.Optional[UserRef]
     description_is_markdown: bool
@@ -79,7 +79,7 @@ def parse_action(
     uuid = _get_uuid(action_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local action {}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local action {fed_id}')
     schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(action_data.get('schema'))
     if schema is not None:
         _parse_schema(schema)
@@ -156,6 +156,8 @@ def import_action(
         return schema
 
     component_id = _get_or_create_component_id(action_data['component_uuid'])
+    # component_id will only be None if this would import a local action
+    assert component_id is not None
 
     action_type_id = _get_or_create_action_type_id(action_data['action_type'])
     instrument_id = _get_or_create_instrument_id(action_data['instrument'])
@@ -306,50 +308,54 @@ def shared_action_preprocessor(
         instrument = None
     else:
         i = get_instrument(action.instrument_id)
-        if i.component_id is None:
+        if i.component is None or i.fed_id is None:
             instrument = InstrumentRef(
                 instrument_id=i.id,
                 component_uuid=flask.current_app.config['FEDERATION_UUID']
             )
         else:
-            comp = i.component
             instrument = InstrumentRef(
                 instrument_id=i.fed_id,
+                component_uuid=i.component.uuid
+            )
+    if action.type is None:
+        action_type = None
+    else:
+        if action.type.component_id is None or action.type.fed_id is None:
+            action_type = ActionTypeRef(
+                action_type_id=action.type.id,
+                component_uuid=flask.current_app.config['FEDERATION_UUID']
+            )
+        else:
+            comp = get_component(action.type.component_id)
+            action_type = ActionTypeRef(
+                action_type_id=action.type.fed_id,
                 component_uuid=comp.uuid
             )
-    if action.type.component_id is None:
-        action_type = ActionTypeRef(
-            action_type_id=action.type.id,
-            component_uuid=flask.current_app.config['FEDERATION_UUID']
-        )
-    else:
-        comp = get_component(action.type.component_id)
-        action_type = ActionTypeRef(
-            action_type_id=action.type.fed_id,
-            component_uuid=comp.uuid
-        )
-    if ('action_types', action.type_id) not in refs:
-        refs.append(('action_types', action.type_id))
+        if ('action_types', action.type.id) not in refs:
+            refs.append(('action_types', action.type.id))
     if action.user_id is None:
         user = None
     else:
         u = get_user(action.user_id)
-        if u.component_id is None or u.fed_id is None:
+        if u.component is None or u.fed_id is None:
             user = UserRef(
                 user_id=u.id,
                 component_uuid=flask.current_app.config['FEDERATION_UUID']
             )
         else:
-            comp = u.component
             user = UserRef(
                 user_id=u.fed_id,
-                component_uuid=comp.uuid
+                component_uuid=u.component.uuid
             )
-    schema = action.schema.copy()
-    schema_entry_preprocessor(schema, refs)
+    if action.schema is None:
+        schema = None
+    else:
+        schema = action.schema.copy()
+        schema_entry_preprocessor(schema, refs)
     return SharedActionData(
         action_id=action.id if action.fed_id is None else action.fed_id,
-        component_uuid=flask.current_app.config['FEDERATION_UUID'] if action.component_id is None else action.component.uuid,
+        component_uuid=flask.current_app.config['FEDERATION_UUID'] if action.component is None else action.component.uuid,
         action_type=action_type,
         instrument=instrument,
         schema=schema,
@@ -386,7 +392,7 @@ def _parse_schema(
                 schema['languages'].remove(language)
 
     if 'choices' in schema:
-        for i, choice in enumerate(schema['choices']):
+        for choice in schema['choices']:
             if isinstance(choice, dict):
                 for lang_code in list(choice.keys()):
                     if lang_code not in all_language_codes:

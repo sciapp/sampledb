@@ -615,14 +615,14 @@
     <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
 
   {% if not config['TIMEZONE'] %}
-    <script>
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     const tz_pref = moment.tz.guess(true);
     var auto_tz = document.getElementById("auto_tz");
     auto_tz.textContent += tz_pref;
     </script>
   {% endif %}
   {% if created_api_token %}
-    <script>
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   $('#viewApiTokenModal').modal('show');
   $('#api-token button').bind('click', function() {
   var input = document.querySelector('#api-token input');
@@ -646,7 +646,7 @@
   </script>
   {% endif %}
   {% if create_api_token_form.description.errors %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   $('#createApiTokenModal').modal('show');
   </script>
   {% endif %}

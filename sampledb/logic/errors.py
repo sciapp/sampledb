@@ -177,21 +177,20 @@ class SchemaError(Exception):
     def __init__(self, message: str, path: typing.List[str]) -> None:
         if path:
             message += ' (at ' + ' -> '.join(path) + ')'
-        super(SchemaError, self).__init__(message)
+        super().__init__(message)
         self.path = path
         self.message = message
         self.paths = [path]
 
 
 class ValidationError(SchemaError):
-    def __init__(self, message: str, path: typing.List[str]) -> None:
-        super(ValidationError, self).__init__(message, path)
+    pass
 
 
 class ValidationMultiError(ValidationError):
     def __init__(self, errors: typing.List[ValidationError]) -> None:
         message = '\n'.join(error.message for error in errors)
-        super(ValidationMultiError, self).__init__(message, [])
+        super().__init__(message, [])
         self.paths = [error.path for error in errors]
 
 
@@ -432,4 +431,24 @@ class GroupCategoryDoesNotExistError(Exception):
 
 
 class CyclicGroupCategoryError(Exception):
+    pass
+
+
+class FileCreationError(Exception):
+    pass
+
+
+class ExceedingLocationCapacityError(Exception):
+    pass
+
+
+class InvalidUnitsError(Exception):
+    pass
+
+
+class DiffMismatchError(Exception):
+    pass
+
+
+class InstrumentObjectLinkAlreadyExistsError(Exception):
     pass

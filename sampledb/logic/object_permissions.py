@@ -2,7 +2,7 @@
 """
 
 """
-
+import dataclasses
 import typing
 
 import flask
@@ -11,6 +11,7 @@ import sqlalchemy
 from .. import db
 from . import errors
 from . import actions
+from . import action_types
 from .default_permissions import get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users
 from . import instruments
 from .notifications import create_notification_for_having_received_an_objects_permissions_request
@@ -148,12 +149,15 @@ def get_user_object_permissions(
         FROM user_object_permissions_by_all
         WHERE (user_id = :user_id OR user_id IS NULL) AND (object_id = :object_id) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (requires_instruments IS FALSE OR :enable_instruments IS TRUE)
         """)
-        permissions_int = db.session.execute(stmt, {
+        permissions_int_result = db.session.execute(stmt, {
             'user_id': user_id,
             'object_id': object_id,
             'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
             'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS']
-        }).fetchone()[0]
+        }).fetchone()
+        if permissions_int_result is None:
+            return Permissions.NONE
+        permissions_int = permissions_int_result[0]
         if permissions_int is None or permissions_int <= 0:
             return Permissions.NONE
         elif include_readonly and user.is_readonly and permissions_int in (1, 2, 3):
@@ -203,6 +207,17 @@ def set_initial_permissions(obj: Object) -> None:
     set_object_permissions_for_all_users(object_id=obj.object_id, permissions=permissions_for_all_users)
 
 
+@dataclasses.dataclass(frozen=True)
+class ObjectInfo:
+    object_id: int
+    name_json: typing.Optional[typing.Union[str, typing.Dict[str, str]]]
+    action_id: typing.Optional[int]
+    max_permission: int
+    tags: typing.Optional[typing.Dict[str, typing.Any]]
+    fed_object_id: typing.Optional[int]
+    component_name: typing.Optional[str]
+
+
 def get_object_info_with_permissions(
         user_id: int,
         permissions: Permissions,
@@ -213,7 +228,7 @@ def get_object_info_with_permissions(
         action_ids: typing.Optional[typing.Sequence[int]] = None,
         action_type_id: typing.Optional[int] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None
-) -> typing.List[Object]:
+) -> typing.List[ObjectInfo]:
 
     user = get_user(user_id)
 
@@ -297,7 +312,18 @@ def get_object_info_with_permissions(
 
     object_infos = db.session.execute(stmt, parameters).fetchall()
 
-    return typing.cast(typing.List[Object], object_infos)
+    return [
+        ObjectInfo(
+            object_id=object_info.object_id,
+            name_json=object_info.name_json,
+            action_id=object_info.action_id,
+            max_permission=object_info.max_permission,
+            tags=object_info.tags,
+            fed_object_id=object_info.fed_object_id,
+            component_name=object_info.component_name
+        )
+        for object_info in object_infos
+    ]
 
 
 def get_objects_with_permissions(
@@ -335,7 +361,7 @@ def get_objects_with_permissions(
 
     if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
         # include federated equivalents for default action types
-        all_action_types = actions.get_action_types()
+        all_action_types = action_types.get_action_types()
         fed_default_action_types: typing.Dict[int, typing.List[int]] = {}
         for action_type in all_action_types:
             if action_type.fed_id is not None and action_type.fed_id <= 0:

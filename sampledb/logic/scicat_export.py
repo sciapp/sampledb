@@ -10,7 +10,7 @@ import requests
 
 from .objects import get_object
 from .object_permissions import get_user_object_permissions
-from .datatypes import DateTime, Quantity
+from .datatypes import DateTime, Quantity, Timeseries
 from . import settings, users, errors, utils
 from ..models import SciCatExport, SciCatExportType, Permissions
 from .. import db
@@ -31,7 +31,7 @@ def get_scicat_url(
     scicat_export: typing.Optional[SciCatExport] = SciCatExport.query.filter_by(object_id=object_id).first()
     if scicat_export is None:
         return None
-    return typing.cast(str, scicat_export.scicat_url)
+    return scicat_export.scicat_url
 
 
 def _convert_metadata(
@@ -85,6 +85,29 @@ def _convert_metadata(
             converted_data = _convert_metadata(item_data, item_schema, sub_property_whitelist, user_id)
             if converted_data is not None:
                 metadata.append(converted_data)
+        return metadata
+
+    def _convert_timeseries(
+        data: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any]
+    ) -> typing.List[typing.Any]:
+        units = data['units']
+        rows = data['data']
+        metadata = []
+        for row in rows:
+            utc_datetime_str, magnitude = row[:2]
+            utc_datetime_str = datetime.datetime.strptime(utc_datetime_str, Timeseries.DATETIME_FORMAT_STRING).isoformat()
+            if units in {'1', ''}:
+                value = magnitude
+            else:
+                value = {
+                    'value': str(float(round(magnitude, 13))),
+                    'unit': units
+                }
+            metadata.append({
+                'utc_datetime': utc_datetime_str,
+                'value': value
+            })
         return metadata
 
     def _convert_datetime(
@@ -187,6 +210,8 @@ def _convert_metadata(
         return _convert_user(data, schema)
     if schema['type'] == 'hazards' and isinstance(data, dict):
         return _convert_hazards(data, schema)
+    if schema['type'] == 'timeseries' and isinstance(data, dict):
+        return _convert_timeseries(data, schema)
     if schema['type'] == 'tags':
         # tags are exported as keywords
         return None
@@ -289,7 +314,8 @@ def upload_object(
             json=[data],
             headers={
                 'Authorization': api_token
-            }
+            },
+            timeout=SCICAT_TIMEOUT
         )
     except requests.exceptions.RequestException:
         raise errors.SciCatNotReachableError()
@@ -454,7 +480,7 @@ def get_instruments(
 def get_scicat_export_for_object(
         object_id: int
 ) -> typing.Optional[SciCatExport]:
-    return typing.cast(typing.Optional[SciCatExport], SciCatExport.query.filter_by(object_id=object_id).first())
+    return SciCatExport.query.filter_by(object_id=object_id).first()
 
 
 def get_exported_referenced_objects(

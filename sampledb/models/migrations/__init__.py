@@ -13,7 +13,7 @@ from .utils import find_migrations, should_skip_by_index, update_migration_index
 def run(db: flask_sqlalchemy.SQLAlchemy) -> None:
     logger = logging.getLogger('sampledb.migrations')
     for index, name, function in find_migrations():
-        logger.info('Migration #{} "{}":'.format(index, name))
+        logger.info('Migration #%d "%s":', index, name)
 
         # Skip migration by migration index
         if should_skip_by_index(db, index):

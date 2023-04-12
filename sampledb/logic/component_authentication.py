@@ -4,7 +4,7 @@ from .. import db
 from ..models import ComponentAuthentication, ComponentAuthenticationType, OwnComponentAuthentication
 from .errors import NoAuthenticationMethodError, InvalidTokenError, AuthenticationMethodDoesNotExistError, \
     TokenExistsError
-from .authentication import _hash_password, _validate_password_authentication
+from .authentication import _hash_password, _validate_password_hash
 from .components import Component
 
 
@@ -93,7 +93,7 @@ def login_via_component_token(
     ).all()
 
     for authentication_method in authentication_methods:
-        if _validate_password_authentication(authentication_method, password):
+        if _validate_password_hash(password, authentication_method.login['bcrypt_hash']):
             if authentication_method.component:
                 return Component.from_database(authentication_method.component)
     return None
@@ -103,10 +103,11 @@ def remove_component_authentication_method(
         authentication_method_id: int
 ) -> None:
     """
-    Remove an component authentication method.
+    Remove a component authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
-    :return:
+    :raise error.AuthenticationMethodDoesNotExistError: when no component
+        authentication method with the given ID exists
     """
     authentication_method = ComponentAuthentication.query.filter(ComponentAuthentication.id == authentication_method_id).first()
     if authentication_method is None:
@@ -120,10 +121,11 @@ def remove_own_component_authentication_method(
         authentication_method_id: int
 ) -> None:
     """
-    Remove an component authentication method.
+    Remove a component authentication method.
 
     :param authentication_method_id: the ID of an existing authentication method
-    :return:
+    :raise error.AuthenticationMethodDoesNotExistError: when no component
+        authentication method with the given ID exists
     """
     authentication_method = OwnComponentAuthentication.query.filter(OwnComponentAuthentication.id == authentication_method_id).first()
     if authentication_method is None:

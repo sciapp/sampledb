@@ -1,4 +1,5 @@
 import copy
+import datetime
 import secrets
 
 import flask
@@ -57,7 +58,7 @@ def _assert_all_routes_are_handled(flask_server, handled_routes, arguments):
     flask_server.app.config['SERVER_NAME'] = server_name
 
 
-def test_status_codes(flask_server, user):
+def test_status_codes(flask_server, user, driver):
     flask_server.app.config['DATAVERSE_URL'] = 'http://localhost'
     flask_server.app.config['SCICAT_FRONTEND_URL'] = 'http://localhost'
     flask_server.app.config['SCICAT_API_URL'] = 'http://localhost'
@@ -84,6 +85,11 @@ def test_status_codes(flask_server, user):
                     'name': {
                         'type': 'text',
                         'title': 'name'
+                    },
+                    'timeseries': {
+                        'type': 'timeseries',
+                        'title': 'timeseries',
+                        'units': 'm'
                     }
                 },
                 'required': ['name']
@@ -208,10 +214,18 @@ def test_status_codes(flask_server, user):
                 'name': {
                     '_type': 'text',
                     'text': 'test'
+                },
+                'timeseries': {
+                    '_type': 'timeseries',
+                    'units': 'm',
+                    'data': [
+                        (datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'), 0, 0)
+                    ]
                 }
             },
             user_id=user_id
         )
+        timeseries_id = 'object__timeseries'
         other_object_id = sampledb.logic.objects.create_object(
             action_id=other_action_id,
             data={
@@ -242,6 +256,7 @@ def test_status_codes(flask_server, user):
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     expected_status_codes = {
         '': 200,
         'action_types/': 200,
@@ -330,6 +345,8 @@ def test_status_codes(flask_server, user):
         f'instruments/{instrument_id}/edit': 200,
         f'instruments/{instrument_id}/log/{instrument_log_entry_id}/file_attachments/{instrument_log_file_attachment_id}': 200,
         f'instruments/{instrument_id}/log/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
+        f'instruments/{instrument_id}/link_object': 302,
+        f'instruments/{instrument_id}/unlink_object': 302,
         'instruments/new': 200,
         'language/new': 200,
         'languages/': 200,
@@ -348,8 +365,8 @@ def test_status_codes(flask_server, user):
         'objects/': 200,
         f'objects/{object_id}': 200,
         f'objects/{object_id}/dataverse_export/': 200,
-        f'objects/{task_id}/dataverse_export_loading/': 404,
-        f'objects/{task_id}/dataverse_export_status/': 404,
+        f'objects/{task_id}/dataverse_export_loading/': 403,
+        f'objects/{task_id}/dataverse_export_status/': 403,
         f'objects/{object_id}/dc.rdf': 200,
         f'objects/{object_id}/download_service/': 404,
         f'objects/{object_id}/export': 200,
@@ -358,6 +375,7 @@ def test_status_codes(flask_server, user):
         f'objects/{object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
         f'objects/{object_id}/label': 200,
         f'objects/{object_id}/permissions': 200,
+        f'objects/{object_id}/timeseries_data/{timeseries_id}': 200,
         f'objects/{object_id}/scicat_export/': 200,
         f'objects/{object_id}/versions/': 200,
         f'objects/{object_id}/versions/0': 200,
@@ -373,6 +391,7 @@ def test_status_codes(flask_server, user):
         f'objects/{other_object_id}/files/mobile_upload/{token}': 400,  # 400 because mobile upload requires valid token
         f'objects/{other_object_id}/label': 403,
         f'objects/{other_object_id}/permissions': 200,
+        f'objects/{other_object_id}/timeseries_data/{timeseries_id}': 404,
         f'objects/{other_object_id}/scicat_export/': 302,
         f'objects/{other_object_id}/versions/': 200,
         f'objects/{other_object_id}/versions/0': 200,
@@ -385,6 +404,7 @@ def test_status_codes(flask_server, user):
         f'objects/new?previous_object_id={other_object_id}': 302,
         'objects/referencable': 200,
         'objects/search/': 200,
+        'multiselect_labels': 400,
         'other-databases/': 200,
         f'other-databases/{component_id}': 200,
         'other-databases/alias/': 200,
@@ -428,6 +448,8 @@ def test_status_codes(flask_server, user):
             allow_redirects=False,
             headers=headers
         ).status_code == expected_status_code
+        driver.get(flask_server.base_url + 'objects/')
+        assert flask_server.app.csp_reports == []
 
     # routes which do not need to be tested, e.g. because they are part of the testing environment
     excluded_routes = [
@@ -463,5 +485,6 @@ def test_status_codes(flask_server, user):
         'file_name': markdown_image_file_name,
         'token': token,
         'task_id': task_id,
+        'timeseries_id': timeseries_id,
         'error_code': 400,
     })

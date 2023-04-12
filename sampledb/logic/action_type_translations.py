@@ -10,7 +10,7 @@ import dataclasses
 import typing
 
 from .. import db
-from . import errors, languages, actions
+from . import errors, languages, action_types
 from ..logic.languages import Language
 from .. import models
 
@@ -119,7 +119,7 @@ def set_action_type_translation(
         language_id=language_id
     ).first()
     if action_type_translation is None:
-        actions.check_action_type_exists(action_type_id)
+        action_types.check_action_type_exists(action_type_id)
         languages.get_language(language_id)
         action_type_translation = models.ActionTypeTranslation(
             action_type_id=action_type_id,

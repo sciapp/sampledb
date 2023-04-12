@@ -6,42 +6,54 @@
 import datetime
 import json
 import os
+import typing
 
 import itsdangerous
 import flask
 import flask_login
+import wtforms
 from flask_babel import _
 from flask_wtf import FlaskForm
 import pytz
 from wtforms import StringField, SelectMultipleField, BooleanField, MultipleFileField, IntegerField, SelectField
-from wtforms.validators import DataRequired, ValidationError
+from wtforms.validators import DataRequired, ValidationError, InputRequired
 
 from . import frontend
+from .objects.permissions import get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
+from .objects.view import get_project_if_it_exists
+from .utils import get_user_if_exists
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
-from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, InstrumentLogCategoryTheme, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
+from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location, get_instrument_object_links, set_instrument_object
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
-from ..logic.actions import ActionType, get_actions
-from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError
+from ..logic.actions import get_actions, get_action
+from ..logic.action_types import ActionType, get_action_types, get_action_type
+from ..logic.errors import InstrumentDoesNotExistError, InstrumentLogFileAttachmentDoesNotExistError, ObjectDoesNotExistError, UserDoesNotExistError, InstrumentLogEntryDoesNotExistError, InstrumentLogObjectAttachmentDoesNotExistError, InstrumentObjectLinkAlreadyExistsError
 from ..logic.favorites import get_user_favorite_instrument_ids
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic.users import get_users, get_user
 from ..logic.objects import get_object
-from ..logic.object_permissions import Permissions, get_object_info_with_permissions
+from ..logic.object_permissions import get_object_info_with_permissions, get_user_object_permissions
 from ..logic.settings import get_user_settings, set_user_settings
+from ..logic.shares import get_shares_for_object
+from ..logic.locations import get_location, get_object_location_assignment
 from .users.forms import ToggleFavoriteInstrumentForm
 from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data
+from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from .validators import MultipleObjectIdValidator
 
+from ..models.permissions import Permissions
+from ..models.instrument_log_entries import InstrumentLogCategoryTheme
+
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
-class MultipleIntegerField(SelectMultipleField):
-    def pre_validate(self, form):
+class MultipleIntegerField(SelectMultipleField):  # type: ignore[misc]
+    def pre_validate(self, form: wtforms.Form) -> None:
         if self.data:
             for d in self.data:
                 try:
@@ -50,22 +62,11 @@ class MultipleIntegerField(SelectMultipleField):
                     raise ValidationError("Invalid value")
 
 
-class SelectMultipleFieldFix(SelectMultipleField):
-    def pre_validate(self, form):
-        # TODO: use SelectMultipleField directly after wtforms release
-        # SelectMultipleField does not yet support the validate_choice flag
-        # used by SelectField. This is already fixed in master of wtforms, but
-        # until the new version is released, this adds support for the flag.
-        if not self.validate_choice:
-            return None
-        super(SelectMultipleFieldFix, self).pre_validate(form)
-
-
 class InstrumentLogEntryForm(FlaskForm):
     content = StringField()
     content_is_markdown = BooleanField()
     files = MultipleFileField()
-    objects = SelectMultipleFieldFix(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
+    objects = SelectMultipleField(validators=[MultipleObjectIdValidator(Permissions.READ)], validate_choice=False)
     categories = SelectMultipleField()
     log_entry_id = IntegerField()
     existing_files = MultipleIntegerField()
@@ -73,13 +74,13 @@ class InstrumentLogEntryForm(FlaskForm):
     has_event_utc_datetime = BooleanField()
     event_utc_datetime = StringField()
 
-    def validate_event_utc_datetime(form, field):
+    def validate_event_utc_datetime(form, field: wtforms.BooleanField) -> None:
         if field.data:
             try:
                 language = get_user_language(flask_login.current_user)
                 parsed_datetime = datetime.datetime.strptime(field.data, language.datetime_format_datetime)
                 # convert datetime to utc
-                local_datetime = pytz.timezone(flask_login.current_user.timezone).localize(parsed_datetime)
+                local_datetime = pytz.timezone(flask_login.current_user.timezone or 'UTC').localize(parsed_datetime)
                 utc_datetime = local_datetime.astimezone(pytz.utc)
                 field.data = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
             except Exception:
@@ -92,14 +93,18 @@ class InstrumentLogOrderForm(FlaskForm):
     ascending = BooleanField()
     attribute = StringField(validators=[DataRequired()])
 
-    def validate_attribute(form, field):
+    def validate_attribute(form, field: wtforms.StringField) -> None:
         if field.data not in ('datetime', 'username'):
             raise ValidationError("invalid log order attribute")
 
 
+class ObjectLinkForm(FlaskForm):
+    object_id = IntegerField(validators=[InputRequired()])
+
+
 @frontend.route('/instruments/')
 @flask_login.login_required
-def instruments():
+def instruments() -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     all_instruments = get_instruments()
@@ -129,7 +134,7 @@ def instruments():
 
 @frontend.route('/instruments/<int:instrument_id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def instrument(instrument_id):
+def instrument(instrument_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -142,6 +147,49 @@ def instrument(instrument_id):
         responsible_user.id == flask_login.current_user.id
         for responsible_user in instrument.responsible_users
     )
+    already_linked_object_ids = []
+    linkable_action_ids = []
+    linkable_objects = []
+    if is_instrument_responsible_user and not flask_login.current_user.is_readonly:
+        object_link_form = ObjectLinkForm()
+        if instrument.object_id is None:
+            already_linked_object_ids = [link[1] for link in get_instrument_object_links()]
+            for action_type in get_action_types():
+                if action_type.enable_instrument_link:
+                    linkable_action_ids.extend([
+                        action.id
+                        for action in get_actions(action_type_id=action_type.id)
+                    ])
+                    if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
+                        for object_info in get_object_info_with_permissions(flask_login.current_user.id, Permissions.GRANT, action_type_id=action_type.id):
+                            if object_info.object_id not in already_linked_object_ids:
+                                linkable_objects.append((object_info.object_id, get_translated_text(object_info.name_json)))
+    else:
+        object_link_form = None
+
+    template_kwargs = {
+        "get_user": get_user_if_exists,
+        "get_component": get_component,
+    }
+    linked_object = None
+    show_object_title = False
+    if instrument.object_id is not None:
+        linked_object_permissions = get_user_object_permissions(object_id=instrument.object_id, user_id=flask_login.current_user.id)
+        if Permissions.READ in linked_object_permissions:
+            linked_object = get_object(instrument.object_id)
+            if linked_object.data and linked_object.schema:
+                show_object_title = get_user_settings(flask_login.current_user.id)['SHOW_OBJECT_TITLE']
+                # various getters used by object view
+                template_kwargs.update({
+                    "get_object": get_object,
+                    "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
+                    "get_fed_object_if_current_user_has_read_permissions": get_fed_object_if_current_user_has_read_permissions,
+                    "get_location": get_location,
+                    "get_object_location_assignment": get_object_location_assignment,
+                    "get_project": get_project_if_it_exists,
+                    "get_action_type": get_action_type,
+                    "get_shares_for_object": get_shares_for_object,
+                })
 
     if is_instrument_responsible_user or instrument.users_can_view_log_entries:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
@@ -184,7 +232,7 @@ def instrument(instrument_id):
         instrument_log_entry_form.objects.choices = []
     else:
         instrument_log_entry_form.objects.choices = [
-            (str(object_info.object_id), "{} (#{})".format(get_translated_text(object_info.name_json), object_info.object_id))
+            (str(object_info.object_id), f"{get_translated_text(object_info.name_json)} (#{object_info.object_id})")
             for object_info in get_object_info_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
         ]
     instrument_log_categories = get_instrument_log_categories(instrument_id)
@@ -351,10 +399,15 @@ def instrument(instrument_id):
         mobile_upload_qrcode=mobile_upload_qrcode,
         instrument_log_order_ascending=instrument_log_order_ascending,
         instrument_log_order_attribute=instrument_log_order_attribute,
+        linked_object=linked_object,
+        object_link_form=object_link_form,
+        linkable_action_ids=linkable_action_ids,
+        linkable_objects=linkable_objects,
+        already_linked_object_ids=already_linked_object_ids,
+        show_object_title=show_object_title,
         languages=get_languages(),
         ActionType=ActionType,
-        get_user=get_user,
-        get_component=get_component
+        **template_kwargs
     )
 
 
@@ -370,11 +423,12 @@ class InstrumentForm(FlaskForm):
     create_log_entry_default = BooleanField(default=False)
     is_hidden = BooleanField(default=False)
     location = SelectField()
+    show_linked_object_data = BooleanField(default=True)
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
 @flask_login.login_required
-def new_instrument():
+def new_instrument() -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     if not flask_login.current_user.is_admin:
@@ -425,8 +479,7 @@ def new_instrument():
                             flask.flash(_('Please enter an instrument name.'), 'error')
                             return flask.render_template('instruments/instrument_form.html',
                                                          submit_text='Create Instrument',
-                                                         instrument_log_category_themes=sorted(
-                                                             InstrumentLogCategoryTheme, key=lambda t: t.value),
+                                                         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                          ENGLISH=get_language(Language.ENGLISH),
                                                          languages=get_languages(only_enabled_for_input=True),
                                                          instrument_form=instrument_form
@@ -435,8 +488,7 @@ def new_instrument():
                         flask.flash(_('Please enter an instrument name.'), 'error')
                         return flask.render_template('instruments/instrument_form.html',
                                                      submit_text='Create Instrument',
-                                                     instrument_log_category_themes=sorted(
-                                                         InstrumentLogCategoryTheme, key=lambda t: t.value),
+                                                     instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                      ENGLISH=get_language(Language.ENGLISH),
                                                      languages=get_languages(only_enabled_for_input=True),
                                                      instrument_form=instrument_form
@@ -449,16 +501,17 @@ def new_instrument():
                 users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
                 create_log_entry_default=instrument_form.create_log_entry_default.data,
                 is_hidden=instrument_form.is_hidden.data,
+                show_linked_object_data=instrument_form.show_linked_object_data.data,
             )
 
             for translation in translation_data:
-                language_id = translation['language_id']
+                language_id = int(translation['language_id'])
                 name = translation['name'].strip()
                 description = translation['description'].strip()
                 short_description = translation['short_description'].strip()
                 notes = translation['notes'].strip()
 
-                if language_id not in map(str, allowed_language_ids):
+                if language_id not in allowed_language_ids:
                     continue
 
                 if instrument_form.is_markdown.data:
@@ -530,7 +583,7 @@ def new_instrument():
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text='Create Instrument',
-        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
+        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
         ENGLISH=get_language(Language.ENGLISH),
         languages=get_languages(only_enabled_for_input=True),
         instrument_form=instrument_form,
@@ -540,7 +593,7 @@ def new_instrument():
 
 @frontend.route('/instruments/<int:instrument_id>/edit', methods=['GET', 'POST'])
 @flask_login.login_required
-def edit_instrument(instrument_id):
+def edit_instrument(instrument_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -588,6 +641,7 @@ def edit_instrument(instrument_id):
         instrument_form.create_log_entry_default.data = instrument.create_log_entry_default
         instrument_form.is_hidden.data = instrument.is_hidden
         instrument_form.location.data = instrument_form.location.default
+        instrument_form.show_linked_object_data.data = instrument.show_linked_object_data
     location_is_invalid = instrument_form.location.data not in {
         location_id_str
         for location_id_str, location_name in choices
@@ -601,7 +655,8 @@ def edit_instrument(instrument_id):
             users_can_create_log_entries=instrument_form.users_can_create_log_entries.data,
             users_can_view_log_entries=instrument_form.users_can_view_log_entries.data,
             create_log_entry_default=instrument_form.create_log_entry_default.data,
-            is_hidden=instrument_form.is_hidden.data
+            is_hidden=instrument_form.is_hidden.data,
+            show_linked_object_data=instrument_form.show_linked_object_data.data
         )
         instrument_responsible_user_ids = [
             int(user_id)
@@ -650,22 +705,24 @@ def edit_instrument(instrument_id):
                         error = True
                     if error:
                         flask.flash(_('Please enter an english instrument name.'), 'error')
-                        instrument_translations = get_instrument_translations_for_instrument(instrument.id)
+                        instrument_translations_list = get_instrument_translations_for_instrument(instrument.id)
                         instrument_language_ids = [
                             translation.language_id
-                            for translation in instrument_translations
+                            for translation in instrument_translations_list
 
                         ]
                         instrument_translations = {
                             instrument_translation.language_id: instrument_translation
-                            for instrument_translation in instrument_translations
+                            for instrument_translation in instrument_translations_list
                         }
                         ENGLISH = get_language(Language.ENGLISH)
                         return flask.render_template(
                             'instruments/instrument_form.html',
                             submit_text=_('Save'),
-                            instrument_log_category_themes=sorted(InstrumentLogCategoryTheme,
-                                                                  key=lambda t: t.value),
+                            instrument_log_category_themes=sorted(
+                                InstrumentLogCategoryTheme,
+                                key=lambda t: int(t.value)
+                            ),
                             instrument_translations=instrument_translations,
                             instrument_language_ids=instrument_language_ids,
                             ENGLISH=ENGLISH,
@@ -760,17 +817,17 @@ def edit_instrument(instrument_id):
         flask.flash(_('The instrument was updated successfully.'), 'success')
         return flask.redirect(flask.url_for('.instrument', instrument_id=instrument.id))
 
-    instrument_translations = get_instrument_translations_for_instrument(instrument.id)
-    instrument_language_ids = [translation.language_id for translation in instrument_translations]
+    instrument_translations_list = get_instrument_translations_for_instrument(instrument.id)
+    instrument_language_ids = [translation.language_id for translation in instrument_translations_list]
     instrument_translations = {
         instrument_translation.language_id: instrument_translation
-        for instrument_translation in instrument_translations
+        for instrument_translation in instrument_translations_list
     }
     english = get_language(Language.ENGLISH)
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text=_('Save'),
-        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: t.value),
+        instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: int(t.value)),
         instrument_translations=instrument_translations,
         instrument_language_ids=instrument_language_ids,
         ENGLISH=english,
@@ -783,7 +840,7 @@ def edit_instrument(instrument_id):
 
 @frontend.route('/instruments/<int:instrument_id>/log/<int:log_entry_id>/file_attachments/<int:file_attachment_id>')
 @flask_login.login_required
-def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_id):
+def instrument_log_file_attachment(instrument_id: int, log_entry_id: int, file_attachment_id: int) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -820,7 +877,7 @@ def instrument_log_file_attachment(instrument_id, log_entry_id, file_attachment_
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['GET'])
-def instrument_log_mobile_file_upload(instrument_id: int, token: str):
+def instrument_log_mobile_file_upload(instrument_id: int, token: str) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -844,7 +901,7 @@ def instrument_log_mobile_file_upload(instrument_id: int, token: str):
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['POST'])
-def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
+def post_instrument_log_mobile_file_upload(instrument_id: int, token: str) -> FlaskResponseT:
     if flask.current_app.config['DISABLE_INSTRUMENTS']:
         return flask.abort(404)
     try:
@@ -874,25 +931,24 @@ def post_instrument_log_mobile_file_upload(instrument_id: int, token: str):
             )
         )
     if files:
-        category_ids = []
         log_entry = create_instrument_log_entry(
             instrument_id=instrument_id,
             user_id=user_id,
             content='',
-            category_ids=category_ids
+            category_ids=[]
         )
         for file_storage in files:
             create_instrument_log_file_attachment(
                 instrument_log_entry_id=log_entry.id,
-                file_name=file_storage.filename,
+                file_name=file_storage.filename or '',
                 content=file_storage.stream.read()
             )
     return flask.render_template('mobile_upload_success.html')
 
 
-@flask_login.login_required
 @frontend.route('/users/me/settings/instrument_log_order', methods=['POST'])
-def set_instrument_log_order():
+@flask_login.login_required
+def set_instrument_log_order() -> FlaskResponseT:
     form = InstrumentLogOrderForm()
     if not form.validate_on_submit():
         return flask.abort(400)
@@ -903,3 +959,80 @@ def set_instrument_log_order():
         'INSTRUMENT_LOG_ORDER_ATTRIBUTE': attribute
     })
     return "", 200
+
+
+@frontend.route('/instruments/<int:instrument_id>/link_object', methods=['GET', 'POST'])
+@flask_login.login_required
+def instrument_link_object(instrument_id: int) -> FlaskResponseT:
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
+    try:
+        instrument = get_instrument(instrument_id)
+    except InstrumentDoesNotExistError:
+        return flask.abort(404)
+
+    is_instrument_responsible_user = any(
+        responsible_user.id == flask_login.current_user.id
+        for responsible_user in instrument.responsible_users
+    )
+    if not is_instrument_responsible_user:
+        return flask.abort(403)
+    check_current_user_is_not_readonly()
+    object_link_form = ObjectLinkForm()
+    if not object_link_form.validate_on_submit():
+        flask.flash(_("Missing or invalid object ID."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    object_id = object_link_form.object_id.data
+    try:
+        if Permissions.GRANT not in get_user_object_permissions(object_id, flask_login.current_user.id) and not flask_login.current_user.has_admin_permissions:
+            flask.flash(_("You do not have GRANT permissions for this object."), 'error')
+            return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+        object = get_object(object_id)
+        object_is_valid = False
+        if object.action_id is not None:
+            action = get_action(object.action_id)
+            if action.type_id is not None:
+                action_type = get_action_type(action.type_id)
+                object_is_valid = action_type.enable_instrument_link
+        if not object_is_valid:
+            flask.flash(_("This object cannot be linked to an instrument."), 'error')
+            return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+        set_instrument_object(instrument_id, object_id)
+    except ObjectDoesNotExistError:
+        flask.flash(_("Object does not exist."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    except InstrumentObjectLinkAlreadyExistsError:
+        flask.flash(_("The instrument is already linked to an object or the object is already linked to an instrument."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    flask.flash(_("Successfully linked the object to the instrument."), 'success')
+    return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+
+
+@frontend.route('/instruments/<int:instrument_id>/unlink_object', methods=['GET', 'POST'])
+@flask_login.login_required
+def instrument_unlink_object(instrument_id: int) -> FlaskResponseT:
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        return flask.abort(404)
+    try:
+        instrument = get_instrument(instrument_id)
+    except InstrumentDoesNotExistError:
+        return flask.abort(404)
+
+    is_instrument_responsible_user = any(
+        responsible_user.id == flask_login.current_user.id
+        for responsible_user in instrument.responsible_users
+    )
+    if not is_instrument_responsible_user:
+        return flask.abort(403)
+    check_current_user_is_not_readonly()
+    object_link_form = ObjectLinkForm()
+    if not object_link_form.validate_on_submit():
+        flask.flash(_("Missing or invalid object ID."), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    object_id = object_link_form.object_id.data
+    if instrument.object_id != object_id:
+        flask.flash(_('This instrument is not linked to this object.'), 'error')
+        return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))
+    set_instrument_object(instrument_id=instrument_id, object_id=None)
+    flask.flash(_("Successfully unlinked the object from the instrument."), 'success')
+    return flask.redirect(flask.url_for('.instrument', instrument_id=instrument_id))

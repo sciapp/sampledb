@@ -4,6 +4,7 @@
 """
 
 import datetime
+import http
 
 import flask
 import flask_login
@@ -21,10 +22,11 @@ from ...models import Authentication, UserType
 from ... import db
 
 from ..users_forms import InvitationForm, RegistrationForm
+from ...utils import FlaskResponseT
 
 
 @frontend.route('/users/invitation', methods=['GET', 'POST'])
-def invitation_route():
+def invitation_route() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated:
         return invitation()
     elif 'token' in flask.request.args:
@@ -33,7 +35,7 @@ def invitation_route():
         return flask.abort(403)
 
 
-def invitation():
+def invitation() -> FlaskResponseT:
     invitation_form = InvitationForm()
     if flask.request.method == "GET":
         #  GET (invitation dialog)
@@ -42,7 +44,7 @@ def invitation():
             invitation_form=invitation_form,
             mail_send_status=None
         )
-    if flask.request.method == "POST":
+    elif flask.request.method == "POST":
         # POST (send invitation)
         has_error = False
         mail_send_status = None
@@ -72,10 +74,15 @@ def invitation():
             has_error=has_error,
             mail_send_status=mail_send_status
         )
+    else:
+        return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)
 
 
-def registration():
+def registration() -> FlaskResponseT:
     token = flask.request.args.get('token')
+    if token is None:
+        flask.flash(_('Invalid invitation token. Please request a new invitation.'), 'error')
+        return flask.abort(403)
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
     token_data = verify_token(token, salt='invitation', secret_key=flask.current_app.config['SECRET_KEY'], expiration=expiration_time_limit)
     if token_data is None:
@@ -97,7 +104,7 @@ def registration():
     if flask.request.method == "GET":
         # confirmation dialog
         return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
-    if flask.request.method == "POST":
+    elif flask.request.method == "POST":
         # redirect or register user and redirect
         has_error = False
         if registration_form.email.data != email:
@@ -121,3 +128,5 @@ def registration():
             return flask.redirect(flask.url_for('frontend.sign_in'))
         else:
             return flask.render_template('registration.html', registration_form=registration_form, has_error=has_error)
+    else:
+        return flask.abort(http.HTTPStatus.METHOD_NOT_ALLOWED)

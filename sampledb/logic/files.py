@@ -20,6 +20,7 @@ will be inside folders named after the action's ID.
 
 import dataclasses
 import datetime
+import hashlib
 import io
 import os
 import typing
@@ -40,6 +41,9 @@ from ..models.file_log import FileLogEntry, FileLogEntryType
 FILE_STORAGE_PATH: typing.Optional[str] = None
 MAX_NUM_FILES: int = 10000
 
+SUPPORTED_HASH_ALGORITHMS = ['sha256', 'sha512']
+DEFAULT_HASH_ALGORITHM = 'sha256'
+
 
 @dataclasses.dataclass(frozen=True)
 class File:
@@ -48,12 +52,32 @@ class File:
     """
     id: int
     object_id: int
-    user_id: int
+    user_id: typing.Optional[int]
     utc_datetime: typing.Optional[datetime.datetime] = None
     data: typing.Optional[typing.Dict[str, typing.Any]] = None
     binary_data: typing.Optional[bytes] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
+
+    @dataclasses.dataclass(frozen=True)
+    class HashInfo:
+        algorithm: str
+        hexdigest: str
+
+        @classmethod
+        def from_binary_data(
+                cls,
+                algorithm: str,
+                binary_data: bytes
+        ) -> typing.Optional['File.HashInfo']:
+            if algorithm not in SUPPORTED_HASH_ALGORITHMS:
+                return None
+            return cls(
+                algorithm=algorithm,
+                hexdigest=getattr(hashlib, algorithm)(binary_data).hexdigest()
+            )
+
+    hash: typing.Optional[HashInfo] = None
 
     @dataclasses.dataclass
     class InfoCache:
@@ -74,6 +98,13 @@ class File:
                 'storage': 'local',
                 'original_file_name': ''
             }
+        if isinstance(data.get('hash'), dict):
+            hash = File.HashInfo(
+                algorithm=data['hash'].get('algorithm'),
+                hexdigest=data['hash'].get('hexdigest')
+            )
+        else:
+            hash = None
         return File(
             id=file.id,
             object_id=file.object_id,
@@ -82,7 +113,8 @@ class File:
             data=data,
             binary_data=file.binary_data,
             fed_id=file.fed_id,
-            component_id=file.component_id
+            component_id=file.component_id,
+            hash=hash
         )
 
     @property
@@ -103,10 +135,9 @@ class File:
         if self.storage == 'local':
             # ensure that 4 digits are enough for every valid file ID
             assert MAX_NUM_FILES <= 10000
-            # TODO: make the base path configurable
             object = objects.get_object(self.object_id)
             action_id = object.action_id
-            prefixed_file_name = '{file_id:04d}_{file_name}'.format(file_id=self.id, file_name=self.original_file_name)
+            prefixed_file_name = f'{self.id:04d}_{self.original_file_name}'
             return os.path.join(FILE_STORAGE_PATH or '', str(action_id), str(self.object_id), prefixed_file_name)
         else:
             raise InvalidFileStorageError()
@@ -268,7 +299,13 @@ class File:
             raise InvalidFileStorageError()
 
 
-def create_local_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> File:
+def create_local_file(
+        object_id: int,
+        user_id: int,
+        file_name: str,
+        save_content: typing.Callable[[typing.BinaryIO], None],
+        hash: typing.Optional[File.HashInfo] = None
+) -> File:
     """
     Create a new local file and add it to the object and user logs.
 
@@ -279,6 +316,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
+    :param hash: the hash info for this file
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -288,6 +326,7 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         bytes when encoded as UTF-8
     :raise errors.TooManyFilesForObjectError: when there are already 10000
         files for the object with the given id
+    :raise errors.FileCreationError: if creating the file has failed
     """
     # ensure that the file name is valid
     if len(file_name.encode('utf8')) > 150:
@@ -298,22 +337,31 @@ def create_local_file(object_id: int, user_id: int, file_name: str, save_content
         user_id=user_id,
         data={
             'storage': 'local',
-            'original_file_name': file_name
+            'original_file_name': file_name,
+            'hash': {
+                'algorithm': hash.algorithm,
+                'hexdigest': hash.hexdigest
+            } if hash is not None else None
         }
     )
     file = File.from_database(db_file)
     try:
         with file.open(read_only=False) as storage_file:
             save_content(storage_file)
-    except Exception:
+    except Exception as exc:
         db.session.delete(db_file)
         db.session.commit()
-        raise
+        raise errors.FileCreationError() from exc
     _create_file_logs(file)
     return file
 
 
-def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> File:
+def create_local_file_reference(
+        object_id: int,
+        user_id: int,
+        filepath: str,
+        hash: typing.Optional[File.HashInfo] = None
+) -> File:
     """
     Create a file as a link to a local file and add it to the object and user
     logs.
@@ -322,6 +370,7 @@ def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> 
     :param user_id: the ID of an existing user
     :param filepath: the filepath relative to the mounting directory of the
         download service
+    :param hash: the hash info for this file
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -329,7 +378,7 @@ def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> 
         exists
     :raise errors.TooManyFilesForObjectError: when there are already 10000
         files for the object with the given id
-    :raise errors.UserNotAllowedError: when the current user is not allowed to
+    :raise errors.UnauthorizedRequestError: when the current user is not allowed to
         add this certain filepath
     """
     path_permissions: typing.Dict[str, typing.List[int]] = flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST']
@@ -351,7 +400,11 @@ def create_local_file_reference(object_id: int, user_id: int, filepath: str) -> 
         data={
             'storage': 'local_reference',
             'filepath': filepath,
-            'valid': True  # to distinguish from local file references created before the whitelist was checked properly
+            'valid': True,  # to distinguish from local file references created before the whitelist was checked properly
+            'hash': {
+                'algorithm': hash.algorithm,
+                'hexdigest': hash.hexdigest
+            } if hash is not None else None
         }
     )
     file = File.from_database(db_file)
@@ -387,7 +440,13 @@ def create_url_file(object_id: int, user_id: int, url: str) -> File:
     return file
 
 
-def create_database_file(object_id: int, user_id: int, file_name: str, save_content: typing.Callable[[typing.BinaryIO], None]) -> File:
+def create_database_file(
+        object_id: int,
+        user_id: int,
+        file_name: str,
+        save_content: typing.Callable[[typing.BinaryIO], None],
+        hash: typing.Optional[File.HashInfo] = None
+) -> File:
     """
     Create a new database file and add it to the object and user logs.
 
@@ -398,6 +457,7 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
     :param file_name: the original file name
     :param save_content: a function which will save the file's content to the
         given stream. The function will be called at most once.
+    :param hash: the hash info for this file
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -413,13 +473,22 @@ def create_database_file(object_id: int, user_id: int, file_name: str, save_cont
     binary_data_file = io.BytesIO()
     save_content(binary_data_file)
     binary_data = binary_data_file.getvalue()
+    if hash is None:
+        hash = File.HashInfo.from_binary_data(
+            algorithm=DEFAULT_HASH_ALGORITHM,
+            binary_data=binary_data
+        )
 
     db_file = _create_db_file(
         object_id=object_id,
         user_id=user_id,
         data={
             'storage': 'database',
-            'original_file_name': file_name
+            'original_file_name': file_name,
+            'hash': {
+                'algorithm': hash.algorithm,
+                'hexdigest': hash.hexdigest
+            } if hash is not None else None
         }
     )
     db_file.binary_data = binary_data
@@ -491,8 +560,6 @@ def create_fed_file(
     :raise errors.ComponentDoesNotExistError: when no component with the given
         component ID exists
     """
-    if fed_id is None or component_id is None:
-        raise TypeError('Missing federation reference.')
     file = _create_db_file(object_id, user_id, data, utc_datetime, fed_id, component_id)
     if save_content:
         binary_data_file = io.BytesIO()
@@ -512,8 +579,9 @@ def _create_file_logs(file: File) -> None:
     file_id = file.id
     object_id = file.object_id
     user_id = file.user_id
-    object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
-    user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+    if user_id is not None:
+        object_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
+        user_log.upload_file(user_id=user_id, object_id=object_id, file_id=file_id)
 
 
 def _create_db_file(
@@ -557,7 +625,7 @@ def _create_db_file(
         # ensure that the component exists
         components.check_component_exists(component_id)
     # calculate the next file id
-    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()  # type: ignore
+    previous_file_id = db.session.query(db.func.max(files.File.id)).filter(files.File.object_id == object.id).scalar()
     if previous_file_id is None:
         file_id = 0
     else:

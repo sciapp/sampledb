@@ -2,10 +2,11 @@
 """
 
 """
+import json
+import typing
 
 import flask
 import flask_login
-import json
 from flask_wtf import FlaskForm
 from wtforms.fields import StringField, BooleanField, SelectField, SelectMultipleField
 from wtforms.validators import DataRequired, ValidationError
@@ -13,16 +14,18 @@ from flask_babel import _
 
 from . import frontend
 from .. import logic
-from .utils import check_current_user_is_not_readonly, get_translated_text
-from ..logic.actions import SciCatExportType
+from .utils import check_current_user_is_not_readonly
+from ..utils import FlaskResponseT
+from ..logic.utils import get_translated_text
 from ..logic.components import get_component_or_none
+from ..models import SciCatExportType
 
 
 class ActionTypesSortingForm(FlaskForm):
     encoded_order = StringField("Order-String", [DataRequired()])
 
-    def validate_encoded_order(form, field):
-        valid_action_type_ids = [action_type.id for action_type in logic.actions.get_action_types()]
+    def validate_encoded_order(form, field: StringField) -> None:
+        valid_action_type_ids = [action_type.id for action_type in logic.action_types.get_action_types()]
 
         try:
             split_string = field.data.split(",")
@@ -38,7 +41,7 @@ class ActionTypesSortingForm(FlaskForm):
 
 @frontend.route('/action_types/', methods=['GET', 'POST'])
 @flask_login.login_required
-def action_types():
+def action_types() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
@@ -47,23 +50,23 @@ def action_types():
     if sorting_form.validate_on_submit():
         check_current_user_is_not_readonly()
 
-        logic.actions.set_action_types_order(sorting_form.encoded_order.data)
+        logic.action_types.set_action_types_order(sorting_form.encoded_order.data)
 
     return flask.render_template(
         'action_types/action_types.html',
-        action_types=logic.actions.get_action_types(),
+        action_types=logic.action_types.get_action_types(),
         sorting_form=sorting_form
     )
 
 
 @frontend.route('/action_types/<int(signed=True):type_id>', methods=['GET', 'POST'])
 @flask_login.login_required
-def action_type(type_id):
+def action_type(type_id: int) -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
 
     try:
-        action_type = logic.actions.get_action_type(
+        action_type = logic.action_types.get_action_type(
             action_type_id=type_id
         )
     except logic.errors.ActionTypeDoesNotExistError:
@@ -91,7 +94,7 @@ def action_type(type_id):
 
 @frontend.route('/action_types/new', methods=['GET', 'POST'])
 @flask_login.login_required
-def new_action_type():
+def new_action_type() -> FlaskResponseT:
     if not flask_login.current_user.is_admin:
         return flask.abort(403)
     return show_action_type_form(None)
@@ -111,6 +114,7 @@ class ActionTypeForm(FlaskForm):
     enable_activity_log = BooleanField()
     enable_related_objects = BooleanField()
     enable_project_link = BooleanField()
+    enable_instrument_link = BooleanField()
     disable_create_objects = BooleanField()
     is_template = BooleanField()
     select_usable_in_action_types = SelectMultipleField(coerce=int)
@@ -121,19 +125,19 @@ class ActionTypeForm(FlaskForm):
         (SciCatExportType.DERIVED_DATASET.name.lower(), _('Derived Dataset')),
     ])
 
-    def set_select_usable_in_action_types_attributes(self):
+    def set_select_usable_in_action_types_attributes(self) -> None:
         self.select_usable_in_action_types.choices = [
             (action_type.id, get_translated_text(action_type.name, default=_('Unnamed Action Type')))
-            for action_type in logic.actions.get_action_types()
+            for action_type in logic.action_types.get_action_types()
             if not action_type.disable_create_objects
         ]
 
         self.select_usable_in_action_types.shared_action_types = [action_type.id
-                                                                  for action_type in logic.actions.get_action_types()
+                                                                  for action_type in logic.action_types.get_action_types()
                                                                   if action_type.component_id is not None]
 
 
-def show_action_type_form(type_id):
+def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     action_type_translations = []
     action_type_language_ids = []
@@ -142,16 +146,13 @@ def show_action_type_form(type_id):
 
     english = logic.languages.get_language(logic.languages.Language.ENGLISH)
 
-    def validate_string(string):
+    def validate_string(string: str) -> bool:
         try:
-            if 0 < len(string) < 100:
-                return True
-            else:
-                return False
+            return 0 < len(string) < 100
         except Exception:
             return False
 
-    def validate_strings(strings):
+    def validate_strings(strings: typing.Sequence[str]) -> bool:
         try:
             result = [validate_string(string) for string in strings]
             for temp in result:
@@ -164,7 +165,7 @@ def show_action_type_form(type_id):
 
     if type_id is not None:
         try:
-            action_type = logic.actions.get_action_type(type_id)
+            action_type = logic.action_types.get_action_type(type_id)
         except logic.errors.ActionTypeDoesNotExistError:
             return flask.abort(404)
         if 'action_submit' not in flask.request.form:
@@ -181,6 +182,7 @@ def show_action_type_form(type_id):
             action_type_form.enable_activity_log.data = action_type.enable_activity_log
             action_type_form.enable_related_objects.data = action_type.enable_related_objects
             action_type_form.enable_project_link.data = action_type.enable_project_link
+            action_type_form.enable_instrument_link.data = action_type.enable_instrument_link
             action_type_form.disable_create_objects.data = action_type.disable_create_objects
             action_type_form.select_usable_in_action_types.data = [element.id for element in action_type.usable_in_action_types]
             action_type_form.is_template.data = action_type.is_template
@@ -228,7 +230,7 @@ def show_action_type_form(type_id):
                             submit_text=_('Create') if type_id is None else _('Save')
                         )
 
-                action_type = logic.actions.create_action_type(
+                action_type = logic.action_types.create_action_type(
                     admin_only=action_type_form.admin_only.data,
                     show_on_frontpage=action_type_form.show_on_frontpage.data,
                     show_in_navbar=action_type_form.show_in_navbar.data,
@@ -240,6 +242,7 @@ def show_action_type_form(type_id):
                     enable_activity_log=action_type_form.enable_activity_log.data,
                     enable_related_objects=action_type_form.enable_related_objects.data,
                     enable_project_link=action_type_form.enable_project_link.data,
+                    enable_instrument_link=action_type_form.enable_instrument_link.data,
                     disable_create_objects=action_type_form.disable_create_objects.data,
                     is_template=action_type_form.is_template.data,
                     usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,
@@ -272,10 +275,12 @@ def show_action_type_form(type_id):
                         view_text=view_text,
                         perform_text=perform_text
                     )
-
+                # load action type with new translations
+                action_type = logic.action_types.get_action_type(action_type.id)
+                logic.action_types.add_action_type_to_order(action_type)
         else:
 
-            action_type = logic.actions.update_action_type(
+            action_type = logic.action_types.update_action_type(
                 action_type_id=type_id,
                 admin_only=action_type_form.admin_only.data,
                 show_on_frontpage=action_type_form.show_on_frontpage.data,
@@ -288,6 +293,7 @@ def show_action_type_form(type_id):
                 enable_activity_log=action_type_form.enable_activity_log.data,
                 enable_related_objects=action_type_form.enable_related_objects.data,
                 enable_project_link=action_type_form.enable_project_link.data,
+                enable_instrument_link=action_type_form.enable_instrument_link.data,
                 disable_create_objects=action_type_form.disable_create_objects.data,
                 is_template=action_type_form.is_template.data,
                 usable_in_action_type_ids=action_type_form.select_usable_in_action_types.data,

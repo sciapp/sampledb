@@ -7,18 +7,15 @@ import os
 
 import flask_sqlalchemy
 
+from .utils import table_has_column
+
 MIGRATION_INDEX = 67
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'files'
-    """)).fetchall()
-    if ('binary_data',) in column_names:
+    if table_has_column('files', 'binary_data'):
         return False
 
     # Perform migration

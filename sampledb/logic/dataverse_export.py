@@ -30,13 +30,13 @@ DATAVERSE_TIMEOUT = 30
 def flatten_metadata(
         metadata: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
         path: typing.Optional[typing.List[typing.Union[str, int]]] = None
-) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]]], None, None]:
+) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
     """
     Convert nested object data to a generator yielding the property data and path.
 
     :param metadata: the nested object data
     :param path: the path to start at, or None
-    :return: the generator for property data and path
+    :return: the generator for property data, whitelist path and title path
     """
     if path is None:
         path = []
@@ -44,14 +44,16 @@ def flatten_metadata(
         yield from _flatten_metadata_array(metadata, path)
     elif isinstance(metadata, dict) and '_type' not in metadata:
         yield from _flatten_metadata_object(metadata, path)
+    elif isinstance(metadata, dict) and '_type' in metadata and metadata['_type'] == 'timeseries':
+        yield from _flatten_metadata_timeseries(metadata, path)
     else:
-        yield metadata, path
+        yield metadata, path, path
 
 
 def _flatten_metadata_array(
         metadata: typing.List[typing.Any],
         path: typing.List[typing.Union[str, int]]
-) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]]], None, None]:
+) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
     for index, value in enumerate(metadata):
         yield from flatten_metadata(value, path + [index])
 
@@ -59,9 +61,24 @@ def _flatten_metadata_array(
 def _flatten_metadata_object(
         metadata: typing.Dict[str, typing.Any],
         path: typing.List[typing.Union[str, int]]
-) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]]], None, None]:
+) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
     for key, value in metadata.items():
         yield from flatten_metadata(value, path + [key])
+
+
+def _flatten_metadata_timeseries(
+        metadata: typing.Dict[str, typing.Any],
+        path: typing.List[typing.Union[str, int]]
+) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
+    for row in metadata['data']:
+        utc_datetime_string, magnitude = row[:2]
+        row_metadata = {
+            '_type': 'quantity',
+            'units': metadata['units'],
+            'dimensionality': metadata['dimensionality'],
+            'magnitude': magnitude
+        }
+        yield row_metadata, path, path + [utc_datetime_string]
 
 
 def _translations_to_str(
@@ -88,14 +105,18 @@ def get_title_for_property(
         subschema = schema
         title_path = []
         for key in path:
-            if isinstance(key, str):
+            if isinstance(key, str) and 'properties' in subschema:
                 subschema = subschema['properties'][key]
                 if isinstance(subschema['title'], dict):
                     title_path.append(subschema['title'].get('en', subschema['title']))
                 else:
                     title_path.append(subschema['title'])
-            else:
+            elif isinstance(key, int) and 'items' in subschema:
                 subschema = subschema['items']
+                title_path.append(key)
+            else:
+                # fallback to just appending the keys to the title path
+                subschema = {}
                 title_path.append(key)
     except Exception:
         title_path = path
@@ -131,13 +152,17 @@ def _convert_metadata_to_process(
         metadata: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any],
         user_id: int,
-        property_whitelist: typing.Sequence[typing.List[typing.Union[str, int]]]
+        property_whitelist: typing.Iterable[typing.Sequence[typing.Union[str, int]]]
 ) -> typing.List[typing.Dict[str, typing.Any]]:
     fields = []
-    for value, path in flatten_metadata(metadata):
-        if path not in property_whitelist:
+    property_whitelist = {
+        tuple(whitelist_path)
+        for whitelist_path in property_whitelist
+    }
+    for value, whitelist_path, title_path in flatten_metadata(metadata):
+        if tuple(whitelist_path) not in property_whitelist:
             continue
-        title = get_title_for_property(path, schema)
+        title = get_title_for_property(title_path, schema)
         units = ''
         magnitude = ''
         text_value = ''
@@ -281,7 +306,7 @@ def upload_object(
         server_url: str,
         api_token: str,
         dataverse: str,
-        property_whitelist: typing.Optional[typing.Sequence[typing.List[typing.Union[str, int]]]] = None,
+        property_whitelist: typing.Optional[typing.Sequence[typing.Sequence[typing.Union[str, int]]]] = None,
         file_id_whitelist: typing.Sequence[int] = (),
         tag_whitelist: typing.Sequence[str] = ()
 ) -> typing.Tuple[bool, str]:
@@ -300,8 +325,10 @@ def upload_object(
     :param property_whitelist: a list of property paths to be uploaded
     :param file_id_whitelist: a list of file IDs to be uploaded
     :param tag_whitelist: a list of tags to be set as keywords
-    :return: whether or not the upload was successful and the Dataverse url
+    :return: whether the upload was successful and the Dataverse url
         or a dictionary containing additional information
+    :raise DataverseNotReachableError: when an HTTP request to the Dataverse
+        instance fails
     """
     if property_whitelist is None:
         property_whitelist = [['name']]
@@ -588,10 +615,10 @@ def upload_object(
             dataverse_url = f'{server_url}/dataset.xhtml?{urlencode({"persistentId": persistent_id})}'
             dataverse_export = DataverseExport.query.filter_by(object_id=object_id).first()
             if dataverse_export and dataverse_export.status == DataverseExportStatus.TASK_CREATED:
-                DataverseExport.query.filter_by(object_id=object_id).update(dict(
-                    status=DataverseExportStatus.EXPORT_FINISHED,
-                    dataverse_url=dataverse_url
-                ))
+                DataverseExport.query.filter_by(object_id=object_id).update({
+                    'status': DataverseExportStatus.EXPORT_FINISHED,
+                    'dataverse_url': dataverse_url
+                })
             else:
                 dataverse_export = DataverseExport(object_id, dataverse_url, user_id, DataverseExportStatus.EXPORT_FINISHED)
                 db.session.add(dataverse_export)
@@ -803,7 +830,7 @@ def get_dataverse_export_state(object_id: int) -> typing.Optional[DataverseExpor
     dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
     if dataverse_export is None:
         return None
-    return dataverse_export.status  # type: ignore
+    return dataverse_export.status
 
 
 def get_dataverse_url(object_id: int) -> typing.Optional[str]:
@@ -816,7 +843,7 @@ def get_dataverse_url(object_id: int) -> typing.Optional[str]:
     dataverse_export: typing.Optional[DataverseExport] = DataverseExport.query.filter_by(object_id=object_id).first()
     if dataverse_export is None:
         return None
-    return dataverse_export.dataverse_url  # type: ignore
+    return dataverse_export.dataverse_url
 
 
 def get_user_valid_api_token(server_url: str, user_id: int) -> typing.Optional[str]:

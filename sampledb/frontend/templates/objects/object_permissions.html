@@ -16,7 +16,7 @@
   {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
     <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     let new_policy_selected_projects = {};
     let new_policy_selected_groups = {};
     let new_policy_selected_users = {};
@@ -27,6 +27,19 @@
     let policies = {{ policies | tojson }};
     let add_selected_component_id = undefined;
     let edit_selected_component_id = undefined;
+
+    $(function() {
+      $('#add_share_component_picker').on('change', setNewPolicyData);
+      $('#edit-share-component-picker').on('change', setEditPolicyData);
+      $('#add_component_policy_user_select_btn').on('click', newPolicyAddUserSelect);
+      $('#add_component_policy_user_input_btn').on('click', newPolicyAddUserText);
+      $('#add_component_policy_group_input_btn').on('click', newPolicyAddGroupText);
+      $('#add_component_policy_project_input_btn').on('click', newPolicyAddProjectText);
+      $('#edit_component_policy_user_select_btn').on('click', editPolicyAddUserSelect);
+      $('#edit_component_policy_user_input_btn').on('click', editPolicyAddUserText);
+      $('#edit_component_policy_group_input_btn').on('click', editPolicyAddGroupText);
+      $('#edit_component_policy_project_input_btn').on('click', editPolicyAddProjectText);
+    });
 
     function setNewPolicyData() {
       if ($('#add_share_component_picker').val() != add_selected_component_id) {
@@ -75,7 +88,7 @@
           edit_policy_selected_projects[project_id] = "{{ _('Project Group') }} #" + project_id;
           projects_tbody.append('<tr id="edit_policy_projects_' + project_id + '">\
             <form action="#">\
-              <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveProject(' + project_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+              <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
               <td>' + edit_policy_selected_projects[project_id] + '</td>\
               {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
                 <td class="text-center" style="vertical-align: middle">\
@@ -85,6 +98,9 @@
               {% endfor %}\
             </form>\
           </tr>');
+          $('#edit_policy_projects_' + project_id + ' button').on('click', function() {
+            editPolicyRemoveProject(project_id);
+          });
         }
         let groups_tbody = $('#edit_policy_groups_tbody');
         groups_tbody.empty();
@@ -99,7 +115,7 @@
           edit_policy_selected_groups[group_id] = "{{ _('Basic Group') }} #" + group_id;
           groups_tbody.append('<tr id="edit_policy_groups_' + group_id + '">\
             <form action="#">\
-              <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveGroup(' + group_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+              <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
               <td>' + edit_policy_selected_groups[group_id] + '</td>\
               {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
                 <td class="text-center" style="vertical-align: middle">\
@@ -109,6 +125,9 @@
               {% endfor %}\
             </form>\
           </tr>');
+          $('#edit_policy_groups_' + group_id + ' button').on('click', function() {
+            editPolicyRemoveGroup(group_id);
+          });
         }
         let users_tbody = $('#edit_policy_users_tbody');
         users_tbody.empty();
@@ -127,7 +146,7 @@
           }
           users_tbody.append('<tr id="edit_policy_users_' + user_id + '">\
             <form action="#">\
-              <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+              <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
               <td>' + edit_policy_selected_users[user_id] + '</td>\
               {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
                 <td class="text-center" style="vertical-align: middle">\
@@ -137,6 +156,9 @@
               {% endfor %}\
             </form>\
           </tr>');
+          $('#edit_policy_users_' + user_id + ' button').on('click', function() {
+            editPolicyRemoveUser(user_id);
+          });
         }
         updateEditSelect();
       }
@@ -149,7 +171,7 @@
         new_policy_selected_users[user_id] = users[add_selected_component_id][user_id];
         $('#new_policy_users_tbody').append('<tr id="new_policy_users_' + user_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="newPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + new_policy_selected_users[user_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -159,6 +181,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#new_policy_users_' + user_id + ' button').on('click', function() {
+          newPolicyRemoveUser(user_id);
+        });
         if ($('#new_policy_users_tbody > tr').length > 1) {
           $('#new_policy_users_tbody').show();
         }
@@ -173,7 +198,7 @@
         edit_policy_selected_users[user_id] = users[edit_selected_component_id][user_id];
         $('#edit_policy_users_tbody').append('<tr id="edit_policy_users_' + user_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + edit_policy_selected_users[user_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -183,6 +208,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#edit_policy_users_' + user_id + ' button').on('click', function() {
+          editPolicyRemoveUser(user_id);
+        });
         if ($('#edit_policy_users_tbody > tr').length > 1) {
           $('#edit_policy_users_tbody').show();
         }
@@ -270,7 +298,7 @@
         $input.val('');
         $('#new_policy_projects_tbody').append('<tr id="new_policy_projects_' + project_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="newPolicyRemoveProject(' + project_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + new_policy_selected_projects[project_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -280,6 +308,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#new_policy_projects_' + project_id + ' button').on('click', function() {
+          newPolicyRemoveProject(project_id);
+        });
         if ($('#new_policy_projects_tbody > tr').length > 1) {
           $('#new_policy_projects_tbody').show();
         }
@@ -295,7 +326,7 @@
         $input.val('');
         $('#new_policy_groups_tbody').append('<tr id="new_policy_groups_' + group_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="newPolicyRemoveGroup(' + group_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + new_policy_selected_groups[group_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -305,6 +336,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#new_policy_groups_' + group_id + ' button').on('click', function() {
+          newPolicyRemoveGroup(group_id);
+        });
         if ($('#new_policy_groups_tbody > tr').length > 1) {
           $('#new_policy_groups_tbody').show();
         }
@@ -324,7 +358,7 @@
         $input.val('');
         $('#new_policy_users_tbody').append('<tr id="new_policy_users_' + user_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="newPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + new_policy_selected_users[user_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -334,6 +368,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#new_policy_users_' + user_id + ' button').on('click', function() {
+          newPolicyRemoveUser(user_id);
+        });
         if ($('#new_policy_users_tbody > tr').length > 1) {
           $('#new_policy_users_tbody').show();
         }
@@ -350,7 +387,7 @@
         $input.val('');
         $('#edit_policy_projects_tbody').append('<tr id="edit_policy_projects_' + project_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveProject(' + project_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + edit_policy_selected_projects[project_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -360,6 +397,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#edit_policy_projects_' + project_id + ' button').on('click', function() {
+          editPolicyRemoveProject(project_id);
+        });
         if ($('#edit_policy_projects_tbody > tr').length > 1) {
           $('#edit_policy_projects_tbody').show();
         }
@@ -375,7 +415,7 @@
         $input.val('');
         $('#edit_policy_groups_tbody').append('<tr id="edit_policy_groups_' + group_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveGroup(' + group_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + edit_policy_selected_groups[group_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -385,6 +425,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#edit_policy_groups_' + group_id + ' button').on('click', function() {
+          editPolicyRemoveGroup(group_id);
+        });
         if ($('#edit_policy_groups_tbody > tr').length > 1) {
           $('#edit_policy_groups_tbody').show();
         }
@@ -404,7 +447,7 @@
         $input.val('');
         $('#edit_policy_users_tbody').append('<tr id="edit_policy_users_' + user_id + '">\
           <form action="#">\
-            <td class="text-center"><button class="btn btn-xs btn-danger" type="button" onclick="editPolicyRemoveUser(' + user_id + ');"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
+            <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>\
             <td>' + edit_policy_selected_users[user_id] + '</td>\
             {% for possible_permissions in [Permissions.READ, Permissions.WRITE, Permissions.GRANT] %}\
               <td class="text-center" style="vertical-align: middle">\
@@ -414,6 +457,9 @@
             {% endfor %}\
           </form>\
         </tr>');
+        $('#edit_policy_users_' + user_id + ' button').on('click', function() {
+          editPolicyRemoveUser(user_id);
+        });
         if ($('#edit_policy_users_tbody > tr').length > 1) {
           $('#edit_policy_users_tbody').show();
         }
@@ -545,7 +591,7 @@
         {{ edit_component_policy_form.csrf_token }}
         <div class="well">
           <label class="control-label">{{ _('Database') }}</label>
-          <select class="selectpicker" id="edit-share-component-picker" onchange="setEditPolicyData();" name="{{ edit_component_policy_form.component_id.name }}" data-width="100%" data-live-search="true">
+          <select class="selectpicker" id="edit-share-component-picker" name="{{ edit_component_policy_form.component_id.name }}" data-width="100%" data-live-search="true">
           {% for _, share in federation_shares.items() %}
             <option value="{{ share.component.id }}">{{ share.component.get_name() }} {% if share.component.address is not none %}({{ share.component.address }}){% endif %}</option>
           {% endfor %}
@@ -647,7 +693,7 @@
               <div class="input-group">
                 <select class="selectpicker" id="edit_share_user_picker" name="edit_share_user_picker" data-live-search="true" data-width="100%"></select>
                 <span class="input-group-btn">
-                  <button onclick="editPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success select-group-button" id="edit_component_policy_user_select_btn" name="edit_component_policy_user_select_btn">{{ _('Add') }}</button>
                 </span>
               </div>
             </div>
@@ -661,7 +707,7 @@
               <div class="input-group">
                 <input type="text" id="edit_share_user_text" class="form-control" placeholder="{{ _('User ID') }}" style="width: 100%">
                 <span class="input-group-btn">
-                  <button onclick="editPolicyAddUserText();" type="button" class="btn btn-success" name="edit_share_user_input_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success" id="edit_component_policy_user_input_btn" name="edit_share_user_input_btn">{{ _('Add') }}</button>
                 </span>
               </div>
               <span id="edit_share_user_text_help_block" style="display: none;" class="help-block"></span>
@@ -677,7 +723,7 @@
               <div class="input-group">
                 <input type="text" id="edit_share_group_text" class="form-control" placeholder="{{ _('Basic Group ID') }}" style="width: 100%">
                 <span class="input-group-btn">
-                  <button onclick="editPolicyAddGroupText();" type="button" class="btn btn-success" name="edit_share_group_input_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success"  id="edit_component_policy_group_input_btn" name="edit_share_group_input_btn">{{ _('Add') }}</button>
                 </span>
               </div>
               <span id="edit_share_group_text_help_block" style="display: none;" class="help-block"></span>
@@ -690,7 +736,7 @@
               <div class="input-group">
                 <input type="text" id="edit_share_project_text" class="form-control" placeholder="{{ _('Project Group ID') }}" style="width: 100%">
                 <span class="input-group-btn">
-                  <button onclick="editPolicyAddProjectText();" type="button" class="btn btn-success" name="edit_share_project_input_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success"  id="edit_component_policy_project_input_btn" name="edit_share_project_input_btn">{{ _('Add') }}</button>
                 </span>
               </div>
               <span id="edit_share_project_text_help_block" style="display: none;" class="help-block"></span>
@@ -708,7 +754,7 @@
         {{ add_component_policy_form.csrf_token }}
         <div class="well">
           <label class="control-label">{{ _('Database') }}</label>
-          <select class="selectpicker" id="add_share_component_picker" name="{{ add_component_policy_form.component_id.name }}" data-width="100%" data-live-search="true" onchange="setNewPolicyData();">
+          <select class="selectpicker" id="add_share_component_picker" name="{{ add_component_policy_form.component_id.name }}" data-width="100%" data-live-search="true">
           {% for component in possible_new_components %}
             <option value="{{ component.id }}">{{ component.get_name() }}{% if component.address is not none %} ({{ component.address }}){% endif %}</option>
           {% endfor %}
@@ -811,7 +857,7 @@
                 <select class="selectpicker" id="add_share_user_picker" data-live-search="true" data-width="100%">
                 </select>
                 <span class="input-group-btn">
-                  <button onclick="newPolicyAddUserSelect();" type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success select-group-button" id="add_component_policy_user_select_btn">{{ _('Add') }}</button>
                 </span>
               </div>
             </div>
@@ -825,7 +871,7 @@
               <div class="input-group">
                 <input type="text" class="form-control" id="add_share_user_text" placeholder="{{ _('User ID') }}">
                 <span class="input-group-btn">
-                  <button onclick="newPolicyAddUserText();" type="button" class="btn btn-success" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success" id="add_component_policy_user_input_btn" name="add_component_policy_user_input_btn" value="add_component_policy_user_input_btn">{{ _('Add') }}</button>
                 </span>
               </div>
               <span id="add_share_user_text_help_block" style="display: none;" class="help-block"></span>
@@ -841,7 +887,7 @@
               <div class="input-group">
                 <input type="text" id="add_share_group_text" class="form-control" placeholder="{{ _('Basic Group ID') }}" style="width: 100%">
                 <span class="input-group-btn">
-                  <button onclick="newPolicyAddGroupText();" type="button" class="btn btn-success" name="add_component_policy_group_input_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success" id="add_component_policy_group_input_btn" name="add_component_policy_group_input_btn">{{ _('Add') }}</button>
                 </span>
               </div>
               <span id="add_share_group_text_help_block" style="display: none;" class="help-block"></span>
@@ -854,7 +900,7 @@
               <div class="input-group">
                 <input type="text" id="add_share_project_text" class="form-control" placeholder="{{ _('Project Group ID') }}" style="width: 100%">
                 <span class="input-group-btn">
-                  <button onclick="newPolicyAddProjectText();" type="button" class="btn btn-success" name="add_component_policy_project_input_btn">{{ _('Add') }}</button>
+                  <button type="button" class="btn btn-success" id="add_component_policy_project_input_btn" name="add_component_policy_project_input_btn">{{ _('Add') }}</button>
                 </span>
               </div>
               <span id="add_share_project_text_help_block" style="display: none;" class="help-block"></span>

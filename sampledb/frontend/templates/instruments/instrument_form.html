@@ -17,7 +17,7 @@
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   {% set allowed_language_ids = [] %}
   window.languages = [
     {% for language in languages %}
@@ -430,6 +430,11 @@
       <div class="checkbox">
         <label for="input-is_hidden">
           <input type="checkbox" id="input-is_hidden" name="{{ instrument_form.is_hidden.name }}" {% if instrument_form.is_hidden.data %}checked="checked"{% endif %}> {{ _('Hide this instrument from instrument lists') }}
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-show_linked_object_data">
+          <input type="checkbox" id="input-show_linked_object_data" name="{{ instrument_form.show_linked_object_data.name }}" {% if instrument_form.show_linked_object_data.data %}checked="checked"{% endif %}> {{ _('Show the information for the linked object') }}
         </label>
       </div>
     </div>

@@ -32,7 +32,7 @@ class UserObjectPermissions(Resource):
                 users.check_user_exists(user_id)
             except errors.UserDoesNotExistError:
                 return {
-                    "message": "user {} does not exist".format(user_id)
+                    "message": f"user {user_id} does not exist"
                 }, 404
         return permissions.name.lower()
 
@@ -42,7 +42,7 @@ class UserObjectPermissions(Resource):
             users.check_user_exists(user_id)
         except errors.UserDoesNotExistError:
             return {
-                "message": "user {} does not exist".format(user_id)
+                "message": f"user {user_id} does not exist"
             }, 404
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):
@@ -92,7 +92,7 @@ class GroupObjectPermissions(Resource):
                 groups.get_group(group_id)
             except errors.GroupDoesNotExistError:
                 return {
-                    "message": "group {} does not exist".format(group_id)
+                    "message": f"group {group_id} does not exist"
                 }, 404
         return permissions.name.lower()
 
@@ -102,7 +102,7 @@ class GroupObjectPermissions(Resource):
             groups.get_group(group_id)
         except errors.GroupDoesNotExistError:
             return {
-                "message": "group {} does not exist".format(group_id)
+                "message": f"group {group_id} does not exist"
             }, 404
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):
@@ -144,7 +144,7 @@ class ProjectObjectPermissions(Resource):
                 projects.get_project(project_id)
             except errors.ProjectDoesNotExistError:
                 return {
-                    "message": "project {} does not exist".format(project_id)
+                    "message": f"project {project_id} does not exist"
                 }, 404
         return permissions.name.lower()
 
@@ -154,7 +154,7 @@ class ProjectObjectPermissions(Resource):
             projects.get_project(project_id)
         except errors.ProjectDoesNotExistError:
             return {
-                "message": "project {} does not exist".format(project_id)
+                "message": f"project {project_id} does not exist"
             }, 404
         request_json = flask.request.get_json(force=True)
         if not isinstance(request_json, str):

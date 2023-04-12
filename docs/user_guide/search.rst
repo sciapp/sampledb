@@ -31,6 +31,19 @@ When an advanced search is used, |service_name| will show the search tree that t
 
     Advanced search tree for the query ``"Sb" in substance and (temperature < 110degC or temperature > 120degC)``
 
+Search Query Builder
+````````````````````
+
+Instead of manually writing search queries, you can use the Search Query Builder via **Objects** ➜ **Search** ➜ **Build Search Query** . This allows you to define search conditions, either requiring all or one of them to be met.
+
+To define a condition, enter the name of the property you want to filter for, select the type of the condition and optionally enter any value to compare against, depending on the condition type.
+
+.. figure:: ../static/img/generated/search_query_builder.png
+    :alt: Using the Search Query Builder
+
+    Using the Search Query Builder
+
+
 Property Names
 ``````````````
 

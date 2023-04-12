@@ -17,71 +17,71 @@ class Literal:
         self.end_position = self.start_position + len(self.input_text)
 
     def __repr__(self) -> str:
-        return '<Literal({})>'.format(self.input_text)
+        return f'<Literal({self.input_text})>'
 
 
 class Text(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Text) -> None:
-        super(Text, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Text({})>'.format(self.value.text)
+        return f'<Text({self.value.text})>'
 
 
 class Tag(Literal):
     def __init__(self, input_text: str, start_position: int, value: str) -> None:
-        super(Tag, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Tag(#{})>'.format(self.value)
+        return f'<Tag(#{self.value})>'
 
 
 class Reference(Literal):
     def __init__(self, input_text: str, start_position: int, value: int) -> None:
-        super(Reference, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Reference(#{})>'.format(self.value)
+        return f'<Reference(#{self.value})>'
 
 
 class Boolean(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Boolean) -> None:
-        super(Boolean, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Boolean({})>'.format(self.value.value)
+        return f'<Boolean({self.value.value})>'
 
 
 class Attribute(Literal):
     def __init__(self, input_text: str, start_position: int, value: typing.List[str]) -> None:
-        super(Attribute, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Attribute({})>'.format(self.value)
+        return f'<Attribute({self.value})>'
 
 
 class Null(Literal):
     def __init__(self, input_text: str, start_position: int, value: str) -> None:
-        super(Null, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Null({})>'.format(self.value)
+        return f'<Null({self.value})>'
 
 
 class Quantity(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.Quantity) -> None:
-        super(Quantity, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Quantity({})>'.format(self.value)
+        return f'<Quantity({self.value})>'
 
 
 class Date(Literal):
     def __init__(self, input_text: str, start_position: int, value: datatypes.DateTime) -> None:
-        super(Date, self).__init__(input_text, start_position, value)
+        super().__init__(input_text, start_position, value)
 
     def __repr__(self) -> str:
-        return '<Date({})>'.format(self.value.utc_datetime)
+        return f'<Date({self.value.utc_datetime})>'
 
 
 class Token:
@@ -90,7 +90,7 @@ class Token:
         self.start_position = start_position
 
     def __repr__(self) -> str:
-        return '<Token("{}")>'.format(self.input_text)
+        return f'<Token("{self.input_text}")>'
 
 
 class Operator:
@@ -100,12 +100,12 @@ class Operator:
         self.operator = operator
 
     def __repr__(self) -> str:
-        return '<Operator(operator="{}")>'.format(self.operator)
+        return f'<Operator(operator="{self.operator}")>'
 
 
 class ParseError(Exception):
     def __init__(self, message: str, start: int, end: int) -> None:
-        super(ParseError, self).__init__(message)
+        super().__init__(message)
         self.message = message
         self.start = start
         self.end = end
@@ -278,7 +278,7 @@ def apply_unary_operator(
 ) -> typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]]:
     previous_tokens = tokens
     new_tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]] = []
-    for i, token in reversed(list(enumerate(previous_tokens))):
+    for token in reversed(list(previous_tokens)):
         if isinstance(token, list):
             new_tokens.insert(0, apply_unary_operator(token, operator))
             continue

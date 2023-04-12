@@ -5,11 +5,12 @@ import typing
 
 from sqlalchemy import String, and_, or_
 from sqlalchemy.sql.expression import select, true, false, not_
+from sqlalchemy.dialects import postgresql
+
 from . import where_filters
 from . import datatypes
 from . import object_search_parser
 from .. import db
-import sqlalchemy.dialects.postgresql as postgresql
 
 
 class Attribute:
@@ -155,7 +156,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(operand)), None  # type: ignore
+    return outer_filter(not_(operand)), None
 
 
 @binary_operator_handler(datatypes.Boolean, datatypes.Boolean, 'and')
@@ -499,7 +500,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -515,7 +516,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -531,7 +532,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -550,7 +551,7 @@ def _(
     if left_operand.dimensionality != right_operand.dimensionality:
         search_notes.append(('warning', 'Invalid comparison between quantities of different dimensionalities', 0, None))
         return outer_filter(true()), None
-    if not (left_operand == right_operand):
+    if not left_operand == right_operand:
         return outer_filter(true()), None
     else:
         return outer_filter(false()), None
@@ -683,7 +684,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.quantity_equals(right_operand, left_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.quantity_equals(right_operand, left_operand))), None
 
 
 @binary_operator_handler(Attribute, datatypes.Quantity, '!=')
@@ -696,7 +697,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.quantity_equals(left_operand, right_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.quantity_equals(left_operand, right_operand))), None
 
 
 @binary_operator_handler(datatypes.Text, Attribute, '==')
@@ -1196,7 +1197,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.reference_equals(left_operand, right_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.reference_equals(left_operand, right_operand))), None
 
 
 @binary_operator_handler(Reference, Attribute, '!=')
@@ -1209,7 +1210,7 @@ def _(
         start_position: int,
         end_position: int
 ) -> typing.Tuple[typing.Any, typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
-    return outer_filter(not_(where_filters.reference_equals(right_operand, left_operand))), None  # type: ignore
+    return outer_filter(not_(where_filters.reference_equals(right_operand, left_operand))), None
 
 
 def transform_literal_to_query(
@@ -1241,11 +1242,11 @@ def transform_literal_to_query(
                 if i > 0:
                     jsonb_selector += " -> "
                 jsonb_selector += attribute
-            array_items = select(db.text('value FROM jsonb_array_elements_text((data -> {0})::jsonb)'.format(jsonb_selector)))
+            array_items = select(db.text(f'value FROM jsonb_array_elements_text((data -> {jsonb_selector})::jsonb)'))
             db_obj = db.literal_column('value').cast(postgresql.JSONB)
             for attribute in attributes[array_placeholder_index + 1:]:
                 db_obj = db_obj[attribute]
-            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text('jsonb_typeof(data -> {0}) = \'array\''.format(jsonb_selector)), filter)).exists()
+            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text(f'jsonb_typeof(data -> {jsonb_selector}) = \'array\''), filter)).exists()
         return Attribute(literal.input_text, literal.start_position, data[attributes]), None
 
     if isinstance(literal, object_search_parser.Null):
@@ -1291,8 +1292,7 @@ def transform_unary_operation_to_query(
     operator_aliases = {
         '!': 'not'
     }
-    if str_operator in operator_aliases:
-        str_operator = operator_aliases[str_operator]
+    str_operator = operator_aliases.get(str_operator, str_operator)
 
     operand_type: typing.Optional[type]
     if isinstance(operand_query, object_search_parser.Boolean):
@@ -1357,8 +1357,7 @@ def transform_binary_operation_to_query(
         '&&': 'and',
         '=': '=='
     }
-    if str_operator in operator_aliases:
-        str_operator = operator_aliases[str_operator]
+    str_operator = operator_aliases.get(str_operator, str_operator)
 
     left_operand_type: typing.Optional[type]
     if isinstance(left_operand, object_search_parser.Boolean):
@@ -1515,7 +1514,7 @@ def generate_filter_func(
                     return False
                 return filter_func, None, use_advanced_search
             if isinstance(tree, list) and not tree:
-                def filter_func(
+                def filter_func(  # pylint: disable=function-redefined
                         data: typing.Any,
                         search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                         start: int = 0,
@@ -1528,7 +1527,7 @@ def generate_filter_func(
             if isinstance(tree, object_search_parser.Literal):
                 if isinstance(tree, object_search_parser.Boolean):
                     if tree.value.value:
-                        def filter_func(
+                        def filter_func(  # pylint: disable=function-redefined
                                 data: typing.Any,
                                 search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                                 start: int = 0,
@@ -1539,7 +1538,7 @@ def generate_filter_func(
                             return True
                         return filter_func, tree, use_advanced_search
                     else:
-                        def filter_func(
+                        def filter_func(  # pylint: disable=function-redefined
                                 data: typing.Any,
                                 search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                                 start: int = 0,
@@ -1554,7 +1553,7 @@ def generate_filter_func(
                 elif isinstance(tree, object_search_parser.Tag):
                     pass
                 else:
-                    def filter_func(
+                    def filter_func(  # pylint: disable=function-redefined
                             data: typing.Any,
                             search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                             start: int = 0,
@@ -1565,7 +1564,7 @@ def generate_filter_func(
                         return False
                     return filter_func, None, use_advanced_search
 
-            def filter_func(
+            def filter_func(  # pylint: disable=function-redefined
                     data: typing.Any,
                     search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]],
                     tree: typing.Any = tree
@@ -1612,7 +1611,7 @@ def wrap_filter_func(
     """
     search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]] = []
 
-    def wrapped_filter_func(
+    def wrapped_filter_func(  # pylint: disable=dangerous-default-value
             *args: typing.Any,
             search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]] = search_notes,
             filter_func_impl: typing.Any = filter_func,

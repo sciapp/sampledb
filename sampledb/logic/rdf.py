@@ -89,7 +89,7 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
     creator_ids = []
     contributor_ids = []
     for entry in reversed(log_entries):
-        if entry.utc_datetime > modification_datetime:
+        if modification_datetime is None or entry.utc_datetime > modification_datetime:
             modification_datetime = entry.utc_datetime
         if entry.type in {
             ObjectLogEntryType.CREATE_BATCH,

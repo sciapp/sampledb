@@ -4,6 +4,7 @@
 """
 
 import datetime
+import typing
 
 import flask
 import flask_login
@@ -11,13 +12,14 @@ from flask_babel import _, lazy_gettext, refresh
 
 from .. import frontend
 from ...logic.authentication import login, get_active_two_factor_authentication_method
-from ...logic.users import get_user
+from ...logic.users import get_user, User
 from ...frontend.users_forms import SigninForm, SignoutForm
 from ... import login_manager
+from ...utils import FlaskResponseT
 
 
 @login_manager.user_loader
-def load_user(user_id):
+def load_user(user_id: typing.Any) -> typing.Optional[User]:
     try:
         user_id = int(user_id)
     except ValueError:
@@ -54,7 +56,7 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     return url.startswith(server_path) and all(c in '/=?&_.+-' or c.isalnum() for c in url)
 
 
-def _redirect_to_next_url():
+def _redirect_to_next_url() -> FlaskResponseT:
     next_url = flask.request.args.get('next', flask.url_for('.index'))
     index_url = flask.url_for('.index')
     if not _is_url_safe_for_redirect(next_url):
@@ -62,7 +64,7 @@ def _redirect_to_next_url():
     return flask.redirect(next_url)
 
 
-def _sign_in_impl(is_for_refresh):
+def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
     form = SigninForm()
     has_errors = False
     if form.validate_on_submit():
@@ -111,7 +113,7 @@ def _sign_in_impl(is_for_refresh):
     return flask.render_template('sign_in.html', form=form, is_for_refresh=is_for_refresh, has_errors=has_errors)
 
 
-def complete_sign_in(user, is_for_refresh, remember_me):
+def complete_sign_in(user: typing.Optional[User], is_for_refresh: bool, remember_me: bool) -> FlaskResponseT:
     if not user:
         flask.flash(_('Please sign in again.'), 'error')
         flask_login.logout_user()
@@ -125,7 +127,7 @@ def complete_sign_in(user, is_for_refresh, remember_me):
 
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])
-def sign_in():
+def sign_in() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated:
         # if the user was already authenticated, redirect to the index.
         return flask.redirect(flask.url_for('.index'))
@@ -134,7 +136,7 @@ def sign_in():
 
 @frontend.route('/users/me/refresh_sign_in', methods=['GET', 'POST'])
 @flask_login.login_required
-def refresh_sign_in():
+def refresh_sign_in() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated and flask_login.login_fresh():
         # if the login was already fresh, redirect to the next_url or index.
         return _redirect_to_next_url()
@@ -143,7 +145,7 @@ def refresh_sign_in():
 
 @frontend.route('/users/me/sign_out', methods=['GET', 'POST'])
 @flask_login.login_required
-def sign_out():
+def sign_out() -> FlaskResponseT:
     form = SignoutForm()
     if form.validate_on_submit():
         flask_login.logout_user()

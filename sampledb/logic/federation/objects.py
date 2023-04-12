@@ -94,7 +94,7 @@ class SharedObjectLocationAssignmentData(typing.TypedDict):
     responsible_user: typing.Optional[UserRef]
     user: typing.Optional[UserRef]
     description: typing.Optional[typing.Dict[str, str]]
-    utc_datetime: str
+    utc_datetime: typing.Optional[str]
     confirmed: bool
     declined: bool
 
@@ -289,7 +289,7 @@ def parse_object(
                 try:
                     result['permissions']['users'][user_id] = Permissions.from_name(permission)
                 except ValueError:
-                    raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                    raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
         groups = _get_dict(permissions.get('groups'))
         if groups is not None:
             for group_id, permission in groups.items():
@@ -301,7 +301,7 @@ def parse_object(
                 try:
                     result['permissions']['groups'][group_id] = Permissions.from_name(permission)
                 except ValueError:
-                    raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                    raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
         projects = _get_dict(permissions.get('projects'))
         if projects is not None:
             for project_id, permission in projects.items():
@@ -313,14 +313,14 @@ def parse_object(
                 try:
                     result['permissions']['projects'][project_id] = Permissions.from_name(permission)
                 except ValueError:
-                    raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                    raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
         all_users = _get_str(permissions.get('all_users'))
         if all_users is not None:
             permission = all_users
             try:
                 result['permissions']['all_users'] = Permissions.from_name(permission)
             except ValueError:
-                raise errors.InvalidDataExportError('Unknown permission "{}"'.format(permission))
+                raise errors.InvalidDataExportError(f'Unknown permission "{permission}"')
     return result
 
 
@@ -398,8 +398,8 @@ def shared_object_preprocessor(
                         'component_uuid': comp.uuid
                     }
                 res_comment['content'] = comment.content
-                res_comment['utc_datetime'] = comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
-                if 'users' in policy['access'] and policy['access']['users']:
+                res_comment['utc_datetime'] = comment.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if comment.utc_datetime is not None else None
+                if 'users' in policy['access'] and policy['access']['users'] and comment.user_id is not None:
                     if ('users', comment.user_id) not in refs:
                         refs.append(('users', comment.user_id))
                     user = get_user(comment.user_id)
@@ -437,7 +437,7 @@ def shared_object_preprocessor(
                         'component_uuid': comp.uuid
                     }
                 res_file['utc_datetime'] = file.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if file.utc_datetime else None
-                if 'users' in policy['access'] and policy['access']['users']:
+                if 'users' in policy['access'] and policy['access']['users'] and file.user_id is not None:
                     if ('users', file.user_id) not in refs:
                         refs.append(('users', file.user_id))
                     user = get_user(file.user_id)
@@ -460,22 +460,26 @@ def shared_object_preprocessor(
                     ).order_by(FileLogEntry.utc_datetime.desc()).first()
                     res_file['hidden'] = {
                         'reason': file.hide_reason,
-                        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+                        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if log_entry is not None else None
                     }
-                    if ('users', log_entry.user_id) not in refs:
-                        refs.append(('users', log_entry.user_id))
-                    user = get_user(file.user_id)
-                    if user.fed_id is not None and user.component is not None:
-                        comp = user.component
-                        res_file['hidden']['user'] = {
-                            'user_id': user.fed_id,
-                            'component_uuid': comp.uuid
-                        }
+                    if log_entry is not None:
+                        if ('users', log_entry.user_id) not in refs:
+                            refs.append(('users', log_entry.user_id))
+                    if file.user_id:
+                        user = get_user(file.user_id)
+                        if user.fed_id is not None and user.component is not None:
+                            comp = user.component
+                            res_file['hidden']['user'] = {
+                                'user_id': user.fed_id,
+                                'component_uuid': comp.uuid
+                            }
+                        else:
+                            res_file['hidden']['user'] = {
+                                'user_id': file.user_id,
+                                'component_uuid': flask.current_app.config['FEDERATION_UUID']
+                            }
                     else:
-                        res_file['hidden']['user'] = {
-                            'user_id': file.user_id,
-                            'component_uuid': flask.current_app.config['FEDERATION_UUID']
-                        }
+                        res_file['hidden']['user'] = None
                 else:
                     res_file['data'] = file.data
 
@@ -555,7 +559,7 @@ def shared_object_preprocessor(
                     responsible_user=responsible_user_ref,
                     user=c_user,
                     description=ola.description,
-                    utc_datetime=ola.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f'),
+                    utc_datetime=ola.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if ola.utc_datetime else None,
                     confirmed=ola.confirmed,
                     declined=ola.declined,
                 ))
@@ -695,7 +699,7 @@ def parse_entry(
                     try:
                         user = get_user(user_id)
                     except errors.UserDoesNotExistError:
-                        raise errors.InvalidDataExportError('Local user #{} does not exist'.format(user_id))
+                        raise errors.InvalidDataExportError(f'Local user #{user_id} does not exist')
                     del entry_data['component_uuid']
                     entry_data['user_id'] = user.id
                 else:
@@ -719,7 +723,7 @@ def parse_entry(
                     try:
                         obj = get_object(data_obj_id)
                     except errors.ObjectDoesNotExistError:
-                        raise errors.InvalidDataExportError('Local object #{} does not exist'.format(data_obj_id))
+                        raise errors.InvalidDataExportError(f'Local object #{data_obj_id} does not exist')
                     del entry_data['component_uuid']
                     entry_data['object_id'] = obj.id
                 else:

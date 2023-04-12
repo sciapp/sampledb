@@ -72,11 +72,8 @@ def _set_group_categories(
         group: typing.Union[projects.Project, groups.Group],
         category_ids: typing.Sequence[int]
 ) -> None:
-    categories = [
-        group_categories.GroupCategory.query.filter_by(id=category_id).first()
-        for category_id in category_ids
-    ]
-    if None in categories:
+    categories = group_categories.GroupCategory.query.filter(group_categories.GroupCategory.id.in_(category_ids)).all()
+    if len(categories) != len(set(category_ids)):
         raise errors.GroupCategoryDoesNotExistError()
     group.categories.clear()
     for category in categories:
@@ -127,7 +124,7 @@ def category_has_ancestor(
     :raise errors.GroupCategoryDoesNotExistError: if one of the checked
         categories does not exist
     """
-    ancestor_category_id = category_id
+    ancestor_category_id: typing.Optional[int] = category_id
     while ancestor_category_id is not None:
         if ancestor_category_id == potential_ancestor_id:
             return True
@@ -331,8 +328,8 @@ def get_full_group_category_names() -> typing.Dict[int, typing.Sequence[typing.D
                 else:
                     any_missing = True
     return {
-        category_id: tuple(category_names[category_id])
-        for category_id in category_names
+        category_id: tuple(individual_category_names)
+        for category_id, individual_category_names in category_names.items()
     }
 
 

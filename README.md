@@ -65,7 +65,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.21.5
+    sciapp/sampledb:0.22.0
 ```
 
 ### Once it's started
@@ -80,4 +80,6 @@ If you want to improve SampleDB, please read the [contribution guide](https://gi
 
 ## Support
 
-If you have any questions about SampleDB or run into any issues setting up or running SampleDB, please [open an issue on GitHub](https://github.com/sciapp/sampledb/issues/new).
+If you run into any issues setting up or running SampleDB, please [open an issue on GitHub](https://github.com/sciapp/sampledb/issues/new).
+
+You can also subscribe to the [SampleDB mailing list](https://lists.fz-juelich.de/mailman/listinfo/sampledb) to learn about new features and to discuss any questions regarding SampleDB.

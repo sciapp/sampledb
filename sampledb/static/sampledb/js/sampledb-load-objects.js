@@ -187,6 +187,8 @@ $(function() {
                 }
                 let header_text = header_text_template.replace('PLACEHOLDER1', num_results_shown).replace('PLACEHOLDER2', num_results_total)
                 let header = $('<div class="tt-header">' + header_text + '</div>');
+                header.find(".objectpicker-button-clear").on("click", function(event) {objectpicker_clear(this, event)});
+                header.find(".objectpicker-button-show-all").on("click", function(event) {objectpicker_show_all(this, event)});
                 header.find('.query-container').text(query);
                 return header;
               },

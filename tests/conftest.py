@@ -11,11 +11,6 @@ import os
 import random
 import threading
 import time
-import warnings
-
-# enable SQLAlchemy 2.0 warnings by setting this before importing sqlalchemy
-# see the handle_warnings fixture below for how these warnings are handled
-os.environ['SQLALCHEMY_WARN_20'] = '1'
 
 # enable Flask debug mode before importing flask
 os.environ['FLASK_DEBUG'] = '1'
@@ -41,12 +36,18 @@ sampledb.logic.authentication.NUM_BCYRPT_ROUNDS = 4
 sampledb.config.MAIL_SUPPRESS_SEND = True
 sampledb.config.TEMPLATES_AUTO_RELOAD = True
 
+# avoid dead database connections, which might occur due to the database reset mechanism in the tests
+sampledb.config.SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,
+    "pool_recycle": 60,
+}
 sampledb.config.SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{0}:@localhost:5432/{0}'.format(getpass.getuser())
 sampledb.config.MAIL_SENDER = 'sampledb@example.com'
 sampledb.config.MAIL_SERVER = 'mail.example.com'
 sampledb.config.CONTACT_EMAIL = 'sampledb@example.com'
 sampledb.config.JUPYTERHUB_URL = 'example.com'
 sampledb.config.LDAP_NAME = 'LDAP'
+sampledb.config.LDAP_CONNECT_TIMEOUT = 60  # ldap3 requires long timeout when tests are run in multiple threads
 
 sampledb.config.TESTING_LDAP_UNKNOWN_LOGIN = 'unknown-login-for-sampledb-tests'
 sampledb.config.TESTING_LDAP_WRONG_PASSWORD = 'wrong-password-for-sampledb-tests'
@@ -55,14 +56,6 @@ sampledb.config.FEDERATION_UUID = 'aef05dbb-2763-49d1-964d-71205d8da0bf'
 
 # restore possibly overridden configuration data from environment variables
 sampledb.config.use_environment_configuration(env_prefix='SAMPLEDB_')
-
-
-@pytest.fixture(autouse=True)
-def handle_warnings():
-    with warnings.catch_warnings():
-        # raise SQLAlchemy 2.0 warnings as errors
-        warnings.simplefilter("error", category=sqlalchemy.exc.RemovedIn20Warning)
-        yield None
 
 
 def create_flask_server(app):

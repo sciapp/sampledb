@@ -20,7 +20,7 @@
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   // translations of error / help messages used in the static schema_editor.js
   window.schema_editor_translations = {
     'object_must_have_name_text': "{{ _("Objects must have a property 'name' as a <i>Text (Simple)</i> property.") }}",
@@ -44,7 +44,10 @@
     'enter_default_magnitude': "{{ _("Please enter the default magnitude (in base units) as a number.") }}",
     'enter_valid_units': "{{ _("Please enter valid units") }}",
     'schema_template_must_be_set': "{{ _("Schema Template input must not be empty") }}",
+    'enter_display_digits': "{{ _("Please enter a number between 0 and 15.") }}",
   };
+  window.schema_editor_tags_translations = {{ tags_translations | tojson }};
+  window.schema_editor_hazards_translations = {{ hazards_translations | tojson }};
 
   {% set allowed_language_ids = [] %}
   window.languages = [
@@ -346,7 +349,7 @@
           <span class="sr-only">{{ _('Use Graphical Editor') }}</span>
           <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" {% if use_schema_editor %}checked="checked"{% endif %} />
         </label>
-        <script>
+        <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
         {% if error_message is not none %}
           window.schema_editor_error_message = {{ error_message | tojson }};
         {% else %}
@@ -371,15 +374,23 @@
     </div>
   </form>
 
+  {% set enabled_languages = [] %}
+  {% for language in languages %}
+    {% if language.enabled_for_user_interface %}
+      {{ enabled_languages.append(language) or '' }}
+    {% endif %}
+  {% endfor %}
 
   <div id="schema-editor-templates">
     <div class="well schema-editor-root-object">
       <div class="schema-editor-property-settings">
-        <div class="schema-editor-form-group">
-          <label class="control-label">{{ _('Title') }}</label>
-          <input type="text" class="form-control schema-editor-root-object-title-input" placeholder="{{ _('Title') }}" value="">
-          <div class="help-block"></div>
-        </div>
+        {% for language in enabled_languages %}
+          <div class="schema-editor-form-group">
+            <label class="control-label schema-editor-root-object-title-label">{{ _('Title') }} ({{ language.names | get_translated_text }})</label>
+            <input type="text" class="form-control schema-editor-root-object-title-input" placeholder="{{ _('Title') }} ({{ language.names | get_translated_text }})" value="" data-sampledb-lang-code="{{ language.lang_code }}">
+            <div class="help-block"></div>
+          </div>
+        {% endfor %}
         <div class="schema-editor-form-group">
           <label class="control-label">{{ _('Tags') }}</label>
           <div class="checkbox">
@@ -419,11 +430,13 @@
           <input type="text" class="form-control schema-editor-generic-property-name-input" placeholder="{{ _('Name') }}" value="">
           <div class="help-block"></div>
         </div>
+        {% for language in enabled_languages %}
         <div class="schema-editor-form-group">
-          <label class="control-label schema-editor-generic-property-title-label" data-toggle="tooltip" data-placement="top" title="{{ _('The title of the property. Examples: Name, Temperature, Distance Z') }}">{{ _('Title') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
-          <input type="text" class="form-control schema-editor-generic-property-title-input" placeholder="{{ _('Title') }}" value="">
+          <label class="control-label schema-editor-generic-property-title-label" data-toggle="tooltip" data-placement="top" title="{{ _('The title of the property. Examples: Name, Temperature, Distance Z') }}">{{ _('Title') }} ({{ language.names | get_translated_text }}) <i class="fa fa-question-circle" aria-hidden="true"></i></label>
+          <input type="text" class="form-control schema-editor-generic-property-title-input" placeholder="{{ _('Title') }} ({{ language.names | get_translated_text }})" value="" data-sampledb-lang-code="{{ language.lang_code }}">
           <span class="help-block"></span>
         </div>
+        {% endfor %}
         <div class="schema-editor-form-group">
           <label class="control-label schema-editor-generic-property-type-label">{{ _('Type') }}</label>
           <select class="form-control schema-editor-generic-property-type-input">
@@ -438,6 +451,7 @@
             <option value="measurement">{{ measurement_action_type.object_name | get_translated_text(default=_('Object')) }}</option>
             <option value="user">{{ _('User') }}</option>
             <option value="object_reference">{{ _('Object Reference') }}</option>
+            <option value="timeseries">{{ _('Time Series') }}</option>
             <option value="plotly_chart">{{ _('Plotly Chart') }}</option>
             <option value="template">{{ _('Schema Template') }}</option>
           </select>
@@ -451,93 +465,85 @@
             </label>
           </div>
         </div>
+        {% for language in enabled_languages %}
         <div class="schema-editor-form-group">
-          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-generic-property-note-checkbox"></label><label class="control-label schema-editor-generic-property-default-label" data-toggle="tooltip" data-placement="top" title="{{ _('Additional information on the property.') }}">{{ _('Note') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
-          <input type="text" class="form-control schema-editor-generic-property-note-input" placeholder="{{ _('Note') }}" value="">
+          {% if language.lang_code == 'en' %}<label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-generic-property-note-checkbox"></label>{% endif %}<label class="control-label schema-editor-generic-property-default-label" data-toggle="tooltip" data-placement="top" title="{{ _('Additional information on the property.') }}">{{ _('Note') }} ({{ language.names | get_translated_text }}) <i class="fa fa-question-circle" aria-hidden="true"></i></label>
+          <input type="text" class="form-control schema-editor-generic-property-note-input" placeholder="{{ _('Note') }} ({{ language.names | get_translated_text }})" value="" data-sampledb-lang-code="{{ language.lang_code }}">
         </div>
-      </div>
+        {% endfor %}
 
-      <div class="schema-editor-property-settings schema-editor-text-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-text-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-placeholder-checkbox"></label><label class="control-label schema-editor-text-property-placeholder-label">{{ _('Placeholder') }}</label>
           <input type="text" class="form-control schema-editor-text-property-placeholder-input" placeholder="{{ _('Placeholder') }}" value="">
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-text-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-default-checkbox"></label><label class="control-label schema-editor-text-property-default-label">{{ _('Default') }}</label>
           <input type="text" class="form-control schema-editor-text-property-default-input" placeholder="{{ _('Default') }}" value="">
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-text-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-pattern-checkbox"></label><label class="control-label schema-editor-text-property-pattern-label" data-toggle="tooltip" data-placement="top" title="{{ _('A regular expression to restrict what values are valid for the property. Examples: ^.*$, ^Sample-[0-9]+$') }}">{{ _('Pattern') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
           <input type="text" class="form-control schema-editor-text-property-pattern-input" placeholder="{{ _('Pattern') }}" value="">
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-text-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-minlength-checkbox"></label><label class="control-label schema-editor-text-property-minlength-label">{{ _('Minimum Length') }}</label>
           <input type="text" class="form-control schema-editor-text-property-minlength-input" placeholder="{{ _('Minimum Length') }}" value="">
           <span class="help-block"></span>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-text-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-text-property-maxlength-checkbox"></label><label class="control-label schema-editor-text-property-maxlength-label">{{ _('Maximum Length') }}</label>
           <input type="text" class="form-control schema-editor-text-property-maxlength-input" placeholder="{{ _('Maximum Length') }}" value="">
           <span class="help-block"></span>
         </div>
-      </div>
 
-      <div class="schema-editor-property-settings schema-editor-choice-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-choice-property-setting">
           <label class="control-label schema-editor-choice-property-choices-label" data-toggle="tooltip" data-placement="top" title="{{ _('A list of values the user can choose from, one per line.') }}">{{ _('Choices') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
           <textarea rows="3" class="form-control schema-editor-choice-property-choices-input" placeholder="{{ _('Choices') }}"></textarea>
           <span class="help-block"></span>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-choice-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-choice-property-default-checkbox"></label><label class="control-label schema-editor-choice-property-default-label">{{ _('Default') }}</label>
           <input type="text" class="form-control schema-editor-choice-property-default-input" placeholder="{{ _('Default') }}" value="">
         </div>
-      </div>
 
-      <div class="schema-editor-property-settings schema-editor-multiline-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-multiline-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-placeholder-checkbox"></label><label class="control-label schema-editor-multiline-property-placeholder-label">{{ _('Placeholder') }}</label>
           <input type="text" class="form-control schema-editor-multiline-property-placeholder-input" placeholder="{{ _('Placeholder') }}" value="">
         </div>
-        <div class="schema-editor-form-group-wide">
+        <div class="schema-editor-form-group-wide schema-editor-property-setting schema-editor-multiline-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-default-checkbox"></label><label class="control-label schema-editor-multiline-property-default-label">{{ _('Default') }}</label>
           <textarea rows="1" class="form-control schema-editor-multiline-property-default-input" placeholder="{{ _('Default') }}"></textarea>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-multiline-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-minlength-checkbox"></label><label class="control-label schema-editor-multiline-property-minlength-label">{{ _('Minimum Length') }}</label>
           <input type="text" class="form-control schema-editor-multiline-property-minlength-input" placeholder="{{ _('Minimum Length') }}" value="">
           <span class="help-block"></span>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-multiline-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-multiline-property-maxlength-checkbox"></label><label class="control-label schema-editor-multiline-property-maxlength-label">{{ _('Maximum Length') }}</label>
           <input type="text" class="form-control schema-editor-multiline-property-maxlength-input" placeholder="{{ _('Maximum Length') }}" value="">
           <span class="help-block"></span>
         </div>
-      </div>
 
-      <div class="schema-editor-property-settings schema-editor-markdown-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-markdown-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-placeholder-checkbox"></label><label class="control-label schema-editor-markdown-property-placeholder-label">{{ _('Placeholder') }}</label>
           <input type="text" class="form-control schema-editor-markdown-property-placeholder-input" placeholder="{{ _('Placeholder') }}" value="">
         </div>
-        <div class="schema-editor-form-group-wide">
+        <div class="schema-editor-form-group-wide schema-editor-property-setting schema-editor-markdown-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-default-checkbox"></label><label class="control-label schema-editor-markdown-property-default-label">{{ _('Default') }}</label>
           <textarea rows="1" class="form-control schema-editor-markdown-property-default-input" placeholder="{{ _('Default') }}"></textarea>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-markdown-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-minlength-checkbox"></label><label class="control-label schema-editor-markdown-property-minlength-label">{{ _('Minimum Length') }}</label>
           <input type="text" class="form-control schema-editor-markdown-property-minlength-input" placeholder="{{ _('Minimum Length') }}" value="">
           <span class="help-block"></span>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-markdown-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-markdown-property-maxlength-checkbox"></label><label class="control-label schema-editor-markdown-property-maxlength-label">{{ _('Maximum Length') }}</label>
           <input type="text" class="form-control schema-editor-markdown-property-maxlength-input" placeholder="{{ _('Maximum Length') }}" value="">
           <span class="help-block"></span>
         </div>
-      </div>
 
-      <div class="schema-editor-property-settings schema-editor-bool-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-bool-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-bool-property-default-checkbox"></label><label class="control-label schema-editor-bool-property-default-label">{{ _('Default') }}</label>
           <div class="checkbox">
             <label>
@@ -546,30 +552,42 @@
             </label>
           </div>
         </div>
-      </div>
 
-      <div class="schema-editor-property-settings schema-editor-plotly_chart-property-settings">
-      </div>
+        <div class="schema-editor-property-setting schema-editor-plotly_chart-property-setting">
+        </div>
 
-      <div class="schema-editor-property-settings schema-editor-quantity-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-quantity-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-quantity-property-placeholder-checkbox"></label><label class="control-label schema-editor-quantity-property-placeholder-label">{{ _('Placeholder') }}</label>
           <input type="text" class="form-control schema-editor-quantity-property-placeholder-input" placeholder="{{ _('Placeholder') }}" value="">
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-quantity-property-setting">
           <label class="control-label schema-editor-quantity-property-units-label" data-toggle="tooltip" data-placement="top" title="{{ _('Unit or a list of units the user can choose from, separated by commas.') }}">{{ _('Units') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
-          <input type="text" class="form-control schema-editor-quantity-property-units-input" id="input-schema-name-text-default" placeholder="{{ _('Units') }}" value="">
+          <input type="text" class="form-control schema-editor-quantity-property-units-input" placeholder="{{ _('Units') }}" value="">
           <span class="help-block"></span>
         </div>
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-quantity-property-setting">
           <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-quantity-property-default-checkbox"></label><label class="control-label schema-editor-quantity-property-default-label" data-toggle="tooltip" data-placement="top" title="{{ _('Standard magnitude in base units.') }}">{{ _('Default') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
           <input type="text" class="form-control schema-editor-quantity-property-default-input" placeholder="{{ _('Default') }}" value="">
           <span class="help-block"></span>
         </div>
-      </div>
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-quantity-property-setting">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-quantity-property-display_digits-checkbox"></label><label class="control-label schema-editor-quantity-property-display_digits-label" data-toggle="tooltip" data-placement="top" title="{{ _('Number of decimal digits to display.') }}">{{ _('Decimal Digits') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
+          <input type="number" class="form-control schema-editor-quantity-property-display_digits-input" placeholder="{{ _('Decimal Digits') }}" value="" min="0">
+          <span class="help-block"></span>
+        </div>
 
-      <div class="schema-editor-property-settings schema-editor-template-property-settings">
-        <div class="schema-editor-form-group">
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-timeseries-property-setting">
+          <label class="control-label schema-editor-timeseries-property-units-label" data-toggle="tooltip" data-placement="top" title="{{ _('Unit or a list of units the user can choose from, separated by commas.') }}">{{ _('Units') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
+          <input type="text" class="form-control schema-editor-timeseries-property-units-input" placeholder="{{ _('Units') }}" value="">
+          <span class="help-block"></span>
+        </div>
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-timeseries-property-setting">
+          <label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-timeseries-property-display_digits-checkbox"></label><label class="control-label schema-editor-timeseries-property-display_digits-label" data-toggle="tooltip" data-placement="top" title="{{ _('Number of decimal digits to display.') }}">{{ _('Decimal Digits') }} <i class="fa fa-question-circle" aria-hidden="true"></i></label>
+          <input type="number" class="form-control schema-editor-timeseries-property-display_digits-input" placeholder="{{ _('Decimal Digits') }}" value="" min="0">
+          <span class="help-block"></span>
+        </div>
+
+        <div class="schema-editor-form-group schema-editor-property-setting schema-editor-template-property-setting">
           <label class="schema-editor-generic-property-template-id-label">{{ _('Schema Template') }}</label>
           <select class="form-control schema-editor-generic-property-template-id-input template-select">
             <option value="">&mdash;</option>

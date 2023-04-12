@@ -178,6 +178,7 @@ Reading an object version
     :>json string utc_datetime: the time and date when this version was created in UTC
     :>json object schema: the object's schema
     :>json object data: the object's data
+    :>json object data_diff: the :ref:`data difference <data_diffs>` between the specified and the previous version (if the parameter include_diff is set to a non-empty value)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object/version combination does not exist
@@ -236,6 +237,8 @@ Creating a new object
     :statuscode 400: invalid data
 
 
+.. _api_post_object_version:
+
 Updating an object / Creating a new object version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -274,7 +277,8 @@ Updating an object / Creating a new object version
     :<json number version_id: the object version's ID (optional, must equal new version's ID)
     :<json number action_id: the action's ID (optional, must equal previous `action_id`)
     :<json object schema: the object's schema (optional, must equal previous `schema` or current action's schema)
-    :<json object data: the object's data
+    :<json object data: the object's data (either `data` or `data_diff` must be set)
+    :<json object data_diff: the :ref:`difference <data_diffs>` between the previous version and the new one (either `data` or `data_diff` must be set)
     :statuscode 201: no error
     :statuscode 400: invalid data
     :statuscode 403: the user does not have WRITE permissions for this object
@@ -1935,6 +1939,7 @@ Reading information for a file
     :>json string url: the URL of the file (for url storage)
     :>json string original_file_name: the original name of the file (for local or database storage)
     :>json string base64_content: the base64 encoded content of the file (for local or database storage)
+    :>json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or the file does not exist
@@ -1959,7 +1964,11 @@ Uploading a file
         {
             "storage": "database",
             "original_file_name": "test.txt",
-            "base64_content": "dGVzdA=="
+            "base64_content": "dGVzdA==",
+            "hash": {
+                "algorithm": "sha256",
+                "hexdigest": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+            }
         }
 
     **Example response**:
@@ -1973,6 +1982,7 @@ Uploading a file
     :<json string storage: how the file is stored (local)
     :<json string original_file_name: the original name of the file
     :<json string base64_content: the base64 encoded content of the file
+    :<json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
@@ -2128,3 +2138,71 @@ Posting a comment
     :statuscode 201: the comment has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
+
+.. _data_diffs:
+
+Object Data Diff Syntax
+-----------------------
+
+When :ref:`updating object data <api_post_object_version>`, instead of providing the full object data a diff can be provided instead. This is an alternative to downloading the current object version, performing the change locally and then uploading the data again, and can be useful in scripts, e.g. to update the status of an object.
+
+The syntax for these diffs is specific to SampleDB data entries, but fairly simple:
+
+- When comparing arrays, the diff is a list that contains the diff item by item, or ``null`` if the items are the same.
+- When comparing objects, the diff is a dictionary mapping each key to the diff of the values, if they have changed.
+- Otherwise, the diff is a dictionary mapping the key ``_before`` to the value before the change (if there was any data there before) and mapping the key ``_after`` to the value after the change (unless there is no value afterwards).
+
+As an example, considering the following data before:
+
+.. code-block:: json
+
+    {
+      "name": {
+          "_type": "text",
+          "text": {
+              "en": "Example Measurement"
+          }
+      },
+      "measurement_complete": {
+          "_type": "bool",
+          "value": false
+      },
+      "mass_list": [
+        {
+          "_type": "quantity",
+          "magnitude": 10,
+          "magnitude_in_base_units": 0.01,
+          "units": "g",
+          "dimensionality": "[mass]"
+        }
+      ]
+    }
+
+The following diff would add a value of 11g to ``mass_list`` and set ``measurement_complete`` to ``True``:
+
+.. code-block:: json
+
+    {
+      "measurement_complete": {
+        "_before": {
+          "_type": "bool",
+          "value": false
+        },
+        "_after": {
+          "_type": "bool",
+          "value": true
+        }
+      },
+      "mass_list": [
+        null,
+        {
+          "_after": {
+            "_type": "quantity",
+            "magnitude": 11,
+            "magnitude_in_base_units": 0.011,
+            "units": "g",
+            "dimensionality": "[mass]"
+          }
+        }
+      ]
+    }

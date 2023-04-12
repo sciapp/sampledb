@@ -37,7 +37,7 @@ def markdown_to_safe_html(markdown: str, use_cache: bool = True, anchor_prefix: 
             MarkdownToHTMLCacheEntry.parameters['anchor_prefix'].astext == anchor_prefix
         ).first()
         if cache_entry is not None and cache_entry.html is not None:
-            return cache_entry.html  # type: ignore
+            return cache_entry.html
 
     toc_extension = TocExtension(
         marker='',
@@ -96,6 +96,7 @@ def get_markdown_from_object_data(data: typing.Union[typing.Dict[str, typing.Any
 
     :param data: the object data to get Markdown text from
     :return: a list of all found Markdown texts
+    :raise errors.ValidationError: when the contained markdown data is invalid
     """
     markdown_texts = []
     if isinstance(data, dict):

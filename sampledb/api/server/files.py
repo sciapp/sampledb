@@ -12,7 +12,7 @@ from .authentication import object_permissions_required
 from ..utils import Resource, ResponseData
 from ...logic import errors
 from ...logic.actions import get_action
-from ...logic.files import create_database_file, create_local_file, create_local_file_reference, create_url_file, File, get_file_for_object, get_files_for_object
+from ...logic.files import create_database_file, create_local_file, create_local_file_reference, create_url_file, File, get_file_for_object, get_files_for_object, SUPPORTED_HASH_ALGORITHMS, DEFAULT_HASH_ALGORITHM
 from ...logic.objects import get_object
 from ...logic.utils import parse_url
 from ...models import Permissions
@@ -36,6 +36,8 @@ def file_info_to_json(file_info: File, include_content: bool = True) -> typing.D
             file_json.update({
                 'base64_content': base64_content.decode('utf-8')
             })
+        if file_info.data:
+            file_json['hash'] = file_info.data.get('hash')
     if file_info.storage == 'url' and file_info.data is not None:
         file_json.update({
             'url': file_info.data['url']
@@ -52,11 +54,11 @@ class ObjectFile(Resource):
                 raise errors.FileDoesNotExistError()
         except errors.FileDoesNotExistError:
             return {
-                "message": "file {} of object {} does not exist".format(file_id, object_id)
+                "message": f"file {file_id} of object {object_id} does not exist"
             }, 404
         if file_info.is_hidden:
             return {
-                "message": "file {} of object {} has been hidden".format(file_id, object_id)
+                "message": f"file {file_id} of object {object_id} has been hidden"
             }, 403
         return file_info_to_json(file_info)
 
@@ -79,7 +81,7 @@ class ObjectFiles(Resource):
         if 'object_id' in request_json:
             if request_json['object_id'] != object.object_id:
                 return {
-                    "message": "object_id must be {}".format(object.object_id)
+                    "message": f"object_id must be {object.object_id}"
                 }, 400
         if 'storage' not in request_json:
             return {
@@ -90,11 +92,30 @@ class ObjectFiles(Resource):
             return {
                 "message": "storage must be 'local', 'local_reference', 'database' or 'url'"
             }, 400
+        if 'hash' in request_json:
+            if not isinstance(request_json['hash'], dict):
+                return {
+                    "message": "hash must be a JSON object"
+                }, 400
+            if set(request_json['hash'].keys()) != {'hexdigest', 'algorithm'} or not isinstance(request_json['hash']['algorithm'], str) or not isinstance(request_json['hash']['hexdigest'], str):
+                return {
+                    "message": "hash must contain algorithm and hexdigest as strings"
+                }, 400
+            hash_algorithm = request_json['hash']['algorithm']
+            if hash_algorithm not in SUPPORTED_HASH_ALGORITHMS:
+                return {
+                    "message": "only the following hash algorithms are supported: " + ", ".join(
+                        SUPPORTED_HASH_ALGORITHMS)
+                }, 400
+            if any(c not in '0123456789abcdef' for c in request_json['hash']['hexdigest']):
+                return {
+                    "message": "hash hexdigest be a lowercase string of hex characters"
+                }, 400
         if storage in {'local', 'database'}:
             for key in request_json:
-                if key not in {'object_id', 'storage', 'original_file_name', 'base64_content'}:
+                if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'hash'}:
                     return {
-                        "message": "invalid key '{}'".format(key)
+                        "message": f"invalid key '{key}'"
                     }, 400
             if 'original_file_name' not in request_json or not request_json['original_file_name']:
                 return {
@@ -112,25 +133,45 @@ class ObjectFiles(Resource):
                 return {
                     "message": "base64_content must be base64 encoded"
                 }, 400
+            if 'hash' in request_json:
+                hash = File.HashInfo.from_binary_data(
+                    algorithm=request_json['hash']['algorithm'],
+                    binary_data=content
+                )
+                if hash is None:
+                    return {
+                        "message": "invalid hash data"
+                    }, 400
+                if request_json['hash']['hexdigest'] != hash.hexdigest:
+                    return {
+                        "message": "hash hexdigest mismatch, expected: " + hash.hexdigest
+                    }, 400
+            else:
+                hash = File.HashInfo.from_binary_data(
+                    algorithm=DEFAULT_HASH_ALGORITHM,
+                    binary_data=content
+                )
             if storage == 'local':
                 file = create_local_file(
                     object_id=object_id,
                     user_id=flask.g.user.id,
                     file_name=original_file_name,
-                    save_content=lambda stream: typing.cast(None, stream.write(content))
+                    save_content=lambda stream: typing.cast(None, stream.write(content)),
+                    hash=hash
                 )
             else:
                 file = create_database_file(
                     object_id=object_id,
                     user_id=flask.g.user.id,
                     file_name=original_file_name,
-                    save_content=lambda stream: typing.cast(None, stream.write(content))
+                    save_content=lambda stream: typing.cast(None, stream.write(content)),
+                    hash=hash
                 )
         if storage == 'local_reference':
             for key in request_json:
-                if key not in {'object_id', 'storage', 'filepath'}:
+                if key not in {'object_id', 'storage', 'filepath', 'hash'}:
                     return {
-                        "message": "invalid key '{}'".format(key)
+                        "message": f"invalid key '{key}'"
                     }, 400
             if 'filepath' not in request_json or not request_json['filepath']:
                 return {
@@ -140,7 +181,11 @@ class ObjectFiles(Resource):
                 file = create_local_file_reference(
                     object_id=object_id,
                     user_id=flask.g.user.id,
-                    filepath=request_json['filepath']
+                    filepath=request_json['filepath'],
+                    hash=File.HashInfo(
+                        algorithm=request_json['hash']['algorithm'],
+                        hexdigest=request_json['hash']['hexdigest']
+                    ) if 'hash' in request_json else None
                 )
             except errors.UnauthorizedRequestError:
                 return {
@@ -150,7 +195,7 @@ class ObjectFiles(Resource):
             for key in request_json:
                 if key not in {'object_id', 'storage', 'url'}:
                     return {
-                        "message": "invalid key '{}'".format(key)
+                        "message": f"invalid key '{key}'"
                     }, 400
             if 'url' not in request_json:
                 return {

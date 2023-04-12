@@ -7,9 +7,11 @@ import enum
 import datetime
 import typing
 
-from .. import db
+from sqlalchemy.orm import Mapped, Query
 
+from .. import db
 from .users import User
+from .utils import Model
 
 
 @enum.unique
@@ -35,15 +37,18 @@ class NotificationMode(enum.Enum):
     EMAIL = 2
 
 
-class Notification(db.Model):  # type: ignore
+class Notification(Model):
     __tablename__ = 'notifications'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(NotificationType), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    data = db.Column(db.JSON, nullable=False)
-    was_read = db.Column(db.Boolean, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[NotificationType] = db.Column(db.Enum(NotificationType), nullable=False)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
+    was_read: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Notification"]]
 
     def __init__(
             self,
@@ -52,25 +57,29 @@ class Notification(db.Model):  # type: ignore
             data: typing.Dict[str, typing.Any],
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.type = type
-        self.user_id = user_id
-        self.data = data
-        self.was_read = False
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            type=type,
+            user_id=user_id,
+            data=data,
+            was_read=False,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, type={1.type}, data={1.data})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, type={self.type}, data={self.data})>'
 
 
-class NotificationModeForType(db.Model):  # type: ignore
+class NotificationModeForType(Model):
     __tablename__ = 'notification_mode_for_types'
 
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.Enum(NotificationType), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    mode = db.Column(db.Enum(NotificationMode), nullable=False)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    type: Mapped[typing.Optional[NotificationType]] = db.Column(db.Enum(NotificationType), nullable=True)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    mode: Mapped[NotificationMode] = db.Column(db.Enum(NotificationMode), nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["NotificationModeForType"]]
+
     __table_args__ = (
         db.UniqueConstraint('type', 'user_id', name='_notification_mode_for_types_uc'),
     )
@@ -81,9 +90,11 @@ class NotificationModeForType(db.Model):  # type: ignore
             user_id: int,
             mode: NotificationMode
     ) -> None:
-        self.type = type
-        self.user_id = user_id
-        self.mode = mode
+        super().__init__(
+            type=type,
+            user_id=user_id,
+            mode=mode
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(type={1.type}, user_id={1.user_id}, mode={1.mode})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(type={self.type}, user_id={self.user_id}, mode={self.mode})>'

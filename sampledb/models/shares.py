@@ -5,24 +5,33 @@
 
 import typing
 import datetime
-import sqlalchemy.dialects.postgresql as postgresql
+
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import relationship, Mapped, Query
 
 from .. import db
 from .components import Component
 from .objects import Objects
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .users import User
 
 
-class ObjectShare(db.Model):  # type: ignore
+class ObjectShare(Model):
     __tablename__ = 'object_shares'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False, primary_key=True)
-    component_id = db.Column(db.Integer, db.ForeignKey(Component.id), nullable=False, primary_key=True)
-    policy = db.Column(postgresql.JSONB, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
-    component = db.relationship('Component')
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    user = db.relationship('User')
-    import_status = db.Column(postgresql.JSONB)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False, primary_key=True)
+    component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Component.id), nullable=False, primary_key=True)
+    policy: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    component: Mapped[Component] = relationship('Component')
+    user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user: Mapped[typing.Optional['User']] = relationship('User')
+    import_status: Mapped[typing.Optional[typing.Dict[str, typing.Any]]] = db.Column(postgresql.JSONB)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ObjectShare"]]
 
     def __init__(
             self,
@@ -32,12 +41,13 @@ class ObjectShare(db.Model):  # type: ignore
             utc_datetime: typing.Optional[datetime.datetime] = None,
             user_id: typing.Optional[int] = None
     ) -> None:
-        self.object_id = object_id
-        self.component_id = component_id
-        self.policy = policy
-        if utc_datetime is None:
-            self.utc_datetime = datetime.datetime.utcnow()
-        self.user_id = user_id
+        super().__init__(
+            object_id=object_id,
+            component_id=component_id,
+            policy=policy,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            user_id=user_id
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(object_id={1.object_id}, component_id={1.component_id}, policy={1.policy}, utc_datetime={1.utc_datetime})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(object_id={self.object_id}, component_id={self.component_id}, policy={self.policy}, utc_datetime={self.utc_datetime})>'

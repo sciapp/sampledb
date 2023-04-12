@@ -64,9 +64,20 @@ def validate_schema(
         for lang_code in schema['title'].keys():
             if lang_code not in all_language_codes:
                 raise ValidationError('title must only contain known languages', path)
-        for note_text in schema['title'].values():
-            if not isinstance(note_text, str):
+        for title_text in schema['title'].values():
+            if not isinstance(title_text, str):
                 raise ValidationError('title must only contain text', path)
+            if strict:
+                if not title_text:
+                    raise ValidationError('title must not be empty', path)
+                if re.match(r'^\s+$', title_text):
+                    raise ValidationError('title must not be whitespace only', path)
+    elif strict:
+        title_text = schema['title']
+        if not title_text:
+            raise ValidationError('title must not be empty', path)
+        if re.match(r'^\s+$', title_text):
+            raise ValidationError('title must not be whitespace only', path)
     if 'style' in schema and not isinstance(schema['style'], str):
         raise ValidationError('style must only contain text', path)
     if 'conditions' in schema:
@@ -93,7 +104,7 @@ def validate_schema(
     elif schema['type'] == 'bool':
         return _validate_bool_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'quantity':
-        return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'sample':
         return _validate_sample_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'measurement':
@@ -108,6 +119,8 @@ def validate_schema(
         return _validate_user_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'plotly_chart':
         return _validate_plotly_chart_schema(schema, path, all_language_codes=all_language_codes)
+    elif schema['type'] == 'timeseries':
+        return _validate_timeseries_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     else:
         raise ValidationError('invalid type', path)
 
@@ -150,10 +163,10 @@ def _validate_hazards_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
@@ -187,10 +200,10 @@ def _validate_array_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     has_min_items = False
     if 'minItems' in schema:
         if not isinstance(schema['minItems'], int):
@@ -250,10 +263,10 @@ def _validate_tags_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if 'default' in schema:
         validate({'_type': 'tags', 'tags': schema['default']}, schema, path + ['(default)'], strict=strict)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
@@ -310,10 +323,10 @@ def _validate_object_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
 
     if not isinstance(schema['properties'], dict):
         raise ValidationError('properties must be dict', path)
@@ -336,7 +349,7 @@ def _validate_object_schema(
             if property_name.endswith('_'):
                 property_name_valid = False
         if not property_name_valid:
-            raise ValidationError('invalid property name: {}'.format(property_name), path)
+            raise ValidationError(f'invalid property name: {property_name}', path)
 
         validate_schema(
             property_schema,
@@ -357,12 +370,12 @@ def _validate_object_schema(
             raise ValidationError('required must be list', path)
         for i, property_name in enumerate(schema['required']):
             if property_name not in schema['properties']:
-                raise ValidationError('unknown required property: {}'.format(property_name), path)
+                raise ValidationError(f'unknown required property: {property_name}', path)
             if property_name in schema['required'][:i]:
-                raise ValidationError('duplicate required property: {}'.format(property_name), path)
+                raise ValidationError(f'duplicate required property: {property_name}', path)
             # the name property in the root object is always required and may not be conditional
             if schema['properties'][property_name].get('conditions') and property_name == 'name' and path == []:
-                raise ValidationError('conditional required property: {}'.format(property_name), path)
+                raise ValidationError(f'conditional required property: {property_name}', path)
 
     if 'hazards' in schema['properties'] and schema['properties']['hazards']['type'] == 'hazards' and 'hazards' not in schema.get('required', []):
         raise ValidationError('GHS hazards may not be optional', path)
@@ -380,9 +393,9 @@ def _validate_object_schema(
             raise ValidationError('propertyOrder must be list', path)
         for i, property_name in enumerate(schema['propertyOrder']):
             if property_name not in schema['properties']:
-                raise ValidationError('unknown propertyOrder property: {}'.format(property_name), path)
+                raise ValidationError(f'unknown propertyOrder property: {property_name}', path)
             if property_name in schema['propertyOrder'][:i]:
-                raise ValidationError('duplicate propertyOrder property: {}'.format(property_name), path)
+                raise ValidationError(f'duplicate propertyOrder property: {property_name}', path)
 
     if 'default' in schema:
         validate(schema['default'], schema, strict=strict)
@@ -392,9 +405,9 @@ def _validate_object_schema(
             raise ValidationError('displayProperties must be list', path)
         for i, property_name in enumerate(schema['displayProperties']):
             if property_name not in schema['properties']:
-                raise ValidationError('unknown display property: {}'.format(property_name), path)
+                raise ValidationError(f'unknown display property: {property_name}', path)
             if property_name in schema['displayProperties'][:i]:
-                raise ValidationError('duplicate displayProperties property: {}'.format(property_name), path)
+                raise ValidationError(f'duplicate displayProperties property: {property_name}', path)
 
     if 'batch' in schema:
         if not isinstance(schema['batch'], bool):
@@ -414,6 +427,8 @@ def _validate_object_schema(
         _validate_notebook_templates(schema['notebookTemplates'])
 
     if 'recipes' in schema:
+        if not isinstance(schema['recipes'], list):
+            raise ValidationError('recipes must be list', path)
         for recipe in schema['recipes']:
             if 'name' not in recipe:
                 raise ValidationError('missing recipe name', path + ['(recipes)'])
@@ -432,11 +447,15 @@ def _validate_object_schema(
                 raise ValidationError('missing property_values', path + ['(recipes)'])
             for property_name in recipe['property_values']:
                 if property_name not in schema['properties'].keys():
-                    raise ValidationError('unknown property: {}'.format(property_name), path + ['(recipes)'])
+                    raise ValidationError(f'unknown property: {property_name}', path + ['(recipes)'])
                 if schema['properties'][property_name]['type'] not in ['text', 'quantity', 'datetime', 'bool']:
                     raise ValidationError('unsupported type in recipe', path + ['(recipes)', property_name])
                 if recipe['property_values'][property_name] is not None:
                     validate(recipe['property_values'][property_name], schema['properties'][property_name], path + ['(recipes)', property_name], strict=strict)
+                    if recipe['property_values'][property_name]['_type'] == 'quantity' and \
+                       ((isinstance(schema['properties'][property_name]['units'], str) and recipe['property_values'][property_name]['units'] != schema['properties'][property_name]['units']) or
+                       (recipe['property_values'][property_name]['units'] not in schema['properties'][property_name]['units'])):
+                        raise ValidationError(f'Invalid unit {recipe["property_values"][property_name]["units"]}, allowed unit(s): {schema["properties"][property_name]["units"]}', path + ['(recipes)', property_name])
                 elif schema['properties'][property_name]['type'] == 'bool':
                     raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
 
@@ -445,7 +464,7 @@ def _validate_object_schema(
             raise ValidationError('show_more must be list', path)
         for property_name in schema['show_more']:
             if property_name not in schema['properties'].keys():
-                raise ValidationError('unknown property: {}'.format(property_name), path)
+                raise ValidationError(f'unknown property: {property_name}', path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
@@ -468,7 +487,7 @@ def _validate_text_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
 
     if 'languages' in schema:
         if schema['languages'] != 'all':
@@ -589,7 +608,7 @@ def _validate_datetime_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
 
     if 'default' in schema:
         if not isinstance(schema['default'], str):
@@ -623,7 +642,7 @@ def _validate_bool_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
 
     if 'default' in schema and not isinstance(schema['default'], bool):
         raise ValidationError('default must be bool', path)
@@ -638,7 +657,8 @@ def _validate_quantity_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool = False
 ) -> None:
     """
     Validates the given quantity object schema and raises a ValidationError if it is invalid.
@@ -646,6 +666,7 @@ def _validate_quantity_schema(
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :param all_language_codes: the set of existing language codes
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
     valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits', 'min_magnitude', 'max_magnitude'}
@@ -653,10 +674,10 @@ def _validate_quantity_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
 
     if isinstance(schema['units'], str):
         if not units_are_valid(schema['units']):
@@ -716,6 +737,9 @@ def _validate_quantity_schema(
                 raise ValidationError('placeholder must only contain text', path)
     if 'display_digits' in schema and (type(schema['display_digits']) is not int or schema['display_digits'] < 0):
         raise ValidationError('display_digits must be a non-negative int', path)
+    if strict:
+        if 'display_digits' in schema and schema['display_digits'] > 15:
+            raise ValidationError('display_digits must be at most 15', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
 
@@ -738,10 +762,10 @@ def _validate_sample_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
 
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
@@ -769,10 +793,10 @@ def _validate_measurement_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
 
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
@@ -800,10 +824,10 @@ def _validate_object_reference_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
 
     if 'action_type_id' in schema and not (
             schema['action_type_id'] is None or
@@ -847,10 +871,10 @@ def _validate_notebook_templates(notebook_templates: typing.Any) -> None:
         schema_keys = set(notebook_template.keys())
         invalid_keys = schema_keys - valid_keys
         if invalid_keys:
-            raise ValidationError('unexpected keys in notebook template: {}'.format(invalid_keys), path)
+            raise ValidationError(f'unexpected keys in notebook template: {invalid_keys}', path)
         missing_keys = required_keys - schema_keys
         if missing_keys:
-            raise ValidationError('missing keys in notebook template: {}'.format(missing_keys), path)
+            raise ValidationError(f'missing keys in notebook template: {missing_keys}', path)
         if not isinstance(notebook_template['title'], str):
             raise ValidationError('notebook template title must be str', path)
         if not isinstance(notebook_template['url'], str):
@@ -875,7 +899,7 @@ def _validate_notebook_templates(notebook_templates: typing.Any) -> None:
             if isinstance(param_value, str):
                 valid_param_values = {'object_id'}
                 if param_value not in valid_param_values:
-                    raise ValidationError('notebook template param value must be a list or one of {}'.format(valid_param_values), path)
+                    raise ValidationError(f'notebook template param value must be a list or one of {valid_param_values}', path)
 
 
 def _validate_user_schema(
@@ -897,10 +921,10 @@ def _validate_user_schema(
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
     if missing_keys:
-        raise ValidationError('missing keys in schema: {}'.format(missing_keys), path)
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
@@ -928,5 +952,66 @@ def _validate_plotly_chart_schema(
     schema_keys = schema.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
-        raise ValidationError('unexpected keys in schema: {}'.format(invalid_keys), path)
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+
+
+def _validate_timeseries_schema(
+        schema: typing.Dict[str, typing.Any],
+        path: typing.List[str],
+        *,
+        all_language_codes: typing.Set[str],
+        strict: bool = False
+) -> None:
+    """
+    Validates the given timeseries schema and raises a ValidationError if it is invalid.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :param all_language_codes: the set of existing language codes
+    :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
+    :raise ValidationError: if the schema is invalid.
+    """
+    valid_keys = {'type', 'title', 'units', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits'}
+    required_keys = {'type', 'title', 'units'}
+    schema_keys = set(schema.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
+
+    if isinstance(schema['units'], str):
+        if not units_are_valid(schema['units']):
+            raise ValidationError('invalid units', path)
+    elif isinstance(schema['units'], list) and len(schema['units']) > 0:
+        dimensionality = None
+        pint_units = []
+        for unit in schema['units']:
+            if not isinstance(unit, str):
+                raise ValidationError('units must be string or list of strings', path)
+            try:
+                quantity = datatypes.Quantity(1.0, units=unit)
+            except pint.UndefinedUnitError:
+                raise ValidationError('invalid units', path)
+            if dimensionality is None:
+                dimensionality = quantity.dimensionality
+            elif quantity.dimensionality != dimensionality:
+                raise ValidationError('units must be for same dimensionality', path)
+            if quantity.pint_units in pint_units:
+                raise ValidationError('units must not be duplicate', path)
+            pint_units.append(quantity.pint_units)
+    else:
+        raise ValidationError('units must be string or list of strings', path)
+
+    if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
+        raise ValidationError('dataverse_export must be True or False', path)
+    if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
+        raise ValidationError('scicat_export must be True or False', path)
+    if 'display_digits' in schema and (type(schema['display_digits']) is not int or schema['display_digits'] < 0):
+        raise ValidationError('display_digits must be a non-negative int', path)
+    if strict:
+        if 'display_digits' in schema and schema['display_digits'] > 15:
+            raise ValidationError('display_digits must be at most 15', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)

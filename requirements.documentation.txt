@@ -1,0 +1,6 @@
+chromedriver-binary-auto
+pytest
+selenium
+Sphinx
+sphinxcontrib.httpdomain
+vcversioner

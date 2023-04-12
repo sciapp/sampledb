@@ -20,7 +20,11 @@
   <div class="alert alert-info alert-dismissible" role="alert">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
     <strong>{{ _('Note') }}:</strong>
-    {% if version_id == current_version_id %}
+    {% if previous_version_data_diff %}
+      {{ _('This page shows the changes between version #%(previous_version_id)s and version #%(version_id)s.', previous_version_id=version_id-1, version_id=version_id) }}
+    {% elif previous_version_schema %}
+      {{ _('Version #%(version_id)s did not change the data of this object.', version_id=version_id) }}
+    {% elif version_id == current_version_id %}
       {{ _('This page contains an archived version of the current object information.') }}
     {% else %}
       {{ _('This page contains an archived version of previous object information.') }}
@@ -29,7 +33,7 @@
   </div>
   {% endif %}
 
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.plotly_charts = [];
   </script>
   <h1>
@@ -65,6 +69,13 @@
       {# counter for plotly_chart_plots #}
       {% set plot_counter = namespace(value=0) %}
       {% if data is not none and schema is not none %}
+          {% if previous_version_data_diff %}
+            {% set diff = previous_version_data_diff %}
+            {% set previous_schema = previous_version_schema %}
+          {% else %}
+            {% set diff = none %}
+            {% set previous_schema = none %}
+          {% endif %}
           {% include "objects/view/any.html" %}
       {% endif %}
   {% endblock %}
@@ -114,7 +125,7 @@
           <a href="{{ url_for('.project', project_id=project.id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('View the Project Group linked to this %(object_type_name)s.', object_type_name=action_type.object_name | get_translated_text(default=_('Object'))) }}"><i class="fa fa-users" aria-hidden="true"></i> {{ _('View Project Group') }}</a>
         </div>
       {% endif %}
-      {% if user_may_use_as_template and action is not none and not action.disable_create_objects and (current_user.is_admin or not action.admin_only) and action.type_id is not none and not action.type.disable_create_objects %}
+      {% if user_may_use_as_template and data and action is not none and not action.disable_create_objects and (current_user.is_admin or not action.admin_only) and action.type_id is not none and not action.type.disable_create_objects %}
         <div class="form-group">
           <a href="{{ url_for('.new_object', previous_object_id=object_id) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="{{ _('Create a new object based on the information for this object.') }}"><i class="fa fa-files-o" aria-hidden="true"></i> {{ _('Use as Template') }}</a>
         </div>
@@ -240,15 +251,6 @@
             <th scope="col" style="white-space: nowrap;width: 1%;"></th>
             <th scope="col">{{ _('Title') }}</th>
             <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
-              <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
-                <label style='font-weight:400'><input type='checkbox' id='file_table_filter_notebooks' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;notebooks&quot;);'/> {{ _('Notebooks') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox' id='file_table_filter_other' onclick='file_table_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);' /> {{ _('Other Files') }}</label><br />
-                <script>
-                  window.update_file_table_filter_states();
-                </script>
-              " style="display: none">
-                <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="file_table_counter"></span>
-              </button>
               <div class="form-group" style="display: inline-flex">
                 {% if show_download_service %}
                   <iframe id="download_frame" style="display:none"></iframe>
@@ -404,6 +406,12 @@
                     {% with file_component = get_component(file.component_id) %}
                     <div class="col-sm-9">{{ _('This file was created as file #%(fed_id)s in database <a href="%(component_url)s">%(component_name)s</a>', fed_id=file.fed_id, component_url=url_for('.component', component_id=file.component_id), component_name=file_component.get_name()) }}</div>
                     {% endwith %}
+                  </div>
+                  {% endif %}
+                  {% if file.hash is not none %}
+                  <div class="row">
+                    <div class="col-sm-3 text-right"><label>{{ _('Checksum (%(algorithm)s)', algorithm=file.hash.algorithm.upper()) }}:</label></div>
+                    <div class="col-sm-9 text-muted" style="word-break: break-all"><span>{{ file.hash.hexdigest }}</span></div>
                   </div>
                   {% endif %}
                   <div class="row">
@@ -562,10 +570,10 @@
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title" id="objectLabelModalLabel">{{ _('Generate Labels') }}</h4>
           </div>
-          <form method="get" action="{{ url_for('.print_object_label', object_id=object_id) }}" class="form-horizontal" onsubmit="return validateLabelsForm()" id="form-generate-labels">
+          <form method="get" action="{{ url_for('.print_object_label', object_id=object_id) }}" class="form-horizontal" id="form-generate-labels">
           <div class="modal-body">
             <div class="radio">
-              <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" onchange="updateLabelsForm()"/>{{ _('Mixed label formats')}}</label>
+              <label class="control-label"><input type="radio" name="mode" value="mixed" checked="checked" />{{ _('Mixed label formats')}}</label>
             </div>
             <span class="help-block">{{ _('This will generate labels in a selection of predefined formats. To request adding a new format, please <a href="mailto:%(contact_email)s">contact an administrator</a>.', contact_email=config['CONTACT_EMAIL']) }}.</span>
             <div class="form-group">
@@ -581,7 +589,7 @@
             </div>
             <hr />
             <div class="radio">
-              <label class="control-label"><input type="radio" name="mode" value="fixed-width" onchange="updateLabelsForm()"/>{{ _('Fixed-width labels')}}</label>
+              <label class="control-label"><input type="radio" name="mode" value="fixed-width" />{{ _('Fixed-width labels')}}</label>
             </div>
             <span class="help-block">{{ _('This will generate vertically oriented labels with a fixed width and an optional minimum height.') }}</span>
             <div class="form-group">
@@ -636,7 +644,7 @@
             </div>
             <hr />
             <div class="radio">
-              <label class="control-label"><input type="radio" name="mode" value="minimum-height" onchange="updateLabelsForm()"/>{{ _('Minimal-height labels')}}</label>
+              <label class="control-label"><input type="radio" name="mode" value="minimum-height" />{{ _('Minimal-height labels')}}</label>
             </div>
             <span class="help-block">{{ _('This will generate vertically oriented labels with a height as low as possible and an optional minimum width.') }}</span>
             <div class="form-group">
@@ -914,15 +922,36 @@
             <th scope="col"></th>
             <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
               <button type="button" class="btn btn-sm btn-primary" data-container="body" data-toggle="popover" data-placement="left" data-html="true" data-content="
-                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;versions&quot;);'/> {{ _('Versions') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;measurements&quot;);' /> {{ _('Measurements') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;comments&quot;);' /> {{ _('Comments') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;files&quot;);' /> {{ _('Files') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;locations&quot;);' /> {{ _('Locations') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;references&quot;);' /> {{ _('References') }}</label><br />
-                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' onclick='activity_log_toggle($(this).is(&quot;:checked&quot;), &quot;other&quot;);'; /> {{ _('Other') }}</label>
-                <script>
+                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_versions' /> {{ _('Versions') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_measurements' /> {{ _('Measurements') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_comments' /> {{ _('Comments') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_files' /> {{ _('Files') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' /> {{ _('Locations') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' /> {{ _('References') }}</label><br />
+                <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' /> {{ _('Other') }}</label>
+                <script type='text/javascript' nonce='{{ generate_inline_script_nonce() }}'>
                   window.update_activity_log_filter_states();
+                  document.getElementById('activity_log_filter_versions').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'versions');
+                  });
+                  document.getElementById('activity_log_filter_measurements').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'measurements');
+                  });
+                  document.getElementById('activity_log_filter_comments').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'comments');
+                  });
+                  document.getElementById('activity_log_filter_files').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'files');
+                  });
+                  document.getElementById('activity_log_filter_locations').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'locations');
+                  });
+                  document.getElementById('activity_log_filter_references').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'references');
+                  });
+                  document.getElementById('activity_log_filter_other').addEventListener('click', function () {
+                    activity_log_toggle($(this).is(':checked'), 'other');
+                  });
                 </script>
               ">
                 <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="activity_log_counter"></span>
@@ -958,7 +987,7 @@
               </td>
               <td class="text-right">
                 {% if 'version_id' in object_log_entry.data %}
-                  <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']) }}">{{ _('View') }}</a>
+                  <a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id']) }}">{{ _('View&nbsp;Version') }}</a>&nbsp;/&nbsp;<a href="{{ url_for('.object_version', object_id=object_id, version_id=object_log_entry.data['version_id'], diff='') }}">{{ _('View&nbsp;Changes') }}</a>
                 {% endif %}
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.RESTORE_OBJECT_VERSION %}
@@ -1042,11 +1071,11 @@
               </td>
             {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
               {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
-              {% if object_location_assignment.location is not none and object_location_assignment.responsible_user_id is not none %}
+              {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
               <td>
                   {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) }}
               </td>
-              {% elif object_location_assignment.location is not none %}
+              {% elif object_location_assignment.location_id is not none %}
               <td>
                 {{ _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) }}
               </td>
@@ -1414,6 +1443,8 @@
       </div>
     </div>
   {% endif %}
+
+  {% include "objects/view/timeseries_modals.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -1426,12 +1457,14 @@
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
-    <script type="text/javascript">
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script type="text/javascript">
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}"></script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
 
@@ -1446,6 +1479,11 @@
     {% endfor %}
   ]
     $(function () {
+      {% if action is not none and action.type.enable_labels and not is_archived %}
+      $('#form-generate-labels').on('submit', validateLabelsForm);
+      $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
+      {% endif %}
+
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
         $('#input-object_location-translations').val(translation_json);
@@ -1991,22 +2029,18 @@
     updateLabelsForm();
     {% endif %}
   {% endif %}
-
-    function toggleShowMore(prefix) {
-      let properties = $('.show-more-' + prefix);
-      let btn = $('#show-more-' + prefix + '-btn');
-      if (properties.hasClass('hidden')) {
-        properties.addClass('show').removeClass('hidden');
-        btn.text('{{ _("Show less") }}');
-      } else {
-        properties.addClass('hidden').removeClass('show');
-        btn.text('{{ _("Show more") }}');
-      }
-    }
-
-    $( document ).ready(function() {
-      $(plotly_charts).each(function(index, element) {
-        Plotly.newPlot(element[0], element[1]);
+   $( document ).ready(function() {
+      $('.modal-body table.diff').each(function(_, table) {
+        let skipped_rows = 0;
+        $(table).find('tr').each(function(index, row) {
+          if ($(row).find('.diff_header').text() === '>>') {
+            skipped_rows += 1;
+            $(row).addClass('noborder');
+          }
+          if ((index - skipped_rows) % 2 === 1) {
+            $(row).addClass('striped');
+          }
+        });
       });
     });
   </script>

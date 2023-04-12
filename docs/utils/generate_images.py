@@ -505,6 +505,21 @@ def group_categories(base_url, driver, categories):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/group_categories.png', (0, list.location['y'] - y_offset, width, min(list.location['y'] + max_height, list.location['y'] + list.rect['height'])))
 
 
+def search_query_builder(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(admin.id))
+    driver.get(base_url + 'objects/search/#%7B%22q%22%3A%22(%5C%22Demo%5C%22%20in%20name)%20and%20(temperature%20%3E%20250%20degC)%22%2C%22action%22%3A%22%22%2C%22t%22%3A%22%22%2C%22c%22%3A%22and%22%2C%22v%22%3A%5B%7B%22n%22%3A%22name%22%2C%22c%22%3A%222%22%2C%22f%22%3A%22Demo%22%7D%2C%7B%22n%22%3A%22temperature%22%2C%22c%22%3A%2211%22%2C%22f%22%3A%22250%20degC%22%7D%5D%7D')
+    for heading in driver.find_elements(By.TAG_NAME, 'h1'):
+        if 'Search' in heading.text:
+            break
+    else:
+        assert False
+    container = driver.find_element(By.ID, 'main').find_elements(By.CLASS_NAME, 'container')[-1]
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/search_query_builder.png', (0, heading.location['y'], 700, min(heading.location['y'] + max_height, container.location['y'] + container.rect['height'])))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -750,5 +765,6 @@ try:
                 translations(flask_server.base_url, driver)
                 other_database(flask_server.base_url, driver)
                 group_categories(flask_server.base_url, driver, [category1, category2, category3])
+                search_query_builder(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

@@ -2,7 +2,6 @@
 """
 
 """
-
 import flask_login
 import flask_wtf
 import wtforms.fields
@@ -11,6 +10,7 @@ import pytz
 
 from . import frontend
 from ..logic import settings
+from ..utils import FlaskResponseT
 
 
 class TimezoneForm(flask_wtf.FlaskForm):
@@ -20,7 +20,7 @@ class TimezoneForm(flask_wtf.FlaskForm):
         ]
     )
 
-    def validate_timezone(self, field):
+    def validate_timezone(self, field: wtforms.fields.StringField) -> None:
         try:
             pytz.timezone(field.data)
         except Exception:
@@ -29,7 +29,7 @@ class TimezoneForm(flask_wtf.FlaskForm):
 
 @frontend.route('/set-timezone', methods=["POST"])
 @flask_login.login_required
-def set_timezone():
+def set_timezone() -> FlaskResponseT:
     if not settings.get_user_setting(flask_login.current_user.id, 'AUTO_TZ'):
         return '', 200
     form = TimezoneForm()

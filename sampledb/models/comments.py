@@ -6,11 +6,18 @@
 import datetime
 import typing
 
+from sqlalchemy.orm import relationship, Mapped, Query
+
 from .. import db
 from .objects import Objects
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .users import User
+    from .components import Component
 
 
-class Comment(db.Model):  # type: ignore
+class Comment(Model):
     __tablename__ = 'comments'
     __table_args__ = (
         db.CheckConstraint(
@@ -20,14 +27,18 @@ class Comment(db.Model):  # type: ignore
         db.UniqueConstraint('fed_id', 'component_id', name='comments_fed_id_component_id_key')
     )
 
-    id = db.Column(db.Integer, primary_key=True)
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    content = db.Column(db.Text, nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=True)
-    fed_id = db.Column(db.Integer, nullable=True)
-    component_id = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    component = db.relationship('Component')
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
+    user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    author: Mapped[typing.Optional['User']] = relationship('User')
+    content: Mapped[str] = db.Column(db.Text, nullable=False)
+    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
+    component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
+    component: Mapped[typing.Optional['Component']] = relationship('Component')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["Comment"]]
 
     def __init__(
             self,
@@ -38,14 +49,14 @@ class Comment(db.Model):  # type: ignore
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None
     ) -> None:
-        self.object_id = object_id
-        self.user_id = user_id
-        self.content = content
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
-        self.fed_id = fed_id
-        self.component_id = component_id
+        super().__init__(
+            object_id=object_id,
+            user_id=user_id,
+            content=content,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            fed_id=fed_id,
+            component_id=component_id
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id}, object_id={1.object_id}, user_id={1.user_id}, utc_datetime={1.utc_datetime}, content="{1.content}")>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id}, object_id={self.object_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, content="{self.content}")>'

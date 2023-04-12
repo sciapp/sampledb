@@ -5,11 +5,11 @@
 {% block scripts %}
   {{ super() }}
   {% if polling %}
-  <script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     const POLLING_SLEEP_TIME = 10000;
     const poll = function() {
       $.ajax({
-        url: "{{ url_for('.dataverse_export_status', task_id=task_id) }}",
+        url: "{{ url_for('.dataverse_export_status', task_id=task_id, token=token) }}",
         success: function(data, status_text, xhr) {
           if(xhr.status === 200) { // dataverse upload was successful
               window.location.replace(data["dataverse_url"])

@@ -134,9 +134,9 @@ def test_create_instrument_fed_exceptions(component):
     assert len(instruments.get_instruments()) == 0
     with pytest.raises(errors.ComponentDoesNotExistError):
         instruments.create_instrument(fed_id=1, component_id=component.id + 1)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         instruments.create_instrument(component_id=component.id)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         instruments.create_instrument(fed_id=1)
     assert len(instruments.get_instruments()) == 0
 

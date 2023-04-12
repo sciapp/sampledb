@@ -45,29 +45,29 @@ def parse_file(
         if storage == 'url':
             for key in data.keys():
                 if key not in {'url', 'storage'}:
-                    raise errors.InvalidDataExportError('Invalid data entry key \'{}\' for file #{} @ {}'.format(key, fed_id, uuid))
+                    raise errors.InvalidDataExportError(f'Invalid data entry key \'{key}\' for file #{fed_id} @ {uuid}')
             url = _get_str(data.get('url'))
             if url:
                 try:
                     parse_url(url)
                 except errors.InvalidURLError:
-                    raise errors.InvalidDataExportError('Invalid URL \'{}\' for file #{} @ {}'.format(url, fed_id, uuid))
+                    raise errors.InvalidDataExportError(f'Invalid URL \'{url}\' for file #{fed_id} @ {uuid}')
                 except errors.URLTooLongError:
-                    raise errors.InvalidDataExportError('URL \'{}\' is too long for file #{} @ {}'.format(url, fed_id, uuid))
+                    raise errors.InvalidDataExportError(f'URL \'{url}\' is too long for file #{fed_id} @ {uuid}')
                 except errors.InvalidIPAddressError:
-                    raise errors.InvalidDataExportError('Invalid IP-address in URL \'{}\' for file #{} @ {}'.format(url, fed_id, uuid))
+                    raise errors.InvalidDataExportError(f'Invalid IP-address in URL \'{url}\' for file #{fed_id} @ {uuid}')
                 except errors.InvalidPortNumberError:
-                    raise errors.InvalidDataExportError('Invalid port number in URL \'{}\' for file #{} @ {}'.format(url, fed_id, uuid))
+                    raise errors.InvalidDataExportError(f'Invalid port number in URL \'{url}\' for file #{fed_id} @ {uuid}')
         elif storage == 'federation':
             for key in data.keys():
                 if key not in {'original_file_name', 'storage'}:
-                    raise errors.InvalidDataExportError('Invalid data entry key \'{}\' for file #{} @ {}'.format(key, fed_id, uuid))
+                    raise errors.InvalidDataExportError(f'Invalid data entry key \'{key}\' for file #{fed_id} @ {uuid}')
         else:
-            raise errors.InvalidDataExportError('Invalid storage type \'{}\' for file #{} @ {}'.format(storage, fed_id, uuid))
+            raise errors.InvalidDataExportError(f'Invalid storage type \'{storage}\' for file #{fed_id} @ {uuid}')
 
     hidden_data = _get_dict(file_data.get('hidden'), default=None)
     if data is None and hidden_data is None:
-        raise errors.InvalidDataExportError('Missing data for file #{} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'Missing data for file #{fed_id} @ {uuid}')
 
     if hidden_data is not None:
         hide = FileHideData(

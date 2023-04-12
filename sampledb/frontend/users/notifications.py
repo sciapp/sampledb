@@ -16,7 +16,9 @@ from wtforms.validators import InputRequired
 
 from .. import frontend
 from ...logic import errors, users, groups, projects, object_permissions, locations, instrument_log_entries, instruments, components
-from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification, NotificationType
+from ...logic.notifications import get_notification, get_notifications, mark_notification_as_read, delete_notification
+from ...models import NotificationType, Permissions
+from ...utils import FlaskResponseT
 
 
 class DeleteAllNotificationsForm(FlaskForm):
@@ -35,23 +37,23 @@ class MarkNotificationAsReadForm(FlaskForm):
     mark_notification_read = IntegerField(validators=[InputRequired()])
 
 
-def _object_location_assignment_is_confirmed_or_declined(object_location_assignment_id):
+def _object_location_assignment_is_confirmed_or_declined(object_location_assignment_id: int) -> bool:
     try:
         object_location_assignment = locations.get_object_location_assignment(object_location_assignment_id)
     except errors.ObjectLocationAssignmentDoesNotExistError:
         return False
-    return object_location_assignment.confirmed or object_location_assignment.declined
+    return bool(object_location_assignment.confirmed or object_location_assignment.declined)
 
 
 @frontend.route('/users/me/notifications')
 @flask_login.login_required
-def current_user_notifications():
+def current_user_notifications() -> FlaskResponseT:
     return flask.redirect(flask.url_for('.notifications', user_id=flask_login.current_user.id))
 
 
 @frontend.route('/users/<int:user_id>/notifications', methods=['GET', 'POST'])
 @flask_login.login_required
-def notifications(user_id):
+def notifications(user_id: int) -> FlaskResponseT:
     if user_id != flask_login.current_user.id:
         return flask.abort(403)
 
@@ -132,7 +134,7 @@ def notifications(user_id):
         is_project_member=_is_project_member,
         get_user_object_permissions=object_permissions.get_user_object_permissions,
         get_object_location_assignment=_safe_get_object_location_assignment,
-        Permissions=object_permissions.Permissions,
+        Permissions=Permissions,
         object_location_assignment_is_confirmed_or_declined=_object_location_assignment_is_confirmed_or_declined,
         datetime=datetime
     )

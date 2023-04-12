@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Version 0.22
+------------
+
+Released on April 12th, 2023.
+
+- Implemented object storage capacities for locations
+- Applied admin permissions to managing groups
+- Added selection to generate labels for multiple objects
+- Added selection to change the permission for multiple objects
+- Added timeseries data type
+- Added support for translated property titles and notes to the graphical schema editor
+- Enforce that titles in schemas are not empty
+- Allow using more than one LDAP server
+- Added optional checksum for file contents
+- Allow viewing differences between object versions
+- Fixed configuration of action types linkable to project groups
+- Allow linking an object to an instrument to provide additional information
+- Added data differences between object versions to the version api
+
 Version 0.21.5
 --------------
 

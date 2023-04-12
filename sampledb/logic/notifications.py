@@ -41,13 +41,13 @@ class Notification:
         )
 
 
-def get_notifications(user_id: int, unread_only: bool = False, _additional_filters: typing.Sequence[typing.Any] = ()) -> typing.List[Notification]:
+def get_notifications(user_id: int, unread_only: bool = False, additional_filters: typing.Sequence[typing.Any] = ()) -> typing.List[Notification]:
     """
     Get all (unread) notifications for a given user.
 
     :param user_id: the ID of an existing user
     :param unread_only: whether only unread notifications should be returned
-    :param _additional_filters: additional filters for the notification query
+    :param additional_filters: additional filters for the notification query
     :return: a list of (unread) notifications
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
@@ -57,7 +57,7 @@ def get_notifications(user_id: int, unread_only: bool = False, _additional_filte
     query = notifications.Notification.query.filter_by(user_id=user_id)
     if unread_only:
         query = query.filter_by(was_read=False)
-    for additional_filter in _additional_filters:
+    for additional_filter in additional_filters:
         query = additional_filter(query)
     query = query.order_by(notifications.Notification.utc_datetime.desc())
     db_notifications = query.all()
@@ -81,7 +81,7 @@ def get_notifications_by_type(user_id: int, notification_type: NotificationType,
     return get_notifications(
         user_id=user_id,
         unread_only=unread_only,
-        _additional_filters=[
+        additional_filters=[
             lambda query, notification_type=notification_type: query.filter_by(type=notification_type)
         ]
     )
@@ -113,7 +113,7 @@ def get_notification(notification_id: int) -> Notification:
 
     :param notification_id: the ID of an existing notification
     :return: a notification
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     notification = notifications.Notification.query.filter_by(id=notification_id).first()
@@ -175,7 +175,7 @@ def _send_notification(type: NotificationType, user_id: int, data: typing.Dict[s
     """
     user = logic.users.get_user(user_id)
     if user.email is None:
-        return None
+        return
 
     service_name = flask.current_app.config['SERVICE_NAME']
     subject = service_name + " Notification"
@@ -224,7 +224,7 @@ def mark_notification_as_read(notification_id: int) -> None:
     Mark a notification as having been read.
 
     :param notification_id: the ID of an existing notification
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     notification = notifications.Notification.query.filter_by(id=notification_id).first()
@@ -244,7 +244,7 @@ def mark_notification_for_being_assigned_as_responsible_user_as_read(user_id: in
     :param object_location_assignment_id: the object location assignment ID
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         exists
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     unread_notifications = get_notifications_by_type(
@@ -262,7 +262,7 @@ def delete_notification(notification_id: int) -> None:
     Delete a notification.
 
     :param notification_id: the ID of an existing notification
-    :raise errors.NotificationDoesNotExist: when no notification with the
+    :raise errors.NotificationDoesNotExistError: when no notification with the
         given notification ID exists
     """
     notification = notifications.Notification.query.filter_by(id=notification_id).first()
@@ -327,10 +327,10 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
         return NotificationMode.IGNORE
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
-        return typing.cast(NotificationMode, notification_mode_for_type.mode)
+        return notification_mode_for_type.mode
     notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
     if notification_mode_for_all_types is not None:
-        return typing.cast(NotificationMode, notification_mode_for_all_types.mode)
+        return notification_mode_for_all_types.mode
     if type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED:
         return NotificationMode.IGNORE
     return NotificationMode.WEBAPP
@@ -381,6 +381,8 @@ def create_notification_for_being_assigned_as_responsible_user(object_location_a
         location assignment with the given object location assignment ID exists
     """
     object_location_assignment = logic.locations.get_object_location_assignment(object_location_assignment_id)
+    if object_location_assignment.responsible_user_id is None:
+        return
     confirmation_url = flask.url_for(
         'frontend.accept_responsibility_for_object',
         t=logic.security_tokens.generate_token(

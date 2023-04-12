@@ -8,15 +8,21 @@ import functools
 import json
 import os
 import typing
+import secrets
 
 import flask
 import flask_login
 import sqlalchemy
+import werkzeug
 
 from . import logic, db
 from .models import Permissions, migrations
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+
+FlaskResponseValueT = typing.Union[flask.Response, werkzeug.Response, str]
+FlaskResponseT = typing.Union[FlaskResponseValueT, typing.Tuple[FlaskResponseValueT, int], typing.Tuple[FlaskResponseValueT, int, typing.Dict[str, str]]]
 
 
 def ansi_color(text: str, color: int) -> str:
@@ -33,20 +39,20 @@ def ansi_color(text: str, color: int) -> str:
 def object_permissions_required(
         required_object_permissions: Permissions,
         auth_extension: typing.Any = flask_login,
-        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: typing.cast(int, flask_login.current_user.get_id()) if flask_login.current_user else None,
-        on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = lambda object_id: flask.abort(403),
+        user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.get_id() if flask_login.current_user else None,
+        on_unauthorized: typing.Callable[[int], FlaskResponseT] = lambda object_id: flask.abort(403),
         may_enable_anonymous_users: bool = True
 ) -> typing.Callable[[typing.Any], typing.Any]:
     def decorator(
             func: typing.Callable[[typing.Any], typing.Any],
             user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
-            on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = on_unauthorized
+            on_unauthorized: typing.Callable[[int], FlaskResponseT] = on_unauthorized
     ) -> typing.Callable[[typing.Any], typing.Any]:
         @functools.wraps(func)
         def wrapper(
                 *args: typing.Any,
                 user_id_callable: typing.Callable[[], typing.Optional[int]] = user_id_callable,
-                on_unauthorized: typing.Callable[[int], typing.Optional[typing.Tuple[str, int]]] = on_unauthorized,
+                on_unauthorized: typing.Callable[[int], FlaskResponseT] = on_unauthorized,
                 **kwargs: typing.Any
         ) -> typing.Any:
             assert 'object_id' in kwargs
@@ -142,3 +148,11 @@ def empty_database(
         db.metadata.create_all(bind=engine)
         # run migrations
         migrations.run(db)
+
+
+def generate_inline_script_nonce() -> str:
+    nonce = getattr(flask.g, 'inline_script_nonce', None)
+    if nonce is None:
+        nonce = secrets.token_hex(32)
+        flask.g.inline_script_nonce = nonce
+    return nonce

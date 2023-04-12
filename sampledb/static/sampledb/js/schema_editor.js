@@ -69,35 +69,58 @@ function enableSchemaEditor() {
       }
     }
 
-    var title_label = node.find('.schema-editor-root-object-title-label');
-    var title_input = node.find('.schema-editor-root-object-title-input');
+    let title_inputs = node.find('.schema-editor-root-object-title-input');
+    title_inputs.val("");
+    title_inputs.each(function(_, title_input) {
+      const lang_code = $(title_input).data('sampledbLangCode');
+      const id = 'schema-editor-root-object-title-input-' + lang_code;
+      $(title_input).attr('id', id);
+      $(title_input).parent().find('.schema-editor-root-object-title-label').attr('for', id);
+    });
     if ('title' in schema) {
       if (typeof schema['title'] === 'string') {
-        title_input.val(schema['title']);
-      } else {
-        title_input.val(schema['title']['en']);
+        schema['title'] = {"en": schema['title']};
       }
-    } else {
-      title_input.val("");
+      for (const lang_code in schema['title']) {
+        let title_input = title_inputs.filter('[data-sampledb-lang-code="' + lang_code + '"]');
+        if (title_input.length > 0) {
+          title_input.val(schema['title'][lang_code]);
+        } else {
+          window.schema_editor_missing_type_support = true;
+        }
+      }
     }
-    title_input.attr('id', 'schema-editor-root-object-title-input');
-    title_label.attr('for', title_input.attr('id'));
-    title_input.on('change', function () {
-      var title_input = $(this);
-      var title_group = title_input.parent();
-      var title_help = title_group.find('.help-block');
-      var title = title_input.val();
-      if (title === "") {
+    title_inputs.on('change', function () {
+      const title_input = $(this);
+      const lang_code = title_input.data('sampledbLangCode');
+      const title_group = title_input.parent();
+      const title_help = title_group.find('.help-block');
+      const title = title_input.val();
+      let has_error = false;
+      if (title === "" && lang_code === "en") {
         title_help.text(window.schema_editor_translations['enter_title']);
         title_group.addClass("has-error");
-      } else {
+        has_error = true;
+      } else if (RegExp('^\\s+$').test(title)) {
+        title_help.text(window.schema_editor_translations['title_must_not_be_whitespace']);
+        title_group.addClass("has-error");
+        has_error = true;
+      } else if (title !== "") {
         title_help.text("");
         title_group.removeClass("has-error");
-        var schema = JSON.parse(input_schema.val());
-        schema['title'] = title;
+        let schema = JSON.parse(input_schema.val());
+        if (typeof schema['title'] === 'string') {
+          schema['title'] = {"en": schema['title']};
+        }
+        schema['title'][lang_code] = title;
         input_schema.val(JSON.stringify(schema, null, 4));
       }
-    });
+      window.schema_editor_errors['root_title__' + lang_code] = true;
+      if (!has_error) {
+        delete window.schema_editor_errors['root_title__' + lang_code];
+      }
+      globallyValidateSchema();
+    }).change();
 
     var hazards_label = node.find('.schema-editor-root-object-hazards-label');
     var hazards_input = node.find('.schema-editor-root-object-hazards-input');
@@ -128,7 +151,7 @@ function enableSchemaEditor() {
         }
         schema['properties']['hazards'] = {
           "type": "hazards",
-          "title": "GHS Hazards"
+          "title": window.schema_editor_hazards_translations
         };
         if (!('required' in schema)) {
           schema['required'] = []
@@ -171,7 +194,7 @@ function enableSchemaEditor() {
         }
         schema['properties']['tags'] = {
           "type": "tags",
-          "title": "Tags"
+          "title": window.schema_editor_tags_translations
         };
         if (!('required' in schema)) {
           schema['required'] = []
@@ -354,6 +377,8 @@ function enableSchemaEditor() {
       type = "plotly_chart";
     } else if (schema['type'] === 'object' && 'template' in schema) {
       type = 'template';
+    } else if (schema['type'] === 'timeseries') {
+      type = "timeseries";
     } else {
       window.schema_editor_missing_type_support = true;
       return null;
@@ -362,7 +387,7 @@ function enableSchemaEditor() {
     var node = schema_editor_templates.find('.schema-editor-generic-property')[0].cloneNode(true);
     node = $(node);
     node.find('[data-toggle="tooltip"]:not(.disabled)').tooltip();
-    node.find('.schema-editor-' + type + '-property-settings').css('display', 'flex');
+    node.find('.schema-editor-' + type + '-property-setting').css('display', 'block');
 
     function updateProperty() {
       var path = this;
@@ -394,6 +419,8 @@ function enableSchemaEditor() {
         updatePlotlyChartProperty(path, real_path);
       } else if (type === 'template') {
         updateTemplateObjectProperty(path, real_path);
+      } else if (type === "timeseries") {
+        updateTimeseriesProperty(path, real_path);
       }
       globallyValidateSchema();
     }
@@ -484,20 +511,30 @@ function enableSchemaEditor() {
     name_input.on('change', updateProperty.bind(path));
 
 
-    var title_label = node.find('.schema-editor-generic-property-title-label');
-    var title_input = node.find('.schema-editor-generic-property-title-input');
-    title_input.attr('id', 'schema-editor-object__' + path.join('__') + '-title-input');
-    title_label.attr('for', title_input.attr('id'));
+    let title_inputs = node.find('.schema-editor-generic-property-title-input');
+    title_inputs.val("");
+    window.schema_editor_lang_codes = [];
+    title_inputs.each(function(_, title_input) {
+      const lang_code = $(title_input).data('sampledbLangCode');
+      window.schema_editor_lang_codes.push(lang_code);
+      const id = 'schema-editor-object__' + path.join('__') + '-title-input-' + lang_code;
+      $(title_input).attr('id', id);
+      $(title_input).parent().find('.schema-editor-generic-property-title-label').attr('for', id);
+    });
     if ('title' in schema) {
       if (typeof schema['title'] === 'string') {
-        title_input.val(schema['title']);
-      } else {
-        title_input.val(schema['title']['en']);
+        schema['title'] = {"en": schema['title']};
       }
-    } else {
-      title_input.val("");
+      for (const lang_code in schema['title']) {
+        let title_input = title_inputs.filter('[data-sampledb-lang-code="' + lang_code + '"]');
+        if (title_input.length > 0) {
+          title_input.val(schema['title'][lang_code]);
+        } else {
+          window.schema_editor_missing_type_support = true;
+        }
+      }
     }
-    title_input.on('change', updateProperty.bind(path));
+    title_inputs.on('change', updateProperty.bind(path));
 
 
     var type_label = node.find('.schema-editor-generic-property-type-label');
@@ -509,11 +546,10 @@ function enableSchemaEditor() {
     type_input.on('change', function () {
       var type = $(this).val();
       var node = $(this).closest('.schema-editor-generic-property');
-      node.find('.schema-editor-property-settings').css('display', 'none');
-      $(node.find('.schema-editor-property-settings')[0]).css('display', 'flex');
+      node.find('.schema-editor-property-setting').css('display', 'none');
       node.find('.help-block').html('');
       node.find('.has-error').removeClass('has-error');
-      node.find('.schema-editor-' + type + '-property-settings').css('display', 'flex');
+      node.find('.schema-editor-' + type + '-property-setting').css('display', 'block');
     });
     type_input.on('change', updateProperty.bind(path));
 
@@ -630,25 +666,38 @@ function enableSchemaEditor() {
         name_group.addClass("has-error");
         has_error = true;
       }
-      var title_input = getElementForProperty(path, 'title-input');
-      var title_group = title_input.parent();
-      var title_help = title_group.find('.help-block');
-      var title = title_input.val();
-      if (title === "") {
-        title_help.text(window.schema_editor_translations['title_must_not_be_empty']);
-        title_group.addClass("has-error");
-        has_error = true;
-      } else if (RegExp('^\\s*$').test(title)) {
-        title_help.text(window.schema_editor_translations['title_must_not_be_whitespace']);
-        title_group.addClass("has-error");
-        has_error = true;
-      } else {
-        title_help.text("");
-        title_group.removeClass("has-error");
+
+      let translated_title = {};
+      for (const lang_code of window.schema_editor_lang_codes) {
+        const title_input = getElementForProperty(path, 'title-input-' + lang_code);
+        const title_group = title_input.parent();
+        const title_help = title_group.find('.help-block');
+        const title = title_input.val();
+        if (title === "" && lang_code === "en") {
+          title_help.text(window.schema_editor_translations['title_must_not_be_empty']);
+          title_group.addClass("has-error");
+          has_error = true;
+        } else if (RegExp('^\\s+$').test(title)) {
+          title_help.text(window.schema_editor_translations['title_must_not_be_whitespace']);
+          title_group.addClass("has-error");
+          has_error = true;
+        } else {
+          title_help.text("");
+          title_group.removeClass("has-error");
+        }
+        if (lang_code === "en" || title !== "") {
+          translated_title[lang_code] = title;
+        }
       }
       var required = getElementForProperty(path, 'required-input').prop('checked');
       var has_note = getElementForProperty(path, 'generic-note-checkbox').prop('checked');
-      var note = getElementForProperty(path, 'generic-note-input').val();
+      let translated_note = {};
+      for (const lang_code of window.schema_editor_lang_codes) {
+        let note = getElementForProperty(path, 'generic-note-input-' + lang_code).val();
+        if (note || lang_code === "en") {
+          translated_note[lang_code] = note;
+        }
+      }
       if (name !== real_path[real_path.length - 1]) {
         delete schema['properties'][real_path[real_path.length - 1]];
         if ('required' in schema) {
@@ -683,10 +732,10 @@ function enableSchemaEditor() {
         window.schema_editor_path_mapping[path.join('__')] = real_path;
       }
       property_schema = {
-        "title": title
+        "title": translated_title
       };
       if (has_note) {
-        property_schema["note"] = note;
+        property_schema["note"] = translated_note;
       }
       if (required) {
         if (!('required' in schema)) {
@@ -846,7 +895,7 @@ function enableSchemaEditor() {
       property_schema["properties"] = {};
 
       var template_input = getElementForProperty(path, 'template-id-input');
-      var template_group = template_input.closest('.schema-editor-property-settings.schema-editor-template-property-settings');
+      var template_group = template_input.closest('.schema-editor-property-setting.schema-editor-template-property-setting');
       var template_help = template_group.find('.help-block');
       if (template_input.is(':visible')) {
         let new_template_id = template_input.selectpicker('val');
@@ -950,6 +999,27 @@ function enableSchemaEditor() {
         has_error = true;
       }
 
+      let has_display_digits = getElementForProperty(path, 'quantity-display_digits-checkbox').prop('checked');
+      let display_digits_input = getElementForProperty(path, 'quantity-display_digits-input');
+      let display_digits_value = display_digits_input.val();
+      let display_digits_group = display_digits_input.parent();
+      let display_digits_help = display_digits_group.find('.help-block');
+      if (has_display_digits) {
+        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0 || Number.parseInt(display_digits_value) > 15) {
+          display_digits_help.text(window.schema_editor_translations['enter_display_digits']);
+          display_digits_group.addClass("has-error");
+          has_error = true;
+        } else {
+          display_digits_value = Number.parseInt(display_digits_value);
+          property_schema['display_digits'] = display_digits_value;
+          display_digits_help.text("");
+          display_digits_group.removeClass("has-error");
+        }
+      } else {
+        display_digits_help.text("");
+        display_digits_group.removeClass("has-error");
+      }
+
       var has_default = getElementForProperty(path, 'quantity-default-checkbox').prop('checked');
       var default_input = getElementForProperty(path, 'quantity-default-input');
       var default_value = default_input.val();
@@ -982,6 +1052,59 @@ function enableSchemaEditor() {
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
 
+    function updateTimeseriesProperty(path, real_path) {
+      let has_error = false;
+      updateGenericProperty(path, real_path);
+      let schema = JSON.parse(input_schema.val());
+      let property_schema = schema['properties'][real_path[real_path.length - 1]];
+      property_schema["type"] = "timeseries";
+
+      let units_input = getElementForProperty(path, 'timeseries-units-input');
+      let units = units_input.val();
+      let units_group = units_input.parent();
+      let units_help = units_group.find('.help-block');
+      // TODO: validate units
+      if (units.length > 0) {
+        // allow multiple units separated by a comma
+        if (units.split(',').length > 1) {
+          units = units.split(',');
+          units = units.map(function(unit) {
+            return unit.trim();
+          });
+        }
+        property_schema['units'] = units;
+        units_help.text("");
+        units_group.removeClass("has-error");
+      } else {
+        units_help.text(window.schema_editor_translations['enter_units']);
+        units_group.addClass("has-error");
+        has_error = true;
+      }
+
+      let has_display_digits = getElementForProperty(path, 'timeseries-display_digits-checkbox').prop('checked');
+      let display_digits_input = getElementForProperty(path, 'timeseries-display_digits-input');
+      let display_digits_value = display_digits_input.val();
+      let display_digits_group = display_digits_input.parent();
+      let display_digits_help = display_digits_group.find('.help-block');
+      if (has_display_digits) {
+        if (isNaN(display_digits_value) || display_digits_value === null || display_digits_value === "" || Number.parseInt(display_digits_value) < 0 || Number.parseInt(display_digits_value) > 15) {
+          display_digits_help.text(window.schema_editor_translations['enter_display_digits']);
+          display_digits_group.addClass("has-error");
+          has_error = true;
+        } else {
+          display_digits_value = Number.parseInt(display_digits_value);
+          property_schema['display_digits'] = display_digits_value;
+          display_digits_help.text("");
+          display_digits_group.removeClass("has-error");
+        }
+      } else {
+        display_digits_help.text("");
+        display_digits_group.removeClass("has-error");
+      }
+
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
+    }
+
     var required_label = node.find('.schema-editor-generic-property-required-label');
     var required_input = node.find('.schema-editor-generic-property-required-input');
     required_input.attr('id', 'schema-editor-object__' + path.join('__') + '-required-input');
@@ -990,30 +1113,55 @@ function enableSchemaEditor() {
     required_input.bootstrapToggle();
     required_input.on('change', updateProperty.bind(path));
 
-    function setupValueFromSchema(path, type, name, schema, is_type) {
+    function setupValueFromSchema(path, type, name, schema, is_type, is_translatable) {
       var value_label = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-label');
       var value_input = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-input');
       var value_checkbox = node.find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-checkbox');
       value_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-checkbox');
-      value_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-input');
-      value_label.attr('for', value_input.attr('id'));
+      if (is_translatable) {
+        value_input.each(function(_, lang_value_input) {
+          const lang_code = $(lang_value_input).data('sampledbLangCode');
+          const id = 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-input-' + lang_code;
+          $(lang_value_input).attr('id', id);
+          $(lang_value_input).parent().find('label').attr('for', 'id');
+        });
+      } else {
+        value_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + type + '-' + name.toLowerCase() + '-input');
+        value_label.attr('for', value_input.attr('id'));
+      }
       if (is_type && name in schema) {
-        if (typeof schema[name] === 'object') {
-          // translations for text properties not supported in graphical editor
-          window.schema_editor_missing_type_support = true;
-          if ('en' in schema[name]) {
-            value_input.val(schema[name]['en']);
-            value_checkbox.prop('checked', true);
-            value_input.prop('disabled', false);
-          } else {
-            value_input.val('');
-            value_checkbox.prop('checked', false);
-            value_input.prop('disabled', true);
+        if (is_translatable) {
+          if (typeof schema[name] === 'string') {
+            schema[name] = {"en": schema[name]};
           }
-        } else {
-          value_input.val(schema[name]);
+          for (const lang_code in schema[name]) {
+            let lang_value_input = value_input.filter('[data-sampledb-lang-code="' + lang_code + '"]');
+            if (lang_value_input.length > 0) {
+              lang_value_input.val(schema[name][lang_code]);
+            } else {
+              window.schema_editor_missing_type_support = true;
+            }
+          }
           value_checkbox.prop('checked', true);
           value_input.prop('disabled', false);
+        } else {
+          if (typeof schema[name] === 'object') {
+            // translations for text properties only supported for some properties in graphical editor
+            window.schema_editor_missing_type_support = true;
+            if ('en' in schema[name]) {
+              value_input.val(schema[name]['en']);
+              value_checkbox.prop('checked', true);
+              value_input.prop('disabled', false);
+            } else {
+              value_input.val('');
+              value_checkbox.prop('checked', false);
+              value_input.prop('disabled', true);
+            }
+          } else {
+            value_input.val(schema[name]);
+            value_checkbox.prop('checked', true);
+            value_input.prop('disabled', false);
+          }
         }
       } else {
         value_input.val("");
@@ -1021,7 +1169,6 @@ function enableSchemaEditor() {
         value_input.prop('disabled', true);
       }
       value_checkbox.on('change', function () {
-        var value_input = $(this).parent().parent().find('.schema-editor-' + type + '-property-' + name.toLowerCase() + '-input');
         if ($(this).prop('checked')) {
           value_input.prop('disabled', false);
         } else {
@@ -1033,15 +1180,15 @@ function enableSchemaEditor() {
     }
 
     // Every supported type has a note input
-    setupValueFromSchema(path, 'generic', 'note', schema, true);
+    setupValueFromSchema(path, 'generic', 'note', schema, true, true);
 
-    setupValueFromSchema(path, 'text', 'default', schema, type === 'text');
-    setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text');
-    setupValueFromSchema(path, 'text', 'pattern', schema, type === 'text');
-    setupValueFromSchema(path, 'text', 'minLength', schema, type === 'text');
-    setupValueFromSchema(path, 'text', 'maxLength', schema, type === 'text');
+    setupValueFromSchema(path, 'text', 'default', schema, type === 'text', false);
+    setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text', false);
+    setupValueFromSchema(path, 'text', 'pattern', schema, type === 'text', false);
+    setupValueFromSchema(path, 'text', 'minLength', schema, type === 'text', false);
+    setupValueFromSchema(path, 'text', 'maxLength', schema, type === 'text', false);
 
-    setupValueFromSchema(path, 'choice', 'default', schema, type === 'choice');
+    setupValueFromSchema(path, 'choice', 'default', schema, type === 'choice', false);
 
     var choices_label = node.find('.schema-editor-choice-property-choices-label');
     var choices_input = node.find('.schema-editor-choice-property-choices-input');
@@ -1066,15 +1213,15 @@ function enableSchemaEditor() {
     }
     choices_input.on('change', updateProperty.bind(path));
 
-    setupValueFromSchema(path, 'multiline', 'default', schema, type === 'multiline');
-    setupValueFromSchema(path, 'multiline', 'placeholder', schema, type === 'multiline');
-    setupValueFromSchema(path, 'multiline', 'minLength', schema, type === 'multiline');
-    setupValueFromSchema(path, 'multiline', 'maxLength', schema, type === 'multiline');
+    setupValueFromSchema(path, 'multiline', 'default', schema, type === 'multiline', false);
+    setupValueFromSchema(path, 'multiline', 'placeholder', schema, type === 'multiline', false);
+    setupValueFromSchema(path, 'multiline', 'minLength', schema, type === 'multiline', false);
+    setupValueFromSchema(path, 'multiline', 'maxLength', schema, type === 'multiline', false);
 
-    setupValueFromSchema(path, 'markdown', 'default', schema, type === 'markdown');
-    setupValueFromSchema(path, 'markdown', 'placeholder', schema, type === 'markdown');
-    setupValueFromSchema(path, 'markdown', 'minLength', schema, type === 'markdown');
-    setupValueFromSchema(path, 'markdown', 'maxLength', schema, type === 'markdown');
+    setupValueFromSchema(path, 'markdown', 'default', schema, type === 'markdown', false);
+    setupValueFromSchema(path, 'markdown', 'placeholder', schema, type === 'markdown', false);
+    setupValueFromSchema(path, 'markdown', 'minLength', schema, type === 'markdown', false);
+    setupValueFromSchema(path, 'markdown', 'maxLength', schema, type === 'markdown', false);
 
     var default_label = node.find('.schema-editor-bool-property-default-label');
     var default_input = node.find('.schema-editor-bool-property-default-input');
@@ -1112,25 +1259,33 @@ function enableSchemaEditor() {
     default_checkbox.on('change', updateProperty.bind(path));
     default_input.on('change', updateProperty.bind(path));
 
-    setupValueFromSchema(path, 'quantity', 'default', schema, type === 'quantity');
-    setupValueFromSchema(path, 'quantity', 'placeholder', schema, type === 'quantity');
+    setupValueFromSchema(path, 'quantity', 'default', schema, type === 'quantity', false);
+    setupValueFromSchema(path, 'quantity', 'placeholder', schema, type === 'quantity', false);
+    setupValueFromSchema(path, 'quantity', 'display_digits', schema, type === 'quantity', false);
 
-    var units_label = node.find('.schema-editor-quantity-property-units-label');
-    var units_input = node.find('.schema-editor-quantity-property-units-input');
-    units_input.attr('id', 'schema-editor-object__' + path.join('__') + '-quantity-units-input');
-    units_label.attr('for', units_input.attr('id'));
-    if (type === 'quantity' && 'units' in schema) {
-      units_input.val(schema['units']);
-    } else {
-      units_input.val("");
+    for (const property_type of ["quantity", "timeseries"]) {
+      let units_label = node.find('.schema-editor-' + property_type + '-property-units-label');
+      let units_input = node.find('.schema-editor-' + property_type + '-property-units-input');
+      units_input.attr('id', 'schema-editor-object__' + path.join('__') + '-' + property_type + '-units-input');
+      units_label.attr('for', units_input.attr('id'));
+      if (type === property_type && 'units' in schema) {
+        units_input.val(schema['units']);
+      } else {
+        units_input.val("");
+      }
+      units_input.on('change', updateProperty.bind(path));
+      if (window.schema_editor_error_message !== null && window.schema_editor_error_message === ("invalid units (at " + path[0] + ")")) {
+        let units_group = units_input.parent();
+        units_group.addClass("has-error");
+        units_group.find('.help-block').text(window.schema_editor_translations['enter_valid_units']);
+        window.schema_editor_errors[path.join('__') + '__specific'] = true;
+        units_input.on('change', function() {
+          window.schema_editor_error_message = null;
+        });
+      }
     }
-    units_input.on('change', updateProperty.bind(path));
-    if (window.schema_editor_error_message !== null && window.schema_editor_error_message === ("invalid units (at " + path[0] + ")")) {
-      var units_group = units_input.parent();
-      units_group.addClass("has-error");
-      units_group.find('.help-block').text(window.schema_editor_translations['enter_valid_units']);
-      window.schema_editor_errors[path.join('__') + '__specific'] = true;
-    }
+
+    setupValueFromSchema(path, 'timeseries', 'display_digits', schema, type === 'timeseries', false);
 
     var default_checkbox = node.find('.schema-editor-user-property-default-checkbox');
     default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-checkbox');
@@ -1149,7 +1304,7 @@ function enableSchemaEditor() {
 
     var advanced_schema_features = [
         'conditions', 'action_type_id', 'action_id',
-        'may_copy', 'dataverse_export', 'languages', 'display_digits',
+        'may_copy', 'dataverse_export', 'languages',
         'min_magnitude', 'max_magnitude'
     ]
 

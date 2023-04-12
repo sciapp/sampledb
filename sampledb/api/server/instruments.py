@@ -38,7 +38,7 @@ class Instrument(Resource):
             )
         except errors.InstrumentDoesNotExistError:
             return {
-                "message": "instrument {} does not exist".format(instrument_id)
+                "message": f"instrument {instrument_id} does not exist"
             }, 404
         return instrument_to_json(instrument)
 

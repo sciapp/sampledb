@@ -8,30 +8,31 @@ import datetime
 import json
 import os
 import sys
+import random
 import typing
 
 
 import sampledb
 from .. import create_app
-from sampledb.models import UserType, ActionType, Language
-from sampledb.logic.instruments import create_instrument, add_instrument_responsible_user
-from sampledb.logic.instrument_translations import set_instrument_translation
-from sampledb.logic.action_translations import set_action_translation
-from sampledb.logic.actions import create_action
+from ..models import UserType, ActionType, Language
+from ..logic.instruments import create_instrument, add_instrument_responsible_user
+from ..logic.instrument_translations import set_instrument_translation
+from ..logic.action_translations import set_action_translation
+from ..logic.actions import create_action
 from ..logic import groups, object_permissions, projects, comments, files
 
 
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 0:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     app = create_app(include_dashboard=False)
     if not app.config.get("SERVER_NAME"):
         app.config["SERVER_NAME"] = "localhost:8000"
     with app.app_context():
         if sampledb.logic.actions.get_actions() or sampledb.logic.instruments.get_instruments() or len(sampledb.logic.users.get_users()) > 1:
             print("Error: database must be empty for demo", file=sys.stderr)
-            exit(1)
+            sys.exit(1)
 
         data_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), 'demo_data'))
         schema_directory = os.path.join(data_directory, 'schemas')
@@ -75,8 +76,8 @@ def main(arguments: typing.List[str]) -> None:
         projects.create_subproject_relationship(parent_project_id=project_id, child_project_id=project_id2,
                                                 child_can_add_users_to_parent=True)
 
-        projects.create_project({"en": "A-Example", "de": "A-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
-        projects.create_project({"en": "C-Example", "de": "C-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
+        projects.create_project({"en": "A-Example", "de": "A-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id)
+        projects.create_project({"en": "C-Example", "de": "C-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id)
         project_id5 = projects.create_project({"en": "B-Example", "de": "B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
         project_id6 = projects.create_project({"en": "2-B-Example", "de": "2-B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
         project_id7 = projects.create_project({"en": "1-B-Example", "de": "1-B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
@@ -158,15 +159,19 @@ This example shows how Markdown can be used for instrument Notes.
             instrument.id, basic_user.id, "This is an example instrument log entry",
             [log_category_error.id, log_category_warning.id, log_category_normal.id, log_category_success.id]
         )
+        with open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs01.png'), 'rb') as ghs01_file:
+            ghs01_image = ghs01_file.read()
         sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
             instrument_log_entry_id=log_entry.id,
             file_name="ghs01.png",
-            content=open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs01.png'), 'rb').read()
+            content=ghs01_image
         )
+        with open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs02.png'), 'rb') as ghs02_file:
+            ghs02_image = ghs02_file.read()
         sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
             instrument_log_entry_id=log_entry.id,
             file_name="ghs02.png",
-            content=open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs02.png'), 'rb').read()
+            content=ghs02_image
         )
         sampledb.logic.instrument_log_entries.create_instrument_log_file_attachment(
             instrument_log_entry_id=log_entry.id,
@@ -211,7 +216,7 @@ This example shows how Markdown can be used for instrument Notes.
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This comment is very long. ' * 20 + '\n' + 'This comment has three paragraphs. ' * 20 + '\n' + '\n' + 'This comment has three paragraphs. ' * 20)
         comments.create_comment(instrument_object.id, instrument_responsible_user.id, 'This is another, shorter comment')
         files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'example.txt', lambda stream: typing.cast(None, stream.write("Dies ist ein Test".encode('utf-8'))))
-        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: typing.cast(None, stream.write(open(os.path.join(os.path.dirname(sampledb.__file__), 'static/sampledb/img/ghs01.png'), 'rb').read())))
+        files.create_database_file(instrument_object.id, instrument_responsible_user.id, 'demo.png', lambda stream: typing.cast(None, stream.write(ghs01_image)))
         files.update_file_information(instrument_object.id, 1, instrument_responsible_user.id, 'Example File', 'This is a file description.')
         files.create_url_file(instrument_object.id, instrument_responsible_user.id, 'http://iffsamples.fz-juelich.de/')
         sampledb.logic.publications.link_publication_to_object(instrument_responsible_user.id, instrument_object.id, '10.5281/zenodo.4012175', 'sciapp/sampledb', 'Example')
@@ -545,6 +550,7 @@ This example shows how Markdown can be used for instrument Notes.
             enable_object_assignments=True,
             enable_responsible_users=True,
             enable_instruments=False,
+            enable_capacities=True,
             show_location_log=True,
         )
         container = sampledb.logic.locations.create_location(
@@ -556,6 +562,7 @@ This example shows how Markdown can be used for instrument Notes.
         )
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(container.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.locations.set_location_responsible_users(container.id, [instrument_responsible_user.id, admin.id])
+        sampledb.logic.locations.set_location_capacity(container.id, sampledb.models.ActionType.SAMPLE_CREATION, 2)
 
         for object in sampledb.logic.objects.get_objects():
             sampledb.logic.instrument_log_entries.create_instrument_log_object_attachment(
@@ -693,7 +700,7 @@ This example shows how Markdown can be used for instrument Notes.
             'enable_comments': True,
             'enable_activity_log': True,
             'enable_related_objects': True,
-            'enable_project_link': True,
+            'enable_project_link': False,
             'translations': {'en': {'name': 'Sample Creation',
                                     'description': 'These Actions represent processes which create a sample.',
                                     'object_name': 'Sample',
@@ -949,5 +956,139 @@ This example shows how Markdown can be used for instrument Notes.
                 'object_id': 14
             }
         )
+        timeseries_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'temperature_series': {
+                        'title': 'Temperature Series',
+                        'type': 'timeseries',
+                        'units': ['degC', 'K'], 'display_digits': 2
+                    },
+                    'pressure_series': {
+                        'title': 'Pressure Series',
+                        'type': 'timeseries',
+                        'units': 'bar', 'display_digits': 2
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, timeseries_action.id, name="Timeseries Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(timeseries_action.id, sampledb.models.Permissions.READ)
+        temperature_data: typing.List[typing.Tuple[str, float, float]] = []
+        pressure_data: typing.List[typing.Tuple[str, float]] = []
+        random.seed(0)
+        for i in range(1000):
+            utc_datetime_string = (datetime.datetime.utcnow() + datetime.timedelta(milliseconds=i * 30)).strftime('%Y-%m-%d %H:%M:%S.%f')
+            if i == 0:
+                temperature_magnitude = 20.0
+            else:
+                temperature_magnitude = temperature_data[-1][1] + random.uniform(-1, 1)
+            temperature_magnitude_in_base_units = temperature_magnitude + 273.15
+            temperature_data.append((
+                utc_datetime_string,
+                temperature_magnitude,
+                temperature_magnitude_in_base_units
+            ))
+            if i == 0:
+                pressure_magnitude = 2.0
+            else:
+                pressure_magnitude = pressure_data[-1][1] + random.uniform(-0.1, 0.1)
+            pressure_data.append((
+                utc_datetime_string,
+                pressure_magnitude
+            ))
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Timeseries Demo 1', 'de': 'Timeseries Demo 1'}
+            },
+            'temperature_series': {
+                '_type': 'timeseries',
+                'units': 'degC',
+                'data': temperature_data
+            },
+            'pressure_series': {
+                '_type': 'timeseries',
+                'units': 'bar',
+                'data': pressure_data
+            }
+        }
+        sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
+
+        combined_conditions_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'choice': {
+                        'title': 'Choice',
+                        'type': 'text',
+                        'choices': ['A', 'B']
+                    },
+                    'checkbox_a': {
+                        'title': 'Checkbox A',
+                        'type': 'bool',
+                        'conditions': [
+                            {
+                                'type': 'choice_equals',
+                                'property_name': 'choice',
+                                'choice': 'A'
+                            }
+                        ]
+                    },
+                    'checkbox_b': {
+                        'title': 'Checkbox B',
+                        'type': 'bool',
+                        'conditions': [
+                            {
+                                'type': 'choice_equals',
+                                'property_name': 'choice',
+                                'choice': 'B'
+                            }
+                        ]
+                    },
+                    'text_a': {
+                        'title': 'Text A',
+                        'type': 'text',
+                        'conditions': [
+                            {
+                                'type': 'bool_equals',
+                                'property_name': 'checkbox_a',
+                                'value': True
+                            }
+                        ]
+                    },
+                    'text_b': {
+                        'title': 'Text B',
+                        'type': 'text',
+                        'conditions': [
+                            {
+                                'type': 'bool_equals',
+                                'property_name': 'checkbox_b',
+                                'value': True
+                            }
+                        ]
+                    }
+                },
+                'required': ['name']
+            }
+        )
+        set_action_translation(Language.ENGLISH, combined_conditions_action.id, name="Combined Conditions Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(combined_conditions_action.id, sampledb.models.Permissions.READ)
 
     print("Success: set up demo data", flush=True)

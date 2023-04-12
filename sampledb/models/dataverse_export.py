@@ -7,25 +7,31 @@ import enum
 import datetime
 import typing
 
+from sqlalchemy.orm import Mapped, Query
+
 from .. import db
 from .objects import Objects
 from .users import User
+from .utils import Model
 
 
 @enum.unique
 class DataverseExportStatus(enum.Enum):
-    TASK_CREATED = 0,
-    EXPORT_FINISHED = 1,
+    TASK_CREATED = 0
+    EXPORT_FINISHED = 1
 
 
-class DataverseExport(db.Model):  # type: ignore
+class DataverseExport(Model):
     __tablename__ = 'dataverse_exports'
 
-    object_id = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
-    dataverse_url = db.Column(db.String, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    utc_datetime = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.Enum(DataverseExportStatus), nullable=False)
+    object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
+    dataverse_url: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    status: Mapped[DataverseExportStatus] = db.Column(db.Enum(DataverseExportStatus), nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["DataverseExport"]]
 
     def __init__(
             self,
@@ -35,13 +41,13 @@ class DataverseExport(db.Model):  # type: ignore
             status: DataverseExportStatus,
             utc_datetime: typing.Optional[datetime.datetime] = None
     ) -> None:
-        self.object_id = object_id
-        self.dataverse_url = dataverse_url
-        self.user_id = user_id
-        self.status = status
-        if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
-        self.utc_datetime = utc_datetime
+        super().__init__(
+            object_id=object_id,
+            dataverse_url=dataverse_url,
+            user_id=user_id,
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            status=status
+        )
 
     def __repr__(self) -> str:
-        return '<{0}(object_id={1.object_id}, dataverse_url={1.dataverse_url})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(object_id={self.object_id}, dataverse_url={self.dataverse_url})>'

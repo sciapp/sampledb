@@ -170,8 +170,8 @@ def get_translated_text(
         if translated_text:
             return translated_text
         # fall back to first language code with non-empty content
-        for language_code in sorted(text):
-            translated_text = text[language_code]
+        for fallback_language_code in sorted(text):
+            translated_text = text[fallback_language_code]
             if translated_text:
                 return translated_text
 
@@ -227,7 +227,12 @@ def parse_url(
     :param max_length: the URI strings maximum allowed length (default: 2048)
     :param valid_schemes: valid URI schemes
     :return: a dict containing scheme, domain, host, ip_address, port, path and query of the given URI
-    :raises: InvalidURIError if the given URI is invalid
+    :raise errors.InvalidURLError: if the given URL is invalid
+    :raise errors.URLTooLongError: if the given URL is too long
+    :raise errors.InvalidIPAddressError: if the IP contained in the given URL
+        is invalid
+    :raise errors.InvalidPortNumberError: if the port contained in the given
+        URL is invalid
     """
     if not len(url) <= max_length:
         raise errors.URLTooLongError()
@@ -369,3 +374,41 @@ def clear_cache_functions() -> None:
     """
     for cache_function in _CACHE_FUNCTIONS:
         cache_function.cache_clear()  # type: ignore
+
+
+def get_data_and_schema_by_id_path(
+        data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
+        id_path: typing.List[typing.Union[str, int]],
+        convert_id_path_elements: bool = False
+) -> typing.Optional[typing.Tuple[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]], typing.Dict[str, typing.Any]]]:
+    if data is None or schema is None:
+        return None
+    if not id_path:
+        return data, schema
+    if schema.get('type') == 'array':
+        if not isinstance(data, list):
+            return None
+        if not isinstance(id_path[0], int) and convert_id_path_elements:
+            try:
+                id_path[0] = int(id_path[0])
+            except ValueError:
+                return None
+        if not isinstance(id_path[0], int):
+            return None
+        if id_path[0] < 0 or id_path[0] >= len(data):
+            return None
+        return get_data_and_schema_by_id_path(data[id_path[0]], schema['items'], id_path[1:])
+    if schema.get('type') == 'object':
+        if not isinstance(data, dict):
+            return None
+        if not isinstance(id_path[0], str) and convert_id_path_elements:
+            id_path[0] = str(id_path[0])
+        if not isinstance(id_path[0], str):
+            return None
+        if id_path[0] not in schema['properties']:
+            return None
+        if id_path[0] not in data:
+            return None
+        return get_data_and_schema_by_id_path(data[id_path[0]], schema['properties'][id_path[0]], id_path[1:])
+    return None

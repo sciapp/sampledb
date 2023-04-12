@@ -8,18 +8,15 @@ import os
 import flask_sqlalchemy
 import sqlalchemy
 
+from .utils import table_has_column
+
 MIGRATION_INDEX = 8
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Skip migration by condition
-    column_names = db.session.execute(db.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'files'
-    """)).fetchall()
-    if ('data',) in column_names:
+    if table_has_column('files', 'data'):
         return False
 
     # Perform migration

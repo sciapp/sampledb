@@ -12,12 +12,12 @@ import base64
 import io
 import json
 import os
+import sys
+import typing
 
 import pytz
 import pytz.exceptions
 import requests
-import typing
-import sys
 import sqlalchemy
 from PIL import Image
 
@@ -49,6 +49,70 @@ def use_environment_configuration(env_prefix: str) -> None:
     config = load_environment_configuration(env_prefix)
     for name, value in config.items():
         globals()[name] = value
+    parse_configuration_values()
+
+
+def parse_configuration_values() -> None:
+    """
+    Convert configuration values from strings to integers, booleans or JSON objects.
+    """
+    # parse values as integers
+    for config_name in [
+        'INVITATION_TIME_LIMIT',
+        'MAX_CONTENT_LENGTH',
+        'MAX_BATCH_SIZE',
+        'VALID_TIME_DELTA',
+        'DOWNLOAD_SERVICE_TIME_LIMIT',
+        'TYPEAHEAD_OBJECT_LIMIT',
+        'LDAP_CONNECT_TIMEOUT',
+    ]:
+        value = globals().get(config_name)
+        if isinstance(value, str):
+            try:
+                globals()[config_name] = int(value)
+            except Exception:
+                pass
+
+    # parse values as json
+    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST']:
+        value = globals().get(config_name)
+        if isinstance(value, str) and value.startswith('{'):
+            try:
+                globals()[config_name] = json.loads(value)
+            except Exception:
+                pass
+
+    # parse boolean values
+    for config_name in [
+        'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
+        'ONLY_ADMINS_CAN_CREATE_GROUPS',
+        'ONLY_ADMINS_CAN_DELETE_GROUPS',
+        'ONLY_ADMINS_CAN_CREATE_PROJECTS',
+        'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
+        'DISABLE_USE_IN_MEASUREMENT',
+        'DISABLE_SUBPROJECTS',
+        'LOAD_OBJECTS_IN_BACKGROUND',
+        'ENFORCE_SPLIT_NAMES',
+        'BUILD_TRANSLATIONS',
+        'SHOW_PREVIEW_WARNING',
+        'SHOW_OBJECT_TITLE',
+        'FULL_WIDTH_OBJECTS_TABLE',
+        'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
+        'DISABLE_INLINE_EDIT',
+        'ENABLE_BACKGROUND_TASKS',
+        'ENABLE_MONITORINGDASHBOARD',
+        'ENABLE_ANONYMOUS_USERS',
+        'ENABLE_NUMERIC_TAGS',
+        'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
+        'SHOW_LAST_PROFILE_UPDATE',
+        'USE_TYPEAHEAD_FOR_OBJECTS',
+        'DISABLE_INSTRUMENTS',
+        'ENABLE_FUNCTION_CACHES',
+        'ENABLE_CONTENT_SECURITY_POLICY',
+    ]:
+        value = globals().get(config_name)
+        if isinstance(value, str):
+            globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
 
 
 def is_download_service_whitelist_valid() -> bool:
@@ -261,10 +325,10 @@ def check_config(
                 admin_username = config.get('ADMIN_USERNAME', 'admin').lower()
                 admin_email = config.get('ADMIN_EMAIL', config['CONTACT_EMAIL']).lower()
                 print(
-                    'A new admin user with the username "{}", the email '
-                    'address "{}" and the given ADMIN_PASSWORD will be '
+                    f'A new admin user with the username "{admin_username}", the email '
+                    f'address "{admin_email}" and the given ADMIN_PASSWORD will be '
                     'created.'
-                    '\n'.format(admin_username, admin_email),
+                    '\n',
                     file=sys.stderr
                 )
                 internal_config['ADMIN_INFO'] = (
@@ -381,7 +445,9 @@ def check_config(
         test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
-        open(test_file_path, 'a').close()
+        with open(test_file_path, 'ab'):
+            # open the file to check that it exists
+            pass
     except Exception:
         print(
             ansi_color(
@@ -444,7 +510,7 @@ def check_config(
         )
 
     if not can_run:
-        exit(1)
+        sys.exit(1)
 
     return internal_config
 
@@ -465,11 +531,6 @@ SECRET_KEY = generate_secret_key(num_bits=256)
 # see: https://flask.palletsprojects.com/en/2.2.x/security/#set-cookie-options
 SESSION_COOKIE_SAMESITE = 'Lax'
 
-# whether or not SQLAlchemy should track modifications
-# see: http://flask-sqlalchemy.pocoo.org/2.3/config/
-# deprecated and should stay disabled, as we manually add modified objects
-SQLALCHEMY_TRACK_MODIFICATIONS = False
-
 # LDAP settings
 LDAP_NAME = None
 LDAP_SERVER = None
@@ -478,6 +539,7 @@ LDAP_UID_FILTER = None
 LDAP_NAME_ATTRIBUTE = None
 LDAP_MAIL_ATTRIBUTE = None
 LDAP_OBJECT_DEF = None
+LDAP_CONNECT_TIMEOUT = 5
 # LDAP credentials, may both be None if anonymous access is enabled
 LDAP_USER_DN = None
 LDAP_PASSWORD = None
@@ -609,6 +671,9 @@ DISABLE_INSTRUMENTS = False
 
 ENABLE_FUNCTION_CACHES = True
 
+# CSP headers should be set, however this value can be used to disable them if necessary
+ENABLE_CONTENT_SECURITY_POLICY = True
+
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
 
@@ -616,73 +681,12 @@ if SERVICE_IMPRINT and not SERVICE_LEGAL_NOTICE:
     # Support SERVICE_IMPRINT for downwards compatibility
     SERVICE_LEGAL_NOTICE = SERVICE_IMPRINT
 
-# convert INVITATION_TIME_LIMIT in case it was set as a string
-try:
-    INVITATION_TIME_LIMIT = int(INVITATION_TIME_LIMIT)
-except ValueError:
-    pass
-
-# parse values as integers
-for config_name in {
-    'MAX_CONTENT_LENGTH',
-    'MAX_BATCH_SIZE',
-    'VALID_TIME_DELTA',
-    'DOWNLOAD_SERVICE_TIME_LIMIT',
-    'TYPEAHEAD_OBJECT_LIMIT',
-}:
-    value = globals().get(config_name)
-    if isinstance(value, str):
-        try:
-            globals()[config_name] = int(value)
-        except Exception:
-            pass
-
-# parse values as json
-for config_name in {'SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST'}:
-    value = globals().get(config_name)
-    if isinstance(value, str) and value.startswith('{'):
-        try:
-            globals()[config_name] = json.loads(value)
-        except Exception:
-            pass
-
-# parse boolean values
-for config_name in {
-    'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
-    'ONLY_ADMINS_CAN_CREATE_GROUPS',
-    'ONLY_ADMINS_CAN_DELETE_GROUPS',
-    'ONLY_ADMINS_CAN_CREATE_PROJECTS',
-    'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
-    'DISABLE_USE_IN_MEASUREMENT',
-    'DISABLE_SUBPROJECTS',
-    'LOAD_OBJECTS_IN_BACKGROUND',
-    'ENFORCE_SPLIT_NAMES',
-    'BUILD_TRANSLATIONS',
-    'SHOW_PREVIEW_WARNING',
-    'SHOW_OBJECT_TITLE',
-    'FULL_WIDTH_OBJECTS_TABLE',
-    'HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE',
-    'DISABLE_INLINE_EDIT',
-    'ENABLE_BACKGROUND_TASKS',
-    'ENABLE_MONITORINGDASHBOARD',
-    'ENABLE_ANONYMOUS_USERS',
-    'ENABLE_NUMERIC_TAGS',
-    'SHOW_UNHANDLED_OBJECT_RESPONSIBILITY_ASSIGNMENTS',
-    'SHOW_LAST_PROFILE_UPDATE',
-    'USE_TYPEAHEAD_FOR_OBJECTS',
-    'DISABLE_INSTRUMENTS',
-    'ENABLE_FUNCTION_CACHES',
-}:
-    value = globals().get(config_name)
-    if isinstance(value, str):
-        globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
-
 # remove trailing slashes from SciCat urls
 if isinstance(SCICAT_API_URL, str) and SCICAT_API_URL.endswith('/'):
-    SCICAT_API_URL = SCICAT_API_URL[:-1]
+    SCICAT_API_URL = SCICAT_API_URL[:-1]  # pylint: disable=unsubscriptable-object
 if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
-    SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]
+    SCICAT_FRONTEND_URL = SCICAT_FRONTEND_URL[:-1]  # pylint: disable=unsubscriptable-object
 
 # remove trailing slashes from Download Service url
 if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
-    DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]
+    DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]  # pylint: disable=unsubscriptable-object

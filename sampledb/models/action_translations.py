@@ -4,28 +4,38 @@
 """
 import typing
 
+from sqlalchemy.orm import Mapped, Query, relationship
+
 from .. import db
+from .utils import Model
+
+if typing.TYPE_CHECKING:
+    from .languages import Language
 
 
-class ActionTypeTranslation(db.Model):  # type: ignore
+class ActionTypeTranslation(Model):
     __tablename__ = 'action_type_translations'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
 
-    language_id = db.Column(db.Integer, db.ForeignKey('languages.id'))
-    language = db.relationship('Language')
+    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'), nullable=False)
+    language: Mapped['Language'] = relationship('Language')
 
-    action_type_id = db.Column(db.Integer, db.ForeignKey('action_types.id'))
+    action_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('action_types.id'), nullable=False)
 
-    name = db.Column(db.String, nullable=False)
-    description = db.Column(db.String, nullable=False)
-    object_name = db.Column(db.String, nullable=False)
-    object_name_plural = db.Column(db.String, nullable=False)
-    view_text = db.Column(db.String, nullable=False)
-    perform_text = db.Column(db.String, nullable=False)
+    name: Mapped[str] = db.Column(db.String, nullable=False)
+    description: Mapped[str] = db.Column(db.String, nullable=False)
+    object_name: Mapped[str] = db.Column(db.String, nullable=False)
+    object_name_plural: Mapped[str] = db.Column(db.String, nullable=False)
+    view_text: Mapped[str] = db.Column(db.String, nullable=False)
+    perform_text: Mapped[str] = db.Column(db.String, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ActionTypeTranslation"]]
 
     __table_args__ = (
         db.UniqueConstraint('language_id', 'action_type_id', name='_language_id_action_type_id_uc'),
+        # TODO: action translation and instrument translation have not-null contraints, but this doesn't
     )
 
     def __init__(
@@ -39,14 +49,16 @@ class ActionTypeTranslation(db.Model):  # type: ignore
             view_text: str,
             perform_text: str
     ) -> None:
-        self.language_id = language_id,
-        self.action_type_id = action_type_id,
-        self.name = name,
-        self.description = description,
-        self.object_name = object_name,
-        self.object_name_plural = object_name_plural,
-        self.view_text = view_text,
-        self.perform_text = perform_text
+        super().__init__(
+            language_id=language_id,
+            action_type_id=action_type_id,
+            name=name,
+            description=description,
+            object_name=object_name,
+            object_name_plural=object_name_plural,
+            view_text=view_text,
+            perform_text=perform_text
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, ActionTypeTranslation):
@@ -64,22 +76,25 @@ class ActionTypeTranslation(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id!r}, name={1.name!r})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id!r}, name={self.name!r})>'
 
 
-class ActionTranslation(db.Model):  # type: ignore
+class ActionTranslation(Model):
     __tablename__ = 'action_translations'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
 
-    language_id = db.Column(db.Integer, db.ForeignKey('languages.id'))
-    language = db.relationship('Language')
+    language_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('languages.id'), nullable=False)
+    language: Mapped['Language'] = relationship('Language')
 
-    action_id = db.Column(db.Integer, db.ForeignKey('actions.id'))
+    action_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('actions.id'), nullable=False)
 
-    name = db.Column(db.String, nullable=True)
-    description = db.Column(db.String, nullable=True, default='')
-    short_description = db.Column(db.String, nullable=True, default='')
+    name: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
+    description: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
+    short_description: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True, default='')
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ActionTranslation"]]
 
     __table_args__ = (
         db.UniqueConstraint('language_id', 'action_id', name='_language_id_action_id_uc'),
@@ -97,11 +112,13 @@ class ActionTranslation(db.Model):  # type: ignore
             description: str = '',
             short_description: str = '',
     ) -> None:
-        self.action_id = action_id
-        self.language_id = language_id
-        self.name = name
-        self.description = description
-        self.short_description = short_description
+        super().__init__(
+            action_id=action_id,
+            language_id=language_id,
+            name=name,
+            description=description,
+            short_description=short_description
+        )
 
     def __eq__(self, other: typing.Any) -> bool:
         if isinstance(other, ActionTranslation):
@@ -116,4 +133,4 @@ class ActionTranslation(db.Model):  # type: ignore
         return NotImplemented
 
     def __repr__(self) -> str:
-        return '<{0}(id={1.id!r})>'.format(type(self).__name__, self)
+        return f'<{type(self).__name__}(id={self.id!r})>'

@@ -43,6 +43,8 @@ def import_user(
         component: Component
 ) -> User:
     component_id = _get_or_create_component_id(user_data['component_uuid'])
+    # component_id will only be None if this would import a local user
+    assert component_id is not None
     try:
         mutable_user = get_mutable_user(user_data['fed_id'], component_id)
         ignored_keys = {
@@ -96,7 +98,7 @@ def parse_user(
     fed_id = _get_id(user_data.get('user_id'))
     if uuid != component.uuid:
         # only accept user data from original source
-        raise errors.InvalidDataExportError('User data update for user #{} @ {}'.format(fed_id, uuid))
+        raise errors.InvalidDataExportError(f'User data update for user #{fed_id} @ {uuid}')
     return UserData(
         fed_id=fed_id,
         component_uuid=uuid,

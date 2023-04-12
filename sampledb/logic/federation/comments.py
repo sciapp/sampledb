@@ -27,7 +27,7 @@ def parse_comment(
     fed_id = _get_id(comment_data.get('comment_id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
         # do not accept updates for own data
-        raise errors.InvalidDataExportError('Invalid update for local comment #{}'.format(fed_id))
+        raise errors.InvalidDataExportError(f'Invalid update for local comment #{fed_id}')
     return CommentData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -43,6 +43,9 @@ def import_comment(
         component: Component
 ) -> Comment:
     component_id = _get_or_create_component_id(comment_data['component_uuid'])
+    assert component_id is not None
+    # component_id will only be None if this would import a local comment
+
     user_id = _get_or_create_user_id(comment_data['user'])
     try:
         comment = get_comment(comment_data['fed_id'], component_id)
@@ -57,7 +60,14 @@ def import_comment(
             fed_logs.update_comment(comment.id, component.id)
     except errors.CommentDoesNotExistError:
         assert component_id is not None
-        comment = get_comment(create_comment(object.object_id, user_id, comment_data['content'], comment_data['utc_datetime'], comment_data['fed_id'], component_id))
+        comment = get_comment(create_comment(
+            object_id=object.object_id,
+            user_id=user_id,
+            content=comment_data['content'],
+            utc_datetime=comment_data['utc_datetime'],
+            fed_id=comment_data['fed_id'],
+            component_id=component_id
+        ))
         fed_logs.import_comment(comment.id, component.id)
     return comment
 

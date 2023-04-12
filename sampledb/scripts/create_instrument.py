@@ -17,18 +17,18 @@ from ..logic.languages import Language
 def main(arguments: typing.List[str]) -> None:
     if len(arguments) != 2:
         print(__doc__)
-        exit(1)
+        sys.exit(1)
     name, description = arguments
     app = create_app()
     with app.app_context():
         if app.config['DISABLE_INSTRUMENTS']:
             print('Error: instruments are disabled', file=sys.stderr)
-            exit(1)
+            sys.exit(1)
         instruments = get_instruments()
         for instrument in instruments:
             if instrument.name.get('en') == name:
-                print('Error: an instrument with this name already exists (#{})'.format(instrument.id), file=sys.stderr)
-                exit(1)
+                print(f'Error: an instrument with this name already exists (#{instrument.id})', file=sys.stderr)
+                sys.exit(1)
         instrument = create_instrument()
         set_instrument_translation(
             language_id=Language.ENGLISH,
@@ -36,4 +36,4 @@ def main(arguments: typing.List[str]) -> None:
             name=name,
             description=description
         )
-        print("Success: the instrument has been created in SampleDB (#{})".format(instrument.id))
+        print(f"Success: the instrument has been created in SampleDB (#{instrument.id})")

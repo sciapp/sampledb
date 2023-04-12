@@ -1,0 +1,11 @@
+flask-httpauth-stubs
+mypy
+pycodestyle
+pyflakes
+pylint
+types-Markdown
+types-babel
+types-beautifulsoup4
+types-bleach
+types-ldap3
+types-requests

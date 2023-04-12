@@ -106,6 +106,40 @@ def test_validate_schema_invalid_title():
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': {'en': b'Example'},
+        'type': 'bool'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': '',
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
+    schema = {
+        'title': {'en': ''},
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
+    schema = {
+        'title': ' ',
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
+    schema = {
+        'title': {'en': ' '},
+        'type': 'bool'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema), strict=True)
 
 
 def test_validate_bool_schema():
@@ -2473,6 +2507,12 @@ def test_validate_recipe():
     }
     validate_schema(schema)
 
+    schema['recipes'][0]['quantity'] = {"magnitude": 123, "units": "nm", "_type": "quantity"}
+    validate_schema(schema)
+
+    schema['properties']['quantity']['units'] = ['nm', 'mm', 'm']
+    validate_schema(schema)
+
     schema['recipes'][0]['property_values'] = {
         "text": None,
         "choice": None,
@@ -2480,6 +2520,24 @@ def test_validate_recipe():
         "timestamp": None
     }
     validate_schema(schema)
+
+
+def test_validate_recipe_invalid_type():
+    schema = {
+        "title": "Recipe",
+        "type": "object",
+        "recipes": {},
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name"]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
 
 
 def test_validate_recipe_invalid_name():
@@ -2615,6 +2673,22 @@ def test_validate_recipe_invalid_quantity():
     with pytest.raises(ValidationError):
         validate_schema(schema)
 
+    schema['recipes'][0]['property_values']['quantity']['magnitude'] = 1
+    schema['recipes'][0]['property_values']['quantity']['units'] = 'cm'  # invalid unit
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['properties']['quantity']['units'] = ['nm', 'm']  # units array, cm still invalid
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['recipes'][0]['property_values']['quantity'] = {
+        'magnitude_in_base_units': 1,
+        "_type": "quantity"
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
 
 def test_validate_recipe_invalid_boolean():
     schema = {
@@ -2641,8 +2715,6 @@ def test_validate_recipe_invalid_boolean():
     }
     with pytest.raises(ValidationError):
         validate_schema(schema)
-
-    schema['recipes'][0]['property_values']['boolean'] = None
 
 
 def test_validate_recipe_invalid_datetime():

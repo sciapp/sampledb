@@ -18,6 +18,14 @@
       {% set z = schema.update({'parent_style': tmp_style}) %}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set data = item %}
+      {% if diff is not none and previous_schema is not none and not (diff is mapping) and diff | length > loop.index0  %}
+        {% set diff = diff[loop.index0] %}
+        {% set previous_schema = previous_schema['items'] %}
+        {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+      {% else %}
+        {% set diff = none %}
+        {% set previous_schema = none %}
+      {% endif %}
       {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
       {% set hidden = False %}
       <li>{% include "objects/view/any.html" %}</li>

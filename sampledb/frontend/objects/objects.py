@@ -8,18 +8,21 @@ import typing
 
 import flask
 import flask_login
+import markupsafe
 import werkzeug
 from flask_babel import _
+from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
 from ... import models
 from ...logic import user_log, object_sorting
 from ...logic.instruments import get_instruments, get_instrument
-from ...logic.actions import get_action, get_action_type
+from ...logic.actions import get_action, Action
+from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import Permissions, get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions
-from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists
+from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, ObjectInfo
+from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists, User
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.groups import get_group
@@ -31,10 +34,13 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
-from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, relative_url_for, get_groups_form_data
 from ...logic.utils import get_translated_text
-from .forms import ObjectLocationAssignmentForm
+from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
 from .permissions import get_object_if_current_user_has_read_permissions
+from ..labels import PAGE_SIZES, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
+from ...models import Permissions
+from ...utils import FlaskResponseT
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -71,8 +77,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
 
 @frontend.route('/objects/')
 @flask_login.login_required
-def objects():
-    objects = []
+def objects() -> FlaskResponseT:
 
     user_settings = get_user_settings(user_id=flask_login.current_user.id)
     if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_OPTION_PARAMETERS):
@@ -86,14 +91,14 @@ def objects():
         user_id=flask_login.current_user.id,
         include_hidden_actions=True
     )
+    all_action_types = logic.action_types.get_action_types(
+        filter_fed_defaults=True
+    )
     all_actions = [
         action
         for action in all_actions_including_hidden
         if not action.is_hidden
     ]
-    all_action_types = logic.actions.get_action_types(
-        filter_fed_defaults=True
-    )
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(
         actions=all_actions,
         action_types=all_action_types,
@@ -108,54 +113,61 @@ def objects():
             'sample',
             'measurement',
             'plotly_chart',
+            'timeseries',
         )
     )
 
     edit_location = flask.request.args.get('edit_location', default=False, type=lambda k: k.lower() == 'true')
+    create_from_objects = flask.request.args.get('create_from_objects', default=False, type=lambda k: k.lower() == 'true')
+    edit_permissions = flask.request.args.get('edit_permissions', default=False, type=lambda k: k.lower() == 'true')
+    use_in_action_type_id = flask.request.args.get('use_in_action_type', default=None, type=int)
+    generate_labels = flask.request.args.get('generate_labels', default=False, type=lambda k: k.lower() == 'true')
 
     name_only = True
     implicit_action_type = None
     object_ids_str = flask.request.args.get('ids', '')
+    object_ids: typing.Optional[typing.Set[int]] = None
     if object_ids_str:
         try:
-            object_ids = [
+            object_ids = {
                 int(object_id)
                 for object_id in object_ids_str.split(',')
-            ]
+            }
         except ValueError:
-            object_ids = []
+            object_ids = set()
         else:
-            object_ids = [
+            object_ids = {
                 object_id
                 for object_id in object_ids
                 if Permissions.READ in get_user_object_permissions(object_id, user_id=flask_login.current_user.id)
-            ]
+            }
+        db_objects = []
         for object_id in object_ids:
             try:
-                objects.append(get_object(object_id))
+                db_objects.append(get_object(object_id))
             except logic.errors.ObjectDoesNotExistError:
                 pass
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
         advanced_search_had_error = False
-        search_notes = []
+        search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]] = []
         search_tree = None
         pagination_limit = None
         pagination_offset = None
         pagination_enabled = True
-        num_objects_found = len(objects)
+        num_objects_found = len(db_objects)
         sorting_property_name = None
         sorting_order_name = None
         show_filters = False
         all_actions = []
-        filter_action_ids = []
+        filter_action_ids: typing.Optional[typing.List[int]] = []
         all_instruments = []
-        filter_instrument_ids = []
+        filter_instrument_ids: typing.Optional[typing.List[int]] = []
         all_action_types = []
-        filter_action_type_ids = []
+        filter_action_type_ids: typing.Optional[typing.List[int]] = []
         all_locations = []
-        filter_location_ids = []
+        filter_location_ids: typing.Optional[typing.List[int]] = []
         filter_related_user_id = None
         filter_doi = None
         filter_user_id = None
@@ -274,24 +286,21 @@ def objects():
                 'grant': Permissions.GRANT
             }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
 
-            filter_origin_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_origin_ids', None)
-            if filter_origin_ids:
+            stored_filter_origin_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_origin_ids', None)
+            if stored_filter_origin_ids:
                 try:
+                    filter_origin_ids = []
                     # ensure origins are valid
-                    for origin in filter_origin_ids:
+                    for origin in stored_filter_origin_ids:
                         origin_type, origin_id = origin
                         if origin_type == 'local' and origin_id is None:
+                            filter_origin_ids.append((origin_type, origin_id))
                             continue
                         if origin_type == 'component' and type(origin_id) == int:
+                            filter_origin_ids.append((origin_type, origin_id))
                             continue
                         filter_origin_ids = None
                         break
-                    else:
-                        # convert origins back to tuples
-                        filter_origin_ids = [
-                            tuple(origin)
-                            for origin in filter_origin_ids
-                        ]
                 except Exception:
                     filter_origin_ids = None
             else:
@@ -317,7 +326,7 @@ def objects():
                     if property_name not in display_properties:
                         display_properties.append(property_name)
                     if property_name not in display_property_titles:
-                        display_property_titles[property_name] = flask.escape(get_translated_text(action_schema['properties'][property_name]['title']))
+                        display_property_titles[property_name] = markupsafe.escape(get_translated_text(action_schema['properties'][property_name]['title']))
 
         if display_properties:
             name_only = False
@@ -422,19 +431,19 @@ def objects():
             except logic.errors.ObjectDoesNotExistError:
                 pass
         try:
-            filter_func, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
+            filter_func_with_notes, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
         except Exception:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:
                 advanced_search_had_error = True
 
-                def filter_func(data, search_notes):
+                def filter_func_with_notes(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> bool:
                     """ Return all objects"""
                     search_notes.append(('error', "Unable to parse search expression", 0, len(query_string)))
                     return False
             else:
                 raise
-        filter_func, search_notes = wrap_filter_func(filter_func)
+        filter_func, search_notes = wrap_filter_func(filter_func_with_notes)
         search_notes.extend(additional_search_notes)
 
         if filter_location_ids is not None:
@@ -456,7 +465,7 @@ def objects():
         else:
             filter_local_objects = ('local', None) in filter_origin_ids
             filter_component_ids = {
-                origin_id
+                typing.cast(int, origin_id)
                 for origin_type, origin_id in filter_origin_ids
                 if origin_type == 'component'
             }
@@ -474,7 +483,7 @@ def objects():
         if use_advanced_search and not must_use_advanced_search:
             search_notes.append(('info', _("The advanced search was used automatically. Search for \"%(query_string)s\" to use the simple search.", query_string=query_string), 0, 0))
         try:
-            object_ids: typing.Optional[typing.Set[int]] = None
+            object_ids = None
             if object_ids_at_location is not None:
                 if object_ids is None:
                     object_ids = object_ids_at_location
@@ -501,10 +510,10 @@ def objects():
                 pagination_limit = None
                 pagination_offset = None
             if object_ids is not None and not object_ids:
-                objects = []
+                db_objects = []
                 num_objects_found = 0
             else:
-                num_objects_found_list = []
+                num_objects_found_list: typing.List[int] = []
                 # do not actually filter by permissions for an administrator
                 # with GRANT permissions for all objects
                 if filter_user_id == flask_login.current_user.id and flask_login.current_user.has_admin_permissions:
@@ -521,7 +530,7 @@ def objects():
                         if not filter_action_ids or action.id in filter_action_ids:
                             if action.instrument_id in filter_instrument_ids:
                                 actual_filter_action_ids.append(action.id)
-                objects = get_objects_with_permissions(
+                db_objects = get_objects_with_permissions(
                     user_id=flask_login.current_user.id,
                     permissions=Permissions.READ,
                     filter_func=filter_func,
@@ -538,26 +547,27 @@ def objects():
                     group_permissions=filter_group_permissions,
                     all_users_permissions=filter_all_users_permissions,
                     anonymous_users_permissions=filter_anonymous_permissions,
-                    object_ids=object_ids,
+                    object_ids=list(object_ids) if object_ids is not None else None,
                     num_objects_found=num_objects_found_list,
                     name_only=name_only
                 )
                 num_objects_found = num_objects_found_list[0]
-        except Exception as e:
-            search_notes.append(('error', "Error during search: {}".format(e), 0, 0))
-            objects = []
+        except Exception as exc:
+            search_notes.append(('error', f"Error during search: {exc}", 0, 0))
+            db_objects = []
             num_objects_found = 0
         if any(note[0] == 'error' for note in search_notes):
-            objects = []
+            db_objects = []
             advanced_search_had_error = True
 
-    cached_actions = {None: None}
+    cached_actions: typing.Dict[typing.Optional[int], typing.Optional[Action]] = {None: None}
     if all_actions:
         for action in all_actions:
             cached_actions[action.id] = action
-    cached_users = {None: None}
+    cached_users: typing.Dict[typing.Optional[int], typing.Optional[User]] = {None: None}
 
-    for i, obj in enumerate(objects):
+    objects: typing.List[typing.Dict[str, typing.Any]] = []
+    for i, obj in enumerate(db_objects):
         if obj.version_id == 0:
             original_object = obj
         else:
@@ -566,9 +576,9 @@ def objects():
             cached_actions[obj.action_id] = get_action(obj.action_id)
         if obj.user_id is not None and obj.user_id not in cached_users:
             cached_users[obj.user_id] = get_user(obj.user_id)
-        if obj.user_id is not None and original_object.user_id not in cached_users:
+        if original_object.user_id is not None and original_object.user_id not in cached_users:
             cached_users[original_object.user_id] = get_user(original_object.user_id)
-        objects[i] = {
+        objects.append({
             'object_id': obj.object_id,
             'created_by': cached_users[original_object.user_id],
             'created_at': original_object.utc_datetime,
@@ -582,7 +592,7 @@ def objects():
             'component_id': obj.component_id,
             'display_properties': {},
             'component': obj.component
-        }
+        })
 
         for property_name in display_properties:
             objects[i]['display_properties'][property_name] = None
@@ -613,16 +623,16 @@ def objects():
     for property_name in display_properties:
         if display_property_titles.get(property_name) is None:
             property_titles = set()
-            for id in action_ids:
-                property_info = search_paths_by_action.get(id, {}).get(property_name)
+            for object_id in action_ids:
+                property_info = search_paths_by_action.get(object_id, {}).get(property_name)
                 if property_info is not None and 'titles' in property_info:
                     property_titles.update(property_info['titles'])
             if property_titles:
                 property_title = ', '.join(sorted(list(property_titles)))
             elif property_name in default_property_titles:
-                property_title = flask.escape(default_property_titles[property_name])
+                property_title = markupsafe.escape(default_property_titles[property_name])
             else:
-                property_title = flask.escape(property_name)
+                property_title = markupsafe.escape(property_name)
             display_property_titles[property_name] = property_title
 
     if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
@@ -679,7 +689,7 @@ def objects():
     elif implicit_action_type is not None:
         object_name_plural = get_translated_text(implicit_action_type.object_name_plural, default=_('Objects'))
 
-    filter_action_infos = []
+    filter_action_infos: typing.List[typing.Dict[str, typing.Any]] = []
     if filter_action_ids:
         for action_id in filter_action_ids:
             action = get_action(action_id)
@@ -691,9 +701,9 @@ def objects():
                 'fed_id': action.fed_id,
                 'component_name': action.component.get_name() if action.component is not None else None
             })
-            if action.user:
+            if action.user is not None:
                 filter_action_infos[-1]['user'] = action.user
-            if action.instrument:
+            if action.instrument is not None:
                 filter_action_infos[-1]['instrument'] = action.instrument
             if action.component and action.component.address:
                 component_address = action.component.address
@@ -743,6 +753,7 @@ def objects():
     else:
         filter_related_user_info = None
 
+    filter_user_permissions_info: typing.Optional[typing.Dict[str, typing.Any]]
     if filter_user_permissions is not None and filter_user_id is not None:
         filter_user_permissions_info = {
             'name': None,
@@ -799,12 +810,29 @@ def objects():
             'components': [
                 get_component(component_id=origin_id)
                 for origin_type, origin_id in filter_origin_ids
-                if origin_type == 'component'
+                if origin_type == 'component' and origin_id is not None
             ]
         }
     else:
         filter_origins_info = None
 
+    location_form = None
+    use_in_action_form = None
+    generate_labels_form = None
+    edit_permissions_form = None
+    user_is_fed: typing.Dict[str, bool] = {}
+    english = None
+    all_languages = []
+    objects_allowed_to_select = []
+    available_action_types = []
+    favorite_actions = []
+    use_in_action_type = None
+    special_groups = ['signed-in-users', 'anonymous']
+    disabled_special_group_permissions = [Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
+    current_permissions_special_groups: typing.Dict[str, typing.Dict[int, str]] = {}
+    current_permissions_normal_entities: typing.Dict[str, typing.Dict[int, typing.Dict[int, str]]] = {}
+    groups_treepicker_info = None
+    projects_treepicker_info = None
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
         all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
@@ -821,13 +849,100 @@ def objects():
         all_languages = get_languages()
 
         shown_object_ids = [object['object_id'] for object in objects]
-        objects_with_write_permission = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
+        objects_allowed_to_select = [obj.id for obj in get_objects_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.WRITE, object_ids=shown_object_ids)]
+    elif create_from_objects and use_in_action_type_id:
+        use_in_action_form = UseInActionForm()
+        use_in_action_type = logic.action_types.get_action_type(use_in_action_type_id)
+
+        if use_in_action_type_id == models.ActionType.MEASUREMENT and logic.action_types.is_usable_in_action_types_table_empty():
+            if not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
+                for object in objects:
+                    if object['action'] and object['action'].type_id == models.ActionType.SAMPLE_CREATION:
+                        objects_allowed_to_select.append(object['object_id'])
+
+        else:
+            for object in objects:
+                if object['action'] is None or object['action'].type is None:
+                    continue
+
+                if use_in_action_type in object['action'].type.usable_in_action_types:
+                    objects_allowed_to_select.append(object['object_id'])
+
+        all_favorite_action_ids = logic.favorites.get_user_favorite_action_ids(flask_login.current_user.id)
+
+        actions = all_actions
+        if not actions:
+            actions = logic.actions.get_actions(action_type_id=use_in_action_type_id)
+
+        for action in actions:
+            if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action.id not in favorite_actions:
+                favorite_actions.append(action)
+
+    elif generate_labels:
+        generate_labels_form = GenerateLabelsForm()
+        objects_allowed_to_select = [object['object_id']
+                                     for object in objects
+                                     if object['action'] is not None and object['action'].type is not None and object['action'].type.enable_labels]
+
+    elif edit_permissions:
+        edit_permissions_form = EditPermissionsForm()
+
+        current_permissions_special_groups = {'signed-in-users': {}}
+        current_permissions_normal_entities = {'user': {}, 'project-group': {}, 'group': {}}
+
+        if flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
+            current_permissions_special_groups['anonymous'] = {}
+
+        for object in objects:
+            object_id = object['object_id']
+
+            if logic.object_permissions.get_user_object_permissions(object_id, user_id=flask_login.current_user.id) < Permissions.GRANT:
+                continue
+
+            objects_allowed_to_select.append(object_id)
+
+            current_permissions_special_groups['signed-in-users'][object_id] = logic.object_permissions.get_object_permissions_for_all_users(object_id).name.lower()
+
+            if flask.current_app.config["ENABLE_ANONYMOUS_USERS"]:
+                current_permissions_special_groups['anonymous'][object_id] = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id).name.lower()
+
+            for group_id, permission in logic.object_permissions.get_object_permissions_for_groups(object_id).items():
+                if group_id not in current_permissions_normal_entities['group']:
+                    current_permissions_normal_entities['group'][group_id] = {}
+                current_permissions_normal_entities['group'][group_id][object_id] = permission.name.lower()
+
+            for project_id, permission in logic.object_permissions.get_object_permissions_for_projects(object_id).items():
+                if project_id not in current_permissions_normal_entities['project-group']:
+                    current_permissions_normal_entities['project-group'][project_id] = {}
+                current_permissions_normal_entities['project-group'][project_id][object_id] = permission.name.lower()
+
+            for user_id, permission in logic.object_permissions.get_object_permissions_for_users(object_id).items():
+                if user_id not in current_permissions_normal_entities['user']:
+                    current_permissions_normal_entities['user'][user_id] = {}
+                current_permissions_normal_entities['user'][user_id][object_id] = permission.name.lower()
+
+        groups_treepicker_info = get_groups_form_data(basic_group_filter=lambda group: True)[1]
+        projects_treepicker_info = get_groups_form_data(project_group_filter=lambda project: True)[1]
+
     else:
-        location_form = None
-        user_is_fed = {}
-        english = None
-        all_languages = []
-        objects_with_write_permission = []
+        create_from_objects = False
+        if logic.action_types.is_usable_in_action_types_table_empty():
+            if not flask.current_app.config['DISABLE_USE_IN_MEASUREMENT']:
+                for object in objects:
+                    if object['action'] and object['action'].type_id == models.ActionType.SAMPLE_CREATION:
+                        available_action_types.append(logic.action_types.get_action_type(models.ActionType.MEASUREMENT))
+                        break
+
+        else:
+            tried_object_action_types = {None}
+            for object in objects:
+                object_action = object['action']
+
+                if object_action and object_action.type_id not in tried_object_action_types:
+                    for action_type in object_action.type.usable_in_action_types:
+                        if action_type not in available_action_types:
+                            available_action_types.append(action_type)
+                    tried_object_action_types.add(object_action.type_id)
 
     return flask.render_template(
         'objects/objects.html',
@@ -893,13 +1008,32 @@ def objects():
         user_is_fed=user_is_fed,
         ENGLISH=english,
         all_languages=all_languages,
-        objects_with_write_permission=objects_with_write_permission,
+        create_from_objects=create_from_objects,
+        objects_allowed_to_select=objects_allowed_to_select,
+        available_action_types=available_action_types,
+        use_in_action_type=use_in_action_type,
+        favorite_actions=favorite_actions,
+        use_in_action_form=use_in_action_form,
+        generate_labels_form=generate_labels_form,
+        generate_labels=generate_labels,
+        PAGE_SIZES=PAGE_SIZES,
+        HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
+        VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
+        mm=mm,
+        edit_permissions=edit_permissions,
+        edit_permissions_form=edit_permissions_form,
+        current_permissions_special_groups=current_permissions_special_groups,
+        current_permissions_normal_entities=current_permissions_normal_entities,
+        special_groups=special_groups,
+        disabled_special_group_permissions=disabled_special_group_permissions,
+        groups_treepicker_info=groups_treepicker_info,
+        projects_treepicker_info=projects_treepicker_info
     )
 
 
 @frontend.route('/objects/referencable')
 @flask_login.login_required
-def referencable_objects():
+def referencable_objects() -> FlaskResponseT:
     required_perm = Permissions.READ
     if 'required_perm' in flask.request.args:
         try:
@@ -908,15 +1042,15 @@ def referencable_objects():
             try:
                 required_perm = Permissions(int(flask.request.args['required_perm']))
             except ValueError:
-                return {
-                    "message": "argument {} is not a valid permission.".format(flask.request.args['required_perm'])
-                }, 400
+                return flask.jsonify({
+                    "message": f"argument {flask.request.args['required_perm']} is not a valid permission."
+                }), 400
 
     action_ids = None
     if 'action_ids' in flask.request.args:
-        action_ids = flask.request.args['action_ids']
+        action_ids_str = flask.request.args['action_ids']
         try:
-            action_ids = json.loads(action_ids)
+            action_ids = json.loads(action_ids_str)
         except Exception:
             action_ids = None
         else:
@@ -933,29 +1067,32 @@ def referencable_objects():
         action_ids=action_ids
     )
 
-    def dictify(x):
+    def dictify(x: ObjectInfo) -> typing.Dict[str, typing.Any]:
+        name = get_translated_text(x.name_json) or '—'
+        if x.component_name is None:
+            name += f' (#{x.object_id})'
+        else:
+            name += f' (#{x.object_id}, #{x.fed_object_id} @ {x.component_name})'
         return {
             'id': x.object_id,
-            'text': '{} (#{})'.format(flask.escape(get_translated_text(x.name_json)) or '—', x.object_id) if x.component_name is None
-            else '{} (#{}, #{} @ {})'.format(flask.escape(get_translated_text(x.name_json)) or '—', x.object_id, x.fed_object_id, flask.escape(x.component_name)),
-            'unescaped_text': '{} (#{})'.format(get_translated_text(x.name_json) or '—', x.object_id) if x.component_name is None
-            else '{} (#{}, #{} @ {})'.format(get_translated_text(x.name_json) or '—', x.object_id, x.fed_object_id, x.component_name),
+            'text': markupsafe.escape(name),
+            'unescaped_text': name,
             'action_id': x.action_id,
             'max_permission': x.max_permission,
-            'tags': [flask.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else [],
+            'tags': [markupsafe.escape(tag) for tag in x.tags['tags']] if x.tags and isinstance(x.tags, dict) and x.tags.get('_type') == 'tags' and x.tags.get('tags') else [],
             'is_fed': x.fed_object_id is not None
         }
 
-    return {
+    return flask.jsonify({
         'referencable_objects': [
             dictify(object)
             for object in referencable_objects
         ]
-    }
+    })
 
 
 def _parse_filter_id_params(
-        params: werkzeug.datastructures.ImmutableMultiDict,
+        params: werkzeug.datastructures.MultiDict[str, str],
         param_aliases: typing.List[str],
         valid_ids: typing.List[int],
         id_map: typing.Dict[str, int],
@@ -993,7 +1130,7 @@ def _parse_filter_id_params(
 
 
 def _parse_object_list_filters(
-        params: werkzeug.datastructures.ImmutableMultiDict,
+        params: werkzeug.datastructures.MultiDict[str, str],
         valid_location_ids: typing.List[int],
         valid_action_type_ids: typing.List[int],
         valid_action_ids: typing.List[int],
@@ -1071,7 +1208,7 @@ def _parse_object_list_filters(
 
     if 'related_user' in params:
         try:
-            filter_related_user_id = int(params.get('related_user'))
+            filter_related_user_id = int(params['related_user'])
             check_user_exists(filter_related_user_id)
         except ValueError:
             flask.flash(_('Unable to parse related user ID.'), 'error')
@@ -1100,7 +1237,7 @@ def _parse_object_list_filters(
 
     if 'user' in params:
         try:
-            filter_user_id = int(params.get('user'))
+            filter_user_id = int(params['user'])
             check_user_exists(filter_user_id)
         except ValueError:
             flask.flash(_('Unable to parse user ID.'), 'error')
@@ -1120,7 +1257,7 @@ def _parse_object_list_filters(
 
     if 'group' in params:
         try:
-            filter_group_id = int(params.get('group'))
+            filter_group_id = int(params['group'])
             group_member_ids = logic.groups.get_group_member_ids(filter_group_id)
         except ValueError:
             flask.flash(_('Unable to parse group ID.'), 'error')
@@ -1129,7 +1266,7 @@ def _parse_object_list_filters(
             flask.flash(_('Invalid group ID.'), 'error')
             return FALLBACK_RESULT
         else:
-            if flask_login.current_user.id not in group_member_ids:
+            if flask_login.current_user.id not in group_member_ids and not flask_login.current_user.has_admin_permissions:
                 flask.flash(_('You need to be a member of this group to list its objects.'), 'error')
                 return FALLBACK_RESULT
             filter_group_permissions = {
@@ -1143,7 +1280,7 @@ def _parse_object_list_filters(
 
     if 'project' in params:
         try:
-            filter_project_id = int(params.get('project'))
+            filter_project_id = int(params['project'])
             get_project(filter_project_id)
         except ValueError:
             flask.flash(_('Unable to parse project ID.'), 'error')
@@ -1156,7 +1293,7 @@ def _parse_object_list_filters(
                     project_id=filter_project_id,
                     user_id=flask_login.current_user.id,
                     include_groups=True
-            ):
+            ) and not flask_login.current_user.has_admin_permissions:
                 flask.flash(_('You need to be a member of this project group to list its objects.'), 'error')
                 return FALLBACK_RESULT
             filter_project_permissions = {
@@ -1168,6 +1305,7 @@ def _parse_object_list_filters(
         filter_project_id = None
         filter_project_permissions = None
 
+    filter_origin_ids: typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]]
     if params.getlist('origins'):
         filter_origin_ids = []
         for origin_id_str in params.getlist('origins'):
@@ -1211,7 +1349,7 @@ def _parse_object_list_filters(
 
 
 def _parse_object_list_options(
-        params: werkzeug.datastructures.ImmutableMultiDict,
+        params: werkzeug.datastructures.MultiDict[str, str],
 ) -> typing.Tuple[
     typing.List[str],
     typing.List[str],
@@ -1219,46 +1357,46 @@ def _parse_object_list_options(
     bool,
     typing.List[str],
 ]:
-    creation_info = set()
+    creation_info_set = set()
     for creation_info_str in params.getlist('creation_info'):
         creation_info_str = creation_info_str.strip().lower()
         if creation_info_str in {'user', 'date'}:
-            creation_info.add(creation_info_str)
-    creation_info = list(creation_info)
+            creation_info_set.add(creation_info_str)
+    creation_info = list(creation_info_set)
 
-    last_edit_info = set()
+    last_edit_info_set = set()
     for last_edit_info_str in params.getlist('last_edit_info'):
         last_edit_info_str = last_edit_info_str.strip().lower()
         if last_edit_info_str in {'user', 'date'}:
-            last_edit_info.add(last_edit_info_str)
-    last_edit_info = list(last_edit_info)
+            last_edit_info_set.add(last_edit_info_str)
+    last_edit_info = list(last_edit_info_set)
 
-    action_info = set()
+    action_info_set = set()
     for action_info_str in params.getlist('action_info'):
         action_info_str = action_info_str.strip().lower()
         if action_info_str in {'instrument', 'action'}:
-            action_info.add(action_info_str)
-    action_info = list(action_info)
+            action_info_set.add(action_info_str)
+    action_info = list(action_info_set)
 
-    location_info = set()
+    location_info_set = set()
     for location_info_str in params.getlist('location_info'):
         location_info_str = location_info_str.strip().lower()
         if location_info_str in {'location', 'responsible_user'}:
-            location_info.add(location_info_str)
-    location_info = list(location_info)
+            location_info_set.add(location_info_str)
+    location_info = list(location_info_set)
 
     other_databases_info = 'other_databases_info' in params
     return creation_info, last_edit_info, action_info, other_databases_info, location_info
 
 
 def _parse_display_properties(
-        params: werkzeug.datastructures.ImmutableMultiDict,
+        params: werkzeug.datastructures.MultiDict[str, str],
 ) -> typing.Tuple[
     typing.List[str],
-    typing.Dict[str, str],
+    typing.Dict[str, typing.Union[str, markupsafe.Markup]],
 ]:
     display_properties = []
-    display_property_titles = {}
+    display_property_titles: typing.Dict[str, typing.Union[str, markupsafe.Markup]] = {}
     for property_info in itertools.chain(*[
         display_properties_str.split(',')
         for display_properties_str in params.getlist('display_properties')
@@ -1270,7 +1408,7 @@ def _parse_display_properties(
         if property_name not in display_properties:
             display_properties.append(property_name)
         if property_title is not None:
-            display_property_titles[property_name] = flask.escape(property_title)
+            display_property_titles[property_name] = markupsafe.escape(property_title)
     return display_properties, display_property_titles
 
 
@@ -1292,13 +1430,13 @@ def _build_modified_url(
 
 @frontend.route('/objects/', methods=['POST'])
 @flask_login.login_required
-def save_object_list_defaults():
+def save_object_list_defaults() -> FlaskResponseT:
     if 'save_default_filters' in flask.request.form:
         all_locations = get_locations_with_user_permissions(
             user_id=flask_login.current_user.id,
             permissions=Permissions.READ
         )
-        all_action_types = logic.actions.get_action_types(
+        all_action_types = logic.action_types.get_action_types(
             filter_fed_defaults=True
         )
         all_actions = get_sorted_actions_for_user(
@@ -1312,16 +1450,16 @@ def save_object_list_defaults():
             filter_action_type_ids,
             filter_action_ids,
             filter_instrument_ids,
-            filter_related_user_id,
+            _filter_related_user_id,
             filter_doi,
             filter_anonymous_permissions,
             filter_all_users_permissions,
             filter_user_id,
             filter_user_permissions,
-            filter_group_id,
-            filter_group_permissions,
-            filter_project_id,
-            filter_project_permissions,
+            _filter_group_id,
+            _filter_group_permissions,
+            _filter_project_id,
+            _filter_project_permissions,
             filter_origin_ids,
         ) = _parse_object_list_filters(
             params=flask.request.form,
@@ -1372,7 +1510,7 @@ def save_object_list_defaults():
         ) = _parse_object_list_options(
             params=flask.request.form
         )
-        display_properties, display_property_titles = _parse_display_properties(
+        display_properties, _display_property_titles = _parse_display_properties(
             params=flask.request.form
         )
         set_user_settings(
@@ -1405,13 +1543,15 @@ def save_object_list_defaults():
             }
         )
         return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
+    return flask.abort(400)
 
 
 @frontend.route("/edit_locations", methods=["POST"])
-def edit_multiple_locations():
+@flask_login.login_required
+def edit_multiple_locations() -> FlaskResponseT:
     location_form = ObjectLocationAssignmentForm()
-    selected_object_ids = flask.request.form["selected_objects"]
-    selected_object_ids = list(map(int, selected_object_ids.split(","))) if selected_object_ids else []
+    selected_object_ids_str = flask.request.form["selected_objects"]
+    selected_object_ids = list(map(int, selected_object_ids_str.split(","))) if selected_object_ids_str else []
 
     if not selected_object_ids:
         return flask.abort(400)
@@ -1431,6 +1571,8 @@ def edit_multiple_locations():
         possible_resposible_users.append((str(user.id), user.get_name()))
     location_form.responsible_user.choices = possible_resposible_users
 
+    location_id: typing.Optional[int]
+    responsible_user_id: typing.Optional[int]
     if location_form.validate_on_submit():
         location_id = int(location_form.location.data)
         if location_id < 0:
@@ -1455,6 +1597,38 @@ def edit_multiple_locations():
                 continue
             valid_description[language_code] = description_text
         description = valid_description
+        if location_id is not None:
+            location = get_location(location_id)
+            if location.type.enable_capacities:
+                action_ids_for_object_ids = logic.objects.get_action_ids_for_object_ids(selected_object_ids)
+                selected_action_ids = [
+                    typing.cast(int, action_ids_for_object_ids[object_id])
+                    for object_id in selected_object_ids
+                    if action_ids_for_object_ids.get(object_id) is not None
+                ]
+                action_type_ids_for_action_ids = logic.actions.get_action_type_ids_for_action_ids(selected_action_ids)
+                selected_action_type_ids = [
+                    typing.cast(int, action_type_ids_for_action_ids[action_id])
+                    for action_id in selected_action_ids
+                    if action_type_ids_for_action_ids.get(action_id) is not None
+                ]
+                action_types = logic.action_types.get_action_types()
+                action_type_id_aliases = {
+                    action_type.id: action_type.fed_id
+                    for action_type in action_types
+                    if action_type.fed_id is not None and action_type.fed_id < 0
+                }
+                selected_action_type_ids = [
+                    action_type_id_aliases.get(action_type_id, action_type_id)
+                    for action_type_id in selected_action_type_ids
+                ]
+                location_capacities = logic.locations.get_location_capacities(location_id)
+                num_stored_objects = logic.locations.get_assigned_object_count_by_action_types(location_id, ignored_object_ids=selected_object_ids)
+                for action_type_id in set(selected_action_type_ids):
+                    location_capacity = location_capacities.get(action_type_id, 0)
+                    if location_capacity is not None and num_stored_objects.get(action_type_id, 0) + selected_action_type_ids.count(action_type_id) > location_capacity:
+                        flask.flash(_('The selected location does not have the capacity to store these objects.'), 'error')
+                        return flask.redirect(flask.url_for('.objects'))
         if location_id is not None or responsible_user_id is not None:
             for object_id in selected_object_ids:
                 logic.locations.assign_location_to_object(object_id, location_id, responsible_user_id, flask_login.current_user.id, description)
@@ -1462,4 +1636,97 @@ def edit_multiple_locations():
             return flask.redirect(flask.url_for('.objects', ids=','.join(map(str, selected_object_ids))))
 
     flask.flash(_('Please select a location or a responsible user.'), 'error')
+    return flask.redirect(flask.url_for('.objects'))
+
+
+@frontend.route("/multiselect_action", methods=["POST"])
+@flask_login.login_required
+def multiselect_action() -> FlaskResponseT:
+    use_in_action_form = UseInActionForm()
+
+    try:
+        object_ids = list(map(int, use_in_action_form.objects.data.split(',')))
+    except ValueError:
+        object_ids = []
+
+    if use_in_action_form.action_id.data:
+        return flask.redirect(flask.url_for('.new_object', action_id=use_in_action_form.action_id.data, object_id=object_ids))
+
+    return flask.redirect(flask.url_for('.actions', t=use_in_action_form.action_type_id.data, object_id=object_ids))
+
+
+@frontend.route("/multiselect_permissions", methods=["POST"])
+@flask_login.login_required
+def multiselect_permissions() -> FlaskResponseT:
+    edit_permissions_form = EditPermissionsForm()
+
+    if edit_permissions_form.validate_on_submit():
+        object_ids = list(map(int, edit_permissions_form.objects.data.split(',')))
+        permission = Permissions.from_name(edit_permissions_form.permission.data)
+        update_mode = edit_permissions_form.update_mode.data
+        current_permission: typing.Optional[Permissions] = None
+
+        for object_id in object_ids:
+            if logic.object_permissions.get_user_object_permissions(object_id, flask_login.current_user.id) < Permissions.GRANT:
+                flask.abort(403)
+
+        if edit_permissions_form.target_type.data == 'anonymous':
+            if permission > Permissions.READ:
+                flask.flash(_('It is not allowed to use permissions higher than read for special groups.'), 'error')
+                return flask.redirect(flask.url_for('.objects'))
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_anonymous_users(object_id)
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_object_permissions_for_anonymous_users(object_id, permission)
+
+        elif edit_permissions_form.target_type.data == 'signed-in-users':
+            if permission > Permissions.READ:
+                flask.flash(_('It is not allowed to use permissions higher than read for special groups.'), 'error')
+                return flask.redirect(flask.url_for('.objects'))
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_all_users(object_id)
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_object_permissions_for_all_users(object_id, permission)
+
+        elif edit_permissions_form.target_type.data == 'group':
+            try:
+                group_id = int(edit_permissions_form.groups.data)
+            except ValueError:
+                flask.abort(400)
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_groups(object_id).get(group_id)
+                if current_permission is None:
+                    current_permission = Permissions.NONE
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_group_object_permissions(object_id, group_id, permission)
+
+        elif edit_permissions_form.target_type.data == 'project-group':
+            try:
+                project_id = int(edit_permissions_form.project_groups.data)
+            except ValueError:
+                flask.abort(400)
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_projects(object_id).get(project_id)
+                if current_permission is None:
+                    current_permission = Permissions.NONE
+                if update_mode == 'set-min' and current_permission < permission or update_mode == 'set-max' and current_permission > permission:
+                    logic.object_permissions.set_project_object_permissions(object_id, project_id, permission)
+        elif edit_permissions_form.target_type.data == 'user':
+            try:
+                user_id = int(edit_permissions_form.users.data)
+            except ValueError:
+                flask.abort(400)
+
+            for object_id in object_ids:
+                current_permission = logic.object_permissions.get_object_permissions_for_users(object_id).get(user_id)
+                if current_permission is None:
+                    current_permission = Permissions.NONE
+                if (update_mode == 'set-min' and current_permission < permission) or (update_mode == 'set-max' and current_permission > permission):
+                    logic.object_permissions.set_user_object_permissions(object_id, user_id, permission)
+
+        flask.flash(_('Updated permissions successfully.'), 'success')
+        return flask.redirect(flask.url_for('.objects', ids=edit_permissions_form.objects.data))
     return flask.redirect(flask.url_for('.objects'))

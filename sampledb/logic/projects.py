@@ -21,7 +21,9 @@ module should be called from within a Flask application context.
 import dataclasses
 import datetime
 import typing
+
 import flask
+
 from .. import db
 from ..models import projects, Permissions, UserProjectPermissions, GroupProjectPermissions, SubprojectRelationship, Object
 from .users import get_user, check_user_exists
@@ -106,6 +108,8 @@ def create_project(
     :raise errors.ProjectAlreadyExistsError: when another project with the given
         name already exists
     :raise errors.LanguageDoesNotExistError: when there is no language for the given lang codes
+    :raise errors.MissingEnglishTranslationError: when the name does not
+        contain an english translation
     """
     if isinstance(name, str):
         name = {
@@ -172,29 +176,21 @@ def update_project(
     :raise errors.ProjectAlreadyExistsError: when another project with the given
         name already exists
     :raise errors.LanguageDoesNotExistError: when there is no language for the given lang codes.
+    :raise errors.MissingEnglishTranslationError: when the name does not
+        contain an english translation
     """
-    try:
-        for language_code, name_text in list(name.items()):
-            language = get_language_by_lang_code(language_code)
-            if not 1 <= len(name_text) <= MAX_PROJECT_NAME_LENGTH:
-                if language.id != Language.ENGLISH and not name_text:
-                    del name[language_code]
-                else:
-                    raise errors.InvalidProjectNameError()
-            existing_project = projects.Project.query.filter(
-                projects.Project.name[language_code].astext.cast(db.Unicode) == name_text
-            ).first()
-            if existing_project is not None and existing_project.id != project_id:
-                raise errors.ProjectAlreadyExistsError()
-
-    except errors.LanguageDoesNotExistError:
-        raise errors.LanguageDoesNotExistError("There is no language for the given lang code")
-    except errors.InvalidProjectNameError:
-        raise errors.InvalidProjectNameError()
-    except errors.ProjectAlreadyExistsError:
-        raise errors.ProjectAlreadyExistsError()
-    except Exception as e:
-        raise e
+    for language_code, name_text in list(name.items()):
+        language = get_language_by_lang_code(language_code)
+        if not 1 <= len(name_text) <= MAX_PROJECT_NAME_LENGTH:
+            if language.id != Language.ENGLISH and not name_text:
+                del name[language_code]
+            else:
+                raise errors.InvalidProjectNameError()
+        existing_project = projects.Project.query.filter(
+            projects.Project.name[language_code].astext.cast(db.Unicode) == name_text
+        ).first()
+        if existing_project is not None and existing_project.id != project_id:
+            raise errors.ProjectAlreadyExistsError()
     if 'en' not in name:
         raise errors.MissingEnglishTranslationError()
 
@@ -304,7 +300,7 @@ def get_user_project_permissions(project_id: int, user_id: int, include_groups: 
     """
     user_permissions = projects.UserProjectPermissions.query.filter_by(project_id=project_id, user_id=user_id).first()
     if user_permissions:
-        permissions = typing.cast(Permissions, user_permissions.permissions)
+        permissions = user_permissions.permissions
     else:
         # verify that project exists or raise error
         get_project(project_id)
@@ -462,8 +458,13 @@ def add_user_to_project(project_id: int, user_id: int, permissions: Permissions,
         include_expired_invitations=False,
         include_accepted_invitations=False
     )
-    for invitation in invitations:
-        mutable_invitation = projects.ProjectInvitation.query.filter_by(id=invitation.id).first()
+    mutable_invitations = projects.ProjectInvitation.query.filter(
+        projects.ProjectInvitation.id.in_([
+            invitation.id
+            for invitation in invitations
+        ])
+    ).all()
+    for mutable_invitation in mutable_invitations:
         mutable_invitation.accepted = True
         db.session.add(mutable_invitation)
     db.session.commit()
@@ -762,8 +763,8 @@ def get_all_parent_project_ids() -> typing.Dict[int, typing.Sequence[int]]:
             parent_project_ids[relationship.child_project_id] = set()
         parent_project_ids[relationship.child_project_id].add(relationship.parent_project_id)
     return {
-        project_id: tuple(parent_project_ids[project_id])
-        for project_id in parent_project_ids
+        project_id: tuple(individual_parent_project_ids)
+        for project_id, individual_parent_project_ids in parent_project_ids.items()
     }
 
 
@@ -937,8 +938,8 @@ def sort_project_id_hierarchy_list(
         current_level_indices = []
         sublist_indices: typing.Dict[int, typing.List[int]] = {}
         previous_id = None
-        for i in range(len(project_id_hierarchy_list)):
-            level, project_id = project_id_hierarchy_list[i]
+        for i, hierarchy_list_entry in enumerate(project_id_hierarchy_list):
+            level, project_id = hierarchy_list_entry
             if level == current_level:
                 current_level_indices.append(i)
                 previous_id = project_id

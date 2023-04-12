@@ -31,16 +31,13 @@ class ChangeUserForm(FlaskForm):
     role = StringField()
     submit = SubmitField('Change Settings')
 
-    def __init_(self, name=None, email=None):
-        super(ChangeUserForm, self).__init__()
-
-    def validate_name(self, field):
+    def validate_name(self, field: StringField) -> None:
         if flask.current_app.config['ENFORCE_SPLIT_NAMES'] and flask_login.current_user.type.name.lower() == "person":
             name = field.data
             if ', ' not in name[1:-1]:
                 raise ValidationError("Please enter your name as: surname, given names.")
 
-    def validate_orcid(self, field):
+    def validate_orcid(self, field: StringField) -> None:
         orcid = field.data
         # accept empty ORCID iDs
         if orcid is None:
