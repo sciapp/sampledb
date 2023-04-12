@@ -4,7 +4,7 @@ Changelog
 Version 0.22
 ------------
 
-Currently in development.
+Released on April 12th, 2023.
 
 - Implemented object storage capacities for locations
 - Applied admin permissions to managing groups
