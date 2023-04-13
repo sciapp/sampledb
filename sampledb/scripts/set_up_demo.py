@@ -1091,4 +1091,6 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, combined_conditions_action.id, name="Combined Conditions Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(combined_conditions_action.id, sampledb.models.Permissions.READ)
 
+        sampledb.logic.authentication.generate_api_access_token(instrument_responsible_user.id, "Example Access Token")
+
     print("Success: set up demo data", flush=True)

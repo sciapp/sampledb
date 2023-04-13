@@ -1308,15 +1308,16 @@ msgid "API Log"
 msgstr "API Log"
 
 #, python-format
-msgid "Log for API token \"%(api_token)s\""
-msgstr "Log für das API Token \"%(api_token)s\""
+msgid "Log for %(api_token_type)s \"%(api_token)s\""
+msgstr "Log für das %(api_token_type)s \"%(api_token)s\""
 
+#, python-format
 msgid ""
-"This table shows a list of all API request authenticated with this API "
-"token."
+"This table shows a list of all API request authenticated with this "
+"%(api_token_type)s."
 msgstr ""
-"Diese Tabelle listet alle API Anfragen auf, die mit diesem API Token "
-"authentifiziert wurden."
+"Diese Tabelle listet alle API Anfragen auf, die mit diesem "
+"%(api_token_type)s authentifiziert wurden."
 
 msgid "Datetime"
 msgstr "Zeitpunkt"
@@ -1327,8 +1328,9 @@ msgstr "Methode"
 msgid "Endpoint"
 msgstr "Endpunkt"
 
-msgid "This API token has not been used so far."
-msgstr "Dieses API Token ist noch nicht benutzt worden."
+#, python-format
+msgid "This %(api_token_type)s has not been used so far."
+msgstr "Dieses %(api_token_type)s ist noch nicht benutzt worden."
 
 msgid "Expand All"
 msgstr "Alle ausklappen"
@@ -2020,6 +2022,23 @@ msgstr "Beschreibung"
 
 msgid "View Log"
 msgstr "Log anzeigen"
+
+msgid "API Access Tokens"
+msgstr "API Zugriffstoken"
+
+msgid ""
+"API access tokens are short-lived tokens for the use by interactive "
+"applications or scripts to authenticate with the <a href=\"https"
+"://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/api.html\">HTTP API</a>."
+msgstr ""
+"API Zugriffstoken sind kurzlebige Token zur Verwendung durch interaktive "
+"Anwendungen oder Skripte, um sich mit der <a href=\"https://scientific-"
+"it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html\">HTTP "
+"API</a> zu authentifizieren."
+
+msgid "Expiration Datetime"
+msgstr "Ablaufzeitpunkt"
 
 msgid "Two Factor Authentication"
 msgstr "Zwei-Faktor-Authentisierung"
@@ -6158,6 +6177,12 @@ msgstr ""
 " wird aktuell nicht unterstützt. Bitte <a "
 "href=\"mailto:%(contact_email)s?subject=%(service_name)s\"> kontaktieren "
 "Sie einen Administrator</a>."
+
+msgid "API token"
+msgstr "API Token"
+
+msgid "API access token"
+msgstr "API Zugriffstoken"
 
 msgid "Your user account has been deactivated. Please contact an administrator."
 msgstr ""
