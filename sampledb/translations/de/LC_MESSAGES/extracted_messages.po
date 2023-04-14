@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.12.1\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -1969,6 +1969,33 @@ msgstr "Ausstehende Einladungen"
 msgid "Account Information"
 msgstr "Nutzerinformationen"
 
+msgid "Authentication Methods"
+msgstr "Authentifizierungs&shy;methoden"
+
+msgid "API Tokens"
+msgstr "API Token"
+
+msgid "API Access Tokens"
+msgstr "API Zugriffstoken"
+
+msgid "Two Factor Authentication"
+msgstr "Zwei-Faktor-Authentisierung"
+
+msgid "Notification Settings"
+msgstr "Benachrichtigungs&shy;einstellungen"
+
+msgid "Default Permissions"
+msgstr "Standard&shy;berechtigungen"
+
+msgid "Other Settings"
+msgstr "Sonstige Einstellungen"
+
+msgid "Administrator Settings"
+msgstr "Administrator&shy;einstellungen"
+
+msgid "Back to top"
+msgstr "Zurück nach oben"
+
 msgid "Please enter your email address."
 msgstr "Bitte geben Sie Ihre E-Mail-Adresse ein."
 
@@ -1993,9 +2020,6 @@ msgstr "Position, z.B. Techniker, Projektleiter oder Doktorand"
 msgid "Please enter your role or leave this field blank."
 msgstr "Bitte geben Sie Ihre Position ein oder lassen Sie dieses Feld leer."
 
-msgid "Authentication Methods"
-msgstr "Authentifizierungsmethoden"
-
 msgid "Username / Email"
 msgstr "Nutzername / E-Mail"
 
@@ -2004,9 +2028,6 @@ msgstr "Authentifizierungsmethode"
 
 msgid "Other"
 msgstr "Andere"
-
-msgid "API Tokens"
-msgstr "API Token"
 
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
@@ -2023,9 +2044,6 @@ msgstr "Beschreibung"
 msgid "View Log"
 msgstr "Log anzeigen"
 
-msgid "API Access Tokens"
-msgstr "API Zugriffstoken"
-
 msgid ""
 "API access tokens are short-lived tokens for the use by interactive "
 "applications or scripts to authenticate with the <a href=\"https"
@@ -2039,9 +2057,6 @@ msgstr ""
 
 msgid "Expiration Datetime"
 msgstr "Ablaufzeitpunkt"
-
-msgid "Two Factor Authentication"
-msgstr "Zwei-Faktor-Authentisierung"
 
 msgid "TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
@@ -2066,9 +2081,6 @@ msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu könne
 
 msgid "Set up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
-
-msgid "Notification Settings"
-msgstr "Benachrichtigungseinstellungen"
 
 #, python-format
 msgid ""
@@ -2124,9 +2136,6 @@ msgstr "Fehlschlag des Imports eines Objekts in eine andere Datenbank"
 msgid "Receiving notes after importing an object into another database"
 msgstr "Hinweise beim Import eines Objekts in eine andere Datenbank erhalten"
 
-msgid "Default Permissions"
-msgstr "Standardberechtigungen"
-
 msgid ""
 "These permissions will be used for objects that you create in the future."
 " To change the permissions for an already existing object, please use the"
@@ -2155,9 +2164,6 @@ msgid ""
 msgstr ""
 "Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
 "Schreib-Berechtigungen."
-
-msgid "Other Settings"
-msgstr "Sonstige Einstellungen"
 
 msgid "Dataverse API Token"
 msgstr "Dataverse API Token"
@@ -2225,9 +2231,6 @@ msgstr "Objekte pro Seite"
 
 msgid "all"
 msgstr "alle"
-
-msgid "Administrator Settings"
-msgstr "Administratoreinstellungen"
 
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
@@ -5074,6 +5077,12 @@ msgstr "Version #%(version_id)s"
 msgid "Show Changes"
 msgstr "Änderungen anzeigen"
 
+msgid "Activity Log"
+msgstr "Aktivitäts-Log"
+
+msgid "Related Objects"
+msgstr "Zugehörige Objekte"
+
 #, python-format
 msgid ""
 "This page shows the changes between version #%(previous_version_id)s and "
@@ -5404,9 +5413,6 @@ msgstr "Kommentar"
 msgid "Post Comment"
 msgstr "Kommentar eintragen"
 
-msgid "Activity Log"
-msgstr "Aktivitäts-Log"
-
 msgid "Measurements"
 msgstr "Messungen"
 
@@ -5717,9 +5723,6 @@ msgstr "Eine unbekannte Datenbank konnte das Objekt nicht erfolgreich importiere
 
 msgid "The other database returned the following notes:"
 msgstr "Die andere Datenbank hat die folgenden Hinweise zurückgegeben:"
-
-msgid "Related Objects"
-msgstr "Zugehörige Objekte"
 
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"

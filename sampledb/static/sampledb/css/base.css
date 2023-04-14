@@ -1,10 +1,76 @@
+html {
+    background-color: #f8f8f8;
+}
 body {
     display: flex;
     min-height: 100vh;
     flex-direction: column;
+    background-color: white;
+    position: relative;
+    z-index: -2;
 }
-body > #main {
+#main {
     flex: 1;
+    padding-top: 20px;
+    padding-bottom:1em;
+    pointer-events: none;
+}
+#main > * {
+    pointer-events: auto;
+}
+
+.navbar-static-top {
+    margin-bottom: 0;
+}
+#main > .container table {
+    background: linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 20%, rgba(255,255,255,0.75) 80%, rgba(255,255,255,0) 100%);;
+}
+body > #sidebar {
+    display: none;
+    position: fixed;
+    top: 100px;
+    right: 0;
+    left: calc(100vw / 2 + 1170px / 2);
+    border-radius: 5px;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: -1;
+}
+body > #sidebar > nav ul {
+    list-style: none;
+    margin-bottom: 0;
+    padding-left: 10px;
+}
+body > #sidebar > nav > ul {
+    padding-left: 0;
+}
+body > #sidebar > nav > ul > li {
+    display: none;
+}
+body > #sidebar a {
+    color: #777777;
+    font-size: small;
+    font-weight: 600;
+    text-decoration: none;
+}
+body > #sidebar a:focus,
+body > #sidebar a:hover,
+body > #sidebar a:active,
+body > #sidebar a.active {
+    color: #23527c
+}
+body > #sidebar a[href="#top"] {
+    display: none;
+    color: #aaaaaa;
+}
+body > #sidebar a[href="#top"]:active, body > #sidebar a[href="#top"]:focus {
+    color: #aaaaaa;
+}
+
+@media only screen and (min-width: 1500px) {
+    body > #sidebar {
+        display: block;
+    }
 }
 
 .full-width-table-wrapper {
@@ -60,7 +126,6 @@ body > footer {
     background-color: #f8f8f8;
     border-top: 1px solid #e7e7e7;
     padding-top:0.75em;
-    margin-top:1em;
 }
 
 #form-signin {

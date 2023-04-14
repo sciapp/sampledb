@@ -3,9 +3,29 @@
 
 {% block title %}{{ _('Preferences') }} — {{ service_name }}{% endblock %}
 
+{% block sidebar %}
+  <nav>
+    <ul>
+      <li><a href="#account_information">{{ _('Account Information') }}</a></li>
+      <li><a href="#authentication_methods">{{ _('Authentication Methods') }}</a>
+        <ul>
+          <li><a href="#api_tokens">{{ _('API Tokens') }}</a></li>
+          <li><a href="#api_access_tokens">{{ _('API Access Tokens') }}</a></li>
+          <li><a href="#2fa">{{ _('Two Factor Authentication') }}</a></li>
+        </ul>
+      </li>
+      <li><a href="#notification_settings">{{ _('Notification Settings') }}</a></li>
+      <li><a href="#default_permissions">{{ _('Default Permissions') }}</a></li>
+      <li><a href="#other_settings">{{ _('Other Settings') }}</a></li>
+      <li><a href="#administrator_settings">{{ _('Administrator Settings') }}</a></li>
+    </ul>
+    <a href="#top">{{ _('Back to top') }}</a>
+  </nav>
+{% endblock %}
+
 {% block content %}
 <h1>{{ _('Preferences') }}</h1>
-<h2>{{ _('Account Information') }}</h2>
+<h2 id="account_information">{{ _('Account Information') }}</h2>
 <form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=user.id) }}">
     {{ change_user_form.csrf_token() }}
     <div class="form-group {% if change_user_form.name.errors %} has-error{% endif %}">
@@ -72,7 +92,7 @@
 </form>
 
 
-<h2>{{ _('Authentication Methods')}}</h2>
+<h2 id="authentication_methods">{{ _('Authentication Methods')}}</h2>
     <div>
        <table class="table">
          <thead>
@@ -129,7 +149,7 @@
        </table>
     </div>
 
-  <h3>{{ _('API Tokens')}}</h3>
+  <h3 id="api_tokens">{{ _('API Tokens')}}</h3>
   <div>
     <p>
       <strong>{{ _('Note:')}}</strong> {{ _('API tokens are an authentication method for use with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
@@ -170,7 +190,7 @@
   </div>
 
   {% if api_access_tokens %}
-  <h3>{{ _('API Access Tokens')}}</h3>
+  <h3 id="api_access_tokens">{{ _('API Access Tokens')}}</h3>
   <div>
     <p>
       <strong>{{ _('Note:')}}</strong> {{ _('API access tokens are short-lived tokens for the use by interactive applications or scripts to authenticate with the <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html">HTTP API</a>.')}}
@@ -204,7 +224,7 @@
   </div>
   {% endif %}
 
-  <h3>{{ _('Two Factor Authentication') }}</h3>
+  <h3 id="2fa">{{ _('Two Factor Authentication') }}</h3>
   {% if two_factor_authentication_methods %}
   <table class="table">
     <thead>
@@ -244,7 +264,7 @@
     <a {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before adding a new one.') }}" {% else %}href="{{ url_for('.setup_totp_two_factor_authentication') }}"{% endif %} class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
   </div>
 
-  <h2>{{ _('Notification Settings')}}</h2>
+  <h2 id="notification_settings">{{ _('Notification Settings')}}</h2>
   <p><strong>{{ _('Note:')}}</strong>
     {{ _('%(service_name)s will notify you about various events. By default, these notifications will be sent using the %(service_name)s notification system, but you can also chose to receive them via email or decide to ignore some notification types.', service_name=service_name) }}</p>
 
@@ -299,7 +319,7 @@
     </div>
   </form>
 
-  <h2>{{ _('Default Permissions')}}</h2>
+  <h2 id="default_permissions">{{ _('Default Permissions')}}</h2>
   <p><strong>{{ _('Note:') }}</strong> {{ _('These permissions will be used for objects that you create in the future. To change the permissions for an already existing object, please use the <strong>Edit permissions</strong> button on the object\'s site.') }}</p>
 
   {% set user_may_edit = not current_user.is_readonly %}
@@ -314,7 +334,7 @@
   {% set grant_permissions_description = _('Permission to grant permissions to other users. Includes Write permissions.') %}
   {% include "permissions/permissions.html" %}
 
-  <h2>{{ _('Other Settings') }}</h2>
+  <h2 id="other_settings">{{ _('Other Settings') }}</h2>
   <form action="{{ url_for('.user_preferences', user_id=current_user.id) }}" method="post" class="form-horizontal">
     {% if user_settings['DATAVERSE_API_TOKEN'] %}
     <div class="form-group">
@@ -459,7 +479,7 @@
       </span>
     </div>
     {% if user.is_admin %}
-  <h2>{{ _('Administrator Settings') }}</h2>
+  <h2 id="administrator_settings">{{ _('Administrator Settings') }}</h2>
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-use-admin-permissions-yes">
         {{ _('Use Admin Permissions') }}
