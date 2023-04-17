@@ -263,6 +263,9 @@
     {% block content %}{% endblock %}
   </div>
 </div>
+<div id="sidebar">
+{% block sidebar %}{% endblock %}
+</div>
 <footer>
   <div class="container">
     <p class="text-center text-muted">{{ service_name }} {{ _('is a service by the') }} <a href="https://pgi-jcns.fz-juelich.de/">PGI / JCNS Scientific IT-Systems</a> {{ _('team') }} &bullet; <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/citations.html">{{ _('Citation Guide') }}</a>{% if service_legal_notice %} &bullet; <a href="{{ service_legal_notice }}">{{ _('Legal Notice') }}</a>{% endif %}{% if service_privacy_policy %} &bullet; <a href="{{ service_privacy_policy }}">{{ _('Privacy Policy') }}</a>{% endif %}{% if service_accessibility %} &bullet; <a href="{{ service_accessibility }}">{{ _('Accessibility') }}</a>{% endif %}</p>
@@ -337,6 +340,32 @@
           element.innerText = local_datetime.locale(lang_code).format(format);
       });
       {% endif %}
+
+      $(window).on('scroll', function () {
+        let active_a = null;
+        let scroll_offset = 50;
+        $('#sidebar > nav a').removeClass('active').each(function(_, a) {
+          a = $(a);
+          let href = a.attr('href');
+          if (href === "#top") {
+            return;
+          }
+          let linked_element = $(href);
+          if (linked_element.length === 1) {
+            a.closest('li').show();
+            if (active_a === null || window.scrollY + scroll_offset >= linked_element.offset().top) {
+              active_a = a;
+            }
+          } else {
+            a.closest('li').hide();
+          }
+        });
+        if (active_a !== null) {
+          active_a.addClass('active');
+          // show back to top link if sidebar is used
+          $('#sidebar > nav a[href="#top"]').show();
+        }
+      }).trigger('scroll');
 
       $(".navbar-nav > .dropdown").hover(function(){
         var dropdown_menu = $(this).children(".dropdown-menu");
