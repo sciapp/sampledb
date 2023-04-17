@@ -474,13 +474,15 @@ def object(object_id: int) -> FlaskResponseT:
         sorted_actions = get_sorted_actions_for_user(
             user_id=flask_login.current_user.id
         )
-        action_type_id_by_action_id = {}
-        for action in sorted_actions:
-            if action.type is not None:
-                if action.type.fed_id is not None and action.type.fed_id < 0:
-                    action_type_id_by_action_id[action.id] = action.type.fed_id
-                else:
-                    action_type_id_by_action_id[action.id] = action.type.id
+        fed_action_type_id_map = {
+            action_type.id: action_type.fed_id
+            for action_type in logic.action_types.get_action_types()
+            if action_type.fed_id is not None and action_type.fed_id < 0
+        }
+        action_type_id_by_action_id = {
+            action_id: fed_action_type_id_map.get(action_type_id, action_type_id) if action_type_id is not None else None
+            for action_id, action_type_id in logic.actions.get_action_type_ids_for_action_ids(None).items()
+        }
         template_kwargs.update({
             "sorted_actions": sorted_actions,
             "action_type_id_by_action_id": action_type_id_by_action_id,
