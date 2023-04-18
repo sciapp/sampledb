@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.22.1
+--------------
+
+Currently in development.
+
+- Fix bug preventing federation file imports containing file hash information
+
 Version 0.22
 ------------
 
