@@ -389,14 +389,17 @@ def update_actions_using_template_action(
 
 
 def get_action_type_ids_for_action_ids(
-        action_ids: typing.Sequence[int]
+        action_ids: typing.Optional[typing.Sequence[int]]
 ) -> typing.Dict[int, typing.Optional[int]]:
-    action_ids_and_action_type_ids = models.actions.Action.query.with_entities(
+    query = models.actions.Action.query.with_entities(
         models.actions.Action.id,
         models.actions.Action.type_id
-    ).filter(
-        models.actions.Action.id.in_(action_ids)
-    ).all()
+    )
+    if action_ids is not None:
+        query = query.filter(
+            models.actions.Action.id.in_(action_ids)
+        )
+    action_ids_and_action_type_ids = query.all()
     return {
         action_id: action_type_id
         for action_id, action_type_id in action_ids_and_action_type_ids
