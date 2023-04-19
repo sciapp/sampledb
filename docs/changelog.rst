@@ -4,7 +4,7 @@ Changelog
 Version 0.22.1
 --------------
 
-Currently in development.
+Released on April 19th, 2023.
 
 - Fix bug preventing federation file imports containing file hash information
 
