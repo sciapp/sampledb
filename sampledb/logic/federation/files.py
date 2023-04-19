@@ -60,7 +60,7 @@ def parse_file(
                     raise errors.InvalidDataExportError(f'Invalid port number in URL \'{url}\' for file #{fed_id} @ {uuid}')
         elif storage == 'federation':
             for key in data.keys():
-                if key not in {'original_file_name', 'storage'}:
+                if key not in {'original_file_name', 'storage', 'hash'}:
                     raise errors.InvalidDataExportError(f'Invalid data entry key \'{key}\' for file #{fed_id} @ {uuid}')
         else:
             raise errors.InvalidDataExportError(f'Invalid storage type \'{storage}\' for file #{fed_id} @ {uuid}')
