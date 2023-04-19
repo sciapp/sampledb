@@ -1504,6 +1504,13 @@
             {{ import_information_symbol(object.action) }}
           </td>
           {% endif %}
+        {% else %}
+          {% if 'instrument' in action_info and not config['DISABLE_INSTRUMENTS'] %}
+            <td>&mdash;</td>
+          {% endif %}
+          {% if 'action' in action_info %}
+            <td>&mdash;</td>
+          {% endif %}
         {% endif %}
         {% if 'location' in location_info %}
           <td>
