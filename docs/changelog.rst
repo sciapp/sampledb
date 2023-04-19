@@ -8,6 +8,13 @@ Currently in development.
 
 - Added support for short-lived API access tokens
 
+Version 0.22.1
+--------------
+
+Released on April 19th, 2023.
+
+- Fix bug preventing federation file imports containing file hash information
+
 Version 0.22
 ------------
 
