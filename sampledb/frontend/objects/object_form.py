@@ -14,15 +14,13 @@ from flask_babel import _
 
 from ... import logic
 from ... import models
-from ...logic.actions import get_actions, get_action, Action
-from ...logic.action_types import get_action_type, get_action_types
+from ...logic.actions import Action
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
 from ...logic.users import get_users
-from ...logic.schemas import validate, generate_placeholder
+from ...logic.schemas import generate_placeholder
 from ...logic.objects import create_object, create_object_batch, update_object
 from ...logic.languages import get_language, get_languages, Language
-from ...logic.errors import ValidationError
 from ...logic.components import get_component
 from .forms import ObjectForm
 from ..utils import default_format_datetime, custom_format_number, format_time
@@ -44,458 +42,422 @@ def show_object_form(
         show_selecting_modal: bool = False,
         previous_data_actions: typing.Optional[typing.List[typing.Any]] = None
 ) -> FlaskResponseT:
-    if object is None and previous_object is None:
-        if action.schema is None:
-            return flask.abort(403)
-        data = generate_placeholder(action.schema)
-        if not isinstance(data, dict):
-            return flask.abort(403)
-        if placeholder_data:
-            for path, value in placeholder_data.items():
-                try:
-                    sub_data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]] = data
-                    for step in path[:-1]:
-                        if isinstance(sub_data, list) and isinstance(step, int):
-                            sub_data = sub_data[step]
-                        elif isinstance(sub_data, dict) and isinstance(step, str):
-                            sub_data = sub_data[step]
-                        else:
-                            sub_data = None
-                            break
-                    step = path[-1]
-                    if isinstance(sub_data, list) and isinstance(step, int):
-                        sub_data[step] = value
-                    elif isinstance(sub_data, dict) and isinstance(step, str):
-                        sub_data[step] = value
-                except Exception:
-                    # Ignore invalid placeholder data
-                    pass
-    elif object is None and previous_object is not None and previous_object.data is not None and previous_object.schema is not None:
-        data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
-    elif object is not None and object.data is not None and object.schema is not None:
-        data = object.data
-    else:
-        return flask.abort(403)
-    previous_object_schema = None
-    mode = 'edit'
-    if should_upgrade_schema and action.schema:
-        mode = 'upgrade'
-        if object is None or object.data is None or object.schema is None:
-            return flask.abort(403)
-        schema = action.schema
-        data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, object.schema, action.schema)
-        for upgrade_warning in upgrade_warnings:
-            flask.flash(upgrade_warning, 'warning')
-    elif object is not None and object.schema is not None:
-        schema = object.schema
-    elif previous_object is not None and previous_object.schema is not None:
-        schema = previous_object.schema
-        previous_object_schema = schema
-    elif action.schema is not None:
-        schema = action.schema
-    else:
-        return flask.abort(403)
 
-    if action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
-        may_create_log_entry = True
-        create_log_entry_default = action.instrument.create_log_entry_default
-        instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
-        if 'create_instrument_log_entry' in flask.request.form:
-            category_ids = []
-            for category_id in flask.request.form.getlist('instrument_log_categories'):
-                try:
-                    if int(category_id) in [category.id for category in instrument_log_categories]:
-                        category_ids.append(int(category_id))
-                except Exception:
-                    pass
-        else:
-            category_ids = None
-    else:
-        instrument_log_categories = None
-        category_ids = None
-        create_log_entry_default = None
-        may_create_log_entry = False
+    if object is None:
+        if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask_login.current_user.is_admin):
+            flask.flash(_('Creating objects with this action has been disabled.'), 'error')
+            return flask.redirect(flask.url_for('.action', action_id=action.id))
 
-    context_id_serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
-    if 'context_id_token' in flask.request.form:
-        context_id_token = flask.request.form.get('context_id_token', '')
-        try:
-            user_id, context_id = context_id_serializer.loads(context_id_token, max_age=15 * 60)
-        except itsdangerous.BadSignature:
-            return flask.abort(400)
-        if user_id != flask_login.current_user.id:
-            return flask.abort(400)
-    else:
-        context_id = secrets.token_hex(32)
-        context_id_token = typing.cast(str, context_id_serializer.dumps((flask_login.current_user.id, context_id)))
-
-    if object is not None:
-        file_names_by_id = logic.files.get_file_names_by_id_for_object(object.object_id)
-    else:
-        file_names_by_id = {}
-    temporary_files = logic.temporary_files.get_files_for_context_id(context_id=context_id)
-    for temporary_file in temporary_files:
-        file_names_by_id[-temporary_file.id] = temporary_file.file_name, temporary_file.file_name
-    actual_file_names_by_id = {
-        file_id: file_names[0]
-        for file_id, file_names in file_names_by_id.items()
+    template_arguments: typing.Dict[str, typing.Any] = {
+        'ENGLISH': get_language(Language.ENGLISH),
+        'get_component': get_component,
+        'get_object_if_current_user_has_read_permissions': get_object_if_current_user_has_read_permissions,
     }
 
-    permissions_for_group_id = None
-    permissions_for_project_id = None
-    copy_permissions_object_id = None
-    if object is None:
-        if flask.request.form.get('permissions_method') == 'copy_permissions':
-            copy_permissions_object_id_str = flask.request.form.get('copy_permissions_object_id')
-            if copy_permissions_object_id_str:
-                try:
-                    copy_permissions_object_id = int(copy_permissions_object_id_str)
-                    if Permissions.READ not in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
-                        flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
-                        copy_permissions_object_id = None
-                except Exception:
-                    flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
-                    copy_permissions_object_id = None
-            else:
-                flask.flash(_("No object selected. Default permissions will be applied."), 'error')
-                copy_permissions_object_id = None
-        elif flask.request.form.get('permissions_method') == 'permissions_for_group':
-            permissions_for_group_id_str = flask.request.form.get('permissions_for_group_group_id')
-            if permissions_for_group_id_str:
-                try:
-                    permissions_for_group_id = int(permissions_for_group_id_str)
-                    if flask_login.current_user.id not in logic.groups.get_group_member_ids(permissions_for_group_id):
-                        flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
-                        permissions_for_group_id = None
-                except Exception:
-                    flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
-                    permissions_for_group_id = None
-            else:
-                flask.flash(_("No basic group selected. Default permissions will be applied."), 'error')
-                permissions_for_group_id = None
-        elif flask.request.form.get('permissions_method') == 'permissions_for_project':
-            permissions_for_project_id_str = flask.request.form.get('permissions_for_project_project_id')
-            if permissions_for_project_id_str:
-                try:
-                    permissions_for_project_id = int(permissions_for_project_id_str)
-                    if flask_login.current_user.id not in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
-                        flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
-                        permissions_for_project_id = None
-                except Exception:
-                    flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
-                    permissions_for_project_id = None
-            else:
-                flask.flash(_("No project group selected. Default permissions will be applied."), 'error')
-                permissions_for_project_id = None
-
-    if previous_object is not None:
-        action_id = previous_object.action_id
-        previous_object_id = previous_object.id
-        has_grant_for_previous_object = Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object_id)
-    else:
-        action_id = action.id
-        previous_object_id = None
-        has_grant_for_previous_object = False
-    if action_id is None:
-        return flask.abort(403)
-    errors = {}
-    form_data = {}
-    if not previous_data_actions:
-        override_previous_actions = False
-        previous_data_actions = []
-    else:
-        override_previous_actions = True
-    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
+    errors: typing.Dict[str, str] = {}
     form = ObjectForm()
     if flask.request.method != 'GET' and form.validate_on_submit():
         raw_form_data = {key: flask.request.form.getlist(key) for key in flask.request.form}
         form_data = {k: v[0] for k, v in raw_form_data.items()}
-        if 'input_num_batch_objects' in form_data:
-            try:
-                # The form allows notations like '1.2e1' for '12', however
-                # Python can only parse these as floats
-                num_objects_in_batch_float = float(form_data['input_num_batch_objects'])
-                if num_objects_in_batch_float == int(num_objects_in_batch_float):
-                    num_objects_in_batch = int(num_objects_in_batch_float)
-                else:
-                    raise ValueError()
-                if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE'] or num_objects_in_batch <= 0:
-                    if num_objects_in_batch <= 0:
-                        raise ValueError()
-                    form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-                    errors['input_num_batch_objects'] = _('The maximum number of objects in one batch is %(max_batch_size)s.', max_batch_size=flask.current_app.config['MAX_BATCH_SIZE'])
-            except ValueError:
-                errors['input_num_batch_objects'] = _('The number of objects in batch must be an positive integer.')
-                num_objects_in_batch = None
-            else:
-                form_data['input_num_batch_objects'] = str(num_objects_in_batch)
-        else:
-            num_objects_in_batch = None
-
-        if 'previous_actions' in flask.request.form:
-            try:
-                previous_data_actions = serializer.loads(flask.request.form['previous_actions'])
-            except itsdangerous.BadData:
-                return flask.abort(400)
-        if not isinstance(previous_data_actions, list):
-            return flask.abort(400)
-
-        if "action_submit" in form_data:
-            # The object name might need the batch number to match the pattern
-            if schema.get('batch', False) and num_objects_in_batch is not None:
-                name_suffix_format = schema.get('batch_name_format', '{:d}')
-                try:
-                    name_suffix_format.format(1)
-                except (ValueError, KeyError):
-                    name_suffix_format = '{:d}'
-                if name_suffix_format:
-                    example_name_suffix = name_suffix_format.format(1)
-                else:
-                    example_name_suffix = ''
-                if 'object__name__text' in form_data:
-                    batch_base_name = form_data['object__name__text']
-                    raw_form_data['object__name__text'] = [batch_base_name + example_name_suffix]
-                else:
-                    enabled_languages_raw: typing.Union[str, typing.List[str]] = form_data.get('object__name__text_languages', [])
-                    if isinstance(enabled_languages_raw, str):
-                        enabled_languages = [enabled_languages_raw]
-                    else:
-                        enabled_languages = enabled_languages_raw
-                    if 'en' not in enabled_languages:
-                        enabled_languages.append('en')
-                    for language_code in enabled_languages:
-                        batch_base_name = form_data.get('object__name__text_' + language_code, '')
-                        raw_form_data['object__name__text_' + language_code] = [batch_base_name + example_name_suffix]
-            else:
-                batch_base_name = None
-                name_suffix_format = None
-            object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id)
-            errors.update(parsing_errors)
-            if form_data['action_submit'] == 'inline_edit' and errors:
-                return flask.jsonify({
-                    'errors': errors
-                }), 400
-            if object_data is not None and not errors:
-                assert isinstance(object_data, dict)
-                try:
-                    validate(object_data, schema, strict=True, file_names_by_id=actual_file_names_by_id)
-                except ValidationError:
-                    # TODO: proper logging
-                    print('object schema validation failed')
-                    # TODO: handle error
-                    flask.abort(400)
-                for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
-                    markdown_as_html = logic.markdown_to_html.markdown_to_safe_html(markdown)
-                    logic.markdown_images.mark_referenced_markdown_images_as_permanent(markdown_as_html)
-                referenced_temporary_file_ids = sorted(logic.temporary_files.get_referenced_temporary_file_ids(object_data))
-                if object is None:
-                    permanent_file_names_by_id = {}
-                    permanent_file_map = {}
-                    for ind, file_id in enumerate(referenced_temporary_file_ids):
-                        permanent_file_map[file_id] = ind
-                        permanent_file_names_by_id[ind] = actual_file_names_by_id[-file_id]
-                    logic.temporary_files.replace_file_reference_ids(object_data, permanent_file_map)
-                    if schema.get('batch', False) and num_objects_in_batch is not None:
-                        if 'name' in object_data and 'text' in object_data['name'] and name_suffix_format is not None and batch_base_name is not None:
-                            data_sequence = []
-                            for i in range(1, num_objects_in_batch + 1):
-                                if name_suffix_format:
-                                    name_suffix = name_suffix_format.format(i)
-                                else:
-                                    name_suffix = ''
-                                object_data['name']['text'] = batch_base_name + name_suffix
-                                data_sequence.append(deepcopy(object_data))
-                        else:
-                            data_sequence = [object_data] * num_objects_in_batch
-                        objects = create_object_batch(
-                            action_id=action.id,
-                            data_sequence=data_sequence,
-                            user_id=flask_login.current_user.id,
-                            copy_permissions_object_id=copy_permissions_object_id,
-                            permissions_for_group_id=permissions_for_group_id,
-                            permissions_for_project_id=permissions_for_project_id,
-                            data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
-                        )
-                        object_ids = [object.id for object in objects]
-                        if action.instrument_id is not None and category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
-                            log_entry = logic.instrument_log_entries.create_instrument_log_entry(
-                                instrument_id=action.instrument_id,
-                                user_id=flask_login.current_user.id,
-                                content='',
-                                category_ids=category_ids
-                            )
-                            for object_id in object_ids:
-                                logic.instrument_log_entries.create_instrument_log_object_attachment(
-                                    instrument_log_entry_id=log_entry.id,
-                                    object_id=object_id
-                                )
-                        logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=object_ids)
-                        logic.temporary_files.delete_temporary_files(context_id=context_id)
-                        flask.flash(_('The objects were created successfully.'), 'success')
-                        return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
-                    else:
-                        object = create_object(
-                            action_id=action.id,
-                            data=object_data,
-                            user_id=flask_login.current_user.id,
-                            previous_object_id=previous_object_id,
-                            schema=previous_object_schema,
-                            copy_permissions_object_id=copy_permissions_object_id,
-                            permissions_for_group_id=permissions_for_group_id,
-                            permissions_for_project_id=permissions_for_project_id,
-                            data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
-                        )
-                        if action.instrument_id is not None and category_ids is not None and not flask.current_app.config['DISABLE_INSTRUMENTS']:
-                            log_entry = logic.instrument_log_entries.create_instrument_log_entry(
-                                instrument_id=action.instrument_id,
-                                user_id=flask_login.current_user.id,
-                                content='',
-                                category_ids=category_ids
-                            )
-                            logic.instrument_log_entries.create_instrument_log_object_attachment(
-                                instrument_log_entry_id=log_entry.id,
-                                object_id=object.id
-                            )
-                        logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
-                        logic.temporary_files.delete_temporary_files(context_id=context_id)
-                        flask.flash(_('The object was created successfully.'), 'success')
-                else:
-                    if object_data != object.data or schema != object.schema:
-                        actual_temporary_file_id_map = logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
-                        logic.temporary_files.delete_temporary_files(context_id=context_id)
-                        logic.temporary_files.replace_file_reference_ids(object_data, actual_temporary_file_id_map)
-                        update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
-                    flask.flash(_('The object was updated successfully.'), 'success')
-                return flask.redirect(flask.url_for('.object', object_id=object.id))
-        elif any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
-            data_action = [name for name in form_data if name.startswith('action_')][0]
-            previous_data_actions.append(data_action)
-
-    if previous_data_actions and not override_previous_actions and isinstance(data, dict):
-        try:
-            for data_action in previous_data_actions:
-                _apply_action_to_data(data_action, data, schema)
-            form_data = _apply_action_to_form_data(previous_data_actions[-1], form_data)
-        except ValueError:
-            flask.abort(400)
-
-    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-        referencable_objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ
-        )
-        if object is not None:
-            referencable_objects = [
-                referencable_object
-                for referencable_object in referencable_objects
-                if referencable_object.object_id != object.object_id
-            ]
-
     else:
-        referencable_objects = []
-        existing_objects = []
-    sorted_actions = get_sorted_actions_for_user(
-        user_id=flask_login.current_user.id
-    )
+        raw_form_data = {}
+        form_data = {}
+    template_arguments.update({
+        'errors': errors,
+        'form': form,
+    })
 
-    action_type_id_by_action_id = {}
-    for action_type in get_action_types():
-        for action in get_actions(action_type_id=action_type.id):
-            if action_type.fed_id is not None and action_type.fed_id < 0:
-                action_type_id_by_action_id[action.id] = action_type.fed_id
-            else:
-                action_type_id_by_action_id[action.id] = action_type.id
+    if should_upgrade_schema:
+        # edit object with schema upgrade
+        mode = 'upgrade'
+        if action.schema is None or object is None or object.schema is None or object.data is None:
+            return flask.abort(400)
+        schema = action.schema
+        data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, object.schema, action.schema)
+        for upgrade_warning in upgrade_warnings:
+            flask.flash(upgrade_warning, 'warning')
+    elif object is not None:
+        # edit object
+        mode = 'edit'
+        if object.data is None or object.schema is None:
+            return flask.abort(400)
+        schema = object.schema
+        data = object.data
+    elif previous_object is not None:
+        # create object via 'Use as Template'
+        mode = 'create'
+        if previous_object.data is None or previous_object.schema is None:
+            return flask.abort(400)
+        schema = previous_object.schema
+        data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
+        template_arguments.update({
+            'previous_object_id': previous_object.id,
+            'has_grant_for_previous_object': Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object.id),
+        })
+    else:
+        # create object from scatch
+        mode = 'create'
+        if action.schema is None:
+            return flask.abort(400)
+        schema = action.schema
+        data = generate_placeholder(action.schema)
+        if not isinstance(data, dict):
+            return flask.abort(400)
+        if placeholder_data:
+            _apply_placeholder_data(placeholder_data, data)
+        template_arguments.update({
+            'previous_object_id': None,
+            'has_grant_for_previous_object': False,
+        })
 
-    tags = [{'name': tag.name, 'uses': tag.uses} for tag in logic.tags.get_tags()]
-    users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
+    if not isinstance(data, dict):
+        return flask.abort(400)
+    if not isinstance(schema, dict):
+        return flask.abort(400)
 
-    english = get_language(Language.ENGLISH)
-
-    if not schema:
-        flask.flash(_('Creating objects with this action has been disabled.'), 'error')
-        return flask.redirect(flask.url_for('.action', action_id=action_id))
-
-    update_recipes_for_input(schema)
+    template_arguments.update({
+        'data': data,
+        'schema': schema,
+    })
 
     if object is None:
-        action_type_id = action_type_id_by_action_id.get(action_id)
-        action = get_action(action_id)
-        if action_type_id is None or get_action_type(action_type_id).disable_create_objects or action.disable_create_objects or (action.admin_only and not flask_login.current_user.is_admin):
-            flask.flash(_('Creating objects with this action has been disabled.'), 'error')
-            return flask.redirect(flask.url_for('.action', action_id=action_id))
+        # allow creating an instrument log entry for a newly created object
+        if not flask.current_app.config['DISABLE_INSTRUMENTS'] and action is not None and action.instrument is not None and flask_login.current_user in action.instrument.responsible_users:
+            may_create_log_entry = True
+            create_log_entry_default = action.instrument.create_log_entry_default
+            instrument_log_categories = logic.instrument_log_entries.get_instrument_log_categories(action.instrument.id)
+        else:
+            may_create_log_entry = False
+            create_log_entry_default = False
+            instrument_log_categories = []
+        template_arguments.update({
+            'may_create_log_entry': may_create_log_entry,
+            'create_log_entry_default': create_log_entry_default,
+            'instrument_log_categories': instrument_log_categories,
+        })
+
+    # handle previous actions, e.g. adding or deleting table rows
+    updated_form_data, serialized_previous_actions = _apply_previous_data_actions(previous_data_actions, data, schema, form_data)
+    if updated_form_data is None:
+        return flask.abort(400)
+    form_data = updated_form_data
+    template_arguments.update({
+        'form_data': form_data,
+        'previous_actions': serialized_previous_actions,
+    })
+
+    template_arguments.update(get_object_form_template_kwargs(object.id if object is not None else None))
+
+    actual_file_names_by_id = {
+        file_id: file_names[0]
+        for file_id, file_names in template_arguments['file_names_by_id'].items()
+    }
+    context_id = template_arguments['context_id']
+
+    if "action_submit" in form_data:
+        batch_names = _handle_batch_names(schema, form_data, raw_form_data, errors)
+        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id)
+        errors.update(parsing_errors)
+        if form_data['action_submit'] == 'inline_edit' and errors:
+            return flask.jsonify({
+                'errors': errors
+            }), 400
+        if object_data is not None and not errors:
+            object_data = typing.cast(typing.Dict[str, typing.Any], object_data)
+            for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
+                markdown_as_html = logic.markdown_to_html.markdown_to_safe_html(markdown)
+                logic.markdown_images.mark_referenced_markdown_images_as_permanent(markdown_as_html)
+            referenced_temporary_file_ids = sorted(logic.temporary_files.get_referenced_temporary_file_ids(object_data))
+            if object is None:
+                copy_permissions_object_id, permissions_for_group_id, permissions_for_project_id = _parse_permissions_ids(form_data)
+                permanent_file_names_by_id = {}
+                permanent_file_map = {}
+                for ind, file_id in enumerate(referenced_temporary_file_ids):
+                    permanent_file_map[file_id] = ind
+                    permanent_file_names_by_id[ind] = actual_file_names_by_id[-file_id]
+                logic.temporary_files.replace_file_reference_ids(object_data, permanent_file_map)
+                if batch_names is not None:
+                    data_sequence = []
+                    for name in batch_names:
+                        object_data['name']['text'] = name
+                        data_sequence.append(deepcopy(object_data))
+                    objects = create_object_batch(
+                        action_id=action.id,
+                        data_sequence=data_sequence,
+                        user_id=flask_login.current_user.id,
+                        copy_permissions_object_id=copy_permissions_object_id,
+                        permissions_for_group_id=permissions_for_group_id,
+                        permissions_for_project_id=permissions_for_project_id,
+                        data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
+                    )
+                else:
+                    objects = [create_object(
+                        action_id=action.id,
+                        data=object_data,
+                        user_id=flask_login.current_user.id,
+                        previous_object_id=previous_object.id if previous_object is not None else None,
+                        schema=previous_object.schema if previous_object is not None else None,
+                        copy_permissions_object_id=copy_permissions_object_id,
+                        permissions_for_group_id=permissions_for_group_id,
+                        permissions_for_project_id=permissions_for_project_id,
+                        data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
+                    )]
+                object_ids = [object.id for object in objects]
+                if action.instrument_id and not flask.current_app.config['DISABLE_INSTRUMENTS'] and may_create_log_entry:
+                    if 'create_instrument_log_entry' in form_data:
+                        category_ids = []
+                        for category_id in raw_form_data.get('instrument_log_categories', []):
+                            try:
+                                if int(category_id) in [category.id for category in instrument_log_categories]:
+                                    category_ids.append(int(category_id))
+                            except Exception:
+                                pass
+                        log_entry = logic.instrument_log_entries.create_instrument_log_entry(
+                            instrument_id=action.instrument_id,
+                            user_id=flask_login.current_user.id,
+                            content='',
+                            category_ids=category_ids
+                        )
+                        for object_id in object_ids:
+                            logic.instrument_log_entries.create_instrument_log_object_attachment(
+                                instrument_log_entry_id=log_entry.id,
+                                object_id=object_id
+                            )
+                logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=object_ids)
+                logic.temporary_files.delete_temporary_files(context_id=context_id)
+                if len(object_ids) == 1:
+                    flask.flash(_('The object was created successfully.'), 'success')
+                    return flask.redirect(flask.url_for('.object', object_id=object_ids[0]))
+                else:
+                    flask.flash(_('The objects were created successfully.'), 'success')
+                    return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
+            else:
+                if object_data != object.data or schema != object.schema:
+                    actual_temporary_file_id_map = logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
+                    logic.temporary_files.delete_temporary_files(context_id=context_id)
+                    logic.temporary_files.replace_file_reference_ids(object_data, actual_temporary_file_id_map)
+                    update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
+                    flask.flash(_('The object was updated successfully.'), 'success')
+                return flask.redirect(flask.url_for('.object', object_id=object.id))
+
+    _update_recipes_for_input(schema)
+
+    if object is None:
+        # alternatives to default permissions
         if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
             existing_objects = get_objects_with_permissions(
                 user_id=flask_login.current_user.id,
                 permissions=Permissions.GRANT
             )
-
+        else:
+            existing_objects = []
         user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
         user_projects = logic.projects.get_user_projects(flask_login.current_user.id, include_groups=True)
+        template_arguments.update({
+            'can_copy_permissions': True,
+            'existing_objects': existing_objects,
+            'user_groups': user_groups,
+            'user_projects': user_projects
+        })
 
         return flask.render_template(
             'objects/forms/form_create.html',
-            action_id=action_id,
-            schema=schema,
-            data=data,
-            errors=errors,
-            form_data=form_data,
-            previous_actions=serializer.dumps(previous_data_actions),
-            form=form,
-            can_copy_permissions=True,
-            existing_objects=existing_objects,
-            user_groups=user_groups,
-            user_projects=user_projects,
-            referencable_objects=referencable_objects,
-            sorted_actions=sorted_actions,
-            action_type_id_by_action_id=action_type_id_by_action_id,
-            get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-            ActionType=models.ActionType,
-            datetime=datetime,
-            tags=tags,
-            users=users,
-            may_create_log_entry=may_create_log_entry,
-            instrument_log_categories=instrument_log_categories,
-            create_log_entry_default=create_log_entry_default,
-            previous_object_id=previous_object_id,
-            has_grant_for_previous_object=has_grant_for_previous_object,
-            languages=get_languages(only_enabled_for_input=True),
-            get_component=get_component,
-            ENGLISH=english,
+            action_id=action.id,
             possible_properties=possible_object_id_properties,
             passed_object_ids=passed_object_ids,
             show_selecting_modal=show_selecting_modal,
-            context_id_token=context_id_token,
-            file_names_by_id=file_names_by_id,
+            **template_arguments
         )
     else:
         return flask.render_template(
             'objects/forms/form_edit.html',
-            schema=schema,
-            data=data,
             object_id=object.object_id,
-            errors=errors,
-            form_data=form_data,
-            previous_actions=serializer.dumps(previous_data_actions),
-            form=form,
-            referencable_objects=referencable_objects,
-            sorted_actions=sorted_actions,
-            get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
-            action_type_id_by_action_id=action_type_id_by_action_id,
-            ActionType=models.ActionType,
-            datetime=datetime,
-            tags=tags,
-            users=users,
             mode=mode,
-            languages=get_languages(),
-            get_component=get_component,
-            ENGLISH=english,
-            possible_properties=None,
-            context_id_token=context_id_token,
-            file_names_by_id=file_names_by_id,
+            **template_arguments
         )
 
 
-def update_recipes_for_input(schema: typing.Dict[str, typing.Any]) -> None:
+def _apply_previous_data_actions(
+        previous_data_actions: typing.Optional[typing.List[typing.Any]],
+        data: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        form_data: typing.Dict[str, typing.Any]
+) -> typing.Union[typing.Tuple[typing.Dict[str, typing.Any], str], typing.Tuple[None, None]]:
+    if not previous_data_actions:
+        apply_previous_actions = True
+        previous_data_actions = []
+    else:
+        apply_previous_actions = False
+    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
+
+    if 'previous_actions' in form_data:
+        try:
+            previous_data_actions = serializer.loads(form_data['previous_actions'])
+        except itsdangerous.BadData:
+            return None, None
+    if not isinstance(previous_data_actions, list):
+        return None, None
+
+    if any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
+        data_action = [name for name in form_data if name.startswith('action_')][0]
+        previous_data_actions.append(data_action)
+
+    if previous_data_actions and apply_previous_actions and isinstance(data, dict):
+        try:
+            for data_action in previous_data_actions:
+                _apply_action_to_data(data_action, data, schema)
+            form_data = _apply_action_to_form_data(previous_data_actions[-1], form_data)
+        except ValueError:
+            return None, None
+    serialized_previous_actions = typing.cast(str, serializer.dumps(previous_data_actions))
+    return form_data, serialized_previous_actions
+
+
+def _apply_placeholder_data(
+        placeholder_data: typing.Dict[typing.Sequence[typing.Union[str, int]], typing.Any],
+        data: typing.Dict[str, typing.Any]
+) -> None:
+    for path, value in placeholder_data.items():
+        try:
+            sub_data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]] = data
+            for step in path[:-1]:
+                if isinstance(sub_data, list) and isinstance(step, int):
+                    sub_data = sub_data[step]
+                elif isinstance(sub_data, dict) and isinstance(step, str):
+                    sub_data = sub_data[step]
+                else:
+                    sub_data = None
+                    break
+            step = path[-1]
+            if isinstance(sub_data, list) and isinstance(step, int):
+                sub_data[step] = value
+            elif isinstance(sub_data, dict) and isinstance(step, str):
+                sub_data[step] = value
+        except Exception:
+            # Ignore invalid placeholder data
+            pass
+
+
+def _parse_permissions_ids(
+        form_data: typing.Dict[str, typing.Any]
+) -> typing.Tuple[typing.Optional[int], typing.Optional[int], typing.Optional[int]]:
+    """
+    Parse and return the IDs for assigning permissions.
+
+    :param form_data: the filtered form data
+    :return: the object, basic group and project group IDs as a tuple
+    """
+    if form_data.get('permissions_method') == 'copy_permissions':
+        copy_permissions_object_id_str = form_data.get('copy_permissions_object_id')
+        if copy_permissions_object_id_str:
+            try:
+                copy_permissions_object_id = int(copy_permissions_object_id_str)
+                if Permissions.READ in get_user_object_permissions(copy_permissions_object_id, flask_login.current_user.id):
+                    return copy_permissions_object_id, None, None
+            except Exception:
+                pass
+            flask.flash(_("Unable to copy permissions. Default permissions will be applied."), 'error')
+        else:
+            flask.flash(_("No object selected. Default permissions will be applied."), 'error')
+        return None, None, None
+    if form_data.get('permissions_method') == 'permissions_for_group':
+        permissions_for_group_id_str = form_data.get('permissions_for_group_group_id')
+        if permissions_for_group_id_str:
+            try:
+                permissions_for_group_id = int(permissions_for_group_id_str)
+                if flask_login.current_user.id in logic.groups.get_group_member_ids(permissions_for_group_id):
+                    return None, permissions_for_group_id, None
+            except Exception:
+                pass
+            flask.flash(_("Unable to grant permissions to basic group. Default permissions will be applied."), 'error')
+        else:
+            flask.flash(_("No basic group selected. Default permissions will be applied."), 'error')
+        return None, None, None
+    if form_data.get('permissions_method') == 'permissions_for_project':
+        permissions_for_project_id_str = form_data.get('permissions_for_project_project_id')
+        if permissions_for_project_id_str:
+            try:
+                permissions_for_project_id = int(permissions_for_project_id_str)
+                if flask_login.current_user.id in logic.projects.get_project_member_user_ids_and_permissions(permissions_for_project_id, include_groups=True):
+                    return None, None, permissions_for_project_id
+            except Exception:
+                pass
+            flask.flash(_("Unable to grant permissions to project group. Default permissions will be applied."), 'error')
+        else:
+            flask.flash(_("No project group selected. Default permissions will be applied."), 'error')
+        return None, None, None
+    return None, None, None
+
+
+def _handle_batch_names(
+        schema: typing.Dict[str, typing.Any],
+        form_data: typing.Dict[str, typing.Any],
+        raw_form_data: typing.Dict[str, typing.List[typing.Any]],
+        errors: typing.Dict[str, str]
+) -> typing.Optional[typing.List[typing.Dict[str, str]]]:
+    """
+    Generate object names for a batch.
+
+    :param schema: the object schema
+    :param form_data: the filtered form data, to read values from
+    :param raw_form_data: the raw form data, to write the example name into
+    :param errors: an error dict, to write errors to
+    :return: the batch names as a list of multi-language dicts, or None
+    """
+    if not schema.get('batch', False) or 'input_num_batch_objects' not in form_data:
+        return None
+
+    # The object name might need the batch number to match the pattern
+    name_suffix_format = schema.get('batch_name_format', '{:d}')
+    try:
+        example_name_suffix = name_suffix_format.format(1)
+    except (ValueError, KeyError):
+        name_suffix_format = '{:d}'
+        example_name_suffix = ''
+    if 'object__name__text' in form_data:
+        batch_base_name = {'en': form_data['object__name__text']}
+        raw_form_data['object__name__text'] = [batch_base_name['en'] + example_name_suffix]
+    else:
+        enabled_languages_raw: typing.Union[str, typing.List[str]] = form_data.get('object__name__text_languages', [])
+        if isinstance(enabled_languages_raw, str):
+            enabled_languages = [enabled_languages_raw]
+        else:
+            enabled_languages = enabled_languages_raw
+        if 'en' not in enabled_languages:
+            enabled_languages.append('en')
+        batch_base_name = {}
+        for language_code in enabled_languages:
+            batch_base_name[language_code] = form_data.get('object__name__text_' + language_code, '')
+            raw_form_data['object__name__text_' + language_code] = [batch_base_name[language_code] + example_name_suffix]
+
+    # parse the number of objects in the batch
+    try:
+        # the form allows notations like '1.2e1' for '12', however Python can only parse these as floats
+        num_objects_in_batch_float = float(form_data['input_num_batch_objects'])
+        if num_objects_in_batch_float == int(num_objects_in_batch_float):
+            num_objects_in_batch = int(num_objects_in_batch_float)
+        else:
+            num_objects_in_batch = None
+    except ValueError:
+        num_objects_in_batch = None
+    if num_objects_in_batch is not None:
+        form_data['input_num_batch_objects'] = str(num_objects_in_batch)
+    if num_objects_in_batch is None or num_objects_in_batch <= 0:
+        errors['input_num_batch_objects'] = _('The number of objects in batch must be an positive integer.')
+        return None
+    if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE']:
+        errors['input_num_batch_objects'] = _('The maximum number of objects in one batch is %(max_batch_size)s.', max_batch_size=flask.current_app.config['MAX_BATCH_SIZE'])
+        return None
+    return [
+        {
+            language_code: batch_base_name_str + (name_suffix_format.format(i) if name_suffix_format else '')
+            for language_code, batch_base_name_str in batch_base_name.items()
+        }
+        for i in range(1, num_objects_in_batch + 1)
+    ]
+
+
+def _update_recipes_for_input(schema: typing.Dict[str, typing.Any]) -> None:
     """
     Update a schema so that recipes contain the values and types used for input instead of the internal representation.
 
@@ -565,9 +527,9 @@ def update_recipes_for_input(schema: typing.Dict[str, typing.Any]) -> None:
                     property_value['title'] = get_translated_text(property_schema['title'])
                     recipe['property_values'][property_name] = property_value
         for property_schema in schema['properties'].values():
-            update_recipes_for_input(property_schema)
+            _update_recipes_for_input(property_schema)
     elif schema['type'] == 'array':
-        update_recipes_for_input(schema['items'])
+        _update_recipes_for_input(schema['items'])
 
 
 def _get_sub_data_and_schema(data: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], id_prefix: str) -> typing.Tuple[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]], typing.Dict[str, typing.Any]]:
@@ -657,3 +619,96 @@ def _apply_action_to_data(action: str, data: typing.Dict[str, typing.Any], schem
                 for row in sub_data:
                     while len(row) > num_existing_columns:
                         del row[-1]
+
+
+def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.Dict[str, typing.Any]:
+    template_kwargs = {
+        'datetime': datetime,
+        'languages': get_languages(),
+    }
+
+    # referencable objects
+    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
+        referencable_objects = get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ
+        )
+        if object_id is not None:
+            referencable_objects = [
+                referencable_object
+                for referencable_object in referencable_objects
+                if referencable_object.object_id != object_id
+            ]
+    else:
+        referencable_objects = []
+    template_kwargs.update({
+        'referencable_objects': referencable_objects,
+    })
+
+    # actions and action types
+    sorted_actions = get_sorted_actions_for_user(
+        user_id=flask_login.current_user.id
+    )
+    fed_action_type_id_map = {
+        action_type.id: action_type.fed_id
+        for action_type in logic.action_types.get_action_types()
+        if action_type.fed_id is not None and action_type.fed_id < 0
+    }
+    action_type_id_by_action_id = {
+        action_id: fed_action_type_id_map.get(action_type_id, action_type_id) if action_type_id is not None else None
+        for action_id, action_type_id in logic.actions.get_action_type_ids_for_action_ids(None).items()
+    }
+    template_kwargs.update({
+        'sorted_actions': sorted_actions,
+        'action_type_id_by_action_id': action_type_id_by_action_id,
+        'ActionType': models.ActionType,
+    })
+
+    # temporary file upload for file fields
+    context_id_serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
+    if 'context_id_token' in flask.request.form:
+        context_id_token = flask.request.form.get('context_id_token', '')
+        try:
+            user_id, context_id = context_id_serializer.loads(context_id_token, max_age=15 * 60)
+        except itsdangerous.BadSignature:
+            return flask.abort(400)
+        if user_id != flask_login.current_user.id:
+            return flask.abort(400)
+    else:
+        context_id = secrets.token_hex(32)
+        context_id_token = typing.cast(str, context_id_serializer.dumps((flask_login.current_user.id, context_id)))
+
+    if object_id is not None:
+        file_names_by_id = logic.files.get_file_names_by_id_for_object(object_id)
+    else:
+        file_names_by_id = {}
+    temporary_files = logic.temporary_files.get_files_for_context_id(context_id=context_id)
+    for temporary_file in temporary_files:
+        file_names_by_id[-temporary_file.id] = temporary_file.file_name, temporary_file.file_name
+
+    template_kwargs.update({
+        'context_id': context_id,
+        'context_id_token': context_id_token,
+        'file_names_by_id': file_names_by_id,
+    })
+
+    # previously used tags
+    tags = [
+        {
+            'name': tag.name,
+            'uses': tag.uses
+        }
+        for tag in logic.tags.get_tags()
+    ]
+    template_kwargs.update({
+        'tags': tags,
+    })
+
+    # users
+    users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
+    users.sort(key=lambda user: user.id)
+    template_kwargs.update({
+        'users': users,
+    })
+
+    return template_kwargs

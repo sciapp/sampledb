@@ -3,10 +3,8 @@
 
 """
 import csv
-import datetime
 import io
 import json
-import secrets
 import typing
 
 import math
@@ -23,8 +21,8 @@ from ... import models
 from ...logic import object_log, comments, errors
 from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
-from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
-from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
+from ...logic.action_permissions import get_user_action_permissions
+from ...logic.object_permissions import get_user_object_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
 from ...logic.users import get_user, get_users, User
 from ...logic.settings import get_user_settings
@@ -45,7 +43,7 @@ from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, DEFAULT_
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
-from .object_form import show_object_form
+from .object_form import show_object_form, get_object_form_template_kwargs
 from ...utils import FlaskResponseT
 from ...models import Permissions, ObjectLogEntryType
 from ...models.file_log import FileLogEntryType
@@ -450,91 +448,9 @@ def object(object_id: int) -> FlaskResponseT:
             "form_data": {},
             "form": ObjectForm(),
             "mode": 'edit',
-            "datetime": datetime,
-            "languages": all_languages,
         })
 
-        # referencable objects
-        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-            referencable_objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.READ
-            )
-            referencable_objects = [
-                referencable_object
-                for referencable_object in referencable_objects
-                if referencable_object.object_id != object_id
-            ]
-        else:
-            referencable_objects = []
-        template_kwargs.update({
-            "referencable_objects": referencable_objects,
-        })
-
-        # actions and action types
-        sorted_actions = get_sorted_actions_for_user(
-            user_id=flask_login.current_user.id
-        )
-        fed_action_type_id_map = {
-            action_type.id: action_type.fed_id
-            for action_type in logic.action_types.get_action_types()
-            if action_type.fed_id is not None and action_type.fed_id < 0
-        }
-        action_type_id_by_action_id = {
-            action_id: fed_action_type_id_map.get(action_type_id, action_type_id) if action_type_id is not None else None
-            for action_id, action_type_id in logic.actions.get_action_type_ids_for_action_ids(None).items()
-        }
-        template_kwargs.update({
-            "sorted_actions": sorted_actions,
-            "action_type_id_by_action_id": action_type_id_by_action_id,
-            "ActionType": models.ActionType,
-        })
-
-        # previously used tags
-        tags = [
-            {
-                'name': tag.name,
-                'uses': tag.uses
-            }
-            for tag in logic.tags.get_tags()
-        ]
-        template_kwargs.update({
-            "tags": tags,
-        })
-
-        # users
-        users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
-        users.sort(key=lambda user: user.id)
-        template_kwargs.update({
-            "users": users,
-        })
-
-        # temporary file upload for file fields
-        context_id_serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
-        if 'context_id_token' in flask.request.form:
-            context_id_token = flask.request.form.get('context_id_token', '')
-            try:
-                user_id, context_id = context_id_serializer.loads(context_id_token, max_age=15 * 60)
-            except itsdangerous.BadSignature:
-                return flask.abort(400)
-            if user_id != flask_login.current_user.id:
-                return flask.abort(400)
-        else:
-            context_id = secrets.token_hex(32)
-            context_id_token = typing.cast(str, context_id_serializer.dumps((flask_login.current_user.id, context_id)))
-
-        if object is not None:
-            file_names_by_id = logic.files.get_file_names_by_id_for_object(object.object_id)
-        else:
-            file_names_by_id = {}
-        temporary_files = logic.temporary_files.get_files_for_context_id(context_id=context_id)
-        for temporary_file in temporary_files:
-            file_names_by_id[-temporary_file.id] = temporary_file.file_name, temporary_file.file_name
-
-        template_kwargs.update({
-            "context_id_token": context_id_token,
-            "file_names_by_id": file_names_by_id,
-        })
+        template_kwargs.update(get_object_form_template_kwargs(object_id))
 
         return flask.render_template(
             'objects/inline_edit/inline_edit_base.html',

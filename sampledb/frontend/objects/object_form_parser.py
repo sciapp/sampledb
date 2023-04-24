@@ -546,7 +546,7 @@ def parse_array_form_data(
                     placeholder if item is None else item
                     for item in items
                 ]
-    schemas.validate(items, schema, strict=True)
+    schemas.validate(items, schema, strict=True, file_names_by_id=file_names_by_id)
     return items
 
 
@@ -571,7 +571,7 @@ def parse_object_form_data(
         property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required, file_names_by_id=file_names_by_id)
         if property is not None:
             data[property_name] = property
-    schemas.validate(data, schema, strict=True)
+    schemas.validate(data, schema, strict=True, file_names_by_id=file_names_by_id)
     return data
 
 

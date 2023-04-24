@@ -939,8 +939,8 @@ def test_new_object_batch(flask_server, user):
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 2
     objects = sampledb.logic.objects.get_objects()
-    assert objects[1].data['name']['text'] == "OMBE-100-001"
-    assert objects[0].data['name']['text'] == "OMBE-100-002"
+    assert objects[1].data['name']['text']['en'] == "OMBE-100-001"
+    assert objects[0].data['name']['text']['en'] == "OMBE-100-002"
 
 
 def test_new_object_batch_invalid_number(flask_server, user):
@@ -2185,7 +2185,7 @@ def test_update_recipes_for_input(mock_current_user):
     }
     sampledb.logic.schemas.validate_schema(schema)
     original_schema = deepcopy(schema)
-    sampledb.frontend.objects.object_form.update_recipes_for_input(schema)
+    sampledb.frontend.objects.object_form._update_recipes_for_input(schema)
     assert schema == original_schema
     schema = {
         'type': 'object',
@@ -2314,7 +2314,7 @@ def test_update_recipes_for_input(mock_current_user):
     }
     sampledb.logic.schemas.validate_schema(schema)
     original_schema = deepcopy(schema)
-    sampledb.frontend.objects.object_form.update_recipes_for_input(schema)
+    sampledb.frontend.objects.object_form._update_recipes_for_input(schema)
     original_schema['recipes'][0]['name'] = 'Recipe 1'
     original_schema['recipes'][0]['property_values']['simple_text'] = {
         'title': 'Simple Text',

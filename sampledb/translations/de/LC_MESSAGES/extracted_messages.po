@@ -970,6 +970,18 @@ msgstr "Nutzer"
 msgid "Anonymous Users"
 msgstr "Anonyme Nutzer"
 
+msgid "Creating objects with this action has been disabled."
+msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
+
+msgid "The object was created successfully."
+msgstr "Das Objekt wurde erfolgreich erstellt."
+
+msgid "The objects were created successfully."
+msgstr "Die Objekte wurden erfolgreich erstellt."
+
+msgid "The object was updated successfully."
+msgstr "Das Objekt wurde erfolgreich aktualisiert."
+
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
@@ -998,26 +1010,14 @@ msgstr ""
 msgid "No project group selected. Default permissions will be applied."
 msgstr "Keine Projektgruppe asugewählt. Standardberechtigungen werden angewandt."
 
-#, python-format
-msgid "The maximum number of objects in one batch is %(max_batch_size)s."
-msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
-
 msgid "The number of objects in batch must be an positive integer."
 msgstr ""
 "Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl "
 "sein."
 
-msgid "The objects were created successfully."
-msgstr "Die Objekte wurden erfolgreich erstellt."
-
-msgid "The object was created successfully."
-msgstr "Das Objekt wurde erfolgreich erstellt."
-
-msgid "The object was updated successfully."
-msgstr "Das Objekt wurde erfolgreich aktualisiert."
-
-msgid "Creating objects with this action has been disabled."
-msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
+#, python-format
+msgid "The maximum number of objects in one batch is %(max_batch_size)s."
+msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
 
 msgid ""
 "Please select at least one hazard or confirm that the object poses no "
