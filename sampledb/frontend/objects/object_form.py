@@ -415,67 +415,7 @@ def show_object_form(
         flask.flash(_('Creating objects with this action has been disabled.'), 'error')
         return flask.redirect(flask.url_for('.action', action_id=action_id))
 
-    def insert_recipe_types(subschema: typing.Dict[str, typing.Any]) -> None:
-        if subschema['type'] == 'object':
-            if 'recipes' in subschema:
-                for i, recipe in enumerate(subschema['recipes']):
-                    for property in recipe['property_values']:
-                        if subschema['properties'][property]['type'] == 'datetime':
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': default_format_datetime(recipe['property_values'][property]['utc_datetime']) if
-                                recipe['property_values'][property] is not None else None,
-                                'type': subschema['properties'][property]['type']
-                            }
-                        elif subschema['properties'][property]['type'] == 'quantity':
-                            units = recipe['property_values'][property]['units'] if recipe['property_values'][property] is not None else None
-                            if units in ['min', 'h']:
-                                value = format_time(recipe['property_values'][property]['magnitude_in_base_units'], units)
-                            elif recipe['property_values'][property] is not None:
-                                value = custom_format_number(recipe['property_values'][property]['magnitude'])
-                            else:
-                                value = None
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': value,
-                                'units': units,
-                                'type': subschema['properties'][property]['type']
-                            }
-                        elif subschema['properties'][property]['type'] == 'text' and 'choices' in \
-                                subschema['properties'][property]:
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
-                                'type': 'choice'
-                            }
-                        elif subschema['properties'][property]['type'] == 'text' and 'markdown' in \
-                                subschema['properties'][property] and subschema['properties'][property]['markdown']:
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
-                                'type': 'markdown'
-                            }
-                        elif subschema['properties'][property]['type'] == 'text' and 'multiline' in \
-                                subschema['properties'][property] and subschema['properties'][property]['multiline']:
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
-                                'type': 'multiline'
-                            }
-                        elif subschema['properties'][property]['type'] == 'text':
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': recipe['property_values'][property]['text'] if recipe['property_values'][property] is not None else None,
-                                'type': 'text'
-                            }
-                        elif subschema['properties'][property]['type'] == 'bool':
-                            subschema['recipes'][i]['property_values'][property] = {
-                                'value': recipe['property_values'][property]['value'],
-                                'type': subschema['properties'][property]['type']
-                            }
-                        subschema['recipes'][i]['property_values'][property]['title'] = get_translated_text(
-                            subschema['properties'][property]['title'])
-                    subschema['recipes'][i]['name'] = get_translated_text(subschema['recipes'][i]['name'])
-            for property in subschema['properties']:
-                insert_recipe_types(subschema['properties'][property])
-        elif subschema['type'] == 'array':
-            insert_recipe_types(subschema['items'])
-
-    insert_recipe_types(schema)
+    update_recipes_for_input(schema)
 
     if object is None:
         action_type_id = action_type_id_by_action_id.get(action_id)
@@ -553,6 +493,81 @@ def show_object_form(
             context_id_token=context_id_token,
             file_names_by_id=file_names_by_id,
         )
+
+
+def update_recipes_for_input(schema: typing.Dict[str, typing.Any]) -> None:
+    """
+    Update a schema so that recipes contain the values and types used for input instead of the internal representation.
+
+    :param schema: the schema to update
+    """
+    if schema['type'] == 'object':
+        if 'recipes' in schema:
+            for recipe in schema['recipes']:
+                recipe['name'] = get_translated_text(recipe['name'])
+                for property_name in recipe['property_values']:
+                    property_schema = schema['properties'][property_name]
+                    property_value = recipe['property_values'][property_name]
+                    if property_schema['type'] == 'datetime':
+                        if property_value:
+                            value = default_format_datetime(property_value['utc_datetime'])
+                        else:
+                            value = None
+                        property_value = {
+                            'value': value,
+                            'type': 'datetime'
+                        }
+                    elif property_schema['type'] == 'quantity':
+                        if property_value:
+                            units = property_value['units']
+                            if units in ['min', 'h']:
+                                value = format_time(property_value['magnitude_in_base_units'], units)
+                            else:
+                                value = custom_format_number(property_value['magnitude'])
+                        else:
+                            units = None
+                            value = None
+                        property_value = {
+                            'value': value,
+                            'units': units,
+                            'type': 'quantity'
+                        }
+                    elif property_schema['type'] == 'text':
+                        if property_value:
+                            value = property_value['text']
+                        else:
+                            value = None
+                        if 'choices' in property_schema:
+                            property_value = {
+                                'value': value,
+                                'type': 'choice'
+                            }
+                        elif 'markdown' in property_schema and property_schema['markdown']:
+                            property_value = {
+                                'value': value,
+                                'type': 'markdown'
+                            }
+                        elif 'multiline' in property_schema and property_schema['multiline']:
+                            property_value = {
+                                'value': value,
+                                'type': 'multiline'
+                            }
+                        else:
+                            property_value = {
+                                'value': value,
+                                'type': 'text'
+                            }
+                    elif property_schema['type'] == 'bool':
+                        property_value = {
+                            'value': property_value['value'],
+                            'type': 'bool'
+                        }
+                    property_value['title'] = get_translated_text(property_schema['title'])
+                    recipe['property_values'][property_name] = property_value
+        for property_schema in schema['properties'].values():
+            update_recipes_for_input(property_schema)
+    elif schema['type'] == 'array':
+        update_recipes_for_input(schema['items'])
 
 
 def _get_sub_data_and_schema(data: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], id_prefix: str) -> typing.Tuple[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]], typing.Dict[str, typing.Any]]:

@@ -2,34 +2,9 @@
 """
 
 """
-import typing
-
 import pytest
 
-import sampledb
 from sampledb.frontend.objects import object_form_parser
-
-
-@pytest.fixture
-def mock_current_user():
-    current_user_backup = sampledb.frontend.objects.object_form_parser.current_user
-
-    class MockUser:
-        def __init__(self):
-            self.language_cache: typing.List[typing.Optional[sampledb.logic.languages.Language]] = [None]
-            self.is_authenticated = True
-            self.timezone = 'UTC'
-
-        def set_language_by_lang_code(self, lang_code):
-            language = sampledb.logic.languages.get_language_by_lang_code(lang_code)
-            self.language_cache[0] = language
-
-    mock_user = MockUser()
-    # use english by default to avoid settings lookups
-    mock_user.set_language_by_lang_code('en')
-    sampledb.frontend.objects.object_form_parser.current_user = mock_user
-    yield mock_user
-    sampledb.frontend.objects.object_form_parser.current_user = current_user_backup
 
 
 def test_parse_time_input(mock_current_user):
