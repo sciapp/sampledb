@@ -434,3 +434,48 @@ def test_create_fed_binary_file(object, user, component):
     assert file.binary_data == binary_data
     assert file.utc_datetime == dt
 
+
+def test_replace_file_reference_ids():
+    data = {
+        'array': [
+            {
+                '_type': 'file',
+                'file_id': -1
+            }
+        ]
+    }
+    sampledb.logic.temporary_files.replace_file_reference_ids(
+        data,
+        temporary_file_id_map={
+            1: 15
+        }
+    )
+    assert data == {
+        'array': [
+            {
+                '_type': 'file',
+                'file_id': 15
+            }
+        ]
+    }
+
+
+def test_get_referenced_temporary_file_ids():
+    assert sampledb.logic.temporary_files.get_referenced_temporary_file_ids(
+        data={
+            'array': [
+                {
+                    '_type': 'file',
+                    'file_id': -1
+                },
+                {
+                    '_type': 'file',
+                    'file_id': -2
+                }
+            ],
+            'file': {
+                '_type': 'file',
+                'file_id': -1
+            }
+        }
+    ) == {1, 2}

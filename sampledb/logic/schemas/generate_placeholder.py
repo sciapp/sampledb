@@ -57,6 +57,8 @@ def generate_placeholder(
         return _generate_plotly_chart_placeholder(schema, path)
     elif schema['type'] == 'timeseries':
         return _generate_timeseries_placeholder(schema, path)
+    elif schema['type'] == 'file':
+        return _generate_file_placeholder(schema, path)
     else:
         raise SchemaError('invalid type', path)
 
@@ -288,5 +290,16 @@ def _generate_timeseries_placeholder(schema: typing.Dict[str, typing.Any], path:
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: None, as there is currently no support for default timeseries
+    """
+    return None
+
+
+def _generate_file_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    """
+    Generates a placeholder file object based on an object schema.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :return: None, as there is currently no support for default files
     """
     return None

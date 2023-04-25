@@ -133,13 +133,13 @@ def has_preview(file: File) -> bool:
         return False
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
-    return file_extension in flask.current_app.config.get('MIME_TYPES', {})
+    return file_extension.lower() in flask.current_app.config.get('MIME_TYPES', {})
 
 
 def file_name_is_image(file_name: str) -> bool:
     file_extension = os.path.splitext(file_name)[1]
     mime_types: typing.Dict[str, str] = flask.current_app.config.get('MIME_TYPES', {})
-    return mime_types.get(file_extension, '').startswith('image/')
+    return mime_types.get(file_extension.lower(), '').startswith('image/')
 
 
 @JinjaFilter()
@@ -1300,3 +1300,11 @@ def to_diff_table(
         label_after: str = ''
 ) -> str:
     return difflib.HtmlDiff(wrapcolumn=55).make_table(fromlines=lines_before.splitlines(), tolines=lines_after.splitlines(), fromdesc=label_before, todesc=label_after)
+
+
+@JinjaFunction('get_component_by_uuid')
+def safe_get_component_by_uuid(component_uuid: str) -> typing.Optional[Component]:
+    try:
+        return get_component_by_uuid(component_uuid=component_uuid)
+    except errors.ComponentDoesNotExistError:
+        return None

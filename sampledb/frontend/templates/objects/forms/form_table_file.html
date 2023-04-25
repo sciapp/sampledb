@@ -1,0 +1,3 @@
+<div class="{% if id_prefix+'_file_id' in errors %} has-error{% elif id_prefix+'_file_id' in form_data %} has-success{% endif %} row" style="padding-right:0.75em; padding-left:1em;">
+  {% include "objects/forms/form_file_field.html" %}
+</div>

@@ -482,9 +482,9 @@ def shared_object_preprocessor(
                         res_file['hidden']['user'] = None
                 else:
                     res_file['data'] = file.data
+                    if file.storage in {'database', 'local'}:
+                        res_file['data']['storage'] = 'federation'
 
-                if file.storage in {'database', 'local'}:
-                    res_file['data']['storage'] = 'federation'
                 result['files'].append(SharedFileData(
                     file_id=res_file['file_id'],
                     component_uuid=res_file['component_uuid'],
@@ -658,6 +658,9 @@ def entry_preprocessor(
                             data['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
                     except errors.UserDoesNotExistError:
                         pass
+            if data['_type'] == 'file':
+                if data.get('component_uuid') is None:
+                    data['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
 
             if data['_type'] == 'text' and data.get('is_markdown'):
                 if isinstance(data.get('text'), str):

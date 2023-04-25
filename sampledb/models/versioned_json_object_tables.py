@@ -228,7 +228,8 @@ class VersionedJSONSerializableObjectTables:
             fed_version_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
             connection: typing.Optional[db.engine.Connection] = None,
-            validate_data: bool = True
+            validate_data: bool = True,
+            data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
     ) -> Object:
         """
         Creates an object in the table for current objects. This object will always have version_id 0.
@@ -243,6 +244,7 @@ class VersionedJSONSerializableObjectTables:
         :param component_id: the ID of the component that created this object
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_data: whether the data must be validated
+        :param data_validator_arguments: additional keyword arguments to the data validator
         :return: the newly created object as object_type
         :raise ValueError: if the schema and action are None for a local object
         """
@@ -269,7 +271,9 @@ class VersionedJSONSerializableObjectTables:
                 self._schema_validator(schema)
             if not (data is None and fed_object_id is not None and fed_version_id is not None):
                 if data is not None and schema is not None and self._data_validator and validate_data:
-                    self._data_validator(data, schema)
+                    if data_validator_arguments is None:
+                        data_validator_arguments = {}
+                    self._data_validator(data, schema, **data_validator_arguments)
         version_id = 0
         object_id = typing.cast(int, connection.execute(
             self._current_table
@@ -315,7 +319,8 @@ class VersionedJSONSerializableObjectTables:
             utc_datetime: typing.Optional[datetime.datetime] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             validate_schema: bool = True,
-            validate_data: bool = True
+            validate_data: bool = True,
+            data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
     ) -> typing.Optional[Object]:
         """
         Updates an existing object using the given data, user id and datetime.
@@ -331,6 +336,7 @@ class VersionedJSONSerializableObjectTables:
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_schema: whether the schema should be validated
         :param validate_data: whether the data should be validated
+        :param data_validator_arguments: additional keyword arguments to the data validator
         :return: the updated object as object_type or None, if the object does not exist
         """
         assert connection is not None  # ensured by decorator
@@ -346,7 +352,9 @@ class VersionedJSONSerializableObjectTables:
         if validate_schema and self._schema_validator and schema is not None:
             self._schema_validator(schema)
         if validate_data and self._data_validator and schema is not None and data is not None:
-            self._data_validator(data, schema)
+            if data_validator_arguments is None:
+                data_validator_arguments = {}
+            self._data_validator(data, schema, **data_validator_arguments)
 
         # Copy current version to previous versions
         if connection.execute(

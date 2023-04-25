@@ -25,15 +25,32 @@ from ...logic.schemas.generate_placeholder import generate_placeholder
 
 
 class FormParserT(typing.Protocol):
-    def __call__(self, form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
+    def __call__(
+            self,
+            form_data: typing.Dict[str, typing.List[str]],
+            schema: typing.Dict[str, typing.Any],
+            id_prefix: str,
+            errors: typing.Dict[str, str],
+            *,
+            file_names_by_id: typing.Dict[int, str],
+            required: bool = False
+    ) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
         ...
 
 
 def form_data_parser(func: FormParserT) -> FormParserT:
     @functools.wraps(func)
-    def wrapper(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
+    def wrapper(
+            form_data: typing.Dict[str, typing.List[str]],
+            schema: typing.Dict[str, typing.Any],
+            id_prefix: str,
+            errors: typing.Dict[str, str],
+            *,
+            file_names_by_id: typing.Dict[int, str],
+            required: bool = False
+    ) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
         try:
-            return func(form_data, schema, id_prefix, errors, required=required)
+            return func(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
         except ValueError as e:
             for name in form_data:
                 if name.startswith(id_prefix) and '__' not in name[len(id_prefix) + 1:]:
@@ -48,40 +65,58 @@ def form_data_parser(func: FormParserT) -> FormParserT:
 
 
 @form_data_parser
-def parse_any_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
+def parse_any_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     if schema.get('type') == 'object':
-        return parse_object_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_object_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'array':
-        return parse_array_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_array_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'text':
-        return parse_text_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_text_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'sample':
-        return parse_sample_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_sample_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'measurement':
-        return parse_measurement_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_measurement_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'object_reference':
-        return parse_object_reference_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_object_reference_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'datetime':
-        return parse_datetime_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_datetime_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'bool':
-        return parse_boolean_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_boolean_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'quantity':
-        return parse_quantity_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_quantity_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'tags':
-        return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_tags_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'hazards':
-        return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_hazards_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'user':
-        return parse_user_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_user_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'plotly_chart':
-        return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_plotly_chart_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     elif schema.get('type') == 'timeseries':
-        return parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=required)
+        return parse_timeseries_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
+    elif schema.get('type') == 'file':
+        return parse_file_form_data(form_data, schema, id_prefix, errors, required=required, file_names_by_id=file_names_by_id)
     raise ValueError('invalid schema')
 
 
 @form_data_parser
-def parse_text_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_text_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys == [id_prefix + '__text']:
         text_list = form_data.get(id_prefix + '__text', [])
@@ -134,7 +169,15 @@ def parse_text_form_data(form_data: typing.Dict[str, typing.List[str]], schema: 
 
 
 @form_data_parser
-def parse_hazards_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_hazards_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if id_prefix + '__hasnohazards' not in keys:
         raise ValueError(_('Please select at least one hazard or confirm that the object poses no hazards.'))
@@ -169,7 +212,15 @@ def parse_hazards_form_data(form_data: typing.Dict[str, typing.List[str]], schem
 
 
 @form_data_parser
-def parse_tags_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_tags_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__tags']:
         raise ValueError('invalid tags form data')
@@ -192,7 +243,15 @@ def parse_tags_form_data(form_data: typing.Dict[str, typing.List[str]], schema: 
 
 
 @form_data_parser
-def parse_sample_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_sample_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid sample form data')
@@ -215,7 +274,15 @@ def parse_sample_form_data(form_data: typing.Dict[str, typing.List[str]], schema
 
 
 @form_data_parser
-def parse_measurement_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_measurement_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid measurement form data')
@@ -238,7 +305,15 @@ def parse_measurement_form_data(form_data: typing.Dict[str, typing.List[str]], s
 
 
 @form_data_parser
-def parse_object_reference_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_object_reference_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__oid']:
         raise ValueError('invalid object reference form data')
@@ -261,7 +336,15 @@ def parse_object_reference_form_data(form_data: typing.Dict[str, typing.List[str
 
 
 @form_data_parser
-def parse_quantity_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_quantity_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if set(keys) != {id_prefix + '__magnitude', id_prefix + '__units'} and keys != [id_prefix + '__magnitude']:
@@ -349,7 +432,15 @@ def parse_quantity_form_data(form_data: typing.Dict[str, typing.List[str]], sche
 
 
 @form_data_parser
-def parse_datetime_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_datetime_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if keys != [id_prefix + '__datetime']:
@@ -378,7 +469,15 @@ def parse_datetime_form_data(form_data: typing.Dict[str, typing.List[str]], sche
 
 
 @form_data_parser
-def parse_boolean_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_boolean_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     # TODO: validate schema?
     if set(keys) == {id_prefix + '__hidden', id_prefix + '__value'}:
@@ -394,7 +493,14 @@ def parse_boolean_form_data(form_data: typing.Dict[str, typing.List[str]], schem
 
 
 @form_data_parser
-def parse_array_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.List[typing.Any]]:
+def parse_array_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str, errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.List[typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if not keys:
         return None
@@ -422,7 +528,7 @@ def parse_array_form_data(form_data: typing.Dict[str, typing.List[str]], schema:
                 items.append(None)
             else:
                 item_id_prefix = f'{id_prefix}__{i}'
-                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, True))
+                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id))
         if None in items:
             # use a placeholder if form_data had no (valid) information on an
             # item, otherwise items would not be a valid array and the form
@@ -445,7 +551,15 @@ def parse_array_form_data(form_data: typing.Dict[str, typing.List[str]], schema:
 
 
 @form_data_parser
-def parse_object_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_object_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     assert schema['type'] == 'object'
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if not keys:
@@ -454,7 +568,7 @@ def parse_object_form_data(form_data: typing.Dict[str, typing.List[str]], schema
     for property_name, property_schema in schema['properties'].items():
         property_id_prefix = id_prefix + '__' + property_name
         property_required = property_name in schema.get('required', [])
-        property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required)
+        property = parse_any_form_data(form_data, property_schema, property_id_prefix, errors, required=property_required, file_names_by_id=file_names_by_id)
         if property is not None:
             data[property_name] = property
     schemas.validate(data, schema, strict=True)
@@ -462,7 +576,15 @@ def parse_object_form_data(form_data: typing.Dict[str, typing.List[str]], schema
 
 
 @form_data_parser
-def parse_user_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_user_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if keys != [id_prefix + '__uid']:
         raise ValueError('invalid user form data')
@@ -485,7 +607,15 @@ def parse_user_form_data(form_data: typing.Dict[str, typing.List[str]], schema: 
 
 
 @form_data_parser
-def parse_plotly_chart_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_plotly_chart_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     plotly_chart_data_list = form_data.get(id_prefix + '__plotly', [])
     plotly_chart_data: typing.Optional[typing.Union[str, typing.Dict[str, typing.Any]]] = plotly_chart_data_list[0] if plotly_chart_data_list else None
     if plotly_chart_data is None and not required:
@@ -500,7 +630,15 @@ def parse_plotly_chart_form_data(form_data: typing.Dict[str, typing.List[str]], 
 
 
 @form_data_parser
-def parse_timeseries_form_data(form_data: typing.Dict[str, typing.List[str]], schema: typing.Dict[str, typing.Any], id_prefix: str, errors: typing.Dict[str, str], required: bool = False) -> typing.Optional[typing.Dict[str, typing.Any]]:
+def parse_timeseries_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
     keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
     if set(keys) != {id_prefix + '__data', id_prefix + '__units'}:
         raise ValueError('invalid timeseries form data')
@@ -549,11 +687,50 @@ def parse_timeseries_form_data(form_data: typing.Dict[str, typing.List[str]], sc
     return data
 
 
+@form_data_parser
+def parse_file_form_data(
+        form_data: typing.Dict[str, typing.List[str]],
+        schema: typing.Dict[str, typing.Any],
+        id_prefix: str,
+        errors: typing.Dict[str, str],
+        *,
+        file_names_by_id: typing.Dict[int, str],
+        required: bool = False
+) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    keys = [key for key in form_data.keys() if key.startswith(id_prefix + '__')]
+    if keys != [id_prefix + '__file_id']:
+        raise ValueError('invalid file form data')
+    file_id_str = form_data.get(id_prefix + '__file_id', [''])[0]
+    if not file_id_str:
+        if not required:
+            return None
+        else:
+            raise ValueError(_('Please select a file.'))
+    try:
+        file_id = int(file_id_str)
+    except ValueError:
+        raise ValueError(_('Please select a file.'))
+    if file_id not in file_names_by_id:
+        raise ValueError(_('Please select a file.'))
+    if 'extensions' in schema:
+        file_name = file_names_by_id[file_id]
+        if not any(file_name.lower().endswith(extension.lower()) for extension in schema['extensions']):
+            raise ValueError(_('Please select a file with one of these extensions: %(extensions)s', extensions=', '.join(schema['extensions'])))
+    data = {
+        '_type': 'file',
+        'file_id': file_id
+    }
+    schemas.validate(data, schema, strict=True, file_names_by_id=file_names_by_id)
+    return data
+
+
 def parse_form_data(
         form_data: typing.Dict[str, typing.List[str]],
-        schema: typing.Dict[str, typing.Any]
+        schema: typing.Dict[str, typing.Any],
+        *,
+        file_names_by_id: typing.Dict[int, str]
 ) -> typing.Tuple[typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]], typing.Dict[str, str]]:
     id_prefix = 'object'
     errors: typing.Dict[str, str] = {}
-    data = parse_object_form_data(form_data, schema, id_prefix, errors)
+    data = parse_object_form_data(form_data, schema, id_prefix, errors, file_names_by_id=file_names_by_id)
     return data, errors

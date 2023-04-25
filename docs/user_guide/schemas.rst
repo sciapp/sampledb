@@ -64,6 +64,7 @@ Additionally, there are special data types:
     - Measurement References
     - Generic Object References
 - Schema Templates
+- Files
 
 In the following, each data type and the attributes in a schema of each type are listed.
 
@@ -921,7 +922,7 @@ Properties of this type are a special case of object reference, limited to refer
     }
 
 Time Series
-``````````
+```````````
 
 Properties of the ``timeseries`` type represent time series, i.e. a sequence of physical quantities or unitless numbers at specific points in time. The ``units`` attribute is mandatory, so for unitless numbers it must be set to ``1``.
 
@@ -975,6 +976,50 @@ display_digits
 ^^^^^^^^^^^^^^
 
 This attribute is the number of decimal places to be shown when displaying the magnitudes, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitudes will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
+
+Files
+`````
+
+Properties of the ``file`` type represent files uploaded for the object that are given additional meaning by being referenced in the metadata.
+
+.. code-block:: json
+    :caption: A file property
+
+    {
+      "title": "Configuration File",
+      "type": "file",
+      "extensions": [".ini", ".cfg"]
+    }
+
+type
+^^^^
+
+This sets the type for this subschema as a JSON string and must be set to ``file``.
+
+title
+^^^^^
+
+The title for the file as a JSON string or object, e.g. ``"Configuration File"`` or ``{"en": "Configuration File"}``.
+
+conditions
+^^^^^^^^^^
+
+This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
+
+note
+^^^^
+
+A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please upload a picture of the experiment setup."`` or ``{"en": "Please upload a picture of the experiment setup."}``.
+
+extensions
+^^^^^^^^^^
+
+An optional list of file extensions to limit which files can be selected, e.g. ``[".png", ".jpg", ".jpeg"]``. If no list of extensions is provided, all files can be selected.
+
+preview
+^^^^^^^
+
+This attribute is a boolean that sets whether or not an image file should have a preview image displayed for this property. By default, it is set to ``false``.
 
 Schema Templates
 ````````````````

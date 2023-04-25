@@ -13,6 +13,8 @@ def copy_data(
 ) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     if not schema.get('may_copy', True):
         return generate_placeholder(schema)
+    if schema['type'] == 'file':
+        return generate_placeholder(schema)
     if schema['type'] == 'array' and isinstance(instance, list):
         array_copy: typing.List[typing.Any] = []
         for item in instance:

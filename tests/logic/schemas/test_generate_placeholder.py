@@ -406,3 +406,12 @@ def test_generate_plotly_chart_object():
     }
     placeholder_object = generate_placeholder(object_schema)
     assert placeholder_object is None
+
+
+def test_generate_file_object():
+    object_schema = {
+        'title': 'Example File',
+        'type': 'file'
+    }
+    placeholder_object = generate_placeholder(object_schema)
+    assert placeholder_object is None

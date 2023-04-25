@@ -34,7 +34,9 @@ def create_object(
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
-        permissions_for_project_id: typing.Optional[int] = None
+        permissions_for_project_id: typing.Optional[int] = None,
+        validate_data: bool = True,
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> Object:
     """
     Creates an object using the given action and its schema. This function
@@ -52,6 +54,9 @@ def create_object(
         permissions to
     :param permissions_for_project_id: the ID of an existing project to give
         permissions to
+    :param validate_data: whether the data should be validated
+    :param data_validator_arguments: additional keyword arguments to the data
+        validator
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -64,11 +69,18 @@ def create_object(
     if action.type is not None and action.type.disable_create_objects:
         raise CreatingObjectsDisabledError()
     users.check_user_exists(user_id)
+    if data_validator_arguments is None:
+        data_validator_arguments = {}
+    # unless file names are explicitly provided, assume no files exist yet
+    if 'file_names_by_id' not in data_validator_arguments:
+        data_validator_arguments['file_names_by_id'] = {}
     object = Objects.create_object(
         data=data,
         schema=schema,
         user_id=user_id,
-        action_id=action_id
+        action_id=action_id,
+        validate_data=validate_data,
+        data_validator_arguments=data_validator_arguments
     )
     object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
     user_log.create_object(object_id=object.object_id, user_id=user_id)
@@ -144,7 +156,9 @@ def create_object_batch(
         user_id: int,
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
-        permissions_for_project_id: typing.Optional[int] = None
+        permissions_for_project_id: typing.Optional[int] = None,
+        validate_data: bool = True,
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> typing.Sequence[Object]:
     """
     Creates a batch of objects using the given action and its schema. This
@@ -162,6 +176,9 @@ def create_object_batch(
         permissions to
     :param permissions_for_project_id: the ID of an existing project to give
         permissions to
+    :param validate_data: whether the data should be validated
+    :param data_validator_arguments: additional keyword arguments to the data
+        validator
     :return: the created objects
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -171,9 +188,21 @@ def create_object_batch(
     objects: typing.List[Object] = []
     actions.check_action_exists(action_id)
     users.check_user_exists(user_id)
+    if data_validator_arguments is None:
+        data_validator_arguments = {}
+    # unless file names are explicitly provided, assume no files exist yet
+    if 'file_names_by_id' not in data_validator_arguments:
+        data_validator_arguments['file_names_by_id'] = {}
     try:
         for data in data_sequence:
-            object = Objects.create_object(data=data, schema=None, user_id=user_id, action_id=action_id)
+            object = Objects.create_object(
+                data=data,
+                schema=None,
+                user_id=user_id,
+                action_id=action_id,
+                validate_data=validate_data,
+                data_validator_arguments=data_validator_arguments
+            )
             objects.append(object)
     finally:
         if objects:
@@ -216,7 +245,19 @@ def update_object(
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    object = Objects.update_object(object_id=object_id, data=data, schema=schema, user_id=user_id)
+    # local import to avoid circular imports
+    from .files import get_file_names_by_id_for_object
+    file_names_by_id = {
+        file_id: file_names[0]
+        for file_id, file_names in get_file_names_by_id_for_object(object_id).items()
+    }
+    object = Objects.update_object(
+        object_id=object_id,
+        data=data,
+        schema=schema,
+        user_id=user_id,
+        data_validator_arguments={'file_names_by_id': file_names_by_id}
+    )
     if object is None:
         raise errors.ObjectDoesNotExistError()
     user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)

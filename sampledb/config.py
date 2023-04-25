@@ -65,6 +65,7 @@ def parse_configuration_values() -> None:
         'DOWNLOAD_SERVICE_TIME_LIMIT',
         'TYPEAHEAD_OBJECT_LIMIT',
         'LDAP_CONNECT_TIMEOUT',
+        'TEMPORARY_FILE_TIME_LIMIT',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -670,6 +671,9 @@ SHOW_LAST_PROFILE_UPDATE = True
 DISABLE_INSTRUMENTS = False
 
 ENABLE_FUNCTION_CACHES = True
+
+# temporary file time limit
+TEMPORARY_FILE_TIME_LIMIT = 7 * 24 * 60 * 60
 
 # CSP headers should be set, however this value can be used to disable them if necessary
 ENABLE_CONTENT_SECURITY_POLICY = True

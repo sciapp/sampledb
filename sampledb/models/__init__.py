@@ -24,6 +24,7 @@ from . import object_permissions
 from . import projects
 from . import scicat_export
 from . import settings
+from . import temporary_files
 from . import users
 
 from .actions import Action, ActionType, SciCatExportType
@@ -63,6 +64,7 @@ from .scicat_export import SciCatExport
 from .settings import Settings
 from .shares import ObjectShare
 from .tags import Tag
+from .temporary_files import TemporaryFile
 from .users import User, UserType, UserFederationAlias
 from .user_log import UserLogEntry, UserLogEntryType
 
@@ -90,6 +92,7 @@ __all__ = [
     'projects',
     'scicat_export',
     'settings',
+    'temporary_files',
     'users',
     'Action',
     'ActionType',
@@ -157,6 +160,7 @@ __all__ = [
     'SubprojectRelationship',
     'Settings',
     'Tag',
+    'TemporaryFile',
     'TwoFactorAuthenticationMethod',
     'User',
     'UserFederationAlias',

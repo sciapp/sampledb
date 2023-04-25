@@ -5,6 +5,7 @@
 {% block content %}
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}
+    <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
     <input type="hidden" name="previous_actions" value="{{ previous_actions }}">
     {% set id_prefix = "object_" %}
     {% include "objects/forms/form_any.html" %}

@@ -1070,6 +1070,13 @@ msgstr ""
 msgid "unable to convert datetime from your timezone to UTC"
 msgstr "Zeitpunkt konnte nicht von Ihrer Zeitzone in UTC umgewandelt werden"
 
+msgid "Please select a file."
+msgstr "Bitte wählen Sie eine Datei aus."
+
+#, python-format
+msgid "Please select a file with one of these extensions: %(extensions)s"
+msgstr "Bitte wählen Sie eine Datei mit einer dieser Erweiterungen: %(extensions)s"
+
 #, python-format
 msgid ""
 "The advanced search was used automatically. Search for "
@@ -3076,6 +3083,9 @@ msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
 msgid "Please enter a number between 0 and 15."
 msgstr "Bitte geben Sie eine Zahl zwischen 0 und 15 ein."
 
+msgid "Please enter allowed file extensions."
+msgstr "Bitte geben Sie erlaubte Dateiendungen ein."
+
 #, python-format
 msgid ""
 "<strong>Warning:</strong> Custom Actions are an advanced feature that "
@@ -3210,6 +3220,9 @@ msgstr "Wahrheitswert"
 msgid "Time Series"
 msgstr "Zeitreihe"
 
+msgid "File"
+msgstr "Datei"
+
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
 
@@ -3273,6 +3286,22 @@ msgstr "Anzahl der anzuzeigenden Nachkommastellen."
 
 msgid "Decimal Digits"
 msgstr "Nachkommastellen"
+
+msgid ""
+"Limit files to specific file extensions, e.g. &quot;.png, .jpg, "
+".jpeg&quot;"
+msgstr ""
+"Begrenze Dateien auf spezifische Dateiendungen, .z.B. &quot;.png, .jpg, "
+".jpeg&quot;"
+
+msgid "File Extensions"
+msgstr "Dateiendungen"
+
+msgid "Show previews for image files."
+msgstr "Zeige Vorschau für Bild-Dateien."
+
+msgid "Preview"
+msgstr "Vorschau"
 
 msgid "Schema Editor Warning"
 msgstr "Schema Editor Warnung"
@@ -5020,6 +5049,9 @@ msgstr ""
 "Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
 "geben."
 
+msgid "Please upload a file."
+msgstr "Bitte laden Sie eine Datei hoch."
+
 msgid "This object does not pose any of these hazards."
 msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
 
@@ -5748,6 +5780,12 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
+msgid "Hidden File"
+msgstr "Versteckte Datei"
+
+msgid "This file has not been shared."
+msgstr "Diese Datei wurde nicht geteilt."
+
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
@@ -5997,9 +6035,6 @@ msgstr "Exportieren nicht möglich für Typ:"
 #, python-format
 msgid "Exported&nbsp;on %(export_date)s"
 msgstr "Exportiert&nbsp;am %(export_date)s"
-
-msgid "File"
-msgstr "Datei"
 
 msgid "Unnamed Basic Group"
 msgstr "Unbenannte einfache Gruppe"

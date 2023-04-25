@@ -11,7 +11,7 @@ import requests
 from .objects import get_object
 from .object_permissions import get_user_object_permissions
 from .datatypes import DateTime, Quantity, Timeseries
-from . import settings, users, errors, utils
+from . import settings, users, errors, utils, files
 from ..models import SciCatExport, SciCatExportType, Permissions
 from .. import db
 
@@ -38,7 +38,8 @@ def _convert_metadata(
         data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
         schema: typing.Dict[str, typing.Any],
         property_whitelist: typing.List[typing.List[typing.Union[str, int]]],
-        user_id: int
+        user_id: int,
+        object_id: int
 ) -> typing.Optional[typing.Union[str, float, int, typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
     if property_whitelist is None:
         property_whitelist = [['name']]
@@ -46,7 +47,8 @@ def _convert_metadata(
     def _convert_object(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any],
-        property_whitelist: typing.List[typing.List[typing.Union[str, int]]]
+        property_whitelist: typing.List[typing.List[typing.Union[str, int]]],
+        object_id: int
     ) -> typing.Dict[str, typing.Any]:
         metadata = {}
         for property_name in schema['properties']:
@@ -63,7 +65,7 @@ def _convert_metadata(
                 continue
             property_data = data[property_name]
             property_schema = schema['properties'][property_name]
-            converted_data = _convert_metadata(property_data, property_schema, sub_property_whitelist, user_id)
+            converted_data = _convert_metadata(property_data, property_schema, sub_property_whitelist, user_id, object_id)
             if converted_data is not None:
                 metadata[property_name] = converted_data
         return metadata
@@ -71,7 +73,8 @@ def _convert_metadata(
     def _convert_array(
         data: typing.List[typing.Any],
         schema: typing.Dict[str, typing.Any],
-        property_whitelist: typing.List[typing.List[typing.Union[str, int]]]
+        property_whitelist: typing.List[typing.List[typing.Union[str, int]]],
+        object_id: int
     ) -> typing.List[typing.Any]:
         item_schema = schema['items']
         metadata = []
@@ -82,7 +85,7 @@ def _convert_metadata(
                     sub_property_whitelist.append(path[1:])
             if not sub_property_whitelist:
                 continue
-            converted_data = _convert_metadata(item_data, item_schema, sub_property_whitelist, user_id)
+            converted_data = _convert_metadata(item_data, item_schema, sub_property_whitelist, user_id, object_id)
             if converted_data is not None:
                 metadata.append(converted_data)
         return metadata
@@ -175,6 +178,22 @@ def _convert_metadata(
         except errors.UserDoesNotExistError:
             return f"User #{data['user_id']}"
 
+    def _convert_file(
+        data: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        object_id: int
+    ) -> str:
+        try:
+            file = files.get_file(data['file_id'], object_id)
+            if file.is_hidden:
+                return f'Hidden (#{data["file_id"]})'
+            else:
+                return file.original_file_name
+        except errors.FileDoesNotExistError:
+            return f'Unknown (#{data["file_id"]})'
+        except errors.InvalidFileStorageError:
+            return f'Unnamed (#{data["file_id"]})'
+
     def _convert_hazards(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
@@ -193,9 +212,9 @@ def _convert_metadata(
         return ', '.join(hazard_names[hazard_id] for hazard_id in sorted(data['hazards']))
 
     if schema['type'] == 'object' and isinstance(data, dict):
-        return _convert_object(data, schema, property_whitelist)
+        return _convert_object(data, schema, property_whitelist, object_id)
     if schema['type'] == 'array' and isinstance(data, list):
-        return _convert_array(data, schema, property_whitelist)
+        return _convert_array(data, schema, property_whitelist, object_id)
     if schema['type'] == 'datetime' and isinstance(data, dict):
         return _convert_datetime(data, schema)
     if schema['type'] == 'bool' and isinstance(data, dict):
@@ -212,6 +231,8 @@ def _convert_metadata(
         return _convert_hazards(data, schema)
     if schema['type'] == 'timeseries' and isinstance(data, dict):
         return _convert_timeseries(data, schema)
+    if schema['type'] == 'file' and isinstance(data, dict):
+        return _convert_file(data, schema, object_id)
     if schema['type'] == 'tags':
         # tags are exported as keywords
         return None
@@ -262,7 +283,7 @@ def upload_object(
             "sourceFolder": "-",
             "version": str(object.version_id),
             "keywords": [],
-            "scientificMetadata": _convert_metadata(object.data, object.schema, property_whitelist, user_id) if object.data is not None and object.schema is not None else {}
+            "scientificMetadata": _convert_metadata(object.data, object.schema, property_whitelist, user_id, object.object_id) if object.data is not None and object.schema is not None else {}
         }
         if object_export_type == SciCatExportType.RAW_DATASET:
             data.update({
@@ -299,7 +320,7 @@ def upload_object(
             "sampleId": object_name + " / " + pid,
             "owner": user.name,
             "description": f"Metadata export from {flask.current_app.config['SERVICE_NAME']} object #{object_id}",
-            "sampleCharacteristics": _convert_metadata(object.data, object.schema, property_whitelist, user_id) if object.data is not None and object.schema is not None else {},
+            "sampleCharacteristics": _convert_metadata(object.data, object.schema, property_whitelist, user_id, object.object_id) if object.data is not None and object.schema is not None else {},
             "ownerGroup": owner_group
         }
 
