@@ -21,7 +21,7 @@ from ...logic.instruments import get_instruments, get_instrument
 from ...logic.actions import get_action, Action
 from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, ObjectInfo
+from ...logic.object_permissions import get_objects_with_permissions, get_object_info_with_permissions, ObjectInfo
 from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists, User
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
@@ -134,19 +134,14 @@ def objects() -> FlaskResponseT:
                 for object_id in object_ids_str.split(',')
             }
         except ValueError:
-            object_ids = set()
+            db_objects = []
         else:
-            object_ids = {
-                object_id
-                for object_id in object_ids
-                if Permissions.READ in get_user_object_permissions(object_id, user_id=flask_login.current_user.id)
-            }
-        db_objects = []
-        for object_id in object_ids:
-            try:
-                db_objects.append(get_object(object_id))
-            except logic.errors.ObjectDoesNotExistError:
-                pass
+            db_objects = get_objects_with_permissions(
+                user_id=flask_login.current_user.id,
+                permissions=Permissions.READ,
+                object_ids=list(object_ids or set())
+            )
+            db_objects.sort(key=lambda db_object: db_object.object_id)
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
