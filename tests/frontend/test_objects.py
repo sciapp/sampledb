@@ -939,8 +939,8 @@ def test_new_object_batch(flask_server, user):
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 2
     objects = sampledb.logic.objects.get_objects()
-    assert objects[1].data['name']['text'] == "OMBE-100-001"
-    assert objects[0].data['name']['text'] == "OMBE-100-002"
+    assert objects[1].data['name']['text']['en'] == "OMBE-100-001"
+    assert objects[0].data['name']['text']['en'] == "OMBE-100-002"
 
 
 def test_new_object_batch_invalid_number(flask_server, user):
@@ -2169,3 +2169,211 @@ def test_object_federation_references(flask_server, user, simple_object, compone
     assert links[0].find('i')['title'] == '#' + str(fed_object.fed_object_id + 1) + ' @ ' + component.name
     assert 'fa' in links[0].find('i')['class']
     assert 'fa-share-alt' in links[0].find('i')['class']
+
+
+def test_update_recipes_for_input(mock_current_user):
+    schema = {
+        'type': 'object',
+        'title': 'Example Schema',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            }
+        },
+        'required': ['name']
+    }
+    sampledb.logic.schemas.validate_schema(schema)
+    original_schema = deepcopy(schema)
+    sampledb.frontend.objects.object_form._update_recipes_for_input(schema)
+    assert schema == original_schema
+    schema = {
+        'type': 'object',
+        'title': 'Example Schema',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'Name'
+            },
+            'simple_text': {
+                'type': 'text',
+                'title': {'en': 'Simple Text', 'de': 'Einfacher Text'},
+                'languages': 'all'
+            },
+            'multiline_text': {
+                'type': 'text',
+                'title': {'en': 'Multiline Text', 'de': 'Mehrzeiliger Text'},
+                'multiline': True,
+                'languages': 'all'
+            },
+            'markdown_text': {
+                'type': 'text',
+                'title': {'en': 'Markdown Text', 'de': 'Markdown-Text'},
+                'markdown': True,
+                'languages': 'all'
+            },
+            'choices_text': {
+                'type': 'text',
+                'title': {'en': 'Choices Text', 'de': 'Auswahl-Text'},
+                'choices': [
+                    {'en': 'Option A', 'de': 'Option A'},
+                    {'en': 'Option B', 'de': 'Option B'},
+                ],
+                'languages': 'all'
+            },
+            'length_quantity': {
+                'type': 'quantity',
+                'title': {'en': 'Length Quantity', 'de': 'Langen-Größe'},
+                'units': 'm'
+            },
+            'time_quantity': {
+                'type': 'quantity',
+                'title': {'en': 'Time Quantity', 'de': 'Zeit-Größe'},
+                'units': 'min'
+            },
+            'percent_quantity': {
+                'type': 'quantity',
+                'title': {'en': 'Percent Quantity', 'de': 'Prozent-Größe'},
+                'units': 'percent'
+            },
+            'datetime': {
+                'type': 'datetime',
+                'title': {'en': 'Datetime', 'de': 'Zeitpunkt'}
+            },
+            'bool': {
+                'type': 'bool',
+                'title': {'en': 'Boolean', 'de': 'Wahrheitswert'}
+            }
+        },
+        'required': ['name'],
+        'recipes': [
+            {
+                'name': {
+                    'en': 'Recipe 1',
+                    'de': 'Rezept 1'
+                },
+                'property_values': {
+                    'simple_text': {
+                        'text': {
+                            'en': 'Text (en)',
+                            'de': 'Text (de)'
+                        },
+                        '_type': 'text'
+                    },
+                    'multiline_text': {
+                        'text': {
+                            'en': 'Text (en)',
+                            'de': 'Text (de)'
+                        },
+                        '_type': 'text'
+                    },
+                    'markdown_text': {
+                        'text': {
+                            'en': 'Text (en)',
+                            'de': 'Text (de)'
+                        },
+                        '_type': 'text',
+                        'is_markdown': True
+                    },
+                    'choices_text': {
+                        'text': {
+                            'en': 'Option A',
+                            'de': 'Option A'
+                        },
+                        '_type': 'text'
+                    },
+                    'length_quantity': {
+                        'magnitude_in_base_units': 1.5,
+                        'magnitude': 1.5,
+                        'units': 'm',
+                        '_type': 'quantity'
+                    },
+                    'time_quantity': {
+                        'magnitude_in_base_units': 90,
+                        'magnitude': 1.5,
+                        'units': 'min',
+                        '_type': 'quantity'
+                    },
+                    'percent_quantity': {
+                        'magnitude_in_base_units': 0.15,
+                        'magnitude': 15,
+                        'units': 'percent',
+                        '_type': 'quantity'
+                    },
+                    'datetime': {
+                        'utc_datetime': '2023-01-02 03:04:05',
+                        '_type': 'datetime'
+                    },
+                    'bool': {
+                        'value': True,
+                        '_type': 'bool'
+                    }
+                }
+            }
+        ],
+    }
+    sampledb.logic.schemas.validate_schema(schema)
+    original_schema = deepcopy(schema)
+    sampledb.frontend.objects.object_form._update_recipes_for_input(schema)
+    original_schema['recipes'][0]['name'] = 'Recipe 1'
+    original_schema['recipes'][0]['property_values']['simple_text'] = {
+        'title': 'Simple Text',
+        'type': 'text',
+        'value': {
+            'en': 'Text (en)',
+            'de': 'Text (de)'
+        }
+    }
+    original_schema['recipes'][0]['property_values']['multiline_text'] = {
+        'title': 'Multiline Text',
+        'type': 'multiline',
+        'value': {
+            'en': 'Text (en)',
+            'de': 'Text (de)'
+        }
+    }
+    original_schema['recipes'][0]['property_values']['markdown_text'] = {
+        'title': 'Markdown Text',
+        'type': 'markdown',
+        'value': {
+            'en': 'Text (en)',
+            'de': 'Text (de)'
+        }
+    }
+    original_schema['recipes'][0]['property_values']['choices_text'] = {
+        'title': 'Choices Text',
+        'type': 'choice',
+        'value': {
+            'en': 'Option A',
+            'de': 'Option A'
+        }
+    }
+    original_schema['recipes'][0]['property_values']['length_quantity'] = {
+        'title': 'Length Quantity',
+        'type': 'quantity',
+        'value': '1.5',
+        'units': 'm'
+    }
+    original_schema['recipes'][0]['property_values']['time_quantity'] = {
+        'title': 'Time Quantity',
+        'type': 'quantity',
+        'value': '01:30',
+        'units': 'min'
+    }
+    original_schema['recipes'][0]['property_values']['percent_quantity'] = {
+        'title': 'Percent Quantity',
+        'type': 'quantity',
+        'value': '15',
+        'units': 'percent'
+    }
+    original_schema['recipes'][0]['property_values']['datetime'] = {
+        'title': 'Datetime',
+        'type': 'datetime',
+        'value': '2023-01-02 03:04:05'
+    }
+    original_schema['recipes'][0]['property_values']['bool'] = {
+        'title': 'Boolean',
+        'type': 'bool',
+        'value': True
+    }
+    assert schema == original_schema
