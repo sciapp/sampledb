@@ -1,6 +1,4 @@
 sccm = 1 * cm**3 / min
-percent = 0.01
-ppm = 0.000001
 ppmv = 0.000001
 ppmw = 0.000001
 ppb = 0.000000001
