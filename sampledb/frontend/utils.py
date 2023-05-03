@@ -5,6 +5,7 @@
 import copy
 import csv
 import dataclasses
+import decimal
 import difflib
 import io
 import json
@@ -273,7 +274,7 @@ def custom_format_time(
 
 @JinjaFilter('babel_format_number')
 def custom_format_number(
-    number: typing.Union[str, int, float],
+    number: typing.Union[str, int, float, decimal.Decimal],
     display_digits: typing.Optional[int] = None,
     integral_digits: typing.Optional[int] = None,
     disable_scientific_format: bool = False

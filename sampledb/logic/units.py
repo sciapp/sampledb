@@ -17,14 +17,21 @@ ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.
 
 int_ureg = pint.UnitRegistry()
 int_ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
+# aliases for unit registry types, as pint 0.21 misses type hints for these
+ureg_unit: typing.Type[pint.facets.plain.PlainUnit] = ureg.Unit  # type: ignore[assignment]
+ureg_quantity: typing.Type[pint.facets.plain.PlainQuantity[typing.Any]] = ureg.Quantity  # type: ignore[assignment]
+int_ureg_unit: typing.Type[pint.facets.plain.PlainUnit] = int_ureg.Unit  # type: ignore[assignment]
+int_ureg_quantity: typing.Type[pint.facets.plain.PlainQuantity[typing.Any]] = int_ureg.Quantity  # type: ignore[assignment]
 
 
-def prettify_units(units: typing.Union[str, pint.Unit]) -> str:
+def prettify_units(units: typing.Optional[typing.Union[str, pint._typing.UnitLike]]) -> str:
     """
     Returns a prettified version of the units, if defined, otherwise returns the units unaltered.
     :param units: The pint units or their string representation
     :return: The prettified units
     """
+    if units is None:
+        units = '1'
     units_str = str(units).strip()
     units_str = {
         'degC': '\xb0C',
@@ -38,7 +45,7 @@ def prettify_units(units: typing.Union[str, pint.Unit]) -> str:
     return units_str
 
 
-def get_dimensionality_for_units(units: typing.Union[str, pint.Unit]) -> str:
+def get_dimensionality_for_units(units: typing.Optional[typing.Union[str, pint._typing.UnitLike]]) -> str:
     """
     Return the dimensionality of given units.
 
@@ -46,15 +53,17 @@ def get_dimensionality_for_units(units: typing.Union[str, pint.Unit]) -> str:
     :return: dimensionality string in pint format
     :raise errors.InvalidUnitsError: if the units cannot be understood
     """
+    if units is None:
+        units = '1'
     try:
-        return str(int_ureg.Unit(units).dimensionality)
+        return str(int_ureg_unit(units).dimensionality)
     except Exception:
         raise errors.InvalidUnitsError()
 
 
 def get_magnitude_in_base_units(
         magnitude: decimal.Decimal,
-        units: typing.Union[str, pint.Unit]
+        units: typing.Union[str, pint._typing.UnitLike]
 ) -> decimal.Decimal:
     """
     Convert a given magnitude in a given unit to base units.
@@ -65,6 +74,6 @@ def get_magnitude_in_base_units(
     :raise errors.InvalidUnitsError: if the units cannot be understood
     """
     try:
-        return typing.cast(decimal.Decimal, ureg.Quantity(magnitude, ureg.Unit(units)).to_base_units().magnitude)
+        return ureg_quantity(magnitude, ureg_unit(units)).to_base_units().magnitude
     except Exception:
         raise errors.InvalidUnitsError()
