@@ -14,7 +14,7 @@ First steps
    | `More -> Other Databases` (:code:`<host>/other-databases/`)
    | To exchange data giving a UUID and address is mandatory
 4. Generate an export token by clicking the **+** button in the *Export* section
-5. Set up the other database's export token as import token by clicking the **+** button in the *Export* section
+5. Set up the other database's export token as import token by clicking the **+** button in the *Import* section
 
 Configured databases can be selected when editing the permissions for an object (see: :ref:`Sharing with other databases <federation_share>`).
 You can repeat the steps 3 to 5 for every additional database you want to exchange data with.
