@@ -152,6 +152,7 @@ def objects() -> FlaskResponseT:
         pagination_offset = None
         pagination_enabled = True
         num_objects_found = len(db_objects)
+        sorting_enabled = False
         sorting_property_name = None
         sorting_order_name = None
         show_filters = False
@@ -178,6 +179,7 @@ def objects() -> FlaskResponseT:
         all_components = []
     else:
         pagination_enabled = True
+        sorting_enabled = True
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
@@ -988,6 +990,7 @@ def objects() -> FlaskResponseT:
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         build_modified_url=_build_modified_url,
+        sorting_enabled=sorting_enabled,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
         limit=pagination_limit,
