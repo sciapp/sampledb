@@ -2,6 +2,9 @@
 """
 
 """
+from __future__ import annotations
+
+import dataclasses
 import typing
 
 from .objects import get_object, find_object_references
@@ -62,13 +65,23 @@ def get_related_object_ids(
     return list(referencing_object_ids), list(referenced_object_ids)
 
 
+@dataclasses.dataclass(kw_only=True)
+class RelatedObjectsTree:
+    object_id: int
+    component_uuid: typing.Optional[str]
+    path: typing.List[typing.Union[typing.Tuple[int, typing.Optional[str]], int]]
+    permissions: str
+    referenced_objects: typing.Optional[typing.List[RelatedObjectsTree]]
+    referencing_objects: typing.Optional[typing.List[RelatedObjectsTree]]
+
+
 def build_related_objects_tree(
         object_id: int,
         component_uuid: typing.Optional[str] = None,
         user_id: typing.Optional[int] = None,
         path: typing.Optional[typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]] = None,
         visited_paths: typing.Optional[typing.Dict[int, typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]]] = None
-) -> typing.Any:
+) -> RelatedObjectsTree:
     """
     Get the tree of related objects for a given object.
 
@@ -98,12 +111,14 @@ def build_related_objects_tree(
     except errors.ObjectDoesNotExistError:
         permissions = Permissions.NONE
     if object_id in visited_paths or permissions == Permissions.NONE:
-        tree = {
-            'object_id': object_id,
-            'component_uuid': component_uuid,
-            'path': visited_paths.get(object_id, path),
-            'permissions': permissions.name.lower()
-        }
+        tree = RelatedObjectsTree(
+            object_id=object_id,
+            component_uuid=component_uuid,
+            path=visited_paths.get(object_id, path),
+            permissions=permissions.name.lower(),
+            referenced_objects=None,
+            referencing_objects=None,
+        )
     else:
         visited_paths[object_id] = path
         referencing_object_ids, referenced_object_ids = get_related_object_ids(
@@ -112,21 +127,21 @@ def build_related_objects_tree(
             include_referencing_objects=component_uuid is None,
             user_id=user_id
         )
-        tree = {
-            'object_id': object_id,
-            'component_uuid': component_uuid,
-            'path': path,
-            'permissions': permissions.name.lower(),
-            'referenced_objects': [
+        tree = RelatedObjectsTree(
+            object_id=object_id,
+            component_uuid=component_uuid,
+            path=path,
+            permissions=permissions.name.lower(),
+            referenced_objects=[
                 build_related_objects_tree(referenced_object_id[0], referenced_object_id[1], user_id, path + [-1], visited_paths)
                 for referenced_object_id in referenced_object_ids
                 if len(path) == 1 or referenced_object_id != path[-3] and referenced_object_id[1] is None
             ],
-            'referencing_objects': [
+            referencing_objects=[
                 build_related_objects_tree(referencing_object_id[0], None, user_id, path + [-2], visited_paths)
                 for referencing_object_id in referencing_object_ids
                 if len(path) == 1 or referencing_object_id != path[-3] and referencing_object_id[1] is None
             ]
-        }
+        )
 
     return tree
