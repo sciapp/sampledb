@@ -84,21 +84,23 @@ def test_single_object(sample_action, user, user2):
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
-    assert tree == {
-        'object_id': object.id,
-        'component_uuid': None,
-        'permissions': 'grant',
-        'path': [(object.id, None)],
-        'referenced_objects': [],
-        'referencing_objects': []
-    }
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_id=object.id,
+        component_uuid=None,
+        permissions='grant',
+        path=[(object.id, None)],
+        referenced_objects=[],
+        referencing_objects=[]
+    )
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user2.id)
-    assert tree == {
-        'object_id': object.id,
-        'component_uuid': None,
-        'permissions': 'none',
-        'path': [(object.id, None)],
-    }
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_id=object.id,
+        component_uuid=None,
+        permissions='none',
+        path=[(object.id, None)],
+        referenced_objects=None,
+        referencing_objects=None
+    )
 
 
 def test_object_with_measurement(sample_action, measurement_action, user):
@@ -121,23 +123,23 @@ def test_object_with_measurement(sample_action, measurement_action, user):
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
-    assert tree == {
-        'object_id': object.id,
-        'component_uuid': None,
-        'permissions': 'grant',
-        'path': [(object.id, None)],
-        'referenced_objects': [],
-        'referencing_objects': [
-            {
-                'object_id': measurement.id,
-                'component_uuid': None,
-                'permissions': 'grant',
-                'path': [(object.id, None), -2, (measurement.id, None)],
-                'referenced_objects': [],
-                'referencing_objects': []
-            }
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_id=object.id,
+        component_uuid=None,
+        permissions='grant',
+        path=[(object.id, None)],
+        referenced_objects=[],
+        referencing_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_id=measurement.id,
+                component_uuid=None,
+                permissions='grant',
+                path=[(object.id, None), -2, (measurement.id, None)],
+                referenced_objects=[],
+                referencing_objects=[]
+            )
         ]
-    }
+    )
 
 
 def test_object_with_sample(sample_action, user):
@@ -160,23 +162,23 @@ def test_object_with_sample(sample_action, user):
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
-    assert tree == {
-        'object_id': object.id,
-        'component_uuid': None,
-        'permissions': 'grant',
-        'path': [(object.id, None)],
-        'referenced_objects': [],
-        'referencing_objects': [
-            {
-                'object_id': sample.id,
-                'component_uuid': None,
-                'permissions': 'grant',
-                'path': [(object.id, None), -2, (sample.id, None)],
-                'referenced_objects': [],
-                'referencing_objects': []
-            }
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_id=object.id,
+        component_uuid=None,
+        permissions='grant',
+        path=[(object.id, None)],
+        referenced_objects=[],
+        referencing_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_id=sample.id,
+                component_uuid=None,
+                permissions='grant',
+                path=[(object.id, None), -2, (sample.id, None)],
+                referenced_objects=[],
+                referencing_objects=[]
+            )
         ]
-    }
+    )
 
 
 def test_object_with_cyclic_sample(sample_action, user):
@@ -210,27 +212,82 @@ def test_object_with_cyclic_sample(sample_action, user):
     }
     sampledb.logic.objects.update_object(object.id, data, user.id)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
-    assert tree == {
-        'object_id': object.id,
-        'component_uuid': None,
-        'permissions': 'grant',
-        'path': [(object.id, None)],
-        'referenced_objects': [
-            {
-                'object_id': sample.id,
-                'component_uuid': None,
-                'permissions': 'grant',
-                'path': [(object.id, None), -1, (sample.id, None)],
-                'referenced_objects': [],
-                'referencing_objects': []
-            }
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_id=object.id,
+        component_uuid=None,
+        permissions='grant',
+        path=[(object.id, None)],
+        referenced_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_id=sample.id,
+                component_uuid=None,
+                permissions='grant',
+                path=[(object.id, None), -1, (sample.id, None)],
+                referenced_objects=[],
+                referencing_objects=[]
+            )
         ],
-        'referencing_objects': [
-            {
-                'object_id': sample.id,
-                'component_uuid': None,
-                'permissions': 'grant',
-                'path': [(object.id, None), -1, (sample.id, None)],
-            }
+        referencing_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_id=sample.id,
+                component_uuid=None,
+                permissions='grant',
+                path=[(object.id, None), -1, (sample.id, None)],
+                referenced_objects=None,
+                referencing_objects=None
+            )
         ]
+    )
+
+
+def test_object_with_unknown_sample(sample_action, user):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': 1,
+            'component_uuid': '91402d3c-b1a7-4c7e-8a68-15bfd21ceace'
+        }
     }
+    object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 2'
+        },
+        'sample': {
+            '_type': 'sample',
+            'object_id': object.id
+        }
+    }
+    sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=sample.id, user_id=user.id)
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_id=sample.id,
+        component_uuid=None,
+        permissions='grant',
+        path=[(sample.id, None)],
+        referenced_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_id=object.id,
+                component_uuid=None,
+                permissions='grant',
+                path=[(sample.id, None), -1, (object.id, None)],
+                referenced_objects=[
+                    sampledb.logic.object_relationships.RelatedObjectsTree(
+                        object_id=1,
+                        component_uuid='91402d3c-b1a7-4c7e-8a68-15bfd21ceace',
+                        permissions='none',
+                        path=[(sample.id, None), -1, (object.id, None), -1, (1, '91402d3c-b1a7-4c7e-8a68-15bfd21ceace')],
+                        referenced_objects=None,
+                        referencing_objects=None
+                    )
+                ],
+                referencing_objects=[]
+            )
+        ],
+        referencing_objects=[]
+    )
