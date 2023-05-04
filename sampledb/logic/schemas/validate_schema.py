@@ -400,7 +400,7 @@ def _validate_object_schema(
                 raise ValidationError(f'duplicate propertyOrder property: {property_name}', path)
 
     if 'default' in schema:
-        validate(schema['default'], schema, strict=strict)
+        validate(schema['default'], schema, path + ['(default)'], strict=strict)
 
     if 'displayProperties' in schema:
         if not isinstance(schema['displayProperties'], list):
