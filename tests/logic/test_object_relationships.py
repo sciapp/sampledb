@@ -83,11 +83,12 @@ def test_single_object(sample_action, user, user2):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object.id,
         component_uuid=None,
-        permissions='grant',
+        object=object,
         path=[(object.id, None)],
         referenced_objects=[],
         referencing_objects=[]
@@ -96,7 +97,7 @@ def test_single_object(sample_action, user, user2):
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object.id,
         component_uuid=None,
-        permissions='none',
+        object=None,
         path=[(object.id, None)],
         referenced_objects=None,
         referencing_objects=None
@@ -111,6 +112,7 @@ def test_object_with_measurement(sample_action, measurement_action, user):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -122,18 +124,19 @@ def test_object_with_measurement(sample_action, measurement_action, user):
         }
     }
     measurement = sampledb.logic.objects.create_object(measurement_action.id, data, user.id)
+    measurement = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[measurement.id], name_only=True)[0]
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object.id,
         component_uuid=None,
-        permissions='grant',
+        object=object,
         path=[(object.id, None)],
         referenced_objects=[],
         referencing_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=measurement.id,
                 component_uuid=None,
-                permissions='grant',
+                object=measurement,
                 path=[(object.id, None), -2, (measurement.id, None)],
                 referenced_objects=[],
                 referencing_objects=[]
@@ -150,6 +153,7 @@ def test_object_with_sample(sample_action, user):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -161,18 +165,19 @@ def test_object_with_sample(sample_action, user):
         }
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sample = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[sample.id], name_only=True)[0]
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object.id,
         component_uuid=None,
-        permissions='grant',
+        object=object,
         path=[(object.id, None)],
         referenced_objects=[],
         referencing_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=sample.id,
                 component_uuid=None,
-                permissions='grant',
+                object=sample,
                 path=[(object.id, None), -2, (sample.id, None)],
                 referenced_objects=[],
                 referencing_objects=[]
@@ -189,6 +194,7 @@ def test_object_with_cyclic_sample(sample_action, user):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -200,6 +206,7 @@ def test_object_with_cyclic_sample(sample_action, user):
         }
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sample = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[sample.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -211,17 +218,18 @@ def test_object_with_cyclic_sample(sample_action, user):
         }
     }
     sampledb.logic.objects.update_object(object.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object.id,
         component_uuid=None,
-        permissions='grant',
+        object=object,
         path=[(object.id, None)],
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=sample.id,
                 component_uuid=None,
-                permissions='grant',
+                object=sample,
                 path=[(object.id, None), -1, (sample.id, None)],
                 referenced_objects=[],
                 referencing_objects=[]
@@ -231,7 +239,7 @@ def test_object_with_cyclic_sample(sample_action, user):
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=sample.id,
                 component_uuid=None,
-                permissions='grant',
+                object=sample,
                 path=[(object.id, None), -1, (sample.id, None)],
                 referenced_objects=None,
                 referencing_objects=None
@@ -253,6 +261,7 @@ def test_object_with_unknown_sample(sample_action, user):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -264,23 +273,24 @@ def test_object_with_unknown_sample(sample_action, user):
         }
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sample = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[sample.id], name_only=True)[0]
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=sample.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=sample.id,
         component_uuid=None,
-        permissions='grant',
+        object=sample,
         path=[(sample.id, None)],
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=object.id,
                 component_uuid=None,
-                permissions='grant',
+                object=object,
                 path=[(sample.id, None), -1, (object.id, None)],
                 referenced_objects=[
                     sampledb.logic.object_relationships.RelatedObjectsTree(
                         object_id=object.id,
                         component_uuid='91402d3c-b1a7-4c7e-8a68-15bfd21ceace',
-                        permissions='none',
+                        object=None,
                         path=[(sample.id, None), -1, (object.id, None), -1, (1, '91402d3c-b1a7-4c7e-8a68-15bfd21ceace')],
                         referenced_objects=None,
                         referencing_objects=None
@@ -301,6 +311,7 @@ def test_object_with_sample_without_permissions(sample_action, user):
         }
     }
     object = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -312,19 +323,20 @@ def test_object_with_sample_without_permissions(sample_action, user):
         }
     }
     sample = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    sample = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[sample.id], name_only=True)[0]
     sampledb.logic.object_permissions.set_user_object_permissions(user_id=user.id, object_id=object.id, permissions=sampledb.models.Permissions.NONE)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=sample.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=sample.id,
         component_uuid=None,
-        permissions='grant',
+        object=sample,
         path=[(sample.id, None)],
         referencing_objects=[],
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=object.id,
                 component_uuid=None,
-                permissions='none',
+                object=None,
                 path=[(sample.id, None), -1, (object.id, None)],
                 referenced_objects=None,
                 referencing_objects=None
@@ -337,7 +349,7 @@ def test_object_with_sample_without_permissions(sample_action, user):
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object.id,
         component_uuid=None,
-        permissions='read',
+        object=object,
         path=[(object.id, None)],
         referenced_objects=[],
         referencing_objects=[]
@@ -352,6 +364,7 @@ def test_object_chain_without_permissions(sample_action, user):
         }
     }
     object1 = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object1 = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object1.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -363,6 +376,7 @@ def test_object_chain_without_permissions(sample_action, user):
         }
     }
     object2 = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object2 = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object2.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -374,6 +388,7 @@ def test_object_chain_without_permissions(sample_action, user):
         }
     }
     object3 = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    object3 = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object3.id], name_only=True)[0]
     data = {
         'name': {
             '_type': 'text',
@@ -385,30 +400,31 @@ def test_object_chain_without_permissions(sample_action, user):
         }
     }
     sampledb.logic.objects.update_object(object1.id, data, user.id)
+    object1 = sampledb.logic.object_permissions.get_objects_with_permissions(user_id=user.id, permissions=sampledb.models.Permissions.READ, object_ids=[object1.id], name_only=True)[0]
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object1.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_id=object1.id,
         component_uuid=None,
         path=[(object1.id, None)],
-        permissions='grant',
+        object=object1,
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=object3.id,
                 component_uuid=None,
                 path=[(object1.id, None), -1, (object3.id, None)],
-                permissions='grant',
+                object=object3,
                 referenced_objects=[
                     sampledb.logic.object_relationships.RelatedObjectsTree(
                         object_id=object2.id,
                         component_uuid=None,
                         path=[(object1.id, None), -1, (object3.id, None), -1, (object2.id, None)],
-                        permissions='grant',
+                        object=object2,
                         referenced_objects=[
                             sampledb.logic.object_relationships.RelatedObjectsTree(
                                 object_id=object1.id,
                                 component_uuid=None,
                                 path=[(object1.id, None)],
-                                permissions='grant',
+                                object=object1,
                                 referenced_objects=None,
                                 referencing_objects=None
                             )
@@ -424,7 +440,7 @@ def test_object_chain_without_permissions(sample_action, user):
                 object_id=object2.id,
                 component_uuid=None,
                 path=[(object1.id, None), -1, (object3.id, None), -1, (object2.id, None)],
-                permissions='grant',
+                object=object2,
                 referenced_objects=None,
                 referencing_objects=None
             )
@@ -436,13 +452,13 @@ def test_object_chain_without_permissions(sample_action, user):
         object_id=object1.id,
         component_uuid=None,
         path=[(object1.id, None)],
-        permissions='grant',
+        object=object1,
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_id=object3.id,
                 component_uuid=None,
                 path=[(object1.id, None), -1, (object3.id, None)],
-                permissions='none',
+                object=None,
                 referenced_objects=None,
                 referencing_objects=None
             )
@@ -452,13 +468,13 @@ def test_object_chain_without_permissions(sample_action, user):
                 object_id=object2.id,
                 component_uuid=None,
                 path=[(object1.id, None), -2, (object2.id, None)],
-                permissions='grant',
+                object=object2,
                 referenced_objects=[
                     sampledb.logic.object_relationships.RelatedObjectsTree(
                         object_id=object1.id,
                         component_uuid=None,
                         path=[(object1.id, None)],
-                        permissions='grant',
+                        object=object1,
                         referenced_objects=None,
                         referencing_objects=None
                     )

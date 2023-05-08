@@ -1,6 +1,6 @@
 {% if related_objects_tree.component_uuid is none %}
-  {% if related_objects_tree.permissions != 'none' %}
-    {% set object = get_object(related_objects_tree.object_id) %}
+  {% if related_objects_tree.object %}
+    {% set object = related_objects_tree.object %}
     {% set object_name = object.name | get_translated_text %}
   {% else %}
     {% set object = none %}
@@ -11,7 +11,6 @@
   {% if object is not none %}
   {{ import_information_symbol(object) }}
   {% endif %}
-  {% if related_objects_tree.permissions != 'none' %}
   {% if related_objects_tree.referenced_objects or related_objects_tree.referencing_objects %}
   <ul>
   {% endif %}
@@ -27,7 +26,6 @@
   {% endif %}
   {% if related_objects_tree.referenced_objects or related_objects_tree.referencing_objects %}
   </ul>
-  {% endif %}
   {% endif %}
 {% else %}
   {% if related_objects_tree.component_uuid is not none and related_objects_tree.component_uuid != config['FEDERATION_UUID'] %}

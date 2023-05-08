@@ -11,8 +11,8 @@ import typing
 import flask
 
 from .objects import get_object, find_object_references
-from .object_permissions import get_user_permissions_for_multiple_objects
-from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions
+from .object_permissions import get_user_permissions_for_multiple_objects, get_objects_with_permissions
+from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions, Object
 from .. import db
 
 
@@ -86,7 +86,7 @@ class RelatedObjectsTree:
     object_id: int
     component_uuid: typing.Optional[str]
     path: typing.List[typing.Union[typing.Tuple[int, typing.Optional[str]], int]]
-    permissions: str
+    object: typing.Optional[Object]
     referenced_objects: typing.Optional[typing.List[RelatedObjectsTree]]
     referencing_objects: typing.Optional[typing.List[RelatedObjectsTree]]
 
@@ -123,9 +123,12 @@ def build_related_objects_tree(
         for object_id, component_uuid in subtrees
         if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']
     )
-    objects_permissions = get_user_permissions_for_multiple_objects(user_id, object_ids)
-
-    return _assemble_tree(subtrees[(object_id, None)][0], objects_permissions, subtrees)
+    objects = get_objects_with_permissions(user_id=user_id, permissions=Permissions.READ, object_ids=object_ids, name_only=True)
+    objects_by_id = {
+        object.object_id: object
+        for object in objects
+    }
+    return _assemble_tree(subtrees[(object_id, None)][0], objects_by_id, subtrees)
 
 
 def _gather_subtrees(
@@ -142,7 +145,7 @@ def _gather_subtrees(
         object_id=object_id,
         component_uuid=component_uuid,
         path=[],
-        permissions='none',
+        object=None,
         referenced_objects=None,
         referencing_objects=None,
     )
@@ -174,7 +177,7 @@ def _gather_subtrees(
 
 def _assemble_tree(
         tree: RelatedObjectsTree,
-        objects_permissions: typing.Dict[int, Permissions],
+        objects_by_id: typing.Dict[int, Object],
         subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]],
         path_prefix: typing.Optional[typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]] = None
 ) -> RelatedObjectsTree:
@@ -185,17 +188,17 @@ def _assemble_tree(
     if not tree.path:
         tree.path = path_prefix + [(tree.object_id, tree.component_uuid)]
         if tree.component_uuid is None or tree.component_uuid == flask.current_app.config['FEDERATION_UUID']:
-            if Permissions.READ in objects_permissions[tree.object_id]:
-                tree.permissions = objects_permissions[tree.object_id].name.lower()
+            if tree.object_id in objects_by_id:
+                tree.object = objects_by_id[tree.object_id]
                 # create a copy that will contain subtrees
                 tree = copy.deepcopy(tree)
                 tree.referenced_objects = [
-                    _assemble_tree(subtrees[referenced_object_id][0], objects_permissions, subtrees, tree.path + [-1])
+                    _assemble_tree(subtrees[referenced_object_id][0], objects_by_id, subtrees, tree.path + [-1])
                     for referenced_object_id in referenced_object_ids
                 ]
                 tree.referencing_objects = [
-                    _assemble_tree(subtrees[referencing_object_id][0], objects_permissions, subtrees, tree.path + [-2])
+                    _assemble_tree(subtrees[referencing_object_id][0], objects_by_id, subtrees, tree.path + [-2])
                     for referencing_object_id in referencing_object_ids
-                    if Permissions.READ in objects_permissions[referencing_object_id[0]]
+                    if referencing_object_id[0] in objects_by_id and (referencing_object_id[1] is None or referencing_object_id[1] == flask.current_app.config['FEDERATION_UUID'])
                 ]
     return tree
