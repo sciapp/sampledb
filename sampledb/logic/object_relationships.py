@@ -11,16 +11,17 @@ import typing
 import flask
 
 from .objects import get_object, find_object_references
-from .object_log import get_object_log_entries
 from .object_permissions import get_user_permissions_for_multiple_objects
-from ..models import ObjectLogEntryType, Permissions
+from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions
+from .. import db
 
 
 def get_related_object_ids(
         object_id: int,
         include_referenced_objects: bool,
         include_referencing_objects: bool,
-        user_id: typing.Optional[int] = None
+        user_id: typing.Optional[int] = None,
+        filter_referencing_objects_by_permissions: bool = True
 ) -> typing.Tuple[
     typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]
 ]:
@@ -33,13 +34,13 @@ def get_related_object_ids(
     - a sample created using the given object (include_referencing_objects)
     - any object referencing the given object in its metadata (include_referencing_objects)
 
-    If user_id is not None, only objects which the given user has READ
-    permissions for will be included in the result.
-
     :param object_id: the ID of an existing object
     :param include_referenced_objects: whether to include referenced objects
     :param include_referencing_objects: whether to include referencing objects
     :param user_id: the ID of an existing user (optional)
+    :param filter_referencing_objects_by_permissions: whether the referencing
+        object ID list should only contain objects for which the given user has
+        READ permissions
     :return: lists of previous object IDs, measurement IDs and sample IDs
     """
     referenced_object_ids: typing.Set[typing.Tuple[int, typing.Optional[str]]] = set()
@@ -50,20 +51,33 @@ def get_related_object_ids(
             if referenced_object_id is not None:
                 referenced_object_ids.add(referenced_object_id)
     if include_referencing_objects:
-        object_log_entries = get_object_log_entries(object_id, user_id)
+        object_log_entries = ObjectLogEntry.query.filter(
+            db.and_(
+                ObjectLogEntry.object_id == object_id,
+                ObjectLogEntry.type.in_((
+                    ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT,
+                    ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION,
+                    ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA
+                ))
+            )
+        ).all()
+        object_id_key_map = {
+            ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT: 'measurement_id',
+            ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION: 'sample_id',
+            ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA: 'object_id',
+        }
         for object_log_entry in object_log_entries:
-            if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT:
-                measurement_id = object_log_entry.data.get('measurement_id')
-                if measurement_id is not None:
-                    referencing_object_ids.add((measurement_id, None))
-            if object_log_entry.type == ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION:
-                sample_id = object_log_entry.data.get('sample_id')
-                if sample_id is not None:
-                    referencing_object_ids.add((sample_id, None))
-            if object_log_entry.type == ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA:
-                referencing_object_id = object_log_entry.data.get('object_id')
-                if referencing_object_id is not None:
-                    referencing_object_ids.add((referencing_object_id, None))
+            object_id_key = object_id_key_map.get(object_log_entry.type, 'object_id')
+            referencing_object_id = object_log_entry.data.get(object_id_key)
+            if referencing_object_id is not None:
+                referencing_object_ids.add((referencing_object_id, None))
+        if filter_referencing_objects_by_permissions:
+            object_permissions = get_user_permissions_for_multiple_objects(user_id, [referencing_object_id[0] for referencing_object_id in referencing_object_ids])
+            referencing_object_ids = {
+                referencing_object_id
+                for referencing_object_id in referencing_object_ids
+                if Permissions.READ in object_permissions[referencing_object_id[0]]
+            }
     return list(referencing_object_ids), list(referenced_object_ids)
 
 
@@ -138,7 +152,8 @@ def _gather_subtrees(
             object_id=object_id,
             include_referenced_objects=True,
             include_referencing_objects=True,
-            user_id=user_id
+            user_id=user_id,
+            filter_referencing_objects_by_permissions=False
         )
         for child_object_list, filtered_child_object_list in [
             (referenced_object_ids, subtrees[object_id, component_uuid][1]),
@@ -181,5 +196,6 @@ def _assemble_tree(
                 tree.referencing_objects = [
                     _assemble_tree(subtrees[referencing_object_id][0], objects_permissions, subtrees, tree.path + [-2])
                     for referencing_object_id in referencing_object_ids
+                    if Permissions.READ in objects_permissions[referencing_object_id[0]]
                 ]
     return tree
