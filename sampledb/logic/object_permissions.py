@@ -326,6 +326,49 @@ def get_object_info_with_permissions(
     ]
 
 
+def get_user_permissions_for_multiple_objects(
+        user_id: typing.Optional[int],
+        object_ids: typing.Sequence[int]
+) -> typing.Dict[int, Permissions]:
+    if user_id is None:
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return {
+                object_id: Permissions.NONE
+                for object_id in object_ids
+            }
+    else:
+        user = get_user(user_id)
+        if user.has_admin_permissions:
+            return {
+                object_id: Permissions.GRANT
+                for object_id in object_ids
+            }
+
+    stmt = db.text("""
+    SELECT
+    u.object_id, MAX(u.permissions_int)
+    FROM user_object_permissions_by_all as u
+    WHERE (u.object_id IN :object_ids) AND (u.user_id = :user_id OR u.user_id IS NULL) AND (u.requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (u.requires_instruments IS FALSE OR :enable_instruments IS TRUE)
+    GROUP BY (u.object_id)
+    """)
+
+    parameters: typing.Dict[str, typing.Any] = {
+        'user_id': user_id,
+        'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
+        'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS'],
+        'object_ids': tuple(object_ids),
+    }
+    result = {
+        object_id: Permissions.from_value(permissions_int)
+        for object_id, permissions_int in db.session.execute(stmt, parameters).fetchall()
+    }
+    # use NONE for all missing objects as fallback
+    for object_id in object_ids:
+        if object_id not in result:
+            result[object_id] = Permissions.NONE
+    return result
+
+
 def get_object_table_with_permissions(
         user_id: typing.Optional[int],
         permissions: Permissions,

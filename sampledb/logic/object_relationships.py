@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import copy
 import dataclasses
 import typing
 
@@ -11,8 +12,7 @@ import flask
 
 from .objects import get_object, find_object_references
 from .object_log import get_object_log_entries
-from .object_permissions import get_user_object_permissions
-from . import errors
+from .object_permissions import get_user_permissions_for_multiple_objects
 from ..models import ObjectLogEntryType, Permissions
 
 
@@ -79,10 +79,7 @@ class RelatedObjectsTree:
 
 def build_related_objects_tree(
         object_id: int,
-        component_uuid: typing.Optional[str] = None,
-        user_id: typing.Optional[int] = None,
-        path: typing.Optional[typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]] = None,
-        visited_paths: typing.Optional[typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]]] = None
+        user_id: typing.Optional[int],
 ) -> RelatedObjectsTree:
     """
     Get the tree of related objects for a given object.
@@ -96,57 +93,93 @@ def build_related_objects_tree(
     samples.
 
     :param object_id: the ID of an existing object
-    :param component_uuid: the component UUID if the object resides on another component (optional)
-    :param user_id: the ID of an existing user (optional)
-    :param path: the path leading to this object (internal)
-    :param visited_paths: all previously visited paths (internal)
-    :return: the related objects tree as a nested dictionary of lists
+    :param user_id: the ID of an existing user
+    :return: the related objects tree
     """
-    if path is None:
-        path = [(object_id, component_uuid)]
-    else:
-        path = path + [(object_id, component_uuid)]
-    if visited_paths is None:
-        visited_paths = {}
+    subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]] = {}
+    _gather_subtrees(
+        object_id=object_id,
+        component_uuid=None,
+        user_id=user_id,
+        subtrees=subtrees
+    )
+
+    object_ids = tuple(
+        object_id
+        for object_id, component_uuid in subtrees
+        if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']
+    )
+    objects_permissions = get_user_permissions_for_multiple_objects(user_id, object_ids)
+
+    return _assemble_tree(subtrees[(object_id, None)][0], objects_permissions, subtrees)
+
+
+def _gather_subtrees(
+        object_id: int,
+        component_uuid: typing.Optional[str],
+        user_id: typing.Optional[int],
+        subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]],
+        parent_object_id: typing.Optional[int] = None,
+        parent_component_id: typing.Optional[str] = None
+) -> None:
+    if (object_id, component_uuid) in subtrees:
+        return
+    tree = RelatedObjectsTree(
+        object_id=object_id,
+        component_uuid=component_uuid,
+        path=[],
+        permissions='none',
+        referenced_objects=None,
+        referencing_objects=None,
+    )
+    subtrees[object_id, component_uuid] = (tree, [], [])
     if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        try:
-            permissions = get_user_object_permissions(object_id, user_id)
-        except errors.ObjectDoesNotExistError:
-            permissions = Permissions.NONE
-    else:
-        permissions = Permissions.NONE
-    if (object_id, component_uuid) in visited_paths or permissions == Permissions.NONE:
-        tree = RelatedObjectsTree(
-            object_id=object_id,
-            component_uuid=component_uuid,
-            path=visited_paths.get((object_id, component_uuid), path),
-            permissions=permissions.name.lower(),
-            referenced_objects=None,
-            referencing_objects=None,
-        )
-    else:
-        visited_paths[(object_id, component_uuid)] = path
         referencing_object_ids, referenced_object_ids = get_related_object_ids(
             object_id=object_id,
             include_referenced_objects=True,
             include_referencing_objects=True,
             user_id=user_id
         )
-        tree = RelatedObjectsTree(
-            object_id=object_id,
-            component_uuid=None,
-            path=path,
-            permissions=permissions.name.lower(),
-            referenced_objects=[
-                build_related_objects_tree(referenced_object_id[0], referenced_object_id[1], user_id, path + [-1], visited_paths)
-                for referenced_object_id in referenced_object_ids
-                if len(path) == 1 or referenced_object_id != path[-3]
-            ],
-            referencing_objects=[
-                build_related_objects_tree(referencing_object_id[0], referencing_object_id[1], user_id, path + [-2], visited_paths)
-                for referencing_object_id in referencing_object_ids
-                if len(path) == 1 or referencing_object_id != path[-3]
-            ]
-        )
+        for child_object_list, filtered_child_object_list in [
+            (referenced_object_ids, subtrees[object_id, component_uuid][1]),
+            (referencing_object_ids, subtrees[object_id, component_uuid][2])
+        ]:
+            for child_object_id, child_component_uuid in child_object_list:
+                if (child_object_id, child_component_uuid) != (parent_object_id, parent_component_id):
+                    _gather_subtrees(
+                        object_id=child_object_id,
+                        component_uuid=child_component_uuid,
+                        user_id=user_id,
+                        subtrees=subtrees,
+                        parent_object_id=object_id,
+                        parent_component_id=component_uuid
+                    )
+                    filtered_child_object_list.append((child_object_id, child_component_uuid))
 
+
+def _assemble_tree(
+        tree: RelatedObjectsTree,
+        objects_permissions: typing.Dict[int, Permissions],
+        subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]],
+        path_prefix: typing.Optional[typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]] = None
+) -> RelatedObjectsTree:
+    if path_prefix is None:
+        path_prefix = []
+
+    tree, referenced_object_ids, referencing_object_ids = subtrees[(tree.object_id, tree.component_uuid)]
+    if not tree.path:
+        tree.path = path_prefix + [(tree.object_id, tree.component_uuid)]
+        if tree.component_uuid is None or tree.component_uuid == flask.current_app.config['FEDERATION_UUID']:
+            if Permissions.READ in objects_permissions[tree.object_id]:
+                tree.permissions = objects_permissions[tree.object_id].name.lower()
+                # create a copy that will contain subtrees
+                tree = copy.deepcopy(tree)
+                tree.referenced_objects = [
+                    _assemble_tree(subtrees[referenced_object_id][0], objects_permissions, subtrees, tree.path + [-1])
+                    for referenced_object_id in referenced_object_ids
+                ]
+                tree.referencing_objects = [
+                    _assemble_tree(subtrees[referencing_object_id][0], objects_permissions, subtrees, tree.path + [-2])
+                    for referencing_object_id in referencing_object_ids
+                ]
     return tree
