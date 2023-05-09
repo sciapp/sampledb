@@ -330,6 +330,8 @@ def get_user_permissions_for_multiple_objects(
         user_id: typing.Optional[int],
         object_ids: typing.Sequence[int]
 ) -> typing.Dict[int, Permissions]:
+    if not object_ids:
+        return {}
     if user_id is None:
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
             return {

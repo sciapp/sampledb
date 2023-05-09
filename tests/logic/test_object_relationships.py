@@ -2,6 +2,7 @@
 """
 
 """
+import uuid
 
 import pytest
 
@@ -483,3 +484,72 @@ def test_object_chain_without_permissions(sample_action, user):
             )
         ]
     )
+
+
+def test_get_referenced_object_ids(sample_action, user):
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        }
+    }
+    object1 = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 1'
+        }
+    }
+    object2 = sampledb.logic.objects.create_object(sample_action.id, data, user.id)
+    multi_reference_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'samples': {
+                    'title': 'Samples',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Sample',
+                        'type': 'sample'
+                    }
+                }
+            },
+            'required': ['name']
+        }
+    )
+    component_uuid = str(uuid.uuid4())
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Object 2'
+        },
+        'samples': [
+            {
+                '_type': 'sample',
+                'object_id': object1.id
+            },
+            {
+                '_type': 'sample',
+                'object_id': object1.id
+            },
+            {
+                '_type': 'sample',
+                'object_id': object2.id
+            },
+            {
+                '_type': 'sample',
+                'object_id': 42,
+                'component_uuid': component_uuid
+            }
+        ]
+    }
+    object3 = sampledb.logic.objects.create_object(multi_reference_action.id, data, user.id)
+    assert set(sampledb.logic.object_relationships._get_referenced_object_ids({object3.id})[object3.id]) == {
+        (object1.id, None), (object2.id, None), (42, component_uuid)
+    }

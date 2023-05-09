@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import itertools
 import typing
 
 import flask
@@ -131,13 +132,68 @@ def build_related_objects_tree(
     return _assemble_tree(subtrees[(object_id, None)][0], objects_by_id, subtrees)
 
 
+def _get_referencing_object_ids(
+        object_ids: typing.Set[int]
+) -> typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]]:
+    if not object_ids:
+        return {}
+    referencing_object_ids_by_id: typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]] = {
+        object_id: set()
+        for object_id in object_ids
+    }
+    for object_id, referencing_object_id, referencing_component_uuid in db.session.execute(db.text("""
+        SELECT DISTINCT object_id, coalesce(data -> 'object_id', data -> 'sample_id', data -> 'measurement_id', NULL)::text::integer AS referencing_object_id, NULL AS referencing_component_uuid
+        FROM object_log_entries
+        WHERE object_id IN :object_ids AND type IN ('USE_OBJECT_IN_MEASUREMENT', 'USE_OBJECT_IN_SAMPLE_CREATION', 'REFERENCE_OBJECT_IN_METADATA')
+    """), {'object_ids': tuple(object_ids)}).fetchall():
+        referencing_object_ids_by_id[object_id].add((referencing_object_id, referencing_component_uuid))
+    return referencing_object_ids_by_id
+
+
+def _get_referenced_object_ids(
+        object_ids: typing.Set[int]
+) -> typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]]:
+    if not object_ids:
+        return {}
+    referenced_object_ids_by_id: typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]] = {
+        object_id: set()
+        for object_id in object_ids
+    }
+    for object_id, referenced_object_id, referenced_component_uuid in db.session.execute(db.text("""
+        WITH RECURSIVE properties(object_id, value) AS (
+            SELECT objects_current.object_id, data.value
+            FROM objects_current, jsonb_each(objects_current.data) AS data
+            WHERE objects_current.object_id IN :object_ids AND jsonb_typeof(objects_current.data) = 'object'
+        UNION ALL
+            SELECT properties.object_id, coalesce(object_data.value, array_data.value)
+            FROM properties
+            LEFT OUTER JOIN jsonb_each(CASE
+                WHEN jsonb_typeof(properties.value) = 'object' THEN properties.value
+                ELSE '{}'::jsonb
+            END) AS object_data ON jsonb_typeof(properties.value) = 'object'
+            LEFT OUTER JOIN jsonb_array_elements(CASE
+                WHEN jsonb_typeof(properties.value) = 'array' THEN properties.value
+                ELSE '[]'::jsonb
+            END) AS array_data ON jsonb_typeof(properties.value) = 'array'
+            WHERE jsonb_typeof(properties.value) = 'object' OR jsonb_typeof(properties.value) = 'array'
+        )
+        SELECT object_id, (properties.value -> 'object_id')::integer, properties.value ->> 'component_uuid'
+        FROM properties
+        WHERE jsonb_typeof(properties.value) = 'object' AND properties.value ? '_type' AND properties.value ? 'object_id' AND properties.value ->> '_type' IN ('object_reference', 'sample', 'measurement')
+    """), {'object_ids': tuple(object_ids)}).fetchall():
+        referenced_object_ids_by_id[object_id].add((referenced_object_id, referenced_component_uuid))
+    return referenced_object_ids_by_id
+
+
 def _gather_subtrees(
         object_id: int,
         component_uuid: typing.Optional[str],
         user_id: typing.Optional[int],
         subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]],
         parent_object_id: typing.Optional[int] = None,
-        parent_component_id: typing.Optional[str] = None
+        parent_component_id: typing.Optional[str] = None,
+        referencing_object_ids: typing.Optional[typing.Set[typing.Tuple[int, typing.Optional[str]]]] = None,
+        referenced_object_ids: typing.Optional[typing.Set[typing.Tuple[int, typing.Optional[str]]]] = None
 ) -> None:
     if (object_id, component_uuid) in subtrees:
         return
@@ -151,28 +207,42 @@ def _gather_subtrees(
     )
     subtrees[object_id, component_uuid] = (tree, [], [])
     if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        referencing_object_ids, referenced_object_ids = get_related_object_ids(
-            object_id=object_id,
-            include_referenced_objects=True,
-            include_referencing_objects=True,
-            user_id=user_id,
-            filter_referencing_objects_by_permissions=False
-        )
+        if referencing_object_ids is None:
+            referencing_object_ids = _get_referencing_object_ids({object_id})[object_id]
+        if referenced_object_ids is None:
+            referenced_object_ids = _get_referenced_object_ids({object_id})[object_id]
         for child_object_list, filtered_child_object_list in [
             (referenced_object_ids, subtrees[object_id, component_uuid][1]),
             (referencing_object_ids, subtrees[object_id, component_uuid][2])
         ]:
             for child_object_id, child_component_uuid in child_object_list:
                 if (child_object_id, child_component_uuid) != (parent_object_id, parent_component_id):
-                    _gather_subtrees(
-                        object_id=child_object_id,
-                        component_uuid=child_component_uuid,
-                        user_id=user_id,
-                        subtrees=subtrees,
-                        parent_object_id=object_id,
-                        parent_component_id=component_uuid
-                    )
                     filtered_child_object_list.append((child_object_id, child_component_uuid))
+        local_child_object_ids = {
+            child_object_id
+            for child_object_id, child_component_uuid in itertools.chain(subtrees[object_id, component_uuid][1], subtrees[object_id, component_uuid][2])
+            if (child_object_id, child_component_uuid) not in subtrees and (child_component_uuid is None or child_component_uuid == flask.current_app.config['FEDERATION_UUID'])
+        }
+        referencing_object_ids_by_id = _get_referencing_object_ids(local_child_object_ids)
+        referenced_object_ids_by_id = _get_referenced_object_ids(local_child_object_ids)
+        for child_object_id, child_component_uuid in itertools.chain(subtrees[object_id, component_uuid][1], subtrees[object_id, component_uuid][2]):
+            if (child_object_id, child_component_uuid) not in subtrees:
+                if child_component_uuid is None or child_component_uuid == flask.current_app.config['FEDERATION_UUID']:
+                    referencing_object_ids = referencing_object_ids_by_id.get(child_object_id)
+                    referenced_object_ids = referenced_object_ids_by_id.get(child_object_id)
+                else:
+                    referencing_object_ids = None
+                    referenced_object_ids = None
+                _gather_subtrees(
+                    object_id=child_object_id,
+                    component_uuid=child_component_uuid,
+                    user_id=user_id,
+                    subtrees=subtrees,
+                    parent_object_id=object_id,
+                    parent_component_id=component_uuid,
+                    referencing_object_ids=referencing_object_ids,
+                    referenced_object_ids=referenced_object_ids
+                )
 
 
 def _assemble_tree(
