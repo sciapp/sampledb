@@ -575,7 +575,21 @@ A note to display below the field when creating or editing an object using this 
 default
 ^^^^^^^
 
-The default value for this property as a number. This should be the value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters. If there are multiple units, the first one will be used for the default.
+The default value for this property as a number or a :ref:`quantity object <metadata_quantity_object>`.
+A number is interpreted as value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters. If there are multiple units, the first one will be used for the default.
+
+.. code-block:: json
+    :caption: A quantity object default. In this case the ``units`` property is optional as it could be derived from the schema.
+
+    "size": {
+      "title": "Size",
+      "type": "quantity",
+      "units": "nm",
+      "default": {
+        "magnitude": 10,
+        "units": "nm"
+      }
+    }
 
 units
 ^^^^^
@@ -598,6 +612,26 @@ max_magnitude
 ^^^^^^^^^^^^^
 
 The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
+
+.. _metadata_quantity_object:
+Quantity Objects
+^^^^^^^^^^^^^^^^
+
+Quantity data is stored in the notation shown in the codebox below.
+It includes the magnitude in base units, a unit to use, the magnitude in given unit, dimensionality and the type, which is ``quantity`` for quantities.
+
+When this is used as input for a quantity default value, a minimal set of parameters is sufficient, e.g. ``units``, if the unit to use cannot be derived unambiguously from the schema, and either ``magnitude`` or ``magnitude_in_base_units``.
+
+.. code-block:: json
+    :caption: A complete quantity object
+
+    {
+        "_type": "quantity",
+        "magnitude": 100,
+        "units": "cm",
+        "magnitude_in_base_units": 1.0,
+        "dimensionality": "dimensionless"
+    }
 
 Datetimes
 `````````
