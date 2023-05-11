@@ -16,12 +16,12 @@
   {% endif %}
   {% if related_objects_tree.referenced_objects %}
     {% for related_objects_tree in related_objects_tree.referenced_objects %}
-      <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=object_name, object_id=related_objects_tree.object_id) }}"></i>{% include "objects/view/related_objects.html" %}</li>
+      <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=object_name, object_id=object.object_id) }}"></i>{% include "objects/view/related_objects.html" %}</li>
     {% endfor %}
   {% endif %}
   {% if related_objects_tree.referencing_objects %}
     {% for related_objects_tree in related_objects_tree.referencing_objects %}
-      <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=object_name, object_id=related_objects_tree.object_id) }}"></i>{% include "objects/view/related_objects.html" %}</li>
+      <li>{% include "objects/view/related_objects_tree_toggle.html" %}<i class="fa fa-fw fa-arrow-right" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=object_name, object_id=object.object_id) }}"></i>{% include "objects/view/related_objects.html" %}</li>
     {% endfor %}
   {% endif %}
   {% if related_objects_tree.referenced_objects or related_objects_tree.referencing_objects %}
