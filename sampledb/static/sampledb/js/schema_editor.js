@@ -944,7 +944,7 @@ function enableSchemaEditor() {
       var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "user";
 
-      var has_default = getElementForProperty(path, 'user-default-checkbox').prop('checked');
+      var has_default = getElementForProperty(path, 'user-default-input').prop('checked');
       if (has_default) {
         property_schema["default"] = "self";
       } else {
@@ -1349,14 +1349,23 @@ function enableSchemaEditor() {
     extensions_checkbox.on('change', updateProperty.bind(path));
     extensions_input.on('change', updateProperty.bind(path));
 
-    var default_checkbox = node.find('.schema-editor-user-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-checkbox');
+    var default_label = node.find('.schema-editor-user-property-default-label');
+    var default_input = node.find('.schema-editor-user-property-default-input');
+    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-input');
+    default_label.attr('for', default_input.attr('id'));
+    default_input.bootstrapToggle();
     if (type === 'user' && 'default' in schema) {
-      default_checkbox.prop('checked', true);
+      if (schema['default'] === 'self') {
+        default_input.prop('checked', true);
+        default_input.bootstrapToggle('on');
+      } else {
+        window.schema_editor_missing_type_support = true;
+      }
     } else {
-      default_checkbox.prop('checked', false);
+      default_input.prop('checked', false);
+      default_input.bootstrapToggle('off');
     }
-    default_checkbox.on('change', updateProperty.bind(path));
+    default_input.on('change', updateProperty.bind(path));
 
     var preview_label = node.find('.schema-editor-file-property-preview-label');
     var preview_input = node.find('.schema-editor-file-property-preview-input');

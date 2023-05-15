@@ -3275,6 +3275,9 @@ msgstr "Eine Liste von Auswahlmöglichkeiten; ein Wert pro Zeile."
 msgid "Choices"
 msgstr "Auswahlmöglichkeiten"
 
+msgid "Use the user creating the object as the default value for this field."
+msgstr "Den Nutzer, der das Objekt erstellt, als Standardwert verwenden."
+
 msgid "Unit or a list of units the user can choose from, separated by commas."
 msgstr "Einheit oder Liste von auswählbaren Einheiten, getrennt durch Kommata."
 
