@@ -20,8 +20,12 @@
       {% set data = item %}
       {% if diff is not none and previous_schema is not none and not (diff is mapping) and diff | length > loop.index0  %}
         {% set diff = diff[loop.index0] %}
-        {% set previous_schema = previous_schema['items'] %}
-        {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+        {% if 'items' in previous_schema %}
+          {% set previous_schema = previous_schema['items'] %}
+          {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+        {% else %}
+          {% set previous_schema = none %}
+        {% endif %}
       {% else %}
         {% set diff = none %}
         {% set previous_schema = none %}

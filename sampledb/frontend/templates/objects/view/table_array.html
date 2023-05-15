@@ -80,7 +80,11 @@
         {% set data = item %}
         {% if has_diff and diff | length > loop.index0  %}
           {% set diff = diff[loop.index0] %}
-          {% set previous_schema = previous_schema['items'] %}
+          {% if 'items' in previous_schema %}
+            {% set previous_schema = previous_schema['items'] %}
+          {% else %}
+            {% set previous_schema = none %}
+          {% endif %}
         {% else %}
           {% set diff = none %}
           {% set previous_schema = none %}
@@ -111,8 +115,12 @@
             {% set id_prefix = id_prefix + '_' + name + '_' %}
             {% if diff is not none and previous_schema is not none and property_name in diff %}
               {% set diff = diff[property_name] %}
-              {% set previous_schema = previous_schema['properties'][property_name] %}
-              {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+              {% if 'properties' in previous_schema and property_name in previous_schema['properties'] %}
+                {% set previous_schema = previous_schema['properties'][property_name] %}
+                {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+              {% else %}
+                {% set previous_schema = none %}
+              {% endif %}
             {% else %}
               {% set diff = none %}
               {% set previous_schema = none %}
@@ -138,8 +146,12 @@
             {% set id_prefix = id_prefix + '_' + name + '_' %}
             {% if diff is not none and previous_schema is not none and property_name in diff %}
               {% set diff = diff[property_name] %}
-              {% set previous_schema = previous_schema['properties'][property_name] %}
-              {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+              {% if 'properties' in previous_schema and property_name in previous_schema['properties'] %}
+                {% set previous_schema = previous_schema['properties'][property_name] %}
+                {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+              {% else %}
+                {% set previous_schema = none %}
+              {% endif %}
             {% else %}
               {% set diff = none %}
               {% set previous_schema = none %}
@@ -190,7 +202,11 @@
   {% for item in data %}
     {% if diff is not none and previous_schema is not none and not (diff is mapping) and diff | length > loop.index0  %}
       {% set diff = diff[loop.index0] %}
-      {% set previous_schema = previous_schema['items'] %}
+      {% if 'items' in previous_schema %}
+        {% set previous_schema = previous_schema['items'] %}
+      {% else %}
+        {% set previous_schema = none %}
+      {% endif %}
     {% else %}
       {% set diff = none %}
       {% set previous_schema = none %}
@@ -220,8 +236,12 @@
           {% set data = field %}
           {% if diff is not none and previous_schema is not none and not (diff is mapping) and diff | length > loop.index0  %}
             {% set diff = diff[loop.index0] %}
-            {% set previous_schema = previous_schema['items'] %}
-            {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+            {% if 'items' in previous_schema %}
+              {% set previous_schema = previous_schema['items'] %}
+              {{ previous_schema.update({'parent_style': tmp_style}) or '' }}
+            {% else %}
+              {% set previous_schema = none %}
+            {% endif %}
           {% else %}
             {% set diff = none %}
             {% set previous_schema = none %}
