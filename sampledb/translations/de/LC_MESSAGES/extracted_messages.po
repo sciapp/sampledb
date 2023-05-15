@@ -2999,6 +2999,9 @@ msgstr "Diese Aktion wurde aus Aktionslisten versteckt."
 msgid "Only administrators can create objects with this action."
 msgstr "Nur Administratoren können mit dieser Aktion Objekte erstellen."
 
+msgid "Only administrators can edit this action."
+msgstr "Nur Administratoren können diese Aktion bearbeiten."
+
 msgid "Modify the settings for this action."
 msgstr "Einstellungen für diese Aktion modifizieren."
 
