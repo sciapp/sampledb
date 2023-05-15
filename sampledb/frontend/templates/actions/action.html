@@ -28,6 +28,9 @@
   {% elif action.admin_only %}
     <p class="text-muted"><i class="fa fa-ban fa-fw" aria-hidden="true"></i> {{_("Only administrators can create objects with this action.") }}</p>
   {% endif %}
+  {% if action.type is not none and action.type.admin_only and not current_user.is_admin %}
+    <p class="text-muted"><i class="fa fa-lock fa-fw" aria-hidden="true"></i> {{_("Only administrators can edit this action.") }}</p>
+  {% endif %}
 
   {% if action.description | get_translated_text %}
     <div class="action-user-content">
