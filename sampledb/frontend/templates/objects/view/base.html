@@ -257,7 +257,7 @@
     {% endif %}
   </div>
   {% if schema and 'workflow_view' in schema and workflow | length > 0 %}
-    <h2>{{ _('Workflow') }}</h2>
+    <h2>{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</h2>
     {# counter for plotly_chart_plots #}
     {% set plot_counter = namespace(value=0) %}
     {% for elem in workflow %}

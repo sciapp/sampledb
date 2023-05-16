@@ -55,28 +55,7 @@ def validate_schema(
         raise ValidationError('invalid schema (type must be str)', path)
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
-    if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
-        raise ValidationError('title must be str or dict', path)
-    if isinstance(schema['title'], dict):
-        if 'en' not in schema['title']:
-            raise ValidationError('title must include an english translation', path)
-        for lang_code in schema['title'].keys():
-            if lang_code not in all_language_codes:
-                raise ValidationError('title must only contain known languages', path)
-        for title_text in schema['title'].values():
-            if not isinstance(title_text, str):
-                raise ValidationError('title must only contain text', path)
-            if strict:
-                if not title_text:
-                    raise ValidationError('title must not be empty', path)
-                if re.match(r'^\s+$', title_text):
-                    raise ValidationError('title must not be whitespace only', path)
-    elif strict:
-        title_text = schema['title']
-        if not title_text:
-            raise ValidationError('title must not be empty', path)
-        if re.match(r'^\s+$', title_text):
-            raise ValidationError('title must not be whitespace only', path)
+    _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     if 'style' in schema and not isinstance(schema['style'], str):
         raise ValidationError('style must only contain text', path)
     if 'conditions' in schema:
@@ -124,6 +103,37 @@ def validate_schema(
         return _validate_file_schema(schema, path, all_language_codes=all_language_codes)
     else:
         raise ValidationError('invalid type', path)
+
+
+def _validate_title_in_schema(
+    schema: typing.Dict[str, typing.Any],
+    path: typing.List[str],
+    *,
+    all_language_codes: typing.Set[str],
+    strict: bool = False
+) -> None:
+    if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
+        raise ValidationError('title must be str or dict', path)
+    if isinstance(schema['title'], dict):
+        if 'en' not in schema['title']:
+            raise ValidationError('title must include an english translation', path)
+        for lang_code in schema['title'].keys():
+            if lang_code not in all_language_codes:
+                raise ValidationError('title must only contain known languages', path)
+        for title_text in schema['title'].values():
+            if not isinstance(title_text, str):
+                raise ValidationError('title must only contain text', path)
+            if strict:
+                if not title_text:
+                    raise ValidationError('title must not be empty', path)
+                if re.match(r'^\s+$', title_text):
+                    raise ValidationError('title must not be whitespace only', path)
+    elif strict:
+        title_text = schema['title']
+        if not title_text:
+            raise ValidationError('title must not be empty', path)
+        if re.match(r'^\s+$', title_text):
+            raise ValidationError('title must not be whitespace only', path)
 
 
 def _validate_note_in_schema(
@@ -471,7 +481,7 @@ def _validate_object_schema(
 
     if 'workflow_view' in schema:
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
-        workflow_valid_keys = set(id_keys)
+        workflow_valid_keys = set(id_keys + ['title'])
         if not isinstance(schema['workflow_view'], dict):
             raise ValidationError('workflow_view must be a dict', path)
         for key in schema['workflow_view'].keys():
@@ -486,6 +496,7 @@ def _validate_object_schema(
                 )
             ):
                 raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
+        _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
