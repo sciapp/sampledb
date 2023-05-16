@@ -165,6 +165,23 @@ def tags_input(base_url, driver, object):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/tags.png', (0, row.location['y'], width, min(row.location['y'] + max_height, row.location['y'] + row.rect['height'])))
 
 
+def workflow(base_url, driver, object, measurement_object_1, measurement_object_2):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'objects/{}'.format(object.id))
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
+        if 'Workflow' in heading.text:
+            break
+    else:
+        assert False
+    y_offset = scroll_to_element(driver, heading)
+    driver.find_element(By.ID, f'show-more-workflow_{measurement_object_1.object_id}_-btn').click()
+    show_more = driver.find_element(By.ID, f'show-more-workflow_{measurement_object_2.object_id}_-btn')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/workflow.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, show_more.location['y'] + show_more.rect['height']) - y_offset))
+
+
 def comments(base_url, driver, object):
     sampledb.logic.comments.create_comment(object.id, user.id, "This is an example comment.")
     sampledb.logic.comments.create_comment(object.id, user.id, "Comments can contain multiple paragraphs.\nThe text will be displayed as you typed it.\n - As a result, you can use simple lists.\n - Markdown or similar languages are not supported however.")
@@ -634,6 +651,9 @@ try:
                     'type': 'hazards'
                 }
             },
+            'workflow_view': {
+                'referencing_action_type_id': -98
+            },
             'required': ['name', 'hazards'],
             'propertyOrder': ['name', 'tags', 'hazards']
         }
@@ -670,6 +690,95 @@ try:
             user_id=user.id,
             previous_object_id=None,
             schema=schema
+        )
+
+        measurement_schema = {
+            'title': "Measurement",
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Measurement Name',
+                    'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'object_reference',
+                    'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
+                },
+                'value': {
+                    'title': 'Value',
+                    'type': 'quantity',
+                    'units': 'nm'
+                },
+                'notes': {
+                    'title': 'Notes',
+                    'type': 'text',
+                    'markdown': True
+                },
+                'tags': {
+                    'title': 'Tags',
+                    'type': 'tags'
+                }
+            },
+            'required': ['name', 'sample', 'value'],
+            'propertyOrder': ['name', 'sample', 'value', 'notes', 'tags'],
+            'workflow_show_more': ['notes', 'sample']
+        }
+        measurement_action = sampledb.logic.actions.create_action(
+            action_type_id=sampledb.models.ActionType.MEASUREMENT,
+            schema=measurement_schema,
+            instrument_id=instrument.id
+        )
+
+        sampledb.logic.action_translations.set_action_translation(
+            sampledb.models.Language.ENGLISH,
+            measurement_action.id,
+            name="Measurement",
+            description="This is an example measurement action"
+        )
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(measurement_action.id, sampledb.models.Permissions.READ)
+        measurement_data = {
+            'name': {
+                'text': 'Meas-Demo-1',
+                '_type': 'text'
+            },
+            'sample': {
+                'object_id': object.object_id,
+                '_type': 'object_reference'
+            },
+            'value': {
+                'magnitude': 1.2,
+                'units': 'nm',
+                '_type': 'quantity',
+            },
+            'notes': {
+                'text': '## Measurement Notes\n* P1\n* P2',
+                'is_markdown': True,
+                '_type': 'text'
+            },
+            'tags': {
+                'tags': ['demo', 'other_tag', 'meas'],
+                '_type': 'tags'
+            }
+        }
+        measurement_object_1 = sampledb.logic.objects.create_object(
+            action_id=measurement_action.id,
+            data=measurement_data,
+            user_id=user.id,
+            previous_object_id=None,
+            schema=measurement_schema
+        )
+
+        measurement_data['name']['text'] = 'Meas-Demo-2'
+        measurement_data['value']['magnitude'] = 1.5
+        del measurement_data['value']['magnitude_in_base_units']
+        measurement_data['notes']['text'] = ''
+        measurement_object_2 = sampledb.logic.objects.create_object(
+            action_id=measurement_action.id,
+            data=measurement_data,
+            user_id=user.id,
+            previous_object_id=None,
+            schema=measurement_schema
         )
 
         component = sampledb.logic.components.add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', 'Example SampleDB', 'https://example.com', 'Example SampleDB instance.')
@@ -750,6 +859,7 @@ try:
                 action(flask_server.base_url, driver, instrument_action)
                 hazards_input(flask_server.base_url, driver, instrument_action)
                 tags_input(flask_server.base_url, driver, object)
+                workflow(flask_server.base_url, driver, object, measurement_object_1, measurement_object_2)
                 comments(flask_server.base_url, driver, object)
                 activity_log(flask_server.base_url, driver, object)
                 files(flask_server.base_url, driver, object)
