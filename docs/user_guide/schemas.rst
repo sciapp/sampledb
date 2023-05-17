@@ -222,6 +222,39 @@ show_more
 
 This attribute is a string array describing which properties to hide in the object view until a "show more"-button is pressed.
 
+workflow_view
+^^^^^^^^^^^^^
+
+This attribute can be used to enable and define a workflow view. Workflow views display contents of related objects referencing or referenced by this object
+on the object page.
+
+By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. If both filters are set, both action and action type will have to match for an object to be included in the workflow view.
+
+The workflow view also allows setting a custom ``title`` for the object page section section, e.g. ``{"en": "Processing"}`` or ``"Measurements"``.
+By setting ``show_action_ínfo`` to ``false`` you can disable displaying action information, which is enabled by default.
+
+Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects' schemas to limit what object data will be shown as a preview.
+
+.. code-block:: json
+    :caption: A workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``
+
+    "workflow_view": {
+        "referencing_action_type_id": [-98, -99],
+        "referenced_action_id": 1,
+        "title": {"en": "Processing", "de": "Bearbeitung"}
+    }
+
+.. figure:: ../static/img/generated/workflow.png
+    :alt: A workflow view, containing previews of related measurements
+
+    A workflow view, containing previews of related measurements
+
+workflow_show_more
+^^^^^^^^^^^^^^^^^^
+
+This attribute works the same as ``show_more``, but is only applied when the object is included in a workflow view.
+
+
 Arrays
 ``````
 

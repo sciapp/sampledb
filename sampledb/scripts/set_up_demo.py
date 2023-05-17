@@ -348,25 +348,31 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
+        sample_schema = {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': {'en': 'Object Name', 'de': 'Objektname'},
+                    'type': 'text',
+                    'languages': 'all'
+                },
+                'sample': {
+                    'title': {'en': 'Sample', 'de': 'Probe'},
+                    'type': 'sample'
+                }
+            },
+            'required': ['name']
+        }
         sample_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.SAMPLE_CREATION,
-            schema={
-                'title': 'Example Object',
-                'type': 'object',
-                'properties': {
-                    'name': {
-                        'title': {'en': 'Object Name', 'de': 'Objektname'},
-                        'type': 'text',
-                        'languages': 'all'
-                    },
-                    'sample': {
-                        'title': {'en': 'Sample', 'de': 'Probe'},
-                        'type': 'sample'
-                    }
-                },
-                'required': ['name']
-            }
+            schema=sample_schema
         )
+        sample_schema['workflow_view'] = {
+            'referencing_action_type_id': -98,
+            'referenced_action_id': sample_action.id
+        }
+        sampledb.logic.actions.update_action(action_id=sample_action.id, schema=sample_schema)
         set_action_translation(Language.ENGLISH, sample_action.id, name="sample_action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(sample_action.id, sampledb.models.Permissions.READ)
         measurement_action = sampledb.logic.actions.create_action(
@@ -391,7 +397,8 @@ This example shows how Markdown can be used for instrument Notes.
                         'languages': "all"
                     }
                 },
-                'required': ['name']
+                'required': ['name'],
+                'workflow_show_more': ['sample', 'comment']
             }
         )
         set_action_translation(Language.ENGLISH, measurement_action.id, name="measurement_action", description="")
