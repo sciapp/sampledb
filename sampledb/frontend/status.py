@@ -29,4 +29,6 @@ def status() -> FlaskResponseT:
         status_code = 500
     status_info['name'] = flask.current_app.config['SERVICE_NAME']
     status_info['federation_uuid'] = flask.current_app.config['FEDERATION_UUID']
-    return flask.jsonify(status_info), status_code
+    return flask.jsonify(status_info), status_code, {
+        'Access-Control-Allow-Origin': '*'
+    }
