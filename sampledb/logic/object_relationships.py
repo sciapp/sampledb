@@ -18,6 +18,7 @@ from .objects import get_object, find_object_references
 from .object_permissions import get_user_permissions_for_multiple_objects, get_objects_with_permissions
 from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions, Object
 from .. import db
+from .utils import get_translated_text
 
 # limit tree depth to avoid hitting the recursion limit in the frontend
 _MAXIMUM_TREE_DEPTH = sys.getrecursionlimit() - 100
@@ -104,7 +105,7 @@ class ObjectRef:
 class RelatedObjectsTree:
     object_ref: ObjectRef
     path: typing.List[typing.Union[int, ObjectRef]]
-    object: typing.Optional[Object]
+    object_name: typing.Optional[str]
     referenced_objects: typing.Optional[typing.List[RelatedObjectsTree]]
     referencing_objects: typing.Optional[typing.List[RelatedObjectsTree]]
 
@@ -224,23 +225,18 @@ def _gather_subtrees(
         object_ref: ObjectRef,
 ) -> typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]]:
     subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]] = {}
-    object_ref_queues: typing.List[typing.List[typing.Tuple[ObjectRef, typing.Optional[ObjectRef]]]] = [
-        [(object_ref, None)]
+    object_ref_stack: typing.List[typing.Tuple[ObjectRef, typing.Optional[ObjectRef]]] = [
+        (object_ref, None)
     ]
     referencing_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {}
     referenced_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {}
-    while object_ref_queues:
-        while object_ref_queues and not object_ref_queues[-1]:
-            object_ref_queues.pop()
-        if not object_ref_queues:
-            break
-        object_ref_queue = object_ref_queues[-1]
-        object_ref, parent_object_ref = object_ref_queue.pop(0)
+    while object_ref_stack:
+        object_ref, parent_object_ref = object_ref_stack.pop()
         if object_ref not in subtrees:
             tree = RelatedObjectsTree(
                 object_ref=object_ref,
                 path=[],
-                object=None,
+                object_name=None,
                 referenced_objects=None,
                 referencing_objects=None,
             )
@@ -254,7 +250,6 @@ def _gather_subtrees(
                 if referenced_object_ids is None:
                     referenced_object_ids = _get_referenced_object_ids({object_ref.object_id})[object_ref.object_id]
 
-                object_ref_queues.append([])
                 for child_object_list, filtered_child_object_list in [
                     (referenced_object_ids, subtrees[object_ref][1]),
                     (referencing_object_ids, subtrees[object_ref][2])
@@ -262,7 +257,7 @@ def _gather_subtrees(
                     for child_object_ref in child_object_list:
                         if child_object_ref != parent_object_ref:
                             filtered_child_object_list.append(child_object_ref)
-                            object_ref_queues[-1].append((child_object_ref, object_ref))
+                            object_ref_stack.append((child_object_ref, object_ref))
                 local_child_object_ids = {
                     child_object_ref.object_id
                     for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2])
@@ -283,16 +278,11 @@ def _assemble_tree(
         path_prefix = []
     root_object_ref = tree.object_ref
     root_tree = tree
-    tree_queues: typing.List[typing.List[typing.Tuple[ObjectRef, typing.List[typing.Union[int, ObjectRef]], typing.Optional[RelatedObjectsTree]]]] = [
-        [(root_object_ref, path_prefix, None)]
+    tree_stack: typing.List[typing.Tuple[ObjectRef, typing.List[typing.Union[int, ObjectRef]], typing.Optional[RelatedObjectsTree]]] = [
+        (root_object_ref, path_prefix, None)
     ]
-    while tree_queues:
-        while tree_queues and not tree_queues[-1]:
-            tree_queues.pop()
-        if not tree_queues:
-            break
-        tree_queue = tree_queues[-1]
-        object_ref, path_prefix, parent_tree = tree_queue.pop(0)
+    while tree_stack:
+        object_ref, path_prefix, parent_tree = tree_stack.pop()
 
         tree, referenced_object_ids, referencing_object_ids = subtrees[object_ref]
         if not tree.path:
@@ -300,7 +290,9 @@ def _assemble_tree(
             tree.path = path_prefix + [object_ref]
             if len(path_prefix) // 2 < _MAXIMUM_TREE_DEPTH:
                 if object_ref.is_local and object_ref.object_id in objects_by_id:
-                    tree.object = objects_by_id[object_ref.object_id]
+                    object = objects_by_id[object_ref.object_id]
+                    if object is not None and object.name is not None:
+                        tree.object_name = get_translated_text(object.name)
                     # create a copy that will contain subtrees
                     tree = dataclasses.replace(
                         tree,
@@ -309,12 +301,11 @@ def _assemble_tree(
                     )
                     if object_ref == root_object_ref:
                         root_tree = tree
-                    tree_queues.append([])
                     for referenced_object_id in referenced_object_ids:
-                        tree_queues[-1].append((referenced_object_id, tree.path + [-1], tree))
+                        tree_stack.append((referenced_object_id, tree.path + [-1], tree))
                     for referencing_object_id in referencing_object_ids:
                         if referencing_object_id.is_local and referencing_object_id.object_id in objects_by_id:
-                            tree_queues[-1].append((referencing_object_id, tree.path + [-2], tree))
+                            tree_stack.append((referencing_object_id, tree.path + [-2], tree))
         if parent_tree is not None:
             if path_prefix[-1] == -1 and parent_tree.referenced_objects is not None:
                 parent_tree.referenced_objects.append(tree)

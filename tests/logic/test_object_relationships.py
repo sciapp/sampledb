@@ -94,7 +94,7 @@ def test_single_object(sample_action, user, user2):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=object,
+        object_name='Object Name',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=[],
         referencing_objects=[]
@@ -107,7 +107,7 @@ def test_single_object(sample_action, user, user2):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=None,
+        object_name=None,
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=None,
         referencing_objects=None
@@ -143,7 +143,7 @@ def test_object_with_measurement(sample_action, measurement_action, user):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=object,
+        object_name='Object 1',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=[],
         referencing_objects=[
@@ -154,7 +154,7 @@ def test_object_with_measurement(sample_action, measurement_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                object=measurement,
+                object_name='Object 2',
                 path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=measurement.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
                 referenced_objects=[],
                 referencing_objects=[]
@@ -192,7 +192,7 @@ def test_object_with_sample(sample_action, user):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=object,
+        object_name='Object 1',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=[],
         referencing_objects=[
@@ -203,7 +203,7 @@ def test_object_with_sample(sample_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                object=sample,
+                object_name='Object 2',
                 path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
                 referenced_objects=[],
                 referencing_objects=[]
@@ -236,7 +236,7 @@ def test_object_with_cyclic_sample(sample_action, user):
     data = {
         'name': {
             '_type': 'text',
-            'text': 'Object 2'
+            'text': 'Object 1'
         },
         'sample': {
             '_type': 'sample',
@@ -253,7 +253,7 @@ def test_object_with_cyclic_sample(sample_action, user):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=object,
+        object_name='Object 1',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
@@ -263,10 +263,10 @@ def test_object_with_cyclic_sample(sample_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                object=sample,
-                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                referenced_objects=[],
-                referencing_objects=[]
+                object_name='Object 2',
+                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                referenced_objects=None,
+                referencing_objects=None
             )
         ],
         referencing_objects=[
@@ -277,10 +277,10 @@ def test_object_with_cyclic_sample(sample_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                object=sample,
-                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                referenced_objects=None,
-                referencing_objects=None
+                object_name='Object 2',
+                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                referenced_objects=[],
+                referencing_objects=[]
             )
         ]
     )
@@ -320,7 +320,7 @@ def test_object_with_unknown_sample(sample_action, user):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=sample,
+        object_name='Object 2',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
@@ -330,7 +330,7 @@ def test_object_with_unknown_sample(sample_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                object=object,
+                object_name='Object 1',
                 path=[sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
                 referenced_objects=[
                     sampledb.logic.object_relationships.RelatedObjectsTree(
@@ -340,7 +340,7 @@ def test_object_with_unknown_sample(sample_action, user):
                             eln_source_url=None,
                             eln_object_url=None,
                         ),
-                        object=None,
+                        object_name=None,
                         path=[sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=1, component_uuid='91402d3c-b1a7-4c7e-8a68-15bfd21ceace', eln_source_url=None, eln_object_url=None)],
                         referenced_objects=None,
                         referencing_objects=None
@@ -383,7 +383,7 @@ def test_object_with_sample_without_permissions(sample_action, user):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=sample,
+        object_name='Object 2',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referencing_objects=[],
         referenced_objects=[
@@ -394,7 +394,7 @@ def test_object_with_sample_without_permissions(sample_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                object=None,
+                object_name=None,
                 path=[sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
                 referenced_objects=None,
                 referencing_objects=None
@@ -411,7 +411,7 @@ def test_object_with_sample_without_permissions(sample_action, user):
             eln_source_url=None,
             eln_object_url=None,
         ),
-        object=object,
+        object_name='Object 1',
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
         referenced_objects=[],
         referencing_objects=[]
@@ -442,7 +442,7 @@ def test_object_chain_without_permissions(sample_action, user):
     data = {
         'name': {
             '_type': 'text',
-            'text': 'Object 2'
+            'text': 'Object 3'
         },
         'sample': {
             '_type': 'sample',
@@ -454,7 +454,7 @@ def test_object_chain_without_permissions(sample_action, user):
     data = {
         'name': {
             '_type': 'text',
-            'text': 'Object 2'
+            'text': 'Object 1'
         },
         'sample': {
             '_type': 'sample',
@@ -472,7 +472,7 @@ def test_object_chain_without_permissions(sample_action, user):
             eln_object_url=None,
         ),
         path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-        object=object1,
+        object_name='Object 1',
         referenced_objects=[
             sampledb.logic.object_relationships.RelatedObjectsTree(
                 object_ref=sampledb.logic.object_relationships.ObjectRef(
@@ -481,74 +481,8 @@ def test_object_chain_without_permissions(sample_action, user):
                     eln_source_url=None,
                     eln_object_url=None,
                 ),
-                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                object=object3,
-                referenced_objects=[
-                    sampledb.logic.object_relationships.RelatedObjectsTree(
-                        object_ref=sampledb.logic.object_relationships.ObjectRef(
-                            object_id=object2.id,
-                            component_uuid=None,
-                            eln_source_url=None,
-                            eln_object_url=None,
-                        ),
-                        path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                        object=object2,
-                        referenced_objects=[
-                            sampledb.logic.object_relationships.RelatedObjectsTree(
-                                object_ref=sampledb.logic.object_relationships.ObjectRef(
-                                    object_id=object1.id,
-                                    component_uuid=None,
-                                    eln_source_url=None,
-                                    eln_object_url=None,
-                                ),
-                                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                                object=object1,
-                                referenced_objects=None,
-                                referencing_objects=None
-                            )
-                        ],
-                        referencing_objects=[]
-                    )
-                ],
-                referencing_objects=[]
-            )
-        ],
-        referencing_objects=[
-            sampledb.logic.object_relationships.RelatedObjectsTree(
-                object_ref=sampledb.logic.object_relationships.ObjectRef(
-                    object_id=object2.id,
-                    component_uuid=None,
-                    eln_source_url=None,
-                    eln_object_url=None,
-                ),
-                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                object=object2,
-                referenced_objects=None,
-                referencing_objects=None
-            )
-        ]
-    )
-    sampledb.logic.object_permissions.set_user_object_permissions(user_id=user.id, object_id=object3.id, permissions=sampledb.models.Permissions.NONE)
-    tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object1.id, user_id=user.id)
-    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
-        object_ref=sampledb.logic.object_relationships.ObjectRef(
-            object_id=object1.id,
-            component_uuid=None,
-            eln_source_url=None,
-            eln_object_url=None,
-        ),
-        path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-        object=object1,
-        referenced_objects=[
-            sampledb.logic.object_relationships.RelatedObjectsTree(
-                object_ref=sampledb.logic.object_relationships.ObjectRef(
-                    object_id=object3.id,
-                    component_uuid=None,
-                    eln_source_url=None,
-                    eln_object_url=None,
-                ),
-                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                object=None,
+                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                object_name='Object 3',
                 referenced_objects=None,
                 referencing_objects=None
             )
@@ -562,21 +496,74 @@ def test_object_chain_without_permissions(sample_action, user):
                     eln_object_url=None,
                 ),
                 path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                object=object2,
-                referenced_objects=[
+                object_name='Object 2',
+                referenced_objects=[],
+                referencing_objects=[
                     sampledb.logic.object_relationships.RelatedObjectsTree(
                         object_ref=sampledb.logic.object_relationships.ObjectRef(
-                            object_id=object1.id,
+                            object_id=object3.id,
                             component_uuid=None,
                             eln_source_url=None,
                             eln_object_url=None,
                         ),
-                        path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
-                        object=object1,
-                        referenced_objects=None,
-                        referencing_objects=None
+                        path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                        object_name='Object 3',
+                        referenced_objects=[],
+                        referencing_objects=[
+                            sampledb.logic.object_relationships.RelatedObjectsTree(
+                                object_ref=sampledb.logic.object_relationships.ObjectRef(
+                                    object_id=object1.id,
+                                    component_uuid=None,
+                                    eln_source_url=None,
+                                    eln_object_url=None,
+                                ),
+                                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                                object_name='Object 1',
+                                referenced_objects=None,
+                                referencing_objects=None
+                            )
+                        ]
                     )
-                ],
+                ]
+            )
+        ]
+    )
+    sampledb.logic.object_permissions.set_user_object_permissions(user_id=user.id, object_id=object3.id, permissions=sampledb.models.Permissions.NONE)
+    tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object1.id, user_id=user.id)
+    assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
+        object_ref=sampledb.logic.object_relationships.ObjectRef(
+            object_id=object1.id,
+            component_uuid=None,
+            eln_source_url=None,
+            eln_object_url=None,
+        ),
+        path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+        object_name='Object 1',
+        referenced_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_ref=sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object3.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -1, sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                object_name=None,
+                referenced_objects=None,
+                referencing_objects=None
+            )
+        ],
+        referencing_objects=[
+            sampledb.logic.object_relationships.RelatedObjectsTree(
+                object_ref=sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object2.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+                path=[sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None), -2, sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None)],
+                object_name='Object 2',
+                referenced_objects=[],
                 referencing_objects=[]
             )
         ]
