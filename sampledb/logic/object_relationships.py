@@ -4,11 +4,11 @@
 """
 from __future__ import annotations
 
-import copy
 import dataclasses
 import datetime
 import itertools
 import typing
+import sys
 
 import flask
 
@@ -18,6 +18,9 @@ from .objects import get_object, find_object_references
 from .object_permissions import get_user_permissions_for_multiple_objects, get_objects_with_permissions
 from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions, Object
 from .. import db
+
+# limit tree depth to avoid hitting the recursion limit in the frontend
+_MAXIMUM_TREE_DEPTH = sys.getrecursionlimit() - 100
 
 
 def get_related_object_ids(
@@ -141,17 +144,14 @@ def build_related_objects_tree(
     :param user_id: the ID of an existing user
     :return: the related objects tree
     """
-    subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]] = {}
     object_ref = ObjectRef(
         object_id=object_id,
         component_uuid=None,
         eln_source_url=None,
         eln_object_url=None
     )
-    _gather_subtrees(
-        object_ref=object_ref,
-        user_id=user_id,
-        subtrees=subtrees
+    subtrees = _gather_subtrees(
+        object_ref=object_ref
     )
 
     object_ids = tuple(
@@ -222,57 +222,55 @@ def _get_referenced_object_ids(
 
 def _gather_subtrees(
         object_ref: ObjectRef,
-        user_id: typing.Optional[int],
-        subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]],
-        parent_object_ref: typing.Optional[ObjectRef] = None,
-        referencing_object_ids: typing.Optional[typing.Set[ObjectRef]] = None,
-        referenced_object_ids: typing.Optional[typing.Set[ObjectRef]] = None
-) -> None:
-    if object_ref in subtrees:
-        return
-    tree = RelatedObjectsTree(
-        object_ref=object_ref,
-        path=[],
-        object=None,
-        referenced_objects=None,
-        referencing_objects=None,
-    )
-    subtrees[object_ref] = (tree, [], [])
-    if object_ref.is_local:
-        if referencing_object_ids is None:
-            referencing_object_ids = _get_referencing_object_ids({object_ref.object_id})[object_ref.object_id]
-        if referenced_object_ids is None:
-            referenced_object_ids = _get_referenced_object_ids({object_ref.object_id})[object_ref.object_id]
-        for child_object_list, filtered_child_object_list in [
-            (referenced_object_ids, subtrees[object_ref][1]),
-            (referencing_object_ids, subtrees[object_ref][2])
-        ]:
-            for child_object_ref in child_object_list:
-                if child_object_ref != parent_object_ref:
-                    filtered_child_object_list.append(child_object_ref)
-        local_child_object_ids = {
-            child_object_ref.object_id
-            for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2])
-            if child_object_ref.is_local and child_object_ref not in subtrees
-        }
-        referencing_object_ids_by_id = _get_referencing_object_ids(local_child_object_ids)
-        referenced_object_ids_by_id = _get_referenced_object_ids(local_child_object_ids)
-        for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2]):
-            if child_object_ref not in subtrees:
-                if child_object_ref.is_local:
-                    referencing_object_ids = referencing_object_ids_by_id.get(child_object_ref.object_id)
-                    referenced_object_ids = referenced_object_ids_by_id.get(child_object_ref.object_id)
-                else:
-                    referencing_object_ids = None
-                    referenced_object_ids = None
-                _gather_subtrees(
-                    object_ref=child_object_ref,
-                    user_id=user_id,
-                    subtrees=subtrees,
-                    parent_object_ref=object_ref,
-                    referencing_object_ids=referencing_object_ids,
-                    referenced_object_ids=referenced_object_ids
-                )
+) -> typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]]:
+    subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]] = {}
+    object_ref_queues: typing.List[typing.List[typing.Tuple[ObjectRef, typing.Optional[ObjectRef]]]] = [
+        [(object_ref, None)]
+    ]
+    referencing_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {}
+    referenced_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {}
+    while object_ref_queues:
+        while object_ref_queues and not object_ref_queues[-1]:
+            object_ref_queues.pop()
+        if not object_ref_queues:
+            break
+        object_ref_queue = object_ref_queues[-1]
+        object_ref, parent_object_ref = object_ref_queue.pop(0)
+        if object_ref not in subtrees:
+            tree = RelatedObjectsTree(
+                object_ref=object_ref,
+                path=[],
+                object=None,
+                referenced_objects=None,
+                referencing_objects=None,
+            )
+            subtrees[object_ref] = (tree, [], [])
+
+            if object_ref.is_local:
+                referencing_object_ids = referencing_object_ids_by_id.get(object_ref.object_id)
+                referenced_object_ids = referenced_object_ids_by_id.get(object_ref.object_id)
+                if referencing_object_ids is None:
+                    referencing_object_ids = _get_referencing_object_ids({object_ref.object_id})[object_ref.object_id]
+                if referenced_object_ids is None:
+                    referenced_object_ids = _get_referenced_object_ids({object_ref.object_id})[object_ref.object_id]
+
+                object_ref_queues.append([])
+                for child_object_list, filtered_child_object_list in [
+                    (referenced_object_ids, subtrees[object_ref][1]),
+                    (referencing_object_ids, subtrees[object_ref][2])
+                ]:
+                    for child_object_ref in child_object_list:
+                        if child_object_ref != parent_object_ref:
+                            filtered_child_object_list.append(child_object_ref)
+                            object_ref_queues[-1].append((child_object_ref, object_ref))
+                local_child_object_ids = {
+                    child_object_ref.object_id
+                    for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2])
+                    if child_object_ref.is_local and child_object_ref not in subtrees
+                }
+                referencing_object_ids_by_id.update(_get_referencing_object_ids(local_child_object_ids))
+                referenced_object_ids_by_id.update(_get_referenced_object_ids(local_child_object_ids))
+    return subtrees
 
 
 def _assemble_tree(
@@ -283,24 +281,46 @@ def _assemble_tree(
 ) -> RelatedObjectsTree:
     if path_prefix is None:
         path_prefix = []
+    root_object_ref = tree.object_ref
+    root_tree = tree
+    tree_queues: typing.List[typing.List[typing.Tuple[ObjectRef, typing.List[typing.Union[int, ObjectRef]], typing.Optional[RelatedObjectsTree]]]] = [
+        [(root_object_ref, path_prefix, None)]
+    ]
+    while tree_queues:
+        while tree_queues and not tree_queues[-1]:
+            tree_queues.pop()
+        if not tree_queues:
+            break
+        tree_queue = tree_queues[-1]
+        object_ref, path_prefix, parent_tree = tree_queue.pop(0)
 
-    tree, referenced_object_ids, referencing_object_ids = subtrees[tree.object_ref]
-    if not tree.path:
-        tree.path = path_prefix + [tree.object_ref]
-        if tree.object_ref.is_local and tree.object_id in objects_by_id:
-            tree.object = objects_by_id[tree.object_id]
-            # create a copy that will contain subtrees
-            tree = copy.deepcopy(tree)
-            tree.referenced_objects = [
-                _assemble_tree(subtrees[referenced_object_id][0], objects_by_id, subtrees, tree.path + [-1])
-                for referenced_object_id in referenced_object_ids
-            ]
-            tree.referencing_objects = [
-                _assemble_tree(subtrees[referencing_object_id][0], objects_by_id, subtrees, tree.path + [-2])
-                for referencing_object_id in referencing_object_ids
-                if referencing_object_id.is_local and referencing_object_id.object_id in objects_by_id
-            ]
-    return tree
+        tree, referenced_object_ids, referencing_object_ids = subtrees[object_ref]
+        if not tree.path:
+
+            tree.path = path_prefix + [object_ref]
+            if len(path_prefix) // 2 < _MAXIMUM_TREE_DEPTH:
+                if object_ref.is_local and object_ref.object_id in objects_by_id:
+                    tree.object = objects_by_id[object_ref.object_id]
+                    # create a copy that will contain subtrees
+                    tree = dataclasses.replace(
+                        tree,
+                        referenced_objects=[],
+                        referencing_objects=[]
+                    )
+                    if object_ref == root_object_ref:
+                        root_tree = tree
+                    tree_queues.append([])
+                    for referenced_object_id in referenced_object_ids:
+                        tree_queues[-1].append((referenced_object_id, tree.path + [-1], tree))
+                    for referencing_object_id in referencing_object_ids:
+                        if referencing_object_id.is_local and referencing_object_id.object_id in objects_by_id:
+                            tree_queues[-1].append((referencing_object_id, tree.path + [-2], tree))
+        if parent_tree is not None:
+            if path_prefix[-1] == -1 and parent_tree.referenced_objects is not None:
+                parent_tree.referenced_objects.append(tree)
+            if path_prefix[-1] == -2 and parent_tree.referencing_objects is not None:
+                parent_tree.referencing_objects.append(tree)
+    return root_tree
 
 
 @dataclasses.dataclass(frozen=True)
