@@ -370,7 +370,7 @@ def object(object_id: int) -> FlaskResponseT:
         location_form.location.choices = choices
         possible_responsible_users: typing.List[typing.Tuple[str, typing.Optional[User]]] = [('-1', None)]
         user_is_fed = {}
-        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
             possible_responsible_users.append((str(user.id), user))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_responsible_users
@@ -815,7 +815,7 @@ def post_object_location(object_id: int) -> FlaskResponseT:
         if location.type is None or location.type.enable_object_assignments
     ]
     possible_responsible_users = [('-1', '—')]
-    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
         possible_responsible_users.append((str(user.id), f'{user.name} (#{user.id})'))
     location_form.responsible_user.choices = possible_responsible_users
     location_id: typing.Optional[int]

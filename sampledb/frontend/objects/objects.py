@@ -837,7 +837,7 @@ def objects() -> FlaskResponseT:
         location_form.location.choices = choices
         possible_resposible_users = [('-1', '-')]
         user_is_fed = {}
-        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
             possible_resposible_users.append((str(user.id), user.get_name()))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_resposible_users
@@ -1565,7 +1565,7 @@ def edit_multiple_locations() -> FlaskResponseT:
     ]
 
     possible_resposible_users = [('-1', '-')]
-    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
         possible_resposible_users.append((str(user.id), user.get_name()))
     location_form.responsible_user.choices = possible_resposible_users
 

@@ -9,6 +9,7 @@ Currently in development.
 - Added support for short-lived API access tokens
 - Added file datatype
 - Implemented workflow view for related objects
+- Allow administrators to set whether they want to see hidden users
 
 Version 0.22.1
 --------------
