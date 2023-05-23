@@ -107,5 +107,43 @@
       );
     });
     {% endif %}
+    $(function() {
+      let address_input = $('#addComponentAddress');
+      let uuid_input = $('#addComponentUUID');
+      let name_input = $('#addComponentName');
+      let address_group = address_input.closest('.form-group');
+      let uuid_group = uuid_input.closest('.form-group');
+      let name_group = name_input.closest('.form-group');
+      address_input.on('change', function() {
+        address_group.removeClass('has-error').removeClass('has-success');
+        address_group.find('.help-block').remove();
+        let database_url = address_input.val();
+        if (database_url) {
+          if (!database_url.endsWith('/')) {
+            database_url = database_url + '/'
+          }
+          let status_url = database_url + 'status/';
+          $.get(status_url, function(data) {
+            address_group.addClass('has-success');
+            if (!uuid_input.val() && data.federation_uuid && !name_input.val() && data.name) {
+              uuid_input.val(data.federation_uuid);
+              name_input.val(data.name);
+              uuid_group.removeClass('has-error').addClass('has-success');
+              name_group.removeClass('has-error').addClass('has-success');
+              uuid_group.find('.help-block').remove();
+              name_group.find('.help-block').remove();
+            }
+          });
+        }
+      });
+      uuid_input.on('change', function() {
+        uuid_group.removeClass('has-error').removeClass('has-success');
+        uuid_group.find('.help-block').remove();
+      });
+      name_input.on('change', function() {
+        name_group.removeClass('has-error').removeClass('has-success');
+        name_group.find('.help-block').remove();
+      });
+    });
   </script>
 {% endblock %}

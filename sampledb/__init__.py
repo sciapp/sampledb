@@ -261,6 +261,10 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             connect_sources += [
                 "https://pypi.org/pypi/Flask-MonitoringDashboard/json",
             ]
+        if flask.request.endpoint == 'frontend.federation':
+            connect_sources += [
+                '*'
+            ]
         content_security_policy = f"default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; report-uri /csp-violation-report"
         if app.config.get('TESTING', True):
             response.headers["Content-Security-Policy-Report-Only"] = content_security_policy
