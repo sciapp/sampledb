@@ -422,7 +422,7 @@ def upload_object(
     else:
         method_parameters = []
 
-    if object.component is None or object.component.uuid == flask.current_app.config['SERVICE_NAME']:
+    if object.component is None or object.component.uuid == flask.current_app.config['FEDERATION_UUID']:
         description = f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
     else:
         object_component = object.component
