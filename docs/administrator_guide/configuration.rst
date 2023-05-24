@@ -213,6 +213,8 @@ Federation
      - Valid time delta between SampleDB instances in a federation in seconds (default: ``300``)
    * - SAMPLEDB_ENABLE_DEFAULT_USER_ALIASES
      - If set, users will have aliases using their profile information by default (default: False). This will not apply to bot users or imported users.
+   * - SAMPLEDB_ENABLE_FEDERATION_DISCOVERABILITY
+     - If set, this instance will be discoverable by other databases in the same federation. (default: True).
 
 .. _monitoring_dashboard_configuration:
 

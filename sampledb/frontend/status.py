@@ -28,7 +28,7 @@ def status() -> FlaskResponseT:
     else:
         status_code = 500
     status_info['name'] = flask.current_app.config['SERVICE_NAME']
-    status_info['federation_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    status_info['federation_uuid'] = flask.current_app.config['FEDERATION_UUID'] if flask.current_app.config['ENABLE_FEDERATION_DISCOVERABILITY'] else None
     return flask.jsonify(status_info), status_code, {
         'Access-Control-Allow-Origin': '*'
     }

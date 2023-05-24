@@ -181,8 +181,8 @@ msgstr "Ungültige UUID"
 msgid "Only secure communication via https is allowed"
 msgstr "Nur verschlüsselte Kommunikation über HTTPS ist erlaubt"
 
-msgid "Failed to add database"
-msgstr "Das Hinzufügen der Datenbank ist fehlgeschlagen"
+msgid "Failed to update database"
+msgstr "Das Aktualisieren der Datenbank ist fehlgeschlagen"
 
 msgid "Database information updated successfully"
 msgstr "Die Datenbank-Informationen wurden erfolgreich aktualisiert"
@@ -247,6 +247,9 @@ msgid "This UUID or name is already used by this instance (%(service_name)s)"
 msgstr ""
 "Diese UUID oder dieser Name wird bereits von dieser lokalen Instanz "
 "verwendet (%(service_name)s)"
+
+msgid "Failed to add database"
+msgstr "Das Hinzufügen der Datenbank ist fehlgeschlagen"
 
 msgid "The database information has been added successfully"
 msgstr "Die Datenbank wurde erfolgreich angelegt"

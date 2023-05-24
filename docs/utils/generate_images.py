@@ -507,6 +507,17 @@ def other_database(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/other_database.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, last_table.location['y'] + last_table.rect['height'])))
 
 
+def federation_graph(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(admin.id))
+    driver.get(base_url + 'other-databases/')
+    graph = driver.find_element(By.ID, 'graph')
+    y_offset = scroll_to_element(driver, graph)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/federation_graph.png', (0, graph.location['y'] - y_offset, width, min(graph.location['y'] + max_height, graph.location['y'] + graph.rect['height'])))
+
+
 def group_categories(base_url, driver, categories):
     width = 300
     max_height = 1000
@@ -784,6 +795,25 @@ try:
         component = sampledb.logic.components.add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', 'Example SampleDB', 'https://example.com', 'Example SampleDB instance.')
         sampledb.logic.component_authentication.add_token_authentication(component.id, secrets.token_hex(32), 'Export Token')
         sampledb.logic.component_authentication.add_own_token_authentication(component.id, secrets.token_hex(32), 'Import Token')
+        component2 = sampledb.logic.components.add_component('4d0d72c2-9447-45f4-9997-362416e7cd44', 'Other SampleDB', None, None)
+        sampledb.logic.component_authentication.add_token_authentication(component2.id, secrets.token_hex(32), 'Export Token')
+        sampledb.logic.component_authentication.add_own_token_authentication(component2.id, secrets.token_hex(32), 'Import Token')
+        sampledb.logic.components.add_or_update_component_info(
+            uuid=component2.uuid,
+            name=component2.name,
+            address=None,
+            discoverable=True,
+            distance=2,
+            source_uuid=component.uuid
+        )
+        sampledb.logic.components.add_or_update_component_info(
+            uuid='e1b93d06-fcaf-4f24-b674-9de86d8cfdc7',
+            name='Third SampleDB',
+            address=None,
+            discoverable=True,
+            distance=2,
+            source_uuid=component.uuid
+        )
 
         campus = sampledb.logic.locations.create_location(
             name={"en": "Campus A"},
@@ -876,5 +906,6 @@ try:
                 other_database(flask_server.base_url, driver)
                 group_categories(flask_server.base_url, driver, [category1, category2, category3])
                 search_query_builder(flask_server.base_url, driver)
+                federation_graph(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

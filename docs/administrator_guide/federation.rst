@@ -58,3 +58,13 @@ The administrator can also manually trigger the synchronization of data.
     :alt: Managing other databases
 
     Managing other databases
+
+Federation Graph
+----------------
+
+The databases that are connected to a SampleDB instance either directly or via others are shown in the federation graph. This can help give an overview over the SampleDB instances in a federation and their connections with each other. To disable being shown in the federation graph of other databases, the environment variable :ref:`SAMPLEDB_ENABLE_FEDERATION_DISCOVERABILITY <federation_configuration>` can be set to ``false``.
+
+.. figure:: ../static/img/generated/federation_graph.png
+    :alt: A federation graph
+
+    A federation graph

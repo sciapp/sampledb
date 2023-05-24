@@ -9,8 +9,9 @@ import io
 import requests
 import flask
 
-from .utils import _get_dict, _get_list
+from .utils import _get_dict, _get_list, _get_bool
 from .users import import_user, parse_user
+from .components import import_component_info, parse_component_info
 from .location_types import import_location_type, parse_location_type
 from .instruments import import_instrument, parse_instrument
 from .action_types import import_action_type, parse_action_type
@@ -18,7 +19,7 @@ from .locations import import_location, parse_location, locations_check_for_cycl
 from .markdown_images import parse_markdown_image, import_markdown_image
 from .actions import import_action, parse_action
 from .objects import import_object, parse_object
-from ..components import Component
+from ..components import Component, set_component_discoverable
 from ..component_authentication import get_own_authentication
 from .. import errors
 from ...models import ComponentAuthenticationType
@@ -167,6 +168,17 @@ def import_updates(
     if flask.current_app.config['FEDERATION_UUID'] is None:
         raise errors.ComponentNotConfiguredForFederationError()
     timestamp = datetime.utcnow()
+    components = None
+    try:
+        components = get('/federation/v1/shares/components/', component, ignore_last_sync_time=ignore_last_sync_time)
+    except errors.InvalidJSONError:
+        raise errors.InvalidDataExportError('Received an invalid JSON string.')
+    except errors.RequestServerError:
+        pass
+    except errors.UnauthorizedRequestError:
+        pass
+    if components:
+        update_components(component, components)
     users = None
     try:
         users = get('/federation/v1/shares/users/', component, ignore_last_sync_time=ignore_last_sync_time)
@@ -185,6 +197,26 @@ def import_updates(
     if updates:
         update_shares(component, updates)
     component.update_last_sync_timestamp(timestamp)
+
+
+def update_components(
+        component: Component,
+        updates: typing.Dict[str, typing.Any]
+) -> None:
+    _get_dict(updates, mandatory=True)
+    _validate_header(updates.get('header'), component)
+    discoverable = _get_bool(updates.get('discoverable'), mandatory=True)
+    set_component_discoverable(component.id, discoverable=discoverable)
+    if discoverable:
+        components = []
+        component_data_list = _get_list(updates.get('components'), default=[])
+        for component_data in component_data_list:
+            components.append(parse_component_info(component_data, component))
+        for component_data in components:
+            if flask.current_app.config['FEDERATION_UUID'] in (component_data['uuid'], component_data['source_uuid']):
+                # skip component info from or about this instance
+                continue
+            import_component_info(component_data, component)
 
 
 def update_users(

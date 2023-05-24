@@ -168,8 +168,53 @@ def _get_bool(
             raise errors.InvalidDataExportError('Missing boolean')
         return default
     if type(bool_in) is not bool:
-        raise errors.InvalidDataExportError('Invalid boolean "{bool_in}"')
+        raise errors.InvalidDataExportError(f'Invalid boolean "{bool_in}"')
     return bool_in
+
+
+@typing.overload
+def _get_int(
+        int_in: typing.Any,
+        *,
+        default: int,
+        mandatory: bool = False
+) -> int:
+    ...
+
+
+@typing.overload
+def _get_int(
+        int_in: typing.Any,
+        *,
+        default: typing.Optional[int] = None,
+        mandatory: typing.Literal[True]
+) -> int:
+    ...
+
+
+@typing.overload
+def _get_int(
+        int_in: typing.Any,
+        *,
+        default: typing.Optional[int] = None,
+        mandatory: bool = False
+) -> typing.Optional[int]:
+    ...
+
+
+def _get_int(
+        int_in: typing.Any,
+        *,
+        default: typing.Optional[int] = None,
+        mandatory: bool = False
+) -> typing.Optional[int]:
+    if int_in is None:
+        if mandatory:
+            raise errors.InvalidDataExportError('Missing integer')
+        return default
+    if type(int_in) is not int:
+        raise errors.InvalidDataExportError(f'Invalid integer "{int_in}"')
+    return int_in
 
 
 def _get_translation(
