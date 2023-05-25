@@ -19,7 +19,7 @@ import pint
 import pytz
 
 from ...logic import schemas, languages
-from ...logic.units import ureg_quantity, ureg_unit, int_ureg_unit
+from ...logic.units import ureg, int_ureg
 from ...logic.errors import ValidationError
 from ...logic.schemas.generate_placeholder import generate_placeholder
 
@@ -360,13 +360,13 @@ def parse_quantity_form_data(
     if id_prefix + '__units' in form_data:
         units = form_data[id_prefix + '__units'][0]
         try:
-            pint_units = ureg_unit(units)
+            pint_units = ureg.Unit(units)
         except pint.UndefinedUnitError:
             raise ValueError('invalid units')
     else:
         units = '1'
-        pint_units = ureg_unit('1')
-    dimensionality = str(int_ureg_unit(pint_units).dimensionality)
+        pint_units = ureg.Unit('1')
+    dimensionality = str(int_ureg.Unit(pint_units).dimensionality)
     user_locale = languages.get_user_language(current_user).lang_code
     if units in ['min', 'h'] and ':' in magnitude_str:
         if units == 'min':
@@ -419,7 +419,7 @@ def parse_quantity_form_data(
                 raise ValueError(_('Unable to parse magnitude.'))
         except ValueError:
             raise ValueError(_('The magnitude must be a number.'))
-        magnitude_in_base_units = float(ureg_quantity(magnitude, pint_units).to_base_units().magnitude)
+        magnitude_in_base_units = float(ureg.Quantity(magnitude, pint_units).to_base_units().magnitude)
         data = {
             '_type': 'quantity',
             'magnitude_in_base_units': magnitude_in_base_units,
@@ -644,7 +644,7 @@ def parse_timeseries_form_data(
         raise ValueError('invalid timeseries form data')
     units = form_data[id_prefix + '__units'][0]
     try:
-        ureg_unit(units)
+        ureg.Unit(units)
     except pint.UndefinedUnitError:
         raise ValueError('invalid units')
     timeseries_data_str = form_data.get(id_prefix + '__data', [''])[0]

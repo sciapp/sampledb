@@ -17,11 +17,6 @@ ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.
 
 int_ureg = pint.UnitRegistry()
 int_ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
-# aliases for unit registry types, as pint 0.21 misses type hints for these
-ureg_unit: typing.Type[pint.facets.plain.PlainUnit] = ureg.Unit  # type: ignore[assignment]
-ureg_quantity: typing.Type[pint.facets.plain.PlainQuantity[typing.Any]] = ureg.Quantity  # type: ignore[assignment]
-int_ureg_unit: typing.Type[pint.facets.plain.PlainUnit] = int_ureg.Unit  # type: ignore[assignment]
-int_ureg_quantity: typing.Type[pint.facets.plain.PlainQuantity[typing.Any]] = int_ureg.Quantity  # type: ignore[assignment]
 
 
 def prettify_units(units: typing.Optional[typing.Union[str, pint._typing.UnitLike]]) -> str:
@@ -56,7 +51,7 @@ def get_dimensionality_for_units(units: typing.Optional[typing.Union[str, pint._
     if units is None:
         units = '1'
     try:
-        return str(int_ureg_unit(units).dimensionality)
+        return str(int_ureg.Unit(units).dimensionality)
     except Exception:
         raise errors.InvalidUnitsError()
 
@@ -74,6 +69,6 @@ def get_magnitude_in_base_units(
     :raise errors.InvalidUnitsError: if the units cannot be understood
     """
     try:
-        return ureg_quantity(magnitude, ureg_unit(units)).to_base_units().magnitude
+        return typing.cast(decimal.Decimal, ureg.Quantity(magnitude, ureg.Unit(units)).to_base_units().magnitude)
     except Exception:
         raise errors.InvalidUnitsError()
