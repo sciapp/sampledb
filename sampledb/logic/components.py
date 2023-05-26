@@ -125,6 +125,9 @@ def add_component(
     except TypeError:
         raise errors.InvalidComponentUUIDError()
 
+    if uuid == flask.current_app.config['FEDERATION_UUID'] or name == flask.current_app.config['SERVICE_NAME']:
+        raise errors.ComponentAlreadyExistsError(is_current_app=True)
+
     if name is not None:
         existing_component = components.Component.query.filter_by(name=name).first()
         if existing_component is not None:
