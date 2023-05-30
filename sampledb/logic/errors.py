@@ -299,7 +299,9 @@ class InvalidComponentUUIDError(Exception):
 
 
 class ComponentAlreadyExistsError(Exception):
-    pass
+    def __init__(self, is_current_app: bool = False):
+        self.is_current_app = is_current_app
+        super().__init__()
 
 
 class ComponentDoesNotExistError(Exception):

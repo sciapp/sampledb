@@ -5,6 +5,7 @@
 import datetime
 from uuid import uuid4
 
+import flask
 import pytest
 
 from sampledb import models, logic
@@ -37,6 +38,14 @@ def test_create_duplicate_component():
 
     with pytest.raises(ComponentAlreadyExistsError):
         add_component(address='https://example.com', uuid='cf7118a7-6976-5b1a-9a39-7adc72f591a4', name='Example Component', description='')
+
+    with pytest.raises(ComponentAlreadyExistsError) as err:
+        add_component(address='https://example.com', uuid=flask.current_app.config['FEDERATION_UUID'], name='Another Component', description='')
+    assert err.value.is_current_app is True
+
+    with pytest.raises(ComponentAlreadyExistsError) as err:
+        add_component(address='https://example.com', uuid='cf7118a7-6976-5b1a-9a39-7adc72f591a4', name=flask.current_app.config['SERVICE_NAME'], description='')
+    assert err.value.is_current_app is True
 
     assert len(models.components.Component.query.all()) == 1
 
