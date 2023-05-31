@@ -4,7 +4,7 @@ Changelog
 Version 0.23
 ------------
 
-Currently in development.
+Released on May 31st, 2023.
 
 - Added support for short-lived API access tokens
 - Added file datatype
