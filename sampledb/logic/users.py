@@ -68,6 +68,8 @@ class User:
     last_modified_by_id: typing.Optional[int]
     # for use by .languages.get_user_language, no type hint to avoid circular import
     language_cache: typing.List[typing.Optional[typing.Any]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
+    # for use by the settings property
+    _settings_cache: typing.List[typing.Optional[typing.Dict[str, typing.Any]]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, user: users.User) -> 'User':
@@ -144,13 +146,21 @@ class User:
         """
         if not self.is_admin:
             return False
-        return bool(settings.get_user_setting(self.id, 'USE_ADMIN_PERMISSIONS'))
+        return bool(self.settings['USE_ADMIN_PERMISSIONS'])
 
     @property
     def timezone(self) -> typing.Optional[str]:
         if flask.current_app.config['TIMEZONE']:
             return typing.cast(str, flask.current_app.config['TIMEZONE'])
-        return typing.cast(typing.Optional[str], settings.get_user_setting(self.id, 'TIMEZONE'))
+        return typing.cast(typing.Optional[str], self.settings['TIMEZONE'])
+
+    @property
+    def settings(self) -> typing.Dict[str, typing.Any]:
+        if self._settings_cache[0] is not None:
+            return self._settings_cache[0]
+        user_settings = settings.get_user_settings(self.id)
+        self._settings_cache[0] = user_settings
+        return user_settings
 
 
 class AnonymousUser(flask_login.AnonymousUserMixin):
@@ -172,6 +182,10 @@ class AnonymousUser(flask_login.AnonymousUserMixin):
     def is_readonly(self) -> bool:
         # anonymous users cannot change anything but are not specifically marked as readonly
         return False
+
+    @property
+    def settings(self) -> typing.Dict[str, typing.Any]:
+        return copy.deepcopy(settings.DEFAULT_SETTINGS)
 
 
 @dataclasses.dataclass(frozen=True)

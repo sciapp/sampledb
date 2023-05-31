@@ -158,7 +158,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         existing_project_permissions=project_permissions
     )
 
-    users = get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True)
+    users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True)
     users = [user for user in users if user.id not in user_permissions]
     users.sort(key=lambda user: user.id)
 
@@ -552,6 +552,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
             show_invitation_log = flask.request.form.get('input-show-invitation-log', 'yes') != 'no'
             modified_settings['SHOW_INVITATION_LOG'] = show_invitation_log
+            show_hidden_users_as_admin = flask.request.form.get('input-show-hidden-users-as-admin', 'yes') != 'no'
+            modified_settings['SHOW_HIDDEN_USERS_AS_ADMIN'] = show_hidden_users_as_admin
         set_user_settings(flask_login.current_user.id, modified_settings)
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')

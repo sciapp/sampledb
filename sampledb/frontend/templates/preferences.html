@@ -514,6 +514,23 @@
         </label>
       </div>
     </div>
+    <div class="form-group">
+      <label class="col-md-4 control-label" for="input-show-hidden-users-as-admin">
+        {{ _('Show hidden users in user lists') }}
+      </label>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-hidden-users-as-admin" id="input-show-hidden-users-as-admin-yes" value="yes" {% if user_settings["SHOW_HIDDEN_USERS_AS_ADMIN"] %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Show hidden users in user lists') }}
+        </label>
+      </div>
+      <div class="radio col-md-4">
+        <label>
+          <input type="radio" name="input-show-hidden-users-as-admin" id="input-show-hidden-users-as-admin-no" value="no" {% if not user_settings["SHOW_HIDDEN_USERS_AS_ADMIN"] %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Hide hidden users in user lists') }}
+        </label>
+      </div>
+    </div>
     {% endif %}
     <div class="form-group">
       <button type="submit" class="btn btn-primary col-md-offset-9 col-md-3" name="edit_other_settings" value="edit_other_settings">{{ _('Save') }}</button>

@@ -45,7 +45,7 @@ def search() -> FlaskResponseT:
         actions=actions,
         action_types=action_types,
         datetime=datetime,
-        users=get_users(exclude_hidden=not flask_login.current_user.is_admin),
+        users=get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']),
         referencable_objects=referencable_objects
     ), 200, {
         'Cache-Control': 'no-cache, no-store, must-revalidate',

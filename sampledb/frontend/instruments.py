@@ -444,7 +444,7 @@ def new_instrument() -> FlaskResponseT:
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user)
         for user in get_users()
-        if user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin)
+        if user.fed_id is None and (not user.is_hidden or (flask_login.current_user.is_admin and flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']))
     ]
     all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
     instrument_form.location.choices = choices
@@ -617,7 +617,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
     instrument_form.instrument_responsible_users.choices = [
         (str(user.id), user)
         for user in get_users()
-        if user in instrument.responsible_users or (user.fed_id is None and (not user.is_hidden or flask_login.current_user.is_admin))
+        if user in instrument.responsible_users or (user.fed_id is None and (not user.is_hidden or (flask_login.current_user.is_admin and flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'])))
     ]
     instrument_form.instrument_responsible_users.default = [
         str(user.id)

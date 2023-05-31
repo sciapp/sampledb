@@ -705,7 +705,7 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
     })
 
     # users
-    users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
+    users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'])
     users.sort(key=lambda user: user.id)
     template_kwargs.update({
         'users': users,
