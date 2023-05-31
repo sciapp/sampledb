@@ -22,6 +22,7 @@ from .forms import FileForm, FileInformationForm, FileHidingForm, ExternalLinkFo
 from ...utils import object_permissions_required, FlaskResponseT
 from ..utils import check_current_user_is_not_readonly
 from .permissions import on_unauthorized
+from ...logic.temporary_files import create_temporary_file, delete_expired_temporary_files
 
 
 @frontend.route('/objects/<int:object_id>/files/')
@@ -210,3 +211,32 @@ def post_object_files(object_id: int) -> FlaskResponseT:
     else:
         flask.flash(_('Failed to upload files.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+
+@frontend.route('/objects/temporary_files/', methods=['POST'])
+@flask_login.login_required
+def temporary_file_upload() -> FlaskResponseT:
+    delete_expired_temporary_files()
+    context_id_token = flask.request.form.get('context_id_token', default='')
+    if not context_id_token:
+        return flask.abort(400)
+    serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
+    try:
+        user_id, context_id = serializer.loads(context_id_token, max_age=15 * 60)
+    except itsdangerous.BadData:
+        return flask.abort(400)
+    if user_id != flask_login.current_user.id:
+        return flask.abort(400)
+    files = flask.request.files.getlist('file')
+    if len(files) != 1:
+        return flask.abort(400)
+    file = files[0]
+    file_name = file.filename or ''
+    binary_data = file.stream.read()
+    temporary_file = create_temporary_file(
+        context_id=context_id,
+        file_name=file_name,
+        user_id=user_id,
+        binary_data=binary_data
+    )
+    return str(temporary_file.id)

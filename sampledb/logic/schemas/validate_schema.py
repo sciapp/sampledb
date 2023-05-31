@@ -2,8 +2,7 @@
 """
 Implementation of validate_schema(schema)
 """
-
-
+import copy
 import datetime
 import math
 import string
@@ -56,28 +55,7 @@ def validate_schema(
         raise ValidationError('invalid schema (type must be str)', path)
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
-    if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
-        raise ValidationError('title must be str or dict', path)
-    if isinstance(schema['title'], dict):
-        if 'en' not in schema['title']:
-            raise ValidationError('title must include an english translation', path)
-        for lang_code in schema['title'].keys():
-            if lang_code not in all_language_codes:
-                raise ValidationError('title must only contain known languages', path)
-        for title_text in schema['title'].values():
-            if not isinstance(title_text, str):
-                raise ValidationError('title must only contain text', path)
-            if strict:
-                if not title_text:
-                    raise ValidationError('title must not be empty', path)
-                if re.match(r'^\s+$', title_text):
-                    raise ValidationError('title must not be whitespace only', path)
-    elif strict:
-        title_text = schema['title']
-        if not title_text:
-            raise ValidationError('title must not be empty', path)
-        if re.match(r'^\s+$', title_text):
-            raise ValidationError('title must not be whitespace only', path)
+    _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     if 'style' in schema and not isinstance(schema['style'], str):
         raise ValidationError('style must only contain text', path)
     if 'conditions' in schema:
@@ -121,8 +99,41 @@ def validate_schema(
         return _validate_plotly_chart_schema(schema, path, all_language_codes=all_language_codes)
     elif schema['type'] == 'timeseries':
         return _validate_timeseries_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+    elif schema['type'] == 'file':
+        return _validate_file_schema(schema, path, all_language_codes=all_language_codes)
     else:
         raise ValidationError('invalid type', path)
+
+
+def _validate_title_in_schema(
+    schema: typing.Dict[str, typing.Any],
+    path: typing.List[str],
+    *,
+    all_language_codes: typing.Set[str],
+    strict: bool = False
+) -> None:
+    if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
+        raise ValidationError('title must be str or dict', path)
+    if isinstance(schema['title'], dict):
+        if 'en' not in schema['title']:
+            raise ValidationError('title must include an english translation', path)
+        for lang_code in schema['title'].keys():
+            if lang_code not in all_language_codes:
+                raise ValidationError('title must only contain known languages', path)
+        for title_text in schema['title'].values():
+            if not isinstance(title_text, str):
+                raise ValidationError('title must only contain text', path)
+            if strict:
+                if not title_text:
+                    raise ValidationError('title must not be empty', path)
+                if re.match(r'^\s+$', title_text):
+                    raise ValidationError('title must not be whitespace only', path)
+    elif strict:
+        title_text = schema['title']
+        if not title_text:
+            raise ValidationError('title must not be empty', path)
+        if re.match(r'^\s+$', title_text):
+            raise ValidationError('title must not be whitespace only', path)
 
 
 def _validate_note_in_schema(
@@ -309,13 +320,14 @@ def _validate_object_schema(
     if schema.get('template') is not None:
         invalid_template_action_ids = list(invalid_template_action_ids) + [typing.cast(int, schema['template'])]
 
-    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note', 'show_more'}
+    valid_keys = {'type', 'title', 'properties', 'propertyOrder', 'required', 'default', 'may_copy', 'style', 'template', 'recipes', 'note', 'show_more', 'workflow_show_more'}
     if not path:
         # the top level object may contain a list of properties to be displayed in a table of objects
         valid_keys.add('displayProperties')
         valid_keys.add('batch')
         valid_keys.add('batch_name_format')
         valid_keys.add('notebookTemplates')
+        valid_keys.add('workflow_view')
     if path:
         # the top level object must not have any conditions
         valid_keys.add('conditions')
@@ -398,7 +410,7 @@ def _validate_object_schema(
                 raise ValidationError(f'duplicate propertyOrder property: {property_name}', path)
 
     if 'default' in schema:
-        validate(schema['default'], schema, strict=strict)
+        validate(schema['default'], schema, path + ['(default)'], strict=strict)
 
     if 'displayProperties' in schema:
         if not isinstance(schema['displayProperties'], list):
@@ -459,12 +471,34 @@ def _validate_object_schema(
                 elif schema['properties'][property_name]['type'] == 'bool':
                     raise ValidationError('recipe values for type \'bool\' must not be None', path + ['(recipes)', property_name])
 
-    if 'show_more' in schema:
-        if not isinstance(schema['show_more'], list):
-            raise ValidationError('show_more must be list', path)
-        for property_name in schema['show_more']:
-            if property_name not in schema['properties'].keys():
-                raise ValidationError(f'unknown property: {property_name}', path)
+    for show_more_key in ['show_more', 'workflow_show_more']:
+        if show_more_key in schema:
+            if not isinstance(schema[show_more_key], list):
+                raise ValidationError(f'{show_more_key} must be list', path)
+            for property_name in schema[show_more_key]:
+                if property_name not in schema['properties'].keys():
+                    raise ValidationError(f'unknown property: {property_name}', path)
+
+    if 'workflow_view' in schema:
+        id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
+        workflow_valid_keys = set(id_keys + ['title', 'show_action_info'])
+        if not isinstance(schema['workflow_view'], dict):
+            raise ValidationError('workflow_view must be a dict', path)
+        for key in schema['workflow_view'].keys():
+            if key not in workflow_valid_keys:
+                raise ValidationError(f'invalid key in workflow_view: {key}', path)
+        for key in id_keys:
+            if key in schema['workflow_view'] and not (
+                schema['workflow_view'][key] is None or
+                type(schema['workflow_view'][key]) == int or
+                type(schema['workflow_view'][key]) == list and all(
+                    type(action_type_id) == int for action_type_id in schema['workflow_view'][key]
+                )
+            ):
+                raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
+        _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+        if 'show_action_info' in schema['workflow_view'] and not isinstance(schema['workflow_view']['show_action_info'], bool):
+            raise ValidationError('show_action_info must be bool', path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
@@ -702,24 +736,31 @@ def _validate_quantity_schema(
     else:
         raise ValidationError('units must be string or list of strings', path)
 
-    if 'default' in schema and not isinstance(schema['default'], float) and not isinstance(schema['default'], int):
-        raise ValidationError('default must be float or int', path)
     if 'min_magnitude' in schema and not isinstance(schema['min_magnitude'], float) and not isinstance(schema['min_magnitude'], int):
         raise ValidationError('min_magnitude must be float or int', path)
     if 'max_magnitude' in schema and not isinstance(schema['max_magnitude'], float) and not isinstance(schema['max_magnitude'], int):
         raise ValidationError('max_magnitude must be float or int', path)
-    if 'default' in schema and not math.isfinite(schema['default']):
-        raise ValidationError('default must be a finite number', path)
     if 'min_magnitude' in schema and not math.isfinite(schema['min_magnitude']):
         raise ValidationError('min_magnitude must be a finite number', path)
     if 'max_magnitude' in schema and not math.isfinite(schema['max_magnitude']):
         raise ValidationError('max_magnitude must be a finite number', path)
     if 'min_magnitude' in schema and 'max_magnitude' in schema and schema['min_magnitude'] > schema['max_magnitude']:
         raise ValidationError('max_magnitude must be greater than or equal to min_magnitude', path)
-    if 'min_magnitude' in schema and 'default' in schema and schema['min_magnitude'] > schema['default']:
-        raise ValidationError('default must be greater than or equal to min_magnitude', path)
-    if 'max_magnitude' in schema and 'default' in schema and schema['max_magnitude'] < schema['default']:
-        raise ValidationError('default must be less than or equal to max_magnitude', path)
+    if 'default' in schema:
+        if isinstance(schema['default'], (float, int)):
+            if not math.isfinite(schema['default']):
+                raise ValidationError('default must be a finite number', path)
+            if 'min_magnitude' in schema and schema['min_magnitude'] > schema['default']:
+                raise ValidationError('default must be greater than or equal to min_magnitude', path)
+            if 'max_magnitude' in schema and schema['max_magnitude'] < schema['default']:
+                raise ValidationError('default must be less than or equal to max_magnitude', path)
+        elif isinstance(schema['default'], dict):
+            _default_quantity = copy.deepcopy(schema['default'])
+            if '_type' not in _default_quantity:
+                _default_quantity['_type'] = 'quantity'
+            validate(_default_quantity, schema, path + ['(default)'])
+        else:
+            raise ValidationError('default must be float, int or dict', path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
@@ -1014,4 +1055,35 @@ def _validate_timeseries_schema(
     if strict:
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+
+
+def _validate_file_schema(
+        schema: typing.Dict[str, typing.Any],
+        path: typing.List[str],
+        *,
+        all_language_codes: typing.Set[str]
+) -> None:
+    """
+    Validates the given file object schema and raises a ValidationError if it is invalid.
+
+    :param schema: the sampledb file object schema
+    :param path: the path to this subschema
+    :param all_language_codes: the set of existing language codes
+    :raise ValidationError: if the schema is invalid.
+    """
+    valid_keys = {'type', 'title', 'note', 'conditions', 'style', 'extensions', 'preview'}
+    required_keys = {'type', 'title'}
+    schema_keys = set(schema.keys())
+    invalid_keys = schema_keys - valid_keys
+    if invalid_keys:
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
+    if 'extensions' in schema:
+        if not isinstance(schema['extensions'], list) or not schema['extensions'] or not all(isinstance(extension, str) and len(extension) > 1 and extension.startswith('.') for extension in schema['extensions']):
+            raise ValidationError('extensions must be a list of file extensions', path)
+    if 'preview' in schema and not isinstance(schema['preview'], bool):
+        raise ValidationError('preview must be a list of file extensions', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)

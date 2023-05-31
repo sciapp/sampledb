@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 0.23
+------------
+
+Released on May 31st, 2023.
+
+- Added support for short-lived API access tokens
+- Added file datatype
+- Implemented workflow view for related objects
+- Allow administrators to set whether they want to see hidden users
+
 Version 0.22.1
 --------------
 

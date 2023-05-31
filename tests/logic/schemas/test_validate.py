@@ -2437,3 +2437,21 @@ def test_validate_timeseries_invalid_magnitude():
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
+
+
+def test_validate_file():
+    schema = {
+        'type': 'file',
+        'title': 'Example File',
+        'extensions': ['.txt']
+    }
+    instance = {
+        '_type': 'file',
+        'file_id': 1
+    }
+    validate(instance, schema)
+    validate(instance, schema, file_names_by_id={1: 'test.txt'})
+    with pytest.raises(ValidationError):
+        validate(instance, schema, file_names_by_id={})
+    with pytest.raises(ValidationError):
+        validate(instance, schema, file_names_by_id={1: 'test.png'})

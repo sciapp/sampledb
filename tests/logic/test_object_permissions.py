@@ -3,6 +3,7 @@
 
 """
 
+import flask
 import pytest
 
 import sampledb
@@ -743,3 +744,62 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             component_name=None
         )
     ]
+
+
+def test_get_user_permissions_for_multiple_objects(users, instrument_action_object, instrument_action):
+    user_id = users[0].id
+    other_user_id = users[1].id
+    object_id = instrument_action_object.object_id
+    instrument_id = instrument_action.instrument_id
+
+    flask.current_app.config['ENABLE_ANONYMOUS_USERS'] = True
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(None, [object_id]) == {object_id: Permissions.NONE}
+
+    sampledb.logic.object_permissions.set_object_permissions_for_anonymous_users(object_id, Permissions.READ)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(None, [object_id]) == {object_id: Permissions.READ}
+
+    flask.current_app.config['ENABLE_ANONYMOUS_USERS'] = False
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(None, [object_id]) == {object_id: Permissions.NONE}
+
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id, user_id, Permissions.NONE)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.NONE}
+
+    flask.current_app.config['ENABLE_ANONYMOUS_USERS'] = True
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.READ}
+
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id, user_id, Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.WRITE}
+
+    sampledb.logic.instruments.set_instrument_responsible_users(instrument_id, [user_id])
+    flask.current_app.config['DISABLE_INSTRUMENTS'] = True
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.WRITE}
+
+    flask.current_app.config['DISABLE_INSTRUMENTS'] = False
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.GRANT}
+
+    sampledb.logic.instruments.set_instrument_responsible_users(instrument_id, [])
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.WRITE}
+
+    group = sampledb.logic.groups.create_group(name='Test Group', description='', initial_user_id=user_id)
+    sampledb.logic.object_permissions.set_user_object_permissions(object_id, user_id, Permissions.READ)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.READ}
+
+    sampledb.logic.object_permissions.set_group_object_permissions(object_id, group.id, Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.WRITE}
+
+    project = sampledb.logic.projects.create_project(name='Test Project', description='', initial_user_id=user_id)
+    sampledb.logic.projects.add_user_to_project(project.id, other_user_id, Permissions.GRANT)
+    sampledb.logic.object_permissions.set_group_object_permissions(object_id, group.id, Permissions.READ)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.READ}
+
+    sampledb.logic.object_permissions.set_project_object_permissions(object_id, project.id, Permissions.GRANT)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.GRANT}
+
+    sampledb.logic.projects.add_group_to_project(project.id, group.id, Permissions.WRITE)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.GRANT}
+
+    sampledb.logic.projects.update_user_project_permissions(project.id, user_id, Permissions.NONE)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.WRITE}
+
+    sampledb.logic.projects.update_group_project_permissions(project.id, group.id, Permissions.READ)
+    assert sampledb.logic.object_permissions.get_user_permissions_for_multiple_objects(user_id, [object_id]) == {object_id: Permissions.READ}

@@ -3,7 +3,7 @@
 SciCat Export
 =============
 
-`SciCat <https://scicatproject.github.io/>`_ is web-based catalog for scientific metadata. Although it has a more fixed structure than |service_name|, with categories for proposals, samples, raw and derived datasets, many action types in |service_name| may be able to be mapped to one of these categories. To configure this mapping, the SciCat export type setting for action types can be used.
+`SciCat <https://scicatproject.github.io/>`_ is a web-based catalog for scientific metadata. Although it has a more fixed structure than |service_name|, with categories for proposals, samples, raw and derived datasets, many action types in |service_name| may be able to be mapped to one of these categories. To configure this mapping, the SciCat export type setting for action types can be used.
 
 If the :ref:`SciCat Export configuration variables <scicat_configuration>` have been set, users with **GRANT** permissions can export object information to a SciCat instance. An entry containing both generic metadata and user-selected properties of the process-specific metadata will be created.
 

@@ -91,6 +91,7 @@
 .schema-editor-markdown-property-setting,
 .schema-editor-choice-property-setting,
 .schema-editor-timeseries-property-setting,
+.schema-editor-file-property-setting,
 .schema-editor-user-property-setting {
     display: none;
 }

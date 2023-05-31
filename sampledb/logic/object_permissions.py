@@ -326,15 +326,54 @@ def get_object_info_with_permissions(
     ]
 
 
-def get_objects_with_permissions(
+def get_user_permissions_for_multiple_objects(
+        user_id: typing.Optional[int],
+        object_ids: typing.Sequence[int]
+) -> typing.Dict[int, Permissions]:
+    if not object_ids:
+        return {}
+    if user_id is None:
+        if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
+            return {
+                object_id: Permissions.NONE
+                for object_id in object_ids
+            }
+    else:
+        user = get_user(user_id)
+        if user.has_admin_permissions:
+            return {
+                object_id: Permissions.GRANT
+                for object_id in object_ids
+            }
+
+    stmt = db.text("""
+    SELECT
+    u.object_id, MAX(u.permissions_int)
+    FROM user_object_permissions_by_all as u
+    WHERE (u.object_id IN :object_ids) AND (u.user_id = :user_id OR u.user_id IS NULL) AND (u.requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (u.requires_instruments IS FALSE OR :enable_instruments IS TRUE)
+    GROUP BY (u.object_id)
+    """)
+
+    parameters: typing.Dict[str, typing.Any] = {
+        'user_id': user_id,
+        'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
+        'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS'],
+        'object_ids': tuple(object_ids),
+    }
+    result = {
+        object_id: Permissions.from_value(permissions_int)
+        for object_id, permissions_int in db.session.execute(stmt, parameters).fetchall()
+    }
+    # use NONE for all missing objects as fallback
+    for object_id in object_ids:
+        if object_id not in result:
+            result[object_id] = Permissions.NONE
+    return result
+
+
+def get_object_table_with_permissions(
         user_id: typing.Optional[int],
         permissions: Permissions,
-        filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
-        sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
-        limit: typing.Optional[int] = None,
-        offset: typing.Optional[int] = None,
-        action_ids: typing.Optional[typing.List[int]] = None,
-        action_type_ids: typing.Optional[typing.List[int]] = None,
         other_user_id: typing.Optional[int] = None,
         other_user_permissions: typing.Optional[Permissions] = None,
         group_id: typing.Optional[int] = None,
@@ -344,44 +383,18 @@ def get_objects_with_permissions(
         all_users_permissions: typing.Optional[Permissions] = None,
         anonymous_users_permissions: typing.Optional[Permissions] = None,
         object_ids: typing.Optional[typing.Sequence[int]] = None,
-        num_objects_found: typing.Optional[typing.List[int]] = None,
         name_only: bool = False,
-        **kwargs: typing.Dict[str, typing.Any]
-) -> typing.List[Object]:
+) -> typing.Union[typing.Tuple[None, None], typing.Tuple[typing.Any, typing.Dict[str, typing.Any]]]:
     if user_id is None:
         if not flask.current_app.config['ENABLE_ANONYMOUS_USERS']:
-            return []
+            return None, None
         user = None
     else:
         user = get_user(user_id)
 
         # readonly users may not have more than READ permissions
         if user.is_readonly and permissions != Permissions.READ:
-            return []
-
-    if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
-        # include federated equivalents for default action types
-        all_action_types = action_types.get_action_types()
-        fed_default_action_types: typing.Dict[int, typing.List[int]] = {}
-        for action_type in all_action_types:
-            if action_type.fed_id is not None and action_type.fed_id <= 0:
-                if action_type.fed_id not in fed_default_action_types:
-                    fed_default_action_types[action_type.fed_id] = []
-                fed_default_action_types[action_type.fed_id].append(action_type.id)
-        extended_action_type_ids = set(action_type_ids)
-        for action_type_id in action_type_ids:
-            if action_type_id <= 0:
-                extended_action_type_ids.update(fed_default_action_types.get(action_type_id, []))
-        action_type_ids = list(extended_action_type_ids)
-
-    if action_type_ids is not None and action_ids is not None:
-        action_filter = db.and_(Action.type_id.in_(action_type_ids), Action.id.in_(action_ids))
-    elif action_type_ids is not None:
-        action_filter = Action.type_id.in_(action_type_ids)
-    elif action_ids is not None:
-        action_filter = Action.id.in_(action_ids)
-    else:
-        action_filter = None
+            return None, None
 
     parameters: typing.Dict[str, typing.Any] = {
         'min_permissions_int': permissions.value,
@@ -498,7 +511,7 @@ def get_objects_with_permissions(
             parameters['min_anonymous_users_permissions_int'] = anonymous_users_permissions.value
     elif anonymous_users_permissions is not None and Permissions.READ in anonymous_users_permissions:
         # if permissions for anonymous users are required but anonymous users are disabled, do not return any objects
-        return []
+        return None, None
 
     if object_ids:
         stmt += """
@@ -518,6 +531,71 @@ def get_objects_with_permissions(
         Objects._current_table.c.fed_version_id,
         Objects._current_table.c.component_id
     ).subquery()
+    return table, parameters
+
+
+def get_objects_with_permissions(
+        user_id: typing.Optional[int],
+        permissions: Permissions,
+        filter_func: typing.Callable[[typing.Any], typing.Any] = lambda data: True,
+        sorting_func: typing.Optional[typing.Callable[[typing.Any], typing.Any]] = None,
+        limit: typing.Optional[int] = None,
+        offset: typing.Optional[int] = None,
+        action_ids: typing.Optional[typing.List[int]] = None,
+        action_type_ids: typing.Optional[typing.List[int]] = None,
+        other_user_id: typing.Optional[int] = None,
+        other_user_permissions: typing.Optional[Permissions] = None,
+        group_id: typing.Optional[int] = None,
+        group_permissions: typing.Optional[Permissions] = None,
+        project_id: typing.Optional[int] = None,
+        project_permissions: typing.Optional[Permissions] = None,
+        all_users_permissions: typing.Optional[Permissions] = None,
+        anonymous_users_permissions: typing.Optional[Permissions] = None,
+        object_ids: typing.Optional[typing.Sequence[int]] = None,
+        num_objects_found: typing.Optional[typing.List[int]] = None,
+        name_only: bool = False,
+        **kwargs: typing.Dict[str, typing.Any]
+) -> typing.List[Object]:
+    table, parameters = get_object_table_with_permissions(
+        user_id=user_id,
+        permissions=permissions,
+        other_user_id=other_user_id,
+        other_user_permissions=other_user_permissions,
+        group_id=group_id,
+        group_permissions=group_permissions,
+        project_id=project_id,
+        project_permissions=project_permissions,
+        all_users_permissions=all_users_permissions,
+        anonymous_users_permissions=anonymous_users_permissions,
+        object_ids=object_ids,
+        name_only=name_only,
+    )
+    if table is None:
+        return []
+
+    if action_type_ids is not None and any(action_type_id <= 0 for action_type_id in action_type_ids):
+        # include federated equivalents for default action types
+        all_action_types = action_types.get_action_types()
+        fed_default_action_types: typing.Dict[int, typing.List[int]] = {}
+        for action_type in all_action_types:
+            if action_type.fed_id is not None and action_type.fed_id <= 0:
+                if action_type.fed_id not in fed_default_action_types:
+                    fed_default_action_types[action_type.fed_id] = []
+                fed_default_action_types[action_type.fed_id].append(action_type.id)
+        extended_action_type_ids = set(action_type_ids)
+        for action_type_id in action_type_ids:
+            if action_type_id <= 0:
+                extended_action_type_ids.update(fed_default_action_types.get(action_type_id, []))
+        action_type_ids = list(extended_action_type_ids)
+
+    if action_type_ids is not None and action_ids is not None:
+        action_filter = db.and_(Action.type_id.in_(action_type_ids), Action.id.in_(action_ids))
+    elif action_type_ids is not None:
+        action_filter = Action.type_id.in_(action_type_ids)
+    elif action_ids is not None:
+        action_filter = Action.id.in_(action_ids)
+    else:
+        action_filter = None
 
     return objects.get_objects(
         filter_func=filter_func,

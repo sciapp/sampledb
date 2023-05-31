@@ -167,13 +167,14 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     mail.init_app(app)
     db.init_app(app)
     babel.init_app(app, locale_selector=babel_locale_selector, timezone_selector=babel_timezone_selector)
-    if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
-        sampledb.dashboard.init_app(app)
 
     app.register_blueprint(sampledb.api.server.api)
     app.register_blueprint(sampledb.api.federation.federation_api)
 
     app.register_blueprint(sampledb.frontend.frontend)
+
+    if include_dashboard and app.config['ENABLE_MONITORINGDASHBOARD']:
+        sampledb.dashboard.init_app(app)
 
     login_manager.login_view = 'frontend.sign_in'
     login_manager.anonymous_user = sampledb.logic.users.AnonymousUser
@@ -259,6 +260,10 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             ]
             connect_sources += [
                 "https://pypi.org/pypi/Flask-MonitoringDashboard/json",
+            ]
+        if flask.request.endpoint == 'frontend.federation':
+            connect_sources += [
+                '*'
             ]
         content_security_policy = f"default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; report-uri /csp-violation-report"
         if app.config.get('TESTING', True):

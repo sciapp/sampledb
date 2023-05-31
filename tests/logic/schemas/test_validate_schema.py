@@ -594,6 +594,14 @@ def test_validate_quantity_schema_default():
     }
     validate_schema(wrap_into_basic_schema(schema))
 
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': 15
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
 
 def test_validate_quantity_schema_invalid_default():
     schema = {
@@ -601,6 +609,72 @@ def test_validate_quantity_schema_invalid_default():
         'type': 'quantity',
         'units': 'm',
         'default': '1.5'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_default_dict():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {
+            'magnitude': 1.5,
+            'units': 'km'
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {
+            'magnitude': 1.5,
+            'units': 'm'
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {
+            'magnitude_in_base_units': 1.5
+        }
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_quantity_schema_default_invalid_dict():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'm',
+        'default': {}
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['default'] = {
+        'magnitude': float('inf'),
+        'units': 'km'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['default'] = {
+        'magnitude': 1.5,
+        'units': 's'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['default'] = {
+        'magnitude_in_base_units': 1.5,
+        'magnitude': 7
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
@@ -2879,5 +2953,170 @@ def test_validate_show_more():
         validate_schema(schema)
 
     schema['show_more'] = ['quant']
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_file_schema():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'preview': True
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_invalid_property():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'extension': '.txt'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_extensions():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'extensions': ['.txt']
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_invalid_extensions():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'note': 'Example Note',
+        'extensions': [1]
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_file_schema_with_invalid_preview():
+    schema = {
+        'title': 'Example File',
+        'type': 'file',
+        'preview': 'small'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+def test_validate_workflow_show_more():
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "1"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text",
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity", "text"],
+        "workflow_show_more": ["quantity"]
+    }
+
+    validate_schema(schema)
+
+    schema['workflow_show_more'] = 'quantity'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_show_more'] = ['quant']
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+
+def test_validate_workflow_view():
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "1"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text",
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity", "text"],
+        "workflow_view": {
+            "referencing_action_type_id": 1,
+            "referencing_action_id": [1],
+            "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
+            "referenced_action_id": 1,
+            "title": {"en": "Workflow", "de": "Prozessablauf"},
+            "show_action_info": True
+        }
+    }
+
+    validate_schema(schema)
+
+    schema['workflow_view']['key'] = 'value'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referencing_action_type_id'] = 'MEASUREMENT'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referencing_action_id'] = 'Action'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_type_id'] = 'MEASUREMENT'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_id'] = 'Action'
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referencing_action_id'] = [ActionType.MEASUREMENT, False]
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_type_id'] = [1, None]
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['referenced_action_id'] = [-99, False]
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['title'] = 3515
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['title'] = {"de": "Prozessablauf"}
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+
+    schema['workflow_view']['show_action_info'] = 3515
     with pytest.raises(ValidationError):
         validate_schema(schema)

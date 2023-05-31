@@ -3,7 +3,7 @@ import typing
 import flask
 from werkzeug.exceptions import HTTPException
 
-from .authentication import http_basic_auth, http_token_auth
+from .authentication import http_basic_auth, http_api_token_or_access_token_auth, http_api_token_or_refresh_token_auth
 from ...utils import FlaskResponseT
 
 
@@ -18,7 +18,8 @@ def handle_api_error(error: typing.Any) -> FlaskResponseT:
 
 
 @http_basic_auth.error_handler
-@http_token_auth.error_handler
+@http_api_token_or_access_token_auth.error_handler
+@http_api_token_or_refresh_token_auth.error_handler
 def auth_error(status: int) -> FlaskResponseT:
     try:
         flask.abort(status)

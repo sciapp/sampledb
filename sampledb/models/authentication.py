@@ -22,6 +22,7 @@ class AuthenticationType(enum.Enum):
     EMAIL = 2
     OTHER = 3
     API_TOKEN = 4
+    API_ACCESS_TOKEN = 5
 
 
 class Authentication(Model):

@@ -1,0 +1,28 @@
+{% if data is not none and "file_id" in data and data.file_id is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
+    {% set component_uuid = data.component_uuid %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% set ns = namespace(found=false) %}
+  {% for file in files_by_object_id[object.object_id] %}
+    {% if (component_uuid is none and file.id == data.file_id) or (component_uuid is not none and file.fed_id == data.file_id) %}
+      {% set ns.found = true %}
+      {% if file.is_hidden %}
+        {{ _('Hidden File') }}
+      {% else %}
+        {{ file.title }} (#{{ data.file_id }})
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  {% if not ns.found %}
+    {% if component_uuid is none %}
+      {{ _('File') }} #{{ data.file_id }}
+    {% else %}
+      {% set component = get_component_by_uuid(component_uuid) %}
+      {{ _('File') }} #{{ data.file_id }} @ {{ component.get_name() }}
+    {% endif %}
+  {% endif %}
+{% else %}
+  &mdash;
+{% endif %}

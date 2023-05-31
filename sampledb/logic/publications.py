@@ -142,18 +142,23 @@ def get_publications_for_user(user_id: int) -> typing.List[typing.Tuple[str, typ
     :param user_id: the ID of an existing user
     :return: a list containing publication DOIs and titles
     """
-    readable_objects = object_permissions.get_objects_with_permissions(
+    table, parameters = object_permissions.get_object_table_with_permissions(
         user_id=user_id,
         permissions=models.Permissions.READ,
         name_only=True
     )
-    readable_object_ids = {
-        object.object_id
-        for object in readable_objects
-    }
-    publication_links = models.object_publications.ObjectPublication.query.filter(
-        models.object_publications.ObjectPublication.object_id.in_(readable_object_ids)
-    ).all()
+    if table is None:
+        return []
+    publication_links = [
+        row[0] for row in db.session.execute(
+            db.select(models.ObjectPublication).select_from(
+                table.join(
+                    models.ObjectPublication,
+                    table.c.object_id == models.ObjectPublication.object_id
+                )
+            ), parameters
+        ).fetchall()
+    ]
     publication_titles: typing.Dict[str, typing.List[str]] = {}
     for link in publication_links:
         if link.doi not in publication_titles:

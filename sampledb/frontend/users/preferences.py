@@ -117,9 +117,10 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
     api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
-    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
+    api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
+    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     authentication_method_form = AuthenticationMethodForm()
@@ -157,7 +158,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         existing_project_permissions=project_permissions
     )
 
-    users = get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True)
+    users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True)
     users = [user for user in users if user.id not in user_permissions]
     users.sort(key=lambda user: user.id)
 
@@ -228,7 +229,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     two_factor_authentication_methods=two_factor_authentication_methods,
                     manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
                 )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -343,7 +345,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     two_factor_authentication_methods=two_factor_authentication_methods,
                     manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
                 )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -404,9 +407,10 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     two_factor_authentication_methods=two_factor_authentication_methods,
                     manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
                 )
-            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN).all()
+            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
         else:
             flask.flash(_("Failed to add an authentication method."), 'error')
     if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
@@ -456,7 +460,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 two_factor_authentication_methods=two_factor_authentication_methods,
                 manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
                 has_active_method=any(method.active for method in two_factor_authentication_methods),
-                api_tokens=api_tokens
+                api_tokens=api_tokens,
+                api_access_tokens=api_access_tokens,
             )
     if handle_permission_forms(
         default_permissions,
@@ -478,7 +483,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                         break
         flask.flash(_("Successfully updated your notification settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         modified_settings: typing.Dict[str, typing.Any] = {
@@ -547,6 +552,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions
             show_invitation_log = flask.request.form.get('input-show-invitation-log', 'yes') != 'no'
             modified_settings['SHOW_INVITATION_LOG'] = show_invitation_log
+            show_hidden_users_as_admin = flask.request.form.get('input-show-hidden-users-as-admin', 'yes') != 'no'
+            modified_settings['SHOW_HIDDEN_USERS_AS_ADMIN'] = show_hidden_users_as_admin
         set_user_settings(flask_login.current_user.id, modified_settings)
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
@@ -593,7 +600,8 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         two_factor_authentication_methods=two_factor_authentication_methods,
         manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
         has_active_method=any(method.active for method in two_factor_authentication_methods),
-        api_tokens=api_tokens
+        api_tokens=api_tokens,
+        api_access_tokens=api_access_tokens,
     )
 
 

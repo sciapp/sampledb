@@ -11,6 +11,7 @@ import os
 import random
 import threading
 import time
+import typing
 
 # enable Flask debug mode before importing flask
 os.environ['FLASK_DEBUG'] = '1'
@@ -222,3 +223,33 @@ def _drop_empty_database_copy():
         ]:
             connection.execute(sqlalchemy.text(statement))
             connection.execute(sqlalchemy.text('COMMIT'))
+
+
+@pytest.fixture
+def mock_current_user():
+    modules = [
+        sampledb.frontend.utils,
+        sampledb.frontend.objects.object_form_parser
+    ]
+    current_user_backup = getattr(modules[0], 'current_user')
+
+    class MockUser:
+        def __init__(self):
+            self.language_cache: typing.List[typing.Optional[sampledb.logic.languages.Language]] = [None]
+            self.is_authenticated = True
+            self.timezone = 'UTC'
+
+        def set_language_by_lang_code(self, lang_code):
+            language = sampledb.logic.languages.get_language_by_lang_code(lang_code)
+            self.language_cache[0] = language
+
+    mock_user = MockUser()
+    # use english by default to avoid settings lookups
+    mock_user.set_language_by_lang_code('en')
+    for module in modules:
+        setattr(module, 'current_user', mock_user)
+
+    yield mock_user
+
+    for module in modules:
+        setattr(module, 'current_user', current_user_backup)

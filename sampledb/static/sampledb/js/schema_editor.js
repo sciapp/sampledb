@@ -58,7 +58,7 @@ function enableSchemaEditor() {
 
     var advanced_root_object_features = [
       'recipes', 'batch', 'batch_name_format', 'displayProperties',
-      'notebookTemplates', 'show_more'
+      'notebookTemplates', 'show_more', 'workflow_view', 'workflow_show_more'
     ]
 
     for (const name of advanced_root_object_features)
@@ -379,6 +379,8 @@ function enableSchemaEditor() {
       type = 'template';
     } else if (schema['type'] === 'timeseries') {
       type = "timeseries";
+    } else if (schema['type'] === 'file') {
+      type = "file";
     } else {
       window.schema_editor_missing_type_support = true;
       return null;
@@ -421,6 +423,8 @@ function enableSchemaEditor() {
         updateTemplateObjectProperty(path, real_path);
       } else if (type === "timeseries") {
         updateTimeseriesProperty(path, real_path);
+      } else if (type === "file") {
+        updateFileProperty(path, real_path);
       }
       globallyValidateSchema();
     }
@@ -940,7 +944,7 @@ function enableSchemaEditor() {
       var property_schema = schema['properties'][real_path[real_path.length - 1]];
       property_schema["type"] = "user";
 
-      var has_default = getElementForProperty(path, 'user-default-checkbox').prop('checked');
+      var has_default = getElementForProperty(path, 'user-default-input').prop('checked');
       if (has_default) {
         property_schema["default"] = "self";
       } else {
@@ -1101,6 +1105,48 @@ function enableSchemaEditor() {
         display_digits_help.text("");
         display_digits_group.removeClass("has-error");
       }
+
+      updateSpecificProperty(path, real_path, schema, property_schema, has_error);
+    }
+
+    function updateFileProperty(path, real_path) {
+      let has_error = false;
+      updateGenericProperty(path, real_path);
+      let schema = JSON.parse(input_schema.val());
+      let property_schema = schema['properties'][real_path[real_path.length - 1]];
+      property_schema["type"] = "file";
+
+      let has_extensions = getElementForProperty(path, 'file-extensions-checkbox').prop('checked');
+      let extensions_input = getElementForProperty(path, 'file-extensions-input');
+      let extensions = extensions_input.val();
+      let extensions_group = extensions_input.parent();
+      let extensions_help = extensions_group.find('.help-block');
+      if (has_extensions) {
+        extensions_input.prop('disabled', false);
+        if (extensions.length > 0) {
+          // allow multiple extensions separated by a comma
+          extensions = extensions.split(',');
+          extensions = extensions.map(function (unit) {
+            return unit.trim();
+          });
+          property_schema['extensions'] = extensions;
+          extensions_help.text("");
+          extensions_group.removeClass("has-error");
+        } else {
+          delete property_schema['extensions'];
+          extensions_help.text(window.schema_editor_translations['enter_extensions']);
+          extensions_group.addClass("has-error");
+          has_error = true;
+        }
+      } else {
+        extensions_input.prop('disabled', true);
+        delete property_schema['extensions'];
+        extensions_help.text("");
+        extensions_group.removeClass("has-error");
+      }
+
+      let has_preview = getElementForProperty(path, 'file-preview-input').prop('checked');
+      property_schema['preview'] = has_preview;
 
       updateSpecificProperty(path, real_path, schema, property_schema, has_error);
     }
@@ -1287,14 +1333,57 @@ function enableSchemaEditor() {
 
     setupValueFromSchema(path, 'timeseries', 'display_digits', schema, type === 'timeseries', false);
 
-    var default_checkbox = node.find('.schema-editor-user-property-default-checkbox');
-    default_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-checkbox');
-    if (type === 'user' && 'default' in schema) {
-      default_checkbox.prop('checked', true);
+    let extensions_checkbox = node.find('.schema-editor-file-property-extensions-checkbox');
+    let extensions_label = node.find('.schema-editor-file-property-extensions-label');
+    let extensions_input = node.find('.schema-editor-file-property-extensions-input');
+    extensions_checkbox.attr('id', 'schema-editor-object__' + path.join('__') + '-file-extensions-checkbox');
+    extensions_input.attr('id', 'schema-editor-object__' + path.join('__') + '-file-extensions-input');
+    extensions_label.attr('for', extensions_input.attr('id'));
+    if (type === 'file' && 'extensions' in schema) {
+      extensions_input.val(schema['extensions']);
+      extensions_checkbox.prop('checked', true);
     } else {
-      default_checkbox.prop('checked', false);
+      extensions_input.val("");
+      extensions_checkbox.prop('checked', false);
     }
-    default_checkbox.on('change', updateProperty.bind(path));
+    extensions_checkbox.on('change', updateProperty.bind(path));
+    extensions_input.on('change', updateProperty.bind(path));
+
+    var default_label = node.find('.schema-editor-user-property-default-label');
+    var default_input = node.find('.schema-editor-user-property-default-input');
+    default_input.attr('id', 'schema-editor-object__' + path.join('__') + '-user-default-input');
+    default_label.attr('for', default_input.attr('id'));
+    default_input.bootstrapToggle();
+    if (type === 'user' && 'default' in schema) {
+      if (schema['default'] === 'self') {
+        default_input.prop('checked', true);
+        default_input.bootstrapToggle('on');
+      } else {
+        window.schema_editor_missing_type_support = true;
+      }
+    } else {
+      default_input.prop('checked', false);
+      default_input.bootstrapToggle('off');
+    }
+    default_input.on('change', updateProperty.bind(path));
+
+    var preview_label = node.find('.schema-editor-file-property-preview-label');
+    var preview_input = node.find('.schema-editor-file-property-preview-input');
+    preview_input.attr('id', 'schema-editor-object__' + path.join('__') + '-file-preview-input');
+    preview_label.attr('for', preview_input.attr('id'));
+    preview_input.bootstrapToggle();
+    if (type === 'file' && 'preview' in schema) {
+      preview_input.prop('checked', schema['preview']);
+      if (schema['preview']) {
+        preview_input.bootstrapToggle('on');
+      } else {
+        preview_input.bootstrapToggle('off');
+      }
+    } else {
+      preview_input.prop('checked', false);
+      preview_input.bootstrapToggle('off');
+    }
+    preview_input.on('change', updateProperty.bind(path));
 
     var template_id_input = node.find('.schema-editor-generic-property-template-id-input');
     template_id_input.attr('id', 'schema-editor-object__' + path.join('__') + '-template-id-input');

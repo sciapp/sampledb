@@ -2,12 +2,13 @@
 """
 Implementation of generate_placeholder(schema)
 """
-
+import copy
 import typing
 
 from flask_login import current_user
 
 from ..errors import UndefinedUnitError, SchemaError, UserDoesNotExistError
+from ..schemas.validate import validate
 from .utils import get_dimensionality_for_units
 from ..users import check_user_exists
 
@@ -57,6 +58,8 @@ def generate_placeholder(
         return _generate_plotly_chart_placeholder(schema, path)
     elif schema['type'] == 'timeseries':
         return _generate_timeseries_placeholder(schema, path)
+    elif schema['type'] == 'file':
+        return _generate_file_placeholder(schema, path)
     else:
         raise SchemaError('invalid type', path)
 
@@ -190,6 +193,12 @@ def _generate_quantity_placeholder(schema: typing.Dict[str, typing.Any], path: t
     """
     if 'default' not in schema:
         return None
+    if isinstance(schema['default'], dict):
+        default = copy.deepcopy(schema['default'])
+        if '_type' not in default:
+            default['_type'] = 'quantity'
+        validate(default, schema, path)   # fills missing values in quantity in place
+        return default
     magnitude_in_base_units = schema['default']
     if isinstance(schema['units'], str):
         units = schema['units']
@@ -288,5 +297,16 @@ def _generate_timeseries_placeholder(schema: typing.Dict[str, typing.Any], path:
     :param schema: the sampledb object schema
     :param path: the path to this subschema
     :return: None, as there is currently no support for default timeseries
+    """
+    return None
+
+
+def _generate_file_placeholder(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    """
+    Generates a placeholder file object based on an object schema.
+
+    :param schema: the sampledb object schema
+    :param path: the path to this subschema
+    :return: None, as there is currently no support for default files
     """
     return None

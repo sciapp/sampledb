@@ -7,6 +7,7 @@ from flask import Blueprint
 from .objects import Object, Objects, ObjectVersion, ObjectVersions, RelatedObjects
 from .actions import Action, Actions
 from .action_types import ActionType, ActionTypes
+from .authentication import AccessTokens
 from .comments import ObjectComment, ObjectComments
 from .files import ObjectFile, ObjectFiles
 from .instruments import Instrument, Instruments
@@ -25,6 +26,7 @@ api.add_url_rule('/api/v1/actions/', endpoint='actions', view_func=Actions.as_vi
 api.add_url_rule('/api/v1/actions/<int:action_id>', endpoint='action', view_func=Action.as_view('action'))
 api.add_url_rule('/api/v1/action_types/', endpoint='action_types', view_func=ActionTypes.as_view('action_types'))
 api.add_url_rule('/api/v1/action_types/<int(signed=True):type_id>', endpoint='action_type', view_func=ActionType.as_view('action_type'))
+api.add_url_rule('/api/v1/access_tokens/', endpoint='access_tokens', view_func=AccessTokens.as_view('access_tokens'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/comments/', endpoint='object_comments', view_func=ObjectComments.as_view('object_comments'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/comments/<int:comment_id>', endpoint='object_comment', view_func=ObjectComment.as_view('object_comment'))
 api.add_url_rule('/api/v1/instruments/', endpoint='instruments', view_func=Instruments.as_view('instruments'))

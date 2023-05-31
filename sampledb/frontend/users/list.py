@@ -18,6 +18,6 @@ from ...utils import FlaskResponseT
 def users() -> FlaskResponseT:
     return flask.render_template(
         'users.html',
-        users=sorted(get_users(exclude_hidden=not flask_login.current_user.is_admin), key=lambda u: typing.cast(int, u.id)),
+        users=sorted(get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']), key=lambda u: typing.cast(int, u.id)),
         get_component=get_component
     )

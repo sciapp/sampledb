@@ -31,7 +31,8 @@ def validate(
         schema: typing.Dict[str, typing.Any],
         path: typing.Optional[typing.List[str]] = None,
         allow_disabled_languages: bool = False,
-        strict: bool = False
+        strict: bool = False,
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
 ) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
@@ -41,6 +42,7 @@ def validate(
     :param path: the path to this subinstance / subschema
     :param allow_disabled_languages: whether disabled languages are allowed
     :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
+    :param file_names_by_id: a dict mapping file IDs to file names, or None
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
@@ -50,9 +52,9 @@ def validate(
     if 'type' not in schema:
         raise ValidationError('invalid schema (must contain type)', path)
     if schema['type'] == 'array' and isinstance(instance, list):
-        return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict)
+        return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
     elif schema['type'] == 'object' and isinstance(instance, dict):
-        return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict)
+        return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
     elif schema['type'] == 'text' and isinstance(instance, dict):
         return _validate_text(instance, schema, path, allow_disabled_languages=allow_disabled_languages)
     elif schema['type'] == 'datetime' and isinstance(instance, dict):
@@ -77,6 +79,8 @@ def validate(
         return _validate_plotly_chart(instance, schema, path)
     elif schema['type'] == 'timeseries' and isinstance(instance, dict):
         return _validate_timeseries(instance, schema, path)
+    elif schema['type'] == 'file' and isinstance(instance, dict):
+        return _validate_file(instance, schema, path, file_names_by_id=file_names_by_id)
     else:
         raise ValidationError('invalid type', path)
 
@@ -85,7 +89,8 @@ def _validate_array(
         instance: typing.List[typing.Any],
         schema: typing.Dict[str, typing.Any], path: typing.List[str],
         allow_disabled_languages: bool = False,
-        strict: bool = False
+        strict: bool = False,
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
 ) -> None:
     """
     Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
@@ -94,6 +99,7 @@ def _validate_array(
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
     :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
+    :param file_names_by_id: a dict mapping file IDs to file names, or None
     :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, list):
@@ -105,7 +111,7 @@ def _validate_array(
     errors = []
     for index, item in enumerate(instance):
         try:
-            validate(item, schema['items'], path + [str(index)], allow_disabled_languages=allow_disabled_languages, strict=strict)
+            validate(item, schema['items'], path + [str(index)], allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
         except ValidationError as e:
             errors.append(e)
     if len(errors) == 1:
@@ -214,7 +220,8 @@ def _validate_object(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         allow_disabled_languages: bool = False,
-        strict: bool = False
+        strict: bool = False,
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
 ) -> None:
     """
     Validates the given instance using the given object schema and raises a ValidationError if it is invalid.
@@ -223,6 +230,7 @@ def _validate_object(
     :param schema: the valid sampledb object schema
     :param path: the path to this subinstance / subschema
     :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
+    :param file_names_by_id: a dict mapping file IDs to file names, or None
     :raise ValidationError: if the schema is invalid.
     """
     if not isinstance(instance, dict):
@@ -248,7 +256,7 @@ def _validate_object(
             if property_name not in schema['properties']:
                 raise ValidationError(f'unknown property "{property_name}"', path + [property_name])
             else:
-                validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict)
+                validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
         except ValidationError as e:
             errors.append(e)
     if len(errors) == 1:
@@ -776,3 +784,45 @@ def _validate_timeseries(
                 raise ValidationError('magnitude_in_base_units and magnitude do not match', path)
         else:
             instance['data'][i] = [utc_datetime, float(magnitude), float(calculated_magnitude_in_base_units)]
+
+
+def _validate_file(
+        instance: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        path: typing.List[str],
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
+) -> None:
+    """
+    Validates the given instance using the given file object schema and raises a ValidationError if it is invalid.
+
+    :param instance: the sampledb file object
+    :param schema: the valid sampledb file object schema
+    :param path: the path to this subinstance / subschema
+    :param file_names_by_id: a dict mapping file IDs to file names, or None
+    :raise ValidationError: if the schema is invalid
+    """
+    if not isinstance(instance, dict):
+        raise ValidationError('instance must be dict', path)
+    valid_keys = {'_type', 'file_id'}
+    required_keys = valid_keys
+    schema_keys = set(instance.keys())
+    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    if invalid_keys:
+        raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
+    missing_keys = required_keys - schema_keys
+    if missing_keys:
+        raise ValidationError(f'missing keys in schema: {missing_keys}', path)
+    if instance['_type'] != 'file':
+        raise ValidationError('expected _type "file"', path)
+    if not isinstance(instance['file_id'], int):
+        raise ValidationError('file_id must be int', path)
+    if file_names_by_id is not None:
+        if instance['file_id'] not in file_names_by_id:
+            raise ValidationError('file does not exist', path)
+        file_name = file_names_by_id[instance['file_id']]
+        if 'extensions' in schema:
+            for extension in schema['extensions']:
+                if file_name.lower().endswith(extension.lower()):
+                    break
+            else:
+                raise ValidationError(f'file name should have one of these extensions: {", ".join(schema["extensions"])}', path)

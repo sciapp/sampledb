@@ -3,10 +3,10 @@
 {% block title %}{{ _('API Log') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-<h1>{{ _('Log for API token "%(api_token)s"', api_token=api_token_description) }}</h1>
+<h1>{{ _('Log for %(api_token_type)s "%(api_token)s"', api_token=api_token_description, api_token_type=api_token_type) }}</h1>
 
 {% if api_log_entries %}
-<p class="help-block">{{ _('This table shows a list of all API request authenticated with this API token.') }}</p>
+<p class="help-block">{{ _('This table shows a list of all API request authenticated with this %(api_token_type)s.', api_token_type=api_token_type) }}</p>
 
 <table class="table">
   <thead>
@@ -27,6 +27,6 @@
   </tbody>
 </table>
   {% else %}
-  <p class="help-block">{{ _('This API token has not been used so far.')}}</p>
+  <p class="help-block">{{ _('This %(api_token_type)s has not been used so far.', api_token_type=api_token_type) }}</p>
   {% endif %}
 {% endblock %}

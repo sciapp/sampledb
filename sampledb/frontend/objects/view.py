@@ -3,7 +3,6 @@
 
 """
 import csv
-import datetime
 import io
 import json
 import typing
@@ -22,9 +21,10 @@ from ... import models
 from ...logic import object_log, comments, errors
 from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
-from ...logic.action_permissions import get_user_action_permissions, get_sorted_actions_for_user
-from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
+from ...logic.action_permissions import get_user_action_permissions
+from ...logic.object_permissions import get_user_object_permissions
 from ...logic.fed_logs import get_fed_object_log_entries_for_object
+from ...logic.object_relationships import get_workflow_references
 from ...logic.users import get_user, get_users, User
 from ...logic.settings import get_user_settings
 from ...logic.objects import get_object
@@ -44,7 +44,7 @@ from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, DEFAULT_
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
-from .object_form import show_object_form
+from .object_form import show_object_form, get_object_form_template_kwargs
 from ...utils import FlaskResponseT
 from ...models import Permissions, ObjectLogEntryType
 from ...models.file_log import FileLogEntryType
@@ -141,9 +141,12 @@ def object(object_id: int) -> FlaskResponseT:
         "ENGLISH": english,
     })
 
+    actions_by_id = {}
+
     # basic object and action information
     if object.action_id is not None:
         action = get_action(object.action_id)
+        actions_by_id[action.id] = action
         action_type = get_action_type(action.type_id) if action.type_id is not None else None
         instrument = action.instrument
         object_type = get_translated_text(action_type.object_name) if action_type else None
@@ -367,7 +370,7 @@ def object(object_id: int) -> FlaskResponseT:
         location_form.location.choices = choices
         possible_responsible_users: typing.List[typing.Tuple[str, typing.Optional[User]]] = [('-1', None)]
         user_is_fed = {}
-        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
             possible_responsible_users.append((str(user.id), user))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_responsible_users
@@ -420,6 +423,11 @@ def object(object_id: int) -> FlaskResponseT:
         "FedObjectLogEntryType": models.FedObjectLogEntryType,
     })
 
+    workflow = get_workflow_references(object, flask_login.current_user.id, actions_by_id)
+    template_kwargs.update({
+        "workflow": workflow,
+    })
+
     # related objects tree
     if action and action.type and action.type.enable_related_objects:
         related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, user_id=flask_login.current_user.id)
@@ -449,62 +457,9 @@ def object(object_id: int) -> FlaskResponseT:
             "form_data": {},
             "form": ObjectForm(),
             "mode": 'edit',
-            "datetime": datetime,
-            "languages": all_languages,
         })
 
-        # referencable objects
-        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-            referencable_objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.READ
-            )
-            referencable_objects = [
-                referencable_object
-                for referencable_object in referencable_objects
-                if referencable_object.object_id != object_id
-            ]
-        else:
-            referencable_objects = []
-        template_kwargs.update({
-            "referencable_objects": referencable_objects,
-        })
-
-        # actions and action types
-        sorted_actions = get_sorted_actions_for_user(
-            user_id=flask_login.current_user.id
-        )
-        action_type_id_by_action_id = {}
-        for action in sorted_actions:
-            if action.type is not None:
-                if action.type.fed_id is not None and action.type.fed_id < 0:
-                    action_type_id_by_action_id[action.id] = action.type.fed_id
-                else:
-                    action_type_id_by_action_id[action.id] = action.type.id
-        template_kwargs.update({
-            "sorted_actions": sorted_actions,
-            "action_type_id_by_action_id": action_type_id_by_action_id,
-            "ActionType": models.ActionType,
-        })
-
-        # previously used tags
-        tags = [
-            {
-                'name': tag.name,
-                'uses': tag.uses
-            }
-            for tag in logic.tags.get_tags()
-        ]
-        template_kwargs.update({
-            "tags": tags,
-        })
-
-        # users
-        users = get_users(exclude_hidden=not flask_login.current_user.is_admin)
-        users.sort(key=lambda user: user.id)
-        template_kwargs.update({
-            "users": users,
-        })
+        template_kwargs.update(get_object_form_template_kwargs(object_id))
 
         return flask.render_template(
             'objects/inline_edit/inline_edit_base.html',
@@ -860,7 +815,7 @@ def post_object_location(object_id: int) -> FlaskResponseT:
         if location.type is None or location.type.enable_object_assignments
     ]
     possible_responsible_users = [('-1', '—')]
-    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
         possible_responsible_users.append((str(user.id), f'{user.name} (#{user.id})'))
     location_form.responsible_user.choices = possible_responsible_users
     location_id: typing.Optional[int]

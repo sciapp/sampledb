@@ -67,9 +67,10 @@ FILE_DATA: typing.Dict[typing.Any, typing.Any] = {'file_id': 1, 'component_uuid'
 OBJECT_LOCATION_ASSIGNMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'id': 1, 'component_uuid': UUID_1, 'user': {'user_id': 1, 'component_uuid': UUID_1}, 'responsible_user': {'user_id': 1, 'component_uuid': UUID_1}, 'location': {'location_id': 1, 'component_uuid': UUID_1}, 'description': {'en': 'Object location assignment description'}, 'confirmed': False, 'utc_datetime': '2021-05-03 05:04:54.123450'}
 COMPLEX_ACTION_SCHEMA: typing.Dict[typing.Any, typing.Any] = {"title": "Action", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}, "multiline_text": {"title": "Multiline Text", "type": "text", "multiline": True, "placeholder": "Multiline Text"}, "markdown_text": {"title": "Markdown Text", "type": "text", "markdown": True, "default": "**Text**"}, "choice": {"title": "Choice", "type": "text", "choices": ["Option 1", "Option 2", "Option 3", "Option 4"]}, "quantity": {"title": "Quantity", "note": "Quantity", "type": "quantity", "units": "1"}, "bool": {"title": "Boolean", "type": "bool", "default": True}, "datetime": {"title": "Datetime", "type": "datetime"}, "sample": {"title": "Sample", "type": "sample"}, "measurement": {"title": "Measurement", "type": "measurement"}, "user": {"title": "User", "type": "user"}, "object": {"title": "Object", "type": "object_reference"}, "graphic": {"title": "Graphic", "type": "plotly_chart"}, "tags": {"type": "tags", "title": "Tags"}, "hazards": {"type": "hazards", "title": "GHS Hazards"}}, "required": ["name", "markdown_text", "tags", "hazards"], "propertyOrder": ["name", "multiline_text", "markdown_text", "choice", "quantity", "bool", "datetime", "sample", "measurement", "user", "object", "graphic", "tags", "hazards"]}
 COMPLEX_OBJECT_DATA: typing.Dict[typing.Any, typing.Any] = {"bool": {"_type": "bool", "value": True}, "name": {"text": {"en": "Object"}, "_type": "text"}, "tags": {"tags": ["object", "result"], "_type": "tags"}, "user": {"_type": "user", "user_id": 3, "component_uuid": UUID_1}, "choice": {"text": "Option 3", "_type": "text"}, "object": {"_type": "object_reference", "object_id": 12, "component_uuid": UUID_1}, "sample": {"_type": "sample", "object_id": 8, "component_uuid": UUID_1}, "graphic": {"_type": "plotly_chart", "plotly": {"data": [{"x": ["0.000", "1.000"], "y": ["0.000", "1.000"], "type": "scatter"}], "layout": {"width": 800, "xaxis": {"type": "linear", "range": [0, 1]}, "yaxis": {"type": "linear", "range": [0.0, 1.0]}}}}, "hazards": {"_type": "hazards", "hazards": [3, 7, 9]}, "datetime": {"_type": "datetime", "utc_datetime": "2021-07-08 13:03:52"}, "quantity": {"_type": "quantity", "units": "1", "magnitude": 12, "dimensionality": "dimensionless", "magnitude_in_base_units": 12}, "measurement": {"_type": "measurement", "object_id": 6, "component_uuid": UUID_1}, "markdown_text": {"text": {"en": "**Text**"}, "_type": "text", "is_markdown": True}, "multiline_text": {"text": {"en": "Object\r\nTest"}, "_type": "text"}}
-REFERENCES_TABLE_LIST_SCHEMA: typing.Dict[typing.Any, typing.Any] = {'title': 'Table and List', 'type': 'object', 'properties': {'name': {'title': 'Object Name', 'type': 'text'}, 'user1': {'title': 'User 1', 'type': 'user'}, 'object1': {'title': 'Object 1', 'type': 'object_reference'}, 'user2': {'title': 'User 2', 'type': 'user'}, 'object2': {'title': 'Object 2', 'type': 'object_reference'}, 'user3': {'title': 'User 3', 'type': 'user'}, 'object3': {'title': 'Object 3', 'type': 'object_reference'}, 'user4': {'title': 'User 4', 'type': 'user'}, 'object4': {'title': 'Object 4', 'type': 'object_reference'}, 'userlist': {'title': 'User List', 'type': 'array', 'style': 'list', 'items': {'title': 'User', 'type': 'user'}}, 'objectlist': {'title': 'Object List', 'type': 'array', 'style': 'list', 'items': {'title': 'Object', 'type': 'object_reference'}}, 'usertable': {'title': 'User Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'User Row', 'items': {'title': 'User', 'type': 'user'}}}, 'objecttable': {'title': 'Object Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'Object Row', 'items': {'title': 'Object', 'type': 'object_reference'}}}}, 'propertyOrder': ['name', 'user1', 'object1', 'user2', 'object2', 'user3', 'object3', 'user4', 'object4', 'userlist', 'objectlist', 'usertable', 'objecttable'], 'required': ['name']}
-REFERENCES_TABLE_LIST_DATA_FRAME: typing.Dict[typing.Any, typing.Any] = {'name': {'text': {'en': 'Test Object'}, '_type': 'text'}, 'user1': {'_type': 'user'}, 'user2': {'_type': 'user'}, 'user3': {'_type': 'user'}, 'user4': {'_type': 'user'}, 'object1': {'_type': 'object_reference'}, 'object2': {'_type': 'object_reference'}, 'object3': {'_type': 'object_reference'}, 'object4': {'_type': 'object_reference'}, 'userlist': [{'_type': 'user'}, {'_type': 'user'}, {'_type': 'user'}, {'_type': 'user'}], 'objectlist': [{'_type': 'object_reference'}, {'_type': 'object_reference'}, {'_type': 'object_reference'}, {'_type': 'object_reference'}], 'usertable': [[{'_type': 'user', 'user_id': 6}, {'_type': 'user', 'user_id': 3, 'component_uuid': '7c3db1e8-15ba-4d86-885f-792e054d9c73'}], [{'_type': 'user', 'user_id': 5}, {'_type': 'user', 'user_id': 3, 'component_uuid': '208363a4-941b-4071-b6f1-f7803bcbe923'}]], 'objecttable': [[{'_type': 'object_reference'}, {'_type': 'object_reference'}], [{'_type': 'object_reference'}, {'_type': 'object_reference'}]]}
-
+REFERENCES_TABLE_LIST_SCHEMA: typing.Dict[typing.Any, typing.Any] = {'title': 'Table and List', 'type': 'object', 'properties': {'name': {'title': 'Object Name', 'type': 'text'}, 'user1': {'title': 'User 1', 'type': 'user'}, 'object1': {'title': 'Object 1', 'type': 'object_reference'}, 'file1': {'title': 'File 1', 'type': 'file'}, 'user2': {'title': 'User 2', 'type': 'user'}, 'object2': {'title': 'Object 2', 'type': 'object_reference'}, 'file2': {'title': 'File 2', 'type': 'file'}, 'user3': {'title': 'User 3', 'type': 'user'}, 'object3': {'title': 'Object 3', 'type': 'object_reference'}, 'file3': {'title': 'File 3', 'type': 'file'}, 'user4': {'title': 'User 4', 'type': 'user'}, 'object4': {'title': 'Object 4', 'type': 'object_reference'}, 'file4': {'title': 'File 4', 'type': 'file'}, 'userlist': {'title': 'User List', 'type': 'array', 'style': 'list', 'items': {'title': 'User', 'type': 'user'}}, 'objectlist': {'title': 'Object List', 'type': 'array', 'style': 'list', 'items': {'title': 'Object', 'type': 'object_reference'}}, 'filelist': {'title': 'File List', 'type': 'array', 'style': 'list', 'items': {'title': 'File', 'type': 'file'}}, 'usertable': {'title': 'User Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'User Row', 'items': {'title': 'User', 'type': 'user'}}}, 'objecttable': {'title': 'Object Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'Object Row', 'items': {'title': 'Object', 'type': 'object_reference'}}}, 'filetable': {'title': 'File Table', 'type': 'array', 'style': 'table', 'items': {'type': 'array', 'title': 'File Row', 'items': {'title': 'File', 'type': 'file'}}}}, 'propertyOrder': ['name', 'user1', 'object1', 'file1', 'user2', 'object2', 'file2', 'user3', 'object3', 'file3', 'user4', 'object4', 'file4', 'userlist', 'objectlist', 'filelist', 'usertable', 'objecttable', 'filetable'], 'required': ['name']}
+REFERENCES_TABLE_LIST_DATA_FRAME: typing.Dict[typing.Any, typing.Any] = {'name': {'text': {'en': 'Test Object'}, '_type': 'text'}, 'user1': {'_type': 'user'}, 'user2': {'_type': 'user'}, 'user3': {'_type': 'user'}, 'user4': {'_type': 'user'}, 'object1': {'_type': 'object_reference'}, 'object2': {'_type': 'object_reference'}, 'object3': {'_type': 'object_reference'}, 'object4': {'_type': 'object_reference'}, 'file1': {'_type': 'file'}, 'file2': {'_type': 'file'}, 'file3': {'_type': 'file'}, 'file4': {'_type': 'file'}, 'userlist': [{'_type': 'user'}, {'_type': 'user'}, {'_type': 'user'}, {'_type': 'user'}], 'objectlist': [{'_type': 'object_reference'}, {'_type': 'object_reference'}, {'_type': 'object_reference'}, {'_type': 'object_reference'}], 'filelist': [{'_type': 'file'}, {'_type': 'file'}, {'_type': 'file'}, {'_type': 'file'}], 'usertable': [[{'_type': 'user', 'user_id': 6}, {'_type': 'user', 'user_id': 3, 'component_uuid': '7c3db1e8-15ba-4d86-885f-792e054d9c73'}], [{'_type': 'user', 'user_id': 5}, {'_type': 'user', 'user_id': 3, 'component_uuid': '208363a4-941b-4071-b6f1-f7803bcbe923'}]], 'objecttable': [[{'_type': 'object_reference'}, {'_type': 'object_reference'}], [{'_type': 'object_reference'}, {'_type': 'object_reference'}]], 'filetable': [[{'_type': 'file', 'file_id': 6}, {'_type': 'file', 'file_id': 3, 'component_uuid': '7c3db1e8-15ba-4d86-885f-792e054d9c73'}], [{'_type': 'file', 'file_id': 5}, {'_type': 'file', 'file_id': 3, 'component_uuid': '208363a4-941b-4071-b6f1-f7803bcbe923'}]]}
+FILE_ACTION_SCHEMA: typing.Dict[str, typing.Any] = {'title': 'Object Information', 'type': 'object', 'properties': {'name': {'type': 'text', 'title': 'Name'}, 'file': {'type': 'file', 'title': 'File'}}, 'required': ['name']}
+FILE_OBJECT_DATA: typing.Dict[str, typing.Any] = {'name': {'_type': 'text', 'text': 'Test Object'}, 'file': {'_type': 'file', 'file_id': 0}}
 
 @pytest.fixture
 def user():
@@ -384,6 +385,57 @@ def complex_object(complex_action, users, ref_objects):
     ola = ObjectLocationAssignment(object_id=object.object_id, location_id=location.id, responsible_user_id=user6.id, user_id=user7.id, description={'en': 'Assignment description'})
     db.session.add(ola)
     db.session.commit()
+
+    return object
+
+
+@pytest.fixture
+def file_action(user):
+    action_type = create_action_type(
+        admin_only=False,
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        enable_labels=True,
+        enable_comments=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_related_objects=True,
+        enable_activity_log=True,
+        enable_project_link=True,
+        enable_instrument_link=False,
+        disable_create_objects=False,
+        is_template=False
+    )
+    action = create_action(
+        action_type_id=action_type.id,
+        schema=FILE_ACTION_SCHEMA,
+        instrument_id=None,
+        user_id=user.id,
+        description_is_markdown=True,
+        short_description_is_markdown=False
+    )
+
+    return action
+
+
+@pytest.fixture
+def file_object(file_action, users):
+    user1, user2, user3, user4, user5, user6, user7 = users
+    object_data = deepcopy(FILE_OBJECT_DATA)
+    object = create_object(
+        user_id=user2.id,
+        action_id=file_action.id,
+        data=object_data,
+        data_validator_arguments={'file_names_by_id': {0: 'test.txt'}}
+    )
+    file = logic.files.create_database_file(
+        object_id=object.id,
+        user_id=user1.id,
+        file_name='test.txt',
+        save_content=lambda stream: stream.write(b'test')
+    )
+    assert file.id == 0
 
     return object
 
@@ -1445,6 +1497,12 @@ def test_import_object_tags_new_old_version(component):
 
 
 def test_import_object_table_list_references(component, user, fed_user, simple_object):
+    file = logic.files.create_database_file(
+        object_id=simple_object.object_id,
+        user_id=user.id,
+        file_name='test.txt',
+        save_content=lambda stream: stream.write(b'test')
+    )
     fed_data = deepcopy(simple_object.data)
     fed_data['name']['text'] = 'Imported'
     fed_object = insert_fed_object_version(
@@ -1477,6 +1535,15 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
     data['object4']['object_id'] = fed_object.fed_object_id + 1  # unknown object, known component
     data['object4']['component_uuid'] = component.uuid
 
+    data['file1']['file_id'] = 1  # unknown local file
+    data['file1']['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    data['file2']['file_id'] = 12  # unknown file, unknown component
+    data['file2']['component_uuid'] = UUID_2
+    data['file3']['file_id'] = file.id  # local file
+    data['file3']['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    data['file4']['file_id'] = fed_user.fed_id + 1  # unknown file, known component
+    data['file4']['component_uuid'] = component.uuid
+
     data['userlist'][0]['user_id'] = fed_user.id  # imported user
     data['userlist'][0]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
     data['userlist'][1]['user_id'] = 12  # unknown user, unknown component
@@ -1495,6 +1562,15 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
     data['objectlist'][3]['object_id'] = fed_object.fed_object_id + 1  # unknown object, known component
     data['objectlist'][3]['component_uuid'] = component.uuid
 
+    data['filelist'][0]['file_id'] = 1  # unknown local file
+    data['filelist'][0]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    data['filelist'][1]['file_id'] = 12  # unknown file, unknown component
+    data['filelist'][1]['component_uuid'] = UUID_2
+    data['filelist'][2]['file_id'] = file.id  # local file
+    data['filelist'][2]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    data['filelist'][3]['file_id'] = fed_user.fed_id + 1  # unknown file, known component
+    data['filelist'][3]['component_uuid'] = component.uuid
+
     data['usertable'][0][0]['user_id'] = fed_user.id  # imported user
     data['usertable'][0][0]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
     data['usertable'][0][1]['user_id'] = 12  # unknown user, unknown component
@@ -1512,6 +1588,15 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
     data['objecttable'][1][0]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
     data['objecttable'][1][1]['object_id'] = fed_object.fed_object_id + 1  # unknown object, known component
     data['objecttable'][1][1]['component_uuid'] = component.uuid
+
+    data['filetable'][0][0]['file_id'] = 1  # unknown local file
+    data['filetable'][0][0]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    data['filetable'][0][1]['file_id'] = 12  # unknown file, unknown component
+    data['filetable'][0][1]['component_uuid'] = UUID_2
+    data['filetable'][1][0]['file_id'] = file.id  # local file
+    data['filetable'][1][0]['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+    data['filetable'][1][1]['file_id'] = fed_user.fed_id + 1  # unknown file, known component
+    data['filetable'][1][1]['component_uuid'] = component.uuid
 
     parse_import_object({
         'object_id': 3,
@@ -3197,6 +3282,27 @@ def test_shared_object_preprocessor_modification_update(complex_object, app):
         data = deepcopy(complex_object.data)
         del data['user']
         assert processed_object['versions'][0]['data'] == data
+
+
+def test_shared_object_preprocessor_file_references(file_object, app):
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        policy = {
+            'access': {
+                'action': True,
+                'data': True,
+                'users': True,
+                'comments': True,
+                'files': True,
+                'user_data': True,
+                'object_location_assignments': True
+            }
+        }
+        refs = []
+        markdown_images = {}
+        processed_object = shared_object_preprocessor(file_object.object_id, policy, refs, markdown_images)
+        assert processed_object['versions'][0]['data']['file']['file_id'] == 0
+        assert processed_object['versions'][0]['data']['file']['component_uuid'] == flask.current_app.config['FEDERATION_UUID']
 
 
 def test_shared_action_preprocessor(action, component, app):

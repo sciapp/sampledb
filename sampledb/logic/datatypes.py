@@ -180,7 +180,7 @@ class Quantity:
 
     def __init__(
             self,
-            magnitude: typing.Union[int, float],
+            magnitude: typing.Union[int, float, decimal.Decimal],
             units: typing.Optional[str],
             already_in_base_units: bool = False
     ) -> None:
@@ -199,15 +199,14 @@ class Quantity:
                     self.pint_units = ureg.Unit(self.units)
                 except (pint.errors.UndefinedUnitError, AttributeError):
                     raise ValueError(f"Invalid units '{self.units}'")
-            if already_in_base_units is False:
-                self.magnitude = magnitude
-                self.magnitude_in_base_units = ureg.Quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
-            else:
-                self.magnitude_in_base_units = magnitude
+            if already_in_base_units:
+                magnitude_in_base_units = magnitude
                 _, pint_base_units = ureg.get_base_units(self.pint_units)
-                self.magnitude = ureg.Quantity(decimal.Decimal(magnitude), pint_base_units).to(self.pint_units).magnitude
-            self.magnitude = float(self.magnitude)
-            self.magnitude_in_base_units = float(self.magnitude_in_base_units)
+                magnitude = ureg.Quantity(decimal.Decimal(magnitude), pint_base_units).to(self.pint_units).magnitude
+            else:
+                magnitude_in_base_units = ureg.Quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
+            self.magnitude = float(magnitude)
+            self.magnitude_in_base_units = float(magnitude_in_base_units)
         # use integer unit registry to ensure compatible dimensionalities
         # e.g. [length] ** 2 instead of [length] * 2.000
         self.dimensionality = str(int_ureg.Unit(self.pint_units).dimensionality)

@@ -150,7 +150,7 @@ def project(project_id: int) -> FlaskResponseT:
 
     if Permissions.GRANT in user_permissions:
         invitable_user_list = []
-        for user in logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin, exclude_fed=True):
+        for user in logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True):
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)

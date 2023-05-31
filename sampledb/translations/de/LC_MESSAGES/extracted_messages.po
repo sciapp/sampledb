@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-04-05 10:21+0200\n"
+"POT-Creation-Date: 2023-05-26 15:17+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.12.1\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -216,6 +216,12 @@ msgstr "Ungültiges Token. Geforderte Länge: 64 Zeichen."
 
 msgid "This token has already been linked to this database."
 msgstr "Dieses Token wurde bereits mit dieser Datenbank verknüpft."
+
+#, python-format
+msgid "This UUID or name is already used by this instance (%(service_name)s)"
+msgstr ""
+"Diese UUID oder dieser Name wird bereits von dieser lokalen Instanz "
+"verwendet (%(service_name)s)"
 
 msgid "The database information has been added successfully"
 msgstr "Die Datenbank wurde erfolgreich angelegt"
@@ -970,6 +976,18 @@ msgstr "Nutzer"
 msgid "Anonymous Users"
 msgstr "Anonyme Nutzer"
 
+msgid "Creating objects with this action has been disabled."
+msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
+
+msgid "The object was created successfully."
+msgstr "Das Objekt wurde erfolgreich erstellt."
+
+msgid "The objects were created successfully."
+msgstr "Die Objekte wurden erfolgreich erstellt."
+
+msgid "The object was updated successfully."
+msgstr "Das Objekt wurde erfolgreich aktualisiert."
+
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
 "Berechtigungen konnten nicht kopiert werden. Standardberechtigungen "
@@ -998,26 +1016,14 @@ msgstr ""
 msgid "No project group selected. Default permissions will be applied."
 msgstr "Keine Projektgruppe asugewählt. Standardberechtigungen werden angewandt."
 
-#, python-format
-msgid "The maximum number of objects in one batch is %(max_batch_size)s."
-msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
-
 msgid "The number of objects in batch must be an positive integer."
 msgstr ""
 "Die Anzahl der Objekte in dieser Charge muss eine positive ganze Zahl "
 "sein."
 
-msgid "The objects were created successfully."
-msgstr "Die Objekte wurden erfolgreich erstellt."
-
-msgid "The object was created successfully."
-msgstr "Das Objekt wurde erfolgreich erstellt."
-
-msgid "The object was updated successfully."
-msgstr "Das Objekt wurde erfolgreich aktualisiert."
-
-msgid "Creating objects with this action has been disabled."
-msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
+#, python-format
+msgid "The maximum number of objects in one batch is %(max_batch_size)s."
+msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
 
 msgid ""
 "Please select at least one hazard or confirm that the object poses no "
@@ -1069,6 +1075,13 @@ msgstr ""
 
 msgid "unable to convert datetime from your timezone to UTC"
 msgstr "Zeitpunkt konnte nicht von Ihrer Zeitzone in UTC umgewandelt werden"
+
+msgid "Please select a file."
+msgstr "Bitte wählen Sie eine Datei aus."
+
+#, python-format
+msgid "Please select a file with one of these extensions: %(extensions)s"
+msgstr "Bitte wählen Sie eine Datei mit einer dieser Erweiterungen: %(extensions)s"
 
 #, python-format
 msgid ""
@@ -1308,15 +1321,16 @@ msgid "API Log"
 msgstr "API Log"
 
 #, python-format
-msgid "Log for API token \"%(api_token)s\""
-msgstr "Log für das API Token \"%(api_token)s\""
+msgid "Log for %(api_token_type)s \"%(api_token)s\""
+msgstr "Log für das %(api_token_type)s \"%(api_token)s\""
 
+#, python-format
 msgid ""
-"This table shows a list of all API request authenticated with this API "
-"token."
+"This table shows a list of all API request authenticated with this "
+"%(api_token_type)s."
 msgstr ""
-"Diese Tabelle listet alle API Anfragen auf, die mit diesem API Token "
-"authentifiziert wurden."
+"Diese Tabelle listet alle API Anfragen auf, die mit diesem "
+"%(api_token_type)s authentifiziert wurden."
 
 msgid "Datetime"
 msgstr "Zeitpunkt"
@@ -1327,8 +1341,9 @@ msgstr "Methode"
 msgid "Endpoint"
 msgstr "Endpunkt"
 
-msgid "This API token has not been used so far."
-msgstr "Dieses API Token ist noch nicht benutzt worden."
+#, python-format
+msgid "This %(api_token_type)s has not been used so far."
+msgstr "Dieses %(api_token_type)s ist noch nicht benutzt worden."
 
 msgid "Expand All"
 msgstr "Alle ausklappen"
@@ -1967,6 +1982,33 @@ msgstr "Ausstehende Einladungen"
 msgid "Account Information"
 msgstr "Nutzerinformationen"
 
+msgid "Authentication Methods"
+msgstr "Authentifizierungs&shy;methoden"
+
+msgid "API Tokens"
+msgstr "API Token"
+
+msgid "API Access Tokens"
+msgstr "API Zugriffstoken"
+
+msgid "Two Factor Authentication"
+msgstr "Zwei-Faktor-Authentisierung"
+
+msgid "Notification Settings"
+msgstr "Benachrichtigungs&shy;einstellungen"
+
+msgid "Default Permissions"
+msgstr "Standard&shy;berechtigungen"
+
+msgid "Other Settings"
+msgstr "Sonstige Einstellungen"
+
+msgid "Administrator Settings"
+msgstr "Administrator&shy;einstellungen"
+
+msgid "Back to top"
+msgstr "Zurück nach oben"
+
 msgid "Please enter your email address."
 msgstr "Bitte geben Sie Ihre E-Mail-Adresse ein."
 
@@ -1991,9 +2033,6 @@ msgstr "Position, z.B. Techniker, Projektleiter oder Doktorand"
 msgid "Please enter your role or leave this field blank."
 msgstr "Bitte geben Sie Ihre Position ein oder lassen Sie dieses Feld leer."
 
-msgid "Authentication Methods"
-msgstr "Authentifizierungsmethoden"
-
 msgid "Username / Email"
 msgstr "Nutzername / E-Mail"
 
@@ -2002,9 +2041,6 @@ msgstr "Authentifizierungsmethode"
 
 msgid "Other"
 msgstr "Andere"
-
-msgid "API Tokens"
-msgstr "API Token"
 
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
@@ -2021,8 +2057,19 @@ msgstr "Beschreibung"
 msgid "View Log"
 msgstr "Log anzeigen"
 
-msgid "Two Factor Authentication"
-msgstr "Zwei-Faktor-Authentisierung"
+msgid ""
+"API access tokens are short-lived tokens for the use by interactive "
+"applications or scripts to authenticate with the <a href=\"https"
+"://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/api.html\">HTTP API</a>."
+msgstr ""
+"API Zugriffstoken sind kurzlebige Token zur Verwendung durch interaktive "
+"Anwendungen oder Skripte, um sich mit der <a href=\"https://scientific-"
+"it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/api.html\">HTTP "
+"API</a> zu authentifizieren."
+
+msgid "Expiration Datetime"
+msgstr "Ablaufzeitpunkt"
 
 msgid "TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
@@ -2047,9 +2094,6 @@ msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu könne
 
 msgid "Set up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
-
-msgid "Notification Settings"
-msgstr "Benachrichtigungseinstellungen"
 
 #, python-format
 msgid ""
@@ -2105,9 +2149,6 @@ msgstr "Fehlschlag des Imports eines Objekts in eine andere Datenbank"
 msgid "Receiving notes after importing an object into another database"
 msgstr "Hinweise beim Import eines Objekts in eine andere Datenbank erhalten"
 
-msgid "Default Permissions"
-msgstr "Standardberechtigungen"
-
 msgid ""
 "These permissions will be used for objects that you create in the future."
 " To change the permissions for an already existing object, please use the"
@@ -2136,9 +2177,6 @@ msgid ""
 msgstr ""
 "Berechtigung um anderen Nutzern Berechtigungen zu erteilen. Beinhaltet "
 "Schreib-Berechtigungen."
-
-msgid "Other Settings"
-msgstr "Sonstige Einstellungen"
 
 msgid "Dataverse API Token"
 msgstr "Dataverse API Token"
@@ -2207,9 +2245,6 @@ msgstr "Objekte pro Seite"
 msgid "all"
 msgstr "alle"
 
-msgid "Administrator Settings"
-msgstr "Administratoreinstellungen"
-
 msgid "Use Admin Permissions"
 msgstr "Administratorrechte verwenden"
 
@@ -2227,6 +2262,15 @@ msgstr "Ja &mdash; Zeige alle Einladungen"
 
 msgid "No &mdash; Only show pending invitations"
 msgstr "Nein &mdash; Zeige nur ausstehende Einladungen"
+
+msgid "Show hidden users in user lists"
+msgstr "Zeige versteckte Nutzer in Nutzerlisten"
+
+msgid "Yes &mdash; Show hidden users in user lists"
+msgstr "Ja &mdash; Zeige als versteckt markierte Nutzer in Nutzerlisten an"
+
+msgid "No &mdash; Hide hidden users in user lists"
+msgstr "Nein &mdash; Verstecke als versteckt markierte Nutzer in Nutzerlisten"
 
 msgid "Close"
 msgstr "Schließen"
@@ -2970,6 +3014,9 @@ msgstr "Diese Aktion wurde aus Aktionslisten versteckt."
 msgid "Only administrators can create objects with this action."
 msgstr "Nur Administratoren können mit dieser Aktion Objekte erstellen."
 
+msgid "Only administrators can edit this action."
+msgstr "Nur Administratoren können diese Aktion bearbeiten."
+
 msgid "Modify the settings for this action."
 msgstr "Einstellungen für diese Aktion modifizieren."
 
@@ -3053,6 +3100,9 @@ msgstr "Schema-Vorlagen Auswahl darf nicht leer sein"
 
 msgid "Please enter a number between 0 and 15."
 msgstr "Bitte geben Sie eine Zahl zwischen 0 und 15 ein."
+
+msgid "Please enter allowed file extensions."
+msgstr "Bitte geben Sie erlaubte Dateiendungen ein."
 
 #, python-format
 msgid ""
@@ -3188,6 +3238,9 @@ msgstr "Wahrheitswert"
 msgid "Time Series"
 msgstr "Zeitreihe"
 
+msgid "File"
+msgstr "Datei"
+
 msgid "Plotly Chart"
 msgstr "Plotly Grafik"
 
@@ -3237,6 +3290,9 @@ msgstr "Eine Liste von Auswahlmöglichkeiten; ein Wert pro Zeile."
 msgid "Choices"
 msgstr "Auswahlmöglichkeiten"
 
+msgid "Use the user creating the object as the default value for this field."
+msgstr "Den Nutzer, der das Objekt erstellt, als Standardwert verwenden."
+
 msgid "Unit or a list of units the user can choose from, separated by commas."
 msgstr "Einheit oder Liste von auswählbaren Einheiten, getrennt durch Kommata."
 
@@ -3251,6 +3307,22 @@ msgstr "Anzahl der anzuzeigenden Nachkommastellen."
 
 msgid "Decimal Digits"
 msgstr "Nachkommastellen"
+
+msgid ""
+"Limit files to specific file extensions, e.g. &quot;.png, .jpg, "
+".jpeg&quot;"
+msgstr ""
+"Begrenze Dateien auf spezifische Dateiendungen, .z.B. &quot;.png, .jpg, "
+".jpeg&quot;"
+
+msgid "File Extensions"
+msgstr "Dateiendungen"
+
+msgid "Show previews for image files."
+msgstr "Zeige Vorschau für Bild-Dateien."
+
+msgid "Preview"
+msgstr "Vorschau"
 
 msgid "Schema Editor Warning"
 msgstr "Schema Editor Warnung"
@@ -4998,6 +5070,9 @@ msgstr ""
 "Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
 "geben."
 
+msgid "Please upload a file."
+msgstr "Bitte laden Sie eine Datei hoch."
+
 msgid "This object does not pose any of these hazards."
 msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
 
@@ -5054,6 +5129,12 @@ msgstr "Version #%(version_id)s"
 
 msgid "Show Changes"
 msgstr "Änderungen anzeigen"
+
+msgid "Activity Log"
+msgstr "Aktivitäts-Log"
+
+msgid "Related Objects"
+msgstr "Zugehörige Objekte"
 
 #, python-format
 msgid ""
@@ -5176,6 +5257,25 @@ msgstr "Notebook erstellen"
 
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
+
+msgid "Workflow"
+msgstr "Workflow"
+
+#, python-format
+msgid ""
+"Referenced by the metadata of %(object_name)s (#%(object_id)s) and "
+"references %(object_name)s (#%(object_id)s) in its metadata"
+msgstr ""
+"Referenziert in den Metadaten von %(object_name)s (#%(object_id)s) und "
+"referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
+#, python-format
+msgid "Referenced by the metadata of %(object_name)s (#%(object_id)s)"
+msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
+
+#, python-format
+msgid "References %(object_name)s (#%(object_id)s) in its metadata"
+msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
@@ -5384,9 +5484,6 @@ msgstr "Kommentar"
 
 msgid "Post Comment"
 msgstr "Kommentar eintragen"
-
-msgid "Activity Log"
-msgstr "Aktivitäts-Log"
 
 msgid "Measurements"
 msgstr "Messungen"
@@ -5699,9 +5796,6 @@ msgstr "Eine unbekannte Datenbank konnte das Objekt nicht erfolgreich importiere
 msgid "The other database returned the following notes:"
 msgstr "Die andere Datenbank hat die folgenden Hinweise zurückgegeben:"
 
-msgid "Related Objects"
-msgstr "Zugehörige Objekte"
-
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"
 
@@ -5726,6 +5820,12 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
+msgid "Hidden File"
+msgstr "Versteckte Datei"
+
+msgid "This file has not been shared."
+msgstr "Diese Datei wurde nicht geteilt."
+
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
@@ -5735,14 +5835,6 @@ msgstr "Plot einblenden"
 #, python-format
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
-
-#, python-format
-msgid "Referenced by the metadata of %(object_name)s (#%(object_id)s)"
-msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
-
-#, python-format
-msgid "References %(object_name)s (#%(object_id)s) in its metadata"
-msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
 msgid "Time"
 msgstr "Zeit"
@@ -5976,9 +6068,6 @@ msgstr "Exportieren nicht möglich für Typ:"
 msgid "Exported&nbsp;on %(export_date)s"
 msgstr "Exportiert&nbsp;am %(export_date)s"
 
-msgid "File"
-msgstr "Datei"
-
 msgid "Unnamed Basic Group"
 msgstr "Unbenannte einfache Gruppe"
 
@@ -6158,6 +6247,12 @@ msgstr ""
 " wird aktuell nicht unterstützt. Bitte <a "
 "href=\"mailto:%(contact_email)s?subject=%(service_name)s\"> kontaktieren "
 "Sie einen Administrator</a>."
+
+msgid "API token"
+msgstr "API Token"
+
+msgid "API access token"
+msgstr "API Zugriffstoken"
 
 msgid "Your user account has been deactivated. Please contact an administrator."
 msgstr ""

@@ -348,25 +348,31 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
+        sample_schema = {
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': {'en': 'Object Name', 'de': 'Objektname'},
+                    'type': 'text',
+                    'languages': 'all'
+                },
+                'sample': {
+                    'title': {'en': 'Sample', 'de': 'Probe'},
+                    'type': 'sample'
+                }
+            },
+            'required': ['name']
+        }
         sample_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.SAMPLE_CREATION,
-            schema={
-                'title': 'Example Object',
-                'type': 'object',
-                'properties': {
-                    'name': {
-                        'title': {'en': 'Object Name', 'de': 'Objektname'},
-                        'type': 'text',
-                        'languages': 'all'
-                    },
-                    'sample': {
-                        'title': {'en': 'Sample', 'de': 'Probe'},
-                        'type': 'sample'
-                    }
-                },
-                'required': ['name']
-            }
+            schema=sample_schema
         )
+        sample_schema['workflow_view'] = {
+            'referencing_action_type_id': -98,
+            'referenced_action_id': sample_action.id
+        }
+        sampledb.logic.actions.update_action(action_id=sample_action.id, schema=sample_schema)
         set_action_translation(Language.ENGLISH, sample_action.id, name="sample_action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(sample_action.id, sampledb.models.Permissions.READ)
         measurement_action = sampledb.logic.actions.create_action(
@@ -391,7 +397,8 @@ This example shows how Markdown can be used for instrument Notes.
                         'languages': "all"
                     }
                 },
-                'required': ['name']
+                'required': ['name'],
+                'workflow_show_more': ['sample', 'comment']
             }
         )
         set_action_translation(Language.ENGLISH, measurement_action.id, name="measurement_action", description="")
@@ -850,6 +857,36 @@ This example shows how Markdown can be used for instrument Notes.
                                 'projects': {project_id: 'read'}}
             }
         }, component)
+        sampledb.logic.federation.objects.parse_import_object({
+            'object_id': 4,
+            'versions': [{
+                'version_id': 0,
+                'data': {'name': {'_type': 'text', 'text': 'Shared Object with File References'}, 'file_a': {'_type': 'file', 'file_id': 1, 'component_uuid': component.uuid}, 'file_b': {'_type': 'file', 'file_id': 2, 'component_uuid': component.uuid}},
+                'schema': {'title': 'Object Information', 'type': 'object', 'properties': {'name': {'title': 'Name', 'type': 'text'}, 'file_a': {'title': 'File A', 'type': 'file'}, 'file_b': {'title': 'File B', 'type': 'file'}}, 'required': ['name']},
+                'user': {'user_id': 1, 'component_uuid': UUID},
+                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+            }],
+            'action': {'action_id': 1, 'component_uuid': UUID},
+            'policy': {
+                'access': {'data': True, 'files': True, 'action': True, 'comments': True, 'user_ids': True, 'user_data': True, 'object_location_assignments': True},
+                'permissions': {'users': {basic_user.id: 'read'}, 'groups': {group_id: 'read'}, 'projects': {project_id: 'read'}}
+            },
+            'sharing_user': {
+                'user_id': 1,
+                'component_uuid': UUID
+            },
+            'comments': [],
+            'object_location_assignments': [],
+            'files': [
+                {
+                    'file_id': 1,
+                    'component_uuid': UUID,
+                    'user': {'user_id': 1, 'component_uuid': UUID},
+                    'data': {"storage": "federation", "original_file_name": "example.txt"},
+                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                }
+            ]
+        }, component)
 
         institute_category = sampledb.logic.group_categories.create_group_category(
             name={
@@ -1090,5 +1127,58 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, combined_conditions_action.id, name="Combined Conditions Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(combined_conditions_action.id, sampledb.models.Permissions.READ)
+
+        file_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.MEASUREMENT,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'file': {
+                        'title': 'Example File',
+                        'type': 'file',
+                        'extensions': ['.txt', '.png'],
+                        'preview': True
+                    },
+                    'list': {
+                        'title': 'File List',
+                        'type': 'array',
+                        'style': 'list',
+                        'items': {
+                            'title': 'Example File',
+                            'type': 'file',
+                            'extensions': ['.txt', '.png']
+                        }
+                    },
+                    'table': {
+                        'title': 'File Table',
+                        'type': 'array',
+                        'style': 'table',
+                        'items': {
+                            'title': 'Example Object',
+                            'type': 'object',
+                            'properties': {
+                                'file': {
+                                    'title': 'Example File',
+                                    'type': 'file',
+                                    'extensions': ['.txt', '.png'],
+                                    'preview': True
+                                }
+                            },
+                            'required': ['file']
+                        }
+                    }
+                },
+                'required': ['name'],
+                'propertyOrder': ['name', 'file', 'list', 'table']
+            }
+        )
+        set_action_translation(Language.ENGLISH, file_action.id, name="File Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(file_action.id, sampledb.models.Permissions.READ)
 
     print("Success: set up demo data", flush=True)

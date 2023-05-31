@@ -225,9 +225,13 @@ def federation() -> FlaskResponseT:
                 if address == '':
                     address = None
                 component_id = add_component(uuid=add_component_form.uuid.data, name=name, description=add_component_form.description.data, address=address).id
-            except errors.ComponentAlreadyExistsError:
-                add_component_form.name.errors.append(_('A database with this UUID or name has already been added'))
-                add_component_form.uuid.errors.append(_('A database with this UUID or name has already been added'))
+            except errors.ComponentAlreadyExistsError as err:
+                if err.is_current_app:
+                    add_component_form.name.errors.append(_('This UUID or name is already used by this instance (%(service_name)s)', service_name=flask.current_app.config['SERVICE_NAME']))
+                    add_component_form.uuid.errors.append(_('This UUID or name is already used by this instance (%(service_name)s)', service_name=flask.current_app.config['SERVICE_NAME']))
+                else:
+                    add_component_form.name.errors.append(_('A database with this UUID or name has already been added'))
+                    add_component_form.uuid.errors.append(_('A database with this UUID or name has already been added'))
             except errors.InvalidComponentNameError:
                 add_component_form.name.errors.append(_('This database name is invalid'))
             except errors.InvalidComponentUUIDError:

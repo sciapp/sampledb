@@ -152,7 +152,8 @@ def _convert_metadata_to_process(
         metadata: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any],
         user_id: int,
-        property_whitelist: typing.Iterable[typing.Sequence[typing.Union[str, int]]]
+        property_whitelist: typing.Iterable[typing.Sequence[typing.Union[str, int]]],
+        object_id: int
 ) -> typing.List[typing.Dict[str, typing.Any]]:
     fields = []
     property_whitelist = {
@@ -195,6 +196,17 @@ def _convert_metadata_to_process(
         elif value['_type'] == 'tags':
             # tags are handled separately via the keywords in Citation Metadata
             continue
+        elif value['_type'] == 'file':
+            try:
+                file = files.get_file(value['file_id'], object_id)
+                if file.is_hidden:
+                    text_value = f'Hidden (#{value["file_id"]})'
+                else:
+                    text_value = file.original_file_name
+            except errors.FileDoesNotExistError:
+                text_value = f'Unknown (#{value["file_id"]})'
+            except errors.InvalidFileStorageError:
+                text_value = f'Unnamed (#{value["file_id"]})'
         elif value['_type'] == 'user':
             if 'component_uuid' in value:
                 try:
@@ -406,11 +418,11 @@ def upload_object(
             }
 
     if sampledb_metadata is not None and schema is not None:
-        method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist)
+        method_parameters = _convert_metadata_to_process(sampledb_metadata, schema, user_id, property_whitelist, object_id)
     else:
         method_parameters = []
 
-    if object.component is None or object.component.uuid == flask.current_app.config['SERVICE_NAME']:
+    if object.component is None or object.component.uuid == flask.current_app.config['FEDERATION_UUID']:
         description = f'Dataset exported from {flask.current_app.config["SERVICE_NAME"]}.'
     else:
         object_component = object.component

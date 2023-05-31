@@ -84,13 +84,15 @@ def _make_json_response(
 
     indent = None
     separators = (",", ":")
-    if flask.current_app.config["JSONIFY_PRETTYPRINT_REGULAR"] or flask.current_app.debug:
+
+    compact_notation = getattr(flask.current_app.json, 'compact', None)
+    if compact_notation is False or (compact_notation is None and flask.current_app.debug):
         indent = 2
         separators = (", ", ": ")
 
     return typing.cast(werkzeug.Response, flask.current_app.response_class(
         response=f"{json.dumps(obj=obj, indent=indent, separators=separators)}\n",
-        mimetype=flask.current_app.config["JSONIFY_MIMETYPE"],
+        mimetype=getattr(flask.current_app.json, 'mimetype', 'application/json'),
         status=status,
         headers=headers
     ))

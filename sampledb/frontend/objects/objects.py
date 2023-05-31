@@ -21,7 +21,7 @@ from ...logic.instruments import get_instruments, get_instrument
 from ...logic.actions import get_action, Action
 from ...logic.action_types import get_action_type
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions, get_object_info_with_permissions, ObjectInfo
+from ...logic.object_permissions import get_objects_with_permissions, get_object_info_with_permissions, ObjectInfo
 from ...logic.users import get_user, get_users, get_users_by_name, check_user_exists, User
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.object_search import generate_filter_func, wrap_filter_func
@@ -134,19 +134,14 @@ def objects() -> FlaskResponseT:
                 for object_id in object_ids_str.split(',')
             }
         except ValueError:
-            object_ids = set()
+            db_objects = []
         else:
-            object_ids = {
-                object_id
-                for object_id in object_ids
-                if Permissions.READ in get_user_object_permissions(object_id, user_id=flask_login.current_user.id)
-            }
-        db_objects = []
-        for object_id in object_ids:
-            try:
-                db_objects.append(get_object(object_id))
-            except logic.errors.ObjectDoesNotExistError:
-                pass
+            db_objects = get_objects_with_permissions(
+                user_id=flask_login.current_user.id,
+                permissions=Permissions.READ,
+                object_ids=list(object_ids or set())
+            )
+            db_objects.sort(key=lambda db_object: db_object.object_id)
         query_string = ''
         use_advanced_search = False
         must_use_advanced_search = False
@@ -157,6 +152,7 @@ def objects() -> FlaskResponseT:
         pagination_offset = None
         pagination_enabled = True
         num_objects_found = len(db_objects)
+        sorting_enabled = False
         sorting_property_name = None
         sorting_order_name = None
         show_filters = False
@@ -183,6 +179,7 @@ def objects() -> FlaskResponseT:
         all_components = []
     else:
         pagination_enabled = True
+        sorting_enabled = True
 
         show_filters = True
         all_locations = get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
@@ -840,7 +837,7 @@ def objects() -> FlaskResponseT:
         location_form.location.choices = choices
         possible_resposible_users = [('-1', '-')]
         user_is_fed = {}
-        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+        for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
             possible_resposible_users.append((str(user.id), user.get_name()))
             user_is_fed[str(user.id)] = user.fed_id is not None
         location_form.responsible_user.choices = possible_resposible_users
@@ -993,6 +990,7 @@ def objects() -> FlaskResponseT:
         filter_doi=filter_doi,
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         build_modified_url=_build_modified_url,
+        sorting_enabled=sorting_enabled,
         sorting_property=sorting_property_name,
         sorting_order=sorting_order_name,
         limit=pagination_limit,
@@ -1567,7 +1565,7 @@ def edit_multiple_locations() -> FlaskResponseT:
     ]
 
     possible_resposible_users = [('-1', '-')]
-    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin):
+    for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):
         possible_resposible_users.append((str(user.id), user.get_name()))
     location_form.responsible_user.choices = possible_resposible_users
 

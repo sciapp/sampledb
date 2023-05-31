@@ -1,3 +1,5 @@
+import datetime
+import secrets
 import typing
 
 import bcrypt
@@ -210,6 +212,161 @@ def login_via_api_token(api_token: str) -> typing.Optional[logic.users.User]:
     return None
 
 
+def generate_api_access_token(
+        user_id: int,
+        description: typing.Optional[str]
+) -> typing.Dict[str, typing.Optional[str]]:
+    """
+    Create a new API access token as an authentication method for a given user.
+
+    :param user_id: the ID of an existing user
+    :param description: an optional description
+    :return: a dict containing the access token information
+    """
+    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    expiration_utc_datetime_str = expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+
+    access_token = secrets.token_hex(32)
+    refresh_token = secrets.token_hex(32)
+
+    refresh_token_login, refresh_token_password = refresh_token[:8], refresh_token[8:]
+    db.session.add(Authentication(
+        login={
+            'access_token': access_token,
+            'refresh_token_login': refresh_token_login,
+            'refresh_token_hash': _hash_password(refresh_token_password),
+            'expiration_utc_datetime': expiration_utc_datetime_str,
+            'description': description
+        },
+        authentication_type=AuthenticationType.API_ACCESS_TOKEN,
+        confirmed=True,
+        user_id=user_id
+    ))
+    db.session.commit()
+    return {
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'expiration_utc_datetime': expiration_utc_datetime_str,
+        'description': description
+    }
+
+
+def remove_expired_api_access_tokens() -> None:
+    """
+    Delete all expired API access tokens.
+    """
+    authentication_methods = Authentication.query.filter_by(
+        type=AuthenticationType.API_ACCESS_TOKEN
+    ).all()
+    current_utc_datetime = datetime.datetime.utcnow()
+    for authentication_method in authentication_methods:
+        expiration_utc_datetime_str = authentication_method.login['expiration_utc_datetime']
+        expiration_utc_datetime = datetime.datetime.strptime(
+            expiration_utc_datetime_str,
+            '%Y-%m-%d %H:%M:%S'
+        )
+        if expiration_utc_datetime <= current_utc_datetime:
+            db.session.delete(authentication_method)
+    db.session.commit()
+
+
+def refresh_api_access_token(api_refresh_token: str) -> typing.Optional[typing.Dict[str, str]]:
+    """
+    Replace an API access token using its refresh token.
+
+    :param api_refresh_token: the refresh token
+    :return: a dict containing the new access token information
+    """
+    remove_expired_api_access_tokens()
+    api_refresh_token = api_refresh_token.lower().strip()
+    refresh_token_login, refresh_token_password = api_refresh_token[:8], api_refresh_token[8:]
+    authentication_methods = Authentication.query.filter(
+        db.and_(
+            Authentication.login['refresh_token_login'].astext == refresh_token_login,
+            Authentication.type == AuthenticationType.API_ACCESS_TOKEN
+        )
+    ).all()
+    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    expiration_utc_datetime_str = expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+
+    for authentication_method in authentication_methods:
+        if not authentication_method.confirmed:
+            continue
+        if _validate_password_hash(refresh_token_password, authentication_method.login['refresh_token_hash']):
+            new_access_token = secrets.token_hex(32)
+            new_refresh_token = secrets.token_hex(32)
+            refresh_token_login, refresh_token_password = new_refresh_token[:8], new_refresh_token[8:]
+            description = authentication_method.login['description']
+            authentication_method.login = {
+                'access_token': new_access_token,
+                'refresh_token_login': refresh_token_login,
+                'refresh_token_hash': _hash_password(refresh_token_password),
+                'expiration_utc_datetime': expiration_utc_datetime_str,
+                'description': description
+            }
+            db.session.add(authentication_method)
+            db.session.commit()
+            return {
+                'access_token': new_access_token,
+                'refresh_token': new_refresh_token,
+                'expiration_utc_datetime': expiration_utc_datetime_str,
+                'description': description
+            }
+    return None
+
+
+def login_via_api_access_token(api_access_token: str) -> typing.Optional[logic.users.User]:
+    """
+    Authenticate a user using an API access token.
+
+    :param api_access_token: the API access token to use for authentication
+    :return: the user, or None
+    """
+    # convert to lower case to enforce case insensitivity
+    api_access_token = api_access_token.lower().strip()
+    remove_expired_api_access_tokens()
+    authentication_methods = Authentication.query.filter(
+        db.and_(
+            Authentication.login['access_token'].astext == api_access_token,
+            Authentication.type == AuthenticationType.API_ACCESS_TOKEN
+        )
+    ).all()
+
+    for authentication_method in authentication_methods:
+        if not authentication_method.confirmed:
+            continue
+        api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
+        return logic.users.User.from_database(authentication_method.user)
+    return None
+
+
+def login_via_api_refresh_token(api_refresh_token: str) -> typing.Optional[logic.users.User]:
+    """
+    Authenticate a user using a refresh token.
+
+    :param api_refresh_token: the refresh token to use for authentication
+    :return: the user, or None
+    """
+    # convert to lower case to enforce case insensitivity
+    api_refresh_token = api_refresh_token.lower().strip()
+    refresh_token_login, refresh_token_password = api_refresh_token[:8], api_refresh_token[8:]
+    remove_expired_api_access_tokens()
+    authentication_methods = Authentication.query.filter(
+        db.and_(
+            Authentication.login['refresh_token_login'].astext == refresh_token_login,
+            Authentication.type == AuthenticationType.API_ACCESS_TOKEN
+        )
+    ).all()
+
+    for authentication_method in authentication_methods:
+        if not authentication_method.confirmed:
+            continue
+        if _validate_password_hash(refresh_token_password, authentication_method.login['refresh_token_hash']):
+            api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
+            return logic.users.User.from_database(authentication_method.user)
+    return None
+
+
 def add_authentication_method(user_id: int, login: str, password: str, authentication_type: AuthenticationType) -> bool:
     """
     Add an authentication method for a user.
@@ -251,8 +408,8 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     authentication_method = Authentication.query.filter(Authentication.id == authentication_method_id).first()
     if authentication_method is None:
         return False
-    if authentication_method.type != AuthenticationType.API_TOKEN:
-        authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN).count()
+    if authentication_method.type not in {AuthenticationType.API_TOKEN, AuthenticationType.API_ACCESS_TOKEN}:
+        authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
         if authentication_methods_count <= 1:
             raise errors.OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
     db.session.delete(authentication_method)

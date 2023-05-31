@@ -25,7 +25,7 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext libcairo2-dev pkg-config python3-dev
     - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
@@ -57,7 +57,7 @@ analyze:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip
+    - apt-get install -y git python3-pip libcairo2-dev pkg-config python3-dev
     # install static analysis packages and library stub files
     - python3 -m pip install -r requirements.analyze.txt
     - python3 -m pycodestyle --ignore=E402,E501,W504,W601 sampledb
@@ -78,7 +78,7 @@ analyze:
     - export SAMPLEDB_MAIL_SENDER=example@example.org
     # set up system dependencies
     - apt-get update
-    - apt-get install -y git python3-pip libpython3-dev libpangocairo-1.0-0 gettext postgresql-client
+    - apt-get install -y git python3-pip libpython3-dev libpangocairo-1.0-0 gettext postgresql-client libcairo2-dev pkg-config python3-dev
     # set up database without upgrade
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
@@ -199,7 +199,7 @@ documentation:
   script:
     - apt-get update
     # set up Python 3
-    - apt-get install -y git python3-pip libpython3-dev chromium libpangocairo-1.0-0 gettext
+    - apt-get install -y git python3-pip libpython3-dev chromium libpangocairo-1.0-0 gettext libcairo2-dev pkg-config python3-dev
     # install dependencies
     - python3 -m pip install -r requirements.txt
     - python3 -m pip install -r requirements.documentation.txt

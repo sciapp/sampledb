@@ -64,6 +64,7 @@ Additionally, there are special data types:
     - Measurement References
     - Generic Object References
 - Schema Templates
+- Files
 
 In the following, each data type and the attributes in a schema of each type are listed.
 
@@ -220,6 +221,39 @@ show_more
 ^^^^^^^^^
 
 This attribute is a string array describing which properties to hide in the object view until a "show more"-button is pressed.
+
+workflow_view
+^^^^^^^^^^^^^
+
+This attribute can be used to enable and define a workflow view. Workflow views display contents of related objects referencing or referenced by this object
+on the object page.
+
+By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. If both filters are set, both action and action type will have to match for an object to be included in the workflow view.
+
+The workflow view also allows setting a custom ``title`` for the object page section section, e.g. ``{"en": "Processing"}`` or ``"Measurements"``.
+By setting ``show_action_ínfo`` to ``false`` you can disable displaying action information, which is enabled by default.
+
+Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects' schemas to limit what object data will be shown as a preview.
+
+.. code-block:: json
+    :caption: A workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``
+
+    "workflow_view": {
+        "referencing_action_type_id": [-98, -99],
+        "referenced_action_id": 1,
+        "title": {"en": "Processing", "de": "Bearbeitung"}
+    }
+
+.. figure:: ../static/img/generated/workflow.png
+    :alt: A workflow view, containing previews of related measurements
+
+    A workflow view, containing previews of related measurements
+
+workflow_show_more
+^^^^^^^^^^^^^^^^^^
+
+This attribute works the same as ``show_more``, but is only applied when the object is included in a workflow view.
+
 
 Arrays
 ``````
@@ -574,7 +608,21 @@ A note to display below the field when creating or editing an object using this 
 default
 ^^^^^^^
 
-The default value for this property as a number. This should be the value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters. If there are multiple units, the first one will be used for the default.
+The default value for this property as a number or a :ref:`quantity object <metadata_quantity_object>`.
+A number is interpreted as value in base units, so if ``units`` is set to ``nm`` and you want to set a default of 10nm, you need to set ``default`` to ``0.00000001`` as it will be interpreted in meters. If there are multiple units, the first one will be used for the default.
+
+.. code-block:: json
+    :caption: A quantity object default. In this case the ``units`` property is optional as it could be derived from the schema.
+
+    "size": {
+      "title": "Size",
+      "type": "quantity",
+      "units": "nm",
+      "default": {
+        "magnitude": 10,
+        "units": "nm"
+      }
+    }
 
 units
 ^^^^^
@@ -597,6 +645,26 @@ max_magnitude
 ^^^^^^^^^^^^^
 
 The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
+
+.. _metadata_quantity_object:
+Quantity Objects
+^^^^^^^^^^^^^^^^
+
+Quantity data is stored in the notation shown in the codebox below.
+It includes the magnitude in base units, a unit to use, the magnitude in given unit, dimensionality and the type, which is ``quantity`` for quantities.
+
+When this is used as input for a quantity default value, a minimal set of parameters is sufficient, e.g. ``units``, if the unit to use cannot be derived unambiguously from the schema, and either ``magnitude`` or ``magnitude_in_base_units``.
+
+.. code-block:: json
+    :caption: A complete quantity object
+
+    {
+        "_type": "quantity",
+        "magnitude": 100,
+        "units": "cm",
+        "magnitude_in_base_units": 1.0,
+        "dimensionality": "dimensionless"
+    }
 
 Datetimes
 `````````
@@ -921,7 +989,7 @@ Properties of this type are a special case of object reference, limited to refer
     }
 
 Time Series
-``````````
+```````````
 
 Properties of the ``timeseries`` type represent time series, i.e. a sequence of physical quantities or unitless numbers at specific points in time. The ``units`` attribute is mandatory, so for unitless numbers it must be set to ``1``.
 
@@ -975,6 +1043,50 @@ display_digits
 ^^^^^^^^^^^^^^
 
 This attribute is the number of decimal places to be shown when displaying the magnitudes, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitudes will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
+
+Files
+`````
+
+Properties of the ``file`` type represent files uploaded for the object that are given additional meaning by being referenced in the metadata.
+
+.. code-block:: json
+    :caption: A file property
+
+    {
+      "title": "Configuration File",
+      "type": "file",
+      "extensions": [".ini", ".cfg"]
+    }
+
+type
+^^^^
+
+This sets the type for this subschema as a JSON string and must be set to ``file``.
+
+title
+^^^^^
+
+The title for the file as a JSON string or object, e.g. ``"Configuration File"`` or ``{"en": "Configuration File"}``.
+
+conditions
+^^^^^^^^^^
+
+This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
+
+note
+^^^^
+
+A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please upload a picture of the experiment setup."`` or ``{"en": "Please upload a picture of the experiment setup."}``.
+
+extensions
+^^^^^^^^^^
+
+An optional list of file extensions to limit which files can be selected, e.g. ``[".png", ".jpg", ".jpeg"]``. If no list of extensions is provided, all files can be selected.
+
+preview
+^^^^^^^
+
+This attribute is a boolean that sets whether or not an image file should have a preview image displayed for this property. By default, it is set to ``false``.
 
 Schema Templates
 ````````````````

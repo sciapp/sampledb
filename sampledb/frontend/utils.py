@@ -5,6 +5,7 @@
 import copy
 import csv
 import dataclasses
+import decimal
 import difflib
 import io
 import json
@@ -21,8 +22,8 @@ from math import log10, floor
 
 import flask
 import flask_babel
-import flask_login
 from flask_babel import format_datetime, format_date, get_locale
+from flask_login import current_user
 from babel import numbers
 import markupsafe
 import qrcode
@@ -133,13 +134,13 @@ def has_preview(file: File) -> bool:
         return False
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
-    return file_extension in flask.current_app.config.get('MIME_TYPES', {})
+    return file_extension.lower() in flask.current_app.config.get('MIME_TYPES', {})
 
 
 def file_name_is_image(file_name: str) -> bool:
     file_extension = os.path.splitext(file_name)[1]
     mime_types: typing.Dict[str, str] = flask.current_app.config.get('MIME_TYPES', {})
-    return mime_types.get(file_extension, '').startswith('image/')
+    return mime_types.get(file_extension.lower(), '').startswith('image/')
 
 
 @JinjaFilter()
@@ -161,7 +162,7 @@ def get_num_unread_notifications(user: User) -> int:
 
 
 def check_current_user_is_not_readonly() -> None:
-    if flask_login.current_user.is_readonly:
+    if current_user.is_readonly:
         raise UserIsReadonlyError()
 
 
@@ -235,7 +236,7 @@ def custom_format_datetime(
             return format_datetime(utc_datetime, format=format2)
         else:
             utc_datetime = pytz.utc.localize(utc_datetime)
-            local_datetime = utc_datetime.astimezone(pytz.timezone(flask_login.current_user.timezone or 'UTC'))
+            local_datetime = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
             return local_datetime.strftime(format)
     except ValueError:
         return utc_datetime
@@ -273,7 +274,7 @@ def custom_format_time(
 
 @JinjaFilter('babel_format_number')
 def custom_format_number(
-    number: typing.Union[str, int, float],
+    number: typing.Union[str, int, float, decimal.Decimal],
     display_digits: typing.Optional[int] = None,
     integral_digits: typing.Optional[int] = None,
     disable_scientific_format: bool = False
@@ -433,7 +434,7 @@ def convert_datetime_input(datetime_input: str) -> str:
     if not datetime_input:
         return ''
     try:
-        user_language = get_user_language(flask_login.current_user)
+        user_language = get_user_language(current_user)
         local_datetime = datetime.strptime(datetime_input, user_language.datetime_format_datetime)
         return local_datetime.strftime('%Y-%m-%d %H:%M:%S')
     except Exception:
@@ -494,7 +495,7 @@ def get_location_name(
         return flask_babel.gettext("Unknown Location")
 
     if location is not None and has_read_permissions is None:
-        has_read_permissions = Permissions.READ in get_user_location_permissions(location_id, flask_login.current_user.id)
+        has_read_permissions = Permissions.READ in get_user_location_permissions(location_id, current_user.id)
 
     if location is None or not has_read_permissions:
         # location ID is always included when the location cannot be accessed
@@ -826,7 +827,7 @@ def build_object_location_assignment_declination_url(object_location_assignment_
 def get_object_name_if_user_has_permissions(object_id: int) -> str:
     fallback_name = f"{flask_babel.gettext('Object')} #{object_id}"
     try:
-        permissions = get_user_object_permissions(object_id, flask_login.current_user.id)
+        permissions = get_user_object_permissions(object_id, current_user.id)
         if Permissions.READ in permissions:
             object = get_object(object_id)
             if object.data:
@@ -941,7 +942,7 @@ def get_locations_form_data(
     """
     readable_location_ids = {
         location.id
-        for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
+        for location in get_locations_with_user_permissions(current_user.id, Permissions.READ)
     }
     locations_map, locations_tree = get_locations_tree()
     readable_locations_map = {
@@ -970,12 +971,12 @@ def get_locations_form_data(
         location = locations_map[location_id]
         # skip hidden locations with a fully hidden subtree
         is_full_subtree_hidden = is_full_location_tree_hidden(readable_locations_map, subtree)
-        if not flask_login.current_user.is_admin and location.is_hidden and is_full_subtree_hidden:
+        if not current_user.is_admin and location.is_hidden and is_full_subtree_hidden:
             continue
         has_read_permissions = location_id in readable_location_ids
         # skip unreadable locations, but allow processing their child locations
         # in case any of them are readable
-        if has_read_permissions and (not location.is_hidden or flask_login.current_user.is_admin):
+        if has_read_permissions and (not location.is_hidden or current_user.is_admin):
             is_disabled = not filter(location)
             all_choices.append(LocationFormInformation(
                 id=location_id,
@@ -1248,7 +1249,7 @@ def to_timeseries_data(
         magnitude_average = magnitudes[0]
         magnitude_stddev = None
     # convert datetimes to local timezone
-    local_timezone = pytz.timezone(flask_login.current_user.timezone or 'UTC')
+    local_timezone = pytz.timezone(current_user.timezone or 'UTC')
     local_datetimes = [
         pytz.utc.localize(utc_datetime).astimezone(local_timezone)
         for utc_datetime in utc_datetimes
@@ -1275,7 +1276,7 @@ def to_timeseries_csv(
         rows: typing.List[typing.List[typing.Union[str, float]]]
 ) -> str:
     rows = copy.deepcopy(rows)
-    user_timezone = pytz.timezone(flask_login.current_user.timezone or 'UTC')
+    user_timezone = pytz.timezone(current_user.timezone or 'UTC')
     if user_timezone != pytz.utc:
         # convert datetimes from UTC if necessary
         for row in rows:
@@ -1300,3 +1301,11 @@ def to_diff_table(
         label_after: str = ''
 ) -> str:
     return difflib.HtmlDiff(wrapcolumn=55).make_table(fromlines=lines_before.splitlines(), tolines=lines_after.splitlines(), fromdesc=label_before, todesc=label_after)
+
+
+@JinjaFunction('get_component_by_uuid')
+def safe_get_component_by_uuid(component_uuid: str) -> typing.Optional[Component]:
+    try:
+        return get_component_by_uuid(component_uuid=component_uuid)
+    except errors.ComponentDoesNotExistError:
+        return None

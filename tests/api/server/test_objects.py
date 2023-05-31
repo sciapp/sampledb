@@ -54,6 +54,10 @@ def action():
                 'name': {
                     'title': 'Object Name',
                     'type': 'text'
+                },
+                'file': {
+                    'title': 'Example File',
+                    'type': 'file'
                 }
             },
             'required': ['name']
@@ -1267,3 +1271,63 @@ def test_get_related_object_ids(flask_server, auth, user, action, other_action):
         ],
         'referencing_objects': []
     }
+
+
+def test_create_object_with_file_invalid_reference(flask_server, auth, user, action):
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            },
+            'file': {
+                '_type': 'file',
+                'file_id': 1
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert not sampledb.logic.objects.get_objects()
+
+
+def test_update_object_with_file_reference(flask_server, auth, user, action):
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201
+    objects = sampledb.logic.objects.get_objects()
+    assert len(objects) == 1
+    object = objects[0]
+    object_json = {
+        'action_id': action.id,
+        'data': {
+            'name': {
+                '_type': 'text',
+                'text': 'Example'
+            },
+            'file': {
+                '_type': 'file',
+                'file_id': 0
+            }
+        }
+    }
+    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/versions/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    file = sampledb.logic.files.create_database_file(
+        object_id=object.object_id,
+        user_id=object.user_id,
+        file_name='test.txt',
+        save_content=lambda stream: stream.write(b"Test")
+    )
+    assert file.id == 0
+    r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/versions/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 201

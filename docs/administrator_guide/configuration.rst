@@ -301,5 +301,7 @@ Miscellaneous
      - If set, features related to instruments will be disabled (default: False).
    * - SAMPLEDB_ENABLE_FUNCTION_CACHES
      - If set, some functions with results that cannot change will use caches (default: True).
+   * - SAMPLEDB_TEMPORARY_FILE_TIME_LIMIT
+     - Time that temporary files uploaded when editing an object are stored, in seconds (default: 604800 seconds / 7 days).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.
