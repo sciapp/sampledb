@@ -23,7 +23,7 @@ import typing
 
 import pint
 
-from .units import ureg, ureg_unit, ureg_quantity, int_ureg_unit, get_dimensionality_for_units
+from .units import ureg, int_ureg, get_dimensionality_for_units
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -186,30 +186,30 @@ class Quantity:
     ) -> None:
         if units is None:
             self.units = None
-            self.pint_units = ureg_unit('1')
+            self.pint_units = ureg.Unit('1')
             self.magnitude = float(magnitude)
             self.magnitude_in_base_units = float(magnitude)
         else:
-            if isinstance(units, ureg_unit):
+            if isinstance(units, ureg.Unit):
                 self.pint_units = units
                 self.units = str(self.pint_units)
             else:
                 self.units = units
                 try:
-                    self.pint_units = ureg_unit(self.units)
+                    self.pint_units = ureg.Unit(self.units)
                 except (pint.errors.UndefinedUnitError, AttributeError):
                     raise ValueError(f"Invalid units '{self.units}'")
             if already_in_base_units:
                 magnitude_in_base_units = magnitude
                 _, pint_base_units = ureg.get_base_units(self.pint_units)
-                magnitude = ureg_quantity(decimal.Decimal(magnitude), pint_base_units).to(self.pint_units).magnitude
+                magnitude = ureg.Quantity(decimal.Decimal(magnitude), pint_base_units).to(self.pint_units).magnitude
             else:
-                magnitude_in_base_units = ureg_quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
+                magnitude_in_base_units = ureg.Quantity(decimal.Decimal(magnitude), self.pint_units).to_base_units().magnitude
             self.magnitude = float(magnitude)
             self.magnitude_in_base_units = float(magnitude_in_base_units)
         # use integer unit registry to ensure compatible dimensionalities
         # e.g. [length] ** 2 instead of [length] * 2.000
-        self.dimensionality = str(int_ureg_unit(self.pint_units).dimensionality)
+        self.dimensionality = str(int_ureg.Unit(self.pint_units).dimensionality)
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(magnitude={self.magnitude}, units="{self.units}")>'
@@ -231,10 +231,10 @@ class Quantity:
     def from_json(cls, obj: typing.Dict[str, typing.Any]) -> 'Quantity':
         units = obj['units']
         if units is None:
-            pint_units = ureg_unit('1')
+            pint_units = ureg.Unit('1')
         else:
             try:
-                pint_units = ureg_unit(units)
+                pint_units = ureg.Unit(units)
             except (pint.errors.UndefinedUnitError, AttributeError):
                 raise ValueError(f"Invalid units '{units}'")
 
@@ -243,8 +243,8 @@ class Quantity:
         else:
             # convert magnitude back from base unit to desired unit
             magnitude_in_base_units = obj['magnitude_in_base_units']
-            pint_base_units = ureg_quantity(1, pint_units).to_base_units().units
-            magnitude = ureg_quantity(decimal.Decimal(magnitude_in_base_units), pint_base_units).to(pint_units).magnitude
+            pint_base_units = ureg.Quantity(1, pint_units).to_base_units().units
+            magnitude = ureg.Quantity(decimal.Decimal(magnitude_in_base_units), pint_base_units).to(pint_units).magnitude
         quantity = cls(magnitude, units)
         if pint_units.dimensionless:
             assert obj['dimensionality'] == 'dimensionless'

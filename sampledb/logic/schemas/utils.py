@@ -7,7 +7,7 @@ import typing
 
 import pint
 
-from ..units import ureg_unit
+from ..units import ureg
 from ..errors import UndefinedUnitError
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -15,7 +15,7 @@ __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 def units_are_valid(units: str) -> bool:
     try:
-        ureg_unit(units)
+        ureg.Unit(units)
         return True
     except pint.UndefinedUnitError:
         return False
@@ -37,7 +37,7 @@ def get_dimensionality_for_units(
         else:
             units = '1'
     try:
-        return str(ureg_unit(units).dimensionality)
+        return str(ureg.Unit(units).dimensionality)
     except pint.UndefinedUnitError:
         raise UndefinedUnitError()
 
