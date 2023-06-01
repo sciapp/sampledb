@@ -99,3 +99,17 @@
     border-radius: 4px;
     margin: 15px 0;
 }
+
+.pygments .pygmentstable td.code {
+    width: 100%;
+}
+.pygments .pygmentstable td.linenos pre {
+    border-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    color:#999999;
+}
+.pygments .pygmentstable td.code pre {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}

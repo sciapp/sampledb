@@ -468,7 +468,7 @@ def show_action_form(
                 error_lines = all_lines
                 error_message = _("Unknown error: ") + str(e)
         lexer = pygments.lexers.data.JsonLexer()
-        formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines))
+        formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines), linenos='table')
         pygments_output = pygments.highlight(schema_json, lexer, formatter)
     if schema is not None and error_message is None and form_is_valid:
         # First block for validation
