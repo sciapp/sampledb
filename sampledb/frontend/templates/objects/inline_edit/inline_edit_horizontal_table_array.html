@@ -5,9 +5,7 @@
   {% set base_search_query_attribute = "" %}
 {% endif %}
 <div class="row" style="padding-right: 0.75em;">
-  <div class="col-md-3" style="text-align: right; margin-bottom: 5px;">
-    <strong>{{ schema.title | get_translated_text }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></strong>
-  </div>
+  {% include "objects/property_label.html" %}
 </div>
 <div style="padding-left:2.5em;">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />

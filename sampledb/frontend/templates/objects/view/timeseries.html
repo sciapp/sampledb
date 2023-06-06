@@ -1,7 +1,5 @@
 <div class="row" style="padding-right:0.75em">
-  <label class="col-md-3" style="text-align: right">{{ schema.title | get_translated_text }}
-    {% include "objects/search_link.html" %}
-  </label>
+  {% include "objects/property_label.html" %}
   <div class="col-md-9">
     {% include "objects/view/timeseries_value.html" %}
     {% if data and data.export_edit_note %}
