@@ -22,6 +22,7 @@ from math import log10, floor
 
 import flask
 import flask_babel
+import jinja2.filters
 from flask_babel import format_datetime, format_date, get_locale
 from flask_login import current_user
 from babel import numbers
@@ -746,13 +747,32 @@ def get_num_deprecation_warnings() -> int:
 
 
 @JinjaFunction()
+def get_search_url(
+        attribute: str,
+        data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
+        metadata_language: typing.Optional[str] = None
+) -> typing.Optional[str]:
+    search_query = get_search_query(attribute, data, metadata_language=metadata_language)
+    if search_query is None:
+        return None
+    return flask.url_for(
+        '.objects',
+        q=search_query,
+        advanced='on'
+    )
+
+
 def get_search_query(
         attribute: str,
-        data: typing.Dict[str, typing.Any],
+        data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
         metadata_language: typing.Optional[str] = None
-) -> str:
+) -> typing.Optional[str]:
     if data is None:
         return f'{attribute} == null'
+    if isinstance(data, list):
+        return None
+    if data['_type'] in ('object', 'hazards'):
+        return None
     if data['_type'] == 'bool':
         if data['value']:
             return f'{attribute} == True'
@@ -772,6 +792,14 @@ def get_search_query(
     if data['_type'] == 'text':
         if data['text']:
             return f'{attribute} == "{get_translated_text(data["text"], metadata_language)}"'
+        else:
+            return f'{attribute} == ""'
+    if data['_type'] == 'tags':
+        return '#' + ' and #'.join(data['tags'])
+    if data['_type'] == 'plotly_chart':
+        title = jinja2.filters.do_striptags(plotly_chart_get_title(data['plotly']))
+        if title:
+            return f'{attribute} == "{str(title)}"'
         else:
             return f'{attribute} == ""'
     # fallback: find all objects that have this attribute set

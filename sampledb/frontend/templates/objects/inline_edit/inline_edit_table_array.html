@@ -1,11 +1,7 @@
 <!-- array start -->
 <div class="row" style="padding-right:0.75em">
     {# Label #}
-    <div class="col-md-3" style="padding-right: 0px">
-        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
-             <a class="search-helper" style="visibility: hidden"><i class="fa fa-search" aria-hidden="true"></i></a>
-        </label>
-    </div>
+    {% include "objects/property_label.html" %}
     {# Content #}
     {% if search_query_attribute %}
         {% set base_search_query_attribute = search_query_attribute %}

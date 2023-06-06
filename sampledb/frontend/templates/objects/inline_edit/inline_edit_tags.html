@@ -1,6 +1,6 @@
 <div class="row form-area" style="padding-right: 0.75em">
     {# Label #}
-    <label class="col-md-3" style="text-align: right; padding-right:2.3em">{{ schema.title | get_translated_text }}</label>
+    {% include "objects/property_label.html" %}
     {# View #}
     <div class="view-switch col-md-9">
         {% if data.tags %}

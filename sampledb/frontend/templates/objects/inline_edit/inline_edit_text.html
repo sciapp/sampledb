@@ -18,11 +18,10 @@
 {% endfor %}
 
 <div class="form-group row form-area" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
-    <div class="col-md-3" style="padding-right: 0px">
+    <div class="col-md-3" style="padding-right: 0">
         {# Label #}
-        <label class="col-md-12 view-label">{{ schema.title | get_translated_text }}
-          {% include "objects/search_link.html" %}
-        </label>
+        {% set property_label_class = 'col-md-12' %}
+        {% include "objects/property_label.html" %}
         {% if 'choices' not in schema %}
           {% if input_languages | length > 1 %}
             <div class="form-switch">

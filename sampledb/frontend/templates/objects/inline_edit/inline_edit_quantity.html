@@ -1,10 +1,6 @@
 <div class="form-group form-area row" style="padding-right:0.75em">
     {# Label #}
-    <div class="col-md-3" style="padding-right: 0px">
-            <label class="col-md-12 view-label">{{ schema.title  | get_translated_text }}
-              {% include "objects/search_link.html" %}
-            </label>
-    </div>
+    {% include "objects/property_label.html" %}
     {# View #}
     <div class="view-switch">
         <div class="col-md-9">
