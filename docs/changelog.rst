@@ -9,6 +9,13 @@ Currently in development.
 
 - Added .eln file import
 
+Version 0.23.1
+--------------
+
+Released on June 6th, 2023.
+
+- Fixed handling of selectpicker fields with conditions
+
 Version 0.23
 ------------
 
