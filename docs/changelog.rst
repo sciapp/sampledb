@@ -4,7 +4,7 @@ Changelog
 Version 0.23.1
 --------------
 
-Currently under development.
+Released on June 6th, 2023.
 
 - Fixed handling of selectpicker fields with conditions
 
