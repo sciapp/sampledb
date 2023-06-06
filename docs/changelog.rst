@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.23.1
+--------------
+
+Currently under development.
+
+- Fixed handling of selectpicker fields with conditions
+
 Version 0.23
 ------------
 
