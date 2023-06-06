@@ -24,6 +24,7 @@
       <li><a href="#comments">{{ _('Comments') }}</a></li>
       <li><a href="#activity_log">{{ _('Activity Log') }}</a></li>
       <li><a href="#other_databases">{{ _('Other Databases') }}</a></li>
+      <li><a href="#import">{{ _('Import') }}</a></li>
       <li><a href="#related_objects">{{ _('Related Objects') }}</a></li>
     </ul>
     <a href="#top">{{ _('Back to top') }}</a>
@@ -553,7 +554,7 @@
                   </div>
                   </div>
                   <div class="modal-footer">
-                    {% if user_may_edit %}
+                    {% if user_may_upload_files %}
                     <button type="submit" class="btn btn-primary file-info-edit-mode">{{ _('Save') }}</button>
                     <button type="button" class="btn btn-default file-info-edit-mode button-file-info-cancel">{{ _('Cancel') }}</button>
                     <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">{{ _('Edit') }}</button>
@@ -591,7 +592,7 @@
         {% endif %}
       {% endfor %}
 
-      {% if user_may_edit %}
+      {% if user_may_upload_files %}
         <h5>{{ _('Upload File') }}</h5>
         <div class="form-group row clearfix" style="padding-right:0.75em">
           <div class="col-md-12">
@@ -1258,6 +1259,15 @@
                 {% endif %}
                 {% endwith %}
               {% endif %}
+            {% elif object_log_entry.type == ObjectLogEntryType.IMPORT_FROM_ELN_FILE %}
+              <td>
+                {{ _('%(user_ref)s imported this object from an .eln file.', user_ref=user_reference(object_log_entry.user)) }}
+              </td>
+              <td class="text-right">
+              {% if object.eln_import_id is not none %}
+                <a href="{{ url_for('.eln_import', eln_import_id=object.eln_import_id) }}">{{ _('View') }}</a>
+              {% endif %}
+              </td>
             {% else %}
               <td>{{ _('Unknown event') }}</td><td></td>
             {% endif %}
@@ -1423,6 +1433,13 @@
           </table>
         {% endif %}
       </div>
+    {% endif %}
+
+    {% if object.eln_import_id is not none %}
+      <h2 id="import">{{ _('Import') }}</h2>
+      <p>
+        {{ _('This object was imported from <a href="%(eln_import_url)s">.eln file #%(eln_import_id)s</a> by %(user_ref)s.', eln_import_id=object.eln_import_id, eln_import_url=url_for('.eln_import', eln_import_id=object.eln_import_id), user_ref=user_reference(object.eln_import.user)) }} {% if eln_import_url is not none and eln_import_url.startswith('http') %}{{ _('The original URL is <a href="%(eln_import_url)s">%(eln_import_url)s</a>.', eln_import_url=eln_import_url) }}{% endif %}
+      </p>
     {% endif %}
   {% endif %}
 
@@ -1841,7 +1858,7 @@
             $('#input-file-names-hidden').val("");
             $('#input-file-source-hidden').val("local");
           }
-          {% if user_may_edit %}
+          {% if user_may_upload_files %}
             $('#input-file-upload').on('change', changeHandler);
             function dropHandler(e) {
               e.preventDefault();

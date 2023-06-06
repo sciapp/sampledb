@@ -242,3 +242,13 @@ def create_instrument_log_entry(user_id: int, instrument_id: int, instrument_log
             'instrument_log_entry_id': instrument_log_entry_id
         }
     )
+
+
+def import_from_eln_file(user_id: int, object_id: int) -> None:
+    _store_new_log_entry(
+        type=UserLogEntryType.IMPORT_FROM_ELN_FILE,
+        user_id=user_id,
+        data={
+            'object_id': object_id
+        }
+    )

@@ -94,7 +94,11 @@ $(function() {
               if (el.is_fed) {
                 is_fed = ' data-icon="fa fa-share-alt" ';
               }
-              return '<option' + is_fed + 'value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
+              let is_eln_imported = ' ';
+              if (el.is_eln_imported) {
+                is_eln_imported = ' data-icon="fa fa-file-archive-o" ';
+              }
+              return '<option' + is_fed + is_eln_imported + 'value="' + el.id + '" '+ data_tokens + ' data-action-id="' + el.action_id + '">' + el.text + '</option>';
             }).join(""));
         } else {
           $x.typeahead("destroy");
@@ -128,7 +132,8 @@ $(function() {
                 // add placeholder for not selecting an object
                 results.unshift({
                   text: null,
-                  is_fed: false
+                  is_fed: false,
+                  is_eln_imported: false
                 });
               }
               sync(results);
@@ -153,6 +158,8 @@ $(function() {
                 }
                 if (data.is_fed) {
                   return '<div><i class="fa fa-share-alt fa-fw" style="margin-left: -1.43571429em; margin-right:0.15em;"></i>' + data.text + '</div>';
+                } else if (data.is_eln_imported) {
+                  return '<div><i class="fa fa-file-archive-o fa-fw" style="margin-left: -1.43571429em; margin-right:0.15em;"></i>' + data.text + '</div>';
                 } else {
                   return '<div>' + data.text + '</div>';
                 }

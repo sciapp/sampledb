@@ -412,3 +412,22 @@ def get_data_and_schema_by_id_path(
             return None
         return get_data_and_schema_by_id_path(data[id_path[0]], schema['properties'][id_path[0]], id_path[1:])
     return None
+
+
+_application_root_url: typing.Optional[str] = None
+
+
+def relative_url_for(
+        route: str,
+        **kwargs: typing.Any
+) -> str:
+    global _application_root_url
+    if _application_root_url is None:
+        _application_root_url = flask.url_for('frontend.index')
+    kwargs['_external'] = False
+    url = flask.url_for(route, **kwargs)
+    if url.startswith(_application_root_url):
+        url = url[len(_application_root_url):]
+    elif url.startswith('/'):
+        url = url[1:]
+    return url

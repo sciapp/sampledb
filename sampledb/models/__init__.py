@@ -7,6 +7,7 @@ from . import authentication
 from . import background_tasks
 from . import dataverse_export
 from . import default_permissions
+from . import eln_imports
 from . import favorites
 from . import files
 from . import groups
@@ -39,6 +40,7 @@ from .component_authentication import ComponentAuthentication, OwnComponentAuthe
 from .dataverse_export import DataverseExport, DataverseExportStatus
 from .default_permissions import DefaultUserPermissions, DefaultGroupPermissions, DefaultProjectPermissions, AllUserDefaultPermissions
 from .download_service import DownloadServiceJobFile
+from .eln_imports import ELNImport, ELNImportObject, ELNImportAction
 from .favorites import FavoriteAction, FavoriteInstrument
 from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType
 from .files import File
@@ -75,6 +77,7 @@ __all__ = [
     'background_tasks',
     'dataverse_export',
     'default_permissions',
+    'eln_imports',
     'favorites',
     'files',
     'groups',
@@ -111,6 +114,9 @@ __all__ = [
     'DataverseExport',
     'DataverseExportStatus',
     'DownloadServiceJobFile',
+    'ELNImport',
+    'ELNImportObject',
+    'ELNImportAction',
     'FavoriteAction',
     'FavoriteInstrument',
     'File',

@@ -1350,6 +1350,14 @@ code {
   display: none;
 }
 
+.invalid-eln-file {
+    color: #f94442
+}
+
+.import-information-symbol:hover, .import-information-symbol:focus {
+    text-decoration: none;
+}
+
 .permissions-table-head,
 .permissions-table-data{
     text-align: center;

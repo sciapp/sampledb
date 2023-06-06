@@ -1,6 +1,6 @@
 {% if related_objects_tree.referencing_objects is not none -%}
   {% if related_objects_tree.referenced_objects or related_objects_tree.referencing_objects -%}
-    <input type="checkbox" class="related-objects-tree-toggle" {% if related_objects_tree.path[0] == (related_objects_tree.object_id, None) %}checked="checked"{% endif %} id="related_object_toggle_{{ in_export_data_model }}_{{ related_objects_tree.object_id }}">
+    <input type="checkbox" class="related-objects-tree-toggle" {% if related_objects_tree.path[0] == related_objects_tree.object_ref %}checked="checked"{% endif %} id="related_object_toggle_{{ in_export_data_model }}_{{ related_objects_tree.object_id }}">
     <label for="related_object_toggle_{{ in_export_data_model }}_{{ related_objects_tree.object_id }}" class="fa fa-fw"></label>
   {%- else -%}
     <i class="fa fa-fw" aria-hidden="true"></i>

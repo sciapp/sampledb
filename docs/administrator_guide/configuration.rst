@@ -303,5 +303,7 @@ Miscellaneous
      - If set, some functions with results that cannot change will use caches (default: True).
    * - SAMPLEDB_TEMPORARY_FILE_TIME_LIMIT
      - Time that temporary files uploaded when editing an object are stored, in seconds (default: 604800 seconds / 7 days).
+   * - SAMPLEDB_ENABLE_ELN_FILE_IMPORT
+     - If set, .eln files can be imported by users (default: False). :ref:`Importing .eln files <eln_import>` is currently experimental and not recommended for production systems, as the file format is still a work in progress.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

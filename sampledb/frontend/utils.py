@@ -35,12 +35,13 @@ import numpy as np
 from ..logic import errors
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
+from ..logic.eln_import import get_eln_import_for_object
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.actions import Action
@@ -103,6 +104,8 @@ JinjaFunction()(get_component_id_by_uuid)
 JinjaFunction()(get_unhandled_object_responsibility_assignments)
 JinjaFunction()(is_full_location_tree_hidden)
 JinjaFunction()(generate_inline_script_nonce)
+JinjaFunction()(get_eln_import_for_object)
+JinjaFunction()(relative_url_for)
 
 
 qrcode_cache: typing.Dict[str, str] = {}
@@ -632,26 +635,6 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
         return None
 
 
-_application_root_url: typing.Optional[str] = None
-
-
-@JinjaFunction()
-def relative_url_for(
-        route: str,
-        **kwargs: typing.Any
-) -> str:
-    global _application_root_url
-    if _application_root_url is None:
-        _application_root_url = flask.url_for('frontend.index')
-    kwargs['_external'] = False
-    url = flask.url_for(route, **kwargs)
-    if url.startswith(_application_root_url):
-        url = url[len(_application_root_url):]
-    elif url.startswith('/'):
-        url = url[1:]
-    return url
-
-
 @functools.lru_cache(maxsize=None)
 def get_fingerprint(file_path: str) -> str:
     """
@@ -885,6 +868,34 @@ class FederationObjectRef(FederationRef):
 @dataclasses.dataclass(frozen=True)
 class FederationUserRef(FederationRef):
     referenced_class: typing.Type[User] = User
+
+
+@JinjaFunction()
+@dataclasses.dataclass(frozen=True)
+class ELNImportObjectRef:
+    eln_import_id: int
+    eln_object_id: int
+
+
+@JinjaFunction()
+def wrap_object_ref(
+        *,
+        fed_id: typing.Optional[int] = None,
+        component_uuid: typing.Optional[str] = None,
+        eln_import_id: typing.Optional[int] = None,
+        eln_object_id: typing.Optional[int] = None
+) -> typing.Optional[typing.Union[FederationObjectRef, ELNImportObjectRef]]:
+    if fed_id is not None and component_uuid is not None:
+        return FederationObjectRef(
+            fed_id=fed_id,
+            component_uuid=component_uuid
+        )
+    if eln_import_id is not None and eln_object_id is not None:
+        return ELNImportObjectRef(
+            eln_import_id=eln_import_id,
+            eln_object_id=eln_object_id
+        )
+    return None
 
 
 @JinjaFunction()

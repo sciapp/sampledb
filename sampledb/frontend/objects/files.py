@@ -86,6 +86,8 @@ def update_file_information(object_id: int, file_id: int) -> FlaskResponseT:
     if object.fed_object_id is not None:
         flask.flash(_('Uploading files for imported objects is not yet supported.'), 'error')
         return flask.abort(403)
+    if object.action_id is None:
+        return flask.abort(403)
     form = FileInformationForm()
     if form.validate_on_submit():
         title = form.title.data
@@ -114,6 +116,9 @@ def update_file_information(object_id: int, file_id: int) -> FlaskResponseT:
 @object_permissions_required(Permissions.WRITE)
 def hide_file(object_id: int, file_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
+    object = get_object(object_id)
+    if object.fed_object_id is not None or object.action_id is None:
+        return flask.abort(403)
     form = FileHidingForm()
     if not form.validate_on_submit():
         return flask.abort(400)
@@ -182,6 +187,9 @@ def post_mobile_file_upload(object_id: int, token: str) -> FlaskResponseT:
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
+    object = get_object(object_id)
+    if object.fed_object_id is not None or object.action_id is None:
+        return flask.abort(403)
     external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():

@@ -64,6 +64,7 @@ def test_status_codes(flask_server, user, driver):
     flask_server.app.config['SCICAT_API_URL'] = 'http://localhost'
     flask_server.app.config['DOWNLOAD_SERVICE_URL'] = 'http://localhost'
     flask_server.app.config['DOWNLOAD_SERVICE_SECRET'] = 'secret'
+    flask_server.app.config['ENABLE_ELN_FILE_IMPORT'] = True
     with flask_server.app.app_context():
         user_id = user.id
         language_id = sampledb.logic.languages.Language.ENGLISH
@@ -253,6 +254,11 @@ def test_status_codes(flask_server, user, driver):
         )
         task_id = 1
         category_id = sampledb.logic.group_categories.create_group_category(name={'en': 'Category'}).id
+        eln_import_id = sampledb.logic.eln_import.create_eln_import(
+            user_id=user_id,
+            file_name='demo.zip',
+            zip_bytes=b''
+        ).id
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -330,6 +336,8 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/users/{user_id}': 200,
         'api/v1/users/me': 200,
         'apple-touch-icon.png': 200,
+        'eln_imports': 200,
+        f'eln_imports/{eln_import_id}': 302,
         'favicon.ico': 200,
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
@@ -487,4 +495,5 @@ def test_status_codes(flask_server, user, driver):
         'task_id': task_id,
         'timeseries_id': timeseries_id,
         'error_code': 400,
+        'eln_import_id': eln_import_id,
     })

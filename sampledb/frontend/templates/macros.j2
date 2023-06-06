@@ -1,6 +1,6 @@
 {% macro _federation_information_symbol(obj, text=false, nolink=false) %}
   {% if obj.component.address is not none and not nolink %}
-    <a href="{{ get_federation_url(obj) }}">
+    <a href="{{ get_federation_url(obj) }}" class="import-information-symbol">
   {% endif %}
   {% if text %}
     (#{{ obj.fed_id }} @ {{ obj.component.get_name() }})
@@ -42,4 +42,27 @@
   {%- if user_or_none is not none and not text -%}
     {{ import_information_symbol(user_or_none, nolink=nolink) }}
   {%- endif -%}
+{% endmacro %}
+
+{% macro _eln_import_information_symbol(obj, text=false, nolink=false) %}
+  {% if not nolink %}
+    <a href="{{ url_for('.eln_import', eln_import_id=obj.eln_import_id) }}" class="import-information-symbol">
+  {% endif %}
+  {% if text %}
+    ({{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }})
+  {% else %}
+    <i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }}"></i>
+  {% endif %}
+  {% if not nolink %}
+    </a>
+  {% endif %}
+{% endmacro %}
+
+{% macro import_information_symbol(object, text=false, nolink=false) %}
+  {% if object.fed_id is defined and object.fed_id is not none %}
+    {{ _federation_information_symbol(object, text=text, nolink=nolink) }}
+  {% endif %}
+  {% if object.eln_import_id is defined and object.eln_import_id is not none %}
+    {{ _eln_import_information_symbol(object, text=text, nolink=nolink) }}
+  {% endif %}
 {% endmacro %}

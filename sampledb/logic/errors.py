@@ -454,3 +454,11 @@ class DiffMismatchError(Exception):
 
 class InstrumentObjectLinkAlreadyExistsError(Exception):
     pass
+
+
+class ELNImportDoesNotExistError(Exception):
+    pass
+
+
+class InvalidELNFileError(Exception):
+    pass

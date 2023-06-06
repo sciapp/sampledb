@@ -1444,7 +1444,7 @@
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>
         <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
-        {{ import_information_symbol(FederationObjectRef(fed_id=object.fed_id, component_uuid=object.component.uuid)) }}
+        {{ import_information_symbol(wrap_object_ref(fed_id=object.fed_id, component_uuid=object.component.uuid, eln_import_id=object.eln_import_id, eln_object_id=object.eln_object_id)) }}
       </td>
       {% if not edit_permissions %}
         {% if 'date' in creation_info %}

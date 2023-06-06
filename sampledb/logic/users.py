@@ -13,7 +13,7 @@ import flask_login
 from flask_babel import gettext
 
 from .components import get_component, get_components, Component, check_component_exists
-from .. import db
+from .. import db, logic
 from . import errors, settings
 from .utils import cache
 from .. models import users, UserType
@@ -66,6 +66,8 @@ class User:
     component_id: typing.Optional[int]
     last_modified: datetime.datetime
     last_modified_by_id: typing.Optional[int]
+    eln_import_id: typing.Optional[int]
+    eln_object_id: typing.Optional[str]
     # for use by .languages.get_user_language, no type hint to avoid circular import
     language_cache: typing.List[typing.Optional[typing.Any]] = dataclasses.field(default_factory=lambda: [None], kw_only=True, repr=False, compare=False)
     # for use by the settings property
@@ -90,6 +92,8 @@ class User:
             component_id=user.component_id,
             last_modified=user.last_modified,
             last_modified_by_id=user.last_modified_by_id,
+            eln_import_id=user.eln_import_id,
+            eln_object_id=user.eln_object_id,
         )
 
     @property
@@ -97,6 +101,13 @@ class User:
         if self.component_id is None:
             return None
         return get_component(self.component_id)
+
+    @property
+    def eln_import(self) -> typing.Optional['logic.eln_import.ELNImport']:
+        if self.eln_import_id is None:
+            return None
+
+        return logic.eln_import.get_eln_import(self.eln_import_id)
 
     def get_id(self) -> int:
         return self.id
@@ -123,6 +134,8 @@ class User:
     def get_name(self, include_ref: bool = False, include_id: bool = True) -> str:
         if include_ref and self.component_id is not None:
             db_ref = f', #{self.fed_id} @ {typing.cast(Component, self.component).get_name()}'
+        elif include_ref and self.eln_import_id is not None and self.eln_object_id is not None:
+            db_ref = f', {self.eln_object_id} @ {gettext("ELN Import")} #{self.eln_import_id}'
         else:
             db_ref = ''
         if not include_id:
@@ -340,7 +353,9 @@ def update_user(
             'role',
             'extra_fields',
             'fed_id',
-            'component_id'
+            'component_id',
+            'eln_import_id',
+            'eln_object_id',
         }:
             raise AttributeError(f"'User' object has no attribute '{name}'")
 
@@ -359,16 +374,19 @@ def update_user(
 
 
 def get_users(
+        *,
         exclude_hidden: bool = False,
         order_by: typing.Optional[db.Column] = users.User.name,  # type: ignore
-        exclude_fed: bool = False
+        exclude_fed: bool = False,
+        exclude_eln_import: bool = False,
 ) -> typing.List[User]:
     """
     Returns all users.
 
     :param exclude_hidden: whether to exclude hidden users
     :param order_by: Column to order the users by, or None
-    :param exclude_fed: whether imported users should be included
+    :param exclude_fed: whether to exclude federation users
+    :param exclude_eln_import: whether to exclude users from an .eln file
     :return: the list of users
     """
     user_query = users.User.query
@@ -378,6 +396,8 @@ def get_users(
         user_query = user_query.order_by(order_by)
     if exclude_fed:
         user_query = user_query.filter(users.User.type != UserType.FEDERATION_USER)
+    if exclude_eln_import:
+        user_query = user_query.filter(users.User.type != UserType.ELN_IMPORT_USER)
     return [
         User.from_database(user)
         for user in user_query.all()
@@ -434,8 +454,11 @@ def create_user(
         affiliation: typing.Optional[str] = None,
         role: typing.Optional[str] = None,
         extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        *,
         fed_id: None = None,
-        component_id: None = None
+        component_id: None = None,
+        eln_import_id: None = None,
+        eln_object_id: None = None
 ) -> User:
     ...
 
@@ -451,7 +474,27 @@ def create_user(
         extra_fields: typing.Optional[typing.Dict[str, str]] = None,
         *,
         fed_id: int,
-        component_id: int
+        component_id: int,
+        eln_import_id: None = None,
+        eln_object_id: None = None,
+) -> User:
+    ...
+
+
+@typing.overload
+def create_user(
+        name: typing.Optional[str],
+        email: typing.Optional[str],
+        type: UserType,
+        orcid: typing.Optional[str] = None,
+        affiliation: typing.Optional[str] = None,
+        role: typing.Optional[str] = None,
+        extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        *,
+        fed_id: None = None,
+        component_id: None = None,
+        eln_import_id: int,
+        eln_object_id: str,
 ) -> User:
     ...
 
@@ -464,8 +507,11 @@ def create_user(
         affiliation: typing.Optional[str] = None,
         role: typing.Optional[str] = None,
         extra_fields: typing.Optional[typing.Dict[str, str]] = None,
+        *,
         fed_id: typing.Optional[int] = None,
-        component_id: typing.Optional[int] = None
+        component_id: typing.Optional[int] = None,
+        eln_import_id: typing.Optional[int] = None,
+        eln_object_id: typing.Optional[str] = None,
 ) -> User:
     """
     Create a new user.
@@ -482,16 +528,35 @@ def create_user(
     :param extra_fields: a dict describing the values for defined extra fields
     :param fed_id: the ID of the related user at the exporting component
     :param component_id: the ID of the exporting component
+    :param eln_import_id: the ID of the ELN import
+    :param eln_object_id: the ID of the user node inside the ELN import
     :return: the newly created user
     """
 
     assert (component_id is None) == (fed_id is None)
-    assert component_id is not None or (name is not None and email is not None)
+    assert (eln_import_id is None) == (eln_object_id is None)
+    assert component_id is not None or eln_import_id is not None or (name is not None and email is not None)
 
     if component_id is not None:
         check_component_exists(component_id)
 
-    user = users.User(name=name, email=email, type=type, orcid=orcid, affiliation=affiliation, role=role, extra_fields=extra_fields, fed_id=fed_id, component_id=component_id, last_modified=datetime.datetime.utcnow())
+    if eln_import_id is not None:
+        logic.eln_import.get_eln_import(eln_import_id)
+
+    user = users.User(
+        name=name,
+        email=email,
+        type=type,
+        orcid=orcid,
+        affiliation=affiliation,
+        role=role,
+        extra_fields=extra_fields,
+        fed_id=fed_id,
+        component_id=component_id,
+        last_modified=datetime.datetime.utcnow(),
+        eln_import_id=eln_import_id,
+        eln_object_id=eln_object_id,
+    )
     db.session.add(user)
     db.session.commit()
     return User.from_database(user)
