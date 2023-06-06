@@ -58,7 +58,6 @@ pycairo==1.23.0
 pycparser==2.21
 pydantic==1.10.8
 pydyf==0.6.0
-Pygments==2.15.1
 pyotp==2.8.0
 pyphen==0.14.0
 pypng==0.20220715.0

@@ -11,9 +11,6 @@ import flask_login
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, SelectField, IntegerField
 from wtforms.validators import InputRequired, ValidationError, DataRequired
-import pygments
-import pygments.lexers.data
-import pygments.formatters
 from flask_babel import _, force_locale
 
 from . import frontend
@@ -339,12 +336,14 @@ def show_action_form(
                     'type': 'text'
                 }
             },
-            'required': ['name']
+            'required': ['name'],
+            'propertyOrder': [
+                'name'
+            ]
         }, indent=2)
         submit_text = "Create"
     may_set_user_specific = action is None and flask_login.current_user.is_admin
     schema = None
-    pygments_output = None
     error_message = None
     action_form = ActionForm()
     instrument_is_fed = {}
@@ -430,6 +429,7 @@ def show_action_form(
         schema_json = action_form.schema.data
     else:
         action_form.schema.data = schema_json
+    error_lines = None
     if schema_json:
         all_lines = set(range(1, 1 + len(schema_json.splitlines())))
         error_lines = set()
@@ -470,9 +470,6 @@ def show_action_form(
             except Exception as e:
                 error_lines = all_lines
                 error_message = _("Unknown error: ") + str(e)
-        lexer = pygments.lexers.data.JsonLexer()
-        formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines), linenos='table')
-        pygments_output = pygments.highlight(schema_json, lexer, formatter)
     if schema is not None and error_message is None and form_is_valid:
         # First block for validation
         try:
@@ -486,7 +483,6 @@ def show_action_form(
                 action_translations=action_translations_by_id,
                 action_language_ids=action_language_ids,
                 action_types=get_action_types(),
-                pygments_output=pygments_output,
                 error_message=error_message,
                 schema_json=schema_json,
                 submit_text=submit_text,
@@ -501,7 +497,8 @@ def show_action_form(
                 hazards_translations=hazards_translations,
                 load_translations=load_translations,
                 ENGLISH=english,
-                instrument_is_fed=instrument_is_fed
+                instrument_is_fed=instrument_is_fed,
+                error_lines=list(error_lines or []),
             )
         else:
             translation_keys = {'language_id', 'name', 'description', 'short_description'}
@@ -537,7 +534,6 @@ def show_action_form(
                             action_translations=action_translations_by_id,
                             action_language_ids=action_language_ids,
                             action_types=get_action_types(),
-                            pygments_output=pygments_output,
                             error_message=error_message,
                             schema_json=schema_json,
                             submit_text=submit_text,
@@ -552,7 +548,8 @@ def show_action_form(
                             hazards_translations=hazards_translations,
                             load_translations=load_translations,
                             ENGLISH=english,
-                            instrument_is_fed=instrument_is_fed
+                            instrument_is_fed=instrument_is_fed,
+                            error_lines=list(error_lines or []),
                         )
 
         instrument_id_str = action_form.instrument.data
@@ -666,7 +663,6 @@ def show_action_form(
         action_translations=action_translations_by_id,
         action_language_ids=action_language_ids,
         action_types=get_action_types(),
-        pygments_output=pygments_output,
         error_message=error_message,
         schema_json=schema_json,
         submit_text=submit_text,
@@ -681,7 +677,8 @@ def show_action_form(
         hazards_translations=hazards_translations,
         load_translations=load_translations,
         ENGLISH=english,
-        instrument_is_fed=instrument_is_fed
+        instrument_is_fed=instrument_is_fed,
+        error_lines=list(error_lines or []),
     )
 
 
