@@ -12,12 +12,6 @@
   {% endif %}
 {% endmacro %}
 
-{% macro import_information_symbol(object, text=false, nolink=false) %}
-  {%- if object.fed_id is not none -%}
-    {{ _federation_information_symbol(object, text=text, nolink=nolink) }}
-  {%- endif -%}
-{% endmacro %}
-
 {% macro user_reference(user_id_or_user, text=false, nolink=false, external=false) %}
   {% if user_id_or_user is number %}
     {% set user_or_none = get_user_or_none(user_id_or_user) %}

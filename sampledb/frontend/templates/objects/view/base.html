@@ -1447,7 +1447,7 @@
     <h2 id="related_objects">{{ _('Related Objects') }}</h2>
 
     <div class="related-objects">
-      {% set in_export_data_model = False %}
+      {% set in_export_data_modal = False %}
       {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
     </div>
   {% endif %}
@@ -1505,7 +1505,7 @@
             {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             <div class="related-objects">
               <div>{{ _('Objects') }}</div>
-              {% set in_export_data_model = True %}
+              {% set in_export_data_modal = True %}
               {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
             </div>
             {% endif %}
