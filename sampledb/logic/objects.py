@@ -35,6 +35,7 @@ def create_object(
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
         permissions_for_project_id: typing.Optional[int] = None,
+        permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> Object:
@@ -54,6 +55,8 @@ def create_object(
         permissions to
     :param permissions_for_project_id: the ID of an existing project to give
         permissions to
+    :param permissions_for_all_users: permissions to be granted to all
+        signed-in users, or None
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
@@ -95,6 +98,8 @@ def create_object(
         object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
     else:
         object_permissions.set_initial_permissions(object)
+    if permissions_for_all_users is not None:
+        object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
     tags.update_object_tag_usage(object)
     return object
 
@@ -188,6 +193,7 @@ def create_object_batch(
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
         permissions_for_project_id: typing.Optional[int] = None,
+        permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> typing.Sequence[Object]:
@@ -207,6 +213,8 @@ def create_object_batch(
         permissions to
     :param permissions_for_project_id: the ID of an existing project to give
         permissions to
+    :param permissions_for_all_users: permissions to be granted to all
+        signed-in users, or None
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
@@ -253,6 +261,8 @@ def create_object_batch(
                     object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
                 else:
                     object_permissions.set_initial_permissions(object)
+                if permissions_for_all_users is not None:
+                    object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
                 tags.update_object_tag_usage(object)
     return objects
 

@@ -170,6 +170,7 @@ def show_object_form(
             referenced_temporary_file_ids = sorted(logic.temporary_files.get_referenced_temporary_file_ids(object_data))
             if object is None:
                 copy_permissions_object_id, permissions_for_group_id, permissions_for_project_id = _parse_permissions_ids(form_data)
+                read_permissions_to_all_users = form_data.get('all_users_read_permissions') == '1'
                 permanent_file_names_by_id = {}
                 permanent_file_map = {}
                 for ind, file_id in enumerate(referenced_temporary_file_ids):
@@ -188,6 +189,7 @@ def show_object_form(
                         copy_permissions_object_id=copy_permissions_object_id,
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,
+                        permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
                         data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
                     )
                 else:
@@ -200,6 +202,7 @@ def show_object_form(
                         copy_permissions_object_id=copy_permissions_object_id,
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,
+                        permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
                         data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
                     )]
                 object_ids = [object.id for object in objects]
