@@ -266,6 +266,7 @@ def show_object_form(
         return flask.render_template(
             'objects/forms/form_create.html',
             action_id=action.id,
+            action=action,
             possible_properties=possible_object_id_properties,
             passed_object_ids=passed_object_ids,
             show_selecting_modal=show_selecting_modal,

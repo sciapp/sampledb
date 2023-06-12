@@ -325,6 +325,12 @@
         </label>
       </div>
 
+      <div class="checkbox">
+        <label for="input-objects_readable_by_all_users_by_default" style="font-weight:400">
+          <input type="checkbox" id="input-objects_readable_by_all_users_by_default" name="{{ action_form.objects_readable_by_all_users_by_default.name }}" {% if action_form.objects_readable_by_all_users_by_default.data %}checked="checked"{% endif %}> {{ _('When creating objects with this action, grant READ permissions to all signed-in users by default') }}
+        </label>
+      </div>
+
       <div class="radio">
         <label>
           <input type="radio" name="{{ action_form.usable_by.name }}" value="with_permissions" {% if action_form.usable_by.data is none or action_form.usable_by.data == 'with_permissions' %}checked="checked"{% endif %}>

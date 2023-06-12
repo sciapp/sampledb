@@ -3203,6 +3203,13 @@ msgstr "Kein Instrument ausgewählt"
 msgid "Hide this action from action lists"
 msgstr "Diese Aktion aus Aktionslisten verstecken"
 
+msgid ""
+"When creating objects with this action, grant READ permissions to all "
+"signed-in users by default"
+msgstr ""
+"Beim Erstellen eines Objekts mit dieser Aktion allen angemeldeten Nutzern"
+" standardmäßig LESE-Berechtigungen geben"
+
 msgid "All users with Read permissions can create objects using this action"
 msgstr ""
 "Alle Nutzer mit Lese-Berechtigungen können mit dieser Aktion Objekte "
