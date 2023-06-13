@@ -10,6 +10,7 @@ Currently in development.
 - Added .eln file import
 - Allowed updating actions via the HTTP API
 - Allow granting READ permissions to all signed-in users during object creation
+- Prevent creation of files with the :ref:`deprecated <deprecated_features>` local file storage via HTTP API
 
 Version 0.23.1
 --------------
