@@ -105,6 +105,7 @@ class ObjectRef:
 class RelatedObjectsTree:
     object_ref: ObjectRef
     path: typing.List[typing.Union[int, ObjectRef]]
+    object: typing.Optional[Object]
     object_name: typing.Optional[str]
     referenced_objects: typing.Optional[typing.List[RelatedObjectsTree]]
     referencing_objects: typing.Optional[typing.List[RelatedObjectsTree]]
@@ -236,6 +237,7 @@ def _gather_subtrees(
             tree = RelatedObjectsTree(
                 object_ref=object_ref,
                 path=[],
+                object=None,
                 object_name=None,
                 referenced_objects=None,
                 referencing_objects=None,
@@ -291,6 +293,7 @@ def _assemble_tree(
             if len(path_prefix) // 2 < _MAXIMUM_TREE_DEPTH:
                 if object_ref.is_local and object_ref.object_id in objects_by_id:
                     object = objects_by_id[object_ref.object_id]
+                    tree.object = object
                     if object is not None and object.name is not None:
                         tree.object_name = get_translated_text(object.name)
                     # create a copy that will contain subtrees
