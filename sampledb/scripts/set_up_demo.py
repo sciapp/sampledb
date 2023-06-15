@@ -1289,4 +1289,28 @@ This example shows how Markdown can be used for instrument Notes.
         ).id
         sampledb.logic.eln_import.import_eln_file(eln_import_id)
 
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Imported Object Reference Demo'
+                }
+            },
+            'samples': [
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'component_uuid': 'ee36dd7f-72b0-44b6-afa8-752e920fbb32'
+                },
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'eln_source_url': 'http://localhost:5000/',
+                    'eln_object_url': 'http://localhost:5000/objects/10001'
+                }
+            ]
+        }
+        object = sampledb.logic.objects.create_object(multi_measurement_action.id, data, instrument_responsible_user.id)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.READ)
+
     print("Success: set up demo data", flush=True)

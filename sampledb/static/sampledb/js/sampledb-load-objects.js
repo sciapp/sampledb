@@ -79,7 +79,7 @@ $(function() {
             return action_ids.length === 0 || $.inArray(el.action_id, action_ids) !== -1;
           });
         if (is_selectpicker) {
-          $x.find('option[value != ""]').remove();
+          $x.find('option[value != ""][value != "-1"]').remove();
           $x.append(
             to_add.map(function (el) {
               var data_tokens = "";
@@ -128,6 +128,14 @@ $(function() {
           function source(q, sync) {
             function syncWrap(results) {
               $x.num_results = results.length;
+              if ($x.data('sampledbDefaultSelected') === -1) {
+                results.unshift({
+                  text: $x.data('sampledbCurrentValueText').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"),
+                  unescaped_text: $x.data('sampledbCurrentValueText'),
+                  is_fed: $x.data('sampledbCurrentValueIsFed') === true,
+                  is_eln_imported: false
+                });
+              }
               if (!$x.prop('required')) {
                 // add placeholder for not selecting an object
                 results.unshift({
@@ -230,10 +238,15 @@ $(function() {
             let is_valid = false;
             let object_id = null;
             if (text) {
-              for (let i = 0; i < to_add.length && !is_valid; i++) {
-                if (to_add[i].unescaped_text === text) {
-                  object_id = to_add[i].id;
-                  is_valid = true;
+              if (text === $x.data('sampledbCurrentValueText')) {
+                object_id = -1;
+                is_valid = true;
+              } else {
+                for (let i = 0; i < to_add.length && !is_valid; i++) {
+                  if (to_add[i].unescaped_text === text) {
+                    object_id = to_add[i].id;
+                    is_valid = true;
+                  }
                 }
               }
             } else if (!field.prop('required')) {
@@ -281,10 +294,14 @@ $(function() {
           if (is_selectpicker) {
             $x.selectpicker('val', data);
           } else {
-            for (let i = 0; i < to_add.length; i++) {
-              if (to_add[i].id === data) {
-                $x.typeahead('val', to_add[i].unescaped_text);
-                break;
+            if (data === -1) {
+              $x.typeahead('val', $x.data('sampledbCurrentValueText'));
+            } else {
+              for (let i = 0; i < to_add.length; i++) {
+                if (to_add[i].id === data) {
+                  $x.typeahead('val', to_add[i].unescaped_text);
+                  break;
+                }
               }
             }
           }

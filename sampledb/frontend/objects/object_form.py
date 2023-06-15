@@ -156,7 +156,7 @@ def show_object_form(
 
     if "action_submit" in form_data:
         batch_names = _handle_batch_names(schema, form_data, raw_form_data, errors)
-        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id)
+        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id, previous_data=data)
         errors.update(parsing_errors)
         if form_data['action_submit'] == 'inline_edit' and errors:
             return flask.jsonify({
