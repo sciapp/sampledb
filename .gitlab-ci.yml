@@ -314,10 +314,12 @@ deploy-to-github:
   script:
     - apt-get update
     - apt-get install -y git
-    - mkdir --mode=700 ~/.ssh/
+    # set up SSH for access to GitHub
+    - mkdir -p --mode=700 ~/.ssh/
     - echo "$SCIAPP_SAMPLEDB_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 400 ~/.ssh/id_rsa
     - echo "github.com $GITHUB_HOST_KEY" >> ~/.ssh/known_hosts
-    - chmod 400 ~/.ssh/*
+    - chmod 400 ~/.ssh/known_hosts
     - git clone --mirror "$CI_REPOSITORY_URL" repo
     - cd repo && git push --mirror git@github.com:sciapp/sampledb.git && cd -
 
