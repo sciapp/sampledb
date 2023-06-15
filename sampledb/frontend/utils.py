@@ -42,7 +42,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning, relative_url_for
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.actions import Action
@@ -741,7 +741,6 @@ def get_search_paths(
 def get_num_deprecation_warnings() -> int:
     return sum([
         show_admin_local_storage_warning(),
-        show_load_objects_in_background_warning(),
         show_numeric_tags_warning(),
     ])
 

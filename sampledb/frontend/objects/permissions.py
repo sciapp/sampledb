@@ -17,7 +17,7 @@ from ...logic import user_log
 from ...logic.actions import get_action
 from ...logic.components import get_component_by_uuid
 from ...logic.errors import ObjectDoesNotExistError, ComponentDoesNotExistError
-from ...logic.object_permissions import get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_objects_with_permissions, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
+from ...logic.object_permissions import get_user_object_permissions, get_object_permissions_for_all_users, get_object_permissions_for_anonymous_users, get_object_permissions_for_users, get_object_permissions_for_groups, get_object_permissions_for_projects, request_object_permissions
 from ...logic.shares import get_shares_for_object, add_object_share, update_object_share
 from ...logic.users import get_users, get_users_for_component
 from ...logic.groups import get_group
@@ -167,20 +167,7 @@ def object_permissions(object_id: int) -> FlaskResponseT:
         edit_component_policy_form.object_location_assignments.data = True
         copy_permissions_form: typing.Optional[CopyPermissionsForm] = CopyPermissionsForm()
         assert copy_permissions_form is not None
-        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-            existing_objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.GRANT
-            )
-            copy_permissions_form.object_id.choices = [
-                (str(existing_object.id), existing_object.name)
-                for existing_object in existing_objects
-                if existing_object.id != object_id
-            ]
-            if len(copy_permissions_form.object_id.choices) == 0:
-                copy_permissions_form = None
-        else:
-            copy_permissions_form.object_id.choices = []
+        copy_permissions_form.object_id.choices = []
     else:
         permissions_form = None
         add_user_permissions_form = None
@@ -245,18 +232,7 @@ def update_object_permissions(object_id: int) -> FlaskResponseT:
     edit_component_policy_form = ObjectEditShareAccessForm()
     copy_permissions_form = CopyPermissionsForm()
     if 'copy_permissions' in flask.request.form:
-        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-            existing_objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.GRANT
-            )
-            copy_permissions_form.object_id.choices = [
-                (str(existing_object.id), existing_object.name)
-                for existing_object in existing_objects
-                if existing_object.id != object_id
-            ]
-        else:
-            copy_permissions_form.object_id.choices = []
+        copy_permissions_form.object_id.choices = []
         if copy_permissions_form.validate_on_submit():
             logic.object_permissions.copy_permissions(object_id, int(copy_permissions_form.object_id.data))
             logic.object_permissions.set_user_object_permissions(object_id, flask_login.current_user.id, Permissions.GRANT)

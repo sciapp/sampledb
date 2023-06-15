@@ -16,7 +16,7 @@ from ... import logic
 from ... import models
 from ...logic.actions import Action
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
+from ...logic.object_permissions import get_user_object_permissions
 from ...logic.users import get_users
 from ...logic.schemas import generate_placeholder
 from ...logic.objects import create_object, create_object_batch, update_object
@@ -247,18 +247,10 @@ def show_object_form(
 
     if object is None:
         # alternatives to default permissions
-        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-            existing_objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.GRANT
-            )
-        else:
-            existing_objects = []
         user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
         user_projects = logic.projects.get_user_projects(flask_login.current_user.id, include_groups=True)
         template_arguments.update({
             'can_copy_permissions': True,
-            'existing_objects': existing_objects,
             'user_groups': user_groups,
             'user_projects': user_projects
         })
@@ -630,24 +622,6 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
         'datetime': datetime,
         'languages': get_languages(),
     }
-
-    # referencable objects
-    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-        referencable_objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ
-        )
-        if object_id is not None:
-            referencable_objects = [
-                referencable_object
-                for referencable_object in referencable_objects
-                if referencable_object.object_id != object_id
-            ]
-    else:
-        referencable_objects = []
-    template_kwargs.update({
-        'referencable_objects': referencable_objects,
-    })
 
     # actions and action types
     sorted_actions = get_sorted_actions_for_user(

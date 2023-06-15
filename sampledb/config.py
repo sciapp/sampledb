@@ -92,7 +92,6 @@ def parse_configuration_values() -> None:
         'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
         'DISABLE_USE_IN_MEASUREMENT',
         'DISABLE_SUBPROJECTS',
-        'LOAD_OBJECTS_IN_BACKGROUND',
         'ENFORCE_SPLIT_NAMES',
         'BUILD_TRANSLATIONS',
         'SHOW_PREVIEW_WARNING',
@@ -206,20 +205,6 @@ def check_config(
             file=sys.stderr
         )
         show_config_info = True
-
-    if config.get('USE_TYPEAHEAD_FOR_OBJECTS') and not config.get('LOAD_OBJECTS_IN_BACKGROUND'):
-        print(
-            ansi_color(
-                'Typeahead can only be used for objects when loading in '
-                'background is enabled, so USE_TYPEAHEAD_FOR_OBJECTS can '
-                'only be true if LOAD_OBJECTS_IN_BACKGROUND is also true.\n',
-                color=31
-            ),
-            '\n',
-            file=sys.stderr
-        )
-        show_config_info = True
-        can_run = False
 
     if 'DATAVERSE_URL' not in defined_config_keys:
         print(
@@ -628,8 +613,6 @@ ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES = True
 DISABLE_USE_IN_MEASUREMENT = False
 
 DISABLE_SUBPROJECTS = False
-
-LOAD_OBJECTS_IN_BACKGROUND = True
 
 USE_TYPEAHEAD_FOR_OBJECTS = False
 TYPEAHEAD_OBJECT_LIMIT = None

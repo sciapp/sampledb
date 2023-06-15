@@ -11,6 +11,7 @@ Currently in development.
 - Allowed updating actions via the HTTP API
 - Allow granting READ permissions to all signed-in users during object creation
 - Prevent creation of files with the :ref:`deprecated <deprecated_features>` local file storage via HTTP API
+- Removed setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND``
 
 Version 0.23.1
 --------------
