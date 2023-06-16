@@ -1419,6 +1419,85 @@ Reading an action
     :statuscode 200: no error
     :statuscode 404: the action does not exist
 
+Updating an action
+^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/actions/(int:action_id)
+
+    Update the specific action (`action_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/actions/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "action_id": 1,
+            "instrument_id": null,
+            "user_id": null,
+            "type": "sample",
+            "type_id": -99,
+            "name": "Example Sample Creation",
+            "description": "This is an example action",
+            "is_hidden": false,
+            "schema": {
+                "title": "Example Sample",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Sample Name",
+                        "type": "text"
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "action_id": 1,
+            "instrument_id": null,
+            "user_id": null,
+            "type": "sample",
+            "type_id": -99,
+            "name": "Example Sample Creation",
+            "description": "This is an example action",
+            "is_hidden": false,
+            "schema": {
+                "title": "Example Sample",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Sample Name",
+                        "type": "text"
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+
+    :<json string name: the action's name
+    :<json string description: the action's description
+    :<json bool is_hidden: whether or not the action is hidden
+    :<json object schema: the action's schema
+    :<json number action_id: the action's ID (optional, must not be changed)
+    :<json number instrument_id: the action's instrument's ID or null (optional, must not be changed)
+    :<json number user_id: the action's user ID, if it is a user-specific action, or null (optional, must not be changed)
+    :<json string type: the action's type ("sample", "measurement", "simulation" or "custom", optional, must not be changed)
+    :<json number type_id: the ID of the action's type (optional, must not be changed)
+    :statuscode 200: no error
+    :statuscode 404: the action does not exist
+
 
 Action Types
 ------------

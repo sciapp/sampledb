@@ -8,6 +8,7 @@ Version 0.24
 Currently in development.
 
 - Added .eln file import
+- Allowed updating actions via the HTTP API
 
 Version 0.23.1
 --------------
