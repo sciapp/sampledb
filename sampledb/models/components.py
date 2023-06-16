@@ -20,6 +20,7 @@ class Component(Model):
     name: Mapped[typing.Optional[str]] = db.Column(db.Text, nullable=True, unique=True)
     description: Mapped[str] = db.Column(db.Text, nullable=False, default='')
     last_sync_timestamp: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    discoverable: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Component"]]
@@ -30,15 +31,35 @@ class Component(Model):
             name: typing.Optional[str] = None,
             description: typing.Optional[str] = '',
             address: typing.Optional[str] = None,
-            last_sync_timestamp: typing.Optional[datetime.datetime] = None
+            last_sync_timestamp: typing.Optional[datetime.datetime] = None,
+            discoverable: bool = True
     ) -> None:
         super().__init__(
             address=address,
             uuid=uuid,
             name=name,
             description=description,
-            last_sync_timestamp=last_sync_timestamp
+            last_sync_timestamp=last_sync_timestamp,
+            discoverable=discoverable
         )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, address={self.address}, uuid={self.uuid}, name={self.name}, description={self.description})>'
+
+
+class ComponentInfo(Model):
+    __tablename__ = 'component_infos'
+
+    id: Mapped[int] = db.Column(db.Integer, primary_key=True)
+    uuid: Mapped[str] = db.Column(db.Text, nullable=False)
+    source_uuid: Mapped[str] = db.Column(db.Text, nullable=False)
+    address: Mapped[typing.Optional[str]] = db.Column(db.Text, nullable=True)
+    name: Mapped[typing.Optional[str]] = db.Column(db.Text, nullable=True)
+    discoverable: Mapped[bool] = db.Column(db.Boolean, nullable=False)
+    distance: Mapped[int] = db.Column(db.Integer, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["ComponentInfo"]]
+
+    def __repr__(self) -> str:
+        return f'<{type(self).__name__}(id={self.id}, address={self.address}, uuid={self.uuid}, name={self.name}, source_uuid={self.source_uuid}, distance={self.distance})>'

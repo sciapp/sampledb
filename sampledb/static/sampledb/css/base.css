@@ -1474,3 +1474,12 @@ table.diff tr.striped {
     width: calc(100% - 20px);
     margin: -7px;
 }
+
+#graph > .vis-network > div.vis-tooltip {
+    border: 0;
+    background-color: #333333;
+    color: #ffffff;
+    font-size: 10pt;
+    padding: 3px;
+    box-shadow: none;
+}

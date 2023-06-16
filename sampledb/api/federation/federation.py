@@ -10,7 +10,7 @@ import flask
 
 from ..utils import Resource, ResponseData
 from ...logic import errors
-from ...logic.components import Component
+from ...logic.components import Component, get_components, get_component_infos
 from ...logic.shares import get_shares_for_component, get_share, ObjectShare, set_object_share_import_status, parse_object_share_import_status
 from ...logic.federation.action_types import shared_action_type_preprocessor
 from ...logic.federation.actions import shared_action_preprocessor
@@ -261,3 +261,33 @@ class File(Resource):
         return {
             "message": f"file {file_id} of object {object_id} is not shareable"
         }, 403
+
+
+class Components(Resource):
+    @http_token_auth.login_required
+    def get(self) -> ResponseData:
+        return {
+            'header': _get_header(flask.g.component),
+            'discoverable': flask.current_app.config['ENABLE_FEDERATION_DISCOVERABILITY'],
+            'components': [
+                {
+                    'name': component.name,
+                    'uuid': component.uuid,
+                    'source_uuid': flask.current_app.config['FEDERATION_UUID'],
+                    'address': component.address,
+                    'distance': 1,
+                    'discoverable': component.discoverable
+                }
+                for component in get_components()
+            ] + [
+                {
+                    'name': component_info.name,
+                    'uuid': component_info.uuid,
+                    'source_uuid': component_info.source_uuid,
+                    'address': component_info.address,
+                    'distance': component_info.distance + 1,
+                    'discoverable': component_info.discoverable
+                }
+                for component_info in get_component_infos()
+            ]
+        }

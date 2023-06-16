@@ -3,6 +3,7 @@
 
 """
 import secrets
+import typing
 
 import flask
 import flask_login
@@ -16,10 +17,11 @@ from .federation_forms import AddComponentForm, EditComponentForm, SyncComponent
 from ..logic import errors
 from .utils import check_current_user_is_not_readonly
 from ..logic.component_authentication import remove_component_authentication_method, add_token_authentication, remove_own_component_authentication_method, add_own_token_authentication
-from ..logic.components import get_component, update_component, add_component, get_components, check_component_exists
+from ..logic.components import get_component, update_component, add_component, get_components, check_component_exists, get_component_infos, ComponentInfo
 from ..logic.federation.update import import_updates
 from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, \
     get_user_alias
+from ..logic.background_tasks import post_poke_components_task
 from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication
 from ..utils import FlaskResponseT
 
@@ -87,8 +89,9 @@ def component(component_id: int) -> FlaskResponseT:
             except errors.InsecureComponentAddressError:
                 edit_component_form.address.errors.append(_('Only secure communication via https is allowed'))
             except Exception:
-                edit_component_form.name.errors.append(_('Failed to add database'))
+                edit_component_form.name.errors.append(_('Failed to update database'))
             else:
+                post_poke_components_task()
                 flask.flash(_('Database information updated successfully'), 'success')
                 return flask.redirect(flask.url_for('.component', component_id=component_id))
     else:
@@ -200,6 +203,105 @@ def component(component_id: int) -> FlaskResponseT:
 @flask_login.login_required
 def federation() -> FlaskResponseT:
     components = get_components()
+
+    # federation graph
+    nodes = []
+    edges = []
+    if flask.current_app.config['FEDERATION_UUID']:
+        node = {
+            'label': flask.current_app.config['SERVICE_NAME'],
+            'title': flask.current_app.config['FEDERATION_UUID'],
+            'borderWidth': 2
+        }
+        nodes_by_uuid = {
+            flask.current_app.config['FEDERATION_UUID']: node
+        }
+        reachable_uuids = {
+            flask.current_app.config['FEDERATION_UUID']
+        }
+
+        for component in components:
+            if component.uuid == flask.current_app.config['FEDERATION_UUID'] or not component.discoverable:
+                continue
+            node = {
+                'label': component.get_name(),
+                'title': component.uuid
+            }
+            nodes_by_uuid[component.uuid] = node
+            reachable_uuids.add(component.uuid)
+
+        component_infos_by_uuid: typing.Dict[str, typing.List[ComponentInfo]] = {}
+        all_component_infos = get_component_infos()
+        for component_info in all_component_infos:
+            if not component_info.discoverable:
+                continue
+            if component_info.uuid not in component_infos_by_uuid:
+                component_infos_by_uuid[component_info.uuid] = []
+            component_infos_by_uuid[component_info.uuid].append(component_info)
+        did_update = True
+        while did_update:
+            did_update = False
+            for uuid, component_infos in component_infos_by_uuid.items():
+                if uuid in reachable_uuids:
+                    continue
+                for component_info in component_infos:
+                    if component_info.discoverable and component_info.source_uuid in reachable_uuids:
+                        reachable_uuids.add(component_info.uuid)
+                        did_update = True
+        for uuid, component_infos in component_infos_by_uuid.items():
+            if uuid in nodes_by_uuid or uuid not in reachable_uuids:
+                continue
+            component_infos_by_distance: typing.Dict[int, typing.List[ComponentInfo]] = {}
+            for component_info in component_infos:
+                if component_info.distance not in component_infos_by_distance:
+                    component_infos_by_distance[component_info.distance] = []
+                component_infos_by_distance[component_info.distance].append(component_info)
+            component_infos = component_infos_by_distance[min(component_infos_by_distance)]
+            names = {
+                component_info.name
+                for component_info in component_infos
+                if component_info.name
+            }
+            if not names:
+                name = None
+            elif len(names) == 1:
+                name = list(names)[0]
+            else:
+                name = ' / '.join(sorted(names))
+            node = {
+                'label': name or uuid,
+                'title': uuid
+            }
+            nodes_by_uuid[uuid] = node
+
+        node_ids_by_uuid = {
+            uuid: node_id
+            for node_id, uuid in enumerate(nodes_by_uuid)
+        }
+        for uuid, node in nodes_by_uuid.items():
+            node['id'] = node_ids_by_uuid[uuid]
+        nodes = list(nodes_by_uuid.values())
+
+        for component in components:
+            if component.uuid in node_ids_by_uuid and component.discoverable:
+                edges.append({
+                    'from': node_ids_by_uuid[flask.current_app.config['FEDERATION_UUID']],
+                    'to': node_ids_by_uuid[component.uuid],
+                    'arrows': {
+                        (True, True): 'from, to',
+                        (True, False): 'from',
+                        (False, True): 'to',
+                        (False, False): None
+                    }.get((component.import_token_available, component.export_token_available))
+                })
+        for component_info in all_component_infos:
+            if component_info.source_uuid in node_ids_by_uuid and component_info.uuid in node_ids_by_uuid and component_info.discoverable:
+                edges.append({
+                    'from': node_ids_by_uuid[component_info.source_uuid],
+                    'to': node_ids_by_uuid[component_info.uuid],
+                    'dashes': True
+                })
+
     add_component_form = AddComponentForm()
     if add_component_form.address.data is None:
         add_component_form.address.data = ''
@@ -243,9 +345,18 @@ def federation() -> FlaskResponseT:
             except Exception:
                 add_component_form.name.errors.append(_('Failed to add database'))
             else:
+                post_poke_components_task()
                 flask.flash(_('The database information has been added successfully'), 'success')
                 return flask.redirect(flask.url_for('.component', component_id=component_id))
-    return flask.render_template("other_databases/federation.html", current_user=flask_login.current_user, components=components, add_component_form=add_component_form, show_add_form=show_add_form)
+    return flask.render_template(
+        "other_databases/federation.html",
+        current_user=flask_login.current_user,
+        components=components,
+        add_component_form=add_component_form,
+        show_add_form=show_add_form,
+        nodes=nodes,
+        edges=edges,
+    )
 
 
 @frontend.route('/other-databases/alias/', methods=['GET', 'POST'])

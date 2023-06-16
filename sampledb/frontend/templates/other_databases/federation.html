@@ -30,6 +30,9 @@
     <li><a href="{{ url_for('.component', component_id=component.id) }}">{{ component.get_name() }}</a> {% if component.address is not none %}(<a href="{{ component.address }}">{{ component.address }}</a>){% endif %}</li>
     {% endfor %}
   </ul>
+  {% if nodes and edges %}
+  <div id="graph" style="height: 400px;"></div>
+  {% endif %}
   {% endif %}
   {% if current_user.is_admin %}
   <div class="modal fade" id="addComponentModal" tabindex="-1" role="dialog" aria-labelledby="addComponentModalLabel">
@@ -83,6 +86,7 @@
 
 {% block scripts %}
   {{ super() }}
+  <script src="{{ fingerprinted_static('visjs/js/vis-network.min.js') }}"></script>
   <script nonce="{{ generate_inline_script_nonce() }}">
     {% if show_add_form %}
     $(document).ready(function() {
@@ -144,6 +148,54 @@
         name_group.removeClass('has-error').removeClass('has-success');
         name_group.find('.help-block').remove();
       });
+      {% if nodes and edges %}
+      // create an array with nodes
+      let nodes = new vis.DataSet(
+        {{ nodes | tojson }}
+      );
+      // create an array with edges
+      let edges = new vis.DataSet(
+        {{ edges | tojson }}
+      );
+
+      // create a network
+      let container = document.getElementById("graph");
+      let data = {
+        nodes: nodes,
+        edges: edges
+      };
+      let options = {
+        layout: {
+          randomSeed: 9 // prevent the graph from being random
+        },
+        interaction: {
+          zoomView: false,
+          dragView: false,
+          dragNodes: false,
+          selectable: false,
+          tooltipDelay: 0
+        },
+        nodes: {
+          shape: 'box',
+          color: {
+            background: '#ffffff',
+            border: '#222222'
+          }
+        },
+        edges: {
+          arrowStrikethrough: false,
+          arrows: {
+            to: {
+              scaleFactor: 0.25
+            },
+            from: {
+              scaleFactor: 0.25
+            }
+          }
+        }
+      };
+      let network = new vis.Network(container, data, options);
+      {% endif %}
     });
   </script>
 {% endblock %}

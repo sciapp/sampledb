@@ -339,6 +339,7 @@ def test_status_codes(flask_server, user, driver):
         'eln_imports': 200,
         f'eln_imports/{eln_import_id}': 302,
         'favicon.ico': 200,
+        'federation/v1/shares/components/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token

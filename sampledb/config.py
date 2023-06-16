@@ -111,6 +111,7 @@ def parse_configuration_values() -> None:
         'ENABLE_FUNCTION_CACHES',
         'ENABLE_CONTENT_SECURITY_POLICY',
         'ENABLE_ELN_FILE_IMPORT',
+        'ENABLE_FEDERATION_DISCOVERABILITY',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -653,6 +654,7 @@ HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
 MAX_BATCH_SIZE = 100
 
 FEDERATION_UUID = None
+ENABLE_FEDERATION_DISCOVERABILITY = True
 ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False

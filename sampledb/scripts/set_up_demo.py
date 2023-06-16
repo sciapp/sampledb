@@ -665,6 +665,30 @@ This example shows how Markdown can be used for instrument Notes.
 
         UUID = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
         component = sampledb.logic.components.add_component(UUID, 'Example SampleDB', None, 'Example component database for demonstration purposes. Do not expect it to function.')
+        sampledb.logic.federation.components.parse_import_component_info({
+            'uuid': 'e50671c5-2b31-4251-a24b-5b39bb6aa6e6',
+            'source_uuid': UUID,
+            'distance': 1,
+            'name': None,
+            'address': None,
+            'discoverable': True
+        }, component)
+        sampledb.logic.federation.components.parse_import_component_info({
+            'uuid': '9b9c5c43-4a7a-4a71-acc8-e75e706feaac',
+            'source_uuid': UUID,
+            'distance': 1,
+            'name': 'Other SampleDB',
+            'address': 'http://example.org',
+            'discoverable': True
+        }, component)
+        sampledb.logic.federation.components.parse_import_component_info({
+            'uuid': 'e50671c5-2b31-4251-a24b-5b39bb6aa6e6',
+            'source_uuid': '9b9c5c43-4a7a-4a71-acc8-e75e706feaac',
+            'distance': 2,
+            'name': None,
+            'address': None,
+            'discoverable': True
+        }, component)
         sampledb.logic.federation.locations.parse_import_location({
             'location_id': 1,
             'component_uuid': UUID,
