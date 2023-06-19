@@ -1,7 +1,7 @@
 {% if property_label_class is not defined %}
   {% set property_label_class = 'col-md-3' %}
 {% endif %}
-<label class="{{ property_label_class }}" style="text-align: right">
+<label class="{{ property_label_class }}" style="text-align: right; padding-left: {{ indent_level * 10 + 10 + 15 }}px">
   {{ schema.title | get_translated_text }}
   {% set search_url = get_search_url(search_query_attribute, data, metadata_language=metadata_language) %}
   {% if search_url %}

@@ -85,6 +85,8 @@
   {% block includes %}
       {# counter for plotly_chart_plots #}
       {% set plot_counter = namespace(value=0) %}
+      {% set indent_level = 0 %}
+      {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
           {% if previous_version_data_diff %}
             {% set diff = previous_version_data_diff %}
@@ -334,6 +336,8 @@
           {% set data = elem.object.data %}
           {% set schema = elem.object.schema %}
           {% set files = elem.files %}
+          {% set indent_level = 0 %}
+          {% set show_indent_border = False %}
           {% include "objects/view/any.html" %}
         {% endif %}
       </div>
