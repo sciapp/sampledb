@@ -116,7 +116,7 @@
       {% endif %}
       <div class="col-md-9 col-md-offset-3" style="padding-top: 12px">
         <label style="font-weight: 400">
-          <input type="checkbox" name="all_users_read_permissions" value="1" {% if request.form.get('all_users_read_permissions') == '1' %}checked="checked"{% endif %}>
+          <input type="checkbox" name="all_users_read_permissions" value="1" {% if request.form.get('all_users_read_permissions') == '1' or ('permissions_method' not in request.form and action.objects_readable_by_all_users_by_default) %}checked="checked"{% endif %}>
           {{ _('Also grant READ permissions to all signed-in users') }}
         </label>
       </div>

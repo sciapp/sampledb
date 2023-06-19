@@ -57,6 +57,7 @@ class ActionForm(FlaskForm):
     short_description_is_markdown = BooleanField(default=None)
     translations = StringField(validators=[DataRequired()])
     usable_by = SelectField(choices=['with_permissions', 'admins', 'nobody'])
+    objects_readable_by_all_users_by_default = BooleanField(default=None)
 
     def validate_type(form, field: IntegerField) -> None:
         try:
@@ -415,6 +416,7 @@ def show_action_form(
                 action_form.usable_by.data = 'admins'
             else:
                 action_form.usable_by.data = 'with_permissions'
+            action_form.objects_readable_by_all_users_by_default.data = action.objects_readable_by_all_users_by_default
         elif previous_action is not None:
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
@@ -422,6 +424,7 @@ def show_action_form(
             action_form.type.data = previous_action.type_id
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
             action_form.usable_by.data = 'with_permissions'
+            action_form.objects_readable_by_all_users_by_default.data = previous_action.objects_readable_by_all_users_by_default
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -559,6 +562,7 @@ def show_action_form(
         short_description_is_markdown = action_form.short_description_is_markdown.data
         admin_only = action_form.usable_by.data == 'admins'
         disable_create_objects = action_form.usable_by.data == 'nobody'
+        objects_readable_by_all_users_by_default = action_form.objects_readable_by_all_users_by_default.data
 
         if instrument_id_str is not None:
             try:
@@ -584,7 +588,8 @@ def show_action_form(
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown,
                 admin_only=admin_only,
-                disable_create_objects=disable_create_objects
+                disable_create_objects=disable_create_objects,
+                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
             )
         else:
             update_action(
@@ -594,7 +599,8 @@ def show_action_form(
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown,
                 admin_only=admin_only,
-                disable_create_objects=disable_create_objects
+                disable_create_objects=disable_create_objects,
+                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
             )
         set_action_permissions_for_all_users(action.id, Permissions.READ if is_public else Permissions.NONE)
 
