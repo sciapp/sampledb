@@ -5156,6 +5156,9 @@ msgstr "Berechtigungen von anderem Objekt kopieren"
 msgid "No object selected"
 msgstr "Kein Objekt ausgewählt"
 
+msgid "Also grant READ permissions to all signed-in users"
+msgstr "Zusätzlich allen angemeldeten Nutzern LESE-Berechtigungen geben"
+
 msgid "Create Instrument Log Entry"
 msgstr "Instrument-Log-Eintrag erstellen"
 

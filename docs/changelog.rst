@@ -9,6 +9,7 @@ Currently in development.
 
 - Added .eln file import
 - Allowed updating actions via the HTTP API
+- Allow granting READ permissions to all signed-in users during object creation
 
 Version 0.23.1
 --------------
