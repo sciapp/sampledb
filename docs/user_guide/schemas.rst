@@ -991,7 +991,7 @@ Properties of this type are a special case of object reference, limited to refer
 Time Series
 ```````````
 
-Properties of the ``timeseries`` type represent time series, i.e. a sequence of physical quantities or unitless numbers at specific points in time. The ``units`` attribute is mandatory, so for unitless numbers it must be set to ``1``.
+Properties of the ``timeseries`` type represent time series, i.e. a sequence of physical quantities or unitless numbers at specific points in time or relative times. The ``units`` attribute is mandatory, so for unitless numbers it must be set to ``1``.
 
 .. code-block:: json
     :caption: A temperature time series property

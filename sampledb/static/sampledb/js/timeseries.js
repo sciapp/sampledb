@@ -77,7 +77,7 @@ $(function() {
               name += ' (' + ts.id.replaceAll('__', ' ➜ ') + ')';
             }
             chart_data.push({
-              x: ts.data.local_datetimes_strings,
+              x: ts.data.times_strings,
               y: ts.data.magnitudes,
               type: 'scatter',
               name: name
@@ -116,9 +116,9 @@ $(function() {
       let table = table_modal.find('table');
       let tbody = table.find('tbody');
       tbody.html('');
-      for (let i = 0; i < timeseries_data.local_datetimes_strings.length; i++) {
+      for (let i = 0; i < timeseries_data.times_strings.length; i++) {
           let tr = $('<tr/>').appendTo(tbody);
-          tr.append('<td>' + timeseries_data.local_datetimes_strings[i] + '</td>');
+          tr.append('<td>' + timeseries_data.times_strings[i] + '</td>');
           tr.append('<td>' + timeseries_data.magnitude_strings[i] + timeseries_data.units + '</td>');
       }
       table_modal.modal();

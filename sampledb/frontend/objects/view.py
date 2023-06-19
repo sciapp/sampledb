@@ -1173,7 +1173,11 @@ def download_timeseries_data(object_id: int, timeseries_id: str) -> FlaskRespons
         return flask.abort(404)
     csv_io = io.StringIO()
     writer = csv.writer(csv_io, quoting=csv.QUOTE_NONNUMERIC)
-    writer.writerow(['utc_datetime', 'magnitude in ' + str(data['units']), 'magnitude in base units'])
+    if isinstance(data['data'][0][0], str):
+        time_row_name = 'utc_datetime'
+    else:
+        time_row_name = 'time in s'
+    writer.writerow([time_row_name, 'magnitude in ' + str(data['units']), 'magnitude in base units'])
     writer.writerows(data['data'])
     binary_csv_io = io.BytesIO(csv_io.getvalue().encode('utf-8'))
     return flask.send_file(
