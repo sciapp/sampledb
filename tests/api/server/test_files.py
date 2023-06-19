@@ -77,7 +77,7 @@ def test_create_invalid_file(flask_server, object, auth, tmpdir):
 
     data = {
         'object_id': object.id+1,
-        'storage': 'local',
+        'storage': 'database',
         'url': 'https://iffsamples.fz-juelich.de'
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
@@ -95,82 +95,12 @@ def test_create_invalid_file(flask_server, object, auth, tmpdir):
     }
 
     data = {
-        'storage': 'invalid'
-    }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
-    assert r.status_code == 400
-    assert r.json() == {
-        "message": "storage must be 'local', 'local_reference', 'database' or 'url'"
-    }
-
-    files = sampledb.logic.files.get_files_for_object(object.id)
-    assert len(files) == 0
-
-
-def test_create_local_file(flask_server, object, auth, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
-    files = sampledb.logic.files.get_files_for_object(object.id)
-    assert len(files) == 0
-    data = {
-        'storage': 'local',
-        'original_file_name': 'test.txt',
-        'base64_content': base64.b64encode('test'.encode('utf8')).decode('utf8')
-    }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
-    assert r.status_code == 201
-    files = sampledb.logic.files.get_files_for_object(object.id)
-    assert len(files) == 1
-    assert files[0].storage == 'local'
-    assert files[0].original_file_name == 'test.txt'
-    with files[0].open() as f:
-        assert f.read().decode('utf-8') == 'test'
-
-
-def test_create_invalid_local_file(flask_server, object, auth, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
-    files = sampledb.logic.files.get_files_for_object(object.id)
-    assert len(files) == 0
-
-    data = {
-        'storage': 'local',
-        'file_name': 'test.txt'
-    }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
-    assert r.status_code == 400
-    assert r.json() == {
-        "message": "invalid key 'file_name'"
-    }
-
-    data = {
         'storage': 'local'
     }
     r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
     assert r.status_code == 400
     assert r.json() == {
-        "message": "original_file_name must be set for files with local or database storage"
-    }
-
-    data = {
-        'storage': 'local',
-        'original_file_name': 'test.txt'
-    }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
-    assert r.status_code == 400
-    assert r.json() == {
-        "message": "base64_content must be set for files with local or database storage"
-    }
-
-    data = {
-        'storage': 'local',
-        'original_file_name': 'test.txt',
-        'base64_content': "test!"
-    }
-    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
-    assert r.status_code == 400
-    assert r.json() == {
-        "message": "base64_content must be base64 encoded"
+        "message": "storage must be 'local_reference', 'database' or 'url'"
     }
 
     files = sampledb.logic.files.get_files_for_object(object.id)

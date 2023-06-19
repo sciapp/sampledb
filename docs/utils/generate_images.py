@@ -203,7 +203,7 @@ def comments(base_url, driver, object):
 
 def activity_log(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_local_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
     sampledb.logic.comments.create_comment(object.id, user.id, "This is an example comment.")
 
     width = 1280
@@ -271,10 +271,10 @@ def unread_notification_icon(base_url, driver):
 
 def files(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_local_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
-    sampledb.logic.files.create_local_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
     with open('docs/utils/photo.jpg', 'rb') as image_file:
-        sampledb.logic.files.create_local_file(object.id, user.id, "photo.jpg", lambda stream: stream.write(image_file.read()))
+        sampledb.logic.files.create_database_file(object.id, user.id, "photo.jpg", lambda stream: stream.write(image_file.read()))
 
     width = 1280
     max_height = 1000
@@ -313,7 +313,7 @@ def files(base_url, driver, object):
 
 def file_information(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_local_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
     sampledb.logic.files.update_file_information(object.id, 0, user.id, 'Scanned Notes', 'This is an example file.')
 
     width = 1280

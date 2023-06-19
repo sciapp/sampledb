@@ -16,6 +16,8 @@ To improve this, database file storage was added to SampleDB and made the defaul
 
 As of version 0.21, local file storage is deprecated and administrators are urged to move all remaining locally stored files to database storage.
 
+As of version 0.24, files with local storage cannot be created via the API.
+
 Synchronous Loading of Object Lists
 -----------------------------------
 

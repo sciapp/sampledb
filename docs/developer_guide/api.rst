@@ -2060,10 +2060,10 @@ Uploading a file
         Content-Type: application/json
         Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/files/0
 
-    :<json string storage: how the file is stored (local)
+    :<json string storage: how the file is stored (either database or local_reference)
     :<json string original_file_name: the original name of the file
     :<json string base64_content: the base64 encoded content of the file
-    :<json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
+    :<json object hash: hash algorithm and hexdigest of the content (optional)
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
