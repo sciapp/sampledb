@@ -1256,57 +1256,88 @@ def to_timeseries_data(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
 ) -> typing.Dict[str, typing.Any]:
-    entries = list(sorted(
-        (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
-        for entry in data['data']
-    ))
-    utc_datetimes = [
-        entry[0]
-        for entry in entries
-    ]
-    magnitudes = [
-        entry[1]
-        for entry in entries
-    ]
+    utc_datetimes: typing.List[datetime] = []
+    relative_times: typing.List[typing.Union[int, float]] = []
+    if isinstance(data['data'][0][0], str):
+        entries = list(sorted(
+            (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
+            for entry in data['data']
+        ))
+        utc_datetimes = [
+            entry[0]
+            for entry in entries
+        ]
+        magnitudes = [
+            entry[1]
+            for entry in entries
+        ]
+    else:
+        r_entries = list(sorted((entry[0], entry[1], entry[2]) for entry in data['data']))
+        relative_times = [
+            entry[0]
+            for entry in r_entries
+        ]
+        magnitudes = [
+            entry[1]
+            for entry in r_entries
+        ]
     display_digits = schema.get('display_digits')
     magnitude_strings = [
         custom_format_number(magnitude, display_digits)
         for magnitude in magnitudes
     ]
-    if len(utc_datetimes) > 1:
-        # determine time-weighted average and standard deviation
-        time_weights = np.zeros(len(magnitudes))
+    time_weights = np.zeros(len(magnitudes))
+    # determine time-weighted average and standard deviation
+    if relative_times and len(relative_times) > 1:
+        time_weights[0] = (relative_times[1] - relative_times[0]) / 2
+        time_weights[-1] = (relative_times[-1] - relative_times[-2]) / 2
+        for i in range(1, len(relative_times) - 1):
+            rel_previous_time = relative_times[i - 1]
+            rel_next_time = relative_times[i + 1]
+            time_weights[i] = (rel_next_time - rel_previous_time) / 2
+        magnitude_average = np.average(magnitudes, weights=time_weights)
+        magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+    elif len(utc_datetimes) > 1:
         time_weights[0] = (utc_datetimes[1] - utc_datetimes[0]).total_seconds() / 2
         time_weights[-1] = (utc_datetimes[-1] - utc_datetimes[-2]).total_seconds() / 2
         for i in range(1, len(utc_datetimes) - 1):
-            previous_utc_datetime = utc_datetimes[i - 1]
-            next_utc_datetime = utc_datetimes[i + 1]
-            time_weights[i] = (next_utc_datetime - previous_utc_datetime).total_seconds() / 2
+            previous_time = utc_datetimes[i - 1]
+            next_time = utc_datetimes[i + 1]
+            time_weights[i] = (next_time - previous_time).total_seconds() / 2
         magnitude_average = np.average(magnitudes, weights=time_weights)
         magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
     else:
         magnitude_average = magnitudes[0]
         magnitude_stddev = None
-    # convert datetimes to local timezone
-    local_timezone = pytz.timezone(current_user.timezone or 'UTC')
-    local_datetimes = [
-        pytz.utc.localize(utc_datetime).astimezone(local_timezone)
-        for utc_datetime in utc_datetimes
-    ]
-    local_datetimes_strings = [
-        local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
-        for local_datetime in local_datetimes
-    ]
+    same_day = None
+    if utc_datetimes:
+        # convert datetimes to local timezone
+        local_timezone = pytz.timezone(current_user.timezone or 'UTC')
+        local_datetimes = [
+            pytz.utc.localize(utc_datetime).astimezone(local_timezone)
+            for utc_datetime in utc_datetimes
+        ]
+        time_strings = [
+            local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+            for local_datetime in local_datetimes
+        ]
+        same_day = utc_datetimes[0].date() == utc_datetimes[-1].date()
+    else:
+        time_strings = [
+            custom_format_number(time, display_digits) + ' s'
+            for time in relative_times
+        ]
     return {
         'title': get_translated_text(schema.get('title')),
         'units': ' ' + prettify_units(data['units']) if data['dimensionality'] != 'dimensionless' else '',
+        'relative_times': relative_times,
         'utc_datetimes': utc_datetimes,
-        'local_datetimes_strings': local_datetimes_strings,
+        'times_strings': time_strings,
         'magnitudes': magnitudes,
         'magnitude_strings': magnitude_strings,
         'magnitude_average': magnitude_average,
         'magnitude_stddev': magnitude_stddev,
-        'same_day': utc_datetimes[0].date() == utc_datetimes[-1].date()
+        'same_day': same_day
     }
 
 
@@ -1316,16 +1347,17 @@ def to_timeseries_csv(
 ) -> str:
     rows = copy.deepcopy(rows)
     user_timezone = pytz.timezone(current_user.timezone or 'UTC')
-    if user_timezone != pytz.utc:
-        # convert datetimes from UTC if necessary
-        for row in rows:
-            try:
-                parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                continue
-            local_datetime = pytz.utc.localize(parsed_datetime)
-            utc_datetime = local_datetime.astimezone(user_timezone)
-            row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+    if isinstance(rows[0][0], str):
+        if user_timezone != pytz.utc:
+            # convert datetimes from UTC if necessary
+            for row in rows:
+                try:
+                    parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
+                except ValueError:
+                    continue
+                local_datetime = pytz.utc.localize(parsed_datetime)
+                utc_datetime = local_datetime.astimezone(user_timezone)
+                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
     csv_file = io.StringIO()
     writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(rows)

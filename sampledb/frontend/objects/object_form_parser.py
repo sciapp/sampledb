@@ -660,23 +660,25 @@ def parse_timeseries_form_data(
             # skip header rows
             timeseries_data = timeseries_data[1:]
         if not timeseries_data:
-            raise ValueError(_('invalid timeseries CSV data, expected datetime string, magnitude and (optional) magnitude in base units'))
+            raise ValueError(_('invalid timeseries CSV data, expected datetime string or relative time in seconds, magnitude and (optional) magnitude in base units'))
+        is_relative_time = len(timeseries_data[0]) > 0 and type(timeseries_data[0][0]) in (int, float)
         user_timezone = pytz.timezone(current_user.timezone or 'UTC')
-        if user_timezone != pytz.utc:
-            # convert datetimes to UTC if necessary
-            for row in timeseries_data:
-                if len(row) not in [2, 3] or not isinstance(row[0], str) or not all(type(entry) in (float, int) for entry in row[1:]):
-                    raise ValueError(_('invalid timeseries CSV data, expected datetime string, magnitude and (optional) magnitude in base units'))
+        for row in timeseries_data:
+            if len(row) not in [2, 3] or not ((not is_relative_time and isinstance(row[0], str)) or (is_relative_time and type(row[0]) in (float, int))) or not all(type(entry) in (float, int) for entry in row[1:]):
+                raise ValueError(_('invalid timeseries CSV data, expected datetime string or relative time in seconds, magnitude and (optional) magnitude in base units'))
+            if not is_relative_time:
                 try:
                     parsed_datetime = datetime.datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
                 except ValueError as exc:
                     raise ValueError(_('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff')) from exc
-                try:
-                    local_datetime = user_timezone.localize(parsed_datetime)
-                    utc_datetime = local_datetime.astimezone(pytz.utc)
-                except Exception as exc:
-                    raise ValueError(_('unable to convert datetime from your timezone to UTC')) from exc
-                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+                if user_timezone != pytz.utc:
+                    # convert datetimes to UTC if necessary
+                    try:
+                        local_datetime = user_timezone.localize(parsed_datetime)
+                        utc_datetime = local_datetime.astimezone(pytz.utc)
+                    except Exception as exc:
+                        raise ValueError(_('unable to convert datetime from your timezone to UTC')) from exc
+                    row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
     data = {
         '_type': 'timeseries',
         'data': timeseries_data,

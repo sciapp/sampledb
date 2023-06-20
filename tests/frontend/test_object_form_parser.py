@@ -293,6 +293,57 @@ def test_parse_timeseries_form_data(mock_current_user):
     assert errors
     assert data is None
 
+    form_data[id_prefix + '__data'][0] = '''-0.1,1.0
+0.75,2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert not errors
+    assert data['data'] == [
+        [-0.1, 1.0, 0.001],
+        [0.75, 2.0, 0.002]
+    ]
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",1.0
+1.0,2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = '''NaN,1.0
+1.0,2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = '''0,1.0
+Inf,2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",NaN
+"2023-01-02 03:04:06.678900",2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert errors
+    assert data is None
+
+    form_data[id_prefix + '__data'][0] = '''"2023-01-02 03:04:05.678900",Inf
+"2023-01-02 03:04:06.678900",2.0
+'''
+    errors = {}
+    data = object_form_parser.parse_timeseries_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert errors
+    assert data is None
+
 
 def test_parse_file_form_data():
     id_prefix = 'object__file'
