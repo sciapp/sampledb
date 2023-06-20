@@ -310,20 +310,34 @@ class Objects(Resource):
             }, 400
         elif need_object_references:
             object_references = get_referencing_object_ids({object.id for object in objects})
-            return [
-                {
-                    'object_id': object.object_id,
-                    'version_id': object.version_id,
-                    'action_id': object.action_id,
-                    'schema': object.schema,
-                    'data': object.data,
-                    'fed_object_id': object.fed_object_id,
-                    'fed_version_id': object.fed_version_id,
-                    'component_id': object.component_id,
-                    'referencing_object_ids': [ref.object_id for ref in object_references[object.object_id]] if object_references.get(object.object_id) is not None else []
-                }
-                for object in objects
-            ], 200
+            ret = []
+            for object in objects:
+                references = object_references[object.object_id]
+                referenced: typing.List[typing.Dict[str, typing.Any]] = []
+                for ref in references:
+                    if ref is not None:
+                        reference_dict: typing.Dict[str, typing.Any] = {'object_id': ref.object_id}
+                        if ref.component_uuid is not None:
+                            reference_dict['component_uuid'] = ref.component_uuid
+                        if ref.eln_source_url is not None:
+                            reference_dict['eln_source_url'] = ref.eln_source_url
+                        if ref.eln_object_url is not None:
+                            reference_dict['eln_object_id'] = ref.eln_object_url
+                        referenced.append(reference_dict)
+                ret.append(
+                    {
+                        'object_id': object.object_id,
+                        'version_id': object.version_id,
+                        'action_id': object.action_id,
+                        'schema': object.schema,
+                        'data': object.data,
+                        'fed_object_id': object.fed_object_id,
+                        'fed_version_id': object.fed_version_id,
+                        'component_id': object.component_id,
+                        'referencing_objects': referenced
+                    }
+                )
+            return ret, 200
         else:
             return [
                 {

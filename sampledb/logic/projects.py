@@ -950,7 +950,7 @@ def sort_project_id_hierarchy_list(
                     sublist_indices[previous_id] = [i, i]
 
         new_project_id_hierarchy_list = []
-        for i in sorted(current_level_indices, key=lambda i: sort_keys[project_id_hierarchy_list[i][1]]):  # type: ignore
+        for i in sorted(current_level_indices, key=lambda i: sort_keys[project_id_hierarchy_list[i][1]]):
             new_project_id_hierarchy_list.append(project_id_hierarchy_list[i])
             project_id = project_id_hierarchy_list[i][1]
             if project_id in sublist_indices:
