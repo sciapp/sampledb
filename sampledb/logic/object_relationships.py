@@ -169,7 +169,7 @@ def build_related_objects_tree(
     return _assemble_tree(subtrees[object_ref][0], objects_by_id, subtrees)
 
 
-def _get_referencing_object_ids(
+def get_referencing_object_ids(
         object_ids: typing.Set[int]
 ) -> typing.Dict[int, typing.Set[ObjectRef]]:
     if not object_ids:
@@ -248,7 +248,7 @@ def _gather_subtrees(
                 referencing_object_ids = referencing_object_ids_by_id.get(object_ref.object_id)
                 referenced_object_ids = referenced_object_ids_by_id.get(object_ref.object_id)
                 if referencing_object_ids is None:
-                    referencing_object_ids = _get_referencing_object_ids({object_ref.object_id})[object_ref.object_id]
+                    referencing_object_ids = get_referencing_object_ids({object_ref.object_id})[object_ref.object_id]
                 if referenced_object_ids is None:
                     referenced_object_ids = _get_referenced_object_ids({object_ref.object_id})[object_ref.object_id]
 
@@ -265,7 +265,7 @@ def _gather_subtrees(
                     for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2])
                     if child_object_ref.is_local and child_object_ref not in subtrees
                 }
-                referencing_object_ids_by_id.update(_get_referencing_object_ids(local_child_object_ids))
+                referencing_object_ids_by_id.update(get_referencing_object_ids(local_child_object_ids))
                 referenced_object_ids_by_id.update(_get_referenced_object_ids(local_child_object_ids))
     return subtrees
 
@@ -346,7 +346,7 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
 
     referencing_objects = {
         object_ref.object_id
-        for object_ref in _get_referencing_object_ids({object.object_id})[object.object_id]
+        for object_ref in get_referencing_object_ids({object.object_id})[object.object_id]
         if object_ref.is_local}
     referenced_objects = {
         object_ref.object_id
