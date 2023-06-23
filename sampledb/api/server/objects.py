@@ -16,7 +16,7 @@ from ...logic.action_permissions import get_user_action_permissions
 from ...logic.object_search import generate_filter_func, wrap_filter_func
 from ...logic.objects import get_object, update_object, create_object
 from ...logic.object_permissions import get_objects_with_permissions
-from ...logic.object_relationships import get_related_object_ids
+from ...logic.object_relationships import get_referencing_object_ids, get_related_object_ids
 from ...logic.schemas.data_diffs import apply_diff, calculate_diff
 from ...logic import errors, users
 from ... import models
@@ -299,6 +299,7 @@ class Objects(Resource):
         except Exception as e:
             search_notes.append(('error', f"Error during search: {e}", 0, 0))
             objects = []
+        need_object_references = flask.request.args.get('get_referencing_objects', False)
         if any(search_note[0] == 'error' for search_note in search_notes):
             return {
                 'message': '\n'.join(
@@ -307,6 +308,36 @@ class Objects(Resource):
                     if search_note[0] == 'error'
                 )
             }, 400
+        elif need_object_references:
+            object_references = get_referencing_object_ids({object.id for object in objects})
+            ret = []
+            for object in objects:
+                references = object_references[object.object_id]
+                referenced: typing.List[typing.Dict[str, typing.Any]] = []
+                for ref in references:
+                    if ref is not None:
+                        reference_dict: typing.Dict[str, typing.Any] = {'object_id': ref.object_id}
+                        if ref.component_uuid is not None:
+                            reference_dict['component_uuid'] = ref.component_uuid
+                        if ref.eln_source_url is not None:
+                            reference_dict['eln_source_url'] = ref.eln_source_url
+                        if ref.eln_object_url is not None:
+                            reference_dict['eln_object_id'] = ref.eln_object_url
+                        referenced.append(reference_dict)
+                ret.append(
+                    {
+                        'object_id': object.object_id,
+                        'version_id': object.version_id,
+                        'action_id': object.action_id,
+                        'schema': object.schema,
+                        'data': object.data,
+                        'fed_object_id': object.fed_object_id,
+                        'fed_version_id': object.fed_version_id,
+                        'component_id': object.component_id,
+                        'referencing_objects': referenced
+                    }
+                )
+            return ret, 200
         else:
             return [
                 {

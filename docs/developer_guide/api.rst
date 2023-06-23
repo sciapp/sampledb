@@ -32,6 +32,8 @@ Reading a list of all objects
 
     If the parameter :code:`name_only` is provided, the object data and schema will be reduced to the name property, omitting all other properties and schema information.
 
+    If the parameter :code:`get_referencing_objects` is provided, the object data include referencing object IDs.
+
     **Example request**:
 
     .. sourcecode:: http
