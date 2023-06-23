@@ -1,7 +1,7 @@
 .. _download_service:
 
 Download Service
-=============
+================
 
 The Download Service is an additional micro service. It can be used to download linked and database files as a zip file.
 

@@ -157,7 +157,7 @@ For more information on the SciCat export, see :ref:`scicat_export`.
 .. _download_service_configuration:
 
 Download Service
--------------
+----------------
 
 .. list-table:: Download Service Configuration Environment Variables
    :header-rows: 1
