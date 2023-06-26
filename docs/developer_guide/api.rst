@@ -12,7 +12,7 @@ Authentication
 
 The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`. If you have a two factor authentication method enabled, you cannot use your user credentials to use the API and will have to use an API token instead.
 
-You can use these authentication methods to create a short-lived :ref:`access token <access_tokens>`_, along with a refresh token to generate new access tokens.
+You can use these authentication methods to create a short-lived :ref:`access token <access_tokens>`, along with a refresh token to generate new access tokens.
 
 Please make sure to use HTTPS when accessing the API.
 

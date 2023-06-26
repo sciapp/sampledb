@@ -33,7 +33,7 @@ master_doc = 'index'
 
 exclude_patterns = []
 
-language = None
+language = 'en'
 
 templates_path = ['templates']
 

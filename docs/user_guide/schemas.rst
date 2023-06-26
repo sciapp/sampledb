@@ -647,6 +647,7 @@ max_magnitude
 The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
 
 .. _metadata_quantity_object:
+
 Quantity Objects
 ^^^^^^^^^^^^^^^^
 
