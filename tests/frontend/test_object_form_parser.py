@@ -4,6 +4,7 @@
 """
 import pytest
 
+import sampledb
 from sampledb.frontend.objects import object_form_parser
 
 
@@ -387,3 +388,74 @@ def test_parse_file_form_data():
     data = object_form_parser.parse_file_form_data(form_data, schema, id_prefix, errors, file_names_by_id={1: 'test.txt'})
     assert errors
     assert data is None
+
+
+def test_parse_object_reference_form_data():
+    id_prefix = 'object__sample'
+    schema = {
+        'type': 'object_reference',
+        'title': 'Example Object Reference'
+    }
+
+    form_data = {
+        id_prefix + '__oid': ['1']
+    }
+    errors = {}
+    data = object_form_parser.parse_object_reference_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert errors
+    assert data is None
+
+    user = sampledb.logic.users.create_user(name="Basic User", email="example@example.com", type=sampledb.models.UserType.PERSON)
+    sample_schema = {
+        'title': 'Example Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': {'en': 'Object Name', 'de': 'Objektname'},
+                'type': 'text',
+                'languages': 'all'
+            }
+        },
+        'required': ['name']
+    }
+    sample_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=sample_schema
+    )
+    sample_data = {
+        'name': {
+            '_type': 'text',
+            'text': {
+                'en': 'Sample'
+            }
+        }
+    }
+    sample = sampledb.logic.objects.create_object(
+        action_id=sample_action.id,
+        data=sample_data,
+        user_id=user.id
+    )
+
+    form_data = {
+        id_prefix + '__oid': [str(sample.object_id)]
+    }
+    errors = {}
+    data = object_form_parser.parse_object_reference_form_data(form_data, schema, id_prefix, errors, file_names_by_id={})
+    assert not errors
+    assert data == {
+        '_type': 'object_reference',
+        'object_id': sample.object_id
+    }
+
+    previous_data = {
+        '_type': 'object_reference',
+        'object_id': 1000,
+        'component_uuid': 'ee36dd7f-72b0-44b6-afa8-752e920fbb32'
+    }
+    form_data = {
+        id_prefix + '__oid': ['-1']
+    }
+    errors = {}
+    data = object_form_parser.parse_object_reference_form_data(form_data, schema, id_prefix, errors, file_names_by_id={}, previous_data=previous_data)
+    assert not errors
+    assert data == previous_data
