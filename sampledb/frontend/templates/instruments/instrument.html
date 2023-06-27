@@ -382,24 +382,11 @@
                     <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>{{ _('Browse...') }}<input id="input-file-upload-{{ log_entry.id }}" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
                   </div>
                 </div>
-                  {% if instrument_log_entry_form.objects.choices or config["LOAD_OBJECTS_IN_BACKGROUND"] %}
                   <div class="form-group" style="margin: 15px 0" id="wrapper-object-attachments-{{ log_entry.id }}">
                     <label for="select-object-attachments-{{ log_entry.id }}">{{ _('Add object attachments') }}</label>
                     <select id="select-object-attachments-{{ log_entry.id }}" name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No objects selected') }}" data-width="100%" data-sampledb-required-perm="1" data-sampledb-remove="{% for object_attachment in log_entry.object_attachments %}{% if not object_attachment.is_hidden%}{{ object_attachment.object_id }},{% endif %}{% endfor %}-1" data-sampledb-empty-hide="#wrapper-object-attachments-{{ log_entry.id }}">
-                      {% for choice in instrument_log_entry_form.objects.choices %}
-                        {% set ns = namespace(found=False) %}
-                        {% for object_attachment in log_entry.object_attachments %}
-                          {% if object_attachment.object_id | string == choice[0] and not object_attachment.is_hidden%}
-                            {% set ns.found = True %}
-                          {% endif %}
-                        {% endfor %}
-                        {% if not ns.found %}
-                        <option value="{{ choice[0] }}">{{ choice[1] }}</option>
-                        {% endif %}
-                      {% endfor %}
                     </select>
                   </div>
-                  {% endif %}
                   {% if instrument_log_entry_form.categories.choices %}
                   <div class="form-group" style="margin: 15px 0">
                     <label for="select-categories-{{ log_entry.id }}">{{ _('Edit categories') }}</label>
@@ -508,16 +495,11 @@
                     <label class="btn btn-primary" style="width: 10em;"><i class="fa fa-folder-open"></i>{{ _('Browse...')}}<input id="input-file-upload" type="file" name="{{ instrument_log_entry_form.files.name }}" multiple style="display: none;"></label>
                   </div>
                 </div>
-                {% if instrument_log_entry_form.objects.choices or config["LOAD_OBJECTS_IN_BACKGROUND"]%}
                 <div class="form-group" style="margin: 15px 0" id="wrapper-object-attachments-new">
                   <label for="select-object-attachments">{{ _('Add object attachments') }}</label>
                   <select id="select-object-attachments" name="{{ instrument_log_entry_form.objects.name }}" class="selectpicker" multiple="multiple" data-live-search="true" data-none-selected-text="{{ _('No objects selected') }}" data-width="100%" data-sampledb-required-perm="1" data-sampledb-remove="-1" data-sampledb-empty-hide="#wrapper-object-attachments-new">
-                    {% for choice in instrument_log_entry_form.objects.choices %}
-                      <option value="{{ choice[0] }}">{{ choice[1] }}</option>
-                    {% endfor %}
                   </select>
                 </div>
-                {% endif %}
                 {% if instrument_log_entry_form.categories.choices %}
                 <div class="form-group" style="margin: 15px 0">
                   <label for="select-categories">{{ _('Add categories') }}</label>
@@ -586,9 +568,7 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
-  {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
-  {% endif %}
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>

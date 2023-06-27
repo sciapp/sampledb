@@ -149,7 +149,6 @@ def instrument(instrument_id: int) -> FlaskResponseT:
     )
     already_linked_object_ids = []
     linkable_action_ids = []
-    linkable_objects = []
     if is_instrument_responsible_user and not flask_login.current_user.is_readonly:
         object_link_form = ObjectLinkForm()
         if instrument.object_id is None:
@@ -160,10 +159,6 @@ def instrument(instrument_id: int) -> FlaskResponseT:
                         action.id
                         for action in get_actions(action_type_id=action_type.id)
                     ])
-                    if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
-                        for object_info in get_object_info_with_permissions(flask_login.current_user.id, Permissions.GRANT, action_type_id=action_type.id):
-                            if object_info.object_id not in already_linked_object_ids:
-                                linkable_objects.append((object_info.object_id, get_translated_text(object_info.name_json)))
     else:
         object_link_form = None
 
@@ -228,13 +223,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         mobile_upload_url = None
         mobile_upload_qrcode = None
     instrument_log_entry_form = InstrumentLogEntryForm()
-    if flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-        instrument_log_entry_form.objects.choices = []
-    else:
-        instrument_log_entry_form.objects.choices = [
-            (str(object_info.object_id), f"{get_translated_text(object_info.name_json)} (#{object_info.object_id})")
-            for object_info in get_object_info_with_permissions(user_id=flask_login.current_user.id, permissions=Permissions.READ)
-        ]
+    instrument_log_entry_form.objects.choices = []
     instrument_log_categories = get_instrument_log_categories(instrument_id)
     instrument_log_entry_form.categories.choices = [
         (str(category.id), category.title)
@@ -402,7 +391,6 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         linked_object=linked_object,
         object_link_form=object_link_form,
         linkable_action_ids=linkable_action_ids,
-        linkable_objects=linkable_objects,
         already_linked_object_ids=already_linked_object_ids,
         show_object_title=show_object_title,
         languages=get_languages(),

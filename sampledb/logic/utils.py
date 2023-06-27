@@ -296,18 +296,6 @@ def print_deprecation_warnings() -> None:
             file=sys.stderr,
             end='\n\n'
         )
-    if show_load_objects_in_background_warning():
-        print(
-            ansi_color(
-                "Asynchronous loading of object lists is disabled, please do "
-                "not set the configuration value 'LOAD_OBJECTS_IN_BACKGROUND' "
-                "or set it to 'True' or '1'. To learn more, see: "
-                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#synchronous-loading-of-object Lists",
-                color=33
-            ),
-            file=sys.stderr,
-            end='\n\n'
-        )
     if show_numeric_tags_warning():
         print(
             ansi_color(
@@ -325,10 +313,6 @@ def print_deprecation_warnings() -> None:
 
 def show_admin_local_storage_warning() -> bool:
     return File.query.filter(db.text("data->>'storage' = 'local'")).first() is not None
-
-
-def show_load_objects_in_background_warning() -> bool:
-    return not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']
 
 
 def show_numeric_tags_warning() -> bool:

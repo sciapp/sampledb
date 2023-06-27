@@ -27,6 +27,8 @@ In version 0.15 the configuration value LOAD_OBJECTS_IN_BACKGROUND was added to 
 
 As of version 0.21, LOAD_OBJECTS_IN_BACKGROUND is set to True by default and setting it to False is deprecated.
 
+As of version 0.24, objects will be loaded asynchronously in the background.
+
 Numeric Tags
 ------------
 

@@ -441,7 +441,6 @@ def project(project_id: int) -> FlaskResponseT:
     object_id = object.id if object is not None else None
     object_action = None
     object_link_form = None
-    linkable_objects = []
     linkable_action_ids = []
     already_linked_object_ids = []
     if Permissions.GRANT in user_permissions and not flask_login.current_user.is_readonly:
@@ -454,10 +453,6 @@ def project(project_id: int) -> FlaskResponseT:
                         action.id
                         for action in logic.actions.get_actions(action_type_id=action_type.id)
                     ])
-                    if not flask.current_app.config['LOAD_OBJECTS_IN_BACKGROUND']:
-                        for object_info in logic.object_permissions.get_object_info_with_permissions(user_id, Permissions.GRANT, action_type_id=action_type.id):
-                            if object_info.object_id not in already_linked_object_ids:
-                                linkable_objects.append((object_info.object_id, get_translated_text(object_info.name_json)))
     if object is not None:
         object_permissions = logic.object_permissions.get_user_object_permissions(object.object_id, flask_login.current_user.id)
         if Permissions.READ in object_permissions and object.action_id is not None:
@@ -491,7 +486,6 @@ def project(project_id: int) -> FlaskResponseT:
         object_link_form=object_link_form,
         linkable_action_ids=linkable_action_ids,
         already_linked_object_ids=already_linked_object_ids,
-        linkable_objects=linkable_objects,
         object_action=object_action,
         leave_project_form=leave_project_form,
         delete_project_form=delete_project_form,
