@@ -1099,6 +1099,26 @@ This example shows how Markdown can be used for instrument Notes.
         }
         sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
 
+        relative_temperature_data: typing.List[typing.Tuple[float, float, float]] = [(i * 0.03, data[1], data[2]) for i, data in enumerate(temperature_data)]
+        relative_pressure_data: typing.List[typing.Tuple[float, float]] = [(i * 0.03, data[1]) for i, data in enumerate(pressure_data)]
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Relative Timeseries Demo', 'de': 'Relative Timeseries Demo'}
+            },
+            'temperature_series': {
+                '_type': 'timeseries',
+                'units': 'degC',
+                'data': relative_temperature_data
+            },
+            'pressure_series': {
+                '_type': 'timeseries',
+                'units': 'bar',
+                'data': relative_pressure_data
+            }
+        }
+        sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
+
         combined_conditions_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.MEASUREMENT,
             schema={
