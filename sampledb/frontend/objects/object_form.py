@@ -2,6 +2,7 @@
 """
 
 """
+import copy
 import secrets
 import typing
 from copy import deepcopy
@@ -82,7 +83,7 @@ def show_object_form(
         if object.data is None or object.schema is None:
             return flask.abort(400)
         schema = object.schema
-        data = object.data
+        data = copy.deepcopy(object.data)
     elif previous_object is not None:
         # create object via 'Use as Template'
         mode = 'create'
