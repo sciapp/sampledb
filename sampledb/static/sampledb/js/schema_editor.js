@@ -1,10 +1,12 @@
 function enableSchemaEditor() {
+  window.schema_editor_enabled = true;
   $('[data-toggle="tooltip"]:not(.disabled)').tooltip();
   var schema_editor = $('#schema-editor');
   var schema_editor_templates = $('#schema-editor-templates');
   var input_schema = $('#input-schema');
   input_schema.hide();
-  $('.pygments').hide();
+  window.code_mirror_editor.save();
+  $('#input-schema ~ .CodeMirror').hide();
   schema_editor.show();
 
   var schema_text = input_schema.val();
@@ -35,7 +37,8 @@ function enableSchemaEditor() {
   window.schema_editor_missing_type_support = false;
   window.schema_editor_initial_updates = [];
 
-  input_schema.val(JSON.stringify(schema, null, 4));
+  input_schema.val(JSON.stringify(schema, null, 2));
+  window.code_mirror_editor.setValue(input_schema.val());
 
   schema_editor.html("");
 
@@ -113,7 +116,8 @@ function enableSchemaEditor() {
           schema['title'] = {"en": schema['title']};
         }
         schema['title'][lang_code] = title;
-        input_schema.val(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 2));
+        window.code_mirror_editor.setValue(input_schema.val());
       }
       window.schema_editor_errors['root_title__' + lang_code] = true;
       if (!has_error) {
@@ -162,7 +166,8 @@ function enableSchemaEditor() {
         }
         schema['propertyOrder'].push('hazards');
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
     });
 
     var tags_label = node.find('.schema-editor-root-object-tags-label');
@@ -213,7 +218,8 @@ function enableSchemaEditor() {
           schema['propertyOrder'].push('hazards');
         }
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
     });
 
     var properties_node = node.find('.schema-editor-root-object-properties');
@@ -282,7 +288,8 @@ function enableSchemaEditor() {
       if (property_node !== null) {
         properties_node[0].appendChild(property_node[0]);
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
       var name_input = property_node.find('.schema-editor-generic-property-name-input');
       name_input.val("");
       name_input.trigger('change');
@@ -446,7 +453,8 @@ function enableSchemaEditor() {
         var index = schema['required'].indexOf(name);
         schema['required'].splice(index, 1);
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
 
       var name_input = getElementForProperty(path, 'name-input');
       name_input.closest('.schema-editor-property').remove();
@@ -468,7 +476,8 @@ function enableSchemaEditor() {
           schema['propertyOrder'].splice(index, 1);
           schema['propertyOrder'].splice(index - 1, 0, name);
         }
-        input_schema.val(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 2));
+        window.code_mirror_editor.setValue(input_schema.val());
         globallyValidateSchema();
         var name_input = getElementForProperty(path, 'name-input');
         var element = name_input.closest('.schema-editor-property');
@@ -496,7 +505,8 @@ function enableSchemaEditor() {
           schema['propertyOrder'].splice(index, 1);
           schema['propertyOrder'].splice(index + 1, 0, name);
         }
-        input_schema.val(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 2));
+        window.code_mirror_editor.setValue(input_schema.val());
         globallyValidateSchema();
         var name_input = getElementForProperty(path, 'name-input');
         var element = name_input.closest('.schema-editor-property');
@@ -757,7 +767,8 @@ function enableSchemaEditor() {
       }
       schema['properties'][real_path[real_path.length - 1]] = property_schema;
 
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
 
       window.schema_editor_errors[path.join('__') + '__generic'] = true;
       if (!has_error) {
@@ -769,7 +780,8 @@ function enableSchemaEditor() {
     function updateSpecificProperty(path, real_path, schema, property_schema, has_error) {
       schema['properties'][real_path[real_path.length - 1]] = property_schema;
 
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
 
       window.schema_editor_errors[path.join('__') + '__specific'] = true;
       if (!has_error) {
@@ -1412,7 +1424,8 @@ function enableSchemaEditor() {
 
   var root_object_node = buildRootObjectNode(schema);
   schema_editor[0].appendChild(root_object_node[0]);
-  input_schema.val(JSON.stringify(schema, null, 4));
+  input_schema.val(JSON.stringify(schema, null, 2));
+  window.code_mirror_editor.setValue(input_schema.val());
   globallyValidateSchema();
   $.each(window.schema_editor_initial_updates, function (_, update_func) {
     update_func();
@@ -1424,16 +1437,49 @@ function enableSchemaEditor() {
 }
 
 function disableSchemaEditor() {
+  window.schema_editor_enabled = false;
   var schema_editor = $('#schema-editor');
   var input_schema = $('#input-schema');
   schema_editor.hide();
-  input_schema.show();
-  $('.pygments').show();
+  window.code_mirror_editor.setValue(input_schema.val());
+  if (window.schema_editor_error_lines.length > 0) {
+    let markers = [];
+    window.schema_editor_error_lines.forEach(function(error_line) {
+      markers.push(window.code_mirror_editor.doc.markText(
+        {line: error_line - 1, ch: 0},
+        {line: error_line, ch: 0},
+        {inclusiveRight: false, css:"background-color: #ffdddd !important"}
+      ));
+    });
+    window.code_mirror_editor.on('change', function() {
+      let current_content = window.code_mirror_editor.getValue();
+      if (window.schema_editor_initial_content === null) {
+        window.schema_editor_initial_content = current_content;
+      }
+      if (current_content !== window.schema_editor_initial_content) {
+        window.schema_editor_error_lines = [];
+        markers.forEach(function (marker) {
+          marker.clear();
+        });
+      }
+    })
+  }
+  $('#input-schema ~ .CodeMirror').show();
+  window.code_mirror_editor.refresh();
+  if (window.schema_editor_initial_content === null) {
+    window.schema_editor_initial_content = window.code_mirror_editor.getValue();
+  }
   $('button[name="action_submit"]').prop('disabled', false);
   $('#form-action').off('submit');
 }
 
 $(function () {
+  window.code_mirror_editor = CodeMirror.fromTextArea($('#input-schema')[0], {
+    lineNumbers: true,
+    mode: {name: "javascript", json: true},
+    scrollbarStyle: null,
+  });
+
   // Add function to hide alert onclick
   $('#schema-editor-type-is-template-close').on('click', function () {
     $('.schema-editor-type-is-template').hide();
@@ -1450,11 +1496,16 @@ $(function () {
   }).change();
 
   var toggle_schema_editor = $('#toggle-schema-editor');
+  window.schema_editor_enabled = null;
   toggle_schema_editor.on('change', function () {
     if (toggle_schema_editor.prop('checked')) {
-      enableSchemaEditor();
+      if (window.schema_editor_enabled !== true) {
+        enableSchemaEditor();
+      }
     } else {
-      disableSchemaEditor();
+      if (window.schema_editor_enabled !== false) {
+        disableSchemaEditor();
+      }
     }
   });
   toggle_schema_editor.change();

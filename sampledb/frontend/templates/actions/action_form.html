@@ -6,8 +6,8 @@
   {{ super() }}
 <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
-<link rel="stylesheet" href="{{ fingerprinted_static('pygments/css/pygments.css') }}">
 <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+<link rel="stylesheet" href="{{ fingerprinted_static('codemirror/css/codemirror.min.css') }}" />
 <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/schema_editor.css') }}">
 {% endblock %}
 
@@ -17,6 +17,8 @@
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('codemirror/js/codemirror.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('codemirror/js/javascript.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
@@ -49,6 +51,8 @@
   };
   window.schema_editor_tags_translations = {{ tags_translations | tojson }};
   window.schema_editor_hazards_translations = {{ hazards_translations | tojson }};
+  window.schema_editor_error_lines = {{ error_lines or [] }};
+  window.schema_editor_initial_content = null;
 
   {% set allowed_language_ids = [] %}
   window.languages = [
@@ -367,12 +371,9 @@
         <textarea class="form-control" rows="{% if schema_json %}{{ schema_json.splitlines() | length }}{% else %}5{% endif %}" id="input-schema" name="{{ action_form.schema.name }}" placeholder="{{ _('Schema') }}">{{ action_form.schema.data or ''}}</textarea>
       </div>
 
-      {% if pygments_output %}
-        {{ pygments_output | safe }}
-        {% if error_message is not none %}
-        <div class="schema-error-message"><strong>Error:</strong> {{ error_message }}</div>
-        {% endif %}
-      {% endif %}
+    {% if error_message is not none %}
+      <div class="schema-error-message"><strong>Error:</strong> {{ error_message }}</div>
+    {% endif %}
 
     </div>
     <div class="form-group col-md-12" style="display: flex; justify-content: flex-end">

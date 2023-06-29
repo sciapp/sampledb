@@ -100,16 +100,24 @@
     margin: 15px 0;
 }
 
-.pygments .pygmentstable td.code {
+.CodeMirror {
+    font-family: inherit;
+}
+#input-schema ~ .CodeMirror {
     width: 100%;
+    padding: 0;
+    border-radius: 4px;
+    font-family: monospace;
+    height: auto !important;
+    overflow: hidden;
 }
-.pygments .pygmentstable td.linenos pre {
-    border-right: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    color:#999999;
+#input-schema ~ .CodeMirror .CodeMirror-code .cm-string {
+    color: #0000DD;
 }
-.pygments .pygmentstable td.code pre {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+#input-schema ~ .CodeMirror .CodeMirror-code .cm-string.cm-property {
+    color: #007700;
+}
+#input-schema ~ .CodeMirror .CodeMirror-code .cm-number {
+    color: #0000DD;
+    font-weight: bold;
 }

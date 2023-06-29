@@ -22,7 +22,6 @@ Pillow
 Pint
 plotly
 psycopg2-binary
-pygments
 pyotp
 qrcode
 reportlab
