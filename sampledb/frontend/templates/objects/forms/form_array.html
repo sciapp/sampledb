@@ -1,7 +1,7 @@
 <!-- array start -->
 <div class="form-group row">
   <div class="col-md-3 control-label">
-    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %}>{{ schema.title | get_translated_text }}</span></strong>{% endif %}
+    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>
 {% set is_required = True %}
 {% set minItems = schema.get('minItems', 0) %}

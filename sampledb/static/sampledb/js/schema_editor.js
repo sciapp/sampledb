@@ -712,6 +712,29 @@ function enableSchemaEditor() {
           translated_note[lang_code] = note;
         }
       }
+      let has_tooltip = getElementForProperty(path, 'generic-tooltip-checkbox').prop('checked');
+      let translated_tooltip = {};
+      for (const lang_code of window.schema_editor_lang_codes) {
+        const tooltip_input = getElementForProperty(path, 'generic-tooltip-input-' + lang_code);
+        const tooltip_group = tooltip_input.parent();
+        const tooltip_help = tooltip_group.find('.help-block');
+        const tooltip = tooltip_input.val();
+        if (has_tooltip && tooltip === "" && lang_code === "en") {
+          tooltip_help.text(window.schema_editor_translations['tooltip_must_not_be_empty']);
+          tooltip_group.addClass("has-error");
+          has_error = true;
+        } else if (has_tooltip && RegExp('^\\s+$').test(tooltip)) {
+          tooltip_help.text(window.schema_editor_translations['tooltip_must_not_be_whitespace']);
+          tooltip_group.addClass("has-error");
+          has_error = true;
+        } else {
+          tooltip_help.text("");
+          tooltip_group.removeClass("has-error");
+        }
+        if (tooltip || lang_code === "en") {
+          translated_tooltip[lang_code] = tooltip;
+        }
+      }
       if (name !== real_path[real_path.length - 1]) {
         delete schema['properties'][real_path[real_path.length - 1]];
         if ('required' in schema) {
@@ -750,6 +773,9 @@ function enableSchemaEditor() {
       };
       if (has_note) {
         property_schema["note"] = translated_note;
+      }
+      if (has_tooltip) {
+        property_schema["tooltip"] = translated_tooltip;
       }
       if (required) {
         if (!('required' in schema)) {
@@ -1237,8 +1263,9 @@ function enableSchemaEditor() {
       value_input.on('change', updateProperty.bind(path));
     }
 
-    // Every supported type has a note input
+    // Every supported type has a note and tooltip input
     setupValueFromSchema(path, 'generic', 'note', schema, true, true);
+    setupValueFromSchema(path, 'generic', 'tooltip', schema, true, true);
 
     setupValueFromSchema(path, 'text', 'default', schema, type === 'text', false);
     setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text', false);

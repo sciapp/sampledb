@@ -1,0 +1,10 @@
+<label class="control-label col-md-3 {% if schema.title | get_translated_text and is_required %}required-label{% endif %}">
+{% if 'tooltip' in schema %}
+  <span data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}">
+{% endif %}
+{{ schema.title | get_translated_text }}
+{% if 'tooltip' in schema %}
+    <i class="fa fa-question-circle" aria-hidden="true"></i>
+  </span>
+{% endif %}
+</label>

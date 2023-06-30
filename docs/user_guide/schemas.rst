@@ -441,6 +441,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please describe the process in detail."`` or ``{"en": "Can be filled in later."}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"A detailed process description"`` or ``{"en": "A detailed process description"}``.
+
 placeholder
 ^^^^^^^^^^^
 
@@ -550,6 +555,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Set if chamber was pressurized."`` or ``{"en": "Check box if a target was set"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Whether the chamber was pressurized"`` or ``{"en": "Whether a target was set"}``.
+
 default
 ^^^^^^^
 
@@ -604,6 +614,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Temperature in measurement chamber"`` or ``{"en": "Horizontal distance between sample and detector"}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"The temperature as measured by sensor T1"`` or ``{"en": "The nominal detector distance"}``.
 
 default
 ^^^^^^^
@@ -711,6 +726,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Use experiment starting time"`` or ``{"en": "Include cool down time in estimate"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"The experiment starting time"`` or ``{"en": "The time the experiment was started"}``.
+
 default
 ^^^^^^^
 
@@ -793,6 +813,11 @@ note
 
 A note to display below the hazards selection when creating or editing an object using this schema, as a JSON string or object, e.g. ``"See lab guidelines"`` or ``{"en": "Please provide additional information in the description."}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Hazards, as per supplier"`` or ``{"en": "Hazards, as per supplier"}``.
+
 plotly Charts
 `````````````
 
@@ -860,6 +885,11 @@ note
 
 A note to display below the JSON field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Will be filled by bot"`` or ``{"en": "Upload raw log file as well"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Temperature curve, extracted from log file"`` or ``{"en": "Temperature curve, extracted from log file"}``.
+
 User References
 ```````````````
 
@@ -903,6 +933,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"For external users, leave blank and fill in information below"`` or ``{"en": "Remember to set as responsible user as well"}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"The user who operated the instrument"`` or ``{"en": "The user who operated the instrument"}``.
 
 default
 ^^^^^^^
@@ -952,6 +987,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Leave blank if no precursor was used."`` or ``{"en": "Select the associated calibration measurement"}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Precursor, if any"`` or ``{"en": "Precursor, if any"}``.
 
 action_type_id
 ^^^^^^^^^^^^^^
@@ -1033,6 +1073,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Pressure"`` or ``{"en": "Sample Temperature"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Pressure, as extracted from log file"`` or ``{"en": "Temperature, as set in instrument settings"}``.
+
 units
 ^^^^^
 
@@ -1089,6 +1134,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please upload a picture of the experiment setup."`` or ``{"en": "Please upload a picture of the experiment setup."}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Setup (top-down view)"`` or ``{"en": "Log file of first run (see logs/0001.log)"}``.
 
 extensions
 ^^^^^^^^^^
