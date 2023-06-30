@@ -358,7 +358,7 @@
         <label for="input-schema" class="control-label">{{ _('Schema') }}</label>
         <label class="pull-right" data-placement="top" data-trigger="manual" data-title="{{ _('Invalid JSON input, can not use graphical editor') }}">
           <span class="sr-only">{{ _('Use Graphical Editor') }}</span>
-          <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" {% if use_schema_editor %}checked="checked"{% endif %} />
+          <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" name="{{ action_form.use_json_editor.name }}" {% if action_form.use_json_editor.data %}checked="checked"{% endif %} />
         </label>
         <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
         {% if error_message is not none %}

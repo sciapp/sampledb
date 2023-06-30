@@ -55,6 +55,7 @@ class ActionForm(FlaskForm):
     translations = StringField(validators=[DataRequired()])
     usable_by = SelectField(choices=['with_permissions', 'admins', 'nobody'])
     objects_readable_by_all_users_by_default = BooleanField(default=None)
+    use_json_editor = BooleanField(default=None)
 
     def validate_type(form, field: IntegerField) -> None:
         try:
@@ -361,7 +362,8 @@ def show_action_form(
         for action_translation in action_translations
     }
 
-    use_schema_editor = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
+    if not action_form.is_submitted():
+        action_form.use_json_editor.data = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
     if action is not None:
         if action.instrument is not None:
             action_form.instrument.choices = [
@@ -488,7 +490,6 @@ def show_action_form(
                 submit_text=submit_text,
                 sample_action_type=sample_action_type,
                 measurement_action_type=measurement_action_type,
-                use_schema_editor=use_schema_editor,
                 may_change_type=action is None,
                 may_change_instrument=action is None,
                 may_set_user_specific=may_set_user_specific,
@@ -539,7 +540,6 @@ def show_action_form(
                             submit_text=submit_text,
                             sample_action_type=sample_action_type,
                             measurement_action_type=measurement_action_type,
-                            use_schema_editor=use_schema_editor,
                             may_change_type=action is None,
                             may_change_instrument=action is None,
                             may_set_user_specific=may_set_user_specific,
@@ -668,7 +668,6 @@ def show_action_form(
         submit_text=submit_text,
         sample_action_type=sample_action_type,
         measurement_action_type=measurement_action_type,
-        use_schema_editor=use_schema_editor,
         may_change_type=action is None,
         may_change_instrument=action is None,
         may_set_user_specific=may_set_user_specific,
