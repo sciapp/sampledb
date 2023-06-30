@@ -457,6 +457,7 @@ def show_action_form(
                     error_lines = all_lines
                 else:
                     schema_json = json.dumps(schema, indent=2)
+                    action_form.schema.data = schema_json
                     all_lines = set(range(1, 1 + len(schema_json)))
                     for path in e.paths:
                         new_error_lines = _get_lines_for_path(schema, path)
