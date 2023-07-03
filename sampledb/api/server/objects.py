@@ -170,7 +170,8 @@ class ObjectVersions(Resource):
         except errors.ValidationError as e:
             messages = e.message.splitlines()
             return {
-                "message": "validation failed:\n - " + "\n - ".join(messages)
+                "message": "validation failed:\n - " + "\n - ".join(messages),
+                "error_paths": e.paths
             }, 400
         except errors.DiffMismatchError:
             return {
@@ -434,7 +435,8 @@ class Objects(Resource):
         except errors.ValidationError as e:
             messages = e.message.splitlines()
             return {
-                "message": "validation failed:\n - " + "\n - ".join(messages)
+                "message": "validation failed:\n - " + "\n - ".join(messages),
+                "error_paths": e.paths
             }, 400
         except Exception:
             return {
