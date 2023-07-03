@@ -3135,6 +3135,12 @@ msgstr "Der Tooltip-Text darf nicht leer sein."
 msgid "Tooltip must not be whitespace only."
 msgstr "Der Tooltip-Text darf nicht nur Leerzeichen enthalten."
 
+msgid "Note must not be empty."
+msgstr "Der Hinweis darf nicht leer sein."
+
+msgid "Note must not be whitespace only."
+msgstr "Der Hinweis darf nicht nur Leerzeichen enthalten."
+
 msgid "Choices must not be empty."
 msgstr "Auswahlmöglichkeiten dürfen nicht leer sein."
 
