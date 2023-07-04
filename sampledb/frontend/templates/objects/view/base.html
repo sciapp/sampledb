@@ -1035,24 +1035,31 @@
                   window.update_activity_log_filter_states();
                   document.getElementById('activity_log_filter_versions').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'versions');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_measurements').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'measurements');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_comments').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'comments');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_files').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'files');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_locations').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'locations');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_references').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'references');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_other').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'other');
+                    activity_log_apply_filters();
                   });
                 </script>
               ">
@@ -1279,6 +1286,7 @@
         {% endfor %}
         </tbody>
       </table>
+      <label id="activity_log_show_all_wrapper" for="activity_log_show_all_toggle" class="btn btn-default btn-xs"><input type="checkbox" id="activity_log_show_all_toggle" autocomplete="off" {% if object_log_entries | length <= 15 %}checked="checked"{% endif %}> <span>{{ _('Show more') }}</span></label>
     {% endif %}
   {% endif %}
 
@@ -1730,18 +1738,38 @@
             {% endfor %}
           ]
         };
-        window.activity_log_toggle = function (should_show, category) {
-          var type_list = activity_log_filter_type_list[category];
-          var activity_log = $('#activity_log_table').find('> tbody');
+        window.activity_log_apply_filters = function() {
+          window.activity_log_apply_filter("versions");
+          window.activity_log_apply_filter("measurements");
+          window.activity_log_apply_filter("comments");
+          window.activity_log_apply_filter("files");
+          window.activity_log_apply_filter("locations");
+          window.activity_log_apply_filter("references");
+          window.activity_log_apply_filter("other");
+          const activity_log = $('#activity_log_table > tbody');
+          const show_all = $('#activity_log_show_all_toggle').prop('checked');
+          const visible_activity_log_entries = activity_log.find('tr:visible');
+          $('#activity_log_counter').html('' + visible_activity_log_entries.length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
+          if (!show_all && visible_activity_log_entries.length > 15) {
+            visible_activity_log_entries.slice(15).css({display: 'none'});
+            $('#activity_log_show_all_wrapper').show();
+          } else {
+            $('#activity_log_show_all_wrapper').hide();
+          }
+        }
+        window.activity_log_apply_filter = function (category) {
+          const type_list = activity_log_filter_type_list[category];
+          const activity_log = $('#activity_log_table > tbody');
           type_list.forEach(function (activity_log_type) {
-            var activity_log_rows = activity_log.find('tr[data-activity-log-type=' + activity_log_type + ']');
-            if (should_show) {
+            const activity_log_rows = activity_log.find('tr[data-activity-log-type=' + activity_log_type + ']');
+            if (window.activity_log_toggle.current_state[category]) {
               activity_log_rows.css({display: 'table-row'});
             } else {
               activity_log_rows.css({display: 'none'});
             }
           });
-          $('#activity_log_counter').html('' + activity_log.find('tr:visible').length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
+        };
+        window.activity_log_toggle = function (should_show, category) {
           window.activity_log_toggle.current_state[category] = should_show;
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(window.activity_log_toggle.current_state), {sameSite: 'Lax'});
         };
@@ -1764,6 +1792,9 @@
           };
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(activity_log_filter_state), {sameSite: 'Lax'});
         }
+        $('#activity_log_show_all_toggle').on('change', function() {
+          window.activity_log_apply_filters();
+        });
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
         window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
@@ -1771,6 +1802,7 @@
         window.activity_log_toggle(activity_log_filter_state['locations'], "locations");
         window.activity_log_toggle(activity_log_filter_state['references'], "references");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
+        window.activity_log_apply_filters();
         window.update_activity_log_filter_states = function () {
           if (window.activity_log_toggle.current_state['versions']) {
             $('#activity_log_filter_versions').attr('checked', 'checked');

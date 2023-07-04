@@ -1483,3 +1483,10 @@ table.diff tr.striped {
     padding: 3px;
     box-shadow: none;
 }
+
+#activity_log_show_all_wrapper {
+    margin: -1.5em 1.5em 1.5em 1.5em;
+}
+#activity_log_show_all_toggle {
+    display: none;
+}
