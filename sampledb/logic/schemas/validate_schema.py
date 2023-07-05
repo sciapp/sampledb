@@ -1013,7 +1013,7 @@ def _validate_timeseries_schema(
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits'}
+    valid_keys = {'type', 'title', 'units', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits', 'statistics'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -1055,6 +1055,12 @@ def _validate_timeseries_schema(
     if strict:
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
+    if 'statistics' in schema:
+        valid_statistics_keys = {'average', 'stddev', 'min', 'max', 'count'}
+        if not isinstance(schema['statistics'], list):
+            raise ValidationError('statistics must be a list of strings', path)
+        if not all(statistics_key in valid_statistics_keys for statistics_key in schema['statistics']):
+            raise ValidationError(f'statistics keys each have to be one of the following: {valid_statistics_keys}', path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
 
 

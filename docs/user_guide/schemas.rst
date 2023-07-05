@@ -1045,6 +1045,17 @@ display_digits
 
 This attribute is the number of decimal places to be shown when displaying the magnitudes, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitudes will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
 
+statistics
+^^^^^^^^^^
+
+This attribute allows to determine which statistics about the timeseries should be displayed in a list of strings. Defaults to ``["average", "stddev"]`` if not defined. Valid statistics:
+
+- ``"average"``: Weighted average
+- ``"stddev"``: Standard deviation
+- ``"min"``: Minimum
+- ``"max"``: Maximum
+- ``"count"``: Count of values
+
 Files
 `````
 

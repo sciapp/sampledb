@@ -276,6 +276,12 @@ def custom_format_time(
         return utc_datetime
 
 
+@JinjaFilter('format_int')
+def format_int(decimal: int) -> str:
+    locale = get_locale()
+    return typing.cast(str, numbers.format_decimal(decimal, locale=locale))
+
+
 @JinjaFilter('babel_format_number')
 def custom_format_number(
     number: typing.Union[str, int, float, decimal.Decimal],
@@ -1285,29 +1291,52 @@ def to_timeseries_data(
         custom_format_number(magnitude, display_digits)
         for magnitude in magnitudes
     ]
+    magnitude_average = None
+    magnitude_stddev = None
+    magnitude_min = None
+    magnitude_max = None
+    magnitude_count = None
+
+    statistics = {'average', 'stddev'}
+    if 'statistics' in schema:
+        statistics = set(schema['statistics'])
+    if 'min' in statistics:
+        magnitude_min = np.min(magnitudes)
+    if 'max' in statistics:
+        magnitude_max = np.max(magnitudes)
+    if 'count' in statistics:
+        magnitude_count = len(magnitudes)
+
     time_weights = np.zeros(len(magnitudes))
     # determine time-weighted average and standard deviation
-    if relative_times and len(relative_times) > 1:
-        time_weights[0] = (relative_times[1] - relative_times[0]) / 2
-        time_weights[-1] = (relative_times[-1] - relative_times[-2]) / 2
-        for i in range(1, len(relative_times) - 1):
-            rel_previous_time = relative_times[i - 1]
-            rel_next_time = relative_times[i + 1]
-            time_weights[i] = (rel_next_time - rel_previous_time) / 2
-        magnitude_average = np.average(magnitudes, weights=time_weights)
-        magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
-    elif len(utc_datetimes) > 1:
-        time_weights[0] = (utc_datetimes[1] - utc_datetimes[0]).total_seconds() / 2
-        time_weights[-1] = (utc_datetimes[-1] - utc_datetimes[-2]).total_seconds() / 2
-        for i in range(1, len(utc_datetimes) - 1):
-            previous_time = utc_datetimes[i - 1]
-            next_time = utc_datetimes[i + 1]
-            time_weights[i] = (next_time - previous_time).total_seconds() / 2
-        magnitude_average = np.average(magnitudes, weights=time_weights)
-        magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
-    else:
-        magnitude_average = magnitudes[0]
-        magnitude_stddev = None
+    if 'average' in statistics or 'stddev' in statistics:
+        if relative_times and len(relative_times) > 1:
+            time_weights[0] = (relative_times[1] - relative_times[0]) / 2
+            time_weights[-1] = (relative_times[-1] - relative_times[-2]) / 2
+            for i in range(1, len(relative_times) - 1):
+                rel_previous_time = relative_times[i - 1]
+                rel_next_time = relative_times[i + 1]
+                time_weights[i] = (rel_next_time - rel_previous_time) / 2
+            magnitude_average = np.average(magnitudes, weights=time_weights)
+            if 'stddev' in statistics:
+                magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+            if 'average' not in statistics:
+                magnitude_average = None
+        elif len(utc_datetimes) > 1:
+            time_weights[0] = (utc_datetimes[1] - utc_datetimes[0]).total_seconds() / 2
+            time_weights[-1] = (utc_datetimes[-1] - utc_datetimes[-2]).total_seconds() / 2
+            for i in range(1, len(utc_datetimes) - 1):
+                previous_time = utc_datetimes[i - 1]
+                next_time = utc_datetimes[i + 1]
+                time_weights[i] = (next_time - previous_time).total_seconds() / 2
+            magnitude_average = np.average(magnitudes, weights=time_weights)
+            if 'stddev' in statistics:
+                magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+            if 'average' not in statistics:
+                magnitude_average = None
+        else:
+            if 'average' in statistics:
+                magnitude_average = magnitudes[0]
     same_day = None
     if utc_datetimes:
         # convert datetimes to local timezone
@@ -1336,6 +1365,9 @@ def to_timeseries_data(
         'magnitude_strings': magnitude_strings,
         'magnitude_average': magnitude_average,
         'magnitude_stddev': magnitude_stddev,
+        'magnitude_min': magnitude_min,
+        'magnitude_max': magnitude_max,
+        'magnitude_count': magnitude_count,
         'same_day': same_day
     }
 
