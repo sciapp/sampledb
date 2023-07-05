@@ -138,8 +138,6 @@ Each of these categories is built on top of the other, with **Write** permission
 
 To modify the permissions of an object, any user with **Grant** permissions can click the **Edit permissions** button on the object's page. They can then view the existing permissions, modify them or add new permissions for users, basic groups or project groups.
 
-Although administrators are shown to have **Grant** permissions for all objects, this only reflects their access to the database mentioned above. At this time, administrators do not automatically have **Grant** permissions for all objects.
-
 .. _federation_share:
 
 Sharing with other databases

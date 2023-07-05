@@ -8,6 +8,7 @@ User Guide
 
 .. toctree::
     :maxdepth: 2
+    :caption: User Guide
 
     user_guide/users.rst
     user_guide/groups.rst
@@ -27,11 +28,26 @@ User Guide
     </div>
     <div class="table_of_contents_block">
 
+Tutorials
+---------
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Tutorials
+
+    tutorials/core_concepts.rst
+    tutorials/create_objects.rst
+    tutorials/permissions.rst
+    tutorials/finding_objects.rst
+    tutorials/sharing_data.rst
+    tutorials/using_the_api.rst
+
 Administrator Guide
 -------------------
 
 .. toctree::
     :maxdepth: 1
+    :caption: Administrator Guide
 
     administrator_guide/getting_started.rst
     administrator_guide/configuration.rst
@@ -53,6 +69,7 @@ Developer Guide
 
 .. toctree::
     :maxdepth: 2
+    :caption: Developer Guide
 
     developer_guide/api.rst
     developer_guide/contributing.rst
