@@ -5,14 +5,12 @@
   {% if data and data.export_edit_note %}
     <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
   {% endif %}
-  {% if 'layout' in data.plotly %}
     <div class="col-md-9">
       <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}"></div>
     </div>
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
     </script>
-  {% endif %}
 {% else %}
   <div class="col-md-9">
     &mdash;

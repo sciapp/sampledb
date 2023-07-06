@@ -13,6 +13,7 @@ Currently in development.
 - Prevent creation of files with the :ref:`deprecated <deprecated_features>` local file storage via HTTP API
 - Removed setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND``
 - Introduce statistics and relative times in timeseries
+- Allow tooltips for property titles
 
 Version 0.23.1
 --------------

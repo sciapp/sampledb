@@ -19,7 +19,16 @@
 <div class="form-group row {% if id_prefix+'_text' in errors or id_prefix+'_text_languages' in errors or id_prefix+'_text_en' in errors %}has-error{% elif id_prefix+'_text' in form_data or id_prefix+'_text_en' in form_data %}has-success{% endif %}" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
   <div class="col-md-3">
     <div class="row">
-      <label class="control-label col-md-12 {% if schema.title | get_translated_text and (is_required and (schema.minLength or schema.choices)) %}required-label{% endif %}">{{ schema.title | get_translated_text }}</label>
+      <label class="control-label col-md-12 {% if schema.title | get_translated_text and (is_required and (schema.minLength or schema.choices)) %}required-label{% endif %}">
+      {% if 'tooltip' in schema %}
+        <span data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}">
+      {% endif %}
+      {{ schema.title | get_translated_text }}
+      {% if 'tooltip' in schema %}
+          <i class="fa fa-question-circle" aria-hidden="true"></i>
+        </span>
+      {% endif %}
+      </label>
     </div>
     {% if 'choices' not in schema %}
       {% if input_languages | length > 1 %}

@@ -3129,6 +3129,12 @@ msgstr "Der Titel darf nicht leer sein."
 msgid "Title must not be whitespace only."
 msgstr "Der Titel darf nicht nur Leerzeichen enthalten."
 
+msgid "Tooltip must not be empty."
+msgstr "Der Tooltip-Text darf nicht leer sein."
+
+msgid "Tooltip must not be whitespace only."
+msgstr "Der Tooltip-Text darf nicht nur Leerzeichen enthalten."
+
 msgid "Choices must not be empty."
 msgstr "Auswahlmöglichkeiten dürfen nicht leer sein."
 
@@ -3314,6 +3320,14 @@ msgstr "Weitere Informationen zur Eigenschaft."
 
 msgid "Note"
 msgstr "Hinweis"
+
+msgid "A tooltip text, shown when holding the mouse cursor over the title."
+msgstr ""
+"Ein Tooltip-Text, der angezeigt wird, wenn der Mauszeiger über den Titel "
+"gehalten wird."
+
+msgid "Tooltip"
+msgstr "Tooltip"
 
 msgid "Placeholder"
 msgstr "Platzhalter"

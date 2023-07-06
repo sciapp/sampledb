@@ -1,5 +1,5 @@
 <div class="form-group{% if id_prefix+'_oid' in errors %} has-error{% elif id_prefix+'_oid' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
-  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title | get_translated_text }}</label>
+  {% include "objects/forms/property_label.html" %}
   <div class="col-md-9">
     {% include "objects/forms/form_object_reference_base_field.html" %}
     {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}

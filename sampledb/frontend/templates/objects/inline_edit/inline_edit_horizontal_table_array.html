@@ -23,7 +23,15 @@
         {% if property_name in item_property_names %}
           {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
           <tr>
-            <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+            <th scope="col">
+              {% if 'tooltip' in schema["items"].properties[property_name] %}
+                <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
+              {% endif %}
+              {{ schema["items"].properties[property_name].title | get_translated_text }}
+              {% if 'tooltip' in schema["items"].properties[property_name] %}
+                  <i class="fa fa-question-circle" aria-hidden="true"></i>
+                </span>
+              {% endif %}
               {% if schema["items"].properties[property_name].type == 'text' %}
                 <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
               {% elif schema["items"].properties[property_name].type == 'quantity' %}
@@ -74,7 +82,15 @@
         {% if property_name not in property_order %}
           {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
           <tr>
-            <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+            <th scope="col">
+              {% if 'tooltip' in schema["items"].properties[property_name] %}
+                <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
+              {% endif %}
+              {{ schema["items"].properties[property_name].title | get_translated_text }}
+              {% if 'tooltip' in schema["items"].properties[property_name] %}
+                  <i class="fa fa-question-circle" aria-hidden="true"></i>
+                </span>
+              {% endif %}
               {% if schema["items"].properties[property_name].type == 'text' %}
                 <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
               {% elif schema["items"].properties[property_name].type == 'quantity' %}

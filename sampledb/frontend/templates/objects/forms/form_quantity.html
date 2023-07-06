@@ -1,5 +1,5 @@
 <div class="form-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
-  <label class="control-label col-md-3 {% if schema.title and is_required %}required-label{% endif %}">{{ schema.title  | get_translated_text}}</label>
+  {% include "objects/forms/property_label.html" %}
     <div class="col-md-9">
     {% if schema['units'] in ("1", "") %}
       <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text  }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units | babel_format_number }}"{% endif %}>

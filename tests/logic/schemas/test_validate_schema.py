@@ -3141,3 +3141,22 @@ def test_validate_timeseries_schema():
     schema['statistics'] = ['average', 'stddev', 'mini', 'max']
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
+
+
+
+def test_validate_with_tooltip():
+    schema = {
+        'title': "Basic Schema",
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': "Name",
+                'tooltip': "The name of the object",
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    validate_schema(schema)
+    schema['properties']['name']['tooltip'] = {'en': 'The name of the object'}
+    validate_schema(schema)
