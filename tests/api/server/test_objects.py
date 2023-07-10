@@ -1422,3 +1422,17 @@ def test_update_object_with_file_reference(flask_server, auth, user, action):
     assert file.id == 0
     r = requests.post(flask_server.base_url + f'api/v1/objects/{object.id}/versions/', auth=auth, json=object_json, allow_redirects=False)
     assert r.status_code == 201
+
+
+def test_create_object_with_missing_required(flask_server, auth, user, action):
+    object_json = {
+        'action_id': action.id,
+        'data': {
+        }
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/', auth=auth, json=object_json, allow_redirects=False)
+    assert r.status_code == 400
+    assert r.json() == {
+        'message': 'validation failed:\n - missing required property "name" (at name)',
+        'error_paths': [['name']]
+    }
