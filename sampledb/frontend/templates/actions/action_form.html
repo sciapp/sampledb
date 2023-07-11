@@ -317,7 +317,7 @@
         <label for="input-instrument" class="control-label">{{ _('Instrument') }}</label>
         <select class="selectpicker form-control" id="input-instrument" name="{{ action_form.instrument.name }}" {% if not may_change_instrument %}disabled="disabled"{% endif %} data-none-selected-text="{{ _('No instrument selected') }}">
           {% for instrument_id, instrument_name in action_form.instrument.choices %}
-          <option {% if instrument_is_fed[instrument_id] %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument_id }}" {% if action_form.instrument.data == instrument_id %}selected="selected"{% endif %}>{% if instrument_id == '-1' %}&mdash;{% else %}{{ instrument_name }}{% endif %}</option>
+          <option {% if instrument_is_fed[instrument_id] %}data-icon="fa fa-share-alt"{% elif instrument_is_fav[instrument_id] %}data-icon="fa fa-star"{% endif %} value="{{ instrument_id }}" {% if action_form.instrument.data == instrument_id %}selected="selected"{% endif %}>{% if instrument_id == '-1' %}&mdash;{% else %}{{ instrument_name }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
