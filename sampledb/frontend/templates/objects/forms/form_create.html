@@ -99,6 +99,8 @@
         {% set selected_obj_id = request.form.get('copy_permissions_object_id') %}
         {% if has_grant_for_previous_object and not 'action_submit' in request.form and request.args.get('previous_object_id') %}
         {% set selected_obj_id = request.args.get('previous_object_id') %}
+        {% elif has_grant_for_first_passed_object and not 'action_submit' in request.form and passed_object_ids %}
+          {% set selected_obj_id = passed_object_ids[0] %}
         {% endif %}
         {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
           <div class="pull-right objectpicker-container" style="width:280px">
