@@ -22,7 +22,7 @@ from ..logic.action_types import get_action_type, get_action_types
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation
 from ..logic.languages import get_languages, get_language, Language
 from ..logic.components import get_component
-from ..logic.favorites import get_user_favorite_action_ids
+from ..logic.favorites import get_user_favorite_action_ids, get_user_favorite_instrument_ids
 from ..logic.instruments import get_user_instruments, get_instrument
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users
@@ -348,6 +348,7 @@ def show_action_form(
     error_message = None
     action_form = ActionForm()
     instrument_is_fed = {}
+    instrument_is_fav = {}
 
     sample_action_type = get_action_type(
         action_type_id=models.ActionType.SAMPLE_CREATION
@@ -361,6 +362,7 @@ def show_action_form(
         action_translation.language_id: action_translation
         for action_translation in action_translations
     }
+    user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
 
     if not action_form.is_submitted():
         action_form.use_json_editor.data = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
@@ -370,6 +372,7 @@ def show_action_form(
                 (str(action.instrument_id), get_translated_text(action.instrument.name, default=_('Unnamed Instrument')))
             ]
             instrument_is_fed[str(action.instrument_id)] = action.instrument.component_id is not None
+            instrument_is_fav[str(action.instrument_id)] = action.instrument_id in user_favorite_instrument_ids
             action_form.instrument.data = str(action.instrument_id)
         else:
             action_form.instrument.choices = [('-1', '-')]
@@ -381,12 +384,18 @@ def show_action_form(
             action_form.instrument.data = '-1'
         else:
             user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
-            action_form.instrument.choices = [('-1', '-')] + [
+            for user_instrument_id in user_instrument_ids:
+                instrument_is_fed[str(user_instrument_id)] = get_instrument(user_instrument_id).component_id is not None
+                instrument_is_fav[str(user_instrument_id)] = user_instrument_id in user_favorite_instrument_ids
+            user_instruments = [
                 (str(instrument_id), get_translated_text(get_instrument(instrument_id).name, default=_('Unnamed Instrument')))
                 for instrument_id in user_instrument_ids
             ]
-            for user_instrument_id in user_instrument_ids:
-                instrument_is_fed[str(user_instrument_id)] = get_instrument(user_instrument_id).component_id is not None
+            user_instruments.sort(key=lambda instrument_data: (
+                not instrument_is_fav[instrument_data[0]],
+                instrument_data[1]
+            ))
+            action_form.instrument.choices = [('-1', '-')] + user_instruments
             if action_form.instrument.data is None or action_form.instrument.data == str(None):
                 if previous_action is not None and previous_action.instrument_id in user_instrument_ids:
                     action_form.instrument.data = str(previous_action.instrument_id)
@@ -500,6 +509,7 @@ def show_action_form(
                 load_translations=load_translations,
                 ENGLISH=english,
                 instrument_is_fed=instrument_is_fed,
+                instrument_is_fav=instrument_is_fav,
                 error_lines=list(error_lines or []),
             )
         else:
@@ -550,6 +560,7 @@ def show_action_form(
                             load_translations=load_translations,
                             ENGLISH=english,
                             instrument_is_fed=instrument_is_fed,
+                            instrument_is_fav=instrument_is_fav,
                             error_lines=list(error_lines or []),
                         )
 
@@ -678,6 +689,7 @@ def show_action_form(
         load_translations=load_translations,
         ENGLISH=english,
         instrument_is_fed=instrument_is_fed,
+        instrument_is_fav=instrument_is_fav,
         error_lines=list(error_lines or []),
     )
 
