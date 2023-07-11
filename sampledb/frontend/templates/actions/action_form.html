@@ -43,6 +43,8 @@
     'title_must_not_be_whitespace': "{{ _("Title must not be whitespace only.") }}",
     'tooltip_must_not_be_empty': "{{ _("Tooltip must not be empty.") }}",
     'tooltip_must_not_be_whitespace': "{{ _("Tooltip must not be whitespace only.") }}",
+    'note_must_not_be_empty': "{{ _("Note must not be empty.") }}",
+    'note_must_not_be_whitespace': "{{ _("Note must not be whitespace only.") }}",
     'choices_must_not_be_empty': "{{ _("Choices must not be empty.") }}",
     'enter_units': "{{ _("Please enter units or 1.") }}",
     'enter_default_magnitude': "{{ _("Please enter the default magnitude (in base units) as a number.") }}",
@@ -480,6 +482,7 @@
         <div class="schema-editor-form-group">
           {% if language.lang_code == 'en' %}<label class="schema-editor-checkbox"><input type="checkbox" class="schema-editor-generic-property-note-checkbox"></label>{% endif %}<label class="control-label schema-editor-generic-property-default-label" data-toggle="tooltip" data-placement="top" title="{{ _('Additional information on the property.') }}">{{ _('Note') }} ({{ language.names | get_translated_text }}) <i class="fa fa-question-circle" aria-hidden="true"></i></label>
           <input type="text" class="form-control schema-editor-generic-property-note-input" placeholder="{{ _('Note') }} ({{ language.names | get_translated_text }})" value="" data-sampledb-lang-code="{{ language.lang_code }}">
+          <span class="help-block"></span>
         </div>
         {% endfor %}
         {% for language in enabled_languages %}

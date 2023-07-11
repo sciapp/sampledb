@@ -707,7 +707,22 @@ function enableSchemaEditor() {
       var has_note = getElementForProperty(path, 'generic-note-checkbox').prop('checked');
       let translated_note = {};
       for (const lang_code of window.schema_editor_lang_codes) {
-        let note = getElementForProperty(path, 'generic-note-input-' + lang_code).val();
+        const note_input = getElementForProperty(path, 'generic-note-input-' + lang_code);
+        const note_group = note_input.parent();
+        const note_help = note_group.find('.help-block');
+        const note = note_input.val();
+        if (has_note && note === "" && lang_code === "en") {
+          note_help.text(window.schema_editor_translations['note_must_not_be_empty']);
+          note_group.addClass("has-error");
+          has_error = true;
+        } else if (has_note && RegExp('^\\s+$').test(note)) {
+          note_help.text(window.schema_editor_translations['note_must_not_be_whitespace']);
+          note_group.addClass("has-error");
+          has_error = true;
+        } else {
+          note_help.text("");
+          note_group.removeClass("has-error");
+        }
         if (note || lang_code === "en") {
           translated_note[lang_code] = note;
         }
