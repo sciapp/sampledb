@@ -111,6 +111,14 @@ def show_object_form(
             'has_grant_for_previous_object': False,
         })
 
+    if passed_object_ids:
+        has_grant_for_first_passed_object = Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=passed_object_ids[0])
+    else:
+        has_grant_for_first_passed_object = False
+    template_arguments.update({
+        'has_grant_for_first_passed_object': has_grant_for_first_passed_object,
+    })
+
     if not isinstance(data, dict):
         return flask.abort(400)
     if not isinstance(schema, dict):
