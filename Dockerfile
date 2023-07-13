@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.licenses=MIT
 # git is required to build python dependencies from git repositories
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y gcc libpangocairo-1.0-0 gettext git libcairo2-dev pkg-config python3-dev
+    apt-get install -y gcc libpangocairo-1.0-0 gettext git
 
 # Switch to non-root user
 RUN useradd -ms /bin/bash sampledb
