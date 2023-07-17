@@ -121,10 +121,6 @@ def is_condition_fulfilled(
             isinstance(instance[condition['property_name']], dict) and
             instance[condition['property_name']].get('object_id') == condition['object_id']
         )
-    if condition['type'] == 'calculate':
-        return (
-            all(property_name in instance for property_name in condition['property_names'])
-        )
     if condition['type'] == 'any':
         for sub_condition in condition['conditions']:
             if is_condition_fulfilled(sub_condition, instance):

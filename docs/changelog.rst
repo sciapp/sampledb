@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.25
+------------
+
+Currently in development.
+
+- Allow automatic calculation of quantity values
 
 Version 0.24
 ------------

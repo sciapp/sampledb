@@ -7,6 +7,7 @@
   {% for property_name, property_schema in schema.properties.items() %}
     {% set is_required = ('required' in schema and property_name in schema['required']) %}
     {% set name = property_name %}
+    {% set parent_schema = schema %}
     {% set schema = property_schema %}
       {% set parent_id_prefix = id_prefix %}
     {% set id_prefix = id_prefix + '_' + name + '_' %}
@@ -29,6 +30,7 @@
     {% if property_name in schema.properties %}
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set name = property_name %}
+      {% set parent_schema = schema %}
       {% set schema = schema.properties[property_name] %}
       {% set parent_id_prefix = id_prefix %}
       {% set id_prefix = id_prefix + '_' + name + '_' %}
@@ -51,6 +53,7 @@
     {% if property_name not in schema.propertyOrder %}
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set name = property_name %}
+      {% set parent_schema = schema %}
       {% set schema = property_schema %}
       {% set parent_id_prefix = id_prefix %}
       {% set id_prefix = id_prefix + '_' + name + '_' %}

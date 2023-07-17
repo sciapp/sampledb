@@ -8,18 +8,20 @@ def test_validate_calculation():
     property_schemas = {
         'a': {
             'title': 'a',
-            'type': 'quantity'
+            'type': 'quantity',
+            'units': 'm'
         },
         'b': {
             'title': 'b',
-            'type': 'quantity'
+            'type': 'quantity',
+            'units': ['s']
         },
         'calculated_property': {
             'title': 'Calculated Property',
-            'type': 'quantity'
+            'type': 'quantity',
+            'units': 'm * s'
         }
     }
-    # TODO: check unit compatibility?
     validate_calculation(
         {
             'property_names': ['a', 'b'],
@@ -27,7 +29,7 @@ def test_validate_calculation():
             'formula': 'a + b'
         },
         property_schemas,
-        ['calculated_property', '0']
+        ['calculated_property']
     )
     validate_calculation(
         {
@@ -35,7 +37,7 @@ def test_validate_calculation():
             'formula': 'a * b'
         },
         property_schemas,
-        ['calculated_property', '0']
+        ['calculated_property']
     )
 
     with pytest.raises(ValidationError):
@@ -44,7 +46,7 @@ def test_validate_calculation():
                 'formula': 'a * b'
             },
             property_schemas,
-            ['calculated_property', '0']
+            ['calculated_property']
         )
 
     with pytest.raises(ValidationError):
@@ -54,7 +56,7 @@ def test_validate_calculation():
                 'formula': 'a * b'
             },
             property_schemas,
-            ['calculated_property', '0']
+            ['calculated_property']
         )
 
     with pytest.raises(ValidationError):
@@ -63,7 +65,7 @@ def test_validate_calculation():
                 'property_names': ['a', 'b'],
             },
             property_schemas,
-            ['calculated_property', '0']
+            ['calculated_property']
         )
 
     with pytest.raises(ValidationError):
@@ -72,7 +74,30 @@ def test_validate_calculation():
                 'property_names', 'formula'
             ],
             property_schemas,
-            ['calculated_property', '0']
+            ['calculated_property']
+        )
+
+    property_schemas['a']['units'] = ['m', 'km']
+    with pytest.raises(ValidationError):
+        validate_calculation(
+            {
+                'property_names': ['a', 'b'],
+                'formula': 'a * b'
+            },
+            property_schemas,
+            ['calculated_property']
+        )
+
+    property_schemas['a']['units'] = ['m']
+    property_schemas['calculated_property']['units'] = ['m * s', 'km * h']
+    with pytest.raises(ValidationError):
+        validate_calculation(
+            {
+                'property_names': ['a', 'b'],
+                'formula': 'a * b'
+            },
+            property_schemas,
+            ['calculated_property']
         )
 
 
@@ -126,3 +151,13 @@ def test_validate_schema_with_calculations():
         ]
     finally:
         sampledb.logic.schemas.calculations.validate_calculation = validate_calculation
+
+    schema['properties']['calculated_property']['calculation'] = {
+        'property_names': ['a', 'b'],
+        'formula': 'a * b'
+    }
+    validate_schema(schema)
+
+    schema['properties']['calculated_property']['units'] = ['m', 'km']
+    with pytest.raises(ValidationError):
+        validate_schema(schema)

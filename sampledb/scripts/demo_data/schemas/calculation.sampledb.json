@@ -59,6 +59,16 @@
       },
       "type": "quantity",
       "note": "Calculated from Distance (Miles)"
+    },
+    "centimeters": {
+      "title": "Distance (Centimeters)",
+      "units": "km",
+      "calculation": {
+        "property_names": ["kilometers"],
+        "formula": "kilometers * 100000"
+      },
+      "type": "quantity",
+      "note": "Calculated from Distance (Kilometers)"
     }
   },
   "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers"],
