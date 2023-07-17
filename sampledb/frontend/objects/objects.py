@@ -164,7 +164,7 @@ def objects() -> FlaskResponseT:
         filter_action_type_ids: typing.Optional[typing.List[int]] = []
         all_locations = []
         filter_location_ids: typing.Optional[typing.List[int]] = []
-        filter_related_user_id = None
+        filter_related_user_ids = None
         filter_doi = None
         filter_user_id = None
         filter_user_permissions = None
@@ -208,7 +208,7 @@ def objects() -> FlaskResponseT:
                 filter_action_type_ids,
                 filter_action_ids,
                 filter_instrument_ids,
-                filter_related_user_id,
+                filter_related_user_ids,
                 filter_doi,
                 filter_anonymous_permissions,
                 filter_all_users_permissions,
@@ -303,7 +303,7 @@ def objects() -> FlaskResponseT:
             else:
                 filter_origin_ids = None
 
-            filter_related_user_id = None
+            filter_related_user_ids = None
             filter_group_id = None
             filter_group_permissions = None
             filter_project_id = None
@@ -401,16 +401,12 @@ def objects() -> FlaskResponseT:
         use_advanced_search = flask.request.args.get('advanced', None) is not None
         must_use_advanced_search = use_advanced_search
         advanced_search_had_error = False
-        additional_search_notes = []
         if not use_advanced_search and query_string:
-            if filter_user_id is None:
+            if filter_related_user_ids is None:
                 users = get_users_by_name(query_string)
-                if len(users) == 1:
-                    user = users[0]
-                    filter_user_id = user.id
+                if users:
+                    filter_related_user_ids = [user.id for user in users]
                     query_string = ''
-                elif len(users) > 1:
-                    additional_search_notes.append(('error', "There are multiple users with this name.", 0, 0))
             if filter_doi is None and query_string.startswith('doi:'):
                 try:
                     filter_doi = logic.publications.simplify_doi(query_string)
@@ -441,7 +437,6 @@ def objects() -> FlaskResponseT:
             else:
                 raise
         filter_func, search_notes = wrap_filter_func(filter_func_with_notes)
-        search_notes.extend(additional_search_notes)
 
         if filter_location_ids is not None:
             object_ids_at_location = set()
@@ -449,10 +444,12 @@ def objects() -> FlaskResponseT:
                 object_ids_at_location.update(get_object_ids_at_location(location_id))
         else:
             object_ids_at_location = None
-        if filter_related_user_id is None:
+        if not filter_related_user_ids:
             object_ids_for_user = None
         else:
-            object_ids_for_user = set(user_log.get_user_related_object_ids(filter_related_user_id))
+            object_ids_for_user = set()
+            for filter_related_user_id in filter_related_user_ids:
+                object_ids_for_user.update(user_log.get_user_related_object_ids(filter_related_user_id))
         if filter_doi is None:
             object_ids_for_doi = None
         else:
@@ -742,16 +739,20 @@ def objects() -> FlaskResponseT:
                 'component_name': location.component.get_name() if location.component is not None else None
             })
 
-    if filter_related_user_id is not None:
-        user = get_user(filter_related_user_id)
-        filter_related_user_info = {
-            'name': user.get_name(),
-            'url': flask.url_for('.user_profile', user_id=filter_related_user_id),
-            'fed_id': user.fed_id,
-            'component_name': user.component.get_name() if user.component is not None else None,
-        }
+    if filter_related_user_ids is not None:
+        filter_related_user_infos = []
+        for filter_related_user_id in filter_related_user_ids:
+            user = get_user(filter_related_user_id)
+            filter_related_user_infos.append({
+                'name': user.get_name(),
+                'url': flask.url_for('.user_profile', user_id=filter_related_user_id),
+                'fed_id': user.fed_id,
+                'component_name': user.component.get_name() if user.component is not None else None,
+                'eln_import_id': user.eln_import_id,
+                'eln_object_id': user.eln_object_id,
+            })
     else:
-        filter_related_user_info = None
+        filter_related_user_infos = None
 
     filter_user_permissions_info: typing.Optional[typing.Dict[str, typing.Any]]
     if filter_user_permissions is not None and filter_user_id is not None:
@@ -969,7 +970,7 @@ def objects() -> FlaskResponseT:
         filter_action_infos=filter_action_infos,
         filter_instrument_infos=filter_instrument_infos,
         filter_location_infos=filter_location_infos,
-        filter_related_user_info=filter_related_user_info,
+        filter_related_user_infos=filter_related_user_infos,
         filter_user_permissions_info=filter_user_permissions_info,
         filter_group_permissions_info=filter_group_permissions_info,
         filter_project_permissions_info=filter_project_permissions_info,
@@ -1145,7 +1146,7 @@ def _parse_object_list_filters(
     typing.Optional[typing.List[int]],
     typing.Optional[typing.List[int]],
     typing.Optional[typing.List[int]],
-    typing.Optional[int],
+    typing.Optional[typing.List[int]],
     typing.Optional[str],
     typing.Optional[Permissions],
     typing.Optional[Permissions],
@@ -1214,6 +1215,7 @@ def _parse_object_list_filters(
         try:
             filter_related_user_id = int(params['related_user'])
             check_user_exists(filter_related_user_id)
+            filter_related_user_ids = [filter_related_user_id]
         except ValueError:
             flask.flash(_('Unable to parse related user ID.'), 'error')
             return FALLBACK_RESULT
@@ -1221,7 +1223,7 @@ def _parse_object_list_filters(
             flask.flash(_('Invalid related user ID.'), 'error')
             return FALLBACK_RESULT
     else:
-        filter_related_user_id = None
+        filter_related_user_ids = None
 
     try:
         filter_doi = logic.publications.simplify_doi(params.get('doi', ''))
@@ -1338,7 +1340,7 @@ def _parse_object_list_filters(
         filter_action_type_ids,
         filter_action_ids,
         filter_instrument_ids,
-        filter_related_user_id,
+        filter_related_user_ids,
         filter_doi,
         filter_anonymous_permissions,
         filter_all_users_permissions,
@@ -1454,7 +1456,7 @@ def save_object_list_defaults() -> FlaskResponseT:
             filter_action_type_ids,
             filter_action_ids,
             filter_instrument_ids,
-            _filter_related_user_id,
+            _filter_related_user_ids,
             filter_doi,
             filter_anonymous_permissions,
             filter_all_users_permissions,
