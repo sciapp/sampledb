@@ -14,6 +14,7 @@ Currently in development.
 - Removed setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND``
 - Introduce statistics and relative times in timeseries
 - Allow tooltips for property titles
+- Fixed search by user name
 
 Version 0.23.1
 --------------
