@@ -96,6 +96,9 @@
     $.each(window.conditional_wrapper_scripts, function () {
       this();
     });
+    $.each(window.calculation_scripts, function () {
+      this();
+    });
 
     $('div.objectpicker').each(function () {
       let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');

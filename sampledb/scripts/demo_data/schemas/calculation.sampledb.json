@@ -1,0 +1,66 @@
+{
+  "title": "Calculation Example",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "m": {
+      "title": "Distance",
+      "units": "m",
+      "calculation": {
+        "property_names": ["s", "mps"],
+        "formula": "mps * s"
+      },
+      "type": "quantity",
+      "note": "Calculated as: Speed * Time"
+    },
+    "s": {
+      "title": "Time",
+      "units": "s",
+      "calculation": {
+        "property_names": ["m", "mps"],
+        "formula": "m / mps"
+      },
+      "type": "quantity",
+      "note": "Calculated as: Distance / Speed"
+    },
+    "mps": {
+      "title": "Speed",
+      "units": "m/s",
+      "calculation": {
+        "property_names": ["m", "s"],
+        "formula": "m / s"
+      },
+      "type": "quantity",
+      "note": "Calculated as: Distance / Time"
+    },
+    "miles": {
+      "title": "Distance (Miles)",
+      "units": "mi",
+      "calculation": {
+        "property_names": ["kilometers"],
+        "digits": 2,
+        "formula": "kilometers / 1.609"
+      },
+      "type": "quantity",
+      "note": "Calculated from Distance (Kilometers)"
+    },
+    "kilometers": {
+      "title": "Distance (Kilometers)",
+      "units": "km",
+      "calculation": {
+        "property_names": ["miles"],
+        "digits": 2,
+        "formula": "miles * 1.609"
+      },
+      "type": "quantity",
+      "note": "Calculated from Distance (Miles)"
+    }
+  },
+  "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers"],
+  "required": ["name"]
+}

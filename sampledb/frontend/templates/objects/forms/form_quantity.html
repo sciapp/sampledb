@@ -33,3 +33,7 @@
     {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     </div>
 </div>
+
+{% if 'calculation' in schema %}
+  {% include "objects/forms/calculation_script.html" %}
+{% endif %}

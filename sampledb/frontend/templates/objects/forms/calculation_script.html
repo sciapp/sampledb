@@ -1,0 +1,59 @@
+<script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  if (!window.calculation_scripts) {
+    window.calculation_scripts = [];
+  }
+  window.calculation_scripts.push(function () {
+    let all_input_elements_available = true;
+    let input_elements = [];
+    let property_names = {{ schema.calculation.property_names | tojson }};
+    for (const property_name of property_names) {
+      const property_id = "{{ parent_id_prefix }}_" + property_name + "__magnitude";
+      const property_element = $("[name=\"" + property_id + "\"]");
+      if (property_element.length === 1) {
+        input_elements.push(property_element);
+      } else {
+        all_input_elements_available = false;
+        break;
+      }
+    }
+
+    let target_element = $("[name=\"{{ id_prefix + '_magnitude' }}\"]");
+
+    if (target_element.length === 1 && all_input_elements_available) {
+      let evaluateCalculation = function () {
+        const local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}";
+        let formula = "{{ schema.calculation.formula }}";
+        let values = {};
+        let all_input_values_available = true;
+        for (i = 0; i < input_elements.length; i++) {
+          let value_string = input_elements[i].val();
+          value_string = value_string.trim();
+          if (local_decimal_delimiter !== ".") {
+            value_string = value_string.replace(local_decimal_delimiter, ".");
+          }
+          let value = parseFloat(value_string);
+          if (!isFinite(value)) {
+            all_input_values_available = false;
+            break;
+          }
+          values[property_names[i]] = value;
+        }
+        if (all_input_values_available) {
+          let result = math.evaluate(formula, values);
+          {% if 'digits' in schema.calculation %}
+            result = math.round(result, {{ schema.calculation.digits }});
+          {% endif %}
+          let result_string = String(result);
+          if (local_decimal_delimiter !== ".") {
+            result_string = result_string.replace('.', local_decimal_delimiter);
+          }
+          target_element.val(result_string);
+        }
+      }
+      input_elements.forEach(function (input_element) {
+        input_element.on('change', evaluateCalculation);
+      });
+      evaluateCalculation();
+    }
+  });
+</script>
