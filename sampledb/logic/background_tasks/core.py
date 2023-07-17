@@ -23,13 +23,15 @@ from ...models import BackgroundTask, BackgroundTaskStatus
 from .. import errors
 from .background_dataverse_export import handle_dataverse_export_task
 from .send_mail import handle_send_mail_task
+from .poke_components import handle_poke_components_task
 
 TASK_WAIT_TIMEOUT = 30
 NUM_HANDLER_THREADS = 4
 
 HANDLERS: typing.Dict[str, typing.Callable[[typing.Dict[str, typing.Any], typing.Optional[int]], typing.Tuple[bool, typing.Optional[dict[str, typing.Any]]]]] = {
     'send_mail': handle_send_mail_task,
-    'dataverse_export': handle_dataverse_export_task
+    'dataverse_export': handle_dataverse_export_task,
+    'poke_components': handle_poke_components_task,
 }
 
 should_stop = False

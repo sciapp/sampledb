@@ -18,12 +18,12 @@ import flask
 from .conditions import are_conditions_fulfilled
 from ...logic import actions, objects, datatypes, users, languages
 from ...models import ActionType
-from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError
+from ..errors import ObjectDoesNotExistError, ValidationError, ValidationMultiError, UserDoesNotExistError, InvalidURLError
 from .utils import units_are_valid
-from ..utils import get_translated_text
+from ..utils import get_translated_text, parse_url
 from ..units import get_dimensionality_for_units, get_magnitude_in_base_units
 
-opt_federation_keys = {'export_edit_note', 'component_uuid'}
+OPT_IMPORT_KEYS = {'export_edit_note', 'component_uuid', 'eln_source_url', 'eln_object_url', 'eln_user_url'}
 
 
 def validate(
@@ -136,7 +136,7 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
     valid_keys = {'_type', 'hazards'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -183,7 +183,7 @@ def _validate_tags(
     valid_keys = {'_type', 'tags'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -281,7 +281,7 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     if schema.get('markdown', False):
         valid_keys.add('is_markdown')
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -361,7 +361,7 @@ def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Di
     valid_keys = {'_type', 'utc_datetime'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -391,7 +391,7 @@ def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     valid_keys = {'_type', 'value'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -417,7 +417,7 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     required_keys = {'_type'}
     valid_keys = required_keys.union({'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'})
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -510,7 +510,7 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
     valid_keys = {'_type', 'object_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -522,6 +522,8 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
         raise ValidationError('object_id must be int', path)
     if 'component_uuid' in instance and instance['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
         pass
+    elif 'eln_source_url' in instance:
+        validate_eln_urls(instance, path)
     else:
         try:
             sample = objects.get_object(object_id=instance['object_id'])
@@ -550,7 +552,7 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
     valid_keys = {'_type', 'object_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -562,6 +564,8 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
         raise ValidationError('object_id must be int', path)
     if 'component_uuid' in instance and instance['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
         pass
+    elif 'eln_source_url' in instance:
+        validate_eln_urls(instance, path)
     else:
         try:
             measurement = objects.get_object(object_id=instance['object_id'])
@@ -590,7 +594,7 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     valid_keys = {'_type', 'user_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -600,8 +604,12 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         raise ValidationError('expected _type "user"', path)
     if not isinstance(instance['user_id'], int):
         raise ValidationError('user_id must be int', path)
+    if instance['user_id'] < 1:
+        raise ValidationError('user_id must be positive', path)
     if 'component_uuid' in instance and instance['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
         pass  # TODO
+    elif 'eln_source_url' in instance:
+        validate_eln_urls(instance, path)
     else:
         try:
             users.check_user_exists(user_id=instance['user_id'])
@@ -623,7 +631,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
     valid_keys = {'_type', 'object_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -633,8 +641,12 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
         raise ValidationError('expected _type "object_reference"', path)
     if not isinstance(instance['object_id'], int):
         raise ValidationError('object_id must be int', path)
+    if instance['object_id'] < 1:
+        raise ValidationError('object_id must be positive', path)
     if 'component_uuid' in instance and instance['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
         pass
+    elif 'eln_source_url' in instance:
+        validate_eln_urls(instance, path)
     else:
         try:
             object = objects.get_object(object_id=instance['object_id'])
@@ -679,7 +691,7 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
     valid_keys = {'_type', 'plotly'}
     required_keys = ['_type', 'plotly']
     schema_keys = instance.keys()
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -722,7 +734,7 @@ def _validate_timeseries(
     required_keys = {'_type', 'data'}
     valid_keys = required_keys.union({'units', 'dimensionality', 'data'})
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -760,21 +772,29 @@ def _validate_timeseries(
 
     if not isinstance(instance['data'], list):
         raise ValidationError('data must be list', path)
-    if not all(isinstance(entry, (list, tuple)) and len(entry) in (2, 3) and type(entry[0]) is str and all(type(value) in (int, float) for value in entry[1:]) for entry in instance['data']):
-        raise ValidationError('data must be list of lists containing a datetime string and 1 or 2 numbers ', path)
+
+    is_relative_time = len(instance['data']) > 0 and len(instance['data'][0]) > 0 and type(instance['data'][0][0]) in (int, float)
+    if (
+        (not is_relative_time and not all(isinstance(entry, (list, tuple)) and len(entry) in (2, 3) and type(entry[0]) is str and all(type(value) in (int, float) for value in entry[1:]) for entry in instance['data'])) or
+        (is_relative_time and not all(isinstance(entry, (list, tuple)) and len(entry) in (2, 3) and type(entry[0]) in (int, float) and all(type(value) in (int, float) for value in entry[1:]) for entry in instance['data']))
+    ):
+        raise ValidationError('data must be list of lists containing either a datetime string or relative time in seconds, and 1 or 2 numbers', path)
 
     existing_times = set()
     for i, entry in enumerate(instance['data']):
-        utc_datetime, magnitude = entry[:2]
+        time, magnitude = entry[:2]
         if not math.isfinite(magnitude):
             raise ValidationError('magnitude must be finite', path)
-        if utc_datetime in existing_times:
+        if time in existing_times:
             raise ValidationError('duplicate point in timeseries', path)
-        try:
-            datetime.datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S.%f')
-        except Exception:
-            raise ValidationError('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff', path)
-        existing_times.add(utc_datetime)
+        if not is_relative_time:
+            try:
+                datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f')
+            except Exception:
+                raise ValidationError('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff', path)
+        elif not math.isfinite(time):
+            raise ValidationError('relative time must be finite', path)
+        existing_times.add(time)
         calculated_magnitude_in_base_units = get_magnitude_in_base_units(magnitude=decimal.Decimal(magnitude), units=instance['units'])
         if len(entry) == 3:
             magnitude_in_base_units = entry[2]
@@ -783,7 +803,7 @@ def _validate_timeseries(
             if not math.isclose(float(calculated_magnitude_in_base_units), magnitude_in_base_units):
                 raise ValidationError('magnitude_in_base_units and magnitude do not match', path)
         else:
-            instance['data'][i] = [utc_datetime, float(magnitude), float(calculated_magnitude_in_base_units)]
+            instance['data'][i] = [time, float(magnitude), float(calculated_magnitude_in_base_units)]
 
 
 def _validate_file(
@@ -806,7 +826,7 @@ def _validate_file(
     valid_keys = {'_type', 'file_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - opt_federation_keys
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -826,3 +846,15 @@ def _validate_file(
                     break
             else:
                 raise ValidationError(f'file name should have one of these extensions: {", ".join(schema["extensions"])}', path)
+
+
+def validate_eln_urls(
+        instance: typing.Dict[str, typing.Any],
+        path: typing.List[str]
+) -> None:
+    for key in ['eln_source_url', 'eln_user_url', 'eln_object_url']:
+        if instance.get(key) is not None:
+            try:
+                parse_url(instance[key], valid_schemes=('http', 'https'))
+            except InvalidURLError:
+                raise ValidationError(f'{key} must be a valid http oder https URL', path)

@@ -24,6 +24,7 @@
       <li><a href="#comments">{{ _('Comments') }}</a></li>
       <li><a href="#activity_log">{{ _('Activity Log') }}</a></li>
       <li><a href="#other_databases">{{ _('Other Databases') }}</a></li>
+      <li><a href="#import">{{ _('Import') }}</a></li>
       <li><a href="#related_objects">{{ _('Related Objects') }}</a></li>
     </ul>
     <a href="#top">{{ _('Back to top') }}</a>
@@ -84,6 +85,8 @@
   {% block includes %}
       {# counter for plotly_chart_plots #}
       {% set plot_counter = namespace(value=0) %}
+      {% set indent_level = 0 %}
+      {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
           {% if previous_version_data_diff %}
             {% set diff = previous_version_data_diff %}
@@ -333,6 +336,8 @@
           {% set data = elem.object.data %}
           {% set schema = elem.object.schema %}
           {% set files = elem.files %}
+          {% set indent_level = 0 %}
+          {% set show_indent_border = False %}
           {% include "objects/view/any.html" %}
         {% endif %}
       </div>
@@ -553,7 +558,7 @@
                   </div>
                   </div>
                   <div class="modal-footer">
-                    {% if user_may_edit %}
+                    {% if user_may_upload_files %}
                     <button type="submit" class="btn btn-primary file-info-edit-mode">{{ _('Save') }}</button>
                     <button type="button" class="btn btn-default file-info-edit-mode button-file-info-cancel">{{ _('Cancel') }}</button>
                     <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">{{ _('Edit') }}</button>
@@ -591,7 +596,7 @@
         {% endif %}
       {% endfor %}
 
-      {% if user_may_edit %}
+      {% if user_may_upload_files %}
         <h5>{{ _('Upload File') }}</h5>
         <div class="form-group row clearfix" style="padding-right:0.75em">
           <div class="col-md-12">
@@ -1012,7 +1017,7 @@
   {% if not is_archived and action is not none and action.type.enable_activity_log %}
     {% if object_log_entries %}
       <h2 id="activity_log">{{ _('Activity Log')}}</h2>
-      <table class="table" id="activity_log">
+      <table class="table" id="activity_log_table">
         <thead>
           <tr>
             <th scope="col" style="white-space: nowrap;width: 1%;">{{ _('Datetime') }}</th>
@@ -1030,24 +1035,31 @@
                   window.update_activity_log_filter_states();
                   document.getElementById('activity_log_filter_versions').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'versions');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_measurements').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'measurements');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_comments').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'comments');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_files').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'files');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_locations').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'locations');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_references').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'references');
+                    activity_log_apply_filters();
                   });
                   document.getElementById('activity_log_filter_other').addEventListener('click', function () {
                     activity_log_toggle($(this).is(':checked'), 'other');
+                    activity_log_apply_filters();
                   });
                 </script>
               ">
@@ -1258,6 +1270,15 @@
                 {% endif %}
                 {% endwith %}
               {% endif %}
+            {% elif object_log_entry.type == ObjectLogEntryType.IMPORT_FROM_ELN_FILE %}
+              <td>
+                {{ _('%(user_ref)s imported this object from an .eln file.', user_ref=user_reference(object_log_entry.user)) }}
+              </td>
+              <td class="text-right">
+              {% if object.eln_import_id is not none %}
+                <a href="{{ url_for('.eln_import', eln_import_id=object.eln_import_id) }}">{{ _('View') }}</a>
+              {% endif %}
+              </td>
             {% else %}
               <td>{{ _('Unknown event') }}</td><td></td>
             {% endif %}
@@ -1265,6 +1286,7 @@
         {% endfor %}
         </tbody>
       </table>
+      <label id="activity_log_show_all_wrapper" for="activity_log_show_all_toggle" class="btn btn-default btn-xs"><input type="checkbox" id="activity_log_show_all_toggle" autocomplete="off" {% if object_log_entries | length <= 15 %}checked="checked"{% endif %}> <span>{{ _('Show more') }}</span></label>
     {% endif %}
   {% endif %}
 
@@ -1424,13 +1446,20 @@
         {% endif %}
       </div>
     {% endif %}
+
+    {% if object.eln_import_id is not none %}
+      <h2 id="import">{{ _('Import') }}</h2>
+      <p>
+        {{ _('This object was imported from <a href="%(eln_import_url)s">.eln file #%(eln_import_id)s</a> by %(user_ref)s.', eln_import_id=object.eln_import_id, eln_import_url=url_for('.eln_import', eln_import_id=object.eln_import_id), user_ref=user_reference(object.eln_import.user)) }} {% if eln_import_url is not none and eln_import_url.startswith('http') %}{{ _('The original URL is <a href="%(eln_import_url)s">%(eln_import_url)s</a>.', eln_import_url=eln_import_url) }}{% endif %}
+      </p>
+    {% endif %}
   {% endif %}
 
   {% if not is_archived and related_objects_tree and action is not none and action.type.enable_related_objects %}
     <h2 id="related_objects">{{ _('Related Objects') }}</h2>
 
     <div class="related-objects">
-      {% set in_export_data_model = False %}
+      {% set in_export_data_modal = False %}
       {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
     </div>
   {% endif %}
@@ -1488,7 +1517,7 @@
             {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
             <div class="related-objects">
               <div>{{ _('Objects') }}</div>
-              {% set in_export_data_model = True %}
+              {% set in_export_data_modal = True %}
               {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
             </div>
             {% endif %}
@@ -1709,18 +1738,38 @@
             {% endfor %}
           ]
         };
-        window.activity_log_toggle = function (should_show, category) {
-          var type_list = activity_log_filter_type_list[category];
-          var activity_log = $('#activity_log').find('> tbody');
+        window.activity_log_apply_filters = function() {
+          window.activity_log_apply_filter("versions");
+          window.activity_log_apply_filter("measurements");
+          window.activity_log_apply_filter("comments");
+          window.activity_log_apply_filter("files");
+          window.activity_log_apply_filter("locations");
+          window.activity_log_apply_filter("references");
+          window.activity_log_apply_filter("other");
+          const activity_log = $('#activity_log_table > tbody');
+          const show_all = $('#activity_log_show_all_toggle').prop('checked');
+          const visible_activity_log_entries = activity_log.find('tr:visible');
+          $('#activity_log_counter').html('' + visible_activity_log_entries.length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
+          if (!show_all && visible_activity_log_entries.length > 15) {
+            visible_activity_log_entries.slice(15).css({display: 'none'});
+            $('#activity_log_show_all_wrapper').show();
+          } else {
+            $('#activity_log_show_all_wrapper').hide();
+          }
+        }
+        window.activity_log_apply_filter = function (category) {
+          const type_list = activity_log_filter_type_list[category];
+          const activity_log = $('#activity_log_table > tbody');
           type_list.forEach(function (activity_log_type) {
-            var activity_log_rows = activity_log.find('tr[data-activity-log-type=' + activity_log_type + ']');
-            if (should_show) {
+            const activity_log_rows = activity_log.find('tr[data-activity-log-type=' + activity_log_type + ']');
+            if (window.activity_log_toggle.current_state[category]) {
               activity_log_rows.css({display: 'table-row'});
             } else {
               activity_log_rows.css({display: 'none'});
             }
           });
-          $('#activity_log_counter').html('' + activity_log.find('tr:visible').length + '&thinsp;/&thinsp;' + activity_log.find('tr').length);
+        };
+        window.activity_log_toggle = function (should_show, category) {
           window.activity_log_toggle.current_state[category] = should_show;
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(window.activity_log_toggle.current_state), {sameSite: 'Lax'});
         };
@@ -1743,6 +1792,9 @@
           };
           Cookies.set('SAMPLEDB_ACTIVITY_LOG_FILTER_STATE', JSON.stringify(activity_log_filter_state), {sameSite: 'Lax'});
         }
+        $('#activity_log_show_all_toggle').on('change', function() {
+          window.activity_log_apply_filters();
+        });
         window.activity_log_toggle(activity_log_filter_state['versions'], "versions");
         window.activity_log_toggle(activity_log_filter_state['measurements'], "measurements");
         window.activity_log_toggle(activity_log_filter_state['comments'], "comments");
@@ -1750,6 +1802,7 @@
         window.activity_log_toggle(activity_log_filter_state['locations'], "locations");
         window.activity_log_toggle(activity_log_filter_state['references'], "references");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
+        window.activity_log_apply_filters();
         window.update_activity_log_filter_states = function () {
           if (window.activity_log_toggle.current_state['versions']) {
             $('#activity_log_filter_versions').attr('checked', 'checked');
@@ -1841,7 +1894,7 @@
             $('#input-file-names-hidden').val("");
             $('#input-file-source-hidden').val("local");
           }
-          {% if user_may_edit %}
+          {% if user_may_upload_files %}
             $('#input-file-upload').on('change', changeHandler);
             function dropHandler(e) {
               e.preventDefault();

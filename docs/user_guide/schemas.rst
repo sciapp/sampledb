@@ -441,6 +441,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please describe the process in detail."`` or ``{"en": "Can be filled in later."}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"A detailed process description"`` or ``{"en": "A detailed process description"}``.
+
 placeholder
 ^^^^^^^^^^^
 
@@ -550,6 +555,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Set if chamber was pressurized."`` or ``{"en": "Check box if a target was set"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Whether the chamber was pressurized"`` or ``{"en": "Whether a target was set"}``.
+
 default
 ^^^^^^^
 
@@ -605,6 +615,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Temperature in measurement chamber"`` or ``{"en": "Horizontal distance between sample and detector"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"The temperature as measured by sensor T1"`` or ``{"en": "The nominal detector distance"}``.
+
 default
 ^^^^^^^
 
@@ -647,6 +662,7 @@ max_magnitude
 The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
 
 .. _metadata_quantity_object:
+
 Quantity Objects
 ^^^^^^^^^^^^^^^^
 
@@ -709,6 +725,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Use experiment starting time"`` or ``{"en": "Include cool down time in estimate"}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"The experiment starting time"`` or ``{"en": "The time the experiment was started"}``.
 
 default
 ^^^^^^^
@@ -792,6 +813,11 @@ note
 
 A note to display below the hazards selection when creating or editing an object using this schema, as a JSON string or object, e.g. ``"See lab guidelines"`` or ``{"en": "Please provide additional information in the description."}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Hazards, as per supplier"`` or ``{"en": "Hazards, as per supplier"}``.
+
 plotly Charts
 `````````````
 
@@ -859,6 +885,11 @@ note
 
 A note to display below the JSON field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Will be filled by bot"`` or ``{"en": "Upload raw log file as well"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Temperature curve, extracted from log file"`` or ``{"en": "Temperature curve, extracted from log file"}``.
+
 User References
 ```````````````
 
@@ -902,6 +933,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"For external users, leave blank and fill in information below"`` or ``{"en": "Remember to set as responsible user as well"}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"The user who operated the instrument"`` or ``{"en": "The user who operated the instrument"}``.
 
 default
 ^^^^^^^
@@ -952,6 +988,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Leave blank if no precursor was used."`` or ``{"en": "Select the associated calibration measurement"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Precursor, if any"`` or ``{"en": "Precursor, if any"}``.
+
 action_type_id
 ^^^^^^^^^^^^^^
 
@@ -991,7 +1032,7 @@ Properties of this type are a special case of object reference, limited to refer
 Time Series
 ```````````
 
-Properties of the ``timeseries`` type represent time series, i.e. a sequence of physical quantities or unitless numbers at specific points in time. The ``units`` attribute is mandatory, so for unitless numbers it must be set to ``1``.
+Properties of the ``timeseries`` type represent time series, i.e. a sequence of physical quantities or unitless numbers at specific points in time or relative times. The ``units`` attribute is mandatory, so for unitless numbers it must be set to ``1``.
 
 .. code-block:: json
     :caption: A temperature time series property
@@ -1032,6 +1073,11 @@ note
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Pressure"`` or ``{"en": "Sample Temperature"}``.
 
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Pressure, as extracted from log file"`` or ``{"en": "Temperature, as set in instrument settings"}``.
+
 units
 ^^^^^
 
@@ -1043,6 +1089,17 @@ display_digits
 ^^^^^^^^^^^^^^
 
 This attribute is the number of decimal places to be shown when displaying the magnitudes, e.g. ``2`` to show ``1.2345`` as ``1.23``. The magnitudes will be rounded for this, though due to the `limitations of floating point representation <https://docs.python.org/3/tutorial/floatingpoint.html>`_, small rounding errors may occur. Also due to limitations, at most 27 decimal places can be displayed.
+
+statistics
+^^^^^^^^^^
+
+This attribute allows to determine which statistics about the timeseries should be displayed in a list of strings. Defaults to ``["average", "stddev"]`` if not defined. Valid statistics:
+
+- ``"average"``: Weighted average
+- ``"stddev"``: Standard deviation
+- ``"min"``: Minimum
+- ``"max"``: Maximum
+- ``"count"``: Count of values
 
 Files
 `````
@@ -1077,6 +1134,11 @@ note
 ^^^^
 
 A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please upload a picture of the experiment setup."`` or ``{"en": "Please upload a picture of the experiment setup."}``.
+
+tooltip
+^^^^^^^
+
+A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Setup (top-down view)"`` or ``{"en": "Log file of first run (see logs/0001.log)"}``.
 
 extensions
 ^^^^^^^^^^

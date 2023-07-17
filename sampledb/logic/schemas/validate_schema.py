@@ -55,7 +55,7 @@ def validate_schema(
         raise ValidationError('invalid schema (type must be str)', path)
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
-    _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+    _validate_title_and_tooltip_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     if 'style' in schema and not isinstance(schema['style'], str):
         raise ValidationError('style must only contain text', path)
     if 'conditions' in schema:
@@ -76,74 +76,84 @@ def validate_schema(
     elif schema['type'] == 'object':
         return _validate_object_schema(schema, path, invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes)
     elif schema['type'] == 'text':
-        return _validate_text_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_text_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'datetime':
-        return _validate_datetime_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_datetime_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'bool':
-        return _validate_bool_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_bool_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'quantity':
         return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'sample':
-        return _validate_sample_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_sample_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'measurement':
-        return _validate_measurement_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_measurement_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'object_reference':
-        return _validate_object_reference_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_object_reference_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'tags':
         return _validate_tags_schema(schema, path, strict=strict)
     elif schema['type'] == 'hazards':
-        return _validate_hazards_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_hazards_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'user':
-        return _validate_user_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_user_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'plotly_chart':
-        return _validate_plotly_chart_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_plotly_chart_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'timeseries':
         return _validate_timeseries_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'file':
-        return _validate_file_schema(schema, path, all_language_codes=all_language_codes)
+        return _validate_file_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     else:
         raise ValidationError('invalid type', path)
 
 
-def _validate_title_in_schema(
+def _validate_title_and_tooltip_in_schema(
     schema: typing.Dict[str, typing.Any],
     path: typing.List[str],
     *,
     all_language_codes: typing.Set[str],
-    strict: bool = False
+    strict: bool
 ) -> None:
-    if not isinstance(schema['title'], str) and not isinstance(schema['title'], dict):
-        raise ValidationError('title must be str or dict', path)
-    if isinstance(schema['title'], dict):
-        if 'en' not in schema['title']:
-            raise ValidationError('title must include an english translation', path)
-        for lang_code in schema['title'].keys():
-            if lang_code not in all_language_codes:
-                raise ValidationError('title must only contain known languages', path)
-        for title_text in schema['title'].values():
-            if not isinstance(title_text, str):
-                raise ValidationError('title must only contain text', path)
-            if strict:
-                if not title_text:
-                    raise ValidationError('title must not be empty', path)
-                if re.match(r'^\s+$', title_text):
-                    raise ValidationError('title must not be whitespace only', path)
-    elif strict:
-        title_text = schema['title']
-        if not title_text:
-            raise ValidationError('title must not be empty', path)
-        if re.match(r'^\s+$', title_text):
-            raise ValidationError('title must not be whitespace only', path)
+    for key in ['title', 'tooltip']:
+        if key == 'tooltip' and key not in schema:
+            continue
+        if not isinstance(schema[key], str) and not isinstance(schema[key], dict):
+            raise ValidationError(f'{key} must be str or dict', path)
+        if isinstance(schema[key], dict):
+            if 'en' not in schema[key]:
+                raise ValidationError(f'{key} must include an english translation', path)
+            for lang_code in schema[key].keys():
+                if lang_code not in all_language_codes:
+                    raise ValidationError(f'{key} must only contain known languages', path)
+            for title_text in schema[key].values():
+                if not isinstance(title_text, str):
+                    raise ValidationError(f'{key} must only contain text', path)
+                if strict or key == 'tooltip':
+                    if not title_text:
+                        raise ValidationError(f'{key} must not be empty', path)
+                    if re.match(r'^\s+$', title_text):
+                        raise ValidationError(f'{key} must not be whitespace only', path)
+        elif strict or key == 'tooltip':
+            title_text = schema[key]
+            if not title_text:
+                raise ValidationError(f'{key} must not be empty', path)
+            if re.match(r'^\s+$', title_text):
+                raise ValidationError(f'{key} must not be whitespace only', path)
 
 
 def _validate_note_in_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     if 'note' in schema and not isinstance(schema['note'], str) and not isinstance(schema['note'], dict):
         raise ValidationError('note must be str or dict', path)
+    if 'note' in schema and isinstance(schema['note'], str):
+        note_text = schema['note']
+        if strict and not note_text:
+            raise ValidationError('note must not be empty', path)
+        if strict and re.match(r'^\s+$', note_text):
+            raise ValidationError('note must not be whitespace only', path)
     if 'note' in schema and isinstance(schema['note'], dict):
         if 'en' not in schema['note']:
             raise ValidationError('note must include an english translation', path)
@@ -153,13 +163,18 @@ def _validate_note_in_schema(
         for note_text in schema['note'].values():
             if not isinstance(note_text, str):
                 raise ValidationError('note must only contain text', path)
+            if strict and not note_text:
+                raise ValidationError('note text must not be empty', path)
+            if strict and re.match(r'^\s+$', note_text):
+                raise ValidationError('note text must not be whitespace only', path)
 
 
 def _validate_hazards_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validate the given GHS hazards schema and raise a ValidationError if it is invalid.
@@ -169,7 +184,7 @@ def _validate_hazards_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -185,7 +200,7 @@ def _validate_hazards_schema(
     if path != ['hazards']:
         raise ValidationError('GHS hazards must be a top-level entry named "hazards"', path)
 
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_array_schema(
@@ -193,7 +208,7 @@ def _validate_array_schema(
         path: typing.List[str],
         *,
         invalid_template_action_ids: typing.Sequence[int] = (),
-        strict: bool = False,
+        strict: bool,
         all_language_codes: typing.Set[str]
 ) -> None:
     """
@@ -206,7 +221,7 @@ def _validate_array_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'items', 'style', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions'}
+    valid_keys = {'type', 'title', 'items', 'style', 'tooltip', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions'}
     required_keys = {'type', 'title', 'items'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -259,7 +274,7 @@ def _validate_tags_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        strict: bool = False
+        strict: bool
 ) -> None:
     """
     Validates the given tags schema and raises a ValidationError if it is invalid.
@@ -269,7 +284,7 @@ def _validate_tags_schema(
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'dataverse_export', 'scicat_export', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'dataverse_export', 'scicat_export', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -293,7 +308,7 @@ def _validate_object_schema(
         path: typing.List[str],
         *,
         invalid_template_action_ids: typing.Sequence[int] = (),
-        strict: bool = False,
+        strict: bool,
         all_language_codes: typing.Set[str]
 ) -> None:
     """
@@ -374,7 +389,7 @@ def _validate_object_schema(
         property_schemas[property_name] = property_schema
     for condition_path, condition in property_conditions:
         if not isinstance(condition, dict) or not isinstance(condition.get('type'), str):
-            raise ValidationError('condition must be a dict containg the key type', condition_path)
+            raise ValidationError('condition must be a dict containing the key type', condition_path)
         validate_condition_schema(condition, property_schemas, condition_path)
 
     if 'required' in schema:
@@ -496,18 +511,19 @@ def _validate_object_schema(
                 )
             ):
                 raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
-        _validate_title_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+        _validate_title_and_tooltip_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
         if 'show_action_info' in schema['workflow_view'] and not isinstance(schema['workflow_view']['show_action_info'], bool):
             raise ValidationError('show_action_info must be bool', path)
 
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_text_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given text object schema and raises a ValidationError if it is invalid.
@@ -517,7 +533,7 @@ def _validate_text_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'languages', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'minLength', 'maxLength', 'choices', 'pattern', 'multiline', 'markdown', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'languages', 'conditions', 'may_copy', 'style', 'tooltip'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -621,14 +637,15 @@ def _validate_text_schema(
         raise ValidationError('scicat_export must be True or False', path)
     if 'scicat_export' in schema and not schema['scicat_export'] and path == ['name']:
         raise ValidationError('scicat_export must be True for the object name', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_datetime_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given datetime object schema and raises a ValidationError if it is invalid.
@@ -638,7 +655,7 @@ def _validate_datetime_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -656,14 +673,15 @@ def _validate_datetime_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_bool_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given boolean object schema and raises a ValidationError if it is invalid.
@@ -672,7 +690,7 @@ def _validate_bool_schema(
     :param path: the path to this subschema
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'default', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
@@ -684,7 +702,7 @@ def _validate_bool_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_quantity_schema(
@@ -692,7 +710,7 @@ def _validate_quantity_schema(
         path: typing.List[str],
         *,
         all_language_codes: typing.Set[str],
-        strict: bool = False
+        strict: bool
 ) -> None:
     """
     Validates the given quantity object schema and raises a ValidationError if it is invalid.
@@ -703,7 +721,7 @@ def _validate_quantity_schema(
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits', 'min_magnitude', 'max_magnitude'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip', 'display_digits', 'min_magnitude', 'max_magnitude'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -781,14 +799,15 @@ def _validate_quantity_schema(
     if strict:
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_sample_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given sample object schema and raises a ValidationError if it is invalid.
@@ -798,7 +817,7 @@ def _validate_sample_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -812,14 +831,15 @@ def _validate_sample_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_measurement_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given measurement object schema and raises a ValidationError if it is invalid.
@@ -829,7 +849,7 @@ def _validate_measurement_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -843,14 +863,15 @@ def _validate_measurement_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_object_reference_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given object reference object schema and raises a ValidationError if it is invalid.
@@ -860,7 +881,7 @@ def _validate_object_reference_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -890,7 +911,7 @@ def _validate_object_reference_schema(
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):
         raise ValidationError('scicat_export must be True or False', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_notebook_templates(notebook_templates: typing.Any) -> None:
@@ -947,7 +968,8 @@ def _validate_user_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given user object schema and raises a ValidationError if it is invalid.
@@ -957,7 +979,7 @@ def _validate_user_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'default', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'scicat_export', 'default', 'conditions', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -972,14 +994,15 @@ def _validate_user_schema(
         raise ValidationError('scicat_export must be True or False', path)
     if 'default' in schema and (schema['default'] != 'self' and type(schema['default']) is not int):
         raise ValidationError('default must be "self" or int', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_plotly_chart_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given plotly_chart object schema and raises a ValidationError if it is invalid.
@@ -989,12 +1012,12 @@ def _validate_plotly_chart_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style'}
+    valid_keys = {'type', 'title', 'note', 'dataverse_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     schema_keys = schema.keys()
     invalid_keys = schema_keys - valid_keys
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_timeseries_schema(
@@ -1002,7 +1025,7 @@ def _validate_timeseries_schema(
         path: typing.List[str],
         *,
         all_language_codes: typing.Set[str],
-        strict: bool = False
+        strict: bool
 ) -> None:
     """
     Validates the given timeseries schema and raises a ValidationError if it is invalid.
@@ -1013,7 +1036,7 @@ def _validate_timeseries_schema(
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'display_digits'}
+    valid_keys = {'type', 'title', 'units', 'note', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip', 'display_digits', 'statistics'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -1055,14 +1078,21 @@ def _validate_timeseries_schema(
     if strict:
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    if 'statistics' in schema:
+        valid_statistics_keys = {'average', 'stddev', 'min', 'max', 'count'}
+        if not isinstance(schema['statistics'], list):
+            raise ValidationError('statistics must be a list of strings', path)
+        if not all(statistics_key in valid_statistics_keys for statistics_key in schema['statistics']):
+            raise ValidationError(f'statistics keys each have to be one of the following: {valid_statistics_keys}', path)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_file_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
-        all_language_codes: typing.Set[str]
+        all_language_codes: typing.Set[str],
+        strict: bool
 ) -> None:
     """
     Validates the given file object schema and raises a ValidationError if it is invalid.
@@ -1072,7 +1102,7 @@ def _validate_file_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'conditions', 'style', 'extensions', 'preview'}
+    valid_keys = {'type', 'title', 'note', 'conditions', 'style', 'tooltip', 'extensions', 'preview'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -1086,4 +1116,4 @@ def _validate_file_schema(
             raise ValidationError('extensions must be a list of file extensions', path)
     if 'preview' in schema and not isinstance(schema['preview'], bool):
         raise ValidationError('preview must be a list of file extensions', path)
-    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)

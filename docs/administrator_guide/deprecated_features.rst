@@ -16,6 +16,8 @@ To improve this, database file storage was added to SampleDB and made the defaul
 
 As of version 0.21, local file storage is deprecated and administrators are urged to move all remaining locally stored files to database storage.
 
+As of version 0.24, files with local storage cannot be created via the API.
+
 Synchronous Loading of Object Lists
 -----------------------------------
 
@@ -24,6 +26,8 @@ There are various pages in SampleDB that require loading the names, IDs and othe
 In version 0.15 the configuration value LOAD_OBJECTS_IN_BACKGROUND was added to allow loading these objects asynchronously and inserting them in the relevant select fiels on the client side. To preserve existing behavior, this variable was set to be False by default, even though loading the objects asynchronously leads to performance improvements and does not negatively impact the user experience.
 
 As of version 0.21, LOAD_OBJECTS_IN_BACKGROUND is set to True by default and setting it to False is deprecated.
+
+As of version 0.24, objects will be loaded asynchronously in the background.
 
 Numeric Tags
 ------------

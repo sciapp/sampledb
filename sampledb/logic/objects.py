@@ -35,6 +35,7 @@ def create_object(
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
         permissions_for_project_id: typing.Optional[int] = None,
+        permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> Object:
@@ -54,6 +55,8 @@ def create_object(
         permissions to
     :param permissions_for_project_id: the ID of an existing project to give
         permissions to
+    :param permissions_for_all_users: permissions to be granted to all
+        signed-in users, or None
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
@@ -95,6 +98,39 @@ def create_object(
         object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
     else:
         object_permissions.set_initial_permissions(object)
+    if permissions_for_all_users is not None:
+        object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
+    tags.update_object_tag_usage(object)
+    return object
+
+
+def create_eln_import_object(
+        eln_import_id: int,
+        eln_object_id: str,
+        action_id: typing.Optional[int],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
+        schema: typing.Optional[typing.Dict[str, typing.Any]],
+        user_id: int,
+        utc_datetime: typing.Optional[datetime.datetime],
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
+) -> Object:
+    users.get_user(user_id)
+    if data_validator_arguments is None:
+        data_validator_arguments = {}
+    object = Objects.create_object(
+        data=data,
+        schema=schema,
+        user_id=user_id,
+        action_id=action_id,
+        utc_datetime=utc_datetime,
+        eln_import_id=eln_import_id,
+        eln_object_id=eln_object_id,
+        data_validator_arguments=data_validator_arguments
+    )
+    object_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
+    user_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
+    _update_object_references(object, user_id=user_id)
+    object_permissions.set_initial_permissions(object)
     tags.update_object_tag_usage(object)
     return object
 
@@ -157,6 +193,7 @@ def create_object_batch(
         copy_permissions_object_id: typing.Optional[int] = None,
         permissions_for_group_id: typing.Optional[int] = None,
         permissions_for_project_id: typing.Optional[int] = None,
+        permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> typing.Sequence[Object]:
@@ -176,6 +213,8 @@ def create_object_batch(
         permissions to
     :param permissions_for_project_id: the ID of an existing project to give
         permissions to
+    :param permissions_for_all_users: permissions to be granted to all
+        signed-in users, or None
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
@@ -222,15 +261,18 @@ def create_object_batch(
                     object_permissions.set_project_object_permissions(object.id, permissions_for_project_id, Permissions.GRANT)
                 else:
                     object_permissions.set_initial_permissions(object)
+                if permissions_for_all_users is not None:
+                    object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
                 tags.update_object_tag_usage(object)
     return objects
 
 
 def update_object(
         object_id: int,
-        data: typing.Dict[str, typing.Any],
+        data: typing.Optional[typing.Dict[str, typing.Any]],
         user_id: int,
-        schema: typing.Optional[typing.Dict[str, typing.Any]] = None
+        schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> None:
     """
     Updates the object to a new version. This function also handles logging
@@ -240,23 +282,28 @@ def update_object(
     :param data: the object's new data, which must fit to the object's schema
     :param user_id: the ID of the user who updated the object
     :param schema: the schema for the new object data
+    :param data_validator_arguments: additional keyword arguments to the data
+        validator
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
         user ID exists
     """
-    # local import to avoid circular imports
-    from .files import get_file_names_by_id_for_object
-    file_names_by_id = {
-        file_id: file_names[0]
-        for file_id, file_names in get_file_names_by_id_for_object(object_id).items()
-    }
+    if data_validator_arguments is None:
+        data_validator_arguments = {}
+    if 'file_names_by_id' not in data_validator_arguments:
+        # local import to avoid circular imports
+        from .files import get_file_names_by_id_for_object
+        data_validator_arguments['file_names_by_id'] = {
+            file_id: file_names[0]
+            for file_id, file_names in get_file_names_by_id_for_object(object_id).items()
+        }
     object = Objects.update_object(
         object_id=object_id,
         data=data,
         schema=schema,
         user_id=user_id,
-        data_validator_arguments={'file_names_by_id': file_names_by_id}
+        data_validator_arguments=data_validator_arguments
     )
     if object is None:
         raise errors.ObjectDoesNotExistError()
@@ -531,7 +578,7 @@ def find_object_references(
         object: Object,
         find_previous_referenced_object_ids: bool = True,
         *,
-        include_fed_references: bool = False
+        include_fed_references: bool = False,
 ) -> typing.Sequence[typing.Tuple[typing.Union[int, typing.Tuple[int, typing.Optional[str]]], typing.Optional[int], str]]:
     """
     Searches for references to other objects.
@@ -562,6 +609,8 @@ def find_object_references(
                     else:
                         continue
                 previous_referenced_object_id = None
+            elif 'eln_source_url' in data:
+                continue
             else:
                 if include_fed_references:
                     referenced_object_id = (data['object_id'], None)

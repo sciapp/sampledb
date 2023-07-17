@@ -103,6 +103,14 @@
   {% endwith %}
   {% endwith %}
 
+  {% if object.eln_import_id is not none %}
+    <h2>{{ _('Import') }}</h2>
+    <p>
+      {% set eln_import_url = eln_import_urls.get(object.object_id) %}
+      {{ _('This object was imported from <a href="%(eln_import_url)s">.eln file #%(eln_import_id)s</a> by %(user_ref)s.', eln_import_id=object.eln_import_id, eln_import_url=url_for('frontend.eln_import', eln_import_id=object.eln_import_id), user_ref=user_reference(object.eln_import.user)) }} {% if eln_import_url is not none and eln_import_url.startswith('http') %}{{ _('The original URL is <a href="%(eln_import_url)s">%(eln_import_url)s</a>.', eln_import_url=eln_import_url) }}{% endif %}
+    </p>
+  {% endif %}
+
   {% if activity_log_entries %}
   <h2>{{ _('Activity Log') }}</h2>
   <ul>

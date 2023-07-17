@@ -8,7 +8,7 @@
     {{ schema.title | get_translated_text }}# {{ loop.index }}
   {% endif %}
 
-  {% if 'layout' in data.plotly %}
+  {% if data.plotly %}
     <a id="plotly_info_link_{{ name }}_{{ plot_counter.value }}" data-hide-text="[{{ _('hide plot')}}]" data-show-text="[{{ _('show plot') }}]">[{{ _('show plot') }}]</a>
     <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}" style="display: none"></div>
 

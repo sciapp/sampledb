@@ -1,4 +1,15 @@
 {% if data is not none and "user_id" in data and data.user_id is not none %}
+  {% if "eln_source_url" in data and data.eln_source_url %}
+    {% if "eln_user_url" in data and data.eln_user_url %}
+      <a href="{{ data.eln_user_url }}">
+    {% endif %}
+    {{ _('User') }} #{{ data.user_id }} @
+    {% if not ("eln_user_url" in data and data.eln_user_url) %}
+      <a href="{{ data.eln_source_url }}">
+    {% endif %}
+    {{ data.eln_source_url }}
+    </a>
+  {% else %}
   {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
     {% set component_uuid = data.component_uuid %}
   {% else %}
@@ -17,6 +28,7 @@
       {% endif %}
     {% endwith %}
   {% endwith %}
+  {% endif %}
 {% else %}
   &mdash;
 {% endif %}

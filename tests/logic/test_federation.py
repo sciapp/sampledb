@@ -18,7 +18,7 @@ from sampledb.logic.action_type_translations import get_action_type_translations
 from sampledb.logic.actions import get_action, create_action
 from sampledb.logic.action_types import get_action_type, create_action_type
 from sampledb.logic.comments import get_comment, create_comment, get_comments_for_object
-from sampledb.logic.components import get_component_by_uuid, add_component, get_component, Component
+from sampledb.logic.components import get_component_by_uuid, add_component, get_component, Component, get_component_infos
 from sampledb.logic.fed_logs import get_fed_action_log_entries_for_action, get_fed_instrument_log_entries_for_instrument, get_fed_user_log_entries_for_user, get_fed_location_log_entries_for_location, get_fed_location_type_log_entries_for_location_type, get_fed_comment_log_entries_for_comment, get_fed_object_location_assignment_log_entries_for_assignment, get_fed_file_log_entries_for_file, get_fed_action_type_log_entries_for_action_type, get_fed_object_log_entries_for_object
 from sampledb.logic.federation.action_types import parse_action_type, shared_action_type_preprocessor, parse_import_action_type
 from sampledb.logic.federation.actions import parse_action, shared_action_preprocessor, parse_import_action, schema_entry_preprocessor
@@ -32,6 +32,7 @@ from sampledb.logic.federation.object_location_assignments import parse_import_o
 from sampledb.logic.federation.objects import shared_object_preprocessor, parse_import_object
 from sampledb.logic.federation.users import parse_user, shared_user_preprocessor, parse_import_user
 from sampledb.logic.federation.update import update_shares
+from sampledb.logic.federation.components import parse_import_component_info
 from sampledb.logic.files import get_file, create_url_file, get_files_for_object
 from sampledb.logic.groups import create_group
 from sampledb.logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation
@@ -4339,3 +4340,170 @@ def test_schema_entry_preprocessor(action):
         },
         'required': ['name']
     }
+
+
+def test_import_component_info(component):
+    flask.current_app.config['ALLOW_HTTP'] = True
+    component_info1 = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': 'Example Component',
+        'address': 'http://localhost:5000',
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info1.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info1.name == 'Example Component'
+    assert component_info1.address == 'http://localhost:5000'
+    assert component_info1.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info1.discoverable is True
+    assert component_info1.distance == 2
+
+    component_info2 = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': None,
+        'address': None,
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': False,
+        'distance': 1
+    }, component)
+    assert component_info2.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info2.name is None
+    assert component_info2.address is None
+    assert component_info2.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info2.discoverable is False
+    assert component_info2.distance == 1
+
+    component_info3 = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': 'Example Component',
+        'address': 'http://localhost:5000',
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info3 == component_info2
+
+    component_infos = get_component_infos()
+    assert len(component_infos) == 1
+    assert component_infos[0] == component_info2
+
+
+def test_import_component_info_invalid_values(component):
+    flask.current_app.config['ALLOW_HTTP'] = True
+    component_info = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': 'Example Component',
+        'address': 'http://localhost:5000',
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info.name == 'Example Component'
+    assert component_info.address == 'http://localhost:5000'
+    assert component_info.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info.discoverable is True
+    assert component_info.distance == 2
+
+    flask.current_app.config['ALLOW_HTTP'] = False
+    component_info = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': 'Example Component',
+        'address': 'http://localhost:5000',
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info.name == 'Example Component'
+    assert component_info.address is None
+    assert component_info.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info.discoverable is True
+    assert component_info.distance == 2
+    flask.current_app.config['ALLOW_HTTP'] = True
+
+    component_info = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': 'Example Component',
+        'address': 'htp://localhost:5000',
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info.name == 'Example Component'
+    assert component_info.address is None
+    assert component_info.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info.discoverable is True
+    assert component_info.distance == 2
+
+    component_info = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': 'Example Component' * 1000,
+        'address': 'http://localhost:5000',
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info.name == ('Example Component' * 1000)[:sampledb.logic.components.MAX_COMPONENT_NAME_LENGTH]
+    assert component_info.address == 'http://localhost:5000'
+    assert component_info.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info.discoverable is True
+    assert component_info.distance == 2
+
+    component_info = parse_import_component_info({
+        'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+        'name': None,
+        'address': None,
+        'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+        'discoverable': True,
+        'distance': 2
+    }, component)
+    assert component_info.uuid == '18a3efbd-216b-4921-9de2-c778e0eeff8a'
+    assert component_info.name is None
+    assert component_info.address is None
+    assert component_info.source_uuid == '3dc026cf-86b3-4155-8c34-71daddcc1108'
+    assert component_info.discoverable is True
+    assert component_info.distance == 2
+
+    with pytest.raises(sampledb.logic.errors.InvalidDataExportError):
+        parse_import_component_info({
+            'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+            'name': 'Example Component',
+            'address': 'http://localhost:5000',
+            'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+            'discoverable': True,
+            'distance': True
+        }, component)
+
+    with pytest.raises(sampledb.logic.errors.InvalidDataExportError):
+        parse_import_component_info({
+            'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8a',
+            'name': 'Example Component',
+            'address': 'http://localhost:5000',
+            'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+            'discoverable': 1,
+            'distance': 2
+        }, component)
+
+    with pytest.raises(sampledb.logic.errors.InvalidDataExportError):
+        parse_import_component_info({
+            'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8aa',
+            'name': 'Example Component',
+            'address': 'http://localhost:5000',
+            'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108',
+            'discoverable': True,
+            'distance': 2
+        }, component)
+
+    with pytest.raises(sampledb.logic.errors.InvalidDataExportError):
+        parse_import_component_info({
+            'uuid': '18a3efbd-216b-4921-9de2-c778e0eeff8aa',
+            'name': 'Example Component',
+            'address': 'http://localhost:5000',
+            'source_uuid': '3dc026cf-86b3-4155-8c34-71daddcc1108a',
+            'discoverable': True,
+            'distance': 2
+        }, component)

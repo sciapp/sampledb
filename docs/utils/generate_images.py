@@ -1,9 +1,11 @@
 # coding: utf-8
 
 import contextlib
+import datetime
 import getpass
 import io
 import os
+import random
 import secrets
 import shutil
 import sys
@@ -203,7 +205,7 @@ def comments(base_url, driver, object):
 
 def activity_log(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_local_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
     sampledb.logic.comments.create_comment(object.id, user.id, "This is an example comment.")
 
     width = 1280
@@ -271,10 +273,10 @@ def unread_notification_icon(base_url, driver):
 
 def files(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_local_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
-    sampledb.logic.files.create_local_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "example.txt", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
     with open('docs/utils/photo.jpg', 'rb') as image_file:
-        sampledb.logic.files.create_local_file(object.id, user.id, "photo.jpg", lambda stream: stream.write(image_file.read()))
+        sampledb.logic.files.create_database_file(object.id, user.id, "photo.jpg", lambda stream: stream.write(image_file.read()))
 
     width = 1280
     max_height = 1000
@@ -313,7 +315,7 @@ def files(base_url, driver, object):
 
 def file_information(base_url, driver, object):
     object = sampledb.logic.objects.create_object(object.action_id, object.data, user.id, object.id)
-    sampledb.logic.files.create_local_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
+    sampledb.logic.files.create_database_file(object.id, user.id, "notes.pdf", lambda stream: stream.write(b'example text'))
     sampledb.logic.files.update_file_information(object.id, 0, user.id, 'Scanned Notes', 'This is an example file.')
 
     width = 1280
@@ -507,6 +509,17 @@ def other_database(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/other_database.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, last_table.location['y'] + last_table.rect['height'])))
 
 
+def federation_graph(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(admin.id))
+    driver.get(base_url + 'other-databases/')
+    graph = driver.find_element(By.ID, 'graph')
+    y_offset = scroll_to_element(driver, graph)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/federation_graph.png', (0, graph.location['y'] - y_offset, width, min(graph.location['y'] + max_height, graph.location['y'] + graph.rect['height'])))
+
+
 def group_categories(base_url, driver, categories):
     width = 300
     max_height = 1000
@@ -535,6 +548,507 @@ def search_query_builder(base_url, driver):
         assert False
     container = driver.find_element(By.ID, 'main').find_elements(By.CLASS_NAME, 'container')[-1]
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/search_query_builder.png', (0, heading.location['y'], 700, min(heading.location['y'] + max_height, container.location['y'] + container.rect['height'])))
+
+
+def object_list(base_url, driver):
+    action_ids = []
+    for action_name, object_names in [
+        ('Create Demo Sample', [f'Demo-Sample-{i}' for i in range(1, 4)]),
+        ('Create Demo Measurement', [f'Demo-Measurement-{i}' for i in range(1, 4)]),
+        ('Create Demo Proposal', ['Demo-Proposal-2023-1']),
+        ('Create Demo Simulation', [f'Demo-Measurement-{i}' for i in range(1, 4)]),
+        ('Create Demo Project', ['Demo-1']),
+    ]:
+        action = sampledb.logic.actions.create_action(
+            action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+            schema={
+                'title': 'Object Information',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Name',
+                        'type': 'text'
+                    }
+                },
+                'propertyOrder': ['name'],
+                'required': ['name']
+            },
+            user_id=user.id
+        )
+        action_ids.append(action.id)
+        sampledb.logic.action_translations.set_action_translation(
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            action_id=action.id,
+            name=action_name
+        )
+        for name in object_names:
+            sampledb.logic.objects.create_object(
+                action_id=action.id,
+                user_id=user.id,
+                data={
+                    'name': {
+                        '_type': 'text',
+                        'text': {'en': name}
+                    }
+                }
+            )
+
+    width = 1280
+    max_height = 1800
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'objects/?object_list_filters=&action_ids=' + '&action_ids='.join(str(action_id) for action_id in action_ids))
+    table = driver.find_elements(By.ID, 'table-objects')[0]
+    y_offset = scroll_to_element(driver, table)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/object_list.png', (0, table.location['y'] - y_offset, width, min(table.location['y'] + max_height, table.location['y'] + table.rect['height']) - y_offset))
+
+
+def object_list_filters(base_url, driver):
+    action_ids = []
+    for action_name, object_names in [
+        ('Create Demo Sample', [f'Demo-Sample-{i}' for i in range(1, 4)]),
+        ('Create Demo Measurement', [f'Demo-Measurement-{i}' for i in range(1, 4)]),
+        ('Create Demo Proposal', ['Demo-Proposal-2023-1']),
+        ('Create Demo Simulation', [f'Demo-Measurement-{i}' for i in range(1, 4)]),
+        ('Create Demo Project', ['Demo-1']),
+    ]:
+        action = sampledb.logic.actions.create_action(
+            action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+            schema={
+                'title': 'Object Information',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Name',
+                        'type': 'text'
+                    }
+                },
+                'propertyOrder': ['name'],
+                'required': ['name']
+            },
+            user_id=user.id
+        )
+        action_ids.append(action.id)
+        sampledb.logic.action_translations.set_action_translation(
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            action_id=action.id,
+            name=action_name
+        )
+        for name in object_names:
+            sampledb.logic.objects.create_object(
+                action_id=action.id,
+                user_id=user.id,
+                data={
+                    'name': {
+                        '_type': 'text',
+                        'text': {'en': name}
+                    }
+                }
+            )
+
+    width = 1280
+    max_height = 1800
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + 'objects/?object_list_filters=&action_ids=' + '&action_ids='.join(str(action_id) for action_id in action_ids))
+    driver.find_elements(By.CSS_SELECTOR, 'button[data-target="#filtersModal"]')[0].click()
+    modal = wait_until_visible(driver.find_elements(By.CSS_SELECTOR, '#filtersModal .modal-dialog')[0])
+    driver.execute_script('$("#filter_action_ids").selectpicker("val", [])')
+    time.sleep(0.1)
+    y_offset = scroll_to_element(driver, modal)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/object_list_filters.png', (0, modal.location['y'] - y_offset, width, min(modal.location['y'] + max_height, modal.location['y'] + modal.rect['height']) - y_offset))
+
+
+def object_data(base_url, driver):
+    sample_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Sample Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'propertyOrder': ['name'],
+            'required': ['name']
+        }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=sample_action.id,
+        name='Create Demo Sample'
+    )
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Measurement Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'sample'
+                },
+                'mode': {
+                    'title': 'Mode',
+                    'type': 'text', 'choices': [{'en': 'Demo'}]
+                },
+                'pressure': {
+                    'type': 'quantity',
+                    'title': 'Pressure',
+                    'units': 'mbar'
+                },
+                'temperature': {
+                    'type': 'timeseries',
+                    'title': 'Temperature',
+                    'units': 'degC'
+                }
+            },
+            'propertyOrder': ['name', 'sample', 'mode', 'pressure', 'temperature'],
+            'required': ['name']
+        }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=measurement_action.id,
+        name='Create Demo Measurement'
+    )
+    sample = sampledb.logic.objects.create_object(
+        action_id=sample_action.id,
+        user_id=user.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Demo-Sample-1'}
+            }
+        }
+    )
+    random.seed(0)
+    measurement = sampledb.logic.objects.create_object(
+        action_id=measurement_action.id,
+        user_id=user.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Demo-Measurement-1'}
+            },
+            'sample': {
+                '_type': 'sample',
+                'object_id': sample.id
+            },
+            'mode': {
+                '_type': 'text',
+                'text': {'en': 'Demo'}
+            },
+            'pressure': {
+                '_type': 'quantity',
+                'magnitude': 42
+            },
+            'temperature': {
+                '_type': 'timeseries',
+                'units': 'degC',
+                'data': [
+                    [
+                        (datetime.datetime.utcnow() + datetime.timedelta(seconds=i * 5)).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                        180 + random.uniform(-2, 2)
+                    ]
+                    for i in range(100)
+                ]
+            }
+        }
+    )
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + f'objects/{measurement.id}')
+    container = driver.find_elements(By.CLASS_NAME, 'container')[0]
+    second_header = driver.find_elements(By.TAG_NAME, 'h2')[1]
+    y_offset = scroll_to_element(driver, container)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/object_data.png', (0, container.location['y'] - y_offset, width, second_header.location['y'] - y_offset))
+
+
+def create_object_form(base_url, driver):
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Measurement Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text', 'minLength': 1
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'sample'
+                },
+                'mode': {
+                    'title': 'Mode',
+                    'type': 'text', 'choices': [{'en': 'Demo'}]
+                },
+                'pressure': {
+                    'type': 'quantity',
+                    'title': 'Pressure',
+                    'units': 'mbar'
+                },
+                'temperature': {
+                    'type': 'timeseries',
+                    'title': 'Temperature',
+                    'units': 'degC'
+                }
+            },
+            'propertyOrder': ['name', 'sample', 'mode', 'pressure', 'temperature'],
+            'required': ['name', 'sample', 'mode']
+        },
+        user_id=user.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=measurement_action.id,
+        name='Create Demo Measurement'
+    )
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + f'objects/new?action_id={measurement_action.id}')
+    form = driver.find_elements(By.CLASS_NAME, 'form-horizontal')[0]
+    y_offset = scroll_to_element(driver, form)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/create_object_form.png', (0, form.location['y'] - y_offset, width, min(form.location['y'] + max_height, form.location['y'] + form.rect['height']) - y_offset))
+
+
+def schema_editor2(base_url, driver):
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Measurement Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'sample': {
+                    'title': 'Sample',
+                    'type': 'sample'
+                },
+                'mode': {
+                    'title': 'Mode',
+                    'type': 'text', 'choices': ['Demo']
+                },
+                'pressure': {
+                    'type': 'quantity',
+                    'title': 'Pressure',
+                    'units': 'mbar'
+                },
+                'temperature': {
+                    'type': 'timeseries',
+                    'title': 'Temperature',
+                    'units': 'degC'
+                }
+            },
+            'propertyOrder': ['name', 'sample', 'mode', 'pressure', 'temperature'],
+            'required': ['name']
+        },
+        user_id=user.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=measurement_action.id,
+        name='Create Demo Measurement'
+    )
+
+    width = 1280
+    max_height = 1800
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + f'actions/{measurement_action.id}?mode=edit')
+    form = wait_until_visible(driver.find_element(By.ID, 'schema-editor'))
+    y_offset = scroll_to_element(driver, form)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/schema_editor2.png', (0, form.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
+
+
+def federation_permissions(base_url, driver):
+    sample_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Sample Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'propertyOrder': ['name'],
+            'required': ['name']
+        }
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=sample_action.id,
+        name='Create Demo Sample'
+    )
+    sample = sampledb.logic.objects.create_object(
+        action_id=sample_action.id,
+        user_id=user.id,
+        data={
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Demo-Sample-1'}
+            }
+        }
+    )
+
+    width = 1280
+    max_height = 1800
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + f'objects/{sample.id}/permissions')
+    header = wait_until_visible(driver.find_element(By.ID, 'other-databases'))
+    copy_permissions_button = driver.find_element(By.ID, 'copyPermissionsBtnDiv')
+    y_offset = scroll_to_element(driver, header)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/federation_permissions.png', (0, header.location['y'] - y_offset, width, copy_permissions_button.location['y'] - y_offset))
+
+
+def federation_user_alias(base_url, driver):
+    width = 1280
+    max_height = 1800
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + f'other-databases/alias/?add_alias_component={component.id}')
+    header = wait_until_visible(driver.find_element(By.ID, 'add-alias'))
+    form = driver.find_elements(By.CLASS_NAME, 'form-horizontal')[0]
+    y_offset = scroll_to_element(driver, header)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/federation_user_alias.png', (0, header.location['y'] - y_offset, width, form.location['y'] - y_offset + min(max_height, form.rect['height'])))
+
+
+def object_permissions2(base_url, driver):
+    width = 1280
+    min_height = 1800
+    resize_for_screenshot(driver, width, min_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + 'objects/{}/permissions'.format(object.object_id))
+    resize_for_screenshot(driver, width, min_height)
+    for heading in driver.find_elements(By.TAG_NAME, 'h2'):
+        if 'Permissions' in heading.text:
+            break
+    else:
+        assert False
+    y_offset = scroll_to_element(driver, heading)
+    other_databases_header = driver.find_element(By.ID, 'other-databases')
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/object_permissions2.png', (0, heading.location['y'] - y_offset, width, other_databases_header.location['y'] - y_offset))
+
+
+def api_token_list(base_url, driver):
+    sampledb.logic.authentication.generate_api_access_token(user.id, "Demo API Token")
+
+    width = 1280
+    min_height = 200
+    resize_for_screenshot(driver, width, min_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+
+    driver.get(base_url + f'users/{user.id}/preferences')
+    resize_for_screenshot(driver, width, min_height)
+    header1 = driver.find_element(By.ID, 'api_tokens')
+    header2 = driver.find_element(By.ID, '2fa')
+    y_offset = scroll_to_element(driver, header1)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/api_token_list.png', (0, header1.location['y'] - y_offset, width, header2.location['y'] - y_offset))
+
+
+def action_list(base_url, driver):
+    action_type = sampledb.logic.action_types.create_action_type(
+        admin_only=False,
+        show_in_navbar=False,
+        show_on_frontpage=False,
+        enable_labels=True,
+        enable_files=True,
+        enable_locations=True,
+        enable_publications=True,
+        enable_comments=True,
+        enable_activity_log=True,
+        enable_related_objects=True,
+        enable_project_link=False,
+        enable_instrument_link=False,
+        disable_create_objects=False,
+        is_template=False
+    )
+    translations = sampledb.logic.action_type_translations.get_action_type_translations_for_action_type(sampledb.logic.action_types.ActionType.SAMPLE_CREATION)
+    for translation in translations:
+        if translation.language_id == sampledb.logic.languages.Language.ENGLISH:
+            sampledb.logic.action_type_translations.set_action_type_translation(
+                action_type_id=action_type.id,
+                language_id=sampledb.logic.languages.Language.ENGLISH,
+                name=translation.name,
+                description=translation.description,
+                object_name=translation.object_name,
+                object_name_plural=translation.object_name_plural,
+                view_text=translation.view_text,
+                perform_text=translation.perform_text
+            )
+
+    sample_action = sampledb.logic.actions.create_action(
+        action_type_id=action_type.id,
+        schema={
+            'title': 'Sample Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'propertyOrder': ['name'],
+            'required': ['name']
+        },
+        user_id=user.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=sample_action.id,
+        name='Create Demo Sample'
+    )
+
+    sample_action2 = sampledb.logic.actions.create_action(
+        action_type_id=action_type.id,
+        schema={
+            'title': 'Sample Information',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'propertyOrder': ['name'],
+            'required': ['name']
+        },
+        user_id=user.id
+    )
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=sample_action2.id,
+        name='Create Other Sample'
+    )
+
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + 'users/{}/autologin'.format(user.id))
+    driver.get(base_url + f'actions/?t={action_type.id}')
+    container = driver.find_elements(By.CLASS_NAME, 'container')[0]
+    y_offset = scroll_to_element(driver, container)
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/action_list.png', (0, container.location['y'] - y_offset, width, min(container.location['y'] + max_height, container.location['y'] + container.rect['height']) - y_offset))
 
 
 def save_cropped_screenshot_as_file(driver, file_name, box):
@@ -784,6 +1298,25 @@ try:
         component = sampledb.logic.components.add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', 'Example SampleDB', 'https://example.com', 'Example SampleDB instance.')
         sampledb.logic.component_authentication.add_token_authentication(component.id, secrets.token_hex(32), 'Export Token')
         sampledb.logic.component_authentication.add_own_token_authentication(component.id, secrets.token_hex(32), 'Import Token')
+        component2 = sampledb.logic.components.add_component('4d0d72c2-9447-45f4-9997-362416e7cd44', 'Other SampleDB', None, None)
+        sampledb.logic.component_authentication.add_token_authentication(component2.id, secrets.token_hex(32), 'Export Token')
+        sampledb.logic.component_authentication.add_own_token_authentication(component2.id, secrets.token_hex(32), 'Import Token')
+        sampledb.logic.components.add_or_update_component_info(
+            uuid=component2.uuid,
+            name=component2.name,
+            address=None,
+            discoverable=True,
+            distance=2,
+            source_uuid=component.uuid
+        )
+        sampledb.logic.components.add_or_update_component_info(
+            uuid='e1b93d06-fcaf-4f24-b674-9de86d8cfdc7',
+            name='Third SampleDB',
+            address=None,
+            discoverable=True,
+            distance=2,
+            source_uuid=component.uuid
+        )
 
         campus = sampledb.logic.locations.create_location(
             name={"en": "Campus A"},
@@ -853,6 +1386,16 @@ try:
         with contextlib.contextmanager(tests.conftest.create_flask_server)(app) as flask_server:
             with contextlib.closing(Chrome(options=options)) as driver:
                 time.sleep(5)
+                object_list(flask_server.base_url, driver)
+                object_data(flask_server.base_url, driver)
+                create_object_form(flask_server.base_url, driver)
+                schema_editor2(flask_server.base_url, driver)
+                federation_permissions(flask_server.base_url, driver)
+                federation_user_alias(flask_server.base_url, driver)
+                api_token_list(flask_server.base_url, driver)
+                action_list(flask_server.base_url, driver)
+                object_list_filters(flask_server.base_url, driver)
+                object_permissions2(flask_server.base_url, driver)
                 object_permissions(flask_server.base_url, driver)
                 default_permissions(flask_server.base_url, driver)
                 guest_invitation(flask_server.base_url, driver)
@@ -876,5 +1419,6 @@ try:
                 other_database(flask_server.base_url, driver)
                 group_categories(flask_server.base_url, driver, [category1, category2, category3])
                 search_query_builder(flask_server.base_url, driver)
+                federation_graph(flask_server.base_url, driver)
 finally:
     shutil.rmtree(temp_dir)

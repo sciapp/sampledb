@@ -1,14 +1,20 @@
 {% if data and 'data' in data and data.data %}
   {% set timeseries_data = data | to_timeseries_data(schema) %}
   {{ timeseries_data.magnitude_average | babel_format_number(schema.get('display_digits', 2)) }}{% if timeseries_data.magnitude_stddev is not none %} ± {{ timeseries_data.magnitude_stddev | babel_format_number(schema.get('display_digits', 2)) }}{% endif %}{{ timeseries_data.units }}
-  {% if timeseries_data.utc_datetimes | length > 1 %}
-    {% if timeseries_data.same_day %}
-      {{ _('between %(start_time)s and %(end_time)s on %(date)s', start_time=timeseries_data.utc_datetimes[0] | babel_format_time, end_time=timeseries_data.utc_datetimes[-1] | babel_format_time, date=timeseries_data.utc_datetimes[0] | babel_format_date) }}
-    {% else %}
-      {{ _('between %(start_datetime)s and %(end_datetime)s', start_datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime, end_datetime=timeseries_data.utc_datetimes[-1] | babel_format_datetime) }}
+  {% if timeseries_data.relative_times %}
+    {% if timeseries_data.relative_times | length > 1 %}
+      {{ _('within a period of %(time_s)s s', time_s=timeseries_data.relative_times[-1] - timeseries_data.relative_times[0]) }}
     {% endif %}
   {% else %}
-    {{ _('at %(datetime)s', datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime) }}
+    {% if timeseries_data.utc_datetimes | length > 1 %}
+      {% if timeseries_data.same_day %}
+        {{ _('between %(start_time)s and %(end_time)s on %(date)s', start_time=timeseries_data.utc_datetimes[0] | babel_format_time, end_time=timeseries_data.utc_datetimes[-1] | babel_format_time, date=timeseries_data.utc_datetimes[0] | babel_format_date) }}
+      {% else %}
+        {{ _('between %(start_datetime)s and %(end_datetime)s', start_datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime, end_datetime=timeseries_data.utc_datetimes[-1] | babel_format_datetime) }}
+      {% endif %}
+    {% else %}
+      {{ _('at %(datetime)s', datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime) }}
+    {% endif %}
   {% endif %}
 {% else %}
   &mdash;

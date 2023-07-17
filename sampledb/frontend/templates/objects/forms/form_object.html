@@ -1,7 +1,7 @@
 <!-- object start -->
-<strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ schema.title | get_translated_text }}</strong>
+<strong style="font-size:1.5em; margin-bottom: 0.25em; {% if id_prefix != 'object_' %}margin-left:4px;{% endif %} display:block;">{{ schema.title | get_translated_text }}</strong>
+<div style="{% if id_prefix != 'object_' %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em">
 {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
-<div style="">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
 {% if "propertyOrder" not in schema %}
   {% for property_name, property_schema in schema.properties.items() %}

@@ -216,6 +216,8 @@ class ObjectInfo:
     tags: typing.Optional[typing.Dict[str, typing.Any]]
     fed_object_id: typing.Optional[int]
     component_name: typing.Optional[str]
+    eln_object_id: typing.Optional[str]
+    eln_import_id: typing.Optional[int]
 
 
 def get_object_info_with_permissions(
@@ -254,14 +256,14 @@ def get_object_info_with_permissions(
         # admins who use admin permissions do not need permission-based filtering
         stmt = db.text("""
         SELECT
-            o.object_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name
+            o.object_id, o.name_cache AS name_json, o.action_id, 3 AS max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name, o.eln_import_id, o.eln_object_id
         FROM objects_current AS o
         LEFT JOIN components AS c ON c.id = o.component_id
         """)
     else:
         stmt = db.text("""
         SELECT
-            o.object_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name
+            o.object_id, o.name_cache AS name_json, o.action_id, p.max_permission, o.tags_cache as tags, o.fed_object_id, COALESCE(c.name, c.address, c.uuid) AS component_name, o.eln_import_id, o.eln_object_id
         FROM (
             SELECT
             object_id, MAX(permissions_int) AS max_permission
@@ -281,7 +283,9 @@ def get_object_info_with_permissions(
         sqlalchemy.sql.expression.column('max_permission'),
         sqlalchemy.sql.expression.column('tags'),
         sqlalchemy.sql.expression.column('fed_object_id'),
-        sqlalchemy.sql.expression.column('component_name')
+        sqlalchemy.sql.expression.column('component_name'),
+        sqlalchemy.sql.expression.column('eln_import_id'),
+        sqlalchemy.sql.expression.column('eln_object_id'),
     )
 
     parameters = {
@@ -320,7 +324,9 @@ def get_object_info_with_permissions(
             max_permission=object_info.max_permission,
             tags=object_info.tags,
             fed_object_id=object_info.fed_object_id,
-            component_name=object_info.component_name
+            component_name=object_info.component_name,
+            eln_object_id=object_info.eln_object_id,
+            eln_import_id=object_info.eln_import_id
         )
         for object_info in object_infos
     ]
@@ -404,13 +410,13 @@ def get_object_table_with_permissions(
     if name_only:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id
+        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id
         FROM objects_current AS o
         """
     else:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id
+        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id
         FROM objects_current AS o
         """
 
@@ -529,7 +535,9 @@ def get_object_table_with_permissions(
         Objects._current_table.c.utc_datetime,
         Objects._current_table.c.fed_object_id,
         Objects._current_table.c.fed_version_id,
-        Objects._current_table.c.component_id
+        Objects._current_table.c.component_id,
+        Objects._current_table.c.eln_import_id,
+        Objects._current_table.c.eln_object_id,
     ).subquery()
     return table, parameters
 

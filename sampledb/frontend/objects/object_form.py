@@ -2,6 +2,7 @@
 """
 
 """
+import copy
 import secrets
 import typing
 from copy import deepcopy
@@ -16,7 +17,7 @@ from ... import logic
 from ... import models
 from ...logic.actions import Action
 from ...logic.action_permissions import get_sorted_actions_for_user
-from ...logic.object_permissions import get_user_object_permissions, get_objects_with_permissions
+from ...logic.object_permissions import get_user_object_permissions
 from ...logic.users import get_users
 from ...logic.schemas import generate_placeholder
 from ...logic.objects import create_object, create_object_batch, update_object
@@ -82,7 +83,7 @@ def show_object_form(
         if object.data is None or object.schema is None:
             return flask.abort(400)
         schema = object.schema
-        data = object.data
+        data = copy.deepcopy(object.data)
     elif previous_object is not None:
         # create object via 'Use as Template'
         mode = 'create'
@@ -109,6 +110,14 @@ def show_object_form(
             'previous_object_id': None,
             'has_grant_for_previous_object': False,
         })
+
+    if passed_object_ids:
+        has_grant_for_first_passed_object = Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=passed_object_ids[0])
+    else:
+        has_grant_for_first_passed_object = False
+    template_arguments.update({
+        'has_grant_for_first_passed_object': has_grant_for_first_passed_object,
+    })
 
     if not isinstance(data, dict):
         return flask.abort(400)
@@ -156,7 +165,7 @@ def show_object_form(
 
     if "action_submit" in form_data:
         batch_names = _handle_batch_names(schema, form_data, raw_form_data, errors)
-        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id)
+        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id, previous_data=data)
         errors.update(parsing_errors)
         if form_data['action_submit'] == 'inline_edit' and errors:
             return flask.jsonify({
@@ -170,6 +179,7 @@ def show_object_form(
             referenced_temporary_file_ids = sorted(logic.temporary_files.get_referenced_temporary_file_ids(object_data))
             if object is None:
                 copy_permissions_object_id, permissions_for_group_id, permissions_for_project_id = _parse_permissions_ids(form_data)
+                read_permissions_to_all_users = form_data.get('all_users_read_permissions') == '1'
                 permanent_file_names_by_id = {}
                 permanent_file_map = {}
                 for ind, file_id in enumerate(referenced_temporary_file_ids):
@@ -188,6 +198,7 @@ def show_object_form(
                         copy_permissions_object_id=copy_permissions_object_id,
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,
+                        permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
                         data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
                     )
                 else:
@@ -200,6 +211,7 @@ def show_object_form(
                         copy_permissions_object_id=copy_permissions_object_id,
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,
+                        permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
                         data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
                     )]
                 object_ids = [object.id for object in objects]
@@ -244,18 +256,10 @@ def show_object_form(
 
     if object is None:
         # alternatives to default permissions
-        if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-            existing_objects = get_objects_with_permissions(
-                user_id=flask_login.current_user.id,
-                permissions=Permissions.GRANT
-            )
-        else:
-            existing_objects = []
         user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
         user_projects = logic.projects.get_user_projects(flask_login.current_user.id, include_groups=True)
         template_arguments.update({
             'can_copy_permissions': True,
-            'existing_objects': existing_objects,
             'user_groups': user_groups,
             'user_projects': user_projects
         })
@@ -263,6 +267,7 @@ def show_object_form(
         return flask.render_template(
             'objects/forms/form_create.html',
             action_id=action.id,
+            action=action,
             possible_properties=possible_object_id_properties,
             passed_object_ids=passed_object_ids,
             show_selecting_modal=show_selecting_modal,
@@ -626,24 +631,6 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
         'datetime': datetime,
         'languages': get_languages(),
     }
-
-    # referencable objects
-    if not flask.current_app.config["LOAD_OBJECTS_IN_BACKGROUND"]:
-        referencable_objects = get_objects_with_permissions(
-            user_id=flask_login.current_user.id,
-            permissions=Permissions.READ
-        )
-        if object_id is not None:
-            referencable_objects = [
-                referencable_object
-                for referencable_object in referencable_objects
-                if referencable_object.object_id != object_id
-            ]
-    else:
-        referencable_objects = []
-    template_kwargs.update({
-        'referencable_objects': referencable_objects,
-    })
 
     # actions and action types
     sorted_actions = get_sorted_actions_for_user(

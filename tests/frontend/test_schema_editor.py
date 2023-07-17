@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -478,43 +480,43 @@ def test_create_action_with_json_editor(flask_server, driver, user):
 
     assert schema_text.strip() == """
 {
-    "title": {
-        "en": "Measurement Information"
+  "title": {
+    "en": "Measurement Information"
+  },
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": {
+        "en": "Name"
+      },
+      "type": "text"
     },
-    "type": "object",
-    "properties": {
-        "name": {
-            "title": {
-                "en": "Name"
-            },
-            "type": "text"
-        },
-        "text": {
-            "title": {
-                "en": "Example Text"
-            },
-            "note": {
-                "en": "This is a Test"
-            },
-            "type": "text",
-            "default": "Text Default",
-            "placeholder": "Text Placeholder",
-            "minLength": 2,
-            "maxLength": 10
-        }
-    },
-    "required": [
-        "name"
-    ],
-    "propertyOrder": [
-        "name",
-        "text"
-    ]
+    "text": {
+      "title": {
+        "en": "Example Text"
+      },
+      "note": {
+        "en": "This is a Test"
+      },
+      "type": "text",
+      "default": "Text Default",
+      "placeholder": "Text Placeholder",
+      "minLength": 2,
+      "maxLength": 10
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "propertyOrder": [
+    "name",
+    "text"
+  ]
 }
-    """.strip()
+  """.strip()
 
-    schema_textarea.clear()
-    schema_textarea.send_keys("""
+
+    driver.execute_script("window.code_mirror_editor.setValue(" + json.dumps("""
     {
         "title": "Measurement Information",
         "type": "object",
@@ -546,7 +548,7 @@ def test_create_action_with_json_editor(flask_server, driver, user):
             "user"
         ]
     }
-    """.strip(), Keys.TAB)
+    """.strip()) + ")")
 
     driver.find_element(By.XPATH, '//input[@id="toggle-schema-editor"]/parent::div').click()
 

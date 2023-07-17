@@ -12,7 +12,7 @@ Authentication
 
 The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`. If you have a two factor authentication method enabled, you cannot use your user credentials to use the API and will have to use an API token instead.
 
-You can use these authentication methods to create a short-lived :ref:`access token <access_tokens>`_, along with a refresh token to generate new access tokens.
+You can use these authentication methods to create a short-lived :ref:`access token <access_tokens>`, along with a refresh token to generate new access tokens.
 
 Please make sure to use HTTPS when accessing the API.
 
@@ -31,6 +31,8 @@ Reading a list of all objects
     Instead of returning all objects, the parameters :code:`limit` and :code:`offset` can be used to reduce to maximum number of objects returned and to provide an offset in the returned set, so allow simple pagination.
 
     If the parameter :code:`name_only` is provided, the object data and schema will be reduced to the name property, omitting all other properties and schema information.
+
+    If the parameter :code:`get_referencing_objects` is provided, the object data include referencing object IDs.
 
     **Example request**:
 
@@ -1419,6 +1421,85 @@ Reading an action
     :statuscode 200: no error
     :statuscode 404: the action does not exist
 
+Updating an action
+^^^^^^^^^^^^^^^^^^
+
+.. http:post:: /api/v1/actions/(int:action_id)
+
+    Update the specific action (`action_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /api/v1/actions/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+        {
+            "action_id": 1,
+            "instrument_id": null,
+            "user_id": null,
+            "type": "sample",
+            "type_id": -99,
+            "name": "Example Sample Creation",
+            "description": "This is an example action",
+            "is_hidden": false,
+            "schema": {
+                "title": "Example Sample",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Sample Name",
+                        "type": "text"
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "action_id": 1,
+            "instrument_id": null,
+            "user_id": null,
+            "type": "sample",
+            "type_id": -99,
+            "name": "Example Sample Creation",
+            "description": "This is an example action",
+            "is_hidden": false,
+            "schema": {
+                "title": "Example Sample",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Sample Name",
+                        "type": "text"
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+
+    :<json string name: the action's name
+    :<json string description: the action's description
+    :<json bool is_hidden: whether or not the action is hidden
+    :<json object schema: the action's schema
+    :<json number action_id: the action's ID (optional, must not be changed)
+    :<json number instrument_id: the action's instrument's ID or null (optional, must not be changed)
+    :<json number user_id: the action's user ID, if it is a user-specific action, or null (optional, must not be changed)
+    :<json string type: the action's type ("sample", "measurement", "simulation" or "custom", optional, must not be changed)
+    :<json number type_id: the ID of the action's type (optional, must not be changed)
+    :statuscode 200: no error
+    :statuscode 404: the action does not exist
+
 
 Action Types
 ------------
@@ -1981,10 +2062,10 @@ Uploading a file
         Content-Type: application/json
         Location: https://iffsamples.fz-juelich.de/api/v1/objects/1/files/0
 
-    :<json string storage: how the file is stored (local)
+    :<json string storage: how the file is stored (either database or local_reference)
     :<json string original_file_name: the original name of the file
     :<json string base64_content: the base64 encoded content of the file
-    :<json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
+    :<json object hash: hash algorithm and hexdigest of the content (optional)
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist

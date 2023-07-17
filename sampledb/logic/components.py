@@ -31,13 +31,24 @@ class Component:
     description: typing.Optional[str]
     last_sync_timestamp: typing.Optional[datetime.datetime]
     import_token_available: bool
+    export_token_available: bool
+    discoverable: bool
 
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
-        import_token_available = False
-        if db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar():
-            import_token_available = True
-        return Component(id=component.id, address=component.address, uuid=component.uuid, name=component.name, description=component.description, last_sync_timestamp=component.last_sync_timestamp, import_token_available=import_token_available)
+        import_token_available = db.session.query(db.exists().where(component_authentication.OwnComponentAuthentication.component_id == component.id)).scalar()
+        export_token_available = db.session.query(db.exists().where(component_authentication.ComponentAuthentication.component_id == component.id)).scalar()
+        return Component(
+            id=component.id,
+            address=component.address,
+            uuid=component.uuid,
+            name=component.name,
+            description=component.description,
+            last_sync_timestamp=component.last_sync_timestamp,
+            import_token_available=import_token_available,
+            export_token_available=export_token_available,
+            discoverable=component.discoverable
+        )
 
     def get_name(self) -> str:
         if self.name is None:
@@ -316,3 +327,84 @@ def get_local_object_ids() -> typing.Set[int]:
         row[0]
         for row in object_ids
     }
+
+
+@dataclasses.dataclass(frozen=True)
+class ComponentInfo:
+    """
+    This class provides an immutable wrapper around models.components.ComponentInfo.
+    """
+    id: int
+    source_uuid: str
+    uuid: str
+    name: typing.Optional[str]
+    address: typing.Optional[str]
+    discoverable: bool
+    distance: int
+
+    @classmethod
+    def from_database(cls, component_info: components.ComponentInfo) -> 'ComponentInfo':
+        return ComponentInfo(
+            id=component_info.id,
+            address=component_info.address,
+            uuid=component_info.uuid,
+            name=component_info.name,
+            discoverable=component_info.discoverable,
+            source_uuid=component_info.source_uuid,
+            distance=component_info.distance
+        )
+
+
+def add_or_update_component_info(
+        uuid: str,
+        source_uuid: str,
+        name: typing.Optional[str],
+        address: typing.Optional[str],
+        discoverable: bool,
+        distance: int
+) -> ComponentInfo:
+    component_info = components.ComponentInfo.query.filter_by(
+        uuid=uuid,
+        source_uuid=source_uuid
+    ).first()
+    if component_info is None:
+        component_info = components.ComponentInfo(
+            uuid=uuid,
+            source_uuid=source_uuid,
+            name=name,
+            address=address,
+            discoverable=discoverable,
+            distance=distance
+        )
+    elif distance <= component_info.distance:
+        component_info.name = name
+        component_info.address = address
+        component_info.discoverable = discoverable
+        component_info.distance = distance
+    db.session.add(component_info)
+    db.session.commit()
+    return ComponentInfo.from_database(component_info)
+
+
+def get_component_infos() -> typing.List[ComponentInfo]:
+    return [
+        ComponentInfo.from_database(component_info)
+        for component_info in components.ComponentInfo.query.all()
+    ]
+
+
+def set_component_discoverable(component_id: int, discoverable: bool) -> None:
+    """
+    Update whether a component should be discoverable.
+
+    :param component_id: the ID of an existing component
+    :param discoverable: whether the component should be discoverable
+    :raise errors.ComponentDoesNotExistError: when no component with the given
+        component ID exists
+    """
+    component = components.Component.query.filter_by(id=component_id).first()
+    if component is None:
+        raise errors.ComponentDoesNotExistError()
+    component.discoverable = discoverable
+    db.session.add(component)
+    db.session.commit()

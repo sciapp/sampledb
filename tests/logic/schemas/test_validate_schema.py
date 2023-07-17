@@ -3120,3 +3120,43 @@ def test_validate_workflow_view():
     schema['workflow_view']['show_action_info'] = 3515
     with pytest.raises(ValidationError):
         validate_schema(schema)
+
+
+def test_validate_timeseries_schema():
+    schema = {
+        'title': 'Timeseries',
+        'type': 'timeseries',
+        'units': ['mV', 'V'],
+        'statistics': []
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+
+    schema['statistics'] = ['average', 'stddev', 'min', 'max', 'count']
+    validate_schema(wrap_into_basic_schema(schema))
+
+    schema['statistics'] = ['average', 'stddev', 'min', 'max', False]
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+    schema['statistics'] = ['average', 'stddev', 'mini', 'max']
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
+
+def test_validate_with_tooltip():
+    schema = {
+        'title': "Basic Schema",
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': "Name",
+                'tooltip': "The name of the object",
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    validate_schema(schema)
+    schema['properties']['name']['tooltip'] = {'en': 'The name of the object'}
+    validate_schema(schema)

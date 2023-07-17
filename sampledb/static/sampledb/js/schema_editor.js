@@ -1,10 +1,12 @@
 function enableSchemaEditor() {
+  window.schema_editor_enabled = true;
   $('[data-toggle="tooltip"]:not(.disabled)').tooltip();
   var schema_editor = $('#schema-editor');
   var schema_editor_templates = $('#schema-editor-templates');
   var input_schema = $('#input-schema');
   input_schema.hide();
-  $('.pygments').hide();
+  window.code_mirror_editor.save();
+  $('#input-schema ~ .CodeMirror').hide();
   schema_editor.show();
 
   var schema_text = input_schema.val();
@@ -35,7 +37,8 @@ function enableSchemaEditor() {
   window.schema_editor_missing_type_support = false;
   window.schema_editor_initial_updates = [];
 
-  input_schema.val(JSON.stringify(schema, null, 4));
+  input_schema.val(JSON.stringify(schema, null, 2));
+  window.code_mirror_editor.setValue(input_schema.val());
 
   schema_editor.html("");
 
@@ -113,7 +116,8 @@ function enableSchemaEditor() {
           schema['title'] = {"en": schema['title']};
         }
         schema['title'][lang_code] = title;
-        input_schema.val(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 2));
+        window.code_mirror_editor.setValue(input_schema.val());
       }
       window.schema_editor_errors['root_title__' + lang_code] = true;
       if (!has_error) {
@@ -162,7 +166,8 @@ function enableSchemaEditor() {
         }
         schema['propertyOrder'].push('hazards');
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
     });
 
     var tags_label = node.find('.schema-editor-root-object-tags-label');
@@ -213,7 +218,8 @@ function enableSchemaEditor() {
           schema['propertyOrder'].push('hazards');
         }
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
     });
 
     var properties_node = node.find('.schema-editor-root-object-properties');
@@ -282,7 +288,8 @@ function enableSchemaEditor() {
       if (property_node !== null) {
         properties_node[0].appendChild(property_node[0]);
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
       var name_input = property_node.find('.schema-editor-generic-property-name-input');
       name_input.val("");
       name_input.trigger('change');
@@ -446,7 +453,8 @@ function enableSchemaEditor() {
         var index = schema['required'].indexOf(name);
         schema['required'].splice(index, 1);
       }
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
 
       var name_input = getElementForProperty(path, 'name-input');
       name_input.closest('.schema-editor-property').remove();
@@ -468,7 +476,8 @@ function enableSchemaEditor() {
           schema['propertyOrder'].splice(index, 1);
           schema['propertyOrder'].splice(index - 1, 0, name);
         }
-        input_schema.val(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 2));
+        window.code_mirror_editor.setValue(input_schema.val());
         globallyValidateSchema();
         var name_input = getElementForProperty(path, 'name-input');
         var element = name_input.closest('.schema-editor-property');
@@ -496,7 +505,8 @@ function enableSchemaEditor() {
           schema['propertyOrder'].splice(index, 1);
           schema['propertyOrder'].splice(index + 1, 0, name);
         }
-        input_schema.val(JSON.stringify(schema, null, 4));
+        input_schema.val(JSON.stringify(schema, null, 2));
+        window.code_mirror_editor.setValue(input_schema.val());
         globallyValidateSchema();
         var name_input = getElementForProperty(path, 'name-input');
         var element = name_input.closest('.schema-editor-property');
@@ -697,9 +707,47 @@ function enableSchemaEditor() {
       var has_note = getElementForProperty(path, 'generic-note-checkbox').prop('checked');
       let translated_note = {};
       for (const lang_code of window.schema_editor_lang_codes) {
-        let note = getElementForProperty(path, 'generic-note-input-' + lang_code).val();
+        const note_input = getElementForProperty(path, 'generic-note-input-' + lang_code);
+        const note_group = note_input.parent();
+        const note_help = note_group.find('.help-block');
+        const note = note_input.val();
+        if (has_note && note === "" && lang_code === "en") {
+          note_help.text(window.schema_editor_translations['note_must_not_be_empty']);
+          note_group.addClass("has-error");
+          has_error = true;
+        } else if (has_note && RegExp('^\\s+$').test(note)) {
+          note_help.text(window.schema_editor_translations['note_must_not_be_whitespace']);
+          note_group.addClass("has-error");
+          has_error = true;
+        } else {
+          note_help.text("");
+          note_group.removeClass("has-error");
+        }
         if (note || lang_code === "en") {
           translated_note[lang_code] = note;
+        }
+      }
+      let has_tooltip = getElementForProperty(path, 'generic-tooltip-checkbox').prop('checked');
+      let translated_tooltip = {};
+      for (const lang_code of window.schema_editor_lang_codes) {
+        const tooltip_input = getElementForProperty(path, 'generic-tooltip-input-' + lang_code);
+        const tooltip_group = tooltip_input.parent();
+        const tooltip_help = tooltip_group.find('.help-block');
+        const tooltip = tooltip_input.val();
+        if (has_tooltip && tooltip === "" && lang_code === "en") {
+          tooltip_help.text(window.schema_editor_translations['tooltip_must_not_be_empty']);
+          tooltip_group.addClass("has-error");
+          has_error = true;
+        } else if (has_tooltip && RegExp('^\\s+$').test(tooltip)) {
+          tooltip_help.text(window.schema_editor_translations['tooltip_must_not_be_whitespace']);
+          tooltip_group.addClass("has-error");
+          has_error = true;
+        } else {
+          tooltip_help.text("");
+          tooltip_group.removeClass("has-error");
+        }
+        if (tooltip || lang_code === "en") {
+          translated_tooltip[lang_code] = tooltip;
         }
       }
       if (name !== real_path[real_path.length - 1]) {
@@ -741,6 +789,9 @@ function enableSchemaEditor() {
       if (has_note) {
         property_schema["note"] = translated_note;
       }
+      if (has_tooltip) {
+        property_schema["tooltip"] = translated_tooltip;
+      }
       if (required) {
         if (!('required' in schema)) {
           schema['required'] = [];
@@ -757,7 +808,8 @@ function enableSchemaEditor() {
       }
       schema['properties'][real_path[real_path.length - 1]] = property_schema;
 
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
 
       window.schema_editor_errors[path.join('__') + '__generic'] = true;
       if (!has_error) {
@@ -769,7 +821,8 @@ function enableSchemaEditor() {
     function updateSpecificProperty(path, real_path, schema, property_schema, has_error) {
       schema['properties'][real_path[real_path.length - 1]] = property_schema;
 
-      input_schema.val(JSON.stringify(schema, null, 4));
+      input_schema.val(JSON.stringify(schema, null, 2));
+      window.code_mirror_editor.setValue(input_schema.val());
 
       window.schema_editor_errors[path.join('__') + '__specific'] = true;
       if (!has_error) {
@@ -1225,8 +1278,9 @@ function enableSchemaEditor() {
       value_input.on('change', updateProperty.bind(path));
     }
 
-    // Every supported type has a note input
+    // Every supported type has a note and tooltip input
     setupValueFromSchema(path, 'generic', 'note', schema, true, true);
+    setupValueFromSchema(path, 'generic', 'tooltip', schema, true, true);
 
     setupValueFromSchema(path, 'text', 'default', schema, type === 'text', false);
     setupValueFromSchema(path, 'text', 'placeholder', schema, type === 'text', false);
@@ -1394,7 +1448,7 @@ function enableSchemaEditor() {
     var advanced_schema_features = [
         'conditions', 'action_type_id', 'action_id',
         'may_copy', 'dataverse_export', 'languages',
-        'min_magnitude', 'max_magnitude'
+        'min_magnitude', 'max_magnitude', 'statistics'
     ]
 
     for (const name of advanced_schema_features)
@@ -1412,7 +1466,8 @@ function enableSchemaEditor() {
 
   var root_object_node = buildRootObjectNode(schema);
   schema_editor[0].appendChild(root_object_node[0]);
-  input_schema.val(JSON.stringify(schema, null, 4));
+  input_schema.val(JSON.stringify(schema, null, 2));
+  window.code_mirror_editor.setValue(input_schema.val());
   globallyValidateSchema();
   $.each(window.schema_editor_initial_updates, function (_, update_func) {
     update_func();
@@ -1424,16 +1479,49 @@ function enableSchemaEditor() {
 }
 
 function disableSchemaEditor() {
+  window.schema_editor_enabled = false;
   var schema_editor = $('#schema-editor');
   var input_schema = $('#input-schema');
   schema_editor.hide();
-  input_schema.show();
-  $('.pygments').show();
+  window.code_mirror_editor.setValue(input_schema.val());
+  if (window.schema_editor_error_lines.length > 0) {
+    let markers = [];
+    window.schema_editor_error_lines.forEach(function(error_line) {
+      markers.push(window.code_mirror_editor.doc.markText(
+        {line: error_line - 1, ch: 0},
+        {line: error_line, ch: 0},
+        {inclusiveRight: false, css:"background-color: #ffdddd !important"}
+      ));
+    });
+    window.code_mirror_editor.on('change', function() {
+      let current_content = window.code_mirror_editor.getValue();
+      if (window.schema_editor_initial_content === null) {
+        window.schema_editor_initial_content = current_content;
+      }
+      if (current_content !== window.schema_editor_initial_content) {
+        window.schema_editor_error_lines = [];
+        markers.forEach(function (marker) {
+          marker.clear();
+        });
+      }
+    })
+  }
+  $('#input-schema ~ .CodeMirror').show();
+  window.code_mirror_editor.refresh();
+  if (window.schema_editor_initial_content === null) {
+    window.schema_editor_initial_content = window.code_mirror_editor.getValue();
+  }
   $('button[name="action_submit"]').prop('disabled', false);
   $('#form-action').off('submit');
 }
 
 $(function () {
+  window.code_mirror_editor = CodeMirror.fromTextArea($('#input-schema')[0], {
+    lineNumbers: true,
+    mode: {name: "javascript", json: true},
+    scrollbarStyle: null,
+  });
+
   // Add function to hide alert onclick
   $('#schema-editor-type-is-template-close').on('click', function () {
     $('.schema-editor-type-is-template').hide();
@@ -1450,11 +1538,16 @@ $(function () {
   }).change();
 
   var toggle_schema_editor = $('#toggle-schema-editor');
+  window.schema_editor_enabled = null;
   toggle_schema_editor.on('change', function () {
     if (toggle_schema_editor.prop('checked')) {
-      enableSchemaEditor();
+      if (window.schema_editor_enabled !== true) {
+        enableSchemaEditor();
+      }
     } else {
-      disableSchemaEditor();
+      if (window.schema_editor_enabled !== false) {
+        disableSchemaEditor();
+      }
     }
   });
   toggle_schema_editor.change();

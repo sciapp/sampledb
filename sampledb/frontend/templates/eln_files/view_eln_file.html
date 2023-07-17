@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('ELN Import') }} #{{ eln_import.id }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h1>{{ _('ELN Import') }} #{{ eln_import.id }}</h1>
+  <dl class="dl-horizontal">
+    <dt>{{ _('Uploaded by') }}</dt>
+    <dd>{{ user_reference(eln_import.user_id) }}</dd>
+    <dt>{{ _('Uploaded at') }}</dt>
+    <dd>{{ eln_import.upload_utc_datetime | babel_format_datetime }}</dd>
+    <dt>{{ _('Imported at') }}</dt>
+    <dd>{% if eln_import.import_utc_datetime %}{{ eln_import.import_utc_datetime | babel_format_datetime }}{% else %}&mdash;{% endif %}</dd>
+    {% if eln_import.imported %}
+    <dt>{{ _('Objects') }}</dt>
+    <dd>
+      {% if imported_objects %}
+        <ul style="padding-left: 1em; margin-bottom: 0">
+        {% for object in imported_objects %}
+          <li>
+            <a href="{{ url_for('.object', object_id=object.id) }}">{{ object.name | get_translated_text(default=_('Unnamed Object')) }}</a>
+            {{ import_information_symbol(object) }}
+          </li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        &mdash;
+      {% endif %}
+    </dd>
+    <dt>{{ _('Users') }}</dt>
+    <dd>
+      {% if imported_users %}
+        <ul style="padding-left: 1em">
+        {% for user in imported_users %}
+          <li>
+            <a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.name }}</a>
+            {{ import_information_symbol(user) }}
+          </li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        &mdash;
+      {% endif %}
+    </dd>
+    {% endif %}
+  </dl>
+{% endblock %}

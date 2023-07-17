@@ -1350,6 +1350,14 @@ code {
   display: none;
 }
 
+.invalid-eln-file {
+    color: #f94442
+}
+
+.import-information-symbol:hover, .import-information-symbol:focus {
+    text-decoration: none;
+}
+
 .permissions-table-head,
 .permissions-table-data{
     text-align: center;
@@ -1465,4 +1473,20 @@ table.diff tr.striped {
     float: left;
     width: calc(100% - 20px);
     margin: -7px;
+}
+
+#graph > .vis-network > div.vis-tooltip {
+    border: 0;
+    background-color: #333333;
+    color: #ffffff;
+    font-size: 10pt;
+    padding: 3px;
+    box-shadow: none;
+}
+
+#activity_log_show_all_wrapper {
+    margin: -1.5em 1.5em 1.5em 1.5em;
+}
+#activity_log_show_all_toggle {
+    display: none;
 }

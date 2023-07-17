@@ -229,6 +229,14 @@ div.document.landing_page {
     max-width: 450px;
     flex: 1;
 }
+.landing_page  .table_of_contents_block .caption {
+    display: none;
+}
+
+.sphinxsidebarwrapper .caption .caption-text {
+    font-size: 120%;
+    color: #888888
+}
 
 @media only screen and (min-width: 700px) {
 .landing_page .feature_blocks_row {

@@ -89,11 +89,17 @@ def object(object_id: int) -> FlaskResponseT:
     object = get_object(object_id=object_id)
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
     user_may_edit = Permissions.WRITE in user_permissions and object.fed_object_id is None and object.action_id is not None
+    user_may_assign_location = user_may_edit
+    user_may_link_publication = user_may_edit
+    user_may_comment = user_may_edit
+    user_may_upload_files = user_may_edit
+    if object.eln_import_id is not None:
+        user_may_edit = False
     user_may_grant = Permissions.GRANT in user_permissions
 
     mode = flask.request.args.get('mode', '')
     if not user_may_edit and mode in {'edit', 'upgrade'}:
-        if object.fed_object_id is not None:
+        if object.fed_object_id is not None or object.eln_import_id is not None:
             flask.flash(_('Editing imported objects is not yet supported.'), 'error')
         return flask.abort(403)
     if not flask.current_app.config['DISABLE_INLINE_EDIT']:
@@ -139,6 +145,7 @@ def object(object_id: int) -> FlaskResponseT:
         "all_languages": all_languages,
         "SUPPORTED_LOCALES": logic.locale.SUPPORTED_LOCALES,
         "ENGLISH": english,
+        "eln_import_url": logic.eln_import.get_eln_import_object_url(object_id)
     })
 
     actions_by_id = {}
@@ -214,7 +221,7 @@ def object(object_id: int) -> FlaskResponseT:
     dataverse_export_task_created = False
     dataverse_url = None
     show_dataverse_export = False
-    if dataverse_enabled:
+    if dataverse_enabled and object.eln_import_id is None:
         export_state = logic.dataverse_export.get_dataverse_export_state(object.id)
         if export_state == models.DataverseExportStatus.EXPORT_FINISHED:
             dataverse_url = logic.dataverse_export.get_dataverse_url(object.id)
@@ -229,7 +236,7 @@ def object(object_id: int) -> FlaskResponseT:
 
     # scicat export
     scicat_enabled = bool(flask.current_app.config['SCICAT_API_URL']) and bool(flask.current_app.config['SCICAT_FRONTEND_URL'])
-    if scicat_enabled:
+    if scicat_enabled and object.eln_import_id is None:
         scicat_url = logic.scicat_export.get_scicat_url(object.id)
         show_scicat_export = user_may_grant and not scicat_url and action_type is not None and action_type.scicat_export_type is not None
     else:
@@ -331,7 +338,7 @@ def object(object_id: int) -> FlaskResponseT:
     })
 
     # mobile file upload
-    if user_may_edit:
+    if user_may_upload_files:
         serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='mobile-upload')
         token = serializer.dumps([flask_login.current_user.id, object_id])
         mobile_upload_url = flask.url_for('.mobile_file_upload', object_id=object_id, token=token, _external=True)
@@ -340,13 +347,13 @@ def object(object_id: int) -> FlaskResponseT:
         mobile_upload_url = None
         mobile_upload_qrcode = None
     template_kwargs.update({
+        "user_may_upload_files": user_may_upload_files,
         "mobile_upload_url": mobile_upload_url,
         "mobile_upload_qrcode": mobile_upload_qrcode,
     })
 
     # object location and/or responsible user assignments
     object_location_assignments = get_object_location_assignments(object_id)
-    user_may_assign_location = user_may_edit
     if user_may_assign_location:
         location_form = ObjectLocationAssignmentForm()
 
@@ -386,7 +393,6 @@ def object(object_id: int) -> FlaskResponseT:
 
     # publications
     object_publications = logic.publications.get_publications_for_object(object_id=object.id)
-    user_may_link_publication = user_may_edit
     if user_may_link_publication:
         publication_form = ObjectPublicationForm()
     else:
@@ -399,7 +405,7 @@ def object(object_id: int) -> FlaskResponseT:
 
     # comments
     template_kwargs.update({
-        "user_may_comment": user_may_edit,
+        "user_may_comment": user_may_comment,
         "comments": comments.get_comments_for_object(object_id),
         "comment_form": CommentForm(),
     })
@@ -790,6 +796,8 @@ def post_object_comments(object_id: int) -> FlaskResponseT:
     if object.fed_object_id is not None:
         flask.flash(_('Commenting on imported objects is not yet supported.'), 'error')
         return flask.abort(403)
+    if object.action_id is None:
+        return flask.abort(403)
     comment_form = CommentForm()
     if comment_form.validate_on_submit():
         content = comment_form.content.data
@@ -807,6 +815,8 @@ def post_object_location(object_id: int) -> FlaskResponseT:
     object = get_object(object_id)
     if object.fed_object_id is not None:
         flask.flash(_('Assigning locations to imported objects is not yet supported.'), 'error')
+        return flask.abort(403)
+    if object.action_id is None:
         return flask.abort(403)
     location_form = ObjectLocationAssignmentForm()
     location_form.location.choices = [('-1', '—')] + [
@@ -865,6 +875,8 @@ def post_object_publication(object_id: int) -> FlaskResponseT:
     object = get_object(object_id)
     if object.fed_object_id is not None:
         flask.flash(_('Assigning publications to imported objects is not yet supported.'), 'error')
+        return flask.abort(403)
+    if object.action_id is None:
         return flask.abort(403)
     publication_form = ObjectPublicationForm()
     if publication_form.validate_on_submit():
@@ -1161,7 +1173,11 @@ def download_timeseries_data(object_id: int, timeseries_id: str) -> FlaskRespons
         return flask.abort(404)
     csv_io = io.StringIO()
     writer = csv.writer(csv_io, quoting=csv.QUOTE_NONNUMERIC)
-    writer.writerow(['utc_datetime', 'magnitude in ' + str(data['units']), 'magnitude in base units'])
+    if isinstance(data['data'][0][0], str):
+        time_row_name = 'utc_datetime'
+    else:
+        time_row_name = 'time in s'
+    writer.writerow([time_row_name, 'magnitude in ' + str(data['units']), 'magnitude in base units'])
     writer.writerows(data['data'])
     binary_csv_io = io.BytesIO(csv_io.getvalue().encode('utf-8'))
     return flask.send_file(

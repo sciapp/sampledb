@@ -620,7 +620,7 @@
 
   {% if objects or not search_notes %}
     <h1>{{ object_name_plural }}</h1>
-    {% if filter_action_type_infos or filter_action_infos or filter_instrument_infos or filter_location_infos or filter_related_user_info or filter_user_permissions_info or filter_all_users_permissions or filter_anonymous_permissions or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info or filter_origins_info %}
+    {% if filter_action_type_infos or filter_action_infos or filter_instrument_infos or filter_location_infos or filter_related_user_infos or filter_user_permissions_info or filter_all_users_permissions or filter_anonymous_permissions or filter_group_permissions_info or filter_project_permissions_info or filter_doi_info or filter_origins_info %}
       <ul>
       {% if filter_action_type_infos %}
         <li>
@@ -678,11 +678,15 @@
       {% if filter_doi_info %}
         <li>{{ _('for publication:') }} <a href="http://doi.org/{{ filter_doi_info.doi | urlencode }}">{% if filter_doi_info.title %}{{ filter_doi_info.title }}{% else %}{{ _('Untitled publication') }}{% endif %} (DOI: {{ filter_doi_info.doi }})</a></li>
       {% endif %}
-      {% if filter_related_user_info %}
+      {% if filter_related_user_infos %}
+        {% for filter_related_user_info in filter_related_user_infos %}
         <li>
         {{ _('with activity by user:') }}
-        <a href="{{ filter_related_user_info.url }}">{{ filter_related_user_info.name }}</a>{% if filter_related_user_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ filter_related_user_info.fed_id }} @ {{ filter_related_user_info.component_name }}"></i>{% endif %}
+        <a href="{{ filter_related_user_info.url }}">{{ filter_related_user_info.name }}</a>{% if filter_related_user_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ filter_related_user_info.fed_id }} @ {{ filter_related_user_info.component_name }}"></i>{% elif filter_related_user_info.eln_import_id %}&nbsp;<a href="{{ url_for('.eln_import', eln_import_id=filter_related_user_info.eln_import_id) }}" class="import-information-symbol"><i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ filter_related_user_info.eln_object_id }} @ {{ _('.eln file') }} #{{ filter_related_user_info.eln_import_id }}"></i></a>{% endif %}
+        {%- if not loop.last %}, {{ _('or') }}
+        {% endif %}
         </li>
+        {% endfor %}
       {% endif %}
       {% if filter_anonymous_permissions %}
         <li>
@@ -1444,7 +1448,7 @@
       <th scope="row"><a href="{{ url_for('.object', object_id=object.object_id) }}">{{ object.object_id }}</a></th>
       <td>
         <a href="{{ url_for('.object', object_id=object.object_id) }}">{% if object.name | get_translated_text == '' %}&mdash;{% else %}{{ object.name | get_translated_text }}{% endif %}</a>
-        {{ import_information_symbol(FederationObjectRef(fed_id=object.fed_id, component_uuid=object.component.uuid)) }}
+        {{ import_information_symbol(wrap_object_ref(fed_id=object.fed_id, component_uuid=object.component.uuid, eln_import_id=object.eln_import_id, eln_object_id=object.eln_object_id)) }}
       </td>
       {% if not edit_permissions %}
         {% if 'date' in creation_info %}

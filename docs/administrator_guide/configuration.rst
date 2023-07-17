@@ -157,7 +157,7 @@ For more information on the SciCat export, see :ref:`scicat_export`.
 .. _download_service_configuration:
 
 Download Service
--------------
+----------------
 
 .. list-table:: Download Service Configuration Environment Variables
    :header-rows: 1
@@ -213,6 +213,8 @@ Federation
      - Valid time delta between SampleDB instances in a federation in seconds (default: ``300``)
    * - SAMPLEDB_ENABLE_DEFAULT_USER_ALIASES
      - If set, users will have aliases using their profile information by default (default: False). This will not apply to bot users or imported users.
+   * - SAMPLEDB_ENABLE_FEDERATION_DISCOVERABILITY
+     - If set, this instance will be discoverable by other databases in the same federation. (default: True).
 
 .. _monitoring_dashboard_configuration:
 
@@ -257,8 +259,6 @@ Miscellaneous
      - If set, only administrators will be able to delete non-empty basic groups.
    * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_PROJECTS
      - If set, only administrators will be able to create project groups.
-   * - SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND
-     - If set, object selections will be loaded in the background using AJAX.
    * - SAMPLEDB_DISABLE_USE_IN_MEASUREMENT
      - If set, the "Use in Measurement" button will not be shown.
    * - SAMPLEDB_DISABLE_SUBPROJECTS
@@ -303,5 +303,7 @@ Miscellaneous
      - If set, some functions with results that cannot change will use caches (default: True).
    * - SAMPLEDB_TEMPORARY_FILE_TIME_LIMIT
      - Time that temporary files uploaded when editing an object are stored, in seconds (default: 604800 seconds / 7 days).
+   * - SAMPLEDB_ENABLE_ELN_FILE_IMPORT
+     - If set, .eln files can be imported by users (default: False). :ref:`Importing .eln files <eln_import>` is currently experimental and not recommended for production systems, as the file format is still a work in progress.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

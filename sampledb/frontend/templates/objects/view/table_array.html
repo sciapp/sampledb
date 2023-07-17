@@ -5,9 +5,7 @@
   {% set base_search_query_attribute = "" %}
 {% endif %}
 <div class="row" style="padding-right: 0.75em;">
-  <div class="col-md-3" style="text-align: right; margin-bottom: 5px;">
-<strong>{{ schema.title | get_translated_text }} <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></strong>
-  </div>
+  {% include "objects/property_label.html" %}
 </div>
 <div {% if schema.style == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   {% if schema["items"]["type"] == 'object' %}
@@ -19,12 +17,22 @@
         {% for property_name in property_order %}
           {% if property_name in item_property_names %}
           {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
-          <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+          <th scope="col">
+            {% if 'tooltip' in schema["items"].properties[property_name] %}
+              <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
+            {% endif %}
+            {{ schema["items"].properties[property_name].title | get_translated_text }}
+            {% if 'tooltip' in schema["items"].properties[property_name] %}
+                <i class="fa fa-question-circle" aria-hidden="true"></i>
+              </span>
+            {% endif %}
             {% if schema["items"].properties[property_name].type == 'text' %}
             <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
             {% elif schema["items"].properties[property_name].type == 'quantity' %}
-            {% if schema["items"].properties[property_name].units.strip() != '1' %}
+            {% if schema["items"].properties[property_name].units is string and schema["items"].properties[property_name].units.strip() != '1' %}
             <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% elif schema["items"].properties[property_name].units is not string and schema["items"].properties[property_name].units | length == 1 and schema["items"].properties[property_name].units[0].strip() != '1' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units[0], advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
             {% else %}
             <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
             {% endif %}
@@ -39,12 +47,22 @@
         {% for property_name in item_property_names %}
           {% if property_name not in property_order %}
           {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
-          <th scope="col">{{ schema["items"].properties[property_name].title | get_translated_text }}
+          <th scope="col">
+            {% if 'tooltip' in schema["items"].properties[property_name] %}
+              <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
+            {% endif %}
+            {{ schema["items"].properties[property_name].title | get_translated_text }}
+            {% if 'tooltip' in schema["items"].properties[property_name] %}
+                <i class="fa fa-question-circle" aria-hidden="true"></i>
+              </span>
+            {% endif %}
             {% if schema["items"].properties[property_name].type == 'text' %}
             <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
             {% elif schema["items"].properties[property_name].type == 'quantity' %}
-            {% if schema["items"].properties[property_name].units.strip() != '1' %}
+            {% if schema["items"].properties[property_name].units is string and schema["items"].properties[property_name].units.strip() != '1' %}
             <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+            {% elif schema["items"].properties[property_name].units is not string and schema["items"].properties[property_name].units | length == 1 and schema["items"].properties[property_name].units[0].strip() != '1' %}
+            <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units[0], advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
             {% else %}
             <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
             {% endif %}

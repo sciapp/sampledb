@@ -26,7 +26,7 @@
           <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
           {{ import_information_symbol(action.instrument) }} &mdash;
         {% endif %}
-        <a href="{{ url_for('.action', action_id=action.id) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+        <a href="{{ url_for('.action', action_id=action.id, object_id=request.args.getlist('object_id')) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
         {{ import_information_symbol(action) }}
         <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
       </h2>

@@ -51,6 +51,8 @@ def create_comment(
         user_id: int,
         content: str,
         utc_datetime: typing.Optional[datetime.datetime] = None,
+        *,
+        create_log_entry: bool = True,
         fed_id: None = None,
         component_id: None = None
 ) -> int:
@@ -64,6 +66,7 @@ def create_comment(
         content: str,
         utc_datetime: typing.Optional[datetime.datetime] = None,
         *,
+        create_log_entry: bool = True,
         fed_id: int,
         component_id: int
 ) -> int:
@@ -75,6 +78,8 @@ def create_comment(
         user_id: typing.Optional[int],
         content: str,
         utc_datetime: typing.Optional[datetime.datetime] = None,
+        *,
+        create_log_entry: bool = True,
         fed_id: typing.Optional[int] = None,
         component_id: typing.Optional[int] = None
 ) -> int:
@@ -85,6 +90,7 @@ def create_comment(
     :param user_id: the ID of an existing user
     :param content: the text content for the new comment
     :param utc_datetime: the creation time of the comment or None to select the current time
+    :param create_log_entry: whether to create a log entry
     :param fed_id: the ID of the related comment at the exporting component
     :param component_id: the ID of the exporting component
     :return: the ID of the new comment
@@ -115,7 +121,7 @@ def create_comment(
     )
     db.session.add(comment)
     db.session.commit()
-    if component_id is None:
+    if component_id is None and create_log_entry:
         # ensured by the if at the start of the function
         assert user_id is not None
         object_log.post_comment(user_id=user_id, object_id=object_id, comment_id=comment.id)

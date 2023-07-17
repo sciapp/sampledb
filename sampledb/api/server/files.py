@@ -12,7 +12,7 @@ from .authentication import object_permissions_required
 from ..utils import Resource, ResponseData
 from ...logic import errors
 from ...logic.actions import get_action
-from ...logic.files import create_database_file, create_local_file, create_local_file_reference, create_url_file, File, get_file_for_object, get_files_for_object, SUPPORTED_HASH_ALGORITHMS, DEFAULT_HASH_ALGORITHM
+from ...logic.files import create_database_file, create_local_file_reference, create_url_file, File, get_file_for_object, get_files_for_object, SUPPORTED_HASH_ALGORITHMS, DEFAULT_HASH_ALGORITHM
 from ...logic.objects import get_object
 from ...logic.utils import parse_url
 from ...models import Permissions
@@ -88,9 +88,9 @@ class ObjectFiles(Resource):
                 "message": "storage must be set"
             }, 400
         storage = request_json['storage']
-        if storage not in ('local', 'local_reference', 'url', 'database'):
+        if storage not in ('local_reference', 'url', 'database'):
             return {
-                "message": "storage must be 'local', 'local_reference', 'database' or 'url'"
+                "message": "storage must be 'local_reference', 'database' or 'url'"
             }, 400
         if 'hash' in request_json:
             if not isinstance(request_json['hash'], dict):
@@ -111,7 +111,7 @@ class ObjectFiles(Resource):
                 return {
                     "message": "hash hexdigest be a lowercase string of hex characters"
                 }, 400
-        if storage in {'local', 'database'}:
+        if storage == 'database':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'hash'}:
                     return {
@@ -119,12 +119,12 @@ class ObjectFiles(Resource):
                     }, 400
             if 'original_file_name' not in request_json or not request_json['original_file_name']:
                 return {
-                    "message": "original_file_name must be set for files with local or database storage"
+                    "message": "original_file_name must be set for files with database storage"
                 }, 400
             original_file_name = request_json['original_file_name']
             if 'base64_content' not in request_json:
                 return {
-                    "message": "base64_content must be set for files with local or database storage"
+                    "message": "base64_content must be set for files with database storage"
                 }, 400
             base64_content = request_json['base64_content']
             try:
@@ -151,22 +151,13 @@ class ObjectFiles(Resource):
                     algorithm=DEFAULT_HASH_ALGORITHM,
                     binary_data=content
                 )
-            if storage == 'local':
-                file = create_local_file(
-                    object_id=object_id,
-                    user_id=flask.g.user.id,
-                    file_name=original_file_name,
-                    save_content=lambda stream: typing.cast(None, stream.write(content)),
-                    hash=hash
-                )
-            else:
-                file = create_database_file(
-                    object_id=object_id,
-                    user_id=flask.g.user.id,
-                    file_name=original_file_name,
-                    save_content=lambda stream: typing.cast(None, stream.write(content)),
-                    hash=hash
-                )
+            file = create_database_file(
+                object_id=object_id,
+                user_id=flask.g.user.id,
+                file_name=original_file_name,
+                save_content=lambda stream: typing.cast(None, stream.write(content)),
+                hash=hash
+            )
         if storage == 'local_reference':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'filepath', 'hash'}:

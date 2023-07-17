@@ -19,7 +19,7 @@
     </option>
   {% endif %}
   {% for user in users %}
-      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ user.id }}" {% if user == selected_user %}selected="selected"{% endif %}>
+      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% elif user.eln_import_id is not none %}data-icon="fa fa-file-archive-o"{% endif %} value="{{ user.id }}" {% if user == selected_user %}selected="selected"{% endif %}>
         {{ user.get_name(include_ref=True) }}
       </option>
   {% endfor %}

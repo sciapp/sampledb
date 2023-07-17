@@ -216,7 +216,7 @@ def test_login_via_component_token(component, component2):
     add_token_authentication(component.id, token3, description3)
     assert len(ComponentAuthentication.query.all()) == 3
 
-    assert logic.components.Component.from_database(login_via_component_token(token3)) == component
+    assert logic.components.Component.from_database(login_via_component_token(token3)).id == component.id
 
 
 def test_login_via_component_token_invalid_token(component, component2):

@@ -92,7 +92,6 @@ def parse_configuration_values() -> None:
         'ONLY_ADMINS_CAN_MANAGE_GROUP_CATEGORIES',
         'DISABLE_USE_IN_MEASUREMENT',
         'DISABLE_SUBPROJECTS',
-        'LOAD_OBJECTS_IN_BACKGROUND',
         'ENFORCE_SPLIT_NAMES',
         'BUILD_TRANSLATIONS',
         'SHOW_PREVIEW_WARNING',
@@ -110,6 +109,8 @@ def parse_configuration_values() -> None:
         'DISABLE_INSTRUMENTS',
         'ENABLE_FUNCTION_CACHES',
         'ENABLE_CONTENT_SECURITY_POLICY',
+        'ENABLE_ELN_FILE_IMPORT',
+        'ENABLE_FEDERATION_DISCOVERABILITY',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -204,20 +205,6 @@ def check_config(
             file=sys.stderr
         )
         show_config_info = True
-
-    if config.get('USE_TYPEAHEAD_FOR_OBJECTS') and not config.get('LOAD_OBJECTS_IN_BACKGROUND'):
-        print(
-            ansi_color(
-                'Typeahead can only be used for objects when loading in '
-                'background is enabled, so USE_TYPEAHEAD_FOR_OBJECTS can '
-                'only be true if LOAD_OBJECTS_IN_BACKGROUND is also true.\n',
-                color=31
-            ),
-            '\n',
-            file=sys.stderr
-        )
-        show_config_info = True
-        can_run = False
 
     if 'DATAVERSE_URL' not in defined_config_keys:
         print(
@@ -627,8 +614,6 @@ DISABLE_USE_IN_MEASUREMENT = False
 
 DISABLE_SUBPROJECTS = False
 
-LOAD_OBJECTS_IN_BACKGROUND = True
-
 USE_TYPEAHEAD_FOR_OBJECTS = False
 TYPEAHEAD_OBJECT_LIMIT = None
 
@@ -652,6 +637,7 @@ HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE = False
 MAX_BATCH_SIZE = 100
 
 FEDERATION_UUID = None
+ENABLE_FEDERATION_DISCOVERABILITY = True
 ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False
@@ -677,6 +663,8 @@ TEMPORARY_FILE_TIME_LIMIT = 7 * 24 * 60 * 60
 
 # CSP headers should be set, however this value can be used to disable them if necessary
 ENABLE_CONTENT_SECURITY_POLICY = True
+
+ENABLE_ELN_FILE_IMPORT = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

@@ -238,3 +238,12 @@ def unlink_project(user_id: int, object_id: int, project_id: int, project_delete
             'project_deleted': project_deleted
         }
     )
+
+
+def import_from_eln_file(user_id: int, object_id: int) -> None:
+    _store_new_log_entry(
+        type=ObjectLogEntryType.IMPORT_FROM_ELN_FILE,
+        object_id=object_id,
+        user_id=user_id,
+        data={}
+    )

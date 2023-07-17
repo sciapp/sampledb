@@ -54,6 +54,7 @@ class Action:
     component: typing.Optional[components.Component]
     admin_only: bool
     disable_create_objects: bool
+    objects_readable_by_all_users_by_default: bool
 
     @classmethod
     def from_database(cls, action: models.Action) -> 'Action':
@@ -77,6 +78,7 @@ class Action:
             component=components.Component.from_database(action.component) if action.component is not None else None,
             admin_only=action.admin_only,
             disable_create_objects=action.disable_create_objects,
+            objects_readable_by_all_users_by_default=action.objects_readable_by_all_users_by_default,
         )
 
     def __repr__(self) -> str:
@@ -97,6 +99,7 @@ def create_action(
         component_id: None = None,
         admin_only: bool = False,
         disable_create_objects: bool = False,
+        objects_readable_by_all_users_by_default: bool = False,
         strict_schema_validation: bool = True,
 ) -> Action:
     ...
@@ -116,6 +119,7 @@ def create_action(
         component_id: int,
         admin_only: bool = False,
         disable_create_objects: bool = False,
+        objects_readable_by_all_users_by_default: bool = False,
         strict_schema_validation: bool = True,
 ) -> Action:
     ...
@@ -134,6 +138,7 @@ def create_action(
         component_id: typing.Optional[int] = None,
         admin_only: bool = False,
         disable_create_objects: bool = False,
+        objects_readable_by_all_users_by_default: bool = False,
         strict_schema_validation: bool = True,
 ) -> Action:
     """
@@ -153,6 +158,8 @@ def create_action(
     :param component_id: the ID of the exporting component
     :param admin_only: whether only admins may use the action to create objects
     :param disable_create_objects: whether the action may not be used to create objects
+    :param objects_readable_by_all_users_by_default: whether objects created
+        with this action should be readable by all signed-in users by default
     :param strict_schema_validation: whether schema validation should use strict mode
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
@@ -195,6 +202,7 @@ def create_action(
         component_id=component_id,
         admin_only=admin_only,
         disable_create_objects=disable_create_objects,
+        objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default,
     )
     db.session.add(action)
     db.session.commit()
@@ -319,6 +327,7 @@ def update_action(
         short_description_is_markdown: bool = False,
         admin_only: typing.Optional[bool] = None,
         disable_create_objects: typing.Optional[bool] = None,
+        objects_readable_by_all_users_by_default: typing.Optional[bool] = None
 ) -> None:
     """
     Updates the action with the given action ID, setting its schema.
@@ -331,6 +340,9 @@ def update_action(
         contains Markdown
     :param admin_only: None or whether only admins may use the action to create objects
     :param disable_create_objects: None or whether the action may not be used to create objects
+    :param objects_readable_by_all_users_by_default: whether objects created
+        with this action should be readable by all signed-in users by default,
+        or None
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -347,6 +359,8 @@ def update_action(
         action.admin_only = admin_only
     if disable_create_objects is not None:
         action.disable_create_objects = disable_create_objects
+    if objects_readable_by_all_users_by_default is not None:
+        action.objects_readable_by_all_users_by_default = objects_readable_by_all_users_by_default
     db.session.add(action)
     db.session.commit()
     update_actions_using_template_action(action_id)

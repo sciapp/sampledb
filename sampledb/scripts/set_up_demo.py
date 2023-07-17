@@ -648,9 +648,47 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, action.id, name="Conditions Demo Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+        user_reference_object = sampledb.logic.objects.create_object(
+            action_id=action.id,
+            data={
+                'name': {
+                    '_type': 'text',
+                    'text': 'Object with a User Reference'
+                },
+                'user': {
+                    '_type': 'user',
+                    'user_id': basic_user.id
+                }
+            },
+            user_id=instrument_responsible_user.id
+        )
 
         UUID = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
         component = sampledb.logic.components.add_component(UUID, 'Example SampleDB', None, 'Example component database for demonstration purposes. Do not expect it to function.')
+        sampledb.logic.federation.components.parse_import_component_info({
+            'uuid': 'e50671c5-2b31-4251-a24b-5b39bb6aa6e6',
+            'source_uuid': UUID,
+            'distance': 1,
+            'name': None,
+            'address': None,
+            'discoverable': True
+        }, component)
+        sampledb.logic.federation.components.parse_import_component_info({
+            'uuid': '9b9c5c43-4a7a-4a71-acc8-e75e706feaac',
+            'source_uuid': UUID,
+            'distance': 1,
+            'name': 'Other SampleDB',
+            'address': 'http://example.org',
+            'discoverable': True
+        }, component)
+        sampledb.logic.federation.components.parse_import_component_info({
+            'uuid': 'e50671c5-2b31-4251-a24b-5b39bb6aa6e6',
+            'source_uuid': '9b9c5c43-4a7a-4a71-acc8-e75e706feaac',
+            'distance': 2,
+            'name': None,
+            'address': None,
+            'discoverable': True
+        }, component)
         sampledb.logic.federation.locations.parse_import_location({
             'location_id': 1,
             'component_uuid': UUID,
@@ -1061,6 +1099,26 @@ This example shows how Markdown can be used for instrument Notes.
         }
         sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
 
+        relative_temperature_data: typing.List[typing.Tuple[float, float, float]] = [(i * 0.03, data[1], data[2]) for i, data in enumerate(temperature_data)]
+        relative_pressure_data: typing.List[typing.Tuple[float, float]] = [(i * 0.03, data[1]) for i, data in enumerate(pressure_data)]
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Relative Timeseries Demo', 'de': 'Relative Timeseries Demo'}
+            },
+            'temperature_series': {
+                '_type': 'timeseries',
+                'units': 'degC',
+                'data': relative_temperature_data
+            },
+            'pressure_series': {
+                '_type': 'timeseries',
+                'units': 'bar',
+                'data': relative_pressure_data
+            }
+        }
+        sampledb.logic.objects.create_object(timeseries_action.id, data, instrument_responsible_user.id)
+
         combined_conditions_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.MEASUREMENT,
             schema={
@@ -1180,5 +1238,99 @@ This example shows how Markdown can be used for instrument Notes.
         )
         set_action_translation(Language.ENGLISH, file_action.id, name="File Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(file_action.id, sampledb.models.Permissions.READ)
+
+        file_object = sampledb.logic.objects.create_object(
+            action_id=file_action.id,
+            data={
+                'name': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'File Demo Object',
+                        'de': 'Datei-Demo-Objekt',
+                    }
+                },
+                'list': [],
+                'table': []
+            },
+            user_id=basic_user.id
+        )
+        file = sampledb.logic.files.create_database_file(
+            object_id=file_object.id,
+            user_id=basic_user.id,
+            file_name='example.txt',
+            save_content=lambda f: typing.cast(None, f.write(b"Test"))
+        )
+        sampledb.logic.objects.update_object(
+            object_id=file_object.id,
+            data={
+                'name': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'File Demo Object',
+                        'de': 'Datei-Demo-Objekt',
+                    }
+                },
+                'file': {
+                    '_type': 'file',
+                    'file_id': file.id
+                },
+                'list': [],
+                'table': []
+            },
+            user_id=basic_user.id
+        )
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(file_object.id, sampledb.models.Permissions.READ)
+
+        sampledb.logic.comments.create_comment(
+            object_id=independent_object.id,
+            user_id=basic_user.id,
+            content='This is a test comment',
+            utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2),
+        )
+        sampledb.logic.files.create_url_file(
+            object_id=independent_object.id,
+            user_id=basic_user.id,
+            url='http://example.org/test_url'
+        )
+        sampledb.logic.files.create_database_file(
+            object_id=independent_object.id,
+            user_id=basic_user.id,
+            file_name='test_database.txt',
+            save_content=lambda f: typing.cast(None, f.write(b"Test"))
+        )
+        eln_file_data = sampledb.logic.export.get_eln_archive(
+            user_id=instrument_responsible_user.id,
+            object_ids=[independent_object.id, file_object.id, measurement.id, user_reference_object.id]
+        )
+        eln_import_id = sampledb.logic.eln_import.create_eln_import(
+            user_id=instrument_responsible_user.id,
+            file_name='sampledb_demo_file.eln',
+            zip_bytes=eln_file_data
+        ).id
+        sampledb.logic.eln_import.import_eln_file(eln_import_id)
+
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {
+                    'en': 'Imported Object Reference Demo'
+                }
+            },
+            'samples': [
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'component_uuid': 'ee36dd7f-72b0-44b6-afa8-752e920fbb32'
+                },
+                {
+                    '_type': 'sample',
+                    'object_id': 10001,
+                    'eln_source_url': 'http://localhost:5000/',
+                    'eln_object_url': 'http://localhost:5000/objects/10001'
+                }
+            ]
+        }
+        object = sampledb.logic.objects.create_object(multi_measurement_action.id, data, instrument_responsible_user.id)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.READ)
 
     print("Success: set up demo data", flush=True)

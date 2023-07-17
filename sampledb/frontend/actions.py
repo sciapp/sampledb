@@ -11,9 +11,6 @@ import flask_login
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, SelectField, IntegerField
 from wtforms.validators import InputRequired, ValidationError, DataRequired
-import pygments
-import pygments.lexers.data
-import pygments.formatters
 from flask_babel import _, force_locale
 
 from . import frontend
@@ -25,7 +22,7 @@ from ..logic.action_types import get_action_type, get_action_types
 from ..logic.action_translations import get_action_translations_for_action, set_action_translation, delete_action_translation
 from ..logic.languages import get_languages, get_language, Language
 from ..logic.components import get_component
-from ..logic.favorites import get_user_favorite_action_ids
+from ..logic.favorites import get_user_favorite_action_ids, get_user_favorite_instrument_ids
 from ..logic.instruments import get_user_instruments, get_instrument
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users
@@ -57,6 +54,8 @@ class ActionForm(FlaskForm):
     short_description_is_markdown = BooleanField(default=None)
     translations = StringField(validators=[DataRequired()])
     usable_by = SelectField(choices=['with_permissions', 'admins', 'nobody'])
+    objects_readable_by_all_users_by_default = BooleanField(default=None)
+    use_json_editor = BooleanField(default=None)
 
     def validate_type(form, field: IntegerField) -> None:
         try:
@@ -338,15 +337,18 @@ def show_action_form(
                     'type': 'text'
                 }
             },
-            'required': ['name']
+            'required': ['name'],
+            'propertyOrder': [
+                'name'
+            ]
         }, indent=2)
         submit_text = "Create"
     may_set_user_specific = action is None and flask_login.current_user.is_admin
     schema = None
-    pygments_output = None
     error_message = None
     action_form = ActionForm()
     instrument_is_fed = {}
+    instrument_is_fav = {}
 
     sample_action_type = get_action_type(
         action_type_id=models.ActionType.SAMPLE_CREATION
@@ -360,14 +362,17 @@ def show_action_form(
         action_translation.language_id: action_translation
         for action_translation in action_translations
     }
+    user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
 
-    use_schema_editor = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
+    if not action_form.is_submitted():
+        action_form.use_json_editor.data = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
     if action is not None:
         if action.instrument is not None:
             action_form.instrument.choices = [
                 (str(action.instrument_id), get_translated_text(action.instrument.name, default=_('Unnamed Instrument')))
             ]
             instrument_is_fed[str(action.instrument_id)] = action.instrument.component_id is not None
+            instrument_is_fav[str(action.instrument_id)] = action.instrument_id in user_favorite_instrument_ids
             action_form.instrument.data = str(action.instrument_id)
         else:
             action_form.instrument.choices = [('-1', '-')]
@@ -379,12 +384,18 @@ def show_action_form(
             action_form.instrument.data = '-1'
         else:
             user_instrument_ids = get_user_instruments(flask_login.current_user.id, exclude_hidden=True)
-            action_form.instrument.choices = [('-1', '-')] + [
+            for user_instrument_id in user_instrument_ids:
+                instrument_is_fed[str(user_instrument_id)] = get_instrument(user_instrument_id).component_id is not None
+                instrument_is_fav[str(user_instrument_id)] = user_instrument_id in user_favorite_instrument_ids
+            user_instruments = [
                 (str(instrument_id), get_translated_text(get_instrument(instrument_id).name, default=_('Unnamed Instrument')))
                 for instrument_id in user_instrument_ids
             ]
-            for user_instrument_id in user_instrument_ids:
-                instrument_is_fed[str(user_instrument_id)] = get_instrument(user_instrument_id).component_id is not None
+            user_instruments.sort(key=lambda instrument_data: (
+                not instrument_is_fav[instrument_data[0]],
+                instrument_data[1]
+            ))
+            action_form.instrument.choices = [('-1', '-')] + user_instruments
             if action_form.instrument.data is None or action_form.instrument.data == str(None):
                 if previous_action is not None and previous_action.instrument_id in user_instrument_ids:
                     action_form.instrument.data = str(previous_action.instrument_id)
@@ -415,6 +426,7 @@ def show_action_form(
                 action_form.usable_by.data = 'admins'
             else:
                 action_form.usable_by.data = 'with_permissions'
+            action_form.objects_readable_by_all_users_by_default.data = action.objects_readable_by_all_users_by_default
         elif previous_action is not None:
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
@@ -422,11 +434,13 @@ def show_action_form(
             action_form.type.data = previous_action.type_id
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
             action_form.usable_by.data = 'with_permissions'
+            action_form.objects_readable_by_all_users_by_default.data = previous_action.objects_readable_by_all_users_by_default
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
     else:
         action_form.schema.data = schema_json
+    error_lines = None
     if schema_json:
         all_lines = set(range(1, 1 + len(schema_json.splitlines())))
         error_lines = set()
@@ -454,6 +468,7 @@ def show_action_form(
                     error_lines = all_lines
                 else:
                     schema_json = json.dumps(schema, indent=2)
+                    action_form.schema.data = schema_json
                     all_lines = set(range(1, 1 + len(schema_json)))
                     for path in e.paths:
                         new_error_lines = _get_lines_for_path(schema, path)
@@ -467,9 +482,6 @@ def show_action_form(
             except Exception as e:
                 error_lines = all_lines
                 error_message = _("Unknown error: ") + str(e)
-        lexer = pygments.lexers.data.JsonLexer()
-        formatter = pygments.formatters.HtmlFormatter(cssclass='pygments', hl_lines=list(error_lines))
-        pygments_output = pygments.highlight(schema_json, lexer, formatter)
     if schema is not None and error_message is None and form_is_valid:
         # First block for validation
         try:
@@ -483,13 +495,11 @@ def show_action_form(
                 action_translations=action_translations_by_id,
                 action_language_ids=action_language_ids,
                 action_types=get_action_types(),
-                pygments_output=pygments_output,
                 error_message=error_message,
                 schema_json=schema_json,
                 submit_text=submit_text,
                 sample_action_type=sample_action_type,
                 measurement_action_type=measurement_action_type,
-                use_schema_editor=use_schema_editor,
                 may_change_type=action is None,
                 may_change_instrument=action is None,
                 may_set_user_specific=may_set_user_specific,
@@ -498,7 +508,9 @@ def show_action_form(
                 hazards_translations=hazards_translations,
                 load_translations=load_translations,
                 ENGLISH=english,
-                instrument_is_fed=instrument_is_fed
+                instrument_is_fed=instrument_is_fed,
+                instrument_is_fav=instrument_is_fav,
+                error_lines=list(error_lines or []),
             )
         else:
             translation_keys = {'language_id', 'name', 'description', 'short_description'}
@@ -534,13 +546,11 @@ def show_action_form(
                             action_translations=action_translations_by_id,
                             action_language_ids=action_language_ids,
                             action_types=get_action_types(),
-                            pygments_output=pygments_output,
                             error_message=error_message,
                             schema_json=schema_json,
                             submit_text=submit_text,
                             sample_action_type=sample_action_type,
                             measurement_action_type=measurement_action_type,
-                            use_schema_editor=use_schema_editor,
                             may_change_type=action is None,
                             may_change_instrument=action is None,
                             may_set_user_specific=may_set_user_specific,
@@ -549,7 +559,9 @@ def show_action_form(
                             hazards_translations=hazards_translations,
                             load_translations=load_translations,
                             ENGLISH=english,
-                            instrument_is_fed=instrument_is_fed
+                            instrument_is_fed=instrument_is_fed,
+                            instrument_is_fav=instrument_is_fav,
+                            error_lines=list(error_lines or []),
                         )
 
         instrument_id_str = action_form.instrument.data
@@ -559,6 +571,7 @@ def show_action_form(
         short_description_is_markdown = action_form.short_description_is_markdown.data
         admin_only = action_form.usable_by.data == 'admins'
         disable_create_objects = action_form.usable_by.data == 'nobody'
+        objects_readable_by_all_users_by_default = action_form.objects_readable_by_all_users_by_default.data
 
         if instrument_id_str is not None:
             try:
@@ -584,7 +597,8 @@ def show_action_form(
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown,
                 admin_only=admin_only,
-                disable_create_objects=disable_create_objects
+                disable_create_objects=disable_create_objects,
+                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
             )
         else:
             update_action(
@@ -594,7 +608,8 @@ def show_action_form(
                 description_is_markdown=is_markdown,
                 short_description_is_markdown=short_description_is_markdown,
                 admin_only=admin_only,
-                disable_create_objects=disable_create_objects
+                disable_create_objects=disable_create_objects,
+                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
             )
         set_action_permissions_for_all_users(action.id, Permissions.READ if is_public else Permissions.NONE)
 
@@ -660,13 +675,11 @@ def show_action_form(
         action_translations=action_translations_by_id,
         action_language_ids=action_language_ids,
         action_types=get_action_types(),
-        pygments_output=pygments_output,
         error_message=error_message,
         schema_json=schema_json,
         submit_text=submit_text,
         sample_action_type=sample_action_type,
         measurement_action_type=measurement_action_type,
-        use_schema_editor=use_schema_editor,
         may_change_type=action is None,
         may_change_instrument=action is None,
         may_set_user_specific=may_set_user_specific,
@@ -675,7 +688,9 @@ def show_action_form(
         hazards_translations=hazards_translations,
         load_translations=load_translations,
         ENGLISH=english,
-        instrument_is_fed=instrument_is_fed
+        instrument_is_fed=instrument_is_fed,
+        instrument_is_fav=instrument_is_fav,
+        error_lines=list(error_lines or []),
     )
 
 

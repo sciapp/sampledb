@@ -1,6 +1,21 @@
 Changelog
 =========
 
+
+Version 0.24
+------------
+
+Released on July 17th, 2023.
+
+- Added .eln file import
+- Allowed updating actions via the HTTP API
+- Allow granting READ permissions to all signed-in users during object creation
+- Prevent creation of files with the :ref:`deprecated <deprecated_features>` local file storage via HTTP API
+- Removed setting ``SAMPLEDB_LOAD_OBJECTS_IN_BACKGROUND``
+- Introduce statistics and relative times in timeseries
+- Allow tooltips for property titles
+- Fixed search by user name
+
 Version 0.23.1
 --------------
 

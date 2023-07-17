@@ -1,4 +1,5 @@
 chromedriver-binary-auto
+pygments
 pytest
 selenium
 Sphinx

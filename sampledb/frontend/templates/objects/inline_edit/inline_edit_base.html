@@ -12,6 +12,8 @@
 {% block includes %}
     {# counter for plotly_chart_plots #}
     {% set plot_counter = namespace(value=0) %}
+    {% set indent_level = 0 %}
+    {% set show_indent_border = False %}
     <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form" autocomplete="off">
         {{ form.csrf_token() }}
         <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
@@ -36,9 +38,7 @@
     <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
     <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}"></script>
-    {% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
-        <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
-    {% endif %}
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
 
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
         window.mde_fields = [];

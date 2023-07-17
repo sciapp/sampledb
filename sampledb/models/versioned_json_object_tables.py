@@ -13,6 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 if typing.TYPE_CHECKING:
     from ..logic.components import Component
+    from ..logic.eln_import import ELNImport
 
 
 F = typing.TypeVar('F', bound=typing.Callable[..., typing.Any])
@@ -71,7 +72,10 @@ class Object:
     fed_object_id: typing.Optional[int]
     fed_version_id: typing.Optional[int]
     component_id: typing.Optional[int]
+    eln_import_id: typing.Optional[int]
+    eln_object_id: typing.Optional[str]
     _component_cache: typing.List[typing.Optional['Component']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
+    _eln_import_cache: typing.List[typing.Optional['ELNImport']] = dataclasses.field(default_factory=lambda: [None], repr=False, kw_only=True)
 
     @property
     def id(self) -> int:
@@ -94,6 +98,13 @@ class Object:
             from ..logic.components import get_component
             self._component_cache[0] = get_component(self.component_id)
         return self._component_cache[0]
+
+    @property
+    def eln_import(self) -> typing.Optional['ELNImport']:
+        if self.eln_import_id is not None and self._eln_import_cache[0] is None:
+            from ..logic.eln_import import get_eln_import
+            self._eln_import_cache[0] = get_eln_import(self.eln_import_id)
+        return self._eln_import_cache[0]
 
 
 class VersionedJSONSerializableObjectTables:
@@ -120,6 +131,7 @@ class VersionedJSONSerializableObjectTables:
             user_id_column: typing.Optional[typing.Any] = None,
             action_id_column: typing.Optional[typing.Any] = None,
             component_id_column: typing.Optional[typing.Any] = None,
+            eln_import_id_column: typing.Optional[typing.Any] = None,
             action_schema_column: typing.Optional[typing.Any] = None,
             metadata: typing.Optional[db.MetaData] = None,
             data_validator: typing.Optional[DataValidator] = None,
@@ -154,8 +166,10 @@ class VersionedJSONSerializableObjectTables:
             db.Column('component_id', db.Integer),
             db.Column('name_cache', db.JSON),
             db.Column('tags_cache', db.JSON),
+            db.Column('eln_import_id', db.Integer, nullable=True),
+            db.Column('eln_object_id', db.String, nullable=True),
             db.CheckConstraint(
-                '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
+                '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (eln_import_id IS NOT NULL AND eln_object_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
                 name=table_name_prefix + '_current_not_null_check'
             ),
             db.UniqueConstraint('fed_object_id', 'fed_version_id', 'component_id', name=table_name_prefix + '_current_fed_object_id_component_id_key')
@@ -173,9 +187,11 @@ class VersionedJSONSerializableObjectTables:
             db.Column('fed_object_id', db.Integer, nullable=True),
             db.Column('fed_version_id', db.Integer, nullable=True),
             db.Column('component_id', db.Integer, nullable=True),
+            db.Column('eln_import_id', db.Integer, nullable=True),
+            db.Column('eln_object_id', db.String, nullable=True),
             db.PrimaryKeyConstraint('object_id', 'version_id'),
             db.CheckConstraint(
-                '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
+                '(fed_object_id IS NOT NULL AND fed_version_id IS NOT NULL AND component_id IS NOT NULL) OR (eln_import_id IS NOT NULL AND eln_object_id IS NOT NULL) OR (action_id IS NOT NULL AND data IS NOT NULL AND schema IS NOT NULL AND user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
                 name=table_name_prefix + '_previous_not_null_check'
             )
         )
@@ -206,9 +222,13 @@ class VersionedJSONSerializableObjectTables:
         if component_id_column is not None:
             self._current_table.append_constraint(db.ForeignKeyConstraint(['component_id'], [component_id_column]))
             self._previous_table.append_constraint(db.ForeignKeyConstraint(['component_id'], [component_id_column]))
+        if eln_import_id_column is not None:
+            self._current_table.append_constraint(db.ForeignKeyConstraint(['eln_import_id'], [eln_import_id_column]))
+            self._previous_table.append_constraint(db.ForeignKeyConstraint(['eln_import_id'], [eln_import_id_column]))
         self._action_id_column = action_id_column
         self._action_schema_column = action_schema_column
         self._component_id_column = component_id_column
+        self._eln_import_id_column = eln_import_id_column
         self.object_id_column = self._current_table.c.object_id
         self.bind = bind
         if self.bind is not None:
@@ -227,6 +247,8 @@ class VersionedJSONSerializableObjectTables:
             fed_object_id: typing.Optional[int] = None,
             fed_version_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
+            eln_import_id: typing.Optional[int] = None,
+            eln_object_id: typing.Optional[str] = None,
             connection: typing.Optional[db.engine.Connection] = None,
             validate_data: bool = True,
             data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
@@ -241,6 +263,8 @@ class VersionedJSONSerializableObjectTables:
         :param utc_datetime: the datetime (in UTC) when the object was created (optional, defaults to utcnow())
         :param fed_object_id: the ID of this object on a federated component
         :param fed_version_id: the version ID of this object on a federated component
+        :param eln_import_id: the ID of an .eln file import
+        :param eln_object_id: the ID of this object in the .eln file
         :param component_id: the ID of the component that created this object
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_data: whether the data must be validated
@@ -251,29 +275,32 @@ class VersionedJSONSerializableObjectTables:
         assert connection is not None  # ensured by decorator
         if utc_datetime is None and fed_object_id is None:
             utc_datetime = datetime.datetime.utcnow()
-        if schema is None and action_id is not None and self._action_schema_column is not None:
-            action = connection.execute(
-                db
-                .select(
-                    self._action_schema_column
-                )
-                .where(self._action_id_column == action_id)
-            ).fetchone()
-            if action is None:
-                if fed_object_id is None or fed_version_id is None or component_id is None:
-                    raise ValueError(f'Action with id {action_id} not found')
+        if schema is not None or data is not None:
+            if schema is None and action_id is not None and self._action_schema_column is not None:
+                action = connection.execute(
+                    db
+                    .select(
+                        self._action_schema_column
+                    )
+                    .where(self._action_id_column == action_id)
+                ).fetchone()
+                if action is None:
+                    if fed_object_id is None or fed_version_id is None or component_id is None:
+                        raise ValueError(f'Action with id {action_id} not found')
+                    else:
+                        schema = None
                 else:
-                    schema = None
-            else:
-                schema = action[0]
-        if not (schema is None and fed_object_id is not None and fed_version_id is not None):
-            if schema is not None and self._schema_validator:
-                self._schema_validator(schema)
-            if not (data is None and fed_object_id is not None and fed_version_id is not None):
-                if data is not None and schema is not None and self._data_validator and validate_data:
-                    if data_validator_arguments is None:
-                        data_validator_arguments = {}
-                    self._data_validator(data, schema, **data_validator_arguments)
+                    schema = action[0]
+            if not (schema is None and fed_object_id is not None and fed_version_id is not None):
+                if schema is not None and self._schema_validator:
+                    self._schema_validator(schema)
+                if not (data is None and fed_object_id is not None and fed_version_id is not None):
+                    if data is not None and schema is not None and self._data_validator and validate_data:
+                        if data_validator_arguments is None:
+                            data_validator_arguments = {}
+                        if 'allow_disabled_languages' not in data_validator_arguments:
+                            data_validator_arguments['allow_disabled_languages'] = False
+                        self._data_validator(data, schema, **data_validator_arguments)
         version_id = 0
         object_id = typing.cast(int, connection.execute(
             self._current_table
@@ -289,7 +316,9 @@ class VersionedJSONSerializableObjectTables:
                 utc_datetime=utc_datetime,
                 fed_object_id=fed_object_id,
                 fed_version_id=fed_version_id,
-                component_id=component_id
+                component_id=component_id,
+                eln_import_id=eln_import_id,
+                eln_object_id=eln_object_id,
             )
             .returning(
                 self._current_table.c.object_id
@@ -305,7 +334,9 @@ class VersionedJSONSerializableObjectTables:
             utc_datetime=utc_datetime,
             fed_object_id=fed_object_id,
             fed_version_id=fed_version_id,
-            component_id=component_id
+            component_id=component_id,
+            eln_import_id=eln_import_id,
+            eln_object_id=eln_object_id,
         )
         return obj
 
@@ -342,26 +373,40 @@ class VersionedJSONSerializableObjectTables:
         assert connection is not None  # ensured by decorator
         if utc_datetime is None:
             utc_datetime = datetime.datetime.utcnow()
-        if schema is None:
-            schema_row = connection.execute(
-                db.select(self._current_table.c.schema).where(self._current_table.c.object_id == object_id)
-            ).fetchone()
-            if schema_row is None:
-                return None
-            schema = schema_row[0]
-        if validate_schema and self._schema_validator and schema is not None:
-            self._schema_validator(schema)
-        if validate_data and self._data_validator and schema is not None and data is not None:
-            if data_validator_arguments is None:
-                data_validator_arguments = {}
-            self._data_validator(data, schema, **data_validator_arguments)
+        if schema is not None or data is not None:
+            if schema is None:
+                schema_row = connection.execute(
+                    db.select(self._current_table.c.schema).where(self._current_table.c.object_id == object_id)
+                ).fetchone()
+                if schema_row is None:
+                    return None
+                schema = schema_row[0]
+            if validate_schema and self._schema_validator and schema is not None:
+                self._schema_validator(schema)
+            if validate_data and self._data_validator and schema is not None and data is not None:
+                if data_validator_arguments is None:
+                    data_validator_arguments = {}
+                self._data_validator(data, schema, **data_validator_arguments)
 
         # Copy current version to previous versions
         if connection.execute(
             self._previous_table
             .insert()
             .from_select(
-                ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime', 'fed_object_id', 'fed_version_id', 'component_id'],
+                [
+                    'object_id',
+                    'version_id',
+                    'action_id',
+                    'data',
+                    'schema',
+                    'user_id',
+                    'utc_datetime',
+                    'fed_object_id',
+                    'fed_version_id',
+                    'component_id',
+                    'eln_import_id',
+                    'eln_object_id',
+                ],
                 self._current_table
                 .select()
                 .with_only_columns(
@@ -374,7 +419,9 @@ class VersionedJSONSerializableObjectTables:
                     self._current_table.c.utc_datetime,
                     self._current_table.c.fed_object_id,
                     self._current_table.c.fed_version_id,
-                    self._current_table.c.component_id
+                    self._current_table.c.component_id,
+                    self._current_table.c.eln_import_id,
+                    self._current_table.c.eln_object_id,
                 )
                 .where(self._current_table.c.object_id == db.bindparam('oid'))
             ),
@@ -476,7 +523,20 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table
                 .insert()
                 .from_select(
-                    ['object_id', 'version_id', 'action_id', 'data', 'schema', 'user_id', 'utc_datetime', 'fed_object_id', 'fed_version_id', 'component_id'],
+                    [
+                        'object_id',
+                        'version_id',
+                        'action_id',
+                        'data',
+                        'schema',
+                        'user_id',
+                        'utc_datetime',
+                        'fed_object_id',
+                        'fed_version_id',
+                        'component_id',
+                        'eln_import_id',
+                        'eln_object_id'
+                    ],
                     self._current_table
                     .select()
                     .with_only_columns(
@@ -489,7 +549,9 @@ class VersionedJSONSerializableObjectTables:
                         self._current_table.c.utc_datetime,
                         self._current_table.c.fed_object_id,
                         self._current_table.c.fed_version_id,
-                        self._current_table.c.component_id
+                        self._current_table.c.component_id,
+                        self._current_table.c.eln_import_id,
+                        self._current_table.c.eln_object_id,
                     )
                     .where(self._current_table.c.object_id == db.bindparam('oid'))
                 ),
@@ -614,7 +676,9 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.utc_datetime,
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
-                self._previous_table.c.component_id
+                self._previous_table.c.component_id,
+                self._previous_table.c.eln_import_id,
+                self._previous_table.c.eln_object_id,
             )
             .where(db.and_(
                 self._previous_table.c.object_id == object_id,
@@ -767,7 +831,9 @@ class VersionedJSONSerializableObjectTables:
                 self._current_table.c.utc_datetime,
                 self._current_table.c.fed_object_id,
                 self._current_table.c.fed_version_id,
-                self._current_table.c.component_id
+                self._current_table.c.component_id,
+                self._current_table.c.eln_import_id,
+                self._current_table.c.eln_object_id,
             )
             .where(self._current_table.c.object_id == object_id)
         ).fetchone()
@@ -792,9 +858,11 @@ class VersionedJSONSerializableObjectTables:
                 self._subversions_table.c.schema,
                 self._subversions_table.c.user_id,
                 self._subversions_table.c.utc_datetime,
-                db.null(),
-                db.null(),
-                db.null()
+                db.null(),  # fed_object_id
+                db.null(),  # fed_version_id
+                db.null(),  # component_id
+                db.null(),  # eln_import_id
+                db.null(),  # eln_object_id
             )
             .where(
                 db.and_(
@@ -830,7 +898,9 @@ class VersionedJSONSerializableObjectTables:
                 self._current_table.c.utc_datetime,
                 self._current_table.c.fed_object_id,
                 self._current_table.c.fed_version_id,
-                self._current_table.c.component_id
+                self._current_table.c.component_id,
+                self._current_table.c.eln_import_id,
+                self._current_table.c.eln_object_id,
             )
             .where(db.and_(
                 self._current_table.c.component_id == component_id,
@@ -864,7 +934,9 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.utc_datetime,
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
-                self._previous_table.c.component_id
+                self._previous_table.c.component_id,
+                self._previous_table.c.eln_import_id,
+                self._previous_table.c.eln_object_id,
             )
             .where(db.and_(db.and_(
                 self._previous_table.c.component_id == component_id,
@@ -927,6 +999,8 @@ class VersionedJSONSerializableObjectTables:
             table.c.fed_object_id,
             table.c.fed_version_id,
             table.c.component_id,
+            table.c.eln_import_id,
+            table.c.eln_object_id,
             db.sql.expression.text('COUNT(*) OVER()')
         )
 
@@ -1007,7 +1081,9 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.utc_datetime,
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
-                self._previous_table.c.component_id
+                self._previous_table.c.component_id,
+                self._previous_table.c.eln_import_id,
+                self._previous_table.c.eln_object_id,
             )
             .where(self._previous_table.c.object_id == object_id)
             # .order_by(db.asc(self._previous_table.c.version_id))
@@ -1047,7 +1123,9 @@ class VersionedJSONSerializableObjectTables:
                 self._previous_table.c.utc_datetime,
                 self._previous_table.c.fed_object_id,
                 self._previous_table.c.fed_version_id,
-                self._previous_table.c.component_id
+                self._previous_table.c.component_id,
+                self._previous_table.c.eln_import_id,
+                self._previous_table.c.eln_object_id,
             )
             .where(db.and_(
                 self._previous_table.c.object_id == object_id,

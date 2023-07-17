@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-05-26 15:17+0200\n"
+"POT-Creation-Date: 2023-07-04 21:13+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -132,6 +132,31 @@ msgstr "Kein für Export brauchbares Dataverse verfügbar."
 msgid "An error occurred while exporting the object: %(error)s"
 msgstr "Beim Export des Objekts ist ein Fehler aufgetreten: %(error)s"
 
+msgid "Successfully deleted .eln file."
+msgstr "Die .eln-Datei wurde erfolgreich gelöscht."
+
+#, python-format
+msgid "Failed to parse .eln file: %(message)s"
+msgstr ".eln Datei konnte nicht geparst werden: %(message)s"
+
+#, python-format
+msgid ""
+"%(num_imported_objects)s objects were imported, but the following errors "
+"occurred:"
+msgstr ""
+"%(num_imported_objects)s Objekte wurden importiert, allerdings sind dabei"
+" die folgenden Fehler aufgetreten:"
+
+msgid "The following errors occurred while trying to import objects:"
+msgstr "Beim Versuch Objekte zu importieren sind die folgenden Fehler aufgetreten:"
+
+msgid "Successfully imported an object."
+msgstr "Ein Objekt wurde erfolgreich importiert."
+
+#, python-format
+msgid "Successfully imported %(num_imported_objects)s objects."
+msgstr "%(num_imported_objects)s Objekte wurden erfolgreich importiert."
+
 msgid "PDF file"
 msgstr "PDF-Dokument"
 
@@ -156,8 +181,8 @@ msgstr "Ungültige UUID"
 msgid "Only secure communication via https is allowed"
 msgstr "Nur verschlüsselte Kommunikation über HTTPS ist erlaubt"
 
-msgid "Failed to add database"
-msgstr "Das Hinzufügen der Datenbank ist fehlgeschlagen"
+msgid "Failed to update database"
+msgstr "Das Aktualisieren der Datenbank ist fehlgeschlagen"
 
 msgid "Database information updated successfully"
 msgstr "Die Datenbank-Informationen wurden erfolgreich aktualisiert"
@@ -222,6 +247,9 @@ msgid "This UUID or name is already used by this instance (%(service_name)s)"
 msgstr ""
 "Diese UUID oder dieser Name wird bereits von dieser lokalen Instanz "
 "verwendet (%(service_name)s)"
+
+msgid "Failed to add database"
+msgstr "Das Hinzufügen der Datenbank ist fehlgeschlagen"
 
 msgid "The database information has been added successfully"
 msgstr "Die Datenbank wurde erfolgreich angelegt"
@@ -622,6 +650,14 @@ msgid ""
 msgstr ""
 "<a href=\"%(user_url)s\">%(user_name)s</a> hat das Objekt mit einer "
 "Projektgruppe verknüpft."
+
+#, python-format
+msgid ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> imported this object from an "
+".eln file."
+msgstr ""
+"<a href=\"%(user_url)s\">%(user_name)s</a> hat dieses Objekt aus einer "
+".eln-Datei importiert."
 
 #, python-format
 msgid ""
@@ -1060,11 +1096,12 @@ msgid "Please select a user."
 msgstr "Bitte wählen Sie einen Nutzer aus."
 
 msgid ""
-"invalid timeseries CSV data, expected datetime string, magnitude and "
-"(optional) magnitude in base units"
+"invalid timeseries CSV data, expected datetime string or relative time in"
+" seconds, magnitude and (optional) magnitude in base units"
 msgstr ""
-"Ungültige CSV-Daten für Zeitreihe, erwartet: Zeitpunkt als Zeichenkette, "
-"Größe und (optional) Größe in Basiseinheiten"
+"Ungültige CSV-Daten für Zeitreihe, erwartet: Zeitpunkt als Zeichenkette "
+"oder relative Zeitangabe in Sekunden, Größe und (optional) Größe in "
+"Basiseinheiten"
 
 msgid ""
 "invalid datetime in timeseries, expected format: YYYY-MM-DD "
@@ -1535,6 +1572,9 @@ msgstr "Nutzer einladen"
 
 msgid "Export Data"
 msgstr "Daten exportieren"
+
+msgid "Import Data"
+msgstr "Daten importieren"
 
 msgid "Sign out"
 msgstr "Abmelden"
@@ -2375,6 +2415,12 @@ msgstr ""
 msgid "User #%(user_id)s (%(component_name)s)"
 msgstr "Nutzer #%(user_id)s (%(component_name)s)"
 
+msgid "Imported from"
+msgstr "Importiert von"
+
+msgid ".eln file"
+msgstr ".eln-Datei"
+
 msgid "Last Update"
 msgstr "Letzte Aktualisierung"
 
@@ -3083,6 +3129,18 @@ msgstr "Der Titel darf nicht leer sein."
 msgid "Title must not be whitespace only."
 msgstr "Der Titel darf nicht nur Leerzeichen enthalten."
 
+msgid "Tooltip must not be empty."
+msgstr "Der Tooltip-Text darf nicht leer sein."
+
+msgid "Tooltip must not be whitespace only."
+msgstr "Der Tooltip-Text darf nicht nur Leerzeichen enthalten."
+
+msgid "Note must not be empty."
+msgstr "Der Hinweis darf nicht leer sein."
+
+msgid "Note must not be whitespace only."
+msgstr "Der Hinweis darf nicht nur Leerzeichen enthalten."
+
 msgid "Choices must not be empty."
 msgstr "Auswahlmöglichkeiten dürfen nicht leer sein."
 
@@ -3157,6 +3215,13 @@ msgstr "Kein Instrument ausgewählt"
 
 msgid "Hide this action from action lists"
 msgstr "Diese Aktion aus Aktionslisten verstecken"
+
+msgid ""
+"When creating objects with this action, grant READ permissions to all "
+"signed-in users by default"
+msgstr ""
+"Beim Erstellen eines Objekts mit dieser Aktion allen angemeldeten Nutzern"
+" standardmäßig LESE-Berechtigungen geben"
 
 msgid "All users with Read permissions can create objects using this action"
 msgstr ""
@@ -3261,6 +3326,14 @@ msgstr "Weitere Informationen zur Eigenschaft."
 
 msgid "Note"
 msgstr "Hinweis"
+
+msgid "A tooltip text, shown when holding the mouse cursor over the title."
+msgstr ""
+"Ein Tooltip-Text, der angezeigt wird, wenn der Mauszeiger über den Titel "
+"gehalten wird."
+
+msgid "Tooltip"
+msgstr "Tooltip"
 
 msgid "Placeholder"
 msgstr "Platzhalter"
@@ -3407,15 +3480,6 @@ msgstr ""
 "übertragen Sie diese zu <code>database</code> Speicherung."
 
 msgid ""
-"Asynchronous loading of object lists is disabled, please do not set the "
-"configuration value <code>LOAD_OBJECTS_IN_BACKGROUND</code> or set it to "
-"<code>True</code> or <code>1</code>."
-msgstr ""
-"Asynchrones Laden von Objektlisten ist deaktiviert, bitte setzen Sie die "
-"Konfigurationsvariable <code>LOAD_OBJECTS_IN_BACKGROUND</code> nicht oder"
-" setzen Sie sie auf <code>True</code> oder <code>1</code>."
-
-msgid ""
 "There are numeric tags, please evaluate if these are necessary for your "
 "use case and set the configuration value <code>ENABLE_NUMERIC_TAGS</code>"
 " to <code>False</code> to disable them."
@@ -3435,6 +3499,69 @@ msgstr ""
 
 msgid "There are no warnings for this installation of SampleDB."
 msgstr "Es gibt keine Warnungen für diese SampleDB-Installation."
+
+#, python-format
+msgid ""
+"%(service_name)s can import objects from .eln files exported by other "
+"electronic lab notebooks."
+msgstr ""
+"%(service_name)s kann Objekte aus von anderen elektronischen Laborbüchern"
+" erzeugten .eln-Dateien importieren."
+
+msgid "The following objects can be imported from this .eln file:"
+msgstr "Die folgenden Objekte können aus dieser .eln-Datei importiert werden:"
+
+msgid "versions"
+msgstr "Versionen"
+
+msgid "files"
+msgstr "Dateien"
+
+msgid "comments"
+msgstr "Kommentare"
+
+msgid "Import as"
+msgstr "Importieren als"
+
+msgid "Unnamed Object"
+msgstr "Unbenanntes Objekt"
+
+msgid "The following users will also be created from this .eln file:"
+msgstr ""
+"Die folgenden Nutzer werden ebenfalls aus dieser .eln-Datei importiert "
+"werden:"
+
+msgid "Browse..."
+msgstr "Durchsuchen..."
+
+msgid "Pending Files"
+msgstr "Ausstehende Dateien"
+
+msgid ""
+"These files were uploaded before but were not imported completely. They "
+"will expire one day after being uploaded."
+msgstr ""
+"Diese Dateien wurden zuvor hochgeladen, aber wurden noch nicht "
+"vollständig importiert. Sie werden einen Tag nach dem Zeitpunkt des "
+"Hochladens ablaufen."
+
+msgid "File Name"
+msgstr "Dateiname"
+
+msgid "Uploaded at"
+msgstr "Hochgeladen am"
+
+msgid "Review"
+msgstr "Prüfen"
+
+msgid "ELN Import"
+msgstr "ELN-Import"
+
+msgid "Uploaded by"
+msgstr "Hochgeladen von"
+
+msgid "Imported at"
+msgstr "Importiert am"
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -3749,9 +3876,6 @@ msgstr "Datei-Anhang hinzufügen"
 
 msgid "No files selected"
 msgstr "Keine Dateien ausgewählt"
-
-msgid "Browse..."
-msgstr "Durchsuchen..."
 
 msgid "Add object attachments"
 msgstr "Objekt-Anhang hinzufügen"
@@ -5051,6 +5175,9 @@ msgstr "Berechtigungen von anderem Objekt kopieren"
 msgid "No object selected"
 msgstr "Kein Objekt ausgewählt"
 
+msgid "Also grant READ permissions to all signed-in users"
+msgstr "Zusätzlich allen angemeldeten Nutzern LESE-Berechtigungen geben"
+
 msgid "Create Instrument Log Entry"
 msgstr "Instrument-Log-Eintrag erstellen"
 
@@ -5096,11 +5223,11 @@ msgid "Data (as CSV)"
 msgstr "Daten (als CSV)"
 
 msgid ""
-"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) and "
-"magnitude"
+"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or "
+"relative time in seconds, and magnitude"
 msgstr ""
-"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) und "
-"Wert"
+"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
+" relative Zeitangabe in Sekunden und Wert"
 
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
@@ -5132,6 +5259,9 @@ msgstr "Änderungen anzeigen"
 
 msgid "Activity Log"
 msgstr "Aktivitäts-Log"
+
+msgid "Import"
+msgstr "Import"
 
 msgid "Related Objects"
 msgstr "Zugehörige Objekte"
@@ -5319,9 +5449,6 @@ msgstr "Diese Datei wurde versteckt."
 
 msgid "File Information"
 msgstr "Dateiinformationen"
-
-msgid "Uploaded by"
-msgstr "Hochgeladen von"
 
 msgid "URL"
 msgstr "URL"
@@ -5670,6 +5797,10 @@ msgstr ""
 "entfernt."
 
 #, python-format
+msgid "%(user_ref)s imported this object from an .eln file."
+msgstr "%(user_ref)s hat dieses Objekt aus einer .eln-Datei importiert."
+
+#, python-format
 msgid ""
 "This object version was created as object #%(fed_object_id)s, version "
 "%(fed_version_id)s in database <a "
@@ -5796,6 +5927,20 @@ msgstr "Eine unbekannte Datenbank konnte das Objekt nicht erfolgreich importiere
 msgid "The other database returned the following notes:"
 msgstr "Die andere Datenbank hat die folgenden Hinweise zurückgegeben:"
 
+#, python-format
+msgid ""
+"This object was imported from <a href=\"%(eln_import_url)s\">.eln file "
+"#%(eln_import_id)s</a> by %(user_ref)s."
+msgstr ""
+"Dieses Objekt wurde von %(user_ref)s aus <a href=\"%(eln_import_url)s"
+"\">.eln-Datei #%(eln_import_id)s</a> importiert."
+
+#, python-format
+msgid "The original URL is <a href=\"%(eln_import_url)s\">%(eln_import_url)s</a>."
+msgstr ""
+"Die ursprüngliche URL ist <a "
+"href=\"%(eln_import_url)s\">%(eln_import_url)s</a>."
+
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"
 
@@ -5842,6 +5987,18 @@ msgstr "Zeit"
 msgid "Value"
 msgstr "Wert"
 
+msgid "Timeseries"
+msgstr "Zeitreihe"
+
+msgid "value"
+msgid_plural "values"
+msgstr[0] "Wert"
+msgstr[1] "Werte"
+
+#, python-format
+msgid "within a period of %(time_s)s s"
+msgstr "in einem Zeitraum von %(time_s)s s"
+
 #, python-format
 msgid "between %(start_time)s and %(end_time)s on %(date)s"
 msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
@@ -5862,6 +6019,10 @@ msgstr "Tabelle anzeigen"
 
 msgid "Download data"
 msgstr "Daten herunterladen"
+
+#, python-format
+msgid "User #%(user_id)s from an ELN at %(eln_source_url)s"
+msgstr "Nutzer #%(user_id)s aus einem ELN auf %(eln_source_url)s"
 
 msgid "Address"
 msgstr "Adresse"
@@ -5923,9 +6084,6 @@ msgid ""
 msgstr ""
 "Tokens, die von %(component_name)s zur Authentifikation bei der Abfrage "
 "von Daten bei dieser Datenbank verwendet werden."
-
-msgid "Import"
-msgstr "Import"
 
 #, python-format
 msgid ""
@@ -6501,6 +6659,35 @@ msgstr "Unbenannte Aktion (#%(action_id)s)"
 #, python-format
 msgid "Database #%(id)s"
 msgstr "Datenbank #%(id)s"
+
+#, python-format
+msgid ""
+"Missing data or schema for version %(version_id)s of object "
+"%(eln_object_id)s"
+msgstr ""
+"Fehlende Daten oder Schema für Version %(version_id)s von Objekt "
+"%(eln_object_id)s"
+
+#, python-format
+msgid ""
+"Invalid data or schema in version %(version_id)s of object "
+"%(eln_object_id)s (%(error)s)"
+msgstr ""
+"Ungültige Daten oder Schema in Version %(version_id)s von Objekt "
+"%(eln_object_id)s (%(error)s)"
+
+#, python-format
+msgid ""
+"Importing metadata for .eln files from %(eln_dialect)s is not yet "
+"supported."
+msgstr ""
+"Das Importieren von Metadaten wird für .eln-Dateien von %(eln_dialect)s "
+"noch nicht unterstützt."
+
+msgid "Importing metadata for .eln files from this ELN is not yet supported."
+msgstr ""
+"Das Importieren von Metadaten wird für .eln-Dateien von diesem ELN noch "
+"nicht unterstützt."
 
 #, python-format
 msgid "Unnamed Instrument (#%(instrument_id)s)"

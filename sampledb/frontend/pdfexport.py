@@ -222,6 +222,8 @@ def create_pdfexport(
                         text += _('<a href="%(user_url)s">%(user_name)s</a> linked this object to <a href="%(project_url)s">project group %(project_name)s (#%(project_id)s)</a>.', user_url=user_url, user_name=user_name, project_url=project_url, project_name=get_translated_text(project.name), project_id=project.id)
                     except logic.errors.ProjectDoesNotExistError:
                         text += _('<a href="%(user_url)s">%(user_name)s</a> linked this object to a project group.', user_url=user_url, user_name=user_name)
+                elif object_log_entry.type == ObjectLogEntryType.IMPORT_FROM_ELN_FILE:
+                    text += _('<a href="%(user_url)s">%(user_name)s</a> imported this object from an .eln file.', user_url=user_url, user_name=user_name)
                 elif object_log_entry.type == ObjectLogEntryType.UNLINK_PROJECT:
                     if object_log_entry.data.get('project_deleted'):
                         text += _('<a href="%(user_url)s">%(user_name)s</a> deleted the project group this object was linked to.', user_url=user_url, user_name=user_name)
@@ -303,6 +305,7 @@ def create_pdfexport(
         get_user=get_user_if_exists,
         metadata_language=lang_code,
         files_by_object_id=files_by_object_id,
+        eln_import_urls={object[0].object_id: logic.eln_import.get_eln_import_object_url(object[0].object_id) for object in objects}
     )
 
     # use regular user language again

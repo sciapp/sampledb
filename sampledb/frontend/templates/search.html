@@ -146,13 +146,6 @@
           <div class="col-md-4">
             <select class="form-control input-condition-field input-condition-object_reference" name="{{ id_prefix }}_uid" data-live-search="true" data-none-selected-text="&mdash;" data-sampledb-default-selected="" data-sampledb-required-perm="1">
               <option value="" selected="selected">&mdash;</option>
-          {% for obj in referencable_objects %}
-            {% if (obj is not none) %}
-              <option {% if obj.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ obj.object_id }}" >
-                {% if obj.name | get_translated_text == '' %}&mdash;{% else %}{{ obj.name | get_translated_text }}{% endif %} (#{{ obj.object_id }}{% if obj.component_id is not none %}, #{{ obj.fed_object_id }} @ {{ obj.component.get_name() }}{% endif %})
-              </option>
-            {% endif %}
-          {% endfor %}
             </select>
           </div>
         </div>
@@ -197,9 +190,7 @@
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
-{% if config['LOAD_OBJECTS_IN_BACKGROUND'] %}
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
-{% endif %}
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   $(function () {
 

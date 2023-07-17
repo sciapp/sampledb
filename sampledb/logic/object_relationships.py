@@ -4,11 +4,11 @@
 """
 from __future__ import annotations
 
-import copy
 import dataclasses
 import datetime
 import itertools
 import typing
+import sys
 
 import flask
 
@@ -18,6 +18,10 @@ from .objects import get_object, find_object_references
 from .object_permissions import get_user_permissions_for_multiple_objects, get_objects_with_permissions
 from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions, Object
 from .. import db
+from .utils import get_translated_text
+
+# limit tree depth to avoid hitting the recursion limit in the frontend
+_MAXIMUM_TREE_DEPTH = sys.getrecursionlimit() - 100
 
 
 def get_related_object_ids(
@@ -85,14 +89,42 @@ def get_related_object_ids(
     return list(referencing_object_ids), list(referenced_object_ids)
 
 
-@dataclasses.dataclass(kw_only=True)
-class RelatedObjectsTree:
+@dataclasses.dataclass(kw_only=True, frozen=True)
+class ObjectRef:
     object_id: int
     component_uuid: typing.Optional[str]
-    path: typing.List[typing.Union[typing.Tuple[int, typing.Optional[str]], int]]
+    eln_source_url: typing.Optional[str]
+    eln_object_url: typing.Optional[str]
+
+    @property
+    def is_local(self) -> bool:
+        return (self.component_uuid is None or self.component_uuid == flask.current_app.config['FEDERATION_UUID']) and self.eln_source_url is None and self.eln_object_url is None
+
+
+@dataclasses.dataclass(kw_only=True)
+class RelatedObjectsTree:
+    object_ref: ObjectRef
+    path: typing.List[typing.Union[int, ObjectRef]]
     object: typing.Optional[Object]
+    object_name: typing.Optional[str]
     referenced_objects: typing.Optional[typing.List[RelatedObjectsTree]]
     referencing_objects: typing.Optional[typing.List[RelatedObjectsTree]]
+
+    @property
+    def object_id(self) -> int:
+        return self.object_ref.object_id
+
+    @property
+    def component_uuid(self) -> typing.Optional[str]:
+        return self.object_ref.component_uuid
+
+    @property
+    def eln_source_url(self) -> typing.Optional[str]:
+        return self.object_ref.eln_source_url
+
+    @property
+    def eln_object_url(self) -> typing.Optional[str]:
+        return self.object_ref.eln_object_url
 
 
 def build_related_objects_tree(
@@ -114,55 +146,57 @@ def build_related_objects_tree(
     :param user_id: the ID of an existing user
     :return: the related objects tree
     """
-    subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]] = {}
-    _gather_subtrees(
+    object_ref = ObjectRef(
         object_id=object_id,
         component_uuid=None,
-        user_id=user_id,
-        subtrees=subtrees
+        eln_source_url=None,
+        eln_object_url=None
+    )
+    subtrees = _gather_subtrees(
+        object_ref=object_ref
     )
 
     object_ids = tuple(
-        object_id
-        for object_id, component_uuid in subtrees
-        if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']
+        object_ref.object_id
+        for object_ref in subtrees
+        if object_ref.is_local
     )
     objects = get_objects_with_permissions(user_id=user_id, permissions=Permissions.READ, object_ids=object_ids, name_only=True)
     objects_by_id = {
         object.object_id: object
         for object in objects
     }
-    return _assemble_tree(subtrees[(object_id, None)][0], objects_by_id, subtrees)
+    return _assemble_tree(subtrees[object_ref][0], objects_by_id, subtrees)
 
 
-def _get_referencing_object_ids(
+def get_referencing_object_ids(
         object_ids: typing.Set[int]
-) -> typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]]:
+) -> typing.Dict[int, typing.Set[ObjectRef]]:
     if not object_ids:
         return {}
-    referencing_object_ids_by_id: typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]] = {
+    referencing_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {
         object_id: set()
         for object_id in object_ids
     }
-    for object_id, referencing_object_id, referencing_component_uuid in db.session.execute(db.text("""
-        SELECT DISTINCT object_id, coalesce(data -> 'object_id', data -> 'sample_id', data -> 'measurement_id', NULL)::text::integer AS referencing_object_id, NULL AS referencing_component_uuid
+    for object_id, referencing_object_id, referencing_component_uuid, referencing_eln_source_url, referencing_eln_object_url in db.session.execute(db.text("""
+        SELECT DISTINCT object_id, coalesce(data -> 'object_id', data -> 'sample_id', data -> 'measurement_id', NULL)::text::integer AS referencing_object_id, NULL AS referencing_component_uuid, NULL AS eln_source_url, NULL AS eln_object_url
         FROM object_log_entries
         WHERE object_id IN :object_ids AND type IN ('USE_OBJECT_IN_MEASUREMENT', 'USE_OBJECT_IN_SAMPLE_CREATION', 'REFERENCE_OBJECT_IN_METADATA')
     """), {'object_ids': tuple(object_ids)}).fetchall():
-        referencing_object_ids_by_id[object_id].add((referencing_object_id, referencing_component_uuid))
+        referencing_object_ids_by_id[object_id].add(ObjectRef(object_id=referencing_object_id, component_uuid=referencing_component_uuid, eln_source_url=referencing_eln_source_url, eln_object_url=referencing_eln_object_url))
     return referencing_object_ids_by_id
 
 
 def _get_referenced_object_ids(
         object_ids: typing.Set[int]
-) -> typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]]:
+) -> typing.Dict[int, typing.Set[ObjectRef]]:
     if not object_ids:
         return {}
-    referenced_object_ids_by_id: typing.Dict[int, typing.Set[typing.Tuple[int, typing.Optional[str]]]] = {
+    referenced_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {
         object_id: set()
         for object_id in object_ids
     }
-    for object_id, referenced_object_id, referenced_component_uuid in db.session.execute(db.text("""
+    for object_id, referenced_object_id, referenced_component_uuid, referenced_eln_source_url, referenced_eln_object_url in db.session.execute(db.text("""
         WITH RECURSIVE properties(object_id, value) AS (
             SELECT objects_current.object_id, data.value
             FROM objects_current, jsonb_each(objects_current.data) AS data
@@ -180,101 +214,107 @@ def _get_referenced_object_ids(
             END) AS array_data ON jsonb_typeof(properties.value) = 'array'
             WHERE jsonb_typeof(properties.value) = 'object' OR jsonb_typeof(properties.value) = 'array'
         )
-        SELECT object_id, (properties.value -> 'object_id')::integer, properties.value ->> 'component_uuid'
+        SELECT object_id, (properties.value -> 'object_id')::integer, properties.value ->> 'component_uuid', properties.value ->> 'eln_source_url', properties.value ->> 'eln_object_url'
         FROM properties
         WHERE jsonb_typeof(properties.value) = 'object' AND properties.value ? '_type' AND properties.value ? 'object_id' AND properties.value ->> '_type' IN ('object_reference', 'sample', 'measurement')
     """), {'object_ids': tuple(object_ids)}).fetchall():
-        referenced_object_ids_by_id[object_id].add((referenced_object_id, referenced_component_uuid))
+        referenced_object_ids_by_id[object_id].add(ObjectRef(object_id=referenced_object_id, component_uuid=referenced_component_uuid, eln_source_url=referenced_eln_source_url, eln_object_url=referenced_eln_object_url))
     return referenced_object_ids_by_id
 
 
 def _gather_subtrees(
-        object_id: int,
-        component_uuid: typing.Optional[str],
-        user_id: typing.Optional[int],
-        subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]],
-        parent_object_id: typing.Optional[int] = None,
-        parent_component_id: typing.Optional[str] = None,
-        referencing_object_ids: typing.Optional[typing.Set[typing.Tuple[int, typing.Optional[str]]]] = None,
-        referenced_object_ids: typing.Optional[typing.Set[typing.Tuple[int, typing.Optional[str]]]] = None
-) -> None:
-    if (object_id, component_uuid) in subtrees:
-        return
-    tree = RelatedObjectsTree(
-        object_id=object_id,
-        component_uuid=component_uuid,
-        path=[],
-        object=None,
-        referenced_objects=None,
-        referencing_objects=None,
-    )
-    subtrees[object_id, component_uuid] = (tree, [], [])
-    if component_uuid is None or component_uuid == flask.current_app.config['FEDERATION_UUID']:
-        if referencing_object_ids is None:
-            referencing_object_ids = _get_referencing_object_ids({object_id})[object_id]
-        if referenced_object_ids is None:
-            referenced_object_ids = _get_referenced_object_ids({object_id})[object_id]
-        for child_object_list, filtered_child_object_list in [
-            (referenced_object_ids, subtrees[object_id, component_uuid][1]),
-            (referencing_object_ids, subtrees[object_id, component_uuid][2])
-        ]:
-            for child_object_id, child_component_uuid in child_object_list:
-                if (child_object_id, child_component_uuid) != (parent_object_id, parent_component_id):
-                    filtered_child_object_list.append((child_object_id, child_component_uuid))
-        local_child_object_ids = {
-            child_object_id
-            for child_object_id, child_component_uuid in itertools.chain(subtrees[object_id, component_uuid][1], subtrees[object_id, component_uuid][2])
-            if (child_object_id, child_component_uuid) not in subtrees and (child_component_uuid is None or child_component_uuid == flask.current_app.config['FEDERATION_UUID'])
-        }
-        referencing_object_ids_by_id = _get_referencing_object_ids(local_child_object_ids)
-        referenced_object_ids_by_id = _get_referenced_object_ids(local_child_object_ids)
-        for child_object_id, child_component_uuid in itertools.chain(subtrees[object_id, component_uuid][1], subtrees[object_id, component_uuid][2]):
-            if (child_object_id, child_component_uuid) not in subtrees:
-                if child_component_uuid is None or child_component_uuid == flask.current_app.config['FEDERATION_UUID']:
-                    referencing_object_ids = referencing_object_ids_by_id.get(child_object_id)
-                    referenced_object_ids = referenced_object_ids_by_id.get(child_object_id)
-                else:
-                    referencing_object_ids = None
-                    referenced_object_ids = None
-                _gather_subtrees(
-                    object_id=child_object_id,
-                    component_uuid=child_component_uuid,
-                    user_id=user_id,
-                    subtrees=subtrees,
-                    parent_object_id=object_id,
-                    parent_component_id=component_uuid,
-                    referencing_object_ids=referencing_object_ids,
-                    referenced_object_ids=referenced_object_ids
-                )
+        object_ref: ObjectRef,
+) -> typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]]:
+    subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]] = {}
+    object_ref_stack: typing.List[typing.Tuple[ObjectRef, typing.Optional[ObjectRef]]] = [
+        (object_ref, None)
+    ]
+    referencing_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {}
+    referenced_object_ids_by_id: typing.Dict[int, typing.Set[ObjectRef]] = {}
+    while object_ref_stack:
+        object_ref, parent_object_ref = object_ref_stack.pop()
+        if object_ref not in subtrees:
+            tree = RelatedObjectsTree(
+                object_ref=object_ref,
+                path=[],
+                object=None,
+                object_name=None,
+                referenced_objects=None,
+                referencing_objects=None,
+            )
+            subtrees[object_ref] = (tree, [], [])
+
+            if object_ref.is_local:
+                referencing_object_ids = referencing_object_ids_by_id.get(object_ref.object_id)
+                referenced_object_ids = referenced_object_ids_by_id.get(object_ref.object_id)
+                if referencing_object_ids is None:
+                    referencing_object_ids = get_referencing_object_ids({object_ref.object_id})[object_ref.object_id]
+                if referenced_object_ids is None:
+                    referenced_object_ids = _get_referenced_object_ids({object_ref.object_id})[object_ref.object_id]
+
+                for child_object_list, filtered_child_object_list in [
+                    (referenced_object_ids, subtrees[object_ref][1]),
+                    (referencing_object_ids, subtrees[object_ref][2])
+                ]:
+                    for child_object_ref in child_object_list:
+                        if child_object_ref != parent_object_ref:
+                            filtered_child_object_list.append(child_object_ref)
+                            object_ref_stack.append((child_object_ref, object_ref))
+                local_child_object_ids = {
+                    child_object_ref.object_id
+                    for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2])
+                    if child_object_ref.is_local and child_object_ref not in subtrees
+                }
+                referencing_object_ids_by_id.update(get_referencing_object_ids(local_child_object_ids))
+                referenced_object_ids_by_id.update(_get_referenced_object_ids(local_child_object_ids))
+    return subtrees
 
 
 def _assemble_tree(
         tree: RelatedObjectsTree,
         objects_by_id: typing.Dict[int, Object],
-        subtrees: typing.Dict[typing.Tuple[int, typing.Optional[str]], typing.Tuple[RelatedObjectsTree, typing.List[typing.Tuple[int, typing.Optional[str]]], typing.List[typing.Tuple[int, typing.Optional[str]]]]],
-        path_prefix: typing.Optional[typing.List[typing.Union[int, typing.Tuple[int, typing.Optional[str]]]]] = None
+        subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]],
+        path_prefix: typing.Optional[typing.List[typing.Union[int, ObjectRef]]] = None
 ) -> RelatedObjectsTree:
     if path_prefix is None:
         path_prefix = []
+    root_object_ref = tree.object_ref
+    root_tree = tree
+    tree_stack: typing.List[typing.Tuple[ObjectRef, typing.List[typing.Union[int, ObjectRef]], typing.Optional[RelatedObjectsTree]]] = [
+        (root_object_ref, path_prefix, None)
+    ]
+    while tree_stack:
+        object_ref, path_prefix, parent_tree = tree_stack.pop()
 
-    tree, referenced_object_ids, referencing_object_ids = subtrees[(tree.object_id, tree.component_uuid)]
-    if not tree.path:
-        tree.path = path_prefix + [(tree.object_id, tree.component_uuid)]
-        if tree.component_uuid is None or tree.component_uuid == flask.current_app.config['FEDERATION_UUID']:
-            if tree.object_id in objects_by_id:
-                tree.object = objects_by_id[tree.object_id]
-                # create a copy that will contain subtrees
-                tree = copy.deepcopy(tree)
-                tree.referenced_objects = [
-                    _assemble_tree(subtrees[referenced_object_id][0], objects_by_id, subtrees, tree.path + [-1])
-                    for referenced_object_id in referenced_object_ids
-                ]
-                tree.referencing_objects = [
-                    _assemble_tree(subtrees[referencing_object_id][0], objects_by_id, subtrees, tree.path + [-2])
-                    for referencing_object_id in referencing_object_ids
-                    if referencing_object_id[0] in objects_by_id and (referencing_object_id[1] is None or referencing_object_id[1] == flask.current_app.config['FEDERATION_UUID'])
-                ]
-    return tree
+        tree, referenced_object_ids, referencing_object_ids = subtrees[object_ref]
+        if not tree.path:
+
+            tree.path = path_prefix + [object_ref]
+            if len(path_prefix) // 2 < _MAXIMUM_TREE_DEPTH:
+                if object_ref.is_local and object_ref.object_id in objects_by_id:
+                    object = objects_by_id[object_ref.object_id]
+                    tree.object = object
+                    if object is not None and object.name is not None:
+                        tree.object_name = get_translated_text(object.name)
+                    # create a copy that will contain subtrees
+                    tree = dataclasses.replace(
+                        tree,
+                        referenced_objects=[],
+                        referencing_objects=[]
+                    )
+                    if object_ref == root_object_ref:
+                        root_tree = tree
+                    for referenced_object_id in referenced_object_ids:
+                        tree_stack.append((referenced_object_id, tree.path + [-1], tree))
+                    for referencing_object_id in referencing_object_ids:
+                        if referencing_object_id.is_local and referencing_object_id.object_id in objects_by_id:
+                            tree_stack.append((referencing_object_id, tree.path + [-2], tree))
+        if parent_tree is not None:
+            if path_prefix[-1] == -1 and parent_tree.referenced_objects is not None:
+                parent_tree.referenced_objects.append(tree)
+            if path_prefix[-1] == -2 and parent_tree.referencing_objects is not None:
+                parent_tree.referencing_objects.append(tree)
+    return root_tree
 
 
 @dataclasses.dataclass(frozen=True)
@@ -304,8 +344,15 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
     if actions_by_id is None:
         actions_by_id = {}
 
-    referencing_objects = {obj[0] for obj in _get_referencing_object_ids({object.object_id})[object.object_id] if obj[1] is None}
-    referenced_objects = {obj[0] for obj in _get_referenced_object_ids({object.object_id})[object.object_id] if obj[1] is None}
+    referencing_objects = {
+        object_ref.object_id
+        for object_ref in get_referencing_object_ids({object.object_id})[object.object_id]
+        if object_ref.is_local}
+    referenced_objects = {
+        object_ref.object_id
+        for object_ref in _get_referenced_object_ids({object.object_id})[object.object_id]
+        if object_ref.is_local
+    }
 
     referencing_workflow_action_ids = None if 'referencing_action_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referencing_action_id']] if isinstance(object.schema['workflow_view']['referencing_action_id'], int) else object.schema['workflow_view']['referencing_action_id']
     referencing_workflow_action_type_ids = None if 'referencing_action_type_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referencing_action_type_id']] if isinstance(object.schema['workflow_view']['referencing_action_type_id'], int) else object.schema['workflow_view']['referencing_action_type_id']

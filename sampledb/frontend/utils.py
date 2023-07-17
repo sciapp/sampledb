@@ -22,6 +22,7 @@ from math import log10, floor
 
 import flask
 import flask_babel
+import jinja2.filters
 from flask_babel import format_datetime, format_date, get_locale
 from flask_login import current_user
 from babel import numbers
@@ -35,12 +36,13 @@ import numpy as np
 from ..logic import errors
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
+from ..logic.eln_import import get_eln_import_for_object
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_load_objects_in_background_warning, show_numeric_tags_warning
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.actions import Action
@@ -103,6 +105,8 @@ JinjaFunction()(get_component_id_by_uuid)
 JinjaFunction()(get_unhandled_object_responsibility_assignments)
 JinjaFunction()(is_full_location_tree_hidden)
 JinjaFunction()(generate_inline_script_nonce)
+JinjaFunction()(get_eln_import_for_object)
+JinjaFunction()(relative_url_for)
 
 
 qrcode_cache: typing.Dict[str, str] = {}
@@ -270,6 +274,12 @@ def custom_format_time(
         return flask_babel.format_time(utc_datetime)
     except ValueError:
         return utc_datetime
+
+
+@JinjaFilter('format_int')
+def format_int(decimal: int) -> str:
+    locale = get_locale()
+    return typing.cast(str, numbers.format_decimal(decimal, locale=locale))
 
 
 @JinjaFilter('babel_format_number')
@@ -632,26 +642,6 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
         return None
 
 
-_application_root_url: typing.Optional[str] = None
-
-
-@JinjaFunction()
-def relative_url_for(
-        route: str,
-        **kwargs: typing.Any
-) -> str:
-    global _application_root_url
-    if _application_root_url is None:
-        _application_root_url = flask.url_for('frontend.index')
-    kwargs['_external'] = False
-    url = flask.url_for(route, **kwargs)
-    if url.startswith(_application_root_url):
-        url = url[len(_application_root_url):]
-    elif url.startswith('/'):
-        url = url[1:]
-    return url
-
-
 @functools.lru_cache(maxsize=None)
 def get_fingerprint(file_path: str) -> str:
     """
@@ -757,19 +747,37 @@ def get_search_paths(
 def get_num_deprecation_warnings() -> int:
     return sum([
         show_admin_local_storage_warning(),
-        show_load_objects_in_background_warning(),
         show_numeric_tags_warning(),
     ])
 
 
 @JinjaFunction()
+def get_search_url(
+        attribute: str,
+        data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
+        metadata_language: typing.Optional[str] = None
+) -> typing.Optional[str]:
+    search_query = get_search_query(attribute, data, metadata_language=metadata_language)
+    if search_query is None:
+        return None
+    return flask.url_for(
+        '.objects',
+        q=search_query,
+        advanced='on'
+    )
+
+
 def get_search_query(
         attribute: str,
-        data: typing.Dict[str, typing.Any],
+        data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
         metadata_language: typing.Optional[str] = None
-) -> str:
+) -> typing.Optional[str]:
     if data is None:
         return f'{attribute} == null'
+    if isinstance(data, list):
+        return None
+    if data['_type'] in ('object', 'hazards'):
+        return None
     if data['_type'] == 'bool':
         if data['value']:
             return f'{attribute} == True'
@@ -789,6 +797,14 @@ def get_search_query(
     if data['_type'] == 'text':
         if data['text']:
             return f'{attribute} == "{get_translated_text(data["text"], metadata_language)}"'
+        else:
+            return f'{attribute} == ""'
+    if data['_type'] == 'tags':
+        return '#' + ' and #'.join(data['tags'])
+    if data['_type'] == 'plotly_chart':
+        title = jinja2.filters.do_striptags(plotly_chart_get_title(data['plotly']))
+        if title:
+            return f'{attribute} == "{str(title)}"'
         else:
             return f'{attribute} == ""'
     # fallback: find all objects that have this attribute set
@@ -885,6 +901,34 @@ class FederationObjectRef(FederationRef):
 @dataclasses.dataclass(frozen=True)
 class FederationUserRef(FederationRef):
     referenced_class: typing.Type[User] = User
+
+
+@JinjaFunction()
+@dataclasses.dataclass(frozen=True)
+class ELNImportObjectRef:
+    eln_import_id: int
+    eln_object_id: int
+
+
+@JinjaFunction()
+def wrap_object_ref(
+        *,
+        fed_id: typing.Optional[int] = None,
+        component_uuid: typing.Optional[str] = None,
+        eln_import_id: typing.Optional[int] = None,
+        eln_object_id: typing.Optional[int] = None
+) -> typing.Optional[typing.Union[FederationObjectRef, ELNImportObjectRef]]:
+    if fed_id is not None and component_uuid is not None:
+        return FederationObjectRef(
+            fed_id=fed_id,
+            component_uuid=component_uuid
+        )
+    if eln_import_id is not None and eln_object_id is not None:
+        return ELNImportObjectRef(
+            eln_import_id=eln_import_id,
+            eln_object_id=eln_object_id
+        )
+    return None
 
 
 @JinjaFunction()
@@ -1217,57 +1261,114 @@ def to_timeseries_data(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
 ) -> typing.Dict[str, typing.Any]:
-    entries = list(sorted(
-        (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
-        for entry in data['data']
-    ))
-    utc_datetimes = [
-        entry[0]
-        for entry in entries
-    ]
-    magnitudes = [
-        entry[1]
-        for entry in entries
-    ]
+    utc_datetimes: typing.List[datetime] = []
+    relative_times: typing.List[typing.Union[int, float]] = []
+    if isinstance(data['data'][0][0], str):
+        entries = list(sorted(
+            (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
+            for entry in data['data']
+        ))
+        utc_datetimes = [
+            entry[0]
+            for entry in entries
+        ]
+        magnitudes = [
+            entry[1]
+            for entry in entries
+        ]
+    else:
+        r_entries = list(sorted((entry[0], entry[1], entry[2]) for entry in data['data']))
+        relative_times = [
+            entry[0]
+            for entry in r_entries
+        ]
+        magnitudes = [
+            entry[1]
+            for entry in r_entries
+        ]
     display_digits = schema.get('display_digits')
     magnitude_strings = [
         custom_format_number(magnitude, display_digits)
         for magnitude in magnitudes
     ]
-    if len(utc_datetimes) > 1:
-        # determine time-weighted average and standard deviation
-        time_weights = np.zeros(len(magnitudes))
-        time_weights[0] = (utc_datetimes[1] - utc_datetimes[0]).total_seconds() / 2
-        time_weights[-1] = (utc_datetimes[-1] - utc_datetimes[-2]).total_seconds() / 2
-        for i in range(1, len(utc_datetimes) - 1):
-            previous_utc_datetime = utc_datetimes[i - 1]
-            next_utc_datetime = utc_datetimes[i + 1]
-            time_weights[i] = (next_utc_datetime - previous_utc_datetime).total_seconds() / 2
-        magnitude_average = np.average(magnitudes, weights=time_weights)
-        magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+    magnitude_average = None
+    magnitude_stddev = None
+    magnitude_min = None
+    magnitude_max = None
+    magnitude_count = None
+
+    statistics = {'average', 'stddev'}
+    if 'statistics' in schema:
+        statistics = set(schema['statistics'])
+    if 'min' in statistics:
+        magnitude_min = np.min(magnitudes)
+    if 'max' in statistics:
+        magnitude_max = np.max(magnitudes)
+    if 'count' in statistics:
+        magnitude_count = len(magnitudes)
+
+    time_weights = np.zeros(len(magnitudes))
+    # determine time-weighted average and standard deviation
+    if 'average' in statistics or 'stddev' in statistics:
+        if relative_times and len(relative_times) > 1:
+            time_weights[0] = (relative_times[1] - relative_times[0]) / 2
+            time_weights[-1] = (relative_times[-1] - relative_times[-2]) / 2
+            for i in range(1, len(relative_times) - 1):
+                rel_previous_time = relative_times[i - 1]
+                rel_next_time = relative_times[i + 1]
+                time_weights[i] = (rel_next_time - rel_previous_time) / 2
+            magnitude_average = np.average(magnitudes, weights=time_weights)
+            if 'stddev' in statistics:
+                magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+            if 'average' not in statistics:
+                magnitude_average = None
+        elif len(utc_datetimes) > 1:
+            time_weights[0] = (utc_datetimes[1] - utc_datetimes[0]).total_seconds() / 2
+            time_weights[-1] = (utc_datetimes[-1] - utc_datetimes[-2]).total_seconds() / 2
+            for i in range(1, len(utc_datetimes) - 1):
+                previous_time = utc_datetimes[i - 1]
+                next_time = utc_datetimes[i + 1]
+                time_weights[i] = (next_time - previous_time).total_seconds() / 2
+            magnitude_average = np.average(magnitudes, weights=time_weights)
+            if 'stddev' in statistics:
+                magnitude_stddev = np.sqrt(np.average(np.square(np.array(magnitudes) - magnitude_average), weights=time_weights))
+            if 'average' not in statistics:
+                magnitude_average = None
+        else:
+            if 'average' in statistics:
+                magnitude_average = magnitudes[0]
+    same_day = None
+    if utc_datetimes:
+        # convert datetimes to local timezone
+        local_timezone = pytz.timezone(current_user.timezone or 'UTC')
+        local_datetimes = [
+            pytz.utc.localize(utc_datetime).astimezone(local_timezone)
+            for utc_datetime in utc_datetimes
+        ]
+        time_strings = [
+            local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+            for local_datetime in local_datetimes
+        ]
+        same_day = utc_datetimes[0].date() == utc_datetimes[-1].date()
     else:
-        magnitude_average = magnitudes[0]
-        magnitude_stddev = None
-    # convert datetimes to local timezone
-    local_timezone = pytz.timezone(current_user.timezone or 'UTC')
-    local_datetimes = [
-        pytz.utc.localize(utc_datetime).astimezone(local_timezone)
-        for utc_datetime in utc_datetimes
-    ]
-    local_datetimes_strings = [
-        local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
-        for local_datetime in local_datetimes
-    ]
+        time_strings = [
+            custom_format_number(time, display_digits) + ' s'
+            for time in relative_times
+        ]
     return {
         'title': get_translated_text(schema.get('title')),
         'units': ' ' + prettify_units(data['units']) if data['dimensionality'] != 'dimensionless' else '',
+        'relative_times': relative_times,
         'utc_datetimes': utc_datetimes,
-        'local_datetimes_strings': local_datetimes_strings,
+        'times_strings': time_strings,
         'magnitudes': magnitudes,
         'magnitude_strings': magnitude_strings,
         'magnitude_average': magnitude_average,
         'magnitude_stddev': magnitude_stddev,
-        'same_day': utc_datetimes[0].date() == utc_datetimes[-1].date()
+        'magnitude_min': magnitude_min,
+        'magnitude_max': magnitude_max,
+        'magnitude_count': magnitude_count,
+        'same_day': same_day
     }
 
 
@@ -1277,16 +1378,17 @@ def to_timeseries_csv(
 ) -> str:
     rows = copy.deepcopy(rows)
     user_timezone = pytz.timezone(current_user.timezone or 'UTC')
-    if user_timezone != pytz.utc:
-        # convert datetimes from UTC if necessary
-        for row in rows:
-            try:
-                parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                continue
-            local_datetime = pytz.utc.localize(parsed_datetime)
-            utc_datetime = local_datetime.astimezone(user_timezone)
-            row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+    if isinstance(rows[0][0], str):
+        if user_timezone != pytz.utc:
+            # convert datetimes from UTC if necessary
+            for row in rows:
+                try:
+                    parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
+                except ValueError:
+                    continue
+                local_datetime = pytz.utc.localize(parsed_datetime)
+                utc_datetime = local_datetime.astimezone(user_timezone)
+                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
     csv_file = io.StringIO()
     writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(rows)

@@ -676,7 +676,9 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             max_permission=Permissions.READ.value,
             tags=None,
             fed_object_id=None,
-            component_name=None
+            component_name=None,
+            eln_object_id=None,
+            eln_import_id=None
         )
     ]
 
@@ -693,7 +695,9 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             max_permission=Permissions.READ.value,
             tags=None,
             fed_object_id=None,
-            component_name=None
+            component_name=None,
+            eln_object_id=None,
+            eln_import_id=None
         )
     ]
 
@@ -717,7 +721,9 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             max_permission=Permissions.READ.value,
             tags=None,
             fed_object_id=None,
-            component_name=None
+            component_name=None,
+            eln_object_id=None,
+            eln_import_id=None
         )
     ]
 
@@ -741,7 +747,9 @@ def test_get_object_info_with_permissions(user, independent_action_object):
             max_permission=Permissions.GRANT.value,
             tags=None,
             fed_object_id=None,
-            component_name=None
+            component_name=None,
+            eln_object_id=None,
+            eln_import_id=None
         )
     ]
 

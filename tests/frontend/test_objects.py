@@ -389,11 +389,11 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 5
     assert data['referencable_objects'] == [
-        {'action_id': None, 'id': fed_object.object_id, 'is_fed': True, 'max_permission': 1, 'text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'unescaped_text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'tags': ['a', 'b']},
-        {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b']},
-        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': []},
-        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': []},
-        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'unescaped_text': f'Example1 (#{objects[0].object_id})', 'tags': []}
+        {'action_id': None, 'id': fed_object.object_id, 'is_fed': True, 'max_permission': 1, 'text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'unescaped_text': f'Fed Object (#{fed_object.object_id}, #{fed_object.fed_object_id} @ Example Component)', 'tags': ['a', 'b'], 'is_eln_imported': False},
+        {'action_id': action2_id, 'id': other_object.object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Other Object (#{other_object.object_id})', 'unescaped_text': f'Other Object (#{other_object.object_id})', 'tags': ['a', 'b'], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[0].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'Example1 (#{objects[0].object_id})', 'unescaped_text': f'Example1 (#{objects[0].object_id})', 'tags': [], 'is_eln_imported': False}
     ]
 
     session = requests.session()
@@ -403,8 +403,8 @@ def test_objects_referencable(flask_server, user):
     data = json.loads(r.content)
     assert len(data['referencable_objects']) == 2
     assert data['referencable_objects'] == [
-        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': []},
-        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': []}
+        {'action_id': action1_id, 'id': objects[2].object_id, 'is_fed': False, 'max_permission': 3, 'text': f'&lt;b&gt;Example42&lt;/b&gt; (#{objects[2].object_id})', 'unescaped_text': f'<b>Example42</b> (#{objects[2].object_id})', 'tags': [], 'is_eln_imported': False},
+        {'action_id': action1_id, 'id': objects[1].object_id, 'is_fed': False, 'max_permission': 2, 'text': f'Example2 (#{objects[1].object_id})', 'unescaped_text': f'Example2 (#{objects[1].object_id})', 'tags': [], 'is_eln_imported': False}
     ]
 
 

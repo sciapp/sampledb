@@ -2315,6 +2315,42 @@ def test_validate_timeseries():
     validate(instance, schema)
 
 
+def test_validate_relative_timeseries():
+    schema = {
+        'title': 'Example',
+        'type': 'timeseries',
+        'units': ['m', 'km']
+    }
+    instance = {
+        '_type': 'timeseries',
+        'units': 'm',
+        'data': [
+            [0.0, 1, 1],
+            [0.678900, 1.0001, 1.0001],
+            [2.0, 2, 2]
+        ]
+    }
+    validate(instance, schema)
+    instance = {
+        '_type': 'timeseries',
+        'units': 'm',
+        'data': [
+            [0.678900, 1],
+            [2.678900, 2]
+        ]
+    }
+    validate(instance, schema)
+    instance = {
+        '_type': 'timeseries',
+        'units': 'km',
+        'data': [
+            [0.0, 1, 1000],
+            [5.0, 2, 2000]
+        ]
+    }
+    validate(instance, schema)
+
+
 def test_validate_timeseries_invalid_datetime_format():
     schema = {
         'title': 'Example',
@@ -2345,6 +2381,24 @@ def test_validate_timeseries_duplicate_datetime():
         'data': [
             ["2023-01-02 03:04:05.678900", 1, 1],
             ["2023-01-02 03:04:05.678900", 2, 2]
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_timeseries_duplicate_relative_time():
+    schema = {
+        'title': 'Example',
+        'type': 'timeseries',
+        'units': 'm'
+    }
+    instance = {
+        '_type': 'timeseries',
+        'units': 'm',
+        'data': [
+            [0.0, 1, 1],
+            [0.0, 2, 2]
         ]
     }
     with pytest.raises(ValidationError):
@@ -2433,6 +2487,24 @@ def test_validate_timeseries_invalid_magnitude():
         'data': [
             ["2023-01-02 03:04:05.678900", 1, 1],
             ["2023-01-02 03:04:06.678900", math.nan, math.nan]
+        ]
+    }
+    with pytest.raises(ValidationError):
+        validate(instance, schema)
+
+
+def test_validate_timeseries_type_mismatch():
+    schema = {
+        'title': 'Example',
+        'type': 'timeseries',
+        'units': 'm'
+    }
+    instance = {
+        '_type': 'timeseries',
+        'units': 'm',
+        'data': [
+            [0.0, 1, 1],
+            ["2023-01-02 03:04:06.678900", 2, 2]
         ]
     }
     with pytest.raises(ValidationError):

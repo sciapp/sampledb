@@ -5,7 +5,7 @@ import flask
 import flask_login
 
 from . import frontend
-from ..logic.utils import show_load_objects_in_background_warning, show_admin_local_storage_warning, show_numeric_tags_warning, do_numeric_tags_exist
+from ..logic.utils import show_admin_local_storage_warning, show_numeric_tags_warning, do_numeric_tags_exist
 from ..utils import FlaskResponseT
 
 
@@ -16,7 +16,6 @@ def admin_warnings() -> FlaskResponseT:
         return flask.abort(HTTPStatus.FORBIDDEN)
     warnings = {}
     for deprecation_warning_check in [
-        show_load_objects_in_background_warning,
         show_admin_local_storage_warning,
         show_numeric_tags_warning,
     ]:
