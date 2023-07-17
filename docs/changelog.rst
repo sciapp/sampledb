@@ -5,7 +5,7 @@ Changelog
 Version 0.24
 ------------
 
-Currently in development.
+Released on July 17th, 2023.
 
 - Added .eln file import
 - Allowed updating actions via the HTTP API
