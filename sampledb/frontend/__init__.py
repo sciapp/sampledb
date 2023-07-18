@@ -39,6 +39,7 @@ from . import scicat_export
 from . import status
 from . import tags
 from . import timezone
+from . import topics
 from . import users
 from . import users_forms
 from . import errors
@@ -71,6 +72,7 @@ __all__ = [
     'status',
     'tags',
     'timezone',
+    'topics',
     'users',
     'users_forms',
     'errors',

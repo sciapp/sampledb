@@ -1,12 +1,13 @@
 Changelog
 =========
 
-Version 0.27.0
+Version 0.27
 ------------
 
 Currently under development.
 
 - Added ``choice`` array style for multi selection dropdowns
+- Introduce action topics and allow filtering action lists by topics
 
 Version 0.26
 ------------

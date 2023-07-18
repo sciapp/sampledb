@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-02-01 10:30+0100\n"
+"POT-Creation-Date: 2024-02-16 17:36+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.13.1\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -60,8 +60,17 @@ msgstr ""
 "Aktionen diesen Typs können nur von Administratoren erstellt oder "
 "bearbeitet werden."
 
+msgid "Unable to parse topic IDs."
+msgstr "Thema-ID konnte nicht geparst werden."
+
+msgid "Invalid topic ID."
+msgstr "Ungültige Thema-ID."
+
 msgid "Invalid user ID."
 msgstr "Ungültige Nutzer-ID."
+
+msgid "Unnamed Topic"
+msgstr "Unbenanntes Thema"
 
 msgid ""
 "The used template does not exist anymore. Use the JSON editor to edit the"
@@ -966,6 +975,12 @@ msgstr ""
 "%(scicat_name)s is aktuell nicht erreichbar, bitte versuchen Sie es "
 "später erneut."
 
+msgid "There was a problem saving the topic data."
+msgstr "Beim Speichern des Themas ist ein Fehler aufgetreten."
+
+msgid "The name is required."
+msgstr "Die Angabe eines Namens ist erforderlich."
+
 msgid "Please enter your contact email."
 msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
 
@@ -1497,6 +1512,9 @@ msgstr "Orte"
 
 msgid "Publications"
 msgstr "Publikationen"
+
+msgid "Topics"
+msgstr "Themen"
 
 msgid "Other Databases"
 msgstr "Andere Datenbanken"
@@ -3410,6 +3428,9 @@ msgstr "Instrument"
 msgid "No instrument selected"
 msgstr "Kein Instrument ausgewählt"
 
+msgid "No topic selected"
+msgstr "Kein Thema ausgewählt"
+
 msgid "Hide this action from action lists"
 msgstr "Diese Aktion aus Aktionslisten verstecken"
 
@@ -3628,6 +3649,12 @@ msgstr ""
 msgid "%(action_type)s Actions"
 msgstr "%(action_type)s-Aktionen"
 
+msgid "for topic:"
+msgstr "für das Thema:"
+
+msgid "for topics:"
+msgstr "für die Themen:"
+
 msgid ""
 "Actions represent processes like creating a sample or performing a "
 "measurement."
@@ -3637,6 +3664,15 @@ msgstr ""
 
 msgid "Create Action"
 msgstr "Aktion erstellen"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Filter by Topics"
+msgstr "Nach Themen filtern"
+
+msgid "Clear"
+msgstr "Leeren"
 
 msgid "Background Tasks"
 msgstr "Hintergrund-Aufgaben"
@@ -5062,12 +5098,6 @@ msgstr "Ort anzeigen"
 
 msgid "Show Responsible User"
 msgstr "Verantwortlichen Nutzer anzeigen"
-
-msgid "Clear"
-msgstr "Leeren"
-
-msgid "Filters"
-msgstr "Filter"
 
 msgid "Filter by User Activity"
 msgstr "Nach Nutzeraktivität filtern"
@@ -6694,6 +6724,44 @@ msgstr ""
 
 msgid "Create Project Group"
 msgstr "Projektgruppe erstellen"
+
+msgid "Topic"
+msgstr "Themen"
+
+msgid "Yes, this topic should be shown on the frontpage"
+msgstr "Ja, dieses Thema auf Startseite anzeigen"
+
+msgid "No, this topic should not be shown on the frontpage"
+msgstr "Nein, dieses Thema nicht auf Startseite anzeigen"
+
+msgid "Yes, this topic should be shown in the navbar"
+msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
+
+msgid "No, this topic should not be shown in the navbar"
+msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
+
+msgid "Modify the settings for this topic."
+msgstr "Einstellungen für dieses Thema modifizieren."
+
+msgid "Edit Topic"
+msgstr "Thema bearbeiten"
+
+#, python-format
+msgid "Topics are not enabled in %(service_name)s."
+msgstr "Themen sind in %(service_name)s nicht aktiviert."
+
+msgid "Show this topic on the frontpage"
+msgstr "Thema auf Startseite anzeigen"
+
+msgid "Show this topic in the navbar"
+msgstr "Aktionen dieses Themas in der Navigationsleiste anzeigen"
+
+#, python-format
+msgid "Topics allow filtering information in %(service_name)s."
+msgstr "Themen erlauben das Filtern von Informationen in %(service_name)s."
+
+msgid "Create Topic"
+msgstr "Thema erstellen"
 
 msgid "Use FIDO2 Passkey"
 msgstr "FIDO2 Passkey verwenden"

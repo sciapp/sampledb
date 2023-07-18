@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Topic') }} #{{ topic.id }}: {{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  {% if not config['DISABLE_TOPICS'] %}
+  <h1>
+    <a href="{{ url_for('.topic', topic_id=topic.id) }}" title="{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}</a>
+  </h1>
+
+  <dl>
+    <dt>{{ _('Description') }}</dt><dd>{{ topic.description | get_translated_text(default='—') }}</dd>
+    {% if current_user.is_admin %}
+    <dt>{{ _('Show on Frontpage') }}</dt><dd>{% if topic.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown on the frontpage') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown on the frontpage') }}{% endif %}</dd>
+    <dt>{{ _('Show on Navbar') }}</dt><dd>{% if topic.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the navbar') }}{% endif %}</dd>
+    {% endif %}
+  </dl>
+  <a href="{{ url_for('.actions', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>
+  {% if current_user.is_admin and not current_user.is_readonly %}
+    <a href="{{ url_for('.topic', topic_id=topic.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this topic.') }}">{{ _('Edit Topic') }}</a>
+  {% endif %}
+  {% else %}
+    <p class="text-danger">{{ _('Topics are not enabled in %(service_name)s.', service_name=service_name) }}</p>
+  {% endif %}
+{% endblock %}

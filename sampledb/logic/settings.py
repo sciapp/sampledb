@@ -34,6 +34,7 @@ DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "INSTRUMENT_LOG_ORDER_ATTRIBUTE": "datetime",
     "DATAVERSE_API_TOKEN": "",
     "SCICAT_API_TOKEN": "",
+    "DEFAULT_ACTION_LIST_FILTERS": {},
     "DEFAULT_OBJECT_LIST_FILTERS": {},
     "DEFAULT_OBJECT_LIST_OPTIONS": {},
     "AUTO_LC": True,

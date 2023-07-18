@@ -282,6 +282,10 @@ class ActionTypeDoesNotExistError(Exception):
     pass
 
 
+class TopicDoesNotExistError(Exception):
+    pass
+
+
 class InvalidComponentNameError(Exception):
     pass
 
