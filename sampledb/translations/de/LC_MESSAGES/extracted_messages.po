@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-09-13 09:37+0200\n"
+"POT-Creation-Date: 2023-10-09 12:58+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5617,6 +5617,40 @@ msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer minimalen Höhe und "
 "einer optionalen Mindestbreite erstellen."
 
+msgid "QR Code labels"
+msgstr "QR-Code-Etiketten"
+
+msgid ""
+"This will generate labels with a qr code and an optional id and label "
+"number."
+msgstr ""
+"Dies wird Etiketten mit einem QR Code und einer optionalen ID und "
+"Etikettennummer erzeugen."
+
+msgid "QR Code Width:"
+msgstr "QR-Code-Breite:"
+
+msgid "Number of Labels:"
+msgstr "Anzahl an Etiketten:"
+
+msgid "QR Code Content:"
+msgstr "QR Code Inhalt:"
+
+msgid "Full Object URL"
+msgstr "Gesamte Objekt-URL"
+
+msgid "Only Object ID"
+msgstr "Nur Objekt-ID"
+
+msgid "Show ID on labels"
+msgstr "ID auf Etiketten anzeigen"
+
+msgid "Add Label Number"
+msgstr "Etikettennummer hinzufügen"
+
+msgid "Add Maximum Label Number"
+msgstr "Maximale Etikettennummer hinzufügen"
+
 msgid "Object QR Code"
 msgstr "Objekt QR Code"
 
@@ -6020,6 +6054,12 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
+
+msgid "Please enter a number greater or equal to {value}."
+msgstr "Bitte geben Sie eine Zahl größer oder gleich {value} ein."
+
+msgid "Please select which data should be stored in the qr codes."
+msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
 
 msgid "hide plot"
 msgstr "Plot ausblenden"

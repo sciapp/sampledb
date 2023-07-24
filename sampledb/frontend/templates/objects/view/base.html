@@ -781,7 +781,75 @@
                 </div>
               </div>
             </div>
-          </div>
+            <hr />
+            <div class="radio">
+              <label class="control-label"><input type="radio" name="mode" value="qr-code-width">{{ _('QR Code labels') }}</label>
+            </div>
+            <span class="help-block">{{ _('This will generate labels with a qr code and an optional id and label number.') }}</span>
+            <div class="form-group">
+              <label for="input-qr-code-paper-format" class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
+              <div class="col-sm-8">
+                <select class="selectpicker form-control" id="input-qr-code-paper-format" name="qr-code-paper-format">
+                  <option value="DIN A4 (Portrait)" selected="selected">{{ _('DIN A4 (Portrait)') }}</option>
+                  <option value="DIN A4 (Landscape)">{{ _('DIN A4 (Landscape)') }}</option>
+                  <option value="Letter (Portrait)">{{ _('Letter / ANSI A (Portrait)') }}</option>
+                  <option value="Letter (Landscape)">{{ _('Letter / ANSI A (Landscape)') }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-qr-code-width" class="control-label col-sm-4">{{ _('QR Code Width:') }}</label>
+              <div class="col-sm-8">
+                <div class="input-group">
+                  <input type="number" class="form-control" aria-label="QR Code Width" value="7" min="4" name="qr-code-width" id="input-qr-code-width">
+                  <span class="input-group-addon">mm</span>
+                </div>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-qr-code-number" class="control-label col-sm-4">{{ _('Number of Labels:') }}</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" aria-label="Number of Labels" value="1" min="1" max="1000" name="qr-code-number" id="input-qr-code-number">
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-sm-4">{{ _('QR Code Content:') }}</label>
+              <div class="col-sm-4 radio">
+                <label style="font-weight: normal;"><input type="radio" name="qr-code-content" value="object-url" checked="checked"> {{ _('Full Object URL') }}</label>
+              </div>
+              <div class="col-sm-4 radio">
+                <label style="font-weight: normal;"><input type="radio" name="qr-code-content" value="object-id"> {{ _('Only Object ID') }}</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="show-id-on-label" checked="checked"> {{ _('Show ID on labels') }}
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="add-label-number"> {{ _('Add Label Number') }}
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="add-maximum-label-number"> {{ _('Add Maximum Label Number') }}
+                  </label>
+                </div>
+              </div>
+            </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
             <button class="btn btn-primary" type="submit">{{ _('Generate Labels') }}</button>
@@ -790,6 +858,7 @@
         </div>
       </div>
     </div>
+  </div>
   {% endif %}
   {% if object_qrcode %}
     <div class="modal fade" id="mobileObjectLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileObjectLinkModalLabel">
@@ -1610,6 +1679,7 @@
       {% if action is not none and action.type.enable_labels and not is_archived %}
       $('#form-generate-labels').on('submit', validateLabelsForm);
       $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
+      $('#objectLabelModal input[name="add-label-number"]').on('change', updateQRCodeLabelsCheckbox);
       {% endif %}
 
       function updateObjectLocationTranslationJSON() {
@@ -2154,6 +2224,55 @@
          labels_form.find('select[name="mixed-paper-format"]').closest('.form-group').addClass('has-success');
         }
       }
+
+      if (labels_form.find('input[name="mode"][value="qr-code-width"]').is(":checked")) {
+        var input_qr_code_width = labels_form.find('input[name="qr-code-width"]');
+        var input_qr_code_width_group = labels_form.find('input[name="qr-code-width"]').closest('.form-group');
+        var input_qr_code_number = labels_form.find('input[name="qr-code-number"]');
+        var input_qr_code_number_group = labels_form.find('input[name="qr-code-number"]').closest('.form-group');
+        var input_qr_code_content = labels_form.find('input[name="qr-code-content"]:checked');
+        var input_qr_code_content_group = labels_form.find('input[name="qr-code-content"]:checked').closest('.form-group');
+
+        var paper_format = labels_form.find('select[name="qr-code-paper-format"] > option:checked').val();
+        var qr_code_width = input_qr_code_width.val();
+        var qr_code_number = input_qr_code_number.val();
+        var qr_code_content = input_qr_code_content.val();
+
+
+        if(!PAGE_SIZES.hasOwnProperty(paper_format)) {
+          var paper_format_group = labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group');
+          paper_format_group.addClass('has-error');
+          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+          is_valid = false;
+        } else {
+          labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group').addClass('has-success');
+        }
+
+        if(!isNaN(qr_code_width) && qr_code_width >= 4) {
+          input_qr_code_width_group.addClass('has-success');
+        } else {
+          input_qr_code_width_group.addClass('has-error');
+          input_qr_code_width_group.find('.help-block').text("{{ _('Please enter a number greater or equal to {value}.') }}".replace("{value}", "4"));
+          is_valid = false;
+        }
+
+        if(!isNaN(qr_code_number) && qr_code_number >= 1 && qr_code_number <= 1000) {
+          input_qr_code_number_group.addClass('has-success');
+        } else {
+          input_qr_code_number_group.addClass('has-error');
+          input_qr_code_number_group.find('.help-block').text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "1").replace("{maximum}", "1000"));
+          is_valid = false;
+        }
+
+        if(qr_code_content  === 'object-url' || qr_code_content === 'object-id') {
+          input_qr_code_width_group.addClass('has-success');
+        } else {
+          input_qr_code_width_group.addClass('has-error');
+          input_qr_code_width_group.find('.help-block').text("{{ _('Please select which data should be stored in the qr codes.') }}");
+          is_valid = false;
+        }
+      }
+
       if (labels_form.find('input[name="mode"]:checked').length == 0) {
         labels_form.find('input[name="mode"]').closest('.radio').addClass('has-error');
         is_valid = false;
@@ -2177,8 +2296,25 @@
       labels_form.find('input[name="include-qrcode"]').prop('disabled', !is_minimum_height);
       labels_form.find('input[name="label-minimum-width"]').prop('disabled', !is_minimum_height);
       labels_form.find('select[name="height-paper-format"]').prop('disabled', !is_minimum_height).selectpicker('refresh');
+      var is_qr_code = labels_form.find('input[name="mode"][value="qr-code-width"]').is(":checked");
+      var show_label_number = labels_form.find('input[name="show-label-number"]').is(":checked");
+      labels_form.find('select[name="qr-code-paper-format"]').prop('disabled', !is_qr_code).selectpicker('refresh');
+      labels_form.find('input[name="qr-code-width"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="qr-code-number"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="qr-code-content"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="show-id-on-label"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="add-label-number"]').prop('disabled', !is_qr_code);
+      updateQRCodeLabelsCheckbox();
     }
     updateLabelsForm();
+
+    function updateQRCodeLabelsCheckbox() {
+      var labels_form = $('#form-generate-labels');
+      var is_qr_code = labels_form.find('input[name="mode"][value="qr-code-width"]').is(":checked");
+      var show_label_number = labels_form.find('input[name="add-label-number"]').is(":checked");
+      labels_form.find('input[name="add-maximum-label-number"]').prop('disabled', !is_qr_code || !show_label_number);
+    }
+
     {% endif %}
   {% endif %}
    $( document ).ready(function() {
