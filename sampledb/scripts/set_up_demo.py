@@ -338,6 +338,16 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
+        with open(os.path.join(schema_directory, 'calculation.sampledb.json'), 'r', encoding='utf-8') as schema_file:
+            schema = json.load(schema_file)
+        action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, action.id, "Calculation Demo Action", "", )
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+        sampledb.db.session.commit()
+
         with open(os.path.join(schema_directory, 'other_sample.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
         action = create_action(

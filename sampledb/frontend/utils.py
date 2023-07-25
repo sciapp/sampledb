@@ -633,6 +633,11 @@ def get_templates(user_id: int) -> typing.List[Action]:
 
 
 @JinjaFunction()
+def get_local_decimal_delimiter() -> str:
+    return typing.cast(str, numbers.format_decimal(1.2346, locale=flask_babel.get_locale())[1:2])
+
+
+@JinjaFunction()
 def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
     try:
         return get_user(user_id, component_id)

@@ -31,3 +31,6 @@
 {% if id_prefix+'_magnitude' in errors %}
   <span class="has-error"><span class="help-block">{{ errors[id_prefix+'_magnitude'] }}</span></span>
 {% endif %}
+{% if 'calculation' in schema %}
+  {% include "objects/forms/calculation_script.html" %}
+{% endif %}

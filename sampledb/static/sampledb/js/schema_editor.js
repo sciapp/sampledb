@@ -1448,7 +1448,8 @@ function enableSchemaEditor() {
     var advanced_schema_features = [
         'conditions', 'action_type_id', 'action_id',
         'may_copy', 'dataverse_export', 'languages',
-        'min_magnitude', 'max_magnitude', 'statistics'
+        'min_magnitude', 'max_magnitude', 'statistics',
+        'calculation'
     ]
 
     for (const name of advanced_schema_features)

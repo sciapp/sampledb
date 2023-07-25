@@ -42,7 +42,8 @@
     {% if data is not none %}
       {% for item in data %}
         {% set name = "item" %}
-        {% set tmp_style = schema['style'] %}
+        {% set tmp_style = schema.get('style') %}
+        {% set parent_schema = schema %}
         {% set schema = schema['items'] %}
         {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
         {% set data = item %}
@@ -51,6 +52,7 @@
           {% if property_name in item_property_names %}
           <td>
             {% set name = property_name %}
+            {% set parent_schema = schema %}
             {% set schema = schema.properties[property_name] %}
             {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set parent_id_prefix = id_prefix %}
@@ -78,6 +80,7 @@
           {% if property_name not in property_order %}
           <td>
             {% set name = property_name %}
+            {% set parent_schema = schema %}
             {% set schema = schema.properties[property_name] %}
             {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set parent_id_prefix = id_prefix %}
@@ -167,7 +170,8 @@
       {% for field in item %}
         <td>
           {% set name = "field_".format(loop.index0) %}
-          {% set tmp_style = schema['style'] %}
+          {% set tmp_style = schema.get('style') %}
+          {% set parent_schema = schema %}
           {% set schema = schema["items"]["items"] %}
           {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
@@ -179,7 +183,8 @@
         {% for i in range((item | length), max_used_fields) %}
         <td>
           {% set name ="field_".format(loop.index0) %}
-          {% set tmp_style = schema['style'] %}
+          {% set tmp_style = schema.get('style') %}
+          {% set parent_schema = schema %}
           {% set schema = schema["items"]["items"] %}
           {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}

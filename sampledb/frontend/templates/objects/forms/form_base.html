@@ -18,7 +18,10 @@
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/calculation.js') }}"></script>
+  <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
   window.mde_fields = [];
 
   $(function () {
@@ -93,6 +96,9 @@
       updateSelectLanguage(selectpicker);
     });
     $.each(window.conditional_wrapper_scripts, function () {
+      this();
+    });
+    $.each(window.calculation_scripts, function () {
       this();
     });
 

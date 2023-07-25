@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-07-04 21:13+0200\n"
+"POT-Creation-Date: 2023-07-18 12:39+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5208,6 +5208,12 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 
 msgid "All Actions"
 msgstr "Alle Aktionen"
+
+msgid "Calculated Value:"
+msgstr "Berechneter Wert:"
+
+msgid "Formula:"
+msgstr "Formel:"
 
 msgid "Apply Recipe"
 msgstr "Rezept anwenden"
