@@ -661,6 +661,76 @@ max_magnitude
 
 The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
 
+calculation
+^^^^^^^^^^^
+
+This JSON object defines how to automatically calculate a value for this property, depending on the values of other properties, if no different value has been provided by the user. The ``formula`` attribute defines the calculation logic and follows the syntax of ``math.evaluate`` from `Math.JS <https://mathjs.org/>`_. The ``property_names`` attribute contains names of other quantity properties (which are in the same object that this property is in), whose values are referenced in the ``formula`` attribute. The optional attribute ``digits`` may be an integer between 0 and 15 which defines the number of decimals the calculation result should be rounded to. The example below shows calculations for several properties referencing each other in the ``formula`` attribute:
+
+.. code-block:: javascript
+    :caption: An example schema with calculation attributes
+
+    {
+        "title": "Calculation Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "distance": {
+                "title": "Distance",
+                "type": "quantity",
+                "units": "m",
+                "calculation": {
+                    "property_names": [
+                        "time",
+                        "speed"
+                    ],
+                    "formula": "time * speed"
+                }
+            },
+            "time": {
+                "title": "Time",
+                "type": "quantity",
+                "units": "s",
+                "calculation": {
+                    "property_names": [
+                        "distance",
+                        "speed"
+                    ],
+                    "formula": "distance / speed"
+                }
+            },
+            "speed": {
+                "title": "Speed",
+                "type": "quantity",
+                "units": "m / s",
+                "calculation": {
+                    "property_names": [
+                        "distance",
+                        "time"
+                    ],
+                    "formula": "distance / time"
+                }
+            }
+        },
+        "propertyOrder": [
+            "name",
+            "distance",
+            "time",
+            "speed"
+        ],
+        "required": [
+            "name"
+        ]
+    }
+
+
+.. note::
+
+    As the formula does not perform unit conversion, both the property this attribute is set for as well as the properties it depends on must have fixed units. If the units do not match, e.g. due to a schema upgrade, the calculation will not be performed.
+
+
 .. _metadata_quantity_object:
 
 Quantity Objects
@@ -735,75 +805,6 @@ default
 ^^^^^^^
 
 A default value for the property, as a JSON string using ``YYYY-MM-DD hh:mm:ss`` notation and UTC, e.g. ``"2021-07-23 08:00:00"``. If no default is given, the current date and time when creating or editing an object using this schema will be used as the default.
-
-calculation
-```````````
-
-This JSON object defines how to automatically calculate a value for this property, depending on the values of other properties, if no different value has been provided by the user. The ``formula`` attribute defines the calculation logic and follows the syntax of ``math.evaluate`` from `Math.JS <https://mathjs.org/>`_. The ``property_names`` attribute contains names of other quantity properties (which are in the same object that this property is in), whose values are referenced in the ``formula`` attribute. The optional attribute ``digits`` may be an integer between 0 and 15 which defines the number of decimals the calculation result should be rounded to. The example below shows calculations for several properties referencing each other in the ``formula`` attribute:
-
-.. code-block:: javascript
-    :caption: An example schema with calculation attributes
-
-    {
-        "title": "Calculation Example",
-        "type": "object",
-        "properties": {
-            "name": {
-                "title": "Name",
-                "type": "text"
-            },
-            "distance": {
-                "title": "Distance",
-                "type": "quantity",
-                "units": "m",
-                "calculation": {
-                    "property_names": [
-                        "time",
-                        "speed"
-                    ],
-                    "formula": "time * speed"
-                }
-            },
-            "time": {
-                "title": "Time",
-                "type": "quantity",
-                "units": "s",
-                "calculation": {
-                    "property_names": [
-                        "distance",
-                        "speed"
-                    ],
-                    "formula": "distance / speed"
-                }
-            },
-            "speed": {
-                "title": "Speed",
-                "type": "quantity",
-                "units": "m / s",
-                "calculation": {
-                    "property_names": [
-                        "distance",
-                        "time"
-                    ],
-                    "formula": "distance / time"
-                }
-            }
-        },
-        "propertyOrder": [
-            "name",
-            "distance",
-            "time",
-            "speed"
-        ],
-        "required": [
-            "name"
-        ]
-    }
-
-
-.. note::
-
-    As the formula does not perform unit conversion, both the property this attribute is set for as well as the properties it depends on must have fixed units. If the units do not match, e.g. due to a schema upgrade, the calculation will not be performed.
 
 
 Tags
