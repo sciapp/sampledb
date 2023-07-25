@@ -1275,7 +1275,7 @@ Some properties might only sometimes be needed, based on some conditions, such a
           "type": "text",
           "choices": [
             {"en": "A"},
-            {"en": "B"},
+            {"en": "B"}
           ],
           "default": {"en": "A"}
         },
