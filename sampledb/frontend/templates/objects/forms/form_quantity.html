@@ -74,7 +74,7 @@
       <span class="help-block" id="{{ id_prefix }}_calculation_help" style="display: none"><strong>{{ _('Calculated Value:') }}</strong> <span></span>&#8239;{{ unit | prettify_units }} ({{ _('Formula:') }} {{ schema.calculation.formula }}) <button type="button" class="btn btn-default btn-xs">{{ _('Apply') }}</button></span>
       </div>
       {% if is_template %}
-        <input type="hidden" class="calculation-wrapper" data-id-prefix="{{ id_prefix }}" data-parent-id-prefix="{{ parent_id_prefix }}" data-schema="{{ schema | stringify }}" data-parent-schema="{{ parent_schema | stringify }}">
+        <input type="hidden" class="calculation-wrapper" data-id-prefix="{{ id_prefix }}" data-schema="{{ schema | stringify }}" data-root-schema="{{ root_schema | stringify }}">
       {% else %}
         {% include "objects/forms/calculation_script.html" %}
       {% endif %}

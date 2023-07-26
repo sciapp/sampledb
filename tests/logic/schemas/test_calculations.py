@@ -1,26 +1,35 @@
 import pytest
 
-from sampledb.logic.schemas.calculations import validate_calculation, ValidationError
+from sampledb.logic.schemas.calculations import validate_calculation, ValidationError, _simplify_absolute_path, _get_property_schema
 from sampledb.logic.schemas.validate_schema import validate_schema
 
 
 def test_validate_calculation():
-    property_schemas = {
-        'a': {
-            'title': 'a',
-            'type': 'quantity',
-            'units': 'm'
+    root_schema = {
+        'type': 'object',
+        'title': 'Test Object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'a': {
+                'title': 'a',
+                'type': 'quantity',
+                'units': 'm'
+            },
+            'b': {
+                'title': 'b',
+                'type': 'quantity',
+                'units': ['s']
+            },
+            'calculated_property': {
+                'title': 'Calculated Property',
+                'type': 'quantity',
+                'units': 'm * s'
+            }
         },
-        'b': {
-            'title': 'b',
-            'type': 'quantity',
-            'units': ['s']
-        },
-        'calculated_property': {
-            'title': 'Calculated Property',
-            'type': 'quantity',
-            'units': 'm * s'
-        }
+        'required': ['name']
     }
     validate_calculation(
         {
@@ -28,7 +37,7 @@ def test_validate_calculation():
             'digits': 2,
             'formula': 'a + b'
         },
-        property_schemas,
+        root_schema,
         ['calculated_property']
     )
     validate_calculation(
@@ -36,7 +45,7 @@ def test_validate_calculation():
             'property_names': ['a', 'b'],
             'formula': 'a * b'
         },
-        property_schemas,
+        root_schema,
         ['calculated_property']
     )
 
@@ -45,7 +54,7 @@ def test_validate_calculation():
             {
                 'formula': 'a * b'
             },
-            property_schemas,
+            root_schema,
             ['calculated_property']
         )
 
@@ -55,7 +64,7 @@ def test_validate_calculation():
                 'property_names': ['a', 'c'],
                 'formula': 'a * b'
             },
-            property_schemas,
+            root_schema,
             ['calculated_property']
         )
 
@@ -64,7 +73,7 @@ def test_validate_calculation():
             {
                 'property_names': ['a', 'b'],
             },
-            property_schemas,
+            root_schema,
             ['calculated_property']
         )
 
@@ -73,30 +82,30 @@ def test_validate_calculation():
             [
                 'property_names', 'formula'
             ],
-            property_schemas,
+            root_schema,
             ['calculated_property']
         )
 
-    property_schemas['a']['units'] = ['m', 'km']
+    root_schema['properties']['a']['units'] = ['m', 'km']
     with pytest.raises(ValidationError):
         validate_calculation(
             {
                 'property_names': ['a', 'b'],
                 'formula': 'a * b'
             },
-            property_schemas,
+            root_schema,
             ['calculated_property']
         )
 
-    property_schemas['a']['units'] = ['m']
-    property_schemas['calculated_property']['units'] = ['m * s', 'km * h']
+    root_schema['properties']['a']['units'] = ['m']
+    root_schema['properties']['calculated_property']['units'] = ['m * s', 'km * h']
     with pytest.raises(ValidationError):
         validate_calculation(
             {
                 'property_names': ['a', 'b'],
                 'formula': 'a * b'
             },
-            property_schemas,
+            root_schema,
             ['calculated_property']
         )
 
@@ -145,7 +154,7 @@ def test_validate_schema_with_calculations():
         validate_schema(schema)
         assert calls == [
             (
-                (schema['properties']['calculated_property']['calculation'], schema['properties'], ['calculated_property']),
+                (schema['properties']['calculated_property']['calculation'], schema, ['calculated_property']),
                 {}
             )
         ]
@@ -161,3 +170,81 @@ def test_validate_schema_with_calculations():
     schema['properties']['calculated_property']['units'] = ['m', 'km']
     with pytest.raises(ValidationError):
         validate_schema(schema)
+    schema['properties']['calculated_property']['units'] = 'm * kg'
+
+    schema['properties']['calculated_property']['calculation'] = {
+        'property_names': {'d': ['c', 0, 'd'], 'b': 'b'},
+        'formula': 'd * b'
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(schema)
+    schema['properties']['c'] = {
+        'type': 'array',
+        'title': 'c',
+        'items': {
+            'type': 'object',
+            'title': 'o',
+            'properties': {
+                'd': {
+                    'type': 'quantity',
+                    'title': 'd',
+                    'units': 'kg'
+                }
+            }
+        }
+    }
+    validate_schema(schema)
+
+
+def test_simplify_absolute_path():
+    assert _simplify_absolute_path(['object', 'property']) == ['object', 'property']
+    assert _simplify_absolute_path(['object', '..', 'object', 'property']) == ['object', 'property']
+    assert _simplify_absolute_path(['object', '..', 'object', 'property', '..', 'property']) == ['object', 'property']
+    assert _simplify_absolute_path(['array', '0']) == ['array', '0']
+    assert _simplify_absolute_path(['array', '[?]', '..', '2']) == ['array', '2']
+    assert _simplify_absolute_path(['array', '[?]', '..', '..', 'object', 'property']) == ['object', 'property']
+    assert _simplify_absolute_path(['array', '+1']) == ['array', '+1']
+    assert _simplify_absolute_path(['array', '-1']) == ['array', '-1']
+    assert _simplify_absolute_path(['array', '[?]', '..', '..', '..']) is None
+
+
+def test_get_property_schema():
+    root_schema = {
+        'title': 'root',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'name'
+            },
+            'object': {
+                'title': 'object',
+                'type': 'object',
+                'properties': {
+                    'property': {
+                        'type': 'quantity',
+                        'title': 'property',
+                        'units': 'm'
+                    }
+                }
+            },
+            'array': {
+                'title': 'array',
+                'type': 'array',
+                'items': {
+                    'type': 'quantity',
+                    'title': 'item',
+                    'units': 'm'
+                }
+            }
+        },
+        'required': ['name']
+    }
+    assert _get_property_schema(root_schema, ['object', 'property']) == root_schema['properties']['object']['properties']['property']
+    assert _get_property_schema(root_schema, ['array', '[?]']) == root_schema['properties']['array']['items']
+    assert _get_property_schema(root_schema, ['array', '2']) == root_schema['properties']['array']['items']
+    assert _get_property_schema(root_schema, ['array', '+1']) == root_schema['properties']['array']['items']
+    assert _get_property_schema(root_schema, ['array', '-1']) == root_schema['properties']['array']['items']
+    assert _get_property_schema(root_schema, ['unknown']) is None
+    assert _get_property_schema(root_schema, ['array', 'items']) is None
+    assert _get_property_schema(root_schema, ['object', '[?]']) is None

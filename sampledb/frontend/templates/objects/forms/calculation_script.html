@@ -4,9 +4,8 @@
   }
   window.calculation_scripts.push(function () {
     const id_prefix = "{{ id_prefix }}";
-    const parent_id_prefix = "{{ parent_id_prefix }}";
     const schema = {{ schema | tojson }};
-    const parent_schema = {{ parent_schema | tojson }};
-    setUpCalculation(id_prefix, parent_id_prefix, schema, parent_schema);
+    const root_schema = {{ root_schema | tojson }};
+    setUpCalculation(id_prefix, schema, root_schema);
   });
 </script>

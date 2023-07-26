@@ -1,17 +1,74 @@
-function setUpCalculation(id_prefix, parent_id_prefix, schema, parent_schema) {
-  const property_names = schema.calculation.property_names;
+function resolvePropertyPath(property_path) {
+  let resolved_property_path = [];
+  let relative_path_stack = [];
+  for (let path_element of property_path) {
+    if (path_element === '..') {
+      relative_path_stack.push(resolved_property_path.pop());
+    } else {
+      if (relative_path_stack.length > 0) {
+        let relative_path_element = relative_path_stack.pop();
+        if (path_element.length > 1 && (path_element[0] === '+' || path_element[0] === '-')) {
+          let updated_path_element = Number.parseInt(relative_path_element) + Number.parseInt(path_element.substr(1)) * (path_element[0] === '-' ? -1 : 1);
+          if (Number.isFinite(updated_path_element)) {
+            path_element = updated_path_element;
+          }
+        }
+      }
+      resolved_property_path.push(path_element)
+    }
+  }
+  return resolved_property_path;
+}
+
+function getPropertySchema(root_schema, property_path) {
+  let property_schema = root_schema;
+  for (const path_element of property_path) {
+    if (property_schema['type'] === 'object') {
+      property_schema = property_schema['properties'][path_element];
+    } else {
+      property_schema = property_schema['items'];
+    }
+  }
+  return property_schema;
+}
+
+function setUpCalculation(id_prefix, schema, root_schema) {
+  let property_names = schema.calculation.property_names;
   let all_input_elements_available = true;
   let input_elements = [];
-  for (const property_name of property_names) {
-    const property_magnitude_element = $(`[name="${parent_id_prefix}_${property_name}__magnitude"]`);
-    const property_units_element = $(`[name="${parent_id_prefix}_${property_name}__units"]`);
+  let property_aliases = [];
+  if (Array.isArray(property_names)) {
+    fixed_property_names = {};
+    for (let property_name of property_names) {
+      fixed_property_names[property_name] = [property_name];
+    }
+    property_names = fixed_property_names;
+  }
+  for (const property_alias in property_names) {
+    if (!property_names.hasOwnProperty(property_alias)) {
+      continue;
+    }
+    let relative_property_path = property_names[property_alias];
+    if (typeof relative_property_path === "string") {
+       relative_property_path = [relative_property_path];
+    }
+    let property_path = (id_prefix + '_').split('__');
+    property_path.shift();
+    property_path.pop();
+    property_path.push('..');
+    property_path = property_path.concat(relative_property_path);
+    property_path = resolvePropertyPath(property_path);
+    const property_id_prefix = 'object__' + property_path.join('__') + '_';
+    const property_magnitude_element = $(`[name="${property_id_prefix}_magnitude"]`);
+    const property_units_element = $(`[name="${property_id_prefix}_units"]`);
     const property_unit = property_units_element.val();
-    const schema = parent_schema.properties[property_name];
+    const schema = getPropertySchema(root_schema, property_path);
     let schema_unit = schema.units;
     if (typeof schema_unit !== "string") {
       schema_unit = schema_unit[0];
     }
-    if (property_magnitude_element.length === 1 && (schema_unit === property_unit || typeof property_unit === "undefined")) {
+    if (property_magnitude_element.length === 1 && !property_magnitude_element.prop('disabled') && (schema_unit === property_unit || typeof property_unit === "undefined")) {
+      property_aliases.push(property_alias);
       input_elements.push(property_magnitude_element);
     } else {
       all_input_elements_available = false;
@@ -27,7 +84,7 @@ function setUpCalculation(id_prefix, parent_id_prefix, schema, parent_schema) {
     schema_unit = schema_unit[0];
   }
 
-  if (target_element.length === 1 && (schema_unit === target_unit || typeof target_unit === "undefined")&& all_input_elements_available) {
+  if (target_element.length === 1 && !input_elements.includes(target_element[0]) && (schema_unit === target_unit || typeof target_unit === "undefined") && all_input_elements_available) {
     let evaluateCalculation = function (event, event_chain) {
       if (!event_chain) {
         event_chain = [];
@@ -46,7 +103,7 @@ function setUpCalculation(id_prefix, parent_id_prefix, schema, parent_schema) {
           all_input_values_available = false;
           break;
         }
-        values[property_names[i]] = value;
+        values[property_aliases[i]] = value;
       }
       if (all_input_values_available) {
         let result = math.evaluate(formula, values);

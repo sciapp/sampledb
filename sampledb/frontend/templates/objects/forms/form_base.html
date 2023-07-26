@@ -486,8 +486,8 @@
         }
       }
 
-      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
       updateArrayNames(parent_prefix);
+      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
     }
   }
 
@@ -553,6 +553,13 @@
       $(`[name^=${old_prefix}]`).each(function(_, element) {
         element.name = new_prefix + element.name.substring(old_prefix.length);
       });
+      $(`[data-id-prefix^=${old_prefix}]`).each(function(_, element) {
+        $(element).attr('data-id-prefix', new_prefix + $(element).data('id-prefix').substring(old_prefix.length));
+        $(element).data('id-prefix', $(element).attr('data-id-prefix'));
+      });
+      $(`span[id^=${old_prefix}][id$=_calculation_help]`).each(function(_, element) {
+        $(element).attr('id', new_prefix + $(element).attr('id').substring(old_prefix.length));
+      });
     }
   }
 
@@ -574,9 +581,9 @@
       parent.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
       template.data('next-id', element_id + 1);
 
+      updateArrayNames(parent_prefix);
       applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, parent.data('compound-default') === 'True');
       if(!initPhase) replaceMarkdownTemplates();
-      updateArrayNames(parent_prefix);
     }
   }
 
@@ -597,8 +604,8 @@
 
       table.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
 
-      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
       updateArrayNames(parent_prefix);
+      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
     }
   }
 
@@ -1009,11 +1016,10 @@
 
   function applySchemaCalculations(clone) {
     $(clone).find('.calculation-wrapper').each(function() {
-      const idPrefix = $(this).data('id-prefix');
-      const parentIdPrefix = $(this).data('parent-id-prefix');
+      const id_prefix = $(this).data('id-prefix');
       const schema = $(this).data('schema');
-      const parentSchema = $(this).data('parent-schema');
-      setUpCalculation(idPrefix, parentIdPrefix, schema, parentSchema);
+      const root_schema = $(this).data('root-schema');
+      setUpCalculation(id_prefix, schema, root_schema);
     });
     $.each(window.calculation_scripts, function () {
       this();
