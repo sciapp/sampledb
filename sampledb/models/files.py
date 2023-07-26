@@ -24,6 +24,10 @@ class File(Model):
             '(fed_id IS NOT NULL AND component_id IS NOT NULL) OR (user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
             name='files_not_null_check'
         ),
+        db.CheckConstraint(
+            '(fed_id IS NOT NULL AND component_id IS NOT NULL) OR data IS NOT NULL',
+            name='files_not_null_check_data'
+        ),
         db.UniqueConstraint('fed_id', 'object_id', 'component_id', name='files_fed_id_component_id_key')
     )
 
