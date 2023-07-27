@@ -2,7 +2,7 @@ import typing
 
 from .. import actions
 from ... import logic
-from ..errors import InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
+from ..errors import InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError, ValidationError
 from ...models import ActionType, Permissions
 
 # keys and properties that only can be used in root objects
@@ -135,8 +135,16 @@ def enforce_permissions(
 ) -> typing.Sequence[typing.List[str]]:
     path = list(path)
     invalid_template_paths = []
+    if not isinstance(schema, dict):
+        raise ValidationError('schema must be dict', path)
     if schema.get('type') == 'object' and schema.get('properties'):
+        if not isinstance(schema.get('properties'), dict):
+            raise ValidationError('properties must be dict', path)
         for property_name, property_schema in schema['properties'].items():
+            if not isinstance(property_name, str):
+                raise ValidationError('property name must be string', path)
+            if not isinstance(property_schema, dict):
+                raise ValidationError('schema must be dict', path + [property_name])
             if property_schema.get('type') == 'object':
                 if property_schema.get('template'):
                     template_action_id = property_schema['template']
