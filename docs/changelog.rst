@@ -5,7 +5,7 @@ Changelog
 Version 0.24.1
 --------------
 
-Currently in development.
+Released on July 27th, 2023.
 
 - Fixed conditions not being applied correctly to object reference fields
 
