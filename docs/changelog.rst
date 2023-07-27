@@ -2,6 +2,13 @@ Changelog
 =========
 
 
+Version 0.24.1
+--------------
+
+Currently in development.
+
+- Fixed conditions not being applied correctly to object reference fields
+
 Version 0.24
 ------------
 
