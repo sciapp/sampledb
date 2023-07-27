@@ -8,6 +8,13 @@ Currently in development.
 
 - Allow automatic calculation of quantity values
 
+Version 0.24.1
+--------------
+
+Released on July 27th, 2023.
+
+- Fixed conditions not being applied correctly to object reference fields
+
 Version 0.24
 ------------
 

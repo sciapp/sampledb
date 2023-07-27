@@ -270,7 +270,9 @@ $(function() {
           $x.on('change', change_handler);
         }
 
-        $x.prop("disabled", false);
+        if (!$x.data('sampledbDisabledByCondition')) {
+          $x.prop("disabled", false);
+        }
 
         $($x.data('sampledbStopEnable')).prop('disabled', false);
         $($x.data('sampledbStopDisable')).prop('disabled', true);
