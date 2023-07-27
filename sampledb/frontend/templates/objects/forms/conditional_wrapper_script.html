@@ -49,7 +49,7 @@
         $('[data-condition-wrapper-for="{{ id_prefix }}"]').hide();
         $('[data-condition-replacement-for="{{ id_prefix }}"]').show();
       }
-      $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled).trigger('conditions_state_changed.sampledb');
+      $('[data-condition-wrapper-for="{{ id_prefix }}"] input, [data-condition-wrapper-for="{{ id_prefix }}"] textarea, [data-condition-wrapper-for="{{ id_prefix }}"] select').prop('disabled', !all_conditions_fulfilled).attr('data-sampledb-disabled-by-condition', !all_conditions_fulfilled).trigger('conditions_state_changed.sampledb');
       $('[data-condition-wrapper-for="{{ id_prefix }}"] select').selectpicker('refresh');
     }
     {% macro handle_condition(condition, index) -%}
