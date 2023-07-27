@@ -6735,7 +6735,7 @@ msgstr ""
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
 
 #, python-format
-msgid "The text must be one of %(choices)s."
+msgid "The text must be one of: %(choices)s."
 msgstr "Der Text muss einer der folgenden sein: %(choices)s."
 
 #, python-format

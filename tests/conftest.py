@@ -229,7 +229,8 @@ def _drop_empty_database_copy():
 def mock_current_user():
     modules = [
         sampledb.frontend.utils,
-        sampledb.frontend.objects.object_form_parser
+        sampledb.frontend.objects.object_form_parser,
+        sampledb.logic.utils,
     ]
     current_user_backup = getattr(modules[0], 'current_user')
 
