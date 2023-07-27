@@ -8,7 +8,7 @@ import typing
 import sys
 
 import flask
-import flask_login
+from flask_login import current_user
 
 from . import errors
 from .. import db
@@ -161,7 +161,7 @@ def get_translated_text(
 
     if isinstance(text, dict):
         if language_code is None:
-            language_code = get_user_language(flask_login.current_user).lang_code
+            language_code = get_user_language(current_user).lang_code
         translated_text = text.get(language_code)
         if translated_text:
             return translated_text

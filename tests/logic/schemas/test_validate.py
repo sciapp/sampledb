@@ -137,18 +137,24 @@ def test_validate_text_translated_choices():
     validate(instance, schema)
 
 
-def test_validate_text_invalid_choice():
+def test_validate_text_invalid_choice(mock_current_user):
     schema = {
         'title': 'Example',
         'type': 'text',
-        'choices': ['A', 'B', 'C']
+        'choices': ['A', 'B', {'en': 'C_en', 'de': 'C_de'}]
     }
     instance = {
         '_type': 'text',
         'text': 'D'
     }
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exception_info:
         validate(instance, schema)
+    assert str(exception_info.value) == 'The text must be one of: A, B, C_en.'
+    mock_current_user.set_language_by_lang_code('de')
+    with pytest.raises(ValidationError) as exception_info:
+        validate(instance, schema)
+    # english general text as the mock user language doesn't apply there
+    assert str(exception_info.value) == 'The text must be one of: A, B, C_de.'
 
 
 def test_validate_text_pattern():
