@@ -413,10 +413,10 @@ def schema_entry_preprocessor(
         schema: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
         refs: typing.List[typing.Tuple[str, int]]
 ) -> None:
-    if type(schema) == list:
+    if type(schema) is list:
         for entry in schema:
             schema_entry_preprocessor(entry, refs)
-    elif type(schema) == dict:
+    elif type(schema) is dict:
         if 'type' not in schema.keys():
             for key in schema:
                 schema_entry_preprocessor(schema[key], refs)

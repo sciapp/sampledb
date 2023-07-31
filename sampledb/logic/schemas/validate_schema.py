@@ -519,9 +519,9 @@ def _validate_object_schema(
         for key in id_keys:
             if key in schema['workflow_view'] and not (
                 schema['workflow_view'][key] is None or
-                type(schema['workflow_view'][key]) == int or
-                type(schema['workflow_view'][key]) == list and all(
-                    type(action_type_id) == int for action_type_id in schema['workflow_view'][key]
+                type(schema['workflow_view'][key]) is int or
+                type(schema['workflow_view'][key]) is list and all(
+                    type(action_type_id) is int for action_type_id in schema['workflow_view'][key]
                 )
             ):
                 raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
@@ -597,7 +597,7 @@ def _validate_text_schema(
         for i, choice in enumerate(schema['choices']):
             if not isinstance(choice, str) and not isinstance(choice, dict):
                 raise ValidationError('choice must be str or dict', path + [str(i)])
-            if choice_type is not None and type(choice) != choice_type:
+            if choice_type is not None and type(choice) is not choice_type:
                 raise ValidationError('choices must be either all str or all dict', path + [str(i)])
             choice_type = type(choice)
             if isinstance(choice, dict):
@@ -907,17 +907,17 @@ def _validate_object_reference_schema(
 
     if 'action_type_id' in schema and not (
             schema['action_type_id'] is None or
-            type(schema['action_type_id']) == int or
-            type(schema['action_type_id']) == list and all(
-                type(action_type_id) == int for action_type_id in schema['action_type_id']
+            type(schema['action_type_id']) is int or
+            type(schema['action_type_id']) is list and all(
+                type(action_type_id) is int for action_type_id in schema['action_type_id']
             )
     ):
         raise ValidationError('action_type_id must be int, None or a list of ints', path)
     if 'action_id' in schema and not (
             schema['action_id'] is None or
-            type(schema['action_id']) == int or
-            type(schema['action_id']) == list and all(
-                type(action_type_id) == int for action_type_id in schema['action_id']
+            type(schema['action_id']) is int or
+            type(schema['action_id']) is list and all(
+                type(action_type_id) is int for action_type_id in schema['action_id']
             )
     ):
         raise ValidationError('action_id must be int, None or a list of ints', path)

@@ -653,7 +653,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
         if 'action_id' in schema:
-            if type(schema['action_id']) == int:
+            if type(schema['action_id']) is int:
                 valid_action_ids = [schema['action_id']]
             else:
                 valid_action_ids = schema['action_id']
@@ -663,7 +663,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 if object.action_id not in valid_action_ids:
                     raise ValidationError('object has wrong action', path)
         if 'action_type_id' in schema:
-            if type(schema['action_type_id']) == int:
+            if type(schema['action_type_id']) is int:
                 valid_action_type_ids = [schema['action_type_id']]
             else:
                 valid_action_type_ids = schema['action_type_id']
