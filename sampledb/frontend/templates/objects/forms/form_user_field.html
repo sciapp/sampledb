@@ -11,7 +11,7 @@
   {% set selected_user = get_user_if_exists(selected_user_id) %}
 {% endif %}
 
-<select class="form-control selectpicker" name="{{ id_prefix }}_uid" data-live-search="true">
+<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker" {% else %} class="form-control selectpicker" {% endif %} name="{{ id_prefix }}_uid" data-live-search="true">
   <option value="" {% if selected_user is none %}selected="selected"{% endif %}>&mdash;</option>
   {% if selected_user is not none and selected_user not in users %}
     <option {% if selected_user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ selected_user_id }}" selected="selected">

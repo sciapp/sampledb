@@ -1,13 +1,13 @@
-<div class="form-group{% if id_prefix+'_datetime' in errors %} has-error{% elif id_prefix+'_datetime' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
+<div class="form-group row error-parent" style="padding-right:0.75em">
   {% include "objects/forms/property_label.html" %}
   <div class="col-md-9">
-    <div class="input-group date" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | default_format_datetime }}{% elif mode != 'edit' %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
+    <div class="input-group {% if is_template %} date-template {% else %} date {% endif %}" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none and 'utc_datetime' in data %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | default_format_datetime }}{% elif mode != 'edit' %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
         <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
         <span class="input-group-addon">
             <span class="glyphicon glyphicon-calendar"></span>
         </span>
     </div>
-    {% if id_prefix+'_datetime' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_datetime'] }}</span>{% endif %}
+    <span class="help-block error-note"></span>
     {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
   </div>
 </div>

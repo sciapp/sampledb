@@ -2,7 +2,6 @@
 """
 
 """
-
 import csv
 import datetime
 import decimal
@@ -21,7 +20,6 @@ import pytz
 from ...logic import schemas, languages
 from ...logic.units import ureg, int_ureg
 from ...logic.errors import ValidationError
-from ...logic.schemas.generate_placeholder import generate_placeholder
 
 
 class FormParserT(typing.Protocol):
@@ -541,37 +539,15 @@ def parse_array_form_data(
             item_index = int(key_parts[1])
         except ValueError:
             raise ValueError('invalid array form data')
+
         item_indices.add(item_index)
     items: typing.List[typing.Any] = []
     if item_indices:
-        num_items = max(item_indices) + 1
-        for i in range(num_items):
-            if i not in item_indices:
-                items.append(None)
-            else:
-                item_id_prefix = f'{id_prefix}__{i}'
-                if isinstance(previous_data, list) and i < len(previous_data):
-                    previous_item_data = previous_data[i]
-                else:
-                    previous_item_data = None
-                items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id, previous_data=previous_item_data))
-        if None in items:
-            # use a placeholder if form_data had no (valid) information on an
-            # item, otherwise items would not be a valid array and the form
-            # could not be submitted at all
-            # if there is no valid placeholder, skip the missing items
-            placeholder = generate_placeholder(item_schema)
-            if placeholder is None:
-                items = [
-                    item
-                    for item in items
-                    if item is not None
-                ]
-            else:
-                items = [
-                    placeholder if item is None else item
-                    for item in items
-                ]
+        for i in item_indices:
+            item_id_prefix = f'{id_prefix}__{i}'
+            previous_item_data = previous_data[i] if isinstance(previous_data, list) and i < len(previous_data) else None
+            items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id, previous_data=previous_item_data))
+
     schemas.validate(items, schema, strict=True, file_names_by_id=file_names_by_id)
     return items
 

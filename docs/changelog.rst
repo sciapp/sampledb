@@ -6,6 +6,7 @@ Version 0.25
 
 Currently in development.
 
+- Implement client-side array editing
 - Allow automatic calculation of quantity values
 
 Version 0.24.1

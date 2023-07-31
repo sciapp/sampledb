@@ -10,8 +10,8 @@ from copy import deepcopy
 
 import requests
 import pytest
-import itsdangerous
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
 
 import sampledb
 import sampledb.models
@@ -702,8 +702,7 @@ def test_edit_object(flask_server, user):
         }
 
 
-
-def test_edit_object_action_add(flask_server, user):
+def test_edit_object_action_add(flask_server, driver, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(
@@ -721,19 +720,16 @@ def test_edit_object_action_add(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__1' not in r.content.decode('utf-8')
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
-    form_data = {'csrf_token': csrf_token, 'action_object__multilayer__2__films__0__elements__?__add': 'action_object__multilayer__2__films__0__elements__?__add', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__checkbox__hidden': 'checkbox exists', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__substrate__text': 'GaAs', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__created__datetime': '2017-02-24 11:56:00', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__name__text': 'OMBE-100', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1', 'object__dropdown__text': 'Option A'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__1' in r.content.decode('utf-8')
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/{object.object_id}?mode=edit')
+
+    assert 'object__multilayer__2__films__0__elements__1' not in driver.page_source
+    driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__?__add').click()
+    assert 'object__multilayer__2__films__0__elements__1' in driver.page_source
 
 
-def test_edit_object_previous_actions(flask_server, user):
+def test_edit_object_applied_actions(flask_server, driver, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(
@@ -751,23 +747,20 @@ def test_edit_object_previous_actions(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
-    previous_actions = ['action_object__multilayer__2__films__0__elements__?__add']
-    serializer = itsdangerous.URLSafeSerializer(flask_server.app.config['SECRET_KEY'])
-    previous_actions = serializer.dumps(previous_actions)
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__1' not in r.content.decode('utf-8')
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
-    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'action_object__multilayer__2__films__0__elements__?__add': 'action_object__multilayer__2__films__0__elements__?__add', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__checkbox__hidden': 'checkbox exists', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__substrate__text': 'GaAs', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__created__datetime': '2017-02-24 11:56:00', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__name__text': 'OMBE-100', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1', 'object__dropdown__text': 'Option A'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__1' in r.content.decode('utf-8')
-    assert 'object__multilayer__2__films__0__elements__2' in r.content.decode('utf-8')
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/{object.object_id}?mode=edit')
+
+    assert 'applied_action__object__multilayer__2__films__0__elements__1__add' not in driver.page_source
+    driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__?__add').click()
+    assert 'applied_action__object__multilayer__2__films__0__elements__1__add' in driver.page_source
+
+    assert 'applied_action__object__multilayer__2__films__0__elements__1__delete' not in driver.page_source
+    driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__1__delete').click()
+    assert 'applied_action__object__multilayer__2__films__0__elements__1__delete' in driver.page_source
 
 
-def test_edit_object_previous_actions_invalid_key(flask_server, user):
+def test_edit_object_action_delete(flask_server, driver, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(
@@ -785,90 +778,22 @@ def test_edit_object_previous_actions_invalid_key(flask_server, user):
         user_id=user.id,
         action_id=action.id
     )
-    previous_actions = ['action_object__multilayer__2__films__0__elements__?_add']
-    serializer = itsdangerous.URLSafeSerializer('invalid key')
-    previous_actions = serializer.dumps(previous_actions)
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__1' not in r.content.decode('utf-8')
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
-    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'action_object__multilayer__2__films__0__elements__?__add': 'action_object__multilayer__2__films__0__elements__?__add', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__checkbox__hidden': 'checkbox exists', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__substrate__text': 'GaAs', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__created__datetime': '2017-02-24 11:56:00', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__name__text': 'OMBE-100', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1', 'object__dropdown__text': 'Option A'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
-    assert r.status_code == 400
 
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/{object.object_id}?mode=edit')
 
-def test_edit_object_previous_actions_invalid_action(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        schema=schema
-    )
-    sampledb.logic.action_translations.set_action_translation(
-        language_id=sampledb.logic.languages.Language.ENGLISH,
-        action_id=action.id,
-        name='Example Action',
-        description=''
-    )
-    object = sampledb.logic.objects.create_object(
-        data=object_data,
-        user_id=user.id,
-        action_id=action.id
-    )
-    previous_actions = ['invalid']
-    serializer = itsdangerous.URLSafeSerializer(flask_server.app.config['SECRET_KEY'])
-    previous_actions = serializer.dumps(previous_actions)
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__1' not in r.content.decode('utf-8')
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
-    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'action_object__multilayer__2__films__0__elements__?__add': 'action_object__multilayer__2__films__0__elements__?__add', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__checkbox__hidden': 'checkbox exists', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__substrate__text': 'GaAs', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__created__datetime': '2017-02-24 11:56:00', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__name__text': 'OMBE-100', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1', 'object__dropdown__text': 'Option A'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
-    assert r.status_code == 400
-
-
-def test_edit_object_action_delete(flask_server, user):
-    schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
-    object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
-    action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        schema=schema
-    )
-    sampledb.logic.action_translations.set_action_translation(
-        language_id=sampledb.logic.languages.Language.ENGLISH,
-        action_id=action.id,
-        name='Example Action',
-        description=''
-    )
-    object = sampledb.logic.objects.create_object(
-        data=object_data,
-        user_id=user.id,
-        action_id=action.id
-    )
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/{}?mode=edit'.format(object.object_id))
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__0' in r.content.decode('utf-8')
-    csrf_token = BeautifulSoup(r.content, 'html.parser').find('input', {'name': 'csrf_token'})['value']
     # Try violating minItems first
-    form_data = {'csrf_token': csrf_token, 'action_object__multilayer__2__films__0__elements__0__delete': 'action_object__multilayer__2__films__0__elements__0__delete', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__checkbox__hidden': 'checkbox exists', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__substrate__text': 'GaAs', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__created__datetime': '2017-02-24 11:56:00', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__name__text': 'OMBE-100', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1', 'object__dropdown__text': 'Option A'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
-    assert r.status_code == 200
-    assert 'object__multilayer__2__films__0__elements__0' in r.content.decode('utf-8')
+    assert driver.find_element(By.ID, 'container_object__multilayer__2__films__0__elements__0_')
+    driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__0__delete').click()
+    assert driver.find_element(By.ID, 'container_object__multilayer__2__films__0__elements__0_')
+
     # Delete something that may actually be deleted
-    assert 'object__multilayer__3' in r.content.decode('utf-8')
-    form_data = {'csrf_token': csrf_token, 'action_object__multilayer__3__delete': 'action_object__multilayer__3__delete', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__checkbox__hidden': 'checkbox exists', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__substrate__text': 'GaAs', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__created__datetime': '2017-02-24 11:56:00', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__name__text': 'OMBE-100', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1', 'object__dropdown__text': 'Option A'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.object_id), data=form_data)
-    assert r.status_code == 200
-    assert 'object__multilayer__3' not in r.content.decode('utf-8')
+    assert driver.find_element(By.ID, 'container_object__multilayer__3_')
+    driver.find_element(By.ID, 'action_object__multilayer__3__delete').click()
+    assert not driver.find_elements(By.ID, 'container_object__multilayer__3_')
 
 
-def test_new_object(flask_server, user):
+def test_new_object(flask_server, driver, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
@@ -881,18 +806,28 @@ def test_new_object(flask_server, user):
         description=''
     )
     sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/new', params={'action_id': action.id})
-    assert r.status_code == 200
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'objects/new?action_id={action.id}')
+
     assert len(sampledb.logic.objects.get_objects()) == 0
     with flask_server.app.app_context():
         assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
-    document = BeautifulSoup(r.content, 'html.parser')
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    form_data = {'csrf_token': csrf_token, 'action_submit': 'action_submit', 'object__name__text': 'OMBE-100', 'object__substrate__text': 'GaAs', 'object__checkbox__hidden': 'checkbox exists', 'object__created__datetime': '2017-02-24 11:56:00', 'object__dropdown__text': 'Option A', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1'}
-    r = session.post(flask_server.base_url + 'objects/new', params={'action_id': action.id}, data=form_data)
-    assert r.status_code == 200
+
+    driver.find_element(By.ID, 'action_object__multilayer__?__add').click()
+    driver.find_element(By.ID, 'action_object__multilayer__?__add').click()
+    driver.find_element(By.ID, 'action_object__multilayer__?__add').click()
+    driver.find_element(By.ID, 'action_object__multilayer__2__films__?__add').click()
+
+    driver.find_element(By.NAME, "object__name__text_en").send_keys('3')
+
+    driver.find_element(By.XPATH, "//select[@name='object__dropdown__text']/following-sibling::button").click()
+    driver.find_element(By.XPATH, "//select[@name='object__dropdown__text']/following-sibling::div/div/ul/li/a/span[text()='Option A']/parent::a/parent::li").click()
+
+    driver.find_element(By.NAME, 'object__substrate__text_en').send_keys("Ag")
+
+    driver.find_element(By.NAME, 'action_submit').click()
+
     assert len(sampledb.logic.objects.get_objects()) == 1
     object = sampledb.logic.objects.get_objects()[0]
     assert len(object.data['multilayer']) == 4
@@ -934,7 +869,7 @@ def test_new_object_batch(flask_server, user):
         assert sampledb.logic.user_log.get_user_log_entries(user.id) == []
     document = BeautifulSoup(r.content, 'html.parser')
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    form_data = {'csrf_token': csrf_token, 'input_num_batch_objects': '2','action_submit': 'action_submit', 'object__name__text': 'OMBE-100', 'object__substrate__text': 'GaAs', 'object__checkbox__hidden': 'checkbox exists', 'object__created__datetime': '2017-02-24 11:56:00', 'object__dropdown__text': 'Option A', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1'}
+    form_data = {'csrf_token': csrf_token, 'input_num_batch_objects': '2', 'action_submit': 'action_submit', 'object__name__text': 'OMBE-100', 'object__substrate__text': 'GaAs', 'object__checkbox__hidden': 'checkbox exists', 'object__created__datetime': '2017-02-24 11:56:00', 'object__dropdown__text': 'Option A', 'object__multilayer__2__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__1__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__0__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__substrate_temperature__magnitude': '130', 'object__multilayer__1__films__0__elements__0__rate__magnitude': '1', 'object__multilayer__0__films__0__thickness__magnitude': '5', 'object__multilayer__1__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__elements__0__name__text': 'Ag', 'object__multilayer__2__films__1__elements__0__rate__magnitude': '0.05', 'object__multilayer__0__films__0__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__thickness__magnitude': '1500', 'object__multilayer__0__films__0__thickness__units': 'Å', 'object__multilayer__0__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__name__text': 'Pd', 'object__multilayer__3__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__3__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__2__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__elements__0__rate__magnitude': '0.01', 'object__multilayer__2__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__1__name__text': 'Fe', 'object__multilayer__2__films__1__oxygen_flow__units': 'cm**3/s', 'object__multilayer__2__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__1__films__0__name__text': 'Buffer Layer', 'object__multilayer__2__repetitions__magnitude': '10', 'object__multilayer__2__films__1__elements__0__name__text': 'Fe', 'object__multilayer__2__films__1__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__substrate_temperature__units': 'degC', 'object__multilayer__0__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__3__films__0__thickness__magnitude': '150', 'object__multilayer__2__films__0__elements__0__frequency_change__magnitude': '', 'object__multilayer__1__repetitions__magnitude': '1', 'object__multilayer__2__films__1__substrate_temperature__units': 'degC', 'object__multilayer__2__films__1__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__0__thickness__magnitude': '150', 'object__multilayer__0__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__2__films__0__name__text': 'Pd', 'object__multilayer__1__films__0__elements__0__frequency_change__units': 'Hz / s', 'object__multilayer__2__films__1__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__1__thickness__magnitude': '10', 'object__multilayer__3__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__0__repetitions__magnitude': '2', 'object__multilayer__1__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__0__oxygen_flow__units': 'cm**3/s', 'object__multilayer__3__films__0__elements__0__rate__magnitude': '0.1', 'object__multilayer__1__films__0__substrate_temperature__magnitude': '130', 'object__multilayer__0__films__0__elements__0__fraction__magnitude': '', 'object__multilayer__2__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__2__films__1__thickness__units': 'Å', 'object__multilayer__0__films__0__name__text': 'Seed Layer', 'object__multilayer__1__films__0__thickness__units': 'Å', 'object__multilayer__3__films__0__oxygen_flow__magnitude': '0', 'object__multilayer__3__films__0__name__text': 'Pd Layer', 'object__multilayer__2__films__0__thickness__units': 'Å', 'object__multilayer__1__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__0__films__0__elements__0__rate__units': 'Å/s', 'object__multilayer__3__films__0__substrate_temperature__magnitude': '100', 'object__multilayer__3__repetitions__magnitude': '1'}
     r = session.post(flask_server.base_url + 'objects/new', params={'action_id': action.id}, data=form_data)
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 2
@@ -1057,6 +992,114 @@ def test_new_object_batch_number_below_one(flask_server, user):
     r = session.post(flask_server.base_url + 'objects/new', params={'action_id': action.id}, data=form_data)
     assert r.status_code == 200
     assert len(sampledb.logic.objects.get_objects()) == 0
+
+
+def test_new_object_javascript_fields_array(flask_server, driver, user):
+    schema = {
+        "title": "Javascript Fields",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Object Name",
+                "type": "text"
+            },
+            "datetime": {
+                "title": "Datetime",
+                "type": "array",
+                "style": "list",
+                "items": {
+                    "title": "Datetime",
+                    "type": "datetime"
+                }
+            },
+            "obj_ref": {
+                "title": "Object Reference",
+                "type": "array",
+                "style": "list",
+                "items": {
+                    "title": "Object Reference",
+                    "type": "object_reference"
+                }
+            },
+            "sample": {
+                "title": "Samples",
+                "type": "array",
+                "style": "list",
+                "items": {
+                    "title": "Sample",
+                    "type": "sample"
+                }
+            },
+            "choices": {
+                "title": "Choices",
+                "type": "array",
+                "style": "list",
+                "items": {
+                    "title": "Choices",
+                    "type": "text",
+                    "choices": ["A", "B", "C", "D"]
+                }
+            }
+        },
+        "required": ["name"]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+
+    data = {'name': {'_type': 'text', 'text': 'object_version_0'}}
+    example_object = sampledb.logic.objects.create_object(
+        data=data,
+        user_id=user.id,
+        action_id=action.id
+    )
+
+    sampledb.logic.action_translations.set_action_translation(
+        language_id=sampledb.logic.languages.Language.ENGLISH,
+        action_id=action.id,
+        name='Javascript Fields',
+        description=''
+    )
+
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+
+    driver.get(f"{flask_server.base_url}users/{user.id}/autologin")
+    driver.get(f"{flask_server.base_url}objects/new?action_id={action.id}")
+
+    assert len(sampledb.logic.objects.get_objects()) == 1
+
+    driver.find_element(By.ID, 'action_object__datetime__?__add').click()
+    driver.find_element(By.ID, 'action_object__obj_ref__?__add').click()
+    driver.find_element(By.ID, 'action_object__sample__?__add').click()
+    driver.find_element(By.ID, 'action_object__choices__?__add').click()
+
+    assert not driver.find_element(By.ID, 'container_object__datetime__0_').find_elements(By.CLASS_NAME, 'bootstrap-datetimepicker-widget')
+    driver.find_element(By.ID, 'container_object__datetime__0_').find_element(By.CLASS_NAME, 'input-group-addon').click()
+    assert driver.find_element(By.ID, 'container_object__datetime__0_').find_element(By.CLASS_NAME, 'bootstrap-datetimepicker-widget') is not None
+
+    datetime = driver.execute_script("return $('[name=\"object__datetime__0__datetime\"]').val()")
+
+    driver.find_element(By.XPATH, '//select[@name="object__obj_ref__0__oid"]/following-sibling::button').click()
+    driver.find_element(By.XPATH, f'//select[@name="object__obj_ref__0__oid"]/following-sibling::div/div/ul/li/a/span[text()[contains(.,"{example_object.id}")]]/parent::a/parent::li').click()
+
+    driver.find_element(By.XPATH, '//select[@name="object__sample__0__oid"]/following-sibling::button').click()
+    driver.find_element(By.XPATH, f'//select[@name="object__sample__0__oid"]/following-sibling::div/div/ul/li/a/span[text()[contains(.,"{example_object.id}")]]/parent::a/parent::li').click()
+
+    driver.find_element(By.XPATH, '//select[@name="object__choices__0__text"]/following-sibling::button').click()
+    driver.find_element(By.XPATH, '//select[@name="object__choices__0__text"]/following-sibling::div/div/ul/li/a/span[text()="D"]/parent::a/parent::li').click()
+
+    driver.find_element(By.NAME, 'action_submit').click()
+
+    assert len(sampledb.logic.objects.get_objects()) == 2
+
+    object_id = int(driver.current_url.split('/')[-1])
+    object = sampledb.logic.objects.get_object(object_id)
+
+    assert object.data['datetime'][0]['utc_datetime'] == datetime
+    assert object.data['obj_ref'][0]['object_id'] == example_object.id
+    assert object.data['sample'][0]['object_id'] == example_object.id
+    assert object.data['choices'][0]['text'] == 'D'
 
 
 def test_restore_object_version(flask_server, user):
@@ -1716,81 +1759,6 @@ def test_edit_empty_nested_array(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'})
     assert r.status_code == 200
-
-
-def test_edit_nested_array(flask_server, user):
-    schema = {
-        "type": "object",
-        "title": "Nested Array Test",
-        "properties": {
-            "name": {
-                "type": "text",
-                "title": "Sample Name",
-                "default": "",
-                "maxLength": 100,
-                "minLength": 1
-            },
-            "nested_array": {
-                "type": "array",
-                "title": "Nested Array",
-                "style": "table",
-                "minItems": 0,
-                "items": {
-                    "type": "array",
-                    "title": "Inner Array",
-                    "maxItems": 5,
-                    "minItems": 1,
-                    "items": {
-                        "type": "text",
-                        "title": "Entry",
-                        "minLength": 0,
-                        "multiline": True
-                    }
-                }
-            }
-        },
-        "required": ["name"],
-        "propertyOrder": ["name", "nested_array"],
-        "displayProperties": []
-    }
-    action = sampledb.logic.actions.create_action(
-        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-        schema=schema
-    )
-    sampledb.logic.action_translations.set_action_translation(
-        language_id=sampledb.logic.languages.Language.ENGLISH,
-        action_id=action.id,
-        name='Example Action',
-        description=''
-    )
-    object = sampledb.logic.objects.create_object(
-        data={"name": {"text": "Test", "_type": "text"}},
-        user_id=user.id,
-        action_id=action.id
-    )
-
-    session = requests.session()
-    assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
-    r = session.get(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'})
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    previous_actions = document.find('input', {'name': 'previous_actions'})['value']
-    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_object__nested_array__?__add': 'action_object__nested_array__?__add'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data)
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    previous_actions = document.find('input', {'name': 'previous_actions'})['value']
-    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_object__nested_array__?__add': 'action_object__nested_array__?__add'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data)
-    assert r.status_code == 200
-    document = BeautifulSoup(r.content, 'html.parser')
-    csrf_token = document.find('input', {'name': 'csrf_token'})['value']
-    previous_actions = document.find('input', {'name': 'previous_actions'})['value']
-    form_data = {'csrf_token': csrf_token, 'previous_actions': previous_actions, 'object__name__text': 'Test', 'action_submit': 'action_submit'}
-    r = session.post(flask_server.base_url + 'objects/{}'.format(object.id), params={'mode': 'edit'}, data=form_data, allow_redirects=False)
-    assert r.status_code == 302
 
 
 def test_new_object_with_instrument_log_entry(flask_server, user):

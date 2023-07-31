@@ -1024,7 +1024,6 @@ def new_object() -> FlaskResponseT:
 
     placeholder_data: typing.Optional[typing.Dict[typing.Sequence[typing.Union[int, str]], typing.Any]] = {}
     possible_properties: typing.Dict[str, typing.Any] = {}
-    previous_actions = []
 
     passed_object_id_strs = flask.request.args.getlist('object_id')
     if passed_object_id_strs:
@@ -1129,14 +1128,9 @@ def new_object() -> FlaskResponseT:
                     ]
                     if possible_properties[property_key].get('type') == 'array':
                         num_min_items = possible_properties[property_key].get('minItems', 0)
-                        num_default_items = possible_properties[property_key].get('defaultItems', 0)
                         num_passed_objects = len(passed_object_ids)
-                        if num_default_items > num_passed_objects:
-                            previous_actions.extend([f'action_object__{property_key}__{num_passed_objects}__remove'] * (num_default_items - num_passed_objects))
                         if num_min_items > num_passed_objects:
                             placeholder_data[(property_key,)].extend([None] * (num_min_items - num_passed_objects))
-                        if num_passed_objects > max(num_default_items, num_min_items):
-                            previous_actions.extend([f'action_object__{property_key}__?__add'] * (num_passed_objects - max(num_default_items, num_min_items)))
                 else:
                     placeholder_data[(property_key, )] = {
                         '_type': possible_properties[property_key].get('type', ''),
@@ -1151,8 +1145,7 @@ def new_object() -> FlaskResponseT:
         placeholder_data=placeholder_data,
         possible_object_id_properties=possible_properties,
         passed_object_ids=passed_object_ids,
-        show_selecting_modal=(not fields_selected),
-        previous_data_actions=previous_actions
+        show_selecting_modal=(not fields_selected)
     )
 
 

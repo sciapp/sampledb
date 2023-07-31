@@ -19,7 +19,7 @@ from ...logic.actions import Action
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.users import get_users
-from ...logic.schemas import generate_placeholder
+from ...logic.schemas import generate_placeholder, validate
 from ...logic.objects import create_object, create_object_batch, update_object
 from ...logic.languages import get_language, get_languages, Language
 from ...logic.components import get_component
@@ -40,8 +40,7 @@ def show_object_form(
         placeholder_data: typing.Optional[typing.Dict[typing.Sequence[typing.Union[str, int]], typing.Any]] = None,
         possible_object_id_properties: typing.Optional[typing.Dict[str, typing.Any]] = None,
         passed_object_ids: typing.Optional[typing.List[int]] = None,
-        show_selecting_modal: bool = False,
-        previous_data_actions: typing.Optional[typing.List[typing.Any]] = None
+        show_selecting_modal: bool = False
 ) -> FlaskResponseT:
 
     if object is None:
@@ -124,9 +123,12 @@ def show_object_form(
     if not isinstance(schema, dict):
         return flask.abort(400)
 
+    quantity_template, compound_defaults = _generate_template_defaults(schema)
     template_arguments.update({
         'data': data,
         'schema': schema,
+        'quantity_template': quantity_template,
+        'compound_defaults': compound_defaults
     })
 
     if object is None:
@@ -145,14 +147,8 @@ def show_object_form(
             'instrument_log_categories': instrument_log_categories,
         })
 
-    # handle previous actions, e.g. adding or deleting table rows
-    updated_form_data, serialized_previous_actions = _apply_previous_data_actions(previous_data_actions, data, schema, form_data)
-    if updated_form_data is None:
-        return flask.abort(400)
-    form_data = updated_form_data
     template_arguments.update({
         'form_data': form_data,
-        'previous_actions': serialized_previous_actions,
     })
 
     template_arguments.update(get_object_form_template_kwargs(object.id if object is not None else None))
@@ -254,6 +250,14 @@ def show_object_form(
 
     _update_recipes_for_input(schema)
 
+    add_actions, delete_actions, table_interaction = _get_sorted_applied_actions(form_data)
+
+    template_arguments.update({
+        'applied_add_actions': add_actions,
+        'applied_delete_actions': delete_actions,
+        'applied_table_interaction': table_interaction
+    })
+
     if object is None:
         # alternatives to default permissions
         user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
@@ -282,40 +286,25 @@ def show_object_form(
         )
 
 
-def _apply_previous_data_actions(
-        previous_data_actions: typing.Optional[typing.List[typing.Any]],
-        data: typing.Dict[str, typing.Any],
-        schema: typing.Dict[str, typing.Any],
+def _get_sorted_applied_actions(
         form_data: typing.Dict[str, typing.Any]
-) -> typing.Union[typing.Tuple[typing.Dict[str, typing.Any], str], typing.Tuple[None, None]]:
-    if not previous_data_actions:
-        apply_previous_actions = True
-        previous_data_actions = []
-    else:
-        apply_previous_actions = False
-    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
-
-    if 'previous_actions' in form_data:
-        try:
-            previous_data_actions = serializer.loads(form_data['previous_actions'])
-        except itsdangerous.BadData:
-            return None, None
-    if not isinstance(previous_data_actions, list):
-        return None, None
-
-    if any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
-        data_action = [name for name in form_data if name.startswith('action_')][0]
-        previous_data_actions.append(data_action)
-
-    if previous_data_actions and apply_previous_actions and isinstance(data, dict):
-        try:
-            for data_action in previous_data_actions:
-                _apply_action_to_data(data_action, data, schema)
-            form_data = _apply_action_to_form_data(previous_data_actions[-1], form_data)
-        except ValueError:
-            return None, None
-    serialized_previous_actions = typing.cast(str, serializer.dumps(previous_data_actions))
-    return form_data, serialized_previous_actions
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    add_actions: dict[str, str] = {}
+    delete_actions: dict[str, str] = {}
+    table_interaction: dict[str, str] = {}
+    for key, value in form_data.items():
+        if key.startswith("applied_action__"):
+            if key.endswith("__add"):
+                add_actions[key] = value
+            elif key.endswith("__delete"):
+                delete_actions[key] = value
+            elif key.endswith("__table_interaction"):
+                table_interaction[key] = value
+    return (
+        dict(sorted(add_actions.items(), key=lambda k: str.count(k[0], "__"))),
+        dict(sorted(delete_actions.items(), key=lambda k: str.count(k[0], "__"))),
+        dict(sorted(table_interaction.items(), key=lambda k: str.count(k[0], "__")))
+    )
 
 
 def _apply_placeholder_data(
@@ -699,3 +688,59 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
     })
 
     return template_kwargs
+
+
+def _generate_template_defaults(schema: typing.Dict[str, typing.Any], path: typing.Optional[typing.List[str]] = None, contains_array: bool = False) -> typing.Tuple[typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]:
+    if path is None:
+        path = []
+    result_quantity = {}
+    result_compounds = {}
+
+    if schema['type'] == 'object':
+        for key, subschema in schema['properties'].items():
+            tmp_results = _generate_template_defaults(subschema, path + [key], contains_array)
+            result_quantity.update(tmp_results[0])
+            result_compounds.update(tmp_results[1])
+        if 'default' in schema and isinstance(schema['default'], dict) and contains_array:
+            result_compounds.update({
+                "_".join(path): schema['default']
+            })
+    elif schema['type'] == 'array':
+        if 'default' in schema and isinstance(schema['default'], list) and contains_array:
+            result_compounds.update({
+                "_".join(path + ['?']): schema['default']
+            })
+        contains_array = True
+        tmp_results = _generate_template_defaults(schema['items'], path + ['?'], contains_array)
+        result_quantity.update(tmp_results[0])
+        result_compounds.update(tmp_results[1])
+    elif schema['type'] == 'quantity':
+        if 'default' not in schema:
+            result_quantity["_".join(path)] = None
+            return result_quantity, result_compounds
+        if isinstance(schema['default'], dict):
+            default = copy.deepcopy(schema['default'])
+            if '_type' not in default:
+                default['_type'] = 'quantity'
+            validate(default, schema, path)
+            result_quantity["_".join(path)] = default
+        else:
+            magnitude_in_base_units = schema['default']
+            if isinstance(schema['units'], str):
+                units = schema['units']
+            else:
+                units = schema['units'][0]
+
+            try:
+                dimensionality = logic.schemas.utils.get_dimensionality_for_units(units)
+            except logic.errors.UndefinedUnitError:
+                raise logic.errors.SchemaError('invalid units', path)
+
+            result_quantity["_".join(path)] = {
+                '_type': 'quantity',
+                'dimensionality': dimensionality,
+                'units': units,
+                'magnitude_in_base_units': magnitude_in_base_units
+            }
+
+    return result_quantity, result_compounds

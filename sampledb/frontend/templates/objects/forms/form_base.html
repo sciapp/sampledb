@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 
+{% set form_conditions = [] %}
+
+{% set form_elements = [] %}
+
+{% set file_pickers = [] %}
+
+{% set calculations = [] %}
+
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block scripts %}
@@ -17,14 +25,50 @@
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/calculation.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
   window.mde_fields = [];
+  let initPhase = true;
+  let file_names_by_id = {};
+  let form_data = {};
+
+  {% if file_names_by_id %}
+    file_names_by_id = {{ file_names_by_id | tojson }};
+  {% endif %}
+
+  {% if form_data %}
+    form_data = {{ form_data | tojson }};
+  {% endif %}
 
   $(function () {
+    $('form').on('submit', function() {
+      $('.array-template').remove();
+      $('input').not('[type="file"]').change();
+      $('textarea').change();
+      $('.col-diff').each(function() {
+        const value = Number($(this).data('value'));
+        const jsonProps = JSON.stringify({ value: value, button_id: (value >= 0) ? $(this).data('add-id') : $(this).data('delete-id') });
+        $(this).val(jsonProps);
+      });
+
+      $('.table-interaction').each(function() {
+        $(this).val($(this).data('content'));
+      });
+
+      $('.typeahead').each(function() {
+        $(this).val($(this).typeahead('val'));
+      });
+    });
+
+    $('.table-interaction').each(function() {
+      $(this).data('content', JSON.stringify({ interactions: [] }));
+    });
+
     $('.input-group.date').each(function() {
       $(this).datetimepicker({
         locale: "{{ get_user_language(current_user).lang_code }}",
@@ -35,7 +79,8 @@
       });
     });
 
-    $('textarea[data-markdown-textarea="true"]').each(function(_, element) {
+
+    $('textarea[data-markdown-textarea="true"]').not('.template-markdown-editor').each(function(_, element) {
       setupImageDragAndDrop(initMarkdownField(element, '100px'));
     });
 
@@ -51,56 +96,97 @@
       }
     });
 
-    function updateSelectLanguage(selectpicker) {
-      var enabled_languages = $(selectpicker).selectpicker('val');
-      if (!Array.isArray(enabled_languages)) {
-        return;
-      }
-      if (enabled_languages === '' || enabled_languages.length === 0) {
-        enabled_languages = ['en'];
-      } else {
-        enabled_languages.push('en');
-      }
-      var parent_form_group = $(selectpicker).closest('.form-group');
-      {% for language in languages %}
-        if (enabled_languages.includes("{{ language.lang_code }}")) {
-          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
-        } else {
-          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
-        }
-      {% endfor %}
-
-      let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
-      if (disabled_languages_error.length === 1) {
-          let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
-          let all_disabled_languages_removed = true;
-          for (let i = 0; i < disabled_language_codes.length; i++) {
-              if (enabled_languages.includes(disabled_language_codes[i])) {
-                  all_disabled_languages_removed = false;
-                  break;
-              }
-          }
-          if (all_disabled_languages_removed) {
-              disabled_languages_error.hide();
-          } else {
-              disabled_languages_error.show();
-          }
-      }
-    }
-
     var select_language_selectpicker = $('.select-language')
     select_language_selectpicker.on('changed.bs.select', function() {
       updateSelectLanguage(this);
-    });
+    })
     select_language_selectpicker.each(function(_, selectpicker) {
       updateSelectLanguage(selectpicker);
     });
+
+    {% for form_condition in form_conditions %}
+      conditional_wrapper("{{ form_condition['parent_id_prefix'] }}", "{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
+    {% endfor %}
+
+    {% for element in form_elements %}
+      {% if element['kind'] == "array_delete" %}
+        document.getElementById("{{ element['delete_button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, false));
+      {% elif element['kind'] == "array_add" %}
+        document.getElementById("action_{{ element['parent_prefix'] }}_?__add").addEventListener('click', arrayFormAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+      {% elif element['kind'] == "table_array_delete" %}
+        document.getElementById("{{ element['button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems'] }}, {{ element['maxItems'] }}, false));
+      {% elif element['kind'] == "table_array_add" %}
+        document.getElementById('action_{{ element['parent_prefix'] }}_?__add').addEventListener('click', arrayTableFormAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+      {% elif element['kind'] == "list_array_delete" %}
+        document.getElementById("{{ element['delete_button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, true));
+      {% elif element['kind'] == "list_array_add" %}
+        document.getElementById("action_{{ element['id_prefix'] }}_?__add").addEventListener('click', arrayFormListAddHandler("{{ element['parent_prefix'] }}", "{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+      {% elif element['kind'] == "table_col_add" %}
+        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormColAddHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        updateTableFormButtons($('#{{ element["button_id"] }}').closest('table'), "{{ element['id_prefix'] }}");
+      {% elif element['kind'] == "table_col_delete" %}
+        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormColDeleteHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+      {% elif element['kind'] == "table_row_add" %}
+        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormRowAddHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+      {% elif element['kind'] == "table_row_delete" %}
+        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormRowDeleteHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+      {% endif %}
+    {% endfor %}
+
+    {% for file_picker in file_pickers %}
+      document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+    {% endfor %}
+
+    {% for add_action, button_id in applied_add_actions.items() %}
+      $('[id="{{ button_id }}"]').click();
+    {% endfor %}
+
+    {% for delete_action, button_id in applied_delete_actions.items() %}
+      $('[id="{{ button_id }}"]').click();
+    {% endfor %}
+    initPhase = false;
+
+    {% for table_interaction_field, actions in applied_table_interaction.items() %}
+    (function(){
+      const actions = JSON.parse({{ actions | tojson }});
+      for(let action of actions.interactions) {
+        $(`[id="${action}"]`).click();
+      }
+    })();
+    {% endfor %}
+
+    updateJSInteractiveFields();
+    insertFormData();
+    replaceMarkdownTemplates();
+    showErrors();
+
+    $('select.file-select').each(function() {
+      if($(this).parents('.array-template').length > 0) return;
+      const name = $(this).attr('name');
+      if(form_data[name]) {
+        const value = form_data[name]
+        const option = $('<option></option>');
+        option.attr('value', value);
+        option.attr('data-sampledb-temporary-file', '1');
+        option.text(file_names_by_id[value][0]);
+        $(this).append(option)
+        $(this).prop('disabled', false);
+        $(this).selectpicker('refresh');
+        $(this).selectpicker('val', form_data[name]);
+        $(this).selectpicker('refresh');
+      }
+    })
+
     $.each(window.conditional_wrapper_scripts, function () {
       this();
     });
+
     $.each(window.calculation_scripts, function () {
       this();
     });
+
+    window.calculation_scripts = [];
+    window.conditional_wrapper_scripts = [];
 
     $('div.objectpicker').each(function () {
       let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
@@ -128,6 +214,43 @@
       });
     });
   });
+
+  function updateSelectLanguage(selectpicker) {
+    var enabled_languages = $(selectpicker).selectpicker('val');
+    if (!Array.isArray(enabled_languages)) {
+      return;
+    }
+    if (enabled_languages === '' || enabled_languages.length === 0) {
+      enabled_languages = ['en'];
+    } else {
+      enabled_languages.push('en');
+    }
+    var parent_form_group = $(selectpicker).closest('.form-group');
+    {% for language in languages %}
+      if (enabled_languages.includes("{{ language.lang_code }}")) {
+        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+      } else {
+        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+      }
+    {% endfor %}
+
+    let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
+    if (disabled_languages_error.length === 1) {
+        let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
+        let all_disabled_languages_removed = true;
+        for (let i = 0; i < disabled_language_codes.length; i++) {
+            if (enabled_languages.includes(disabled_language_codes[i])) {
+                all_disabled_languages_removed = false;
+                break;
+            }
+        }
+        if (all_disabled_languages_removed) {
+            disabled_languages_error.hide();
+        } else {
+            disabled_languages_error.show();
+        }
+    }
+  }
 
   var tags = new Bloodhound({
     initialize: true,
@@ -297,6 +420,567 @@
           break;
       }
     }
+  }
+
+  function updateArrayButtons(addButton, deleteButtons, minItems, maxItems) {
+      let current_length = deleteButtons.length - 1;
+      deleteButtons.prop('disabled', current_length <= minItems);
+      if(addButton) addButton.prop('disabled', maxItems !== -1 && current_length >= maxItems);
+  }
+
+  function setTemplateAddHandler(button) {
+    const type = $(button).data('array-type');
+    const minItems = Number($(button).data('min-items'));
+    const maxItems = Number($(button).data('max-items'));
+    if(type === "array") {
+      $(button).click(arrayFormAddHandler($(button).data('parent-prefix'), minItems, maxItems));
+    } else if(type === "list") {
+      $(button).click(arrayFormListAddHandler($(button).data('parent-prefix'), $(button).data('id-prefix'), minItems, maxItems));
+    } else if(type === "table") {
+      $(button).click(arrayTableFormAddHandler($(button).data('parent-prefix'), minItems, maxItems));
+    }
+  }
+
+  function arrayFormListAddHandler(parent_prefix, id_prefix, minItems, maxItems) {
+    return function() {
+      const array = $(`#array-${parent_prefix}`);
+      const index_order_placeholder = `!index${$(array).data('template-order-index')}!`;
+      let template = $(`#template-${parent_prefix}`);
+      let clone = $(`#template-${parent_prefix} > div`).clone(true);
+      let element_id = Number(template.data('next-id'));
+
+      replaceTemplateIndex(clone, index_order_placeholder, element_id);
+      template.before(clone);
+
+      $(`#action_${id_prefix}_${element_id}__delete`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, true));
+      $(array).append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
+      template.data('next-id', element_id + 1);
+
+      let current_length = $(`.container_${id_prefix}`).length - 1;
+
+      if(current_length === 0) {
+        $(`#button_${id_prefix}_width`).removeClass('col-md-offset-3');
+      } else {
+        $(`#button_${id_prefix}_width`).addClass('col-md-offset-3');
+        if(current_length === 1) {
+          $(clone).removeClass('col-md-offset-3');
+        }
+      }
+
+      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
+    }
+  }
+
+  function applyInteractionModifications(clone, addButton, deleteButton, minItems, maxItems, defaultItems) {
+      updateJSInteractiveFields();
+      applySchemaConditions(clone);
+      applySchemaCalculations(clone);
+      updateLanguageSelects(clone);
+      updateArrayButtons(addButton, deleteButton, minItems, maxItems);
+
+      clone.find('.form-add-button').each(function() {
+        if($(this).parents('.array-template').length === 0) {
+          setTemplateAddHandler($(this));
+        }
+      });
+
+      if(defaultItems) {
+        updateButtonsForDefaultItems(clone);
+      } else {
+        generateMinOrDefaultElements(clone, addButton, deleteButton, minItems, maxItems);
+      }
+  }
+
+  function updateButtonsForDefaultItems(clone) {
+    clone.find('[data-is-default="default"]').each(function() {
+      const parent_prefix = $(this).data('parent-prefix');
+      $(this).click(arrayFormDeleteHandler(parent_prefix, $(this).data('element-id'), $(this).data('min-items'), $(this).data('max-items'), $(this).data('is-default') === 'list'));
+      updateArrayButtons(null, $(`.action_delete_${parent_prefix}`), $(this).data('min-items'), $(this).data('max-items'));
+    });
+    clone.find('[data-array-kind="table"]').not('[data-is-default="default"]').each(function() {
+      if($(this).parents('.array-template').length > 0) return;
+      if($(this).data('is-default') === "row-add") {
+        $(this).click(tableFormRowAddHandler($(this).data('id-prefix'), $(this).data('min-items'), $(this).data('max-items')));
+      } else if($(this).data('is-default') === "row-delete") {
+        $(this).click(tableFormRowDeleteHandler($(this).data('id-prefix')));
+      } else if($(this).data('is-default') === "col-add") {
+        $(this).click(tableFormColAddHandler($(this).data('id-prefix'), $(this).data('min-items'), $(this).data('max-items')));
+      } else if($(this).data('is-default') === "col-delete") {
+        $(this).click(tableFormColDeleteHandler($(this).data('id-prefix')));
+      }
+      updateTableFormButtons($(this).closest('table'), $(this).data('id-prefix'));
+    })
+  }
+
+  function arrayFormAddHandler(parent_prefix, minItems, maxItems) {
+    return function() {
+      let parent = $(`[id="container_${parent_prefix}_elements"]`);
+      const index_order_placeholder = `!index${parent.data('template-order-index')}!`;
+      let template = parent.children('.array-template').first();
+      let clone = $(template.clone(true));
+      let element_id = Number(template.data('next-id'));
+      clone.removeClass('array-template');
+      clone.removeData('next-id');
+
+      replaceTemplateIndex(clone, index_order_placeholder, element_id);
+
+      template.before(clone);
+      clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
+
+      parent.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
+      template.data('next-id', element_id + 1);
+
+      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, parent.data('compound-default') === 'True');
+      if(!initPhase) replaceMarkdownTemplates();
+    }
+  }
+
+  function arrayTableFormAddHandler(parent_prefix, minItems, maxItems) {
+    return function() {
+      let table = $(this).closest('table');
+      let clone = table.find('.array-template').clone(true);
+      let element_id = Number(table.find('.array-template').data('next-id'));
+      const index_order_placeholder = `!index${table.parent().data('template-order-index')}!`;
+      clone.removeClass('array-template');
+      clone.removeData('next-id');
+
+      replaceTemplateIndex(clone, index_order_placeholder, element_id);
+
+      clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
+      table.find('.array-template').before(clone);
+      table.find('.array-template').data('next-id', element_id + 1);
+
+      table.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
+
+      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
+    }
+  }
+
+  function tableFormColAddHandler(id_prefix) {
+    return function () {
+      const table = $(this).closest('table');
+      const body = table.find('tbody');
+      const newHeader = $('<th>');
+      const currentLength = table.find('thead').first().find('tr').children().length - 1;
+      const templateField = table.find('tbody').first().children('.array-template').filter('[data-template-table-type="col"]').children('td').clone(true);
+      const templateRow = body.children('.array-template').filter('[data-template-table-type="row"]');
+
+      updateTableInteraction(id_prefix, $(this).attr('id'));
+
+      newHeader.text(`Field ${currentLength+1}`);
+      newHeader.clone().insertBefore(table.children('tfoot').find('.control-buttons'));
+      newHeader.clone().insertBefore(table.children('thead').find('.control-buttons'));
+
+      templateField.removeClass('array-col-template');
+      let targetRows = table.find('tbody').first().find('tr').not('[data-template-table-type="col"]');
+
+      const rowLengthDiff = templateRow.children().not('.control-buttons').length - currentLength;
+      if(rowLengthDiff > 0) {
+        targetRows = targetRows.not('[data-template-table-type="row"]');
+      }
+
+      targetRows.each(function() {
+        const customField = templateField.clone();
+        customField.attr('id', customField.attr('id').replaceAll(`!index${table.data('template-order-index')}!`, $(this).data('row-id')));
+        replaceTemplateIndex(customField, `!index${table.data('template-order-index')}!`, $(this).data('row-id'));
+        replaceTemplateIndex(customField, `!cindex${table.data('col-order-index')}!`, $(this).hasClass('array-template') ? $(this).children('td').not('.control-buttons').length : table.data('col-next-id') );
+        customField.insertBefore($(this).children().last());
+      });
+
+      updateTableFormButtons(table, id_prefix);
+      updateJSInteractiveFields();
+      table.data('col-next-id', table.data('col-next-id') + 1);
+    }
+  }
+
+  function updateTableInteraction(id_prefix, interactionId) {
+    const input = $(`[name="applied_action__${id_prefix}__table_interaction"]`);
+    let content = JSON.parse(input.data('content'));
+    content.interactions.push(interactionId);
+    input.data('content', JSON.stringify(content));
+  }
+
+  function tableFormRowAddHandler(id_prefix) {
+    return function() {
+      const table = $(this).closest('table');
+      const head = table.children('thead');
+      const body = table.children('tbody');
+      const foot = table.children('tfoot');
+      const btnAddCol = $(`#action_addcolumn_${id_prefix}`);
+      const btnDelCol = $(`#action_deletecolumn_${id_prefix}`);
+      const nextRowIndex = table.data('row-next-id');
+      const templateRow = body.children('.array-template').filter('[data-template-table-type="row"]');
+      let headerSize = head.find('tr').children().not('.control-buttons').length;
+      let rowSize = body.find('tr').not('.array-template').length;
+
+      updateTableInteraction(id_prefix, $(this).attr('id'));
+
+      if(rowSize > 0) {
+        const rowLengthDiff = templateRow.children().not('.control-buttons').length - headerSize;
+        if(rowLengthDiff > 0) {
+          for(let i = 0; i < rowLengthDiff; i++) {
+            body.children().not('.array-template').each(function() {
+              appendFieldToRow($(this), table, $(this).data('row-id'), $(this).children().not('.control-buttons').length + i);
+            });
+          }
+          table.data('col-next-id', templateRow.children().not('.control-buttons').length);
+        } else {
+          const startLength = templateRow.children().not('.control-buttons').length;
+          for(let i = 0; i < -rowLengthDiff; i++) {
+            appendFieldToRow(templateRow, table, undefined,  startLength + i);
+          }
+        }
+      }
+      const newRow = templateRow.clone();
+      newRow.attr('data-row-id', table.data('row-next-id'));
+      newRow.removeClass('array-template');
+      replaceTemplateIndex(newRow, `!index${table.data('template-order-index')}!`, table.data('row-next-id'));
+      newRow.children('.control-buttons').find('button').click(tableFormRowDeleteHandler(id_prefix));
+      body.append(newRow);
+      table.data('row-next-id', table.data('row-next-id') + 1);
+      updateTableFormHead(table, newRow.children().not('.control-buttons').length - headerSize);
+      updateTableFormButtons(table, id_prefix);
+      updateJSInteractiveFields();
+    }
+  }
+
+  function appendFieldToRow(row, table, rowId, colId) {
+      const templateField = table.find('tbody').first().children('.array-template').filter('[data-template-table-type="col"]').children('td').clone(true);
+      const customField = templateField.clone();
+
+      if(rowId !== undefined) {
+        customField.attr('id', customField.attr('id').replaceAll(`!index${table.data('template-order-index')}!`, rowId));
+        replaceTemplateIndex(customField, `!index${table.data('template-order-index')}!`, rowId);
+      }
+      replaceTemplateIndex(customField, `!cindex${table.data('col-order-index')}!`, colId);
+      customField.insertBefore(row.children().last());
+  }
+
+  function updateTableFormHead(table, diff) {
+    const head = table.find('thead > tr');
+    const foot = table.find('tfoot > tr');
+    if(diff < 0) {
+      for(let i = 0; i < -diff; i++) {
+        head.children().not('.control-buttons').last().remove();
+        foot.children().not('.control-buttons').last().remove();
+      }
+    } else {
+      let nextId = head.children().not('.control-buttons').length + 1;
+      const newHeader = $('<th>');
+      for(let i = 0; i < diff; i++) {
+        newHeader.text(`Field ${nextId}`);
+        newHeader.clone().insertBefore(head.children().last());
+        newHeader.clone().insertBefore(foot.children().last());
+        nextId += 1;
+      }
+    }
+  }
+
+  function replaceTemplateIndex(parentNode, templateReplacement, id) {
+    parentNode.attr('id', parentNode.attr('id').replaceAll(templateReplacement, id));
+    parentNode.find('*').add(parentNode).each(function() {
+      if($(this).attr('id')) $(this).attr('id', $(this).attr('id').replaceAll(templateReplacement, id));
+      if($(this).attr('name')) $(this).attr('name', $(this).attr('name').replaceAll(templateReplacement, id));
+      if($(this).attr('class')) $(this).attr('class', $(this).attr('class').replaceAll(templateReplacement, id));
+
+      if($(this).attr('data-parent-prefix')) $(this).attr('data-parent-prefix', $(this).attr('data-parent-prefix').replaceAll(templateReplacement, id));
+      if($(this).attr('data-name')) $(this).attr('data-name', $(this).attr('data-name').replaceAll(templateReplacement, id));
+      if($(this).attr('data-id-prefix')) $(this).attr('data-id-prefix', $(this).attr('data-id-prefix').replaceAll(templateReplacement, id));
+      if($(this).attr('data-parent-id-prefix')) $(this).attr('data-parent-id-prefix', $(this).attr('data-parent-id-prefix').replaceAll(templateReplacement, id));
+      if($(this).attr('data-condition-wrapper-for')) $(this).attr('data-condition-wrapper-for', $(this).attr('data-condition-wrapper-for').replaceAll(templateReplacement, id));
+      if($(this).attr('data-condition-replacement-for')) $(this).attr('data-condition-replacement-for', $(this).attr('data-condition-replacement-for').replaceAll(templateReplacement, id));
+    });
+  }
+
+  function arrayFormDeleteHandler(prefix, id, minItems, maxItems, isListStyle) {
+    return function() {
+      $(`#action_${prefix}_${id}__delete`).closest("form").append(`<input type="hidden" value="" name="action_${prefix}_${id}___delete">`);
+      $(`#action_${prefix}_${id}__delete`).closest("form").append(`<input type="hidden" value="action_${prefix}_${id}__delete" name="applied_action__${prefix}_${id}__delete">`);
+      $(`#container_${prefix}_${id}_`).remove();
+      let current_length = $(`.action_delete_${prefix}`).length - 1;
+
+      if(isListStyle) {
+        if(current_length === 0) {
+          $(`#button_${prefix}_width`).removeClass('col-md-offset-3');
+        } else {
+          $(`#button_${prefix}_${id}_width`).addClass('col-md-offset-3');
+          $(`.container_${prefix}`).first().removeClass("col-md-offset-3");
+        }
+      }
+      updateArrayButtons($(`[id="action_${prefix}_?__add"]`), $(`.action_delete_${prefix}`), minItems, maxItems);
+    }
+  }
+
+  function tableFormRowDeleteHandler(id_prefix) {
+    return function() {
+      const table = $(this).closest('table');
+      const rowIndex = $(this).data('row-index');
+
+      updateTableInteraction(id_prefix, $(this).attr('id'));
+
+      $(`[name="${id_prefix}_${rowIndex}__hidden"]`).remove();
+      $(this).closest('tr').remove();
+      if(table.find('tbody > tr').not('.array-template').length === 0) {
+        updateTableFormHead(table, -table.find('thead > tr > th').not('.control-buttons').length);
+      }
+      updateTableFormButtons(table, id_prefix);
+    }
+  }
+
+  function tableFormColDeleteHandler(id_prefix) {
+    return function() {
+      const table = $(this).closest('table');
+
+      updateTableInteraction(id_prefix, $(this).attr('id'));
+
+      table.children('thead').children('tr').children().not('.control-buttons').last().remove();
+      table.children('tbody').children().not('[data-template-table-type="col"]').each(function() {
+        $(this).children().not('.control-buttons').last().remove();
+      });
+      table.children('tfoot').children('tr').children().not('.control-buttons').last().remove();
+
+      updateTableFormButtons(table, id_prefix);
+      table.data('col-next-id', table.data('col-next-id') - 1);
+    }
+  }
+
+  function insertFormData() {
+    {% if form_data is not none and form_data|length > 0 %}
+    const form_data = {{ form_data | tojson }};
+
+    $.each(form_data, function(key, value) {
+      const field = $(`[name=${key}]`);
+      if(field.hasClass('objectpicker')) {
+        field.data('sampledb-default-selected', value);
+      } else if(field.hasClass('choicepicker')) {
+        field.data('sampledb-default', value);
+        field.selectpicker('val', value);
+      } else if(field.parents('.date').length > 0) {
+        field.val(value);
+      } else if(field.hasClass('typeahead')) {
+        field.attr('data-previous-data', value);
+      } else if(field.data('markdown-textarea')) {
+        field.text(value);
+      }
+      field.val(value);
+    });
+
+    $('[type="checkbox"]').each(function() {
+      const name = $(this).attr('name');
+      $(this).prop('checked', form_data.hasOwnProperty(name));
+    });
+
+    $('.selectpicker').selectpicker('refresh');
+    {% endif %}
+  }
+
+  function showErrors() {
+    {% if errors is not none %}
+    const errors = {{ errors | tojson }};
+    const form_data = {{ form_data | tojson }};
+
+    $.each(form_data, function(key, value) {
+      if(errors.hasOwnProperty(key)) return;
+      const errorParent = $(`[name=${key}]`).closest('.error-parent');
+      errorParent.addClass('has-success');
+    });
+
+    $.each(errors, function(key, value) {
+      const errorParent = $(`[name=${key}]`).closest('.error-parent');
+      if(errorParent.hasClass('has-success')) errorParent.removeClass('has-success');
+      errorParent.addClass('has-error');
+      errorParent.find('.error-note').html(`<strong>{{ _('Error:') }} </strong>${value}`);
+    });
+
+    {% endif %}
+  }
+
+  function generateMinOrDefaultElements(newElem, addButton, deleteButton, minItems, maxItems) {
+    $(newElem).find('.form-add-button').each(function() {
+      if($(this).parents('.array-template').length === 0 && !initPhase) {
+        const minItems = $(this).data('min-items') ? $(this).data('min-items') : 0;
+        const defaultItems = $(this).data('default-items') ? $(this).data('defaultItems') : 0;
+        for(let i = 0; i < Math.max(minItems, defaultItems); i++) {
+          $(this).click();
+        }
+      }
+    });
+  }
+
+  function updateTableFormButtons(table, id_prefix) {
+    const rowLength = table.children('tbody').find('.delete-row-button').length - 1;
+    const headLength = table.children('thead').find('tr').children().not('.control-buttons').length;
+
+    const minRows = table.data('min-rows');
+    const maxRows = table.data('max-rows');
+    const minCols = table.data('min-cols');
+    const maxCols = table.data('max-cols');
+
+    const addColumn = $(`#action_addcolumn_${id_prefix}`);
+    const deleteColumn = $(`#action_deletecolumn_${id_prefix}`);
+
+    addColumn.prop('disabled', true);
+
+    $('.delete-row-button').prop('disabled', rowLength <= minRows);
+    $(`[id="action_add_${id_prefix}"]`).prop('disabled', maxRows !== -1 && rowLength >= maxRows);
+
+    deleteColumn.prop('disabled', headLength <= minCols);
+    addColumn.prop('disabled', headLength >= maxCols);
+
+    if(rowLength === 0) {
+      addColumn.prop('disabled', true);
+      deleteColumn.prop('disabled', true);
+      table.find('thead > tr > *:not(.control-buttons)').remove();
+      table.find('tfoot > tr > *:not(.control-buttons)').remove();
+    } else {
+      addColumn.prop('disabled', maxCols !== -1 && headLength >= maxCols);
+      deleteColumn.prop('disabled', !(headLength > minCols));
+    }
+  }
+
+  function updateLanguageSelects(clone) {
+    clone.find('select').each(function() {
+      if($(this).hasClass('select-language')) {
+        $(this).on('changed.bs.select', function() {
+          updateSelectLanguage(this);
+        });
+
+        updateSelectLanguage($(this));
+      }
+    });
+  }
+
+  function addActionFilterButton(picker) {
+    let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
+    picker.append(filter_button);
+    let objectpicker = picker.find('.selectpicker');
+    let actionpicker = picker.next('.objectpicker-actionpicker');
+
+    filter_button.tooltip();
+    filter_button.on('click', function() {
+      actionpicker.selectpicker('toggle');
+    });
+    actionpicker.on('hidden.bs.select', function() {
+      let action_id = actionpicker.selectpicker('val');
+      if (action_id === "") {
+        objectpicker.find('option').prop('disabled', false);
+      } else {
+        objectpicker.find('option').prop('disabled', true);
+        objectpicker.find('option[data-action-id="' + action_id + '"]').prop('disabled', false);
+      }
+      objectpicker.find('option[value=""]').prop('disabled', false);
+      objectpicker.selectpicker('refresh');
+      objectpicker.selectpicker('toggle');
+      if (objectpicker.selectpicker('val') === null) {
+        objectpicker.selectpicker('val', '-');
+      }
+    });
+  }
+
+  function updateJSInteractiveFields() {
+    let objectpickers = [];
+    $('.template-select').each(function() {
+      if($(this).parents('.array-template').length === 0) {
+        $(this).attr('class', $(this).data('template-class'));
+        $(this).removeData('template-class');
+        if($(this).hasClass('objectpicker')) objectpickers.push($(this));
+      }
+    });
+
+    $('.template-file-select').each(function() {
+      if($(this).parents('.array-template').length === 0) {
+        const parent = $(this).parent();
+        const input = parent.find('input:file');
+        $(this).attr('class', $(this).data('template-class'));
+        $(this).selectpicker();
+        input.change(fileEventHandler(input.data('id-prefix'), input.data('context-id-token'), "{{ url_for('.temporary_file_upload') }}"));
+      }
+    });
+
+    $('.template-typeahead-container').each(function() {
+      if($(this).parents('.array-template').length === 0) {
+        $(this).removeClass('template-typeahead-container');
+        $(this).addClass('objectpicker-container');
+        let inputChild = $(this).find('.template-typeahead');
+        inputChild.removeClass('template-typeahead');
+        inputChild.addClass('typeahead');
+      }
+    });
+
+    $('.date-template').each(function() {
+      if($(this).parents('.array-template').length === 0) {
+        $(this).removeClass('date-template');
+        $(this).addClass('date');
+        $(this).datetimepicker({
+          locale: "{{ get_user_language(current_user).lang_code }}",
+          format: '{{ get_user_language(current_user).datetime_format_moment }}',
+          date: $(this).attr('data-datetime'),
+          timeZone: "{{ current_user.timezone }}",
+          showTodayButton: true
+        });
+      }
+    });
+
+    $('.objectpicker').each(function() {
+      $(this).data('sampledb-default-selected', $(this).val());
+    })
+
+    updateObjectPickers();
+
+    $.each(objectpickers, function() {
+      if($(this).closest('.error-parent').find('.objectpicker-filter-button').length === 0) {
+        addActionFilterButton($(this).parents('.bootstrap-select'));
+      }
+    });
+
+    $('.choicepicker').each(function() {
+      if($(this).data('sampledb-default')) {
+        if($(this).parents('.array-template').length === 0) {
+          $(this).selectpicker('val', $(this).data('sampledb-default'));
+          $(this).removeAttr('data-sampledb-default');
+          $(this).removeData('sampledb-default');
+        }
+      }
+    });
+
+    $('.selectpicker').selectpicker('refresh');
+  }
+
+  function replaceMarkdownTemplates() {
+    $('.template-markdown-editor').each(function(_, element) {
+      if($(this).parents('.array-template').length === 0) {
+        $(this).removeClass('template-markdown-editor');
+        setupImageDragAndDrop(initMarkdownField(element, '100px'));
+      }
+    });
+  }
+
+  function applySchemaCalculations(clone) {
+    $(clone).find('.calculation-wrapper').each(function() {
+      const idPrefix = $(this).data('id-prefix');
+      const parentIdPrefix = $(this).data('parent-id-prefix');
+      const schema = $(this).data('schema');
+      const parentSchema = $(this).data('parent-schema');
+      setUpCalculation(idPrefix, parentIdPrefix, schema, parentSchema);
+    });
+    $.each(window.calculation_scripts, function () {
+      this();
+    });
+    window.calculation_scripts = [];
+  }
+
+  function applySchemaConditions(clone) {
+    $(clone).find('.condition-wrapper').each(function() {
+      const parentIdPrefix = $(this).data('parent-id-prefix');
+      const idPrefix = $(this).data('id-prefix');
+      const conditions = $(this).data('conditions');
+      conditional_wrapper(parentIdPrefix, idPrefix, conditions);
+    });
+
+    $.each(window.conditional_wrapper_scripts, function () {
+      this();
+    });
+    window.conditional_wrapper_scripts = [];
   }
 </script>
 {% endblock %}
