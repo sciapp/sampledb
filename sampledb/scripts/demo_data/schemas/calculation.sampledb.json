@@ -80,6 +80,38 @@
       "type": "quantity",
       "note": "Calculated from Distance (Kilometers)"
     },
+    "mean": {
+      "title": "Mean",
+      "type": "quantity",
+      "units": "1",
+      "note": "This is the mean of the golden ratio approximations in the table above.",
+      "calculation": {
+        "property_names": {
+          "Phi": [
+            "array",
+            "*",
+            "golden_ratio_approx"
+          ]
+        },
+        "formula": "mean(Phi)"
+      }
+    },
+    "stddev": {
+      "title": "Stddev",
+      "type": "quantity",
+      "units": "1",
+      "note": "This is the standard deviation of the golden ratio approximations in the table above.",
+      "calculation": {
+        "property_names": {
+          "Phi": [
+            "array",
+            "*",
+            "golden_ratio_approx"
+          ]
+        },
+        "formula": "std(Phi)"
+      }
+    },
     "array": {
       "title": "Array with Fibonacci quantities",
       "type": "array",
@@ -138,6 +170,6 @@
       }
     }
   },
-  "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers"],
+  "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers", "array", "mean", "stddev"],
   "required": ["name"]
 }

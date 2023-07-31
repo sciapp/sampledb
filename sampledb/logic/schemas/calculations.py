@@ -17,7 +17,7 @@ def _get_property_schema(
                 return None
             property_schema = property_schema['properties'][path_element]
         elif property_schema['type'] == 'array':
-            if path_element != '[?]' and not re.match(r'^[-+]?[0-9]+$', path_element):
+            if path_element not in ('[?]', '*') and not re.match(r'^[-+]?[0-9]+$', path_element):
                 return None
             property_schema = property_schema['items']
         else:

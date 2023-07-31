@@ -200,12 +200,9 @@
       this();
     });
 
-    $.each(window.calculation_scripts, function () {
-      this();
-    });
-
-    window.calculation_scripts = [];
     window.conditional_wrapper_scripts = [];
+
+    setUpCalculations();
 
     $('div.objectpicker').each(function () {
       let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
@@ -785,6 +782,7 @@
       updateArrayButtons($(`[id="action_${prefix}_?__add"]`), $(`.action_delete_${prefix}`), minItems, maxItems);
       updateArrayNames(prefix);
       clearUnusedConditions();
+      setUpCalculations();
     }
   }
 
@@ -803,6 +801,7 @@
       updateTableFormButtons(table, id_prefix);
       updateArrayNames(id_prefix);
       clearUnusedConditions();
+      setUpCalculations();
     }
   }
 
@@ -822,6 +821,7 @@
       table.data('col-next-id', table.data('col-next-id') - 1);
       updateArrayNames(id_prefix);
       clearUnusedConditions();
+      setUpCalculations();
     }
   }
 
@@ -1042,12 +1042,20 @@
       const id_prefix = $(this).data('id-prefix');
       const schema = $(this).data('schema');
       const root_schema = $(this).data('root-schema');
-      setUpCalculation(id_prefix, schema, root_schema);
+      window.calculation_scripts.push(function () {
+        setUpCalculation(id_prefix, schema, root_schema);
+      });
     });
+    setUpCalculations();
+  }
+
+  function setUpCalculations() {
+    if (!window.calculation_scripts) {
+      window.calculation_scripts = [];
+    }
     $.each(window.calculation_scripts, function () {
       this();
     });
-    window.calculation_scripts = [];
   }
 
   function applySchemaConditions(clone) {
