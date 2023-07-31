@@ -630,10 +630,10 @@ def entry_preprocessor(
         refs: typing.List[typing.Tuple[str, int]],
         markdown_images: typing.Dict[str, str]
 ) -> None:
-    if type(data) == list:
+    if type(data) is list:
         for entry in data:
             entry_preprocessor(entry, refs, markdown_images)
-    elif type(data) == dict:
+    elif type(data) is dict:
         if '_type' not in data.keys():
             for key in data:
                 entry_preprocessor(data[key], refs, markdown_images)
@@ -685,10 +685,10 @@ def parse_entry(
         entry_data: typing.Any,
         component: Component
 ) -> None:
-    if type(entry_data) == list:
+    if type(entry_data) is list:
         for entry in entry_data:
             parse_entry(entry, component)
-    elif type(entry_data) == dict:
+    elif type(entry_data) is dict:
         if '_type' not in entry_data.keys():
             for key in entry_data:
                 parse_entry(entry_data[key], component)

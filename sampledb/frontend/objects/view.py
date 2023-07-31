@@ -1082,12 +1082,12 @@ def new_object() -> FlaskResponseT:
                 return False
 
             if property_action_id:
-                valid_action_ids = [property_action_id] if type(property_action_id) == int else property_action_id
+                valid_action_ids = [property_action_id] if type(property_action_id) is int else property_action_id
                 if valid_action_ids and any(passed_object_action is None or passed_object_action.id not in valid_action_ids for passed_object_action in passed_object_actions):
                     return False
 
             if property_action_type_id:
-                valid_action_type_ids = [property_action_type_id] if type(property_action_type_id) == int else property_action_type_id
+                valid_action_type_ids = [property_action_type_id] if type(property_action_type_id) is int else property_action_type_id
                 if valid_action_type_ids and any(passed_object_action is None or passed_object_action.type is None or passed_object_action.type_id not in valid_action_type_ids for passed_object_action in passed_object_actions):
                     return False
 
