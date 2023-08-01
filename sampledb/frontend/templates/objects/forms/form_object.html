@@ -17,7 +17,7 @@
     {% set data = none %}
     {% endif %}
     {% if schema_path is defined %}
-    {% set schema_path = schema_path + "_" + property_name %}
+    {% set schema_path = schema_path + "__" + property_name %}
     {% else %}
     {% set schema_path = property_name %}
     {% endif %}
@@ -49,7 +49,7 @@
       {% set data = none %}
       {% endif %}
       {% if schema_path is defined %}
-      {% set schema_path = schema_path + "_" + property_name %}
+      {% set schema_path = schema_path + "__" + property_name %}
       {% else %}
       {% set schema_path = property_name %}
       {% endif %}
@@ -81,7 +81,7 @@
       {% set data = none %}
       {% endif %}
       {% if schema_path is defined %}
-      {% set schema_path = schema_path + "_" + property_name %}
+      {% set schema_path = schema_path + "__" + property_name %}
       {% else %}
       {% set schema_path = property_name %}
       {% endif %}

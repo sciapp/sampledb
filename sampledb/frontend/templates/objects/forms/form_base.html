@@ -477,6 +477,7 @@
       applySchemaConditions(clone);
       applySchemaCalculations(clone);
       updateLanguageSelects(clone);
+      updateRecipeState(clone);
       updateArrayButtons(addButton, deleteButton, minItems, maxItems);
 
       clone.find('.form-add-button').each(function() {
@@ -972,6 +973,7 @@
     });
 
     $('.selectpicker').selectpicker('refresh');
+    $('[data-toggle="tooltip"]').tooltip('hide');
   }
 
   function replaceMarkdownTemplates() {
@@ -1009,6 +1011,27 @@
       this();
     });
     window.conditional_wrapper_scripts = [];
+  }
+
+  function updateRecipeState(clone) {
+    if (!clone[0].id.startsWith('container_')) {
+      return;
+    }
+    const id_prefix = clone[0].id.substring('container_'.length);
+    const recipe_div = $(`#${id_prefix}_recipe_div`);
+    if (recipe_div.length === 0) {
+      return;
+    }
+    recipe_div.attr('data-toggle', 'tooltip');
+    recipe_div.tooltip();
+    const recipes = recipe_div.data('sampledb-recipes');
+    refreshRecipeTooltip(id_prefix, recipes);
+    $(`#${id_prefix}_recipe_input`).on('change', function() {
+      refreshRecipeTooltip(id_prefix, recipes);
+    }).addClass('selectpicker').selectpicker();
+    $(`#${id_prefix}_recipe_button`).on('click', function() {
+      applyRecipe(id_prefix, recipes, false);
+    });
   }
 </script>
 {% endblock %}

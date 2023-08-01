@@ -16,8 +16,8 @@
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set col_order_index = col_order_index + 1 if col_order_index else 1 %}
 {% set parent_prefix = id_prefix %}
-{% set schema_path = schema_path + '_?' %}
-<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}" data-compound-default="{{ schema_path + '_?' in compound_defaults }}">
+{% set schema_path = schema_path + '__?' %}
+<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}" data-compound-default="{{ schema_path + '__?' in compound_defaults }}">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if is_template and schema_path in compound_defaults %}
     {% set data = compound_defaults[schema_path] %}
@@ -63,6 +63,7 @@
             {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set parent_id_prefix = id_prefix %}
             {% set id_prefix = id_prefix + '_' + name + '_' %}
+            {% set schema_path = schema_path + '__' + name %}
             {% if data is not none and property_name in data %}
             {% set data = data[property_name] %}
             {% else %}
@@ -93,6 +94,7 @@
             {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set parent_id_prefix = id_prefix %}
             {% set id_prefix = id_prefix + '_' + name + '_' %}
+            {% set schema_path = schema_path + '__' + name %}
             {% if data is not none and property_name in data %}
             {% set data = data[property_name] %}
             {% else %}
@@ -144,6 +146,7 @@
             {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set parent_id_prefix = id_prefix %}
             {% set id_prefix = id_prefix + '_' + name + '_' %}
+            {% set schema_path = schema_path + '__' + name %}
             {% if data is not none and property_name in data %}
               {% set data = data[property_name] %}
             {% else %}
@@ -171,6 +174,7 @@
             {% set z = schema.update({'parent_style': tmp_style}) %}
             {% set parent_id_prefix = id_prefix %}
             {% set id_prefix = id_prefix + '_' + name + '_' %}
+            {% set schema_path = schema_path + '__' + name %}
             {% set data = data[property_name] %}
             {% if data is not none and property_name in data %}
               {% set data = data[property_name] %}
@@ -265,6 +269,7 @@
           {% set schema = schema["items"]["items"] %}
           {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
+          {% set schema_path = schema_path + '__?' %}
           {% set data = field %}
           {% include "objects/forms/form_any.html" %}
         </td>
@@ -278,6 +283,7 @@
           {% set schema = schema["items"]["items"] %}
           {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
+          {% set schema_path = schema_path + '__?' %}
           {% set data = none %}
           {% include "objects/forms/form_any.html" %}
         </td>{% endfor %}
@@ -303,6 +309,7 @@
         {% set schema = tableschema["items"]["items"] %}
         {% set z = schema.update({'parent_style': tmp_style}) %}
         {% set id_prefix = row_prefix + '_{}_'.format(col_index) %}
+        {% set schema_path = schema_path + '__?' %}
         {% set data = none %}
         {% include "objects/forms/form_any.html" %}
       </td>
@@ -314,7 +321,6 @@
       {% set name ="field_".format(col_index) %}
       {% set tmp_style = tableschema['style'] %}
       {% set z = schema.update({'parent_style': tmp_style}) %}
-      {% set schema_path = schema_path + '_?' %}
       {% set maxColItems = tableschema['items'].get('maxItems', none) %}
       {% set minColItems = tableschema['items'].get('minItems', 0) %}
       {% set defaultColItems = tableschema['items'].get('defaultItems', minColItems) %}

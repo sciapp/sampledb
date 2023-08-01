@@ -703,12 +703,12 @@ def _generate_template_defaults(schema: typing.Dict[str, typing.Any], path: typi
             result_compounds.update(tmp_results[1])
         if 'default' in schema and isinstance(schema['default'], dict) and contains_array:
             result_compounds.update({
-                "_".join(path): schema['default']
+                "__".join(path): schema['default']
             })
     elif schema['type'] == 'array':
         if 'default' in schema and isinstance(schema['default'], list) and contains_array:
             result_compounds.update({
-                "_".join(path + ['?']): schema['default']
+                "__".join(path + ['?']): schema['default']
             })
         contains_array = True
         tmp_results = _generate_template_defaults(schema['items'], path + ['?'], contains_array)
@@ -716,14 +716,14 @@ def _generate_template_defaults(schema: typing.Dict[str, typing.Any], path: typi
         result_compounds.update(tmp_results[1])
     elif schema['type'] == 'quantity':
         if 'default' not in schema:
-            result_quantity["_".join(path)] = None
+            result_quantity["__".join(path)] = None
             return result_quantity, result_compounds
         if isinstance(schema['default'], dict):
             default = copy.deepcopy(schema['default'])
             if '_type' not in default:
                 default['_type'] = 'quantity'
             validate(default, schema, path)
-            result_quantity["_".join(path)] = default
+            result_quantity["__".join(path)] = default
         else:
             magnitude_in_base_units = schema['default']
             if isinstance(schema['units'], str):
@@ -736,7 +736,7 @@ def _generate_template_defaults(schema: typing.Dict[str, typing.Any], path: typi
             except logic.errors.UndefinedUnitError:
                 raise logic.errors.SchemaError('invalid units', path)
 
-            result_quantity["_".join(path)] = {
+            result_quantity["__".join(path)] = {
                 '_type': 'quantity',
                 'dimensionality': dimensionality,
                 'units': units,

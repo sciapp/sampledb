@@ -15,8 +15,8 @@
 </div>
 {% set parent_prefix = id_prefix %}
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
-{% set schema_path = schema_path + '_?' %}
-<div style="padding-left:2.5em;" id="container_{{ parent_prefix }}_elements" data-template-order-index="{{ template_order_index }}" data-compound-default="{{ schema_path + '_?' in compound_defaults }}">
+{% set schema_path = schema_path + '__?' %}
+<div style="padding-left:2.5em;" id="container_{{ parent_prefix }}_elements" data-template-order-index="{{ template_order_index }}" data-compound-default="{{ schema_path + '__?' in compound_defaults }}">
   <input type="hidden" name="{{ parent_prefix }}_hidden" value="array">
   {% set itemName = (schema['items'].title | get_translated_text) %}
   {% set using_compound_default = false %}
