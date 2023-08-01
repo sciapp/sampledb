@@ -116,7 +116,7 @@
       {% elif element['kind'] == "table_array_delete" %}
         document.getElementById("{{ element['button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems'] }}, {{ element['maxItems'] }}, false));
       {% elif element['kind'] == "table_array_add" %}
-        document.getElementById('action_{{ element['parent_prefix'] }}_?__add').addEventListener('click', arrayTableFormAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        document.getElementById('action_{{ element['parent_prefix'] }}_?__add').addEventListener('click', arrayFormTableAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "list_array_delete" %}
         document.getElementById("{{ element['delete_button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, true));
       {% elif element['kind'] == "list_array_add" %}
@@ -437,7 +437,7 @@
     } else if(type === "list") {
       $(button).click(arrayFormListAddHandler($(button).data('parent-prefix'), $(button).data('id-prefix'), minItems, maxItems));
     } else if(type === "table") {
-      $(button).click(arrayTableFormAddHandler($(button).data('parent-prefix'), minItems, maxItems));
+      $(button).click(arrayFormTableAddHandler($(button).data('parent-prefix'), minItems, maxItems));
     }
   }
 
@@ -468,6 +468,7 @@
       }
 
       applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
+      updateArrayNames(parent_prefix);
     }
   }
 
@@ -512,6 +513,26 @@
     })
   }
 
+  function updateArrayNames(prefix) {
+    const elements = $(`[name^=${prefix}_]`);
+    const used_array_indices = [];
+    elements.each(function(_, element) {
+      const index_string = element.name.substring(prefix.length + 1).split('_', 1)[0];
+      const index = Number.parseInt(index_string);
+      if (index.toString() === index_string && !used_array_indices.includes(index)) {
+        used_array_indices.push(index);
+      }
+    });
+    used_array_indices.sort();
+    for (let i = 0; i < used_array_indices.length; i++) {
+      const old_prefix = `${prefix}_${used_array_indices[i]}__`;
+      const new_prefix = `${prefix}_${i}__`;
+      $(`[name^=${old_prefix}]`).each(function(_, element) {
+        element.name = new_prefix + element.name.substring(old_prefix.length);
+      });
+    }
+  }
+
   function arrayFormAddHandler(parent_prefix, minItems, maxItems) {
     return function() {
       let parent = $(`[id="container_${parent_prefix}_elements"]`);
@@ -532,10 +553,11 @@
 
       applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, parent.data('compound-default') === 'True');
       if(!initPhase) replaceMarkdownTemplates();
+      updateArrayNames(parent_prefix);
     }
   }
 
-  function arrayTableFormAddHandler(parent_prefix, minItems, maxItems) {
+  function arrayFormTableAddHandler(parent_prefix, minItems, maxItems) {
     return function() {
       let table = $(this).closest('table');
       let clone = table.find('.array-template').clone(true);
@@ -553,6 +575,7 @@
       table.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
 
       applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
+      updateArrayNames(parent_prefix);
     }
   }
 
@@ -588,6 +611,7 @@
       });
 
       updateTableFormButtons(table, id_prefix);
+      updateArrayNames(id_prefix);
       updateJSInteractiveFields();
       table.data('col-next-id', table.data('col-next-id') + 1);
     }
@@ -640,6 +664,7 @@
       table.data('row-next-id', table.data('row-next-id') + 1);
       updateTableFormHead(table, newRow.children().not('.control-buttons').length - headerSize);
       updateTableFormButtons(table, id_prefix);
+      updateArrayNames(id_prefix);
       updateJSInteractiveFields();
     }
   }
@@ -708,6 +733,7 @@
         }
       }
       updateArrayButtons($(`[id="action_${prefix}_?__add"]`), $(`.action_delete_${prefix}`), minItems, maxItems);
+      updateArrayNames(prefix);
     }
   }
 
@@ -724,6 +750,7 @@
         updateTableFormHead(table, -table.find('thead > tr > th').not('.control-buttons').length);
       }
       updateTableFormButtons(table, id_prefix);
+      updateArrayNames(id_prefix);
     }
   }
 
@@ -741,6 +768,7 @@
 
       updateTableFormButtons(table, id_prefix);
       table.data('col-next-id', table.data('col-next-id') - 1);
+      updateArrayNames(id_prefix);
     }
   }
 
