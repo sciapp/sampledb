@@ -1,3 +1,5 @@
+import pytest
+
 import sampledb.logic
 
 
@@ -403,3 +405,24 @@ def test_update_template_action_recursion():
         },
         'required': ['name']
     }
+
+
+def test_enforce_permissions_invalid_schema():
+    user = sampledb.logic.users.create_user('Test User', 'example@example.com', sampledb.logic.users.UserType.PERSON)
+    with pytest.raises(sampledb.logic.errors.ValidationError) as exception_info:
+        sampledb.logic.schemas.templates.enforce_permissions({
+            "title": "Basic Schema",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "text"
+                },
+                "other": [
+                    ["title", "Example"],
+                    ["type", "text"]
+                ]
+            },
+            "required": ["name"]
+        }, user.id)
+    assert str(exception_info.value) == 'schema must be dict (at other)'
