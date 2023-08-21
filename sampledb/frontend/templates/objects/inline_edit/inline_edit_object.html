@@ -33,7 +33,7 @@
             {% if 'conditions' in schema %}
                 <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                     {% include "objects/inline_edit/inline_edit_any.html" %}
-                    {% include "objects/forms/conditional_wrapper_script.html" %}
+                    {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
                 </div>
             {% else %}
                 {% include "objects/inline_edit/inline_edit_any.html" %}
@@ -61,7 +61,7 @@
                 {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                         {% include "objects/inline_edit/inline_edit_any.html" %}
-                        {% include "objects/forms/conditional_wrapper_script.html" %}
+                        {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
                     </div>
                 {% else %}
                     {% include "objects/inline_edit/inline_edit_any.html" %}
@@ -91,7 +91,7 @@
                 {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                         {% include "objects/inline_edit/inline_edit_any.html" %}
-                        {% include "objects/forms/conditional_wrapper_script.html" %}
+                        {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
                     </div>
                 {% else %}
                     {% include "objects/inline_edit/inline_edit_any.html" %}

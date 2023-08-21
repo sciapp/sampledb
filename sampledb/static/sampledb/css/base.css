@@ -1487,6 +1487,11 @@ table.diff tr.striped {
 #activity_log_show_all_wrapper {
     margin: -1.5em 1.5em 1.5em 1.5em;
 }
+
 #activity_log_show_all_toggle {
+  display: none;
+}
+
+.array-template {
     display: none;
 }

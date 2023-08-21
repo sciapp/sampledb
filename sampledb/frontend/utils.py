@@ -453,7 +453,7 @@ def convert_datetime_input(datetime_input: str) -> str:
 
 @JinjaFilter()
 def base64encode(value: typing.Any) -> str:
-    return base64.b64encode(json.dumps(value).encode('utf8')).decode('ascii')
+    return base64.b64encode(json.dumps(value, separators=(',', ':')).encode('utf8')).decode('ascii')
 
 
 @JinjaFilter('are_conditions_fulfilled')
@@ -1398,6 +1398,19 @@ def to_timeseries_csv(
     writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(rows)
     return csv_file.getvalue()
+
+
+@JinjaFilter()
+def encode_choices(condition_list: list[dict[str, typing.Any]]) -> list[dict[str, typing.Any]]:
+    for condition in condition_list:
+        if condition['type'] == 'choice_equals':
+            condition['encoded_choice'] = base64encode(condition['choice'])
+    return condition_list
+
+
+@JinjaFilter()
+def stringify(json_object: list[dict[str, typing.Any]]) -> str:
+    return json.dumps(json_object, separators=(',', ':'))
 
 
 @JinjaFunction()

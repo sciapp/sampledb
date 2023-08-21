@@ -25,61 +25,19 @@
 {% endif %}
 
 <div class="input-group">
-  <select class="form-control selectpicker" id="{{ id_prefix }}_file_id" name="{{ id_prefix }}_file_id" data-live-search="true" {% if not filepicker_options %}disabled="disabled" data-none-selected-text="{{ _('Please upload a file.') }}"{% endif %}>
+  <select {% if is_template %} class="template-file-select" data-template-class="form-control selectpicker file-select" {% else %} class="form-control selectpicker file-select" {% endif %} id="{{ id_prefix }}_file_id" name="{{ id_prefix }}_file_id" data-live-search="true" {% if not filepicker_options %}disabled="disabled" data-none-selected-text="{{ _('Please upload a file.') }}"{% endif %}>
     {% for value, text, is_selected in filepicker_options %}
-      <option value="{{ value }}" {% if is_selected %}selected="selected"{% endif %}>{{ text }}</option>
+      <option value="{{ value }}" {% if is_selected %} selected="selected" {% endif %}>{{ text }}</option>
     {% endfor %}
   </select>
   <span class="input-group-btn">
     <div class="btn-group" style="margin-bottom: 2px">
       <label class="btn btn-primary btn-file">
         {{ _('Browse...') }}
-        <input type="file" id="{{ id_prefix }}_file" {% if schema.get('extensions') is not none %}accept="{% for extension in schema.extensions %}{% if not loop.first %}, {% endif %}{% if extension[0] != '.' %}.{% endif %}{{ extension }}{% endfor %}"{% endif %} class="hidden"></label>
+        <input type="file" id="{{ id_prefix }}_file" data-id-prefix="{{ id_prefix }}" data-context-id-token="{{ context_id_token }}" {% if schema.get('extensions') is not none %}accept="{% for extension in schema.extensions %}{% if not loop.first %}, {% endif %}{% if extension[0] != '.' %}.{% endif %}{{ extension }}{% endfor %}"{% endif %} class="hidden"></label>
     </div>
   </span>
 </div>
 
 
-<script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('{{ id_prefix }}_file').addEventListener('change', function() {
-      let file_input = $(this);
-      let file_id_input = $('#{{ id_prefix }}_file_id');
-      let file_name_input = $(this).closest('.input-group').find('input[type="text"]');
-      file_id_input.val('');
-      file_name_input.val('');
-      file_id_input.find('option[data-sampledb-temporary-file]').remove();
-      if (this.files.length === 1) {
-        let file = this.files[0];
-        let form_data = new FormData();
-        form_data.append("file", file);
-        form_data.append("context_id_token", '{{ context_id_token }}');
-        $.ajax({
-          url: '{{ url_for('.temporary_file_upload') }}',
-          data: form_data,
-          processData: false,
-          contentType: false,
-          type: 'POST',
-          success: function (data){
-            let temporary_file_option = $('<option></option>');
-            temporary_file_option.attr('value', '-' + data);
-            temporary_file_option.attr('data-sampledb-temporary-file', "1");
-            temporary_file_option.text(file.name);
-            file_id_input.append(temporary_file_option);
-            file_id_input.prop('disabled', false);
-            file_id_input.selectpicker('refresh');
-            file_id_input.selectpicker('val', '-' + data);
-            file_id_input.selectpicker('refresh');
-            file_input.closest('.form-group').removeClass('has-error');
-          },
-          error: function (data) {
-            file_input.val('');
-            file_input.closest('.form-group').addClass('has-error');
-          }
-        });
-      } else {
-        file_input.closest('.form-group').addClass('has-error');
-      }
-    });
-  });
-</script>
+{{ file_pickers.append({'id_prefix': id_prefix, 'context_id_token': context_id_token }) or '' }}

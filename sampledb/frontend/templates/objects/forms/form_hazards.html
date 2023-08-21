@@ -1,6 +1,6 @@
-<div class="form-group{% if id_prefix+'_hidden' in errors %} has-error{% elif id_prefix+'_hidden' in form_data %} has-success{% endif %} row" style="padding-right:0.75em">
+<div class="form-group row" style="padding-right:0.75em">
   {% include "objects/forms/property_label.html" %}
-  <div class="col-md-9">
+  <div class="col-md-9 error-parent">
     <input type="hidden" name="{{ id_prefix }}_hidden" value="field exists" />
     <div class="radio">
       <label>
@@ -22,7 +22,7 @@
         </label>
       {% endfor %}
     </div>
-    {% if id_prefix+'_hidden' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_hidden'] }}</span>{% endif %}
+    <span class="error-note help-block"></span>
     {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       document.getElementById('{{ id_prefix }}_hasnohazards').addEventListener('change', function () {

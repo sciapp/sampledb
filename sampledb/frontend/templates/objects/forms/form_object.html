@@ -16,10 +16,19 @@
     {% else %}
     {% set data = none %}
     {% endif %}
+    {% if schema_path is defined %}
+    {% set schema_path = schema_path + "__" + property_name %}
+    {% else %}
+    {% set schema_path = property_name %}
+    {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
         {% include "objects/forms/form_any.html" %}
-        {% include "objects/forms/conditional_wrapper_script.html" %}
+        {% if not is_template %}
+          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+        {% else %}
+          <input type="hidden" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+        {% endif %}
         </div>
       {% else %}
         {% include "objects/forms/form_any.html" %}
@@ -39,10 +48,19 @@
       {% else %}
       {% set data = none %}
       {% endif %}
+      {% if schema_path is defined %}
+      {% set schema_path = schema_path + "__" + property_name %}
+      {% else %}
+      {% set schema_path = property_name %}
+      {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
         {% include "objects/forms/form_any.html" %}
-        {% include "objects/forms/conditional_wrapper_script.html" %}
+        {% if not is_template %}
+          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+        {% else %}
+          <input type="hidden" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+        {% endif %}
         </div>
       {% else %}
         {% include "objects/forms/form_any.html" %}
@@ -62,10 +80,19 @@
       {% else %}
       {% set data = none %}
       {% endif %}
+      {% if schema_path is defined %}
+      {% set schema_path = schema_path + "__" + property_name %}
+      {% else %}
+      {% set schema_path = property_name %}
+      {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
         {% include "objects/forms/form_any.html" %}
-        {% include "objects/forms/conditional_wrapper_script.html" %}
+        {% if not is_template %}
+          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+        {% else %}
+          <input type="hidden" data-used="false" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+        {% endif %}
         </div>
       {% else %}
         {% include "objects/forms/form_any.html" %}
