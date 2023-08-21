@@ -524,7 +524,10 @@
         used_array_indices.push(index);
       }
     });
-    used_array_indices.sort();
+    // custom comparator to sort numbers numerically instead of lexicographically
+    used_array_indices.sort(function(a, b) {
+      return a-b;
+    });
     for (let i = 0; i < used_array_indices.length; i++) {
       const old_prefix = `${prefix}_${used_array_indices[i]}__`;
       const new_prefix = `${prefix}_${i}__`;
