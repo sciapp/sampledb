@@ -1505,3 +1505,11 @@ table.diff tr.striped {
 #object-form-errors-show-more-input:checked ~ #object-form-errors-show-more-label {
     display: none;
 }
+
+.form-delete-button {
+    margin-left: 4px;
+}
+
+.form-copy-button {
+    padding: 6px 9.2px;
+}

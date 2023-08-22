@@ -21,7 +21,7 @@ function conditional_wrapper(parent_id_prefix, id_prefix, schema_conditions) {
     function update_conditions_result() {
       function check_condition_fulfilled(condition) {
         if (condition === true) {
-          return true
+          return true;
         } else if (condition === false) {
           return false;
         } else if (condition.type === 'not') {
