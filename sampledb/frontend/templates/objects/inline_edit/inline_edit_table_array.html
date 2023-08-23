@@ -226,8 +226,8 @@
                                     {% set z = schema.update({'parent_style': tmp_style}) %}
                                     {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
                                     {% set data = null %}
-                                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                                    {% include "objects/forms/form_any.html" %}
+                                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(i, name) %}
+                                    {% include "objects/inline_edit/inline_edit_any.html" %}
                                 </td>{% endfor %}
                         {% endif %}
                     </tr>
