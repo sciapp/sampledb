@@ -3,6 +3,7 @@
 {% block title %}{{ _('New Object') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
+  {{ super() }}
   {% if possible_properties|length > 1 and passed_object_ids and show_selecting_modal %}
   <div class="modal fade" id="selectionModal" tabindex="-1" role="dialog" data-target="selectionModalLabel">
     <div class="modal-dialog" role="document">

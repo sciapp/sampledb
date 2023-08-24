@@ -1495,3 +1495,13 @@ table.diff tr.striped {
 .array-template {
     display: none;
 }
+
+#object-form-errors-show-more-content, #object-form-errors-show-more-input {
+    display: none;
+}
+#object-form-errors-show-more-input:checked ~ #object-form-errors-show-more-content {
+    display: block;
+}
+#object-form-errors-show-more-input:checked ~ #object-form-errors-show-more-label {
+    display: none;
+}

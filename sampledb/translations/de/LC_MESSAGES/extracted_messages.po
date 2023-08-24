@@ -1061,6 +1061,10 @@ msgstr ""
 msgid "The maximum number of objects in one batch is %(max_batch_size)s."
 msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
 
+#, python-format
+msgid "Unknown (%(name)s)"
+msgstr "Unbekannt (%(name)s)"
+
 msgid ""
 "Please select at least one hazard or confirm that the object poses no "
 "hazards."
@@ -5132,6 +5136,9 @@ msgstr "%(item_name)s entfernen"
 #, python-format
 msgid "Add %(item_name)s"
 msgstr "%(item_name)s hinzufügen"
+
+msgid "The object could not be saved due to an error."
+msgstr "Das Objekt konnte aufgrund eines Fehlers nicht gespeichert werden."
 
 msgid "Filter by Action…"
 msgstr "Nach Aktion filtern…"

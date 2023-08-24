@@ -3,6 +3,7 @@
 {% block title %}{{ _('Object') }} #{{ object_id }} — {{ service_name }}{% endblock %}
 
 {% block content %}
+  {{ super() }}
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />

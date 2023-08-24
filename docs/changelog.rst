@@ -8,6 +8,7 @@ Currently in development.
 
 - Implement client-side array editing
 - Allow automatic calculation of quantity values
+- Show object form errors as expandable alert message
 
 Version 0.24.1
 --------------

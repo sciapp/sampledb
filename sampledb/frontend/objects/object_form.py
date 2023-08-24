@@ -167,6 +167,9 @@ def show_object_form(
             return flask.jsonify({
                 'errors': errors
             }), 400
+        template_arguments.update({
+            'errors_by_title': get_errors_by_title(errors, schema)
+        })
         if object_data is not None and not errors:
             object_data = typing.cast(typing.Dict[str, typing.Any], object_data)
             for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
@@ -744,3 +747,69 @@ def _generate_template_defaults(schema: typing.Dict[str, typing.Any], path: typi
             }
 
     return result_quantity, result_compounds
+
+
+def _get_title_by_property_path(
+        schema: typing.Any,
+        property_path: typing.Sequence[str],
+        *,
+        index: typing.Optional[str] = None,
+        is_root_object: bool = True
+) -> str:
+    if not isinstance(schema, dict):
+        return ''
+    schema_title = get_translated_text(schema.get('title', ''))
+    if index:
+        schema_title += ' #' + index
+    if len(property_path) == 0 or not schema_title:
+        return schema_title
+    if schema.get('type') == 'array':
+        return ('' if is_root_object else f'{schema_title} ➜ ') + _get_title_by_property_path(schema.get('items'), property_path[1:], is_root_object=False, index=property_path[0])
+    if schema.get('type') == 'object':
+        property_schemas = schema.get('properties')
+        if isinstance(property_schemas, dict):
+            return ('' if is_root_object else f'{schema_title} ➜ ') + _get_title_by_property_path(property_schemas.get(property_path[0]), property_path[1:], is_root_object=False)
+    return ''
+
+
+def get_errors_by_title(
+        errors: typing.Dict[str, str],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Dict[str, typing.Set[str]]:
+    # filter out errors for required fields or None array entries with existing error messages
+    missing_required_fields = {}
+    invalid_type_entries = {}
+    for name, message in errors.items():
+        if name.startswith('object__') and name.endswith('__hidden') and message.startswith('missing required property "'):
+            parent_property_path = name.split('__')[1:-1]
+            property_name = message.split('"')[1]
+            missing_required_fields[tuple(parent_property_path + [property_name])] = (name, message)
+        if name.startswith('object__') and name.endswith('__hidden') and message.startswith('invalid type (at '):
+            parent_property_path = name.split('__')[1:-1]
+            property_name = message.split('(at ')[1].split(')')[0]
+            invalid_type_entries[tuple(parent_property_path + [property_name])] = (name, message)
+    ignorable_errors = set()
+    for name, message in errors.items():
+        if name.startswith('object__'):
+            property_path = tuple(name.split('__')[1:-1])
+            for potential_ignorable_errors in (missing_required_fields, invalid_type_entries):
+                if tuple(property_path) in potential_ignorable_errors:
+                    ignorable_errors.add(potential_ignorable_errors[property_path])
+
+    # construct title -> error messages dict
+    errors_by_title: typing.Dict[str, typing.Set[str]] = {}
+    for name, message in errors.items():
+        if (name, message) in ignorable_errors:
+            continue
+        title = ''
+        if name.startswith('object__'):
+            property_path = tuple(name.split('__')[1:-1])
+            if property_path:
+                title = _get_title_by_property_path(schema, property_path)
+        if not title:
+            title = _('Unknown (%(name)s)', name=name)
+        if title in errors_by_title:
+            errors_by_title[title].update(message.splitlines())
+        else:
+            errors_by_title[title] = set(message.splitlines())
+    return errors_by_title

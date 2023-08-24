@@ -16,6 +16,25 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 {% endblock %}
 
+
+{% block content %}
+  {% if errors_by_title %}
+    <div class="alert alert-danger" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      {{ _('The object could not be saved due to an error.') }}
+      <input type="checkbox" id="object-form-errors-show-more-input"/>
+      <label id="object-form-errors-show-more-label" for="object-form-errors-show-more-input"> {{ _('Show more') }}</label>
+      <div id="object-form-errors-show-more-content">
+        <ul>
+          {% for title in errors_by_title %}
+          <li><strong>{{ title}}</strong>: <ul>{% for message in errors_by_title[title] %}<li>{{ message }}</li>{% endfor %}</ul></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
