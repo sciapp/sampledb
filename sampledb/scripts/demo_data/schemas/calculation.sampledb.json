@@ -8,21 +8,28 @@
       "minLength": 1,
       "maxLength": 100
     },
-    "m": {
-      "title": "Distance",
-      "units": "m",
-      "calculation": {
-        "property_names": ["s", "mps"],
-        "formula": "mps * s"
-      },
-      "type": "quantity",
-      "note": "Calculated as: Speed * Time"
+    "m":{
+      "title": "Distances",
+      "type": "array",
+       "items": {
+        "title": "Distance",
+        "units": "m",
+        "calculation": {
+          "property_names": {"s":  ["..", "s"], "mps": ["..", "mps"]},
+          "formula": "mps * s"
+        },
+        "type": "quantity",
+        "note": "Calculated as: Speed * Time"
+      }
     },
     "s": {
       "title": "Time",
       "units": "s",
       "calculation": {
-        "property_names": ["m", "mps"],
+        "property_names": {
+          "m": ["m", 0],
+          "mps": ["mps"]
+        },
         "formula": "m / mps"
       },
       "type": "quantity",
@@ -32,7 +39,10 @@
       "title": "Speed",
       "units": "m/s",
       "calculation": {
-        "property_names": ["m", "s"],
+        "property_names": {
+          "m": ["m", 0],
+          "s": ["s"]
+        },
         "formula": "m / s"
       },
       "type": "quantity",
@@ -69,6 +79,63 @@
       },
       "type": "quantity",
       "note": "Calculated from Distance (Kilometers)"
+    },
+    "array": {
+      "title": "Array with Fibonacci quantities",
+      "type": "array",
+      "style": "table",
+      "default": [
+        {
+          "quantity": {
+            "_type": "quantity",
+            "magnitude": 1,
+            "units": "1"
+          }
+        },
+        {
+          "quantity": {
+            "_type": "quantity",
+            "magnitude": 1,
+            "units": "1"
+          }
+        }
+      ],
+      "items": {
+        "title": "Row",
+        "type": "object",
+        "properties": {
+          "quantity": {
+            "title": "Quantity",
+            "type": "quantity",
+            "units": "1",
+            "calculation": {
+              "property_names": {
+                "a": ["..", "-1", "quantity"],
+                "b": ["..", "-2", "quantity"]
+              },
+              "formula": "a + b"
+            }
+          },
+          "golden_ratio_approx": {
+            "title": "Golden Ratio (approx.)",
+            "type": "quantity",
+            "units": "1",
+            "calculation": {
+              "property_names": {
+                "a": [
+                  "quantity"
+                ],
+                "b": [
+                  "..",
+                  "-1",
+                  "quantity"
+                ]
+              },
+              "formula": "a / b"
+            }
+          }
+        }
+      }
     }
   },
   "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers"],

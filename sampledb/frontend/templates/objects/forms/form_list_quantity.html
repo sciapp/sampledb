@@ -59,4 +59,9 @@
       </div>
     {% endif %}
     <span class="help-block error-note"></span>
+    {% if is_template %}
+      <input type="hidden" class="calculation-wrapper" data-id-prefix="{{ id_prefix }}" data-schema="{{ schema | stringify }}" data-root-schema="{{ root_schema | stringify }}">
+    {% else %}
+      {% include "objects/forms/calculation_script.html" %}
+    {% endif %}
 </div>
