@@ -12,6 +12,11 @@ function conditional_wrapper(parent_id_prefix, id_prefix, schema_conditions) {
     }
     window.conditional_wrapper_conditions[id_prefix].push(false);
   }
+  const condition_wrapper_element = $(`[data-condition-wrapper-for="${id_prefix}"]`);
+  if (!condition_wrapper_element.data('id-prefix')) {
+    condition_wrapper_element.data('id-prefix', id_prefix);
+    condition_wrapper_element.attr('data-id-prefix', id_prefix);
+  }
   window.conditional_wrapper_scripts.push(function () {
     function update_conditions_result() {
       function check_condition_fulfilled(condition) {
@@ -43,15 +48,14 @@ function conditional_wrapper(parent_id_prefix, id_prefix, schema_conditions) {
         }
         return false;
       }
-      let all_conditions_fulfilled = check_all_conditions_fulfilled(window.conditional_wrapper_conditions[id_prefix]);
+      const id_prefix = condition_wrapper_element.data('id-prefix');
+      const all_conditions_fulfilled = check_all_conditions_fulfilled(window.conditional_wrapper_conditions[id_prefix]);
       if (all_conditions_fulfilled) {
-        $(`[data-condition-wrapper-for="${id_prefix}"]`).removeClass('hidden');
-        $(`[data-condition-wrapper-for="${id_prefix}"]`).show();
+        condition_wrapper_element.removeClass('hidden').show();
         $(`[data-condition-replacement-for="${id_prefix}"]`).hide();
       } else {
-        $(`[data-condition-wrapper-for="${id_prefix}"]`).hide();
-        $(`[data-condition-replacement-for="${id_prefix}"]`).removeClass('hidden');
-        $(`[data-condition-replacement-for="${id_prefix}"]`).show();
+        condition_wrapper_element.hide();
+        $(`[data-condition-replacement-for="${id_prefix}"]`).removeClass('hidden').show();
       }
       $(`[data-condition-wrapper-for="${id_prefix}"] input, [data-condition-wrapper-for="${id_prefix}"] textarea, [data-condition-wrapper-for="${id_prefix}"] select`).prop('disabled', !all_conditions_fulfilled).attr('data-sampledb-disabled-by-condition', !all_conditions_fulfilled).trigger('conditions_state_changed.sampledb');
       $(`[data-condition-wrapper-for="${id_prefix}"] select`).not('.template-select').selectpicker('refresh');
@@ -150,6 +154,7 @@ function conditional_wrapper(parent_id_prefix, id_prefix, schema_conditions) {
     if(schema_conditions !== undefined) {
       schema_conditions.forEach(function(condition, i) {
         handle_condition(condition, function(value) {
+          const id_prefix = condition_wrapper_element.data('id-prefix');
           window.conditional_wrapper_conditions[id_prefix][i] = value;
         });
       });
