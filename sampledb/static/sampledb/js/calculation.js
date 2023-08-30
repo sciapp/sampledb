@@ -59,19 +59,58 @@ function setUpCalculation(id_prefix, schema, root_schema) {
     property_path = property_path.concat(relative_property_path);
     property_path = resolvePropertyPath(property_path);
     const property_id_prefix = 'object__' + property_path.join('__') + '_';
-    const property_magnitude_element = $(`[name="${property_id_prefix}_magnitude"]`);
-    const property_units_element = $(`[name="${property_id_prefix}_units"]`);
-    const property_unit = property_units_element.val();
-    const schema = getPropertySchema(root_schema, property_path);
-    let schema_unit = schema.units;
-    if (typeof schema_unit !== "string") {
-      schema_unit = schema_unit[0];
-    }
-    if (property_magnitude_element.length === 1 && !property_magnitude_element.prop('disabled') && (schema_unit === property_unit || typeof property_unit === "undefined")) {
-      property_aliases.push(property_alias);
-      input_elements.push(property_magnitude_element);
+    const property_id_prefixes = [];
+    if (property_path.includes('*')) {
+      const property_id_prefix_wildcard_prefix = property_id_prefix.split('*').shift();
+      const property_id_prefix_wildcard_suffix = property_id_prefix.split('*').pop();
+      const potential_property_magnitude_elements = $(`[name^="${property_id_prefix_wildcard_prefix}"][name$="${property_id_prefix_wildcard_suffix}_magnitude"]`);
+      potential_property_magnitude_elements.each(function(_, element) {
+        if (element.name.substr(element.name.length - '__magnitude'.length) !== '__magnitude') {
+          return;
+        }
+        const property_id_prefix = element.name.substring(0, element.name.length - '_magnitude'.length);
+        if (!property_id_prefix.startsWith('object__') || !property_id_prefix.endsWith('_')) {
+          return;
+        }
+        const property_id_prefix_parts = property_id_prefix.substring('object__'.length, property_id_prefix.length - 1).split('__');
+        if (property_id_prefix_parts.length !== property_path.length) {
+          return;
+        }
+        for (let i = 0; i < property_id_prefix_parts.length; i++) {
+          if (property_path[i] === '*') {
+            const index = Number.parseInt(property_id_prefix_parts[i]);
+            if (!Number.isFinite(index) || index < 0 || index.toString() !== property_id_prefix_parts[i]) {
+              return;
+            }
+          } else if (property_path[i] !== property_id_prefix_parts[i]) {
+            return;
+          }
+        }
+        property_id_prefixes.push(property_id_prefix);
+      });
     } else {
-      all_input_elements_available = false;
+      property_id_prefixes.push(property_id_prefix);
+    }
+    const elements = [];
+    property_id_prefixes.forEach(function(property_id_prefix) {
+      const property_magnitude_element = $(`[name="${property_id_prefix}_magnitude"]`);
+      const property_units_element = $(`[name="${property_id_prefix}_units"]`);
+      const property_unit = property_units_element.val();
+      const schema = getPropertySchema(root_schema, property_path);
+      let schema_unit = schema.units;
+      if (typeof schema_unit !== "string") {
+        schema_unit = schema_unit[0];
+      }
+      if (property_magnitude_element.length === 1 && (schema_unit === property_unit || typeof property_unit === "undefined")) {
+        elements.push(property_magnitude_element);
+      } else {
+        all_input_elements_available = false;
+      }
+    });
+    if (all_input_elements_available) {
+      property_aliases.push(property_alias);
+      input_elements.push(elements);
+    } else {
       break;
     }
   }
@@ -84,7 +123,7 @@ function setUpCalculation(id_prefix, schema, root_schema) {
     schema_unit = schema_unit[0];
   }
 
-  if (target_element.length === 1 && !input_elements.includes(target_element[0]) && (schema_unit === target_unit || typeof target_unit === "undefined") && all_input_elements_available) {
+  if (target_element.length === 1 && input_elements.every(function(elements) {return !elements.includes(target_element[0]);}) && (schema_unit === target_unit || typeof target_unit === "undefined") && all_input_elements_available) {
     let evaluateCalculation = function (event, event_chain) {
       if (!event_chain) {
         event_chain = [];
@@ -93,17 +132,30 @@ function setUpCalculation(id_prefix, schema, root_schema) {
       let values = {};
       let all_input_values_available = true;
       for (i = 0; i < input_elements.length; i++) {
-        let value_string = input_elements[i].val();
-        value_string = value_string.trim();
-        if (window.local_decimal_delimiter !== ".") {
-          value_string = value_string.replace(window.local_decimal_delimiter, ".");
+        values[property_aliases[i]] = []
+        for (let j = 0; j < input_elements[i].length; j++) {
+          if (input_elements[i][j].prop('disabled')) {
+            continue;
+          }
+          let value_string = input_elements[i][j].val();
+          if (value_string === '') {
+            continue;
+          }
+          value_string = value_string.trim();
+          if (window.local_decimal_delimiter !== ".") {
+            value_string = value_string.replace(window.local_decimal_delimiter, ".");
+          }
+          let value = parseFloat(value_string);
+          if (!isFinite(value)) {
+            all_input_values_available = false;
+            break;
+          }
+          values[property_aliases[i]].push(value);
         }
-        let value = parseFloat(value_string);
-        if (!isFinite(value)) {
-          all_input_values_available = false;
-          break;
+        if (!all_input_values_available || values[property_aliases[i]].length === 0) {
+            all_input_values_available = false;
+            break;
         }
-        values[property_aliases[i]] = value;
       }
       if (all_input_values_available) {
         let result = math.evaluate(formula, values);
@@ -171,11 +223,20 @@ function setUpCalculation(id_prefix, schema, root_schema) {
         }
       }
     });
-    input_elements.forEach(function (input_element) {
-      input_element.on('change', function() {
-        input_element.trigger('sampledb.calculation.change', [[input_element.attr('name')]]);
+    target_element.off('sampledb.calculation.evaluate');
+    target_element.on('sampledb.calculation.evaluate', evaluateCalculation);
+    input_elements.forEach(function(elements) {
+      elements.forEach(function (input_element) {
+        input_element.on('change', function() {
+          input_element.trigger('sampledb.calculation.change', [[input_element.attr('name')]]);
+        });
+        input_element.on('conditions_state_changed.sampledb', function() {
+          input_element.trigger('sampledb.calculation.change', [[input_element.attr('name')]]);
+        });
+        input_element.on('sampledb.calculation.change', function(event, event_chain) {
+          target_element.trigger('sampledb.calculation.evaluate', [event_chain]);
+        });
       });
-      input_element.on('sampledb.calculation.change', evaluateCalculation);
     });
     evaluateCalculation();
   }
