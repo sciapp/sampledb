@@ -533,6 +533,16 @@
     })
   }
 
+  function clearUnusedConditions() {
+      if (window.conditional_wrapper_conditions) {
+        for (const id_prefix of Object.keys(window.conditional_wrapper_conditions)) {
+          if ($(`[data-condition-wrapper-for^=${id_prefix}]`).length === 0) {
+            delete window.conditional_wrapper_conditions[id_prefix];
+          }
+        }
+      }
+  }
+
   function updateArrayNames(prefix) {
     const elements = $(`[name^=${prefix}_]`);
     const used_array_indices = [];
@@ -548,18 +558,28 @@
       return a-b;
     });
     for (let i = 0; i < used_array_indices.length; i++) {
-      const old_prefix = `${prefix}_${used_array_indices[i]}__`;
-      const new_prefix = `${prefix}_${i}__`;
-      $(`[name^=${old_prefix}]`).each(function(_, element) {
+      const old_prefix = `${prefix}_${used_array_indices[i]}_`;
+      const new_prefix = `${prefix}_${i}_`;
+      $(`[name^=${old_prefix}_]`).each(function(_, element) {
         element.name = new_prefix + element.name.substring(old_prefix.length);
       });
-      $(`[data-id-prefix^=${old_prefix}]`).each(function(_, element) {
-        $(element).attr('data-id-prefix', new_prefix + $(element).data('id-prefix').substring(old_prefix.length));
-        $(element).data('id-prefix', $(element).attr('data-id-prefix'));
-      });
-      $(`span[id^=${old_prefix}][id$=_calculation_help]`).each(function(_, element) {
+      for (const data_attribute of ['id-prefix', 'parent-id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+        $(`[data-${data_attribute}^=${old_prefix}_], [data-${data_attribute}=${old_prefix}]`).each(function(_, element) {
+          $(element).attr(`data-${data_attribute}`, new_prefix + $(element).data(data_attribute).substring(old_prefix.length));
+          $(element).data(data_attribute, $(element).attr(`data-${data_attribute}`));
+        });
+      }
+      $(`span[id^=${old_prefix}_][id$=_calculation_help]`).each(function(_, element) {
         $(element).attr('id', new_prefix + $(element).attr('id').substring(old_prefix.length));
       });
+      if (window.conditional_wrapper_conditions) {
+        for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
+          if (id_prefix.startsWith(old_prefix)) {
+            delete window.conditional_wrapper_conditions[id_prefix];
+            window.conditional_wrapper_conditions[new_prefix + id_prefix.substring(old_prefix.length)] = conditions;
+          }
+        }
+      }
     }
   }
 
@@ -764,6 +784,7 @@
       }
       updateArrayButtons($(`[id="action_${prefix}_?__add"]`), $(`.action_delete_${prefix}`), minItems, maxItems);
       updateArrayNames(prefix);
+      clearUnusedConditions();
     }
   }
 
@@ -781,6 +802,7 @@
       }
       updateTableFormButtons(table, id_prefix);
       updateArrayNames(id_prefix);
+      clearUnusedConditions();
     }
   }
 
@@ -799,6 +821,7 @@
       updateTableFormButtons(table, id_prefix);
       table.data('col-next-id', table.data('col-next-id') - 1);
       updateArrayNames(id_prefix);
+      clearUnusedConditions();
     }
   }
 
