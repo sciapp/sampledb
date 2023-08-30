@@ -122,9 +122,13 @@
           </td>
         {% endif %}
         {% if not is_template %}
+          {{ form_elements.append({ "kind": "table_array_copy", "button_id": "action_" + id_prefix + "_copy", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
           {{ form_elements.append({ "kind": "table_array_delete", "button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
         {% endif %}
-        <td><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>&times;</button></td>
+        <td>
+          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>&times;</button>
+          <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-clone"></i></button>
+        </td>
         </tr>
       {% endfor %}
     {% endif %}
@@ -199,7 +203,10 @@
             {% include "objects/forms/form_table_recipe.html" %}
           </td>
         {% endif %}
-        <td><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right action_delete_{{ parent_prefix }}" disabled="disabled" {% if is_template %} {% endif %} >&times;</button></td>
+        <td>
+          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" disabled="disabled" {% if is_template %} {% endif %} >&times;</button>
+          <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-clone"></i></button>
+        </td>
           {% set is_template = false %}
         </tr>
     </tbody>

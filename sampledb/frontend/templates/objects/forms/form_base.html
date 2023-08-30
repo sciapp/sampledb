@@ -134,6 +134,8 @@
         document.getElementById("action_{{ element['parent_prefix'] }}_?__add").addEventListener('click', arrayFormAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_array_delete" %}
         document.getElementById("{{ element['button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems'] }}, {{ element['maxItems'] }}, false));
+      {% elif element['kind'] == "table_array_copy" %}
+        document.getElementById("{{ element['button_id'] }}").addEventListener('click', arrayFormTableCopyHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_array_add" %}
         document.getElementById('action_{{ element['parent_prefix'] }}_?__add').addEventListener('click', arrayFormTableAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "list_array_delete" %}
@@ -438,10 +440,11 @@
     }
   }
 
-  function updateArrayButtons(addButton, deleteButtons, minItems, maxItems) {
+  function updateArrayButtons(addButton, copyButtons, deleteButtons, minItems, maxItems) {
       let current_length = deleteButtons.length - 1;
       deleteButtons.prop('disabled', current_length <= minItems);
       if(addButton) addButton.prop('disabled', maxItems !== -1 && current_length >= maxItems);
+      if(copyButtons.length > 0) copyButtons.prop('disabled', maxItems !== -1 && current_length >= maxItems);
   }
 
   function setTemplateAddHandler(button) {
@@ -484,17 +487,17 @@
       }
 
       updateArrayNames(parent_prefix);
-      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
+      applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
     }
   }
 
-  function applyInteractionModifications(clone, addButton, deleteButton, minItems, maxItems, defaultItems) {
+  function applyInteractionModifications(clone, addButton, copyButtons, deleteButton, minItems, maxItems, defaultItems) {
       updateJSInteractiveFields();
       applySchemaConditions(clone);
       applySchemaCalculations(clone);
       updateLanguageSelects(clone);
       updateRecipeState(clone);
-      updateArrayButtons(addButton, deleteButton, minItems, maxItems);
+      updateArrayButtons(addButton, copyButtons, deleteButton, minItems, maxItems);
 
       clone.find('.form-add-button').each(function() {
         if($(this).parents('.array-template').length === 0) {
@@ -513,7 +516,7 @@
     clone.find('[data-is-default="default"]').each(function() {
       const parent_prefix = $(this).data('parent-prefix');
       $(this).click(arrayFormDeleteHandler(parent_prefix, $(this).data('element-id'), $(this).data('min-items'), $(this).data('max-items'), $(this).data('is-default') === 'list'));
-      updateArrayButtons(null, $(`.action_delete_${parent_prefix}`), $(this).data('min-items'), $(this).data('max-items'));
+      updateArrayButtons(null, [], $(`.action_delete_${parent_prefix}`), $(this).data('min-items'), $(this).data('max-items'));
     });
     clone.find('[data-array-kind="table"]').not('[data-is-default="default"]').each(function() {
       if($(this).parents('.array-template').length > 0) return;
@@ -540,40 +543,67 @@
       }
   }
 
-  function updateArrayNames(prefix) {
-    const elements = $(`[name^=${prefix}_]`);
-    const used_array_indices = [];
-    elements.each(function(_, element) {
-      const index_string = element.name.substring(prefix.length + 1).split('_', 1)[0];
-      const index = Number.parseInt(index_string);
-      if (index.toString() === index_string && !used_array_indices.includes(index)) {
-        used_array_indices.push(index);
-      }
-    });
-    // custom comparator to sort numbers numerically instead of lexicographically
-    used_array_indices.sort(function(a, b) {
-      return a-b;
-    });
-    for (let i = 0; i < used_array_indices.length; i++) {
-      const old_prefix = `${prefix}_${used_array_indices[i]}_`;
-      const new_prefix = `${prefix}_${i}_`;
+  function updateArrayNames(prefix, sorted_array_indices) {
+    if (typeof sorted_array_indices !== 'object') {
+      const elements = $(`[name^=${prefix}_]`);
+      const used_array_indices = [];
+      elements.each(function(_, element) {
+        const index_string = element.name.substring(prefix.length + 1).split('_', 1)[0];
+        const index = Number.parseInt(index_string);
+        if (index.toString() === index_string && !used_array_indices.includes(index)) {
+          used_array_indices.push(index);
+        }
+      });
+      // custom comparator to sort numbers numerically instead of lexicographically
+      used_array_indices.sort(function(a, b) {
+        return a-b;
+      });
+      sorted_array_indices = used_array_indices;
+    }
+    for (let i = 0; i < sorted_array_indices.length; i++) {
+      const old_prefix = `${prefix}_${sorted_array_indices[i]}_`;
+      const tmp_prefix = `updateArrayNames_tmp_prefix_${i}_`;
       $(`[name^=${old_prefix}_]`).each(function(_, element) {
-        element.name = new_prefix + element.name.substring(old_prefix.length);
+        element.name = tmp_prefix + element.name.substring(old_prefix.length);
       });
       for (const data_attribute of ['id-prefix', 'parent-id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
         $(`[data-${data_attribute}^=${old_prefix}_], [data-${data_attribute}=${old_prefix}]`).each(function(_, element) {
-          $(element).attr(`data-${data_attribute}`, new_prefix + $(element).data(data_attribute).substring(old_prefix.length));
+          $(element).attr(`data-${data_attribute}`, tmp_prefix + $(element).data(data_attribute).substring(old_prefix.length));
           $(element).data(data_attribute, $(element).attr(`data-${data_attribute}`));
         });
       }
       $(`span[id^=${old_prefix}_][id$=_calculation_help]`).each(function(_, element) {
-        $(element).attr('id', new_prefix + $(element).attr('id').substring(old_prefix.length));
+        $(element).attr('id', tmp_prefix + $(element).attr('id').substring(old_prefix.length));
       });
       if (window.conditional_wrapper_conditions) {
         for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
           if (id_prefix.startsWith(old_prefix)) {
             delete window.conditional_wrapper_conditions[id_prefix];
-            window.conditional_wrapper_conditions[new_prefix + id_prefix.substring(old_prefix.length)] = conditions;
+            window.conditional_wrapper_conditions[tmp_prefix + id_prefix.substring(old_prefix.length)] = conditions;
+          }
+        }
+      }
+    }
+    for (let i = 0; i < sorted_array_indices.length; i++) {
+      const tmp_prefix = `updateArrayNames_tmp_prefix_${i}_`;
+      const new_prefix = `${prefix}_${i}_`;
+      $(`[name^=${tmp_prefix}_]`).each(function(_, element) {
+        element.name = new_prefix + element.name.substring(tmp_prefix.length);
+      });
+      for (const data_attribute of ['id-prefix', 'parent-id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+        $(`[data-${data_attribute}^=${tmp_prefix}_], [data-${data_attribute}=${tmp_prefix}]`).each(function(_, element) {
+          $(element).attr(`data-${data_attribute}`, new_prefix + $(element).data(data_attribute).substring(tmp_prefix.length));
+          $(element).data(data_attribute, $(element).attr(`data-${data_attribute}`));
+        });
+      }
+      $(`span[id^=${tmp_prefix}_][id$=_calculation_help]`).each(function(_, element) {
+        $(element).attr('id', new_prefix + $(element).attr('id').substring(tmp_prefix.length));
+      });
+      if (window.conditional_wrapper_conditions) {
+        for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
+          if (id_prefix.startsWith(tmp_prefix)) {
+            delete window.conditional_wrapper_conditions[id_prefix];
+            window.conditional_wrapper_conditions[new_prefix + id_prefix.substring(tmp_prefix.length)] = conditions;
           }
         }
       }
@@ -599,7 +629,7 @@
       template.data('next-id', element_id + 1);
 
       updateArrayNames(parent_prefix);
-      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, parent.data('compound-default') === 'True');
+      applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems, parent.data('compound-default') === 'True');
       if(!initPhase) replaceMarkdownTemplates();
     }
   }
@@ -616,13 +646,68 @@
       replaceTemplateIndex(clone, index_order_placeholder, element_id);
 
       clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
+      clone.find(`[id="action_${parent_prefix}_${element_id}__copy"]`).click(arrayFormTableCopyHandler(parent_prefix, minItems, maxItems));
       table.find('.array-template').before(clone);
       table.find('.array-template').data('next-id', element_id + 1);
 
       table.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
 
       updateArrayNames(parent_prefix);
-      applyInteractionModifications(clone, $(this), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
+      applyInteractionModifications(clone, $(this), table.find('> tbody > tr > td:last-of-type .form-copy-button'), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
+    }
+  }
+
+  function arrayFormTableCopyHandler(parent_prefix, minItems, maxItems) {
+    function getTableRowPrefix(row) {
+      const field_prefixes = [];
+      // for arrays, there is always at least a "hidden" field, so we can use the prefixes for those fields
+      row.find('[name^="object__"][name$="__hidden"]').each(function(_, element) {
+        field_prefixes.push(element.name.substring(0, element.name.length - "hidden".length));
+      });
+      field_prefixes.sort();
+      // the shortest prefix is the one for this row, longer ones may be e.g. for a checkbox
+      return field_prefixes[0];
+    }
+
+    return function() {
+      const addButton = $(this).closest('table').find('> tfoot .form-add-button')[0];
+      arrayFormTableAddHandler(parent_prefix, minItems, maxItems).bind(addButton)();
+      const table_body = $(this).closest('tbody');
+      const source_row = $(this).closest('tr');
+      const target_row = table_body.find('tr:nth-last-of-type(2)');
+      source_row.after(target_row);
+      const source_field_prefix = getTableRowPrefix(source_row);
+      const target_field_prefix = getTableRowPrefix(target_row);
+      const target_fields = target_row.find(`[name^="${target_field_prefix}"]`);
+      for (const target_field of target_fields) {
+        const source_field_name = source_field_prefix + target_field.name.substring(target_field_prefix.length);
+        const source_field = $(`[name=${source_field_name}]`)[0];
+        if (source_field.tagName === "INPUT" || source_field.tagName === "TEXTAREA") {
+          if (source_field.type === "checkbox") {
+            $(target_field).prop('checked', $(source_field).prop('checked'));
+          } else {
+            $(target_field).val($(source_field).val());
+          }
+        } else if (source_field.tagName === "SELECT") {
+          const source_value = $(source_field).selectpicker('val');
+          if ($(target_field).find(`option[value="${source_value}"]`).length === 0) {
+            $(target_field).append($(source_field).find('option:selected').clone());
+            $(target_field).prop('disabled', $(source_field).prop('disabled'));
+            $(target_field).selectpicker('refresh');
+          }
+          $(target_field).selectpicker('val', $(source_field).selectpicker('val'));
+        }
+        $(target_field).trigger('change');
+      }
+      const sorted_row_indices = [];
+      for (const row of table_body.find('tr')) {
+        const row_prefix = getTableRowPrefix($(row));
+        const row_index = row_prefix.split('__').slice(-2)[0];
+        if (row_index[0] !== "!") {
+          sorted_row_indices.push(Number.parseInt(row_index));
+        }
+      }
+      updateArrayNames(parent_prefix, sorted_row_indices);
     }
   }
 
@@ -779,7 +864,12 @@
           $(`.container_${prefix}`).first().removeClass("col-md-offset-3");
         }
       }
-      updateArrayButtons($(`[id="action_${prefix}_?__add"]`), $(`.action_delete_${prefix}`), minItems, maxItems);
+      const addButton = $(`[id="action_${prefix}_?__add"]`);
+      let copyButtons = [];
+      if (addButton.parent()[0].tagName === 'TH') {
+        copyButtons = addButton.closest('table').find('> tbody > tr > td:last-of-type .form-copy-button');
+      }
+      updateArrayButtons(addButton, copyButtons, $(`.action_delete_${prefix}`), minItems, maxItems);
       updateArrayNames(prefix);
       clearUnusedConditions();
       setUpCalculations();
