@@ -3,26 +3,22 @@ import re
 import string
 
 from ..errors import ValidationError
+from .utils import schema_iter
 
 
 def _get_property_schema(
         root_schema: typing.Dict[str, typing.Any],
         absolute_path: typing.List[str]
 ) -> typing.Optional[typing.Dict[str, typing.Any]]:
-    property_schema = root_schema
-    for path_element in absolute_path:
-        path_element = str(path_element)
-        if property_schema['type'] == 'object':
-            if path_element not in property_schema['properties']:
-                return None
-            property_schema = property_schema['properties'][path_element]
-        elif property_schema['type'] == 'array':
-            if path_element not in ('[?]', '*') and not re.match(r'^[-+]?[0-9]+$', path_element):
-                return None
-            property_schema = property_schema['items']
-        else:
-            return None
-    return property_schema
+    filter_property_path = tuple(
+        path_element if isinstance(path_element, str) and path_element not in ('[?]', '*') and not re.match(r'^[-+]?[0-9]+$', path_element) else None
+        for path_element in absolute_path
+    )
+    return dict(schema_iter(
+        root_schema,
+        filter_path_depth_limit=len(filter_property_path),
+        filter_property_path=filter_property_path,
+    )).get(filter_property_path)
 
 
 def _simplify_absolute_path(

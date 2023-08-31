@@ -14,7 +14,7 @@ from ...logic.action_translations import set_action_translation
 from ...logic.languages import Language
 from ...logic.action_permissions import get_user_action_permissions, get_actions_with_permissions
 from ...logic import errors, utils, actions, action_types
-from ...logic.schemas.templates import enforce_permissions
+from ...logic.schemas.templates import find_invalid_template_paths
 from ...logic.schemas.validate_schema import validate_schema
 from ...models import Permissions
 
@@ -124,7 +124,7 @@ class Action(Resource):
                 schema = request_json['schema']
                 error_message = None
                 try:
-                    invalid_template_paths = enforce_permissions(schema, flask.g.user.id)
+                    invalid_template_paths = find_invalid_template_paths(schema, flask.g.user.id)
                     if invalid_template_paths:
                         raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
                     validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id], strict=True)

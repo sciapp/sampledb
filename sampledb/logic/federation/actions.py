@@ -17,6 +17,7 @@ from ..markdown_images import get_markdown_image, find_referenced_markdown_image
 from ..components import Component, get_component, get_component_by_uuid
 from ..users import get_user
 from ..schemas.validate_schema import validate_schema
+from ..schemas.utils import schema_iter
 from .. import errors, fed_logs, markdown_to_html
 from ... import db
 from ...models import Permissions
@@ -131,30 +132,6 @@ def import_action(
         action_data: ActionData,
         component: Component
 ) -> Action:
-    def _import_schema(
-            schema: typing.Dict[str, typing.Any],
-            path: typing.Optional[typing.List[str]] = None
-    ) -> typing.Optional[typing.Dict[str, typing.Any]]:
-        if schema is None:
-            return None
-        if path is None:
-            path = []
-        if schema.get('type') == 'array' and 'items' in schema:
-            _import_schema(schema['items'], path + ['[?]'])
-        if schema.get('type') == 'object':
-            if isinstance(schema.get('properties'), dict):
-                for property_name, property_schema in schema['properties'].items():
-                    _import_schema(property_schema, path + [property_name])
-                    if 'template' in property_schema:
-                        try:
-                            c = get_component_by_uuid(property_schema['template']['component_uuid'])
-                            property_schema['template'] = get_action(property_schema['template']['action_id'], c.id).id
-                        except errors.ActionDoesNotExistError:
-                            pass
-                        except errors.ComponentDoesNotExistError:
-                            pass
-        return schema
-
     component_id = _get_or_create_component_id(action_data['component_uuid'])
     # component_id will only be None if this would import a local action
     assert component_id is not None
@@ -163,10 +140,17 @@ def import_action(
     instrument_id = _get_or_create_instrument_id(action_data['instrument'])
     user_id = _get_or_create_user_id(action_data['user'])
 
-    if action_data['schema'] is not None:
-        schema = _import_schema(action_data['schema'])
-    else:
-        schema = None
+    schema = action_data['schema']
+    if schema is not None:
+        for _, property_schema in schema_iter(schema, filter_property_types={'object'}):
+            if 'template' in property_schema:
+                try:
+                    c = get_component_by_uuid(property_schema['template']['component_uuid'])
+                    property_schema['template'] = get_action(property_schema['template']['action_id'], c.id).id
+                except errors.ActionDoesNotExistError:
+                    pass
+                except errors.ComponentDoesNotExistError:
+                    pass
 
     try:
         mutable_action = get_mutable_action(action_data['fed_id'], component_id)
