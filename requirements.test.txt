@@ -1,5 +1,7 @@
 chromedriver-binary-auto
 coverage
+jsonschema
+lxml
 pypdf
 pytest
 pytest-cov

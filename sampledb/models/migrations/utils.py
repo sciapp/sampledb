@@ -129,7 +129,7 @@ def column_is_nullable(table_name: str, column_name: str) -> bool:
     :param column_name: the name of the column to check
     :return: whether the column may contain NULL values
     """
-    return db.session.execute(
+    return bool(db.session.execute(
         db.text("""
             SELECT is_nullable
             FROM information_schema.columns
@@ -139,7 +139,7 @@ def column_is_nullable(table_name: str, column_name: str) -> bool:
             'table_name': table_name,
             'column_name': column_name
         }
-    ).scalar() == 'YES'
+    ).scalar() == 'YES')
 
 
 def enum_has_value(enum_name: str, value_name: str) -> bool:
