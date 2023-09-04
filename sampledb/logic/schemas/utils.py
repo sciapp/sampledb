@@ -130,3 +130,46 @@ def schema_iter(
                 filter_property_types=filter_property_types,
                 filter_property_path=filter_property_path
             )
+
+
+def data_iter(
+        data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
+        *,
+        path: typing.Sequence[typing.Union[str, int]] = (),
+        filter_property_types: typing.Optional[typing.Set[str]] = None,
+) -> typing.Iterator[typing.Tuple[typing.Sequence[typing.Union[str, int]], typing.Union[typing.Dict[str, typing.Any], typing.Sequence[typing.Any]]]]:
+    """
+    Iterate over data.
+
+    :param data: the data to iterate over
+    :param path: the path to this schema
+    :param filter_property_types: a set of property types to include in the
+        iterator, or None
+    :return: an iterator over tuples of path and data at that path
+    """
+    if isinstance(data, dict):
+        if '_type' in data:
+            data_type = data['_type']
+        else:
+            data_type = 'object'
+    elif isinstance(data, list):
+        data_type = 'array'
+    else:
+        return
+    if filter_property_types is None or data_type in filter_property_types:
+        yield path, data
+    if data_type == 'object' and isinstance(data, dict):
+        for property_name, property_data in data.items():
+            if isinstance(property_name, str) and isinstance(property_data, (dict, list)):
+                yield from data_iter(
+                    data=property_data,
+                    path=tuple(path) + (property_name,),
+                    filter_property_types=filter_property_types,
+                )
+    if data_type == 'array':
+        for index, item_data in enumerate(data):
+            yield from data_iter(
+                data=item_data,
+                path=tuple(path) + (index,),
+                filter_property_types=filter_property_types,
+            )
