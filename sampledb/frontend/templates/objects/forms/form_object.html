@@ -6,40 +6,8 @@
 <div style="{% if id_prefix != 'object_' %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em">
 {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
   <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
-{% if "propertyOrder" not in schema %}
-  {% for property_name, property_schema in schema.properties.items() %}
-    {% set is_required = ('required' in schema and property_name in schema['required']) %}
-    {% set name = property_name %}
-    {% set parent_schema = schema %}
-    {% set schema = property_schema %}
-      {% set parent_id_prefix = id_prefix %}
-    {% set id_prefix = id_prefix + '_' + name + '_' %}
-    {% if data is not none and property_name in data %}
-    {% set data = data[property_name] %}
-    {% else %}
-    {% set data = none %}
-    {% endif %}
-    {% if schema_path is defined %}
-    {% set schema_path = schema_path + "__" + property_name %}
-    {% else %}
-    {% set schema_path = property_name %}
-    {% endif %}
-      {% if 'conditions' in schema %}
-        <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-        {% include "objects/forms/form_any.html" %}
-        {% if not is_template %}
-          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-        {% else %}
-          <input type="hidden" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
-        {% endif %}
-        </div>
-      {% else %}
-        {% include "objects/forms/form_any.html" %}
-      {% endif %}
-  {% endfor %}
-{% else %}
-  {% for property_name in schema.propertyOrder %}
-    {% if property_name in schema.properties %}
+  {% set property_names = get_property_names_in_order(schema) %}
+  {% for property_name in property_names %}
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set name = property_name %}
       {% set parent_schema = schema %}
@@ -68,41 +36,7 @@
       {% else %}
         {% include "objects/forms/form_any.html" %}
       {% endif %}
-    {% endif %}
   {% endfor %}
-  {% for property_name, property_schema in schema.properties.items() %}
-    {% if property_name not in schema.propertyOrder %}
-      {% set is_required = ('required' in schema and property_name in schema['required']) %}
-      {% set name = property_name %}
-      {% set parent_schema = schema %}
-      {% set schema = property_schema %}
-      {% set parent_id_prefix = id_prefix %}
-      {% set id_prefix = id_prefix + '_' + name + '_' %}
-      {% if data is not none and property_name in data %}
-      {% set data = data[property_name] %}
-      {% else %}
-      {% set data = none %}
-      {% endif %}
-      {% if schema_path is defined %}
-      {% set schema_path = schema_path + "__" + property_name %}
-      {% else %}
-      {% set schema_path = property_name %}
-      {% endif %}
-      {% if 'conditions' in schema %}
-        <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-        {% include "objects/forms/form_any.html" %}
-        {% if not is_template %}
-          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-        {% else %}
-          <input type="hidden" data-used="false" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
-        {% endif %}
-        </div>
-      {% else %}
-        {% include "objects/forms/form_any.html" %}
-      {% endif %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
 {% if 'recipes' in schema and schema['recipes'] | length > 0 %}
   {% include "objects/forms/form_recipe.html" %}
 {% endif %}

@@ -23,21 +23,13 @@
     {% set data = compound_defaults[schema_path] %}
   {% endif %}
   {% if schema['items']['type'] == 'object' %}
+  {% set item_property_names = get_property_names_in_order(schema["items"]) %}
   {% set table_prefix = 'table_' + id_prefix %}
   <table class="table" id="{{ table_prefix }}">
     <thead>
       <tr>
-        {% set item_property_names = schema["items"].properties.keys() %}
-        {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
-        {% for property_name in property_order %}
-          {% if property_name in item_property_names %}
-          <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema["items"].properties[property_name] %}data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }} {% if 'tooltip' in schema["items"].properties[property_name] %}<i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span>{% endif %}</th>
-          {% endif %}
-        {% endfor %}
         {% for property_name in item_property_names %}
-          {% if property_name not in property_order %}
           <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema["items"].properties[property_name] %}data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }} {% if 'tooltip' in schema["items"].properties[property_name] %}<i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span>{% endif %}</th>
-          {% endif %}
         {% endfor %}
         <th></th>
       </tr>
@@ -54,8 +46,7 @@
         {% set data = item %}
         <tr id="container_{{ id_prefix }}">
           <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
-        {% for property_name in property_order %}
-          {% if property_name in item_property_names %}
+        {% for property_name in item_property_names %}
           <td>
             {% set name = property_name %}
             {% set parent_schema = schema %}
@@ -83,38 +74,6 @@
               {% include "objects/forms/form_any.html" %}
             {% endif %}
           </td>
-          {% endif %}
-        {% endfor %}
-        {% for property_name in item_property_names %}
-          {% if property_name not in property_order %}
-          <td>
-            {% set name = property_name %}
-            {% set parent_schema = schema %}
-            {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'parent_style': tmp_style}) %}
-            {% set parent_id_prefix = id_prefix %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% set schema_path = schema_path + '__' + name %}
-            {% if data is not none and property_name in data %}
-            {% set data = data[property_name] %}
-            {% else %}
-            {% set data = none %}
-            {% endif %}
-            {% if 'conditions' in schema %}
-              <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
-              {% include "objects/forms/form_any.html" %}
-              {% if not is_template %}
-                {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-              {% endif %}
-              </div>
-              <div data-condition-replacement-for="{{ id_prefix }}" class="hidden">
-                &mdash;
-              </div>
-            {% else %}
-              {% include "objects/forms/form_any.html" %}
-            {% endif %}
-          </td>
-          {% endif %}
         {% endfor %}
         {% if 'recipes' in schema %}
           <td colspan="{{ item_property_names | length }}">
@@ -141,8 +100,7 @@
         <tr id="container_{{ id_prefix }}" class="array-template" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
           <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
           {% set is_template = true %}
-          {% for property_name in property_order %}
-          {% if property_name in item_property_names %}
+          {% for property_name in item_property_names %}
           <td>
             {% set name = property_name %}
             {% set parent_schema = schema %}
@@ -167,37 +125,7 @@
               {% include "objects/forms/form_any.html" %}
             {% endif %}
           </td>
-          {% endif %}
-        {% endfor %}
-        {% for property_name in item_property_names %}
-          {% if property_name not in property_order %}
-          <td>
-            {% set name = property_name %}
-            {% set parent_schema = schema %}
-            {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'parent_style': tmp_style}) %}
-            {% set parent_id_prefix = id_prefix %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% set schema_path = schema_path + '__' + name %}
-            {% set data = data[property_name] %}
-            {% if data is not none and property_name in data %}
-              {% set data = data[property_name] %}
-            {% else %}
-              {% set data = none %}
-            {% endif %}
-            {% if 'conditions' in schema %}
-              <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
-              {% include "objects/forms/form_any.html" %}
-              </div>
-              <div data-condition-replacement-for="{{ id_prefix }}" class="hidden">
-                &mdash;
-              </div>
-            {% else %}
-              {% include "objects/forms/form_any.html" %}
-            {% endif %}
-          </td>
-          {% endif %}
-        {% endfor %}
+          {% endfor %}
         {% if 'recipes' in schema %}
           <td colspan="{{ item_property_names | length }}">
             {% include "objects/forms/form_table_recipe.html" %}

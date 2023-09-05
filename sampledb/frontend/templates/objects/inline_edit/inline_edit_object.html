@@ -12,36 +12,8 @@
     {% else %}
         {% set base_search_query_attribute = "" %}
     {% endif %}
-    {% if "propertyOrder" not in schema %}
-        {% for property_name, property_schema in schema.properties.items() %}
-            {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
-            {% set is_required = ('required' in schema and property_name in schema['required']) %}
-            {% set name = property_name %}
-            {% set schema = property_schema %}
-            {% set parent_id_prefix = id_prefix %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% if data is not none and property_name in data %}
-                {% set data = data[property_name] %}
-            {% else %}
-                {% set data = none %}
-            {% endif %}
-            {% if base_search_query_attribute %}
-                {% set search_query_attribute = base_search_query_attribute + "." + name %}
-            {% else %}
-                {% set search_query_attribute = name %}
-            {% endif %}
-            {% if 'conditions' in schema %}
-                <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                    {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-                </div>
-            {% else %}
-                {% include "objects/inline_edit/inline_edit_any.html" %}
-            {% endif %}
-        {% endfor %}
-    {% else %}
-        {% for property_name in schema.propertyOrder %}
-            {% if property_name in schema.properties %}
+    {% set property_names = get_property_names_in_order(schema) %}
+        {% for property_name in property_names %}
                 {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
                 {% set is_required = ('required' in schema and property_name in schema['required']) %}
                 {% set name = property_name %}
@@ -66,39 +38,7 @@
                 {% else %}
                     {% include "objects/inline_edit/inline_edit_any.html" %}
                 {% endif %}
-            {% endif %}
         {% endfor %}
-        {% for property_name, property_schema in schema.properties.items() %}
-            {% if property_name not in schema.propertyOrder %}
-                {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
-                {% set is_required = ('required' in schema and property_name in schema['required']) %}
-                {% set name = property_name %}
-                {% set schema = property_schema %}
-                {% set parent_id_prefix = id_prefix %}
-                {% set id_prefix = id_prefix + '_' + name + '_' %}
-                {% if data is not none and property_name in data %}
-                    {% set data = data[property_name] %}
-                {% else %}
-                    {% set data = none %}
-                {% endif %}
-
-                {% if base_search_query_attribute %}
-                    {% set search_query_attribute = base_search_query_attribute + "." + name %}
-                {% else %}
-                    {% set search_query_attribute = name %}
-                {% endif %}
-
-                {% if 'conditions' in schema %}
-                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                        {% include "objects/inline_edit/inline_edit_any.html" %}
-                        {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-                    </div>
-                {% else %}
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-    {% endif %}
     {% if schema.get("show_more") %}
         <div class="row">
             <div class="col-md-3" style="padding-rigth: 0px;"></div>
