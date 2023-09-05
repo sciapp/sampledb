@@ -13,7 +13,7 @@
   {% set show_indent_border = True %}
   {% set property_names = get_property_names_in_order(schema) %}
   {% for property_name in property_names %}
-      {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
+    {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
       {% set hidden = (not (workflow_display_mode and 'workflow_show_more' in schema.keys()) and 'show_more' in schema.keys() and property_name in schema['show_more']) or (workflow_display_mode and 'workflow_show_more' in schema.keys() and property_name in schema['workflow_show_more']) %}
       {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
@@ -37,7 +37,7 @@
         {% set search_query_attribute = property_name %}
       {% endif %}
       {% include "objects/view/any.html" %}
-      {% endif %}
+    {% endif %}
   {% endfor %}
 {% if schema.get("show_more") or (workflow_display_mode and schema.get("workflow_show_more")) %}
   <div class="row">
