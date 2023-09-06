@@ -33,6 +33,7 @@ from . import languages
 from . import ldap
 from . import locale
 from . import locations
+from . import location_log
 from . import location_permissions
 from . import markdown_images
 from . import markdown_to_html
@@ -99,6 +100,7 @@ __all__ = [
     'ldap',
     'locale',
     'locations',
+    'location_log',
     'location_permissions',
     'markdown_images',
     'markdown_to_html',
