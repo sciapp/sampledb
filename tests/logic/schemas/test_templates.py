@@ -407,22 +407,45 @@ def test_update_template_action_recursion():
     }
 
 
-def test_enforce_permissions_invalid_schema():
+def test_enforce_permissions():
     user = sampledb.logic.users.create_user('Test User', 'example@example.com', sampledb.logic.users.UserType.PERSON)
-    with pytest.raises(sampledb.logic.errors.ValidationError) as exception_info:
-        sampledb.logic.schemas.templates.enforce_permissions({
-            "title": "Basic Schema",
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,
+        schema={
+            "title": "Schema",
             "type": "object",
             "properties": {
                 "name": {
                     "title": "Name",
                     "type": "text"
-                },
-                "other": [
-                    ["title", "Example"],
-                    ["type", "text"]
-                ]
+                }
             },
             "required": ["name"]
-        }, user.id)
-    assert str(exception_info.value) == 'schema must be dict (at other)'
+        }
+    )
+    assert sampledb.logic.schemas.templates.find_invalid_template_paths(action.schema, user.id) == []
+    schema = {
+        "title": "Schema",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "type": "object",
+                    "title": "Nested Object",
+                    "template": action.id
+                }
+            }
+        },
+        "required": ["name"]
+    }
+    assert sampledb.logic.schemas.templates.find_invalid_template_paths(schema, user.id) == [
+        ['array', '[?]']
+    ]
+    sampledb.logic.action_permissions.set_user_action_permissions(action.id, user.id, sampledb.models.permissions.Permissions.READ)
+    assert sampledb.logic.schemas.templates.find_invalid_template_paths(schema, user.id) == []
