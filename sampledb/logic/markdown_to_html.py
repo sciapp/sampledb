@@ -9,7 +9,8 @@ from markdown import markdown as _markdown_to_html
 from markdown.extensions.toc import TocExtension, slugify_unicode  # type: ignore
 
 from .. import db
-from ..logic import errors
+from . import errors
+from .schemas.utils import data_iter
 from ..models import MarkdownToHTMLCacheEntry
 
 
@@ -90,7 +91,7 @@ def clear_cache() -> None:
     db.session.commit()
 
 
-def get_markdown_from_object_data(data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]) -> typing.List[str]:
+def get_markdown_from_object_data(data: typing.Dict[str, typing.Any]) -> typing.List[str]:
     """
     Extract Markdown text properties from object data.
 
@@ -99,24 +100,13 @@ def get_markdown_from_object_data(data: typing.Union[typing.Dict[str, typing.Any
     :raise errors.ValidationError: when the contained markdown data is invalid
     """
     markdown_texts = []
-    if isinstance(data, dict):
-        properties = list(data.values())
-    elif isinstance(data, list):
-        properties = data
-    else:
-        return []
-    for property in properties:
-        if isinstance(property, dict) and '_type' in property:
-            if property['_type'] == 'text' and property.get('is_markdown'):
-                if isinstance(property.get('text'), str):
-                    markdown_texts.append(property['text'])
-                elif isinstance(property.get('text'), dict):
-                    for text in property['text'].values():
-                        markdown_texts.append(text)
-                else:
-                    raise errors.ValidationError('text must be str or a dictionary', ['?'])
-                continue
-        else:
-            markdown_texts.extend(get_markdown_from_object_data(property))
-            continue
+    for path, property in data_iter(data, filter_property_types={'text'}):
+        if isinstance(property, dict) and property.get('is_markdown'):
+            if isinstance(property.get('text'), str):
+                markdown_texts.append(property['text'])
+            elif isinstance(property.get('text'), dict):
+                for text in property['text'].values():
+                    markdown_texts.append(text)
+            else:
+                raise errors.ValidationError('text must be str or a dictionary', [str(path_element) for path_element in path])
     return markdown_texts
