@@ -513,7 +513,6 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
   {% if object_link_form and not object_id and not current_user.is_readonly %}
     <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   {% endif %}
