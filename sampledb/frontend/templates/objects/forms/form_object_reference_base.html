@@ -1,11 +1,12 @@
-<div class="form-group row error-parent" style="padding-right:0.75em">
-  {% include "objects/forms/property_label.html" %}
-  <div class="col-md-9">
-    {% include "objects/forms/form_object_reference_base_field.html" %}
-    {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
-      <span class="help-block"></span>
-    {% endif %}
-    <span class="error-note help-block"></span>
-    {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
-  </div>
-</div>
+{% extends get_form_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/fields/object_reference_base_field.html" %}
+{% endblock %}
+
+{% block property_errors %}
+  {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
+    <span class="help-block"></span>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

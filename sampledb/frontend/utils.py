@@ -583,6 +583,39 @@ def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[
     return template_folder + default_prefix + base_file
 
 
+def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any]) -> str:
+    system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
+
+    file_order = ['regular_property.html']
+    if schema.get('parent_style'):
+        for parent_style in get_style_aliases(schema['parent_style']):
+            file_order.insert(0, parent_style + '_property.html')
+    if schema.get('style'):
+        for style in get_style_aliases(schema['style']):
+            file_order.insert(0, style + '_property.html')
+
+    for file in file_order:
+        if os.path.exists(os.path.join(system_path, file)):
+            return os.path.join(template_folder, file)
+
+    return os.path.join(template_folder + 'regular_property.html')
+
+
+@JinjaFunction()
+def get_form_property_template(schema: typing.Dict[str, typing.Any]) -> str:
+    return get_property_template('objects/forms/', schema)
+
+
+@JinjaFunction()
+def get_view_property_template(schema: typing.Dict[str, typing.Any]) -> str:
+    return get_property_template('objects/view/', schema)
+
+
+@JinjaFunction()
+def get_inline_edit_property_template(schema: typing.Dict[str, typing.Any]) -> str:
+    return get_property_template('objects/inline_edit/', schema)
+
+
 @JinjaFunction()
 def get_form_template(schema: typing.Dict[str, typing.Any]) -> str:
     return get_template('objects/forms/', 'form_', schema)

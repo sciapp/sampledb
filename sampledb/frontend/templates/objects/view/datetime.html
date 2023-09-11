@@ -1,13 +1,5 @@
-<div class="row" style="padding-right:0.75em">
-  {% include "objects/property_label.html" %}
-  <div class="col-md-9">
-    {% if data is not none %}
-      <span data-utc-datetime="{{ data.utc_datetime | generic_format_datetime }}">{{ data.utc_datetime | babel_format_datetime }}</span>
-    {% else %}
-      &mdash;
-    {% endif %}
-    {% if data and data.export_edit_note %}
-      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
-    {% endif %}
-  </div>
-</div>
+{% extends get_view_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/values/datetime_value.html" %}
+{% endblock %}

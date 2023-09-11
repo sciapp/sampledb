@@ -1,15 +1,5 @@
-<div class="row" style="padding-right:0.75em">
-  {% include "objects/property_label.html" %}
-  <div class="col-md-9">
-    {% if data.tags %}
-      {% for tag in data.tags %}
-        <a href="{{ url_for('.objects', q='#'+tag, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>
-      {% endfor %}
-    {% else %}
-        &mdash;
-    {% endif %}
-    {% if data and data.export_edit_note %}
-      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
-    {% endif %}
-  </div>
-</div>
+{% extends get_view_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/values/tags_value.html" %}
+{% endblock %}

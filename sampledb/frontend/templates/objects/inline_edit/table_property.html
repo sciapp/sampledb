@@ -1,0 +1,20 @@
+<div class="form-area inline-edit-table-property">
+  {# View #}
+  <div class="view-switch">
+    {% block property_value %}
+    {% endblock %}
+    {% block property_edit_helper %}
+      <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+    {% endblock %}
+    <div class="alert-upload-failed">
+      {{ _('Your input is not valid. Please check.') }}
+    </div>
+  </div>
+  {# Form #}
+  <div class="form-switch">
+    <div class="row">
+      {% block property_field %}
+      {% endblock %}
+    </div>
+  </div>
+</div>

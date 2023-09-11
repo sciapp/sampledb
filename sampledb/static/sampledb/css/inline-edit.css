@@ -37,3 +37,39 @@
     visibility: hidden;
     cursor: pointer ;
 }
+
+.inline-edit-regular-property {
+    padding-right:0.75em;
+}
+
+.inline-edit-table-property {
+    position: relative;
+}
+
+.inline-edit-table-property .form-switch .row {
+    padding-right: 0.75em;
+    padding-left: 1em;
+}
+
+.inline-edit-regular-property .form-switch .checkbox,
+.inline-edit-table-property .form-switch .checkbox {
+    padding-top: 0;
+    min-height: initial;
+}
+
+.inline-edit-regular-property .form-switch .checkbox label,
+.inline-edit-table-property .form-switch .checkbox label {
+    margin-bottom: 0;
+    min-height: 15px;
+}
+
+.inline-edit-list-property textarea.text-multiline-field{
+    min-height:2.5em;
+    height:4em;
+    margin-bottom: 14px;
+}
+
+.inline-edit-list-property textarea.text-markdown-field {
+    min-height: 171px;
+    margin-bottom: 14px;
+}

@@ -1,8 +1,5 @@
-<div class="form-group row" style="padding-right:0.75em">
-  {% include "objects/forms/property_label.html" %}
-  <div class="col-md-9 error-parent">
-    {% include "objects/forms/form_timeseries_field.html" %}
-    <span class="error-note help-block"></span>
-    {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
-  </div>
-</div>
+{% extends get_form_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/fields/timeseries_field.html" %}
+{% endblock %}

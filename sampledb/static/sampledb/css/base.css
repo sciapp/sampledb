@@ -1513,3 +1513,18 @@ table.diff tr.striped {
 .form-copy-button {
     padding: 6px 9.2px;
 }
+
+textarea.text-multiline-field,
+textarea.text-markdown-field {
+    resize: vertical;
+}
+
+.form-list-property textarea.text-multiline-field{
+    min-height:2.5em;
+    height:4em;
+}
+
+.form-list-property textarea.text-markdown-field {
+    min-height: 171px;
+}
+
