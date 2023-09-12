@@ -1429,3 +1429,19 @@ def safe_get_component_by_uuid(component_uuid: str) -> typing.Optional[Component
         return get_component_by_uuid(component_uuid=component_uuid)
     except errors.ComponentDoesNotExistError:
         return None
+
+
+@JinjaFunction()
+def get_property_names_in_order(
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Sequence[str]:
+    property_names = [
+        property_name
+        for property_name in schema.get('propertyOrder', [])
+        if property_name in schema.get('properties', [])
+    ] + [
+        property_name
+        for property_name in schema.get('properties', [])
+        if property_name not in schema.get('propertyOrder', [])
+    ]
+    return property_names

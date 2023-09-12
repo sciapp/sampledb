@@ -50,7 +50,7 @@
     {% set z = schema.update({'parent_style': parent_schema['style']}) %}
     {% set tmp_prefix = id_prefix %}
     {% set id_prefix = parent_prefix ~ '_!index' ~ template_order_index ~ '!_' %}
-    {% set data = {} %}
+    {% set data = none %}
     <div class="col-md-9 col-md-offset-3 container_{{parent_prefix}}" id="container_{{ id_prefix }}" style="display: flex; padding-left: 2em; padding-right: 1.75em;">
       {% include get_form_template(schema) %}
       <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
