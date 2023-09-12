@@ -488,6 +488,7 @@
 
       updateArrayNames(parent_prefix);
       applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
+      if(!initPhase) replaceMarkdownTemplates();
     }
   }
 
