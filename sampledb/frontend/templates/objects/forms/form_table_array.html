@@ -195,7 +195,7 @@
     {% for item in data %}
       {% set item_index = loop.index0 %}
       <tr data-row-id="{{ loop.index0 }}">
-        <input type="hidden" name="{{ id_prefix }}__{{ loop.index0 }}__hidden" value="hidden" />
+        <input type="hidden" name="{{ id_prefix }}_{{ loop.index0 }}__hidden" value="hidden" />
       {% for field in item %}
         <td>
           {% set name = "field_".format(loop.index0) %}
