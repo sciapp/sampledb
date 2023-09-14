@@ -1,7 +1,7 @@
 <!-- array start -->
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set schema_path = schema_path + '__?' %}
-<div class="form-group row" id="array-{{ id_prefix }}" data-template-order-index="{{ template_order_index }}" data-compound-default="{{ schema_path + '__?' in compound_defaults }}">
+<div class="form-group row" id="array-{{ id_prefix }}" data-template-order-index="{{ template_order_index }}">
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }}{% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>

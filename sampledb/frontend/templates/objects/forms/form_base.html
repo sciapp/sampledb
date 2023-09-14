@@ -487,12 +487,12 @@
       }
 
       updateArrayNames(parent_prefix);
-      applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems, array.data('compound-default'));
+      applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems);
       if(!initPhase) replaceMarkdownTemplates();
     }
   }
 
-  function applyInteractionModifications(clone, addButton, copyButtons, deleteButton, minItems, maxItems, defaultItems) {
+  function applyInteractionModifications(clone, addButton, copyButtons, deleteButton, minItems, maxItems) {
       updateJSInteractiveFields();
       applySchemaConditions(clone);
       applySchemaCalculations(clone);
@@ -506,17 +506,18 @@
         }
       });
 
-      if(defaultItems) {
-        updateButtonsForDefaultItems(clone);
-      } else {
-        generateMinOrDefaultElements(clone, addButton, deleteButton, minItems, maxItems);
-      }
+      updateButtonsForDefaultItems(clone);
+      generateMinOrDefaultElements(clone);
   }
 
   function updateButtonsForDefaultItems(clone) {
     clone.find('[data-is-default="default"]').each(function() {
       const parent_prefix = $(this).data('parent-prefix');
-      $(this).click(arrayFormDeleteHandler(parent_prefix, $(this).data('element-id'), $(this).data('min-items'), $(this).data('max-items'), $(this).data('is-default') === 'list'));
+      if ($(this).attr('id').endsWith('__copy')) {
+        $(this).click(arrayFormTableCopyHandler(parent_prefix, $(this).data('min-items'), $(this).data('max-items')));
+      } else {
+        $(this).click(arrayFormDeleteHandler(parent_prefix, $(this).data('element-id'), $(this).data('min-items'), $(this).data('max-items'), $(this).data('is-default') === 'list'));
+      }
       updateArrayButtons(null, [], $(`.action_delete_${parent_prefix}`), $(this).data('min-items'), $(this).data('max-items'));
     });
     clone.find('[data-array-kind="table"]').not('[data-is-default="default"]').each(function() {
@@ -630,7 +631,7 @@
       template.data('next-id', element_id + 1);
 
       updateArrayNames(parent_prefix);
-      applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems, parent.data('compound-default') === 'True');
+      applyInteractionModifications(clone, $(this), [], $(`.action_delete_${parent_prefix}`), minItems, maxItems);
       if(!initPhase) replaceMarkdownTemplates();
     }
   }
@@ -654,7 +655,7 @@
       table.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
 
       updateArrayNames(parent_prefix);
-      applyInteractionModifications(clone, $(this), table.find('> tbody > tr > td:last-of-type .form-copy-button'), $(`.action_delete_${parent_prefix}`), minItems, maxItems, table.data('compound-default'));
+      applyInteractionModifications(clone, $(this), table.find('> tbody > tr > td:last-of-type .form-copy-button'), $(`.action_delete_${parent_prefix}`), minItems, maxItems);
     }
   }
 
@@ -967,13 +968,18 @@
     {% endif %}
   }
 
-  function generateMinOrDefaultElements(newElem, addButton, deleteButton, minItems, maxItems) {
-    $(newElem).find('.form-add-button').each(function() {
-      if($(this).parents('.array-template').length === 0 && !initPhase) {
-        const minItems = $(this).data('min-items') ? $(this).data('min-items') : 0;
-        const defaultItems = $(this).data('default-items') ? $(this).data('defaultItems') : 0;
+  function generateMinOrDefaultElements(newElem) {
+    $(newElem).find('.form-add-button[id$="__?__add"]').each(function() {
+      const add_button = $(this);
+      if(add_button.parents('.array-template').length === 0 && !initPhase) {
+        const array_id_prefix = add_button.attr('id').substring(0, add_button.attr('id').length - '_?__add'.length);
+        const minItems = add_button.data('min-items') ? add_button.data('min-items') : 0;
+        const defaultItems = add_button.data('default-items') ? add_button.data('defaultItems') : 0;
         for(let i = 0; i < Math.max(minItems, defaultItems); i++) {
-          $(this).click();
+          const delete_button = $('#' + array_id_prefix + '_' + i + '__delete');
+          if (delete_button.length === 0) {
+            add_button.click();
+          }
         }
       }
     });
