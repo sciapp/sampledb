@@ -1,4 +1,3 @@
-<!-- object start -->
     {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title)  and schema.title %}
         <span style="{% if workflow_display_mode %}font-weight: bold;{% else %}font-size: 1.5em;{% endif %} padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
     {% endif %}
@@ -54,4 +53,3 @@
 {% endif %}
 </div>
 </div>
-<!-- object end -->
