@@ -16,126 +16,126 @@
   {% if schema["items"]["type"] == 'object' %}
     <table class="table">
       <tbody>
-      {% set item_property_names = schema["items"].properties.keys() %}
-      {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
-      {% for property_name in property_order %}
-        {% if property_name in item_property_names %}
-          {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
-          <tr>
-            <th scope="col">
-              {% if 'tooltip' in schema["items"].properties[property_name] %}
-                <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
-              {% endif %}
-              {{ schema["items"].properties[property_name].title | get_translated_text }}
-              {% if 'tooltip' in schema["items"].properties[property_name] %}
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
-                </span>
-              {% endif %}
-              {% if schema["items"].properties[property_name].type == 'text' %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% elif schema["items"].properties[property_name].type == 'quantity' %}
-                {% if schema["items"].properties[property_name].units.strip() != '1' %}
-                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+        {% set item_property_names = schema["items"].properties.keys() %}
+        {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
+        {% for property_name in property_order %}
+          {% if property_name in item_property_names %}
+            {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
+            <tr>
+              <th scope="col">
+                {% if 'tooltip' in schema["items"].properties[property_name] %}
+                  <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
+                    {{ schema["items"].properties[property_name].title | get_translated_text }}
+                    <i class="fa fa-question-circle" aria-hidden="true"></i>
+                  </span>
                 {% else %}
-                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                  {{ schema["items"].properties[property_name].title | get_translated_text }}
                 {% endif %}
-              {% elif schema["items"].properties[property_name].type == 'bool' %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% else %}
-                <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% endif %}
-            </th>
-            {% if data is not none %}
-              {% for item in data %}
-                <td>
-                  {% set name = property_name %}
-                  {% set schema = schema['items'].properties[property_name] %}
-                  {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
-                  {% if property_name in item %}
-                    {% set data = item[property_name] %}
+                {% if schema["items"].properties[property_name].type == 'text' %}
+                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                {% elif schema["items"].properties[property_name].type == 'quantity' %}
+                  {% if schema["items"].properties[property_name].units.strip() != '1' %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                   {% else %}
-                    {% set data = none %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                   {% endif %}
-                  {% set entry_index = loop.index0 %}
-                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                  {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-                  {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
-                  {% if 'conditions' in schema %}
-                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                      {% include "objects/inline_edit/inline_edit_any.html" %}
-                      {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-                    </div>
-                    <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
-                      &mdash;
-                    </div>
-                  {% else %}
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                  {% endif %}
-                </td>
-              {% endfor %}
-            {% endif %}
-          </tr>
-        {% endif %}
-      {% endfor %}
-      {% for property_name in item_property_names %}
-        {% if property_name not in property_order %}
-          {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
-          <tr>
-            <th scope="col">
-              {% if 'tooltip' in schema["items"].properties[property_name] %}
-                <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
-              {% endif %}
-              {{ schema["items"].properties[property_name].title | get_translated_text }}
-              {% if 'tooltip' in schema["items"].properties[property_name] %}
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
-                </span>
-              {% endif %}
-              {% if schema["items"].properties[property_name].type == 'text' %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% elif schema["items"].properties[property_name].type == 'quantity' %}
-                {% if schema["items"].properties[property_name].units.strip() != '1' %}
-                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                {% elif schema["items"].properties[property_name].type == 'bool' %}
+                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                 {% else %}
-                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                  <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                 {% endif %}
-              {% elif schema["items"].properties[property_name].type == 'bool' %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% else %}
-                <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% endif %}
-            </th>
-            {% if data is not none %}
-              {% for item in data %}
-                <td>
-                  {% set name = property_name %}
-                  {% set schema = schema['items'].properties[property_name] %}
-                  {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
-                  {% if property_name in item %}
-                    {% set data = item[property_name] %}
-                  {% else %}
-                    {% set data = none %}
-                  {% endif %}
-                  {% set entry_index = loop.index0 %}
-                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
-                  {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-                  {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
-                  {% if 'conditions' in schema %}
-                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+              </th>
+              {% if data is not none %}
+                {% for item in data %}
+                  <td>
+                    {% set name = property_name %}
+                    {% set schema = schema['items'].properties[property_name] %}
+                    {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
+                    {% if property_name in item %}
+                      {% set data = item[property_name] %}
+                    {% else %}
+                      {% set data = none %}
+                    {% endif %}
+                    {% set entry_index = loop.index0 %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                    {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                    {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
+                    {% if 'conditions' in schema %}
+                      <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                        {% include "objects/inline_edit/inline_edit_any.html" %}
+                        {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      </div>
+                      <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                        &mdash;
+                      </div>
+                    {% else %}
                       {% include "objects/inline_edit/inline_edit_any.html" %}
-                      {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-                    </div>
-                    <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
-                      &mdash;
-                    </div>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              {% endif %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+        {% for property_name in item_property_names %}
+          {% if property_name not in property_order %}
+            {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
+            <tr>
+              <th scope="col">
+                {% if 'tooltip' in schema["items"].properties[property_name] %}
+                  <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
+                    {{ schema["items"].properties[property_name].title | get_translated_text }}
+                    <i class="fa fa-question-circle" aria-hidden="true"></i>
+                  </span>
+                {% else %}
+                  {{ schema["items"].properties[property_name].title | get_translated_text }}
+                {% endif %}
+                {% if schema["items"].properties[property_name].type == 'text' %}
+                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                {% elif schema["items"].properties[property_name].type == 'quantity' %}
+                  {% if schema["items"].properties[property_name].units.strip() != '1' %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                   {% else %}
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
+                    <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
                   {% endif %}
-                </td>
-              {% endfor %}
-            {% endif %}
-          </tr>
-        {% endif %}
-      {% endfor %}
+                {% elif schema["items"].properties[property_name].type == 'bool' %}
+                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                {% else %}
+                  <a href="{{ url_for('.objects', q=search_query_attribute, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+                {% endif %}
+              </th>
+              {% if data is not none %}
+                {% for item in data %}
+                  <td>
+                    {% set name = property_name %}
+                    {% set schema = schema['items'].properties[property_name] %}
+                    {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
+                    {% if property_name in item %}
+                      {% set data = item[property_name] %}
+                    {% else %}
+                      {% set data = none %}
+                    {% endif %}
+                    {% set entry_index = loop.index0 %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                    {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+                    {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
+                    {% if 'conditions' in schema %}
+                      <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+                        {% include "objects/inline_edit/inline_edit_any.html" %}
+                        {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      </div>
+                      <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                        &mdash;
+                      </div>
+                    {% else %}
+                      {% include "objects/inline_edit/inline_edit_any.html" %}
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              {% endif %}
+            </tr>
+          {% endif %}
+        {% endfor %}
       </tbody>
     </table>
   {% else %}

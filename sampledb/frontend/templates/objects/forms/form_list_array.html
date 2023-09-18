@@ -5,71 +5,71 @@
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }}{% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
-{% set is_required = True %}
-{% set minItems = schema.get('minItems', 0) %}
-{% set maxItems = schema.get('maxItems', None) %}
-{% set defaultItems = schema.get('defaultItems', 0) %}
-{% if data is not none %}
-{% set numItems = (data | length) %}
-{% else %}
-{% set numItems = 0 %}
-{% endif %}
-{% set using_compound_default = false %}
-{% if is_template and schema_path in compound_defaults %}
-  {% set data = compound_defaults[schema_path] %}
-  {% set using_compound_default = true %}
-  {% set numItems = (data | length) %}
-{% endif %}
-{% set itemName = (schema['items'].title | get_translated_text) %}
-{% set has_objects = data is not none %}
-{% if data is not none %}
-{% set parent_prefix = id_prefix %}
-{% for item in data %}
-  {% set name = "item" %}
-  {% set tmp_style = schema.get('style') %}
-  {% set parent_schema = schema %}
-  {% set schema = schema['items'] %}
-  {% set z = schema.update({'parent_style': tmp_style}) %}
-  {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-  {% set data = item %}
-  {% if not is_template %}
-    {{ form_elements.append({ "kind": "list_array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
+  {% set is_required = True %}
+  {% set minItems = schema.get('minItems', 0) %}
+  {% set maxItems = schema.get('maxItems', None) %}
+  {% set defaultItems = schema.get('defaultItems', 0) %}
+  {% if data is not none %}
+    {% set numItems = (data | length) %}
+  {% else %}
+    {% set numItems = 0 %}
   {% endif %}
-  <div class="col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %} container_{{ parent_prefix }}" id="container_{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em">
-      {% include "objects/forms/form_any.html" %}
-      <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-      <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height:34px;" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if using_compound_default %} data-is-default="default" data-array-kind="list" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}><i class="fa fa-minus"></i></button>
+  {% set using_compound_default = false %}
+  {% if is_template and schema_path in compound_defaults %}
+    {% set data = compound_defaults[schema_path] %}
+    {% set using_compound_default = true %}
+    {% set numItems = (data | length) %}
+  {% endif %}
+  {% set itemName = (schema['items'].title | get_translated_text) %}
+  {% set has_objects = data is not none %}
+  {% if data is not none %}
+    {% set parent_prefix = id_prefix %}
+    {% for item in data %}
+      {% set name = "item" %}
+      {% set tmp_style = schema.get('style') %}
+      {% set parent_schema = schema %}
+      {% set schema = schema['items'] %}
+      {% set z = schema.update({'parent_style': tmp_style}) %}
+      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+      {% set data = item %}
+      {% if not is_template %}
+        {{ form_elements.append({ "kind": "list_array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
+      {% endif %}
+      <div class="col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %} container_{{ parent_prefix }}" id="container_{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em">
+          {% include "objects/forms/form_any.html" %}
+          <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
+            <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height:34px;" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if using_compound_default %} data-is-default="default" data-array-kind="list" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}><i class="fa fa-minus"></i></button>
+          </div>
       </div>
-  </div>
-{% endfor %}
-  <div class="array-template" id="template-{{ id_prefix }}" data-next-id="{{ data|length }}" disabled="disabled">
-    {% set is_template = true %}
-    {% set parent_schema = schema %}
-    {% set schema = schema['items'] %}
-    {% set z = schema.update({'parent_style': parent_schema['style']}) %}
-    {% set tmp_prefix = id_prefix %}
-    {% set id_prefix = parent_prefix ~ '_!index' ~ template_order_index ~ '!_' %}
-    {% set data = none %}
-    <div class="col-md-9 col-md-offset-3 container_{{parent_prefix}}" id="container_{{ id_prefix }}" style="display: flex; padding-left: 2em; padding-right: 1.75em;">
-      {% include get_form_template(schema) %}
-      <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-        <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height: 34px;"><i class="fa fa-minus"></i></button>
+    {% endfor %}
+    <div class="array-template" id="template-{{ id_prefix }}" data-next-id="{{ data|length }}" disabled="disabled">
+      {% set is_template = true %}
+      {% set parent_schema = schema %}
+      {% set schema = schema['items'] %}
+      {% set z = schema.update({'parent_style': parent_schema['style']}) %}
+      {% set tmp_prefix = id_prefix %}
+      {% set id_prefix = parent_prefix ~ '_!index' ~ template_order_index ~ '!_' %}
+      {% set data = none %}
+      <div class="col-md-9 col-md-offset-3 container_{{parent_prefix}}" id="container_{{ id_prefix }}" style="display: flex; padding-left: 2em; padding-right: 1.75em;">
+        {% include get_form_template(schema) %}
+        <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
+          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height: 34px;"><i class="fa fa-minus"></i></button>
+        </div>
       </div>
+      {% set schema = parent_schema %}
+      {% set id_prefix = tmp_prefix %}
+      {% set is_template = false %}
     </div>
-    {% set schema = parent_schema %}
-    {% set id_prefix = tmp_prefix %}
-    {% set is_template = false %}
-  </div>
-{% endif %}
-<div class="col-md-9 {% if has_objects %} col-md-offset-3{% endif %}" id="button_{{ id_prefix }}_width" style="display: flex; padding-left:1em; padding-right:1.75em">
-  <div style="flex-grow: 1">
-  {% if 'note' in schema['items'] %}
-    <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['items']['note'] | get_translated_text }}</span>
   {% endif %}
+  <div class="col-md-9 {% if has_objects %} col-md-offset-3{% endif %}" id="button_{{ id_prefix }}_width" style="display: flex; padding-left:1em; padding-right:1.75em">
+    <div style="flex-grow: 1">
+    {% if 'note' in schema['items'] %}
+      <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['items']['note'] | get_translated_text }}</span>
+    {% endif %}
+    </div>
+    <div style="flex-grow: 0; flex-basis: 4em;"></div>
+    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-array-type="list" data-parent-prefix="{{ parent_prefix }}" data-id-prefix="{{ id_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" style="height:34px;" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %}><i class="fa fa-plus"></i></button>
   </div>
-<div style="flex-grow: 0; flex-basis: 4em;"></div>
-  <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-array-type="list" data-parent-prefix="{{ parent_prefix }}" data-id-prefix="{{ id_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" style="height:34px;" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %}><i class="fa fa-plus"></i></button>
-</div>
 </div>
 {% if not is_template %}
   {{ form_elements.append({ "kind": "list_array_add", "parent_prefix": parent_prefix, "id_prefix": id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}

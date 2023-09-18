@@ -1,20 +1,20 @@
 <div class="form-group row">
-{% if schema.title %}
-  {% include "objects/property_label.html" %}
-{% endif %}
-{% set is_required = False %}
-{% set minItems = schema.get('minItems', 0) %}
-{% set maxItems = schema.get('maxItems', None) %}
-{% if data is not none %}
-  {% set numItems = (data | length) %}
-{% else %}
-  {% set numItems = 0 %}
-{% endif %}
-{% if search_query_attribute %}
-  {% set base_search_query_attribute = search_query_attribute %}
-{% else %}
-  {% set base_search_query_attribute = "" %}
-{% endif %}
+  {% if schema.title %}
+    {% include "objects/property_label.html" %}
+  {% endif %}
+  {% set is_required = False %}
+  {% set minItems = schema.get('minItems', 0) %}
+  {% set maxItems = schema.get('maxItems', None) %}
+  {% if data is not none %}
+    {% set numItems = (data | length) %}
+  {% else %}
+    {% set numItems = 0 %}
+  {% endif %}
+  {% if search_query_attribute %}
+    {% set base_search_query_attribute = search_query_attribute %}
+  {% else %}
+    {% set base_search_query_attribute = "" %}
+  {% endif %}
 </div>
 <div style="padding-left:2.5em;">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
