@@ -23,12 +23,14 @@
   {% set has_objects = data is not none %}
   {% if data is not none %}
     {% set parent_prefix = id_prefix %}
+    {% set parent_property_path = property_path %}
     {% for item in data %}
       {% set tmp_style = schema.get('style') %}
       {% set parent_schema = schema %}
       {% set schema = schema['items'] %}
       {% set z = schema.update({'parent_style': tmp_style}) %}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+      {% set property_path = property_path + (loop.index0,) %}
       {% set data = item %}
       {% if not is_template %}
         {{ form_elements.append({ "kind": "list_array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
@@ -47,6 +49,8 @@
       {% set z = schema.update({'parent_style': parent_schema['style']}) %}
       {% set tmp_prefix = id_prefix %}
       {% set id_prefix = parent_prefix ~ '_!index' ~ template_order_index ~ '!_' %}
+      {% set tmp_property_path = property_path %}
+      {% set property_path = parent_property_path + ('!index' ~ template_order_index ~ '!',) %}
       {% set data = none %}
       <div class="col-md-9 col-md-offset-3 container_{{parent_prefix}}" id="container_{{ id_prefix }}" style="display: flex; padding-left: 2em; padding-right: 1.75em;">
         {% include get_form_template(schema) %}
@@ -56,6 +60,7 @@
       </div>
       {% set schema = parent_schema %}
       {% set id_prefix = tmp_prefix %}
+      {% set property_path = tmp_property_path %}
       {% set is_template = false %}
     </div>
   {% endif %}

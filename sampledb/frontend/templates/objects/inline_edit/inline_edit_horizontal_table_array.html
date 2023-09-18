@@ -1,8 +1,3 @@
-{% if search_query_attribute %}
-  {% set base_search_query_attribute = search_query_attribute %}
-{% else %}
-  {% set base_search_query_attribute = "" %}
-{% endif %}
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
 </div>
@@ -20,11 +15,14 @@
         {% set property_order = schema.get('items', {}).get('propertyOrder', []) %}
         {% for property_name in property_order %}
           {% if property_name in item_property_names %}
-            {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
             <tr>
-              <th scope="col">
-                {% include "objects/table_property_label.html" %}
-              </th>
+              {% with %}
+                {% set schema = schema["items"].properties[property_name] %}
+                {% set property_path = property_path + ('?', property_name) %}
+                <th scope="col">
+                  {% include "objects/table_property_label.html" %}
+                </th>
+              {% endwith %}
               {% if data is not none %}
                 {% for item in data %}
                   <td>
@@ -36,9 +34,9 @@
                       {% set data = none %}
                     {% endif %}
                     {% set entry_index = loop.index0 %}
-                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                     {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
                     {% set id_prefix = parent_id_prefix + '_' + property_name + '_' %}
+                    {% set property_path = property_path + (loop.index0, property_name,) %}
                     {% if 'conditions' in schema %}
                       <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                         {% include "objects/inline_edit/inline_edit_any.html" %}
@@ -58,11 +56,14 @@
         {% endfor %}
         {% for property_name in item_property_names %}
           {% if property_name not in property_order %}
-            {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
             <tr>
-              <th scope="col">
-                {% include "objects/table_property_label.html" %}
-              </th>
+              {% with %}
+                {% set schema = schema["items"].properties[property_name] %}
+                {% set property_path = property_path + ('?', property_name) %}
+                <th scope="col">
+                  {% include "objects/table_property_label.html" %}
+                </th>
+              {% endwith %}
               {% if data is not none %}
                 {% for item in data %}
                   <td>
@@ -74,9 +75,9 @@
                       {% set data = none %}
                     {% endif %}
                     {% set entry_index = loop.index0 %}
-                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                     {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
                     {% set id_prefix = parent_id_prefix + '_' + property_name + '_' %}
+                    {% set property_path = property_path + (loop.index0, property_name,) %}
                     {% if 'conditions' in schema %}
                       <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                         {% include "objects/inline_edit/inline_edit_any.html" %}

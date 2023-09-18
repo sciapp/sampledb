@@ -1,11 +1,6 @@
 {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title)  and schema.title %}
   <span style="{% if workflow_display_mode %}font-weight: bold;{% else %}font-size: 1.5em;{% endif %} padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
-{% if search_query_attribute %}
-  {% set base_search_query_attribute = search_query_attribute %}
-{% else %}
-  {% set base_search_query_attribute = "" %}
-{% endif %}
 {% set indent_level = indent_level + 1 %}
 <div style="border-left: 1px solid {% if show_indent_border %}#dddddd{% else %}transparent{% endif %}; margin-left: {{ indent_level * 10 }}px">
   <div style="margin-left: {{ -indent_level * 20 - 1 }}px; padding-left:{{ indent_level * 10 + 1 }}px">
@@ -17,6 +12,7 @@
         {% set schema = schema.properties[property_name] %}
         {% set parent_id_prefix = id_prefix %}
         {% set id_prefix = id_prefix + '_' + property_name + '_' %}
+        {% set property_path = property_path + (property_name,) %}
         {% if data is not none and property_name in data %}
           {% set data = data[property_name] %}
         {% else %}
@@ -28,11 +24,6 @@
         {% else %}
           {% set diff = none %}
           {% set previous_schema = none %}
-        {% endif %}
-        {% if base_search_query_attribute %}
-          {% set search_query_attribute = base_search_query_attribute + "." + property_name %}
-        {% else %}
-          {% set search_query_attribute = property_name %}
         {% endif %}
         {% include "objects/view/any.html" %}
       {% endif %}

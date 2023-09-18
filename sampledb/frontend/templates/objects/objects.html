@@ -1544,6 +1544,7 @@
             {% set metadata_language = none %}
             {% set object_id = object.object_id %}
             {% set id_prefix = 'object' + (object_id | string) + '__' + property_name + '_' %}
+            {% set property_path = (property_name,) %}
             {% set data = object.display_properties[property_name][0] %}
             {% set schema = object.display_properties[property_name][1] %}
             {% set z = schema.update({'parent_style': 'table'}) %}

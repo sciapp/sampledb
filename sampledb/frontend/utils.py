@@ -791,11 +791,11 @@ def get_num_deprecation_warnings() -> int:
 
 @JinjaFunction()
 def get_search_url(
-        attribute: str,
+        property_path: typing.Tuple[str, ...],
         data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
         metadata_language: typing.Optional[str] = None
 ) -> typing.Optional[str]:
-    search_query = get_search_query(attribute, data, metadata_language=metadata_language)
+    search_query = get_search_query(property_path, data, metadata_language=metadata_language)
     if search_query is None:
         return None
     return flask.url_for(
@@ -806,10 +806,14 @@ def get_search_url(
 
 
 def get_search_query(
-        attribute: str,
+        property_path: typing.Tuple[str, ...],
         data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
         metadata_language: typing.Optional[str] = None
 ) -> typing.Optional[str]:
+    attribute = '.'.join(
+        str(path_element)
+        for path_element in property_path
+    )
     if data is None:
         return f'{attribute} == null'
     if isinstance(data, list):
@@ -845,6 +849,43 @@ def get_search_query(
             return f'{attribute} == "{str(title)}"'
         else:
             return f'{attribute} == ""'
+    # fallback: find all objects that have this attribute set
+    return f'!({attribute} == null)'
+
+
+@JinjaFunction()
+def get_table_search_url(
+        property_path: typing.Tuple[str, ...],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    search_query = get_table_search_query(property_path, schema)
+    if search_query is None:
+        return None
+    return flask.url_for(
+        '.objects',
+        q=search_query,
+        advanced='on'
+    )
+
+
+def get_table_search_query(
+        property_path: typing.Tuple[str, ...],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    attribute = '.'.join(
+        str(path_element)
+        for path_element in property_path
+    )
+    if schema.get('type') == 'text':
+        return f'{attribute} == ""'
+    if schema.get('type') == 'quantity':
+        if isinstance(schema['units'], str) and schema['units'].strip() != '1':
+            return f'{attribute} == 0{schema.get("units")}'
+        if isinstance(schema['units'], list) and len(schema['units']) == 1 and schema['units'][0].strip() != '1':
+            return f'{attribute} == 0{schema.get("units")}'
+        return f'{attribute} == 0'
+    if schema.get('type') == 'bool':
+        return f'{attribute} == True'
     # fallback: find all objects that have this attribute set
     return f'!({attribute} == null)'
 

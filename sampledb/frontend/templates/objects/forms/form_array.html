@@ -29,6 +29,7 @@
       {% set schema = schema['items'] %}
       {{ schema.update({'parent_style': parent_schema.get('style', none)}) or '' }}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+      {% set property_path = property_path + (loop.index0,) %}
       {% if not using_compound_default %}
         {{ form_elements.append({ "kind": "array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
       {% endif %}
@@ -44,6 +45,7 @@
     {% endfor %}
   {% endif %}
   {% set id_prefix = parent_prefix + '_!index' ~ template_order_index ~ '!_' %}
+  {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
   <div class="array-template" id="container_{{ id_prefix }}" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
     {% set parent_schema = schema %}
     {% set schema = schema['items'] %}

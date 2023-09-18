@@ -11,11 +11,6 @@
   {% else %}
     {% set numItems = 0 %}
   {% endif %}
-  {% if search_query_attribute %}
-    {% set base_search_query_attribute = search_query_attribute %}
-  {% else %}
-    {% set base_search_query_attribute = "" %}
-  {% endif %}
   <div class="col-md-9 array-style-list">
     {% if data is not none %}
       <ul style="padding-left: 1.25em">
@@ -24,8 +19,8 @@
           {% set schema = schema['items'] %}
           {% set z = schema.update({'parent_style': tmp_style}) %}
           {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+          {% set property_path = property_path + (loop.index0,) %}
           {% set data = item %}
-          {% set search_query_attribute = base_search_query_attribute + ".%d" | format(loop.index0) %}
           {% set hidden = False %}
           <li>
             {% include "objects/inline_edit/inline_edit_any.html" %}

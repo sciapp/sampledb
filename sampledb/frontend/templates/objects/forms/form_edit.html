@@ -8,6 +8,7 @@
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
     {% set id_prefix = "object_" %}
+    {% set property_path = () %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-6 text-muted">* {{ _('required') }}</div>
