@@ -18,7 +18,6 @@
 </div>
 <div style="padding-left:2.5em;">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
-  {% set itemName = (schema['items'].title | get_translated_text) %}
   {% if data is not none %}
     {% for item in data %}
       {% set name = loop.index0 | string %}

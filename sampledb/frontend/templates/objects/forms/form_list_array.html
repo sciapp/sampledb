@@ -20,7 +20,6 @@
     {% set using_compound_default = true %}
     {% set numItems = (data | length) %}
   {% endif %}
-  {% set itemName = (schema['items'].title | get_translated_text) %}
   {% set has_objects = data is not none %}
   {% if data is not none %}
     {% set parent_prefix = id_prefix %}

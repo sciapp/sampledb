@@ -16,7 +16,6 @@
   {% else %}
     {% set base_search_query_attribute = "" %}
   {% endif %}
-  {% set itemName = (schema['items'].title | get_translated_text) %}
   <div class="col-md-9 array-style-list">
     {% if data is not none %}
       <ul style="padding-left: 1.25em">

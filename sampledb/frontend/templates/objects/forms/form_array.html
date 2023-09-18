@@ -17,7 +17,7 @@
 {% set schema_path = schema_path + '__?' %}
 <div style="padding-left:2.5em;" id="container_{{ parent_prefix }}_elements" data-template-order-index="{{ template_order_index }}">
   <input type="hidden" name="{{ parent_prefix }}_hidden" value="array">
-  {% set itemName = (schema['items'].title | get_translated_text) %}
+  {% set item_name = (schema['items'].title | get_translated_text) %}
   {% set using_compound_default = false %}
   {% if is_template and schema_path in compound_defaults %}
     {% set data = compound_defaults[schema_path] %}
@@ -37,7 +37,7 @@
 
       <div id="container_{{ id_prefix }}">
         <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
-          <div class="pull-right" style="padding-right:0.75em"><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }} delete-button" data-array-type="array" name="action_{{ id_prefix }}_delete" {% if numItems <= minItems %} disabled="disabled" {% endif %} style="width:20em;" {% if using_compound_default %} data-is-default="default" data-array-kind="list" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
+          <div class="pull-right" style="padding-right:0.75em"><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }} delete-button" data-array-type="array" name="action_{{ id_prefix }}_delete" {% if numItems <= minItems %} disabled="disabled" {% endif %} style="width:20em;" {% if using_compound_default %} data-is-default="default" data-array-kind="list" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>{{ _('Remove %(item_name)s', item_name=item_name) }}</button></div>
           <div class="clearfix" style="padding-bottom:0.75em"></div>
           {% include "objects/forms/form_any.html" %}
         </div>
@@ -54,7 +54,7 @@
     {% set data = none %}
     {% set is_template = true %}
     <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
-      <div class="pull-right" style="padding-right:0.75em"><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }} delete-button" data-array-type="array" data-prefix="{{ parent_prefix }}" name="action_{{ id_prefix }}_delete" {% if numItems <= minItems %} disabled="disabled" {% endif %} style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
+      <div class="pull-right" style="padding-right:0.75em"><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }} delete-button" data-array-type="array" data-prefix="{{ parent_prefix }}" name="action_{{ id_prefix }}_delete" {% if numItems <= minItems %} disabled="disabled" {% endif %} style="width:20em;">{{ _('Remove %(item_name)s', item_name=item_name) }}</button></div>
       <div class="clearfix" style="padding-bottom:0.75em"></div>
       {% include "objects/forms/form_any.html" %}
     </div>
@@ -63,7 +63,7 @@
 
   <div class="form-group row clearfix" style="padding-right:0.75em">
     <div class="col-md-9 col-md-offset-3">
-      <button type="button" id="action_{{ parent_prefix }}_?__add" name="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-array-type="array" data-parent-prefix="{{ parent_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %} style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
+      <button type="button" id="action_{{ parent_prefix }}_?__add" name="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-array-type="array" data-parent-prefix="{{ parent_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %} style="width:20em">{{ _('Add %(item_name)s', item_name=item_name) }}</button>
     </div>
     {% set data = data_backup %}
   </div>
