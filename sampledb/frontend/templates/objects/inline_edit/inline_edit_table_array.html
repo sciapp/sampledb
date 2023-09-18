@@ -83,16 +83,18 @@
       </tfoot>
     </table>
   {% elif schema['items']['type'] == 'array' %}
-    <table class="table">
-      {% set max_used_fields = 0 %}
-      {% if data is not none %}
-        {% set max_used_fields = [0] %}
-        {% for item in data %}
-          {% if (item | length) > max_used_fields[-1] %}
-            {% set tmp = max_used_fields.append(item | length) %}
-          {% endif %}
-        {% endfor %}
-        {% set max_used_fields = max_used_fields [-1] %}
+    {% set max_used_fields = 0 %}
+    {% if data is not none %}
+      {% set max_used_fields = [0] %}
+      {% for item in data %}
+        {% if (item | length) > max_used_fields[-1] %}
+          {% set tmp = max_used_fields.append(item | length) %}
+        {% endif %}
+      {% endfor %}
+      {% set max_used_fields = max_used_fields [-1] %}
+    {% endif %}
+    {% if max_used_fields > 0 %}
+      <table class="table">
         <thead>
           <tr>
             {% for i in range(max_used_fields) %}
@@ -119,14 +121,14 @@
             </tr>
           {% endfor %}
         </tbody>
-      {% endif %}
-      <tfoot>
-        <tr>
-          {% for i in range(max_used_fields) %}
-            <th>{{ _('Field %(index)s', index=i + 1) }}</th>
-          {% endfor %}
-        </tr>
-      </tfoot>
-    </table>
+        <tfoot>
+          <tr>
+            {% for i in range(max_used_fields) %}
+              <th>{{ _('Field %(index)s', index=i + 1) }}</th>
+            {% endfor %}
+          </tr>
+        </tfoot>
+      </table>
+    {% endif %}
   {% endif %}
 </div>
