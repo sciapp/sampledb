@@ -33,27 +33,7 @@
             {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
             {% set search_query_attribute = base_search_query_attribute + ".%s.%s" | format('?', property_name) %}
             <th scope="col">
-              {% if 'tooltip' in schema["items"].properties[property_name] %}
-                <span data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}">
-                  {{ schema["items"].properties[property_name].title | get_translated_text }}
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
-                </span>
-              {% else %}
-                {{ schema["items"].properties[property_name].title | get_translated_text }}
-              {% endif %}
-              {% if schema["items"].properties[property_name].type == 'text' %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == ""', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% elif schema["items"].properties[property_name].type == 'quantity' %}
-                {% if schema["items"].properties[property_name].units.strip() != '1' %}
-                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0' + schema["items"].properties[property_name].units, advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% else %}
-                  <a href="{{ url_for('.objects', q=search_query_attribute + ' == 0', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-                {% endif %}
-              {% elif schema["items"].properties[property_name].type == 'bool' %}
-                <a href="{{ url_for('.objects', q=search_query_attribute + ' == True', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% else %}
-                <a href="{{ url_for('.objects', q='!(' + search_query_attribute + ' == null)', advanced='on') }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
-              {% endif %}
+              {% include "objects/table_property_label.html" %}
             </th>
           {% endfor %}
           <th></th>
