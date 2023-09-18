@@ -15,9 +15,9 @@
     {% if data is not none %}
       <ul style="padding-left: 1.25em">
         {% for item in data %}
-          {% set tmp_style = schema['style'] %}
+          {% set parent_style = schema.get('style') %}
           {% set schema = schema['items'] %}
-          {% set z = schema.update({'parent_style': tmp_style}) %}
+          {% set z = schema.update({'parent_style': parent_style}) %}
           {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
           {% set property_path = property_path + (loop.index0,) %}
           {% set data = item %}

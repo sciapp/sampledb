@@ -25,9 +25,9 @@
   {% endif %}
   {% if data is not none %}
     {% for item in data %}
-      {% set parent_schema = schema %}
+      {% set parent_style = schema.get('style') %}
       {% set schema = schema['items'] %}
-      {{ schema.update({'parent_style': parent_schema.get('style', none)}) or '' }}
+      {{ schema.update({'parent_style': parent_style}) or '' }}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set property_path = property_path + (loop.index0,) %}
       {% if not using_compound_default %}
@@ -47,9 +47,9 @@
   {% set id_prefix = parent_prefix + '_!index' ~ template_order_index ~ '!_' %}
   {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
   <div class="array-template" id="container_{{ id_prefix }}" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
-    {% set parent_schema = schema %}
+    {% set parent_style = schema.get('style') %}
     {% set schema = schema['items'] %}
-    {{ schema.update({'parent_style': parent_schema.get('style', none)}) or '' }}
+    {{ schema.update({'parent_style': parent_style}) or '' }}
     {% set data_backup = data %}
     {% set data = none %}
     {% set is_template = true %}

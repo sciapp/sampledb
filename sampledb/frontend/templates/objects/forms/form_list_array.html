@@ -25,10 +25,9 @@
     {% set parent_prefix = id_prefix %}
     {% set parent_property_path = property_path %}
     {% for item in data %}
-      {% set tmp_style = schema.get('style') %}
-      {% set parent_schema = schema %}
+      {% set parent_style = schema.get('style') %}
       {% set schema = schema['items'] %}
-      {% set z = schema.update({'parent_style': tmp_style}) %}
+      {% set z = schema.update({'parent_style': parent_style}) %}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set property_path = property_path + (loop.index0,) %}
       {% set data = item %}
@@ -45,8 +44,9 @@
     <div class="array-template" id="template-{{ id_prefix }}" data-next-id="{{ data|length }}" disabled="disabled">
       {% set is_template = true %}
       {% set parent_schema = schema %}
+      {% set parent_style = schema.get('style') %}
       {% set schema = schema['items'] %}
-      {% set z = schema.update({'parent_style': parent_schema['style']}) %}
+      {% set z = schema.update({'parent_style': parent_style}) %}
       {% set tmp_prefix = id_prefix %}
       {% set id_prefix = parent_prefix ~ '_!index' ~ template_order_index ~ '!_' %}
       {% set tmp_property_path = property_path %}
