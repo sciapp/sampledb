@@ -104,31 +104,18 @@
           {% for item in data %}
             {% set item_index = loop.index0 %}
             <tr>
-              {% for field in item %}
+              {% for field_index, field in zip_longest(range(max_used_fields), item) %}
                 <td>
                   {% set tmp_style = schema['style'] %}
                   {% set schema = schema["items"]["items"] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
-                  {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
-                  {% set property_path = property_path + (item_index, loop.index0) %}
+                  {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, field_index) %}
+                  {% set property_path = property_path + (item_index, field_index) %}
                   {% set data = field %}
                   {% set entry_index = loop.index0 %}
                   {% include "objects/inline_edit/inline_edit_any.html" %}
                 </td>
               {% endfor %}
-              {% if (item | length) < max_used_fields %}
-                {% for i in range((item | length), max_used_fields) %}
-                  <td>
-                    {% set tmp_style = schema['style'] %}
-                    {% set schema = schema["items"]["items"] %}
-                    {% set z = schema.update({'parent_style': tmp_style}) %}
-                    {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
-                    {% set property_path = property_path + (item_index, i) %}
-                    {% set data = null %}
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                  </td>
-                {% endfor %}
-              {% endif %}
             </tr>
           {% endfor %}
         </tbody>

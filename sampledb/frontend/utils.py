@@ -12,10 +12,11 @@ import json
 import base64
 import functools
 import hashlib
-import typing
-from io import BytesIO
 import os
 import re
+import typing
+from io import BytesIO
+from itertools import zip_longest
 from urllib.parse import quote_plus
 from datetime import datetime
 from math import log10, floor
@@ -107,6 +108,7 @@ JinjaFunction()(is_full_location_tree_hidden)
 JinjaFunction()(generate_inline_script_nonce)
 JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
+JinjaFunction()(zip_longest)
 
 
 qrcode_cache: typing.Dict[str, str] = {}

@@ -151,7 +151,7 @@
           {% endif %}
           {% for item, item_class in item_rows %}
             <tr class="{{ item_class }}">
-            {% for field in item %}
+            {% for field_index, field in zip_longest(range(max_used_fields), item) %}
               <td>
                 {% set tmp_style = schema['style'] %}
                 {% set schema = schema["items"]["items"] %}
