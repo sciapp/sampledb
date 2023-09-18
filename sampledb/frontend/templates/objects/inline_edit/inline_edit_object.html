@@ -15,19 +15,18 @@
     {% for property_name in property_names %}
       {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
-      {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
       {% set parent_id_prefix = id_prefix %}
-      {% set id_prefix = id_prefix + '_' + name + '_' %}
+      {% set id_prefix = id_prefix + '_' + property_name + '_' %}
       {% if data is not none and property_name in data %}
         {% set data = data[property_name] %}
       {% else %}
         {% set data = none %}
       {% endif %}
       {% if base_search_query_attribute %}
-        {% set search_query_attribute = base_search_query_attribute + "." + name %}
+        {% set search_query_attribute = base_search_query_attribute + "." + property_name %}
       {% else %}
-        {% set search_query_attribute = name %}
+        {% set search_query_attribute = property_name %}
       {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">

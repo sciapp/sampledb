@@ -24,7 +24,6 @@
   {% if data is not none %}
     {% set parent_prefix = id_prefix %}
     {% for item in data %}
-      {% set name = "item" %}
       {% set tmp_style = schema.get('style') %}
       {% set parent_schema = schema %}
       {% set schema = schema['items'] %}

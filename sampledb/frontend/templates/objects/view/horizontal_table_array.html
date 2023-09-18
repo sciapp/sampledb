@@ -22,7 +22,6 @@
               {% if data is not none %}
                 {% for item in data %}
                   <td>
-                    {% set name = property_name %}
                     {% set schema = schema['items'].properties[property_name] %}
                     {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
                     {% if property_name in item %}
@@ -31,7 +30,7 @@
                       {% set data = none %}
                     {% endif %}
                     {% set entry_index = loop.index0 %}
-                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                     {% include "objects/view/any.html" %}
                   </td>
                 {% endfor %}
@@ -49,7 +48,6 @@
                 {% if data is not none %}
                   {% for item in data %}
                     <td>
-                      {% set name = property_name %}
                       {% set schema = schema['items'].properties[property_name] %}
                       {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
                       {% if property_name in item %}
@@ -58,7 +56,7 @@
                         {% set data = none %}
                       {% endif %}
                       {% set entry_index = loop.index0 %}
-                      {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                      {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                       {% include "objects/view/any.html" %}
                     </td>
                   {% endfor %}

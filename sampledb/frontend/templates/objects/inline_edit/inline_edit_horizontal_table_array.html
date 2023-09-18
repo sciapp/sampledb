@@ -28,7 +28,6 @@
               {% if data is not none %}
                 {% for item in data %}
                   <td>
-                    {% set name = property_name %}
                     {% set schema = schema['items'].properties[property_name] %}
                     {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
                     {% if property_name in item %}
@@ -37,9 +36,9 @@
                       {% set data = none %}
                     {% endif %}
                     {% set entry_index = loop.index0 %}
-                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                     {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-                    {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
+                    {% set id_prefix = parent_id_prefix + '_' + property_name + '_' %}
                     {% if 'conditions' in schema %}
                       <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                         {% include "objects/inline_edit/inline_edit_any.html" %}
@@ -67,7 +66,6 @@
               {% if data is not none %}
                 {% for item in data %}
                   <td>
-                    {% set name = property_name %}
                     {% set schema = schema['items'].properties[property_name] %}
                     {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
                     {% if property_name in item %}
@@ -76,9 +74,9 @@
                       {% set data = none %}
                     {% endif %}
                     {% set entry_index = loop.index0 %}
-                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                     {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-                    {% set id_prefix = parent_id_prefix + '_' + name + '_' %}
+                    {% set id_prefix = parent_id_prefix + '_' + property_name + '_' %}
                     {% if 'conditions' in schema %}
                       <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                         {% include "objects/inline_edit/inline_edit_any.html" %}

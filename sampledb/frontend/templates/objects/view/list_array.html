@@ -9,7 +9,6 @@
   {% if data %}
     <ul style="padding-left: 1.25em">
       {% for item in data %}
-        {% set name = name ~ "_" ~ loop.index0 %}
         {% set tmp_style = schema['style'] %}
         {% set schema = schema['items'] %}
         {% set z = schema.update({'parent_style': tmp_style}) %}

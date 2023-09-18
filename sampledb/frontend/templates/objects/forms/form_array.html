@@ -25,7 +25,6 @@
   {% endif %}
   {% if data is not none %}
     {% for item in data %}
-      {% set name = "item" %}
       {% set parent_schema = schema %}
       {% set schema = schema['items'] %}
       {{ schema.update({'parent_style': parent_schema.get('style', none)}) or '' }}
@@ -46,7 +45,6 @@
   {% endif %}
   {% set id_prefix = parent_prefix + '_!index' ~ template_order_index ~ '!_' %}
   <div class="array-template" id="container_{{ id_prefix }}" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
-    {% set name = none %}
     {% set parent_schema = schema %}
     {% set schema = schema['items'] %}
     {{ schema.update({'parent_style': parent_schema.get('style', none)}) or '' }}

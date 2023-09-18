@@ -9,7 +9,6 @@
 <div style="padding-left:2.5em;">
   {% if data is not none %}
     {% for item in data %}
-      {% set name = name ~ "_" ~ loop.index0 %}
       {% set schema = schema['items'] %}
       {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set data = item %}

@@ -36,7 +36,6 @@
           {% else %}
             {% set item = none %}
           {% endif %}
-          {% set name = "item" %}
           {% set tmp_style = schema['style'] %}
           {% set schema = schema['items'] %}
           {% set data = item %}
@@ -69,11 +68,10 @@
             <tr class="{{ row_class }}">
               {% for property_name in item_property_names %}
                 <td>
-                  {% set name = property_name %}
                   {% set schema = schema.properties[property_name] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
                   {% set parent_id_prefix = id_prefix %}
-                  {% set id_prefix = id_prefix + '_' + name + '_' %}
+                  {% set id_prefix = id_prefix + '_' + property_name + '_' %}
                   {% if diff is not none and previous_schema is not none and property_name in diff %}
                     {% set diff = diff[property_name] %}
                     {% if 'properties' in previous_schema and property_name in previous_schema['properties'] %}
@@ -91,7 +89,7 @@
                   {% else %}
                     {% set data = none %}
                   {% endif %}
-                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                   {% set hidden = False %}
                   {% include "objects/view/any.html" %}
                 </td>
@@ -159,7 +157,6 @@
             <tr class="{{ item_class }}">
             {% for field in item %}
               <td>
-                {% set name = name ~ "_" ~ loop.index0 %}
                 {% set tmp_style = schema['style'] %}
                 {% set schema = schema["items"]["items"] %}
                 {% set z = schema.update({'parent_style': tmp_style}) %}
@@ -177,7 +174,7 @@
                   {% set diff = none %}
                   {% set previous_schema = none %}
                 {% endif %}
-                {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                {% set search_query_attribute = base_search_query_attribute + ".%d.%d" | format(entry_index, loop.index0) %}
                 {% set hidden = False %}
                 {% include "objects/view/any.html" %}
               </td>

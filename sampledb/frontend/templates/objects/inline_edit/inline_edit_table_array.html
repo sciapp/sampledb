@@ -42,7 +42,6 @@
       <tbody>
         {% if data is not none %}
           {% for item in data %}
-            {% set name = "item" %}
             {% set tmp_style = schema['style'] %}
             {% set schema = schema['items'] %}
             {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
@@ -52,17 +51,16 @@
               {% for property_name in item_property_names %}
                 {% set hidden = False %}
                 <td>
-                  {% set name = property_name %}
                   {% set schema = schema.properties[property_name] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
                   {% set parent_id_prefix = id_prefix %}
-                  {% set id_prefix = id_prefix + '_' + name + '_' %}
+                  {% set id_prefix = id_prefix + '_' + property_name + '_' %}
                   {% if data is not none and property_name in data %}
                     {% set data = data[property_name] %}
                   {% else %}
                     {% set data = none %}
                   {% endif %}
-                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, property_name) %}
                   {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                       {% include "objects/inline_edit/inline_edit_any.html" %}
@@ -112,27 +110,25 @@
             <tr>
               {% for field in item %}
                 <td>
-                  {% set name = "field_".format(loop.index0) %}
                   {% set tmp_style = schema['style'] %}
                   {% set schema = schema["items"]["items"] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
                   {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
                   {% set data = field %}
                   {% set entry_index = loop.index0 %}
-                  {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(entry_index, name) %}
+                  {% set search_query_attribute = base_search_query_attribute + ".%d.%d" | format(entry_index, loop.index0) %}
                   {% include "objects/inline_edit/inline_edit_any.html" %}
                 </td>
               {% endfor %}
               {% if (item | length) < max_used_fields %}
                 {% for i in range((item | length), max_used_fields) %}
                   <td>
-                    {% set name ="field_".format(loop.index0) %}
                     {% set tmp_style = schema['style'] %}
                     {% set schema = schema["items"]["items"] %}
                     {% set z = schema.update({'parent_style': tmp_style}) %}
                     {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
                     {% set data = null %}
-                    {% set search_query_attribute = base_search_query_attribute + ".%d.%s" | format(i, name) %}
+                    {% set search_query_attribute = base_search_query_attribute + ".%d.%d" | format(i, loop.index0) %}
                     {% include "objects/inline_edit/inline_edit_any.html" %}
                   </td>
                 {% endfor %}
