@@ -25,7 +25,9 @@
           {% set diff = none %}
           {% set previous_schema = none %}
         {% endif %}
-        {% include "objects/view/any.html" %}
+        <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+          {% include "objects/view/any.html" %}
+        </div>
       {% endif %}
     {% endfor %}
     {% if schema.get("show_more") or (workflow_display_mode and schema.get("workflow_show_more")) %}

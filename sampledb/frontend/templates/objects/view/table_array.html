@@ -66,7 +66,6 @@
                 <td>
                   {% set schema = schema.properties[property_name] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
-                  {% set parent_id_prefix = id_prefix %}
                   {% set id_prefix = id_prefix + '_' + property_name + '_' %}
                   {% set property_path = property_path + (entry_index, property_name) %}
                   {% if diff is not none and previous_schema is not none and property_name in diff %}
@@ -86,7 +85,6 @@
                   {% else %}
                     {% set data = none %}
                   {% endif %}
-                  {% set hidden = False %}
                   {% include "objects/view/any.html" %}
                 </td>
               {% endfor %}
@@ -172,7 +170,6 @@
                     {% set diff = none %}
                     {% set previous_schema = none %}
                   {% endif %}
-                  {% set hidden = False %}
                   {% include "objects/view/any.html" %}
                 </td>
               {% endfor %}

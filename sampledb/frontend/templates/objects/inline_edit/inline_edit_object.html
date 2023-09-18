@@ -21,11 +21,15 @@
       {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-          {% include "objects/inline_edit/inline_edit_any.html" %}
-          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+          <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+            {% include "objects/inline_edit/inline_edit_any.html" %}
+          </div>
+          {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
         </div>
       {% else %}
-        {% include "objects/inline_edit/inline_edit_any.html" %}
+        <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+          {% include "objects/inline_edit/inline_edit_any.html" %}
+        </div>
       {% endif %}
     {% endfor %}
     {% if schema.get("show_more") %}

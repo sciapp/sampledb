@@ -24,7 +24,6 @@
         <tr>
           {% set item_property_names = get_property_names_in_order(schema["items"]) %}
           {% for property_name in item_property_names %}
-            {% set hidden = False %}
             {% set schema = schema["items"].properties[property_name] %}
             {% set property_path = property_path + ('?', property_name) %}
             <th scope="col">
@@ -45,11 +44,9 @@
             {% set data = item %}
             <tr>
               {% for property_name in item_property_names %}
-                {% set hidden = False %}
                 <td>
                   {% set schema = schema.properties[property_name] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
-                  {% set parent_id_prefix = id_prefix %}
                   {% set id_prefix = id_prefix + '_' + property_name + '_' %}
                   {% set property_path = property_path + (property_name,) %}
                   {% if data is not none and property_name in data %}
@@ -60,7 +57,7 @@
                   {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                       {% include "objects/inline_edit/inline_edit_any.html" %}
-                      {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
                     </div>
                     <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
                       &mdash;

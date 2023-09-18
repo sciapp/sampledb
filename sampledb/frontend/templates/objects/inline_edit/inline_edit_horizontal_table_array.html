@@ -31,13 +31,12 @@
                     {% set data = none %}
                   {% endif %}
                   {% set entry_index = loop.index0 %}
-                  {% set parent_id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-                  {% set id_prefix = parent_id_prefix + '_' + property_name + '_' %}
+                  {% set id_prefix = id_prefix + '__' ~ loop.index0 ~ '__' + property_name + '_' %}
                   {% set property_path = property_path + (loop.index0, property_name,) %}
                   {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                       {% include "objects/inline_edit/inline_edit_any.html" %}
-                      {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
                     </div>
                     <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
                       &mdash;

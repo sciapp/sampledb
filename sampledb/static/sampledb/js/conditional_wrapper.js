@@ -5,7 +5,11 @@ if (!window.conditional_wrapper_conditions) {
   window.conditional_wrapper_conditions = {};
 }
 
-function conditional_wrapper(parent_id_prefix, id_prefix, schema_conditions) {
+function conditional_wrapper(id_prefix, schema_conditions) {
+  if (typeof(id_prefix) !== "string") {
+    return;
+  }
+  const parent_id_prefix = id_prefix.split('__').slice(0, -1).join('__') + '_';
   for(let condition in schema_conditions) {
     if (typeof conditional_wrapper_conditions[id_prefix] === 'undefined') {
       conditional_wrapper_conditions[id_prefix] = [];

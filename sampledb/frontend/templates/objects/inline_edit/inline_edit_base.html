@@ -176,7 +176,7 @@
             }.bind(tagsinput));
         });
       {% for form_condition in form_conditions %}
-        conditional_wrapper("{{ form_condition['parent_id_prefix'] }}", "{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
+        conditional_wrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
       {% endfor %}
 
       $.each(window.conditional_wrapper_scripts, function () {

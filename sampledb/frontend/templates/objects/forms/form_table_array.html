@@ -50,7 +50,6 @@
                   {% set parent_schema = schema %}
                   {% set schema = schema.properties[property_name] %}
                   {% set z = schema.update({'parent_style': tmp_style}) %}
-                  {% set parent_id_prefix = id_prefix %}
                   {% set id_prefix = id_prefix + '_' + property_name + '_' %}
                   {% set property_path = property_path + (property_name,) %}
                   {% set schema_path = schema_path + '__' + property_name %}
@@ -60,10 +59,10 @@
                     {% set data = none %}
                   {% endif %}
                   {% if 'conditions' in schema %}
-                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
                       {% include "objects/forms/form_any.html" %}
                       {% if not is_template %}
-                        {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                        {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
                       {% endif %}
                     </div>
                     <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
@@ -106,7 +105,6 @@
               {% set parent_schema = schema %}
               {% set schema = schema.properties[property_name] %}
               {% set z = schema.update({'parent_style': tmp_style}) %}
-              {% set parent_id_prefix = id_prefix %}
               {% set id_prefix = id_prefix + '_' + property_name + '_' %}
               {% set property_path = property_path + (property_name,) %}
               {% set schema_path = schema_path + '__' + property_name %}
@@ -116,7 +114,7 @@
                 {% set data = none %}
               {% endif %}
               {% if 'conditions' in schema %}
-                <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+                <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
                 {% include "objects/forms/form_any.html" %}
                 </div>
                 <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
