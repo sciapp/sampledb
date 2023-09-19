@@ -1,15 +1,6 @@
 <div class="row" style="padding-right:0.75em">
-  {# Label #}
   {% include "objects/property_label.html" %}
-  {# Content #}
   {% set is_required = False %}
-  {% set minItems = schema.get('minItems', 0) %}
-  {% set maxItems = schema.get('maxItems', None) %}
-  {% if data is not none %}
-    {% set numItems = (data | length) %}
-  {% else %}
-    {% set numItems = 0 %}
-  {% endif %}
 </div>
 <div {% if schema.style == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
@@ -111,7 +102,6 @@
                   {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, field_index) %}
                   {% set property_path = property_path + (item_index, field_index) %}
                   {% set data = field %}
-                  {% set entry_index = loop.index0 %}
                   {% include "objects/inline_edit/inline_edit_any.html" %}
                 </td>
               {% endfor %}

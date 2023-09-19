@@ -1,16 +1,7 @@
 <div class="row" style="padding-right: 0.75em">
-  {# Label #}
   {% include "objects/property_label.html" %}
-  <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
-  {# Content #}
   {% set is_required = False %}
-  {% set minItems = schema.get('minItems', 0) %}
-  {% set maxItems = schema.get('maxItems', None) %}
-  {% if data is not none %}
-    {% set numItems = (data | length) %}
-  {% else %}
-    {% set numItems = 0 %}
-  {% endif %}
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   <div class="col-md-9 array-style-list">
     {% if data is not none %}
       <ul style="padding-left: 1.25em">
