@@ -17,7 +17,7 @@
 {% set col_order_index = col_order_index + 1 if col_order_index else 1 %}
 {% set parent_prefix = id_prefix %}
 {% set schema_path = schema_path + '__?' %}
-<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}" data-compound-default="{{ schema_path + '__?' in compound_defaults }}">
+<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if is_template and schema_path in compound_defaults %}
     {% set data = compound_defaults[schema_path] %}
@@ -86,7 +86,7 @@
         {% endif %}
         <td>
           <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>&times;</button>
-          <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-clone"></i></button>
+          <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if is_template %}data-is-default="default"{% endif %}><i class="fa fa-clone"></i></button>
         </td>
         </tr>
       {% endfor %}
@@ -158,7 +158,7 @@
   {% elif schema['items']['type'] == 'array' %}
   {% set next_col_id = data[0] | length if data is not none and data | length > 0 and data[0] is not none else 0 %}
   <input type="hidden" class="table-interaction" name="applied_action__{{ id_prefix }}__table_interaction" data-content="" value="">
-  <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}" data-col-next-id="{{ next_col_id }}" data-row-next-id="{{ data | length if data is not none else 0 }}" data-compound-default="{{ schema_path in compound_defaults }}">
+  <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}" data-col-next-id="{{ next_col_id }}" data-row-next-id="{{ data | length if data is not none else 0 }}">
   {% set max_used_fields = 0 %}
   {% if (data is none or is_template) and schema_path in compound_defaults %}
     {% set data = compound_defaults[schema_path] %}
