@@ -17,11 +17,6 @@
       {% else %}
         {% set data = none %}
       {% endif %}
-      {% if schema_path is defined %}
-        {% set schema_path = schema_path + "__" + property_name %}
-      {% else %}
-        {% set schema_path = property_name %}
-      {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
           {% include "objects/forms/form_any.html" %}

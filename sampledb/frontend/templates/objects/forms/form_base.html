@@ -724,7 +724,7 @@
 
       updateTableInteraction(id_prefix, $(this).attr('id'));
 
-      newHeader.text(`Field ${currentLength+1}`);
+      newHeader.text(`{{ _('Field %(index)s', index="${currentLength+1}") }}`);
       newHeader.clone().insertBefore(table.children('tfoot').find('.control-buttons'));
       newHeader.clone().insertBefore(table.children('thead').find('.control-buttons'));
 
@@ -827,7 +827,7 @@
       let nextId = head.children().not('.control-buttons').length + 1;
       const newHeader = $('<th>');
       for(let i = 0; i < diff; i++) {
-        newHeader.text(`Field ${nextId}`);
+        newHeader.text(`{{ _('Field %(index)s', index="${nextId}") }}`);
         newHeader.clone().insertBefore(head.children().last());
         newHeader.clone().insertBefore(foot.children().last());
         nextId += 1;
