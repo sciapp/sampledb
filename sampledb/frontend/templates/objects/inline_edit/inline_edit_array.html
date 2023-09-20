@@ -1,3 +1,4 @@
+{% set container_style = none %}
 <div class="form-group row">
   {% if schema.title %}
     {% include "objects/property_label.html" %}
@@ -8,9 +9,7 @@
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if data is not none %}
     {% for item in data %}
-      {% set parent_style = schema.get('style') %}
       {% set schema = schema['items'] %}
-      {% set z = schema.update({'parent_style': parent_style}) %}
       {% set property_path = property_path + (loop.index0,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {% set data = item %}

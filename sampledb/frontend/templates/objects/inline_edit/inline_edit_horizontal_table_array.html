@@ -1,3 +1,4 @@
+{% set container_style = schema.get('style') %}
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
   {% set is_required = False %}
@@ -25,7 +26,6 @@
               {% for item in data %}
                 <td>
                   {% set schema = schema['items'].properties[property_name] %}
-                  {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
                   {% if property_name in item %}
                     {% set data = item[property_name] %}
                   {% else %}

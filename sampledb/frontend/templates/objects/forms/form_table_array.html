@@ -1,3 +1,4 @@
+{% set container_style = schema.get('style') %}
 <div class="form-group row">
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
@@ -35,7 +36,6 @@
       <tbody>
         {% if data is not none %}
           {% for item in data %}
-            {% set parent_style = schema.get('style') %}
             {% set schema = schema['items'] %}
             {% set parent_prefix = id_prefix %}
             {% set property_path = property_path + (loop.index0,) %}
@@ -46,7 +46,6 @@
               {% for property_name in item_property_names %}
                 <td>
                   {% set schema = schema.properties[property_name] %}
-                  {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set property_path = property_path + (property_name,) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% if data is not none and property_name in data %}
@@ -85,7 +84,6 @@
             </tr>
           {% endfor %}
         {% endif %}
-        {% set parent_style = schema.get('style') %}
         {% set schema = schema['items'] %}
         {% set parent_prefix = id_prefix %}
         {% set parent_property_path = property_path %}
@@ -99,7 +97,6 @@
           {% for property_name in item_property_names %}
             <td>
               {% set schema = schema.properties[property_name] %}
-              {% set z = schema.update({'parent_style': parent_style}) %}
               {% set property_path = property_path + (property_name,) %}
               {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
               {% if data is not none and property_name in data %}
@@ -190,9 +187,7 @@
               <input type="hidden" name="{{ id_prefix }}_{{ loop.index0 }}__hidden" value="hidden" />
               {% for field in item %}
                 <td>
-                  {% set parent_style = schema.get('style') %}
                   {% set schema = schema["items"]["items"] %}
-                  {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set property_path = property_path + (item_index, loop.index0) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% set data = field %}
@@ -202,9 +197,7 @@
               {% if (item | length) < max_used_fields %}
                 {% for i in range((item | length), max_used_fields) %}
                   <td>
-                    {% set parent_style = schema.get('style') %}
                     {% set schema = schema["items"]["items"] %}
-                    {% set z = schema.update({'parent_style': parent_style}) %}
                     {% set property_path = property_path + (item_index, i) %}
                     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                     {% set data = none %}
@@ -226,12 +219,10 @@
             {% set row_prefix = id_prefix %}
             {% set row_property_path = property_path %}
             {% set tableschema = schema %}
-            {% set parent_style = schema.get('style') %}
             <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
             <td class="array-col-template" id="col_template_{{ id_prefix }}">
               {% set col_index = '!cindex{}!'.format(col_order_index) %}
               {% set schema = tableschema["items"]["items"] %}
-              {% set z = schema.update({'parent_style': parent_style}) %}
               {% set property_path = row_property_path + (col_index,) %}
               {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
               {% set data = get_default_data(root_schema, property_path) %}
@@ -242,7 +233,6 @@
           <tr class="array-template" data-template-table-type="row" id="row_{{ row_prefix }}" data-row-id="!index{{template_order_index}}!">
             {% set is_template = true %}
             {% set col_index = '!cindex{}!'.format(col_order_index) %}
-            {% set z = schema.update({'parent_style': parent_style}) %}
             {% set maxColItems = tableschema['items'].get('maxItems', none) %}
             {% set minColItems = tableschema['items'].get('minItems', 0) %}
             {% set defaultColItems = tableschema['items'].get('defaultItems', minColItems) %}

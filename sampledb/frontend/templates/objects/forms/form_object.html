@@ -1,6 +1,7 @@
 {% if not property_path %}
   {% set root_schema = schema %}
 {% endif %}
+{% set container_style = none %}
 <strong style="font-size:1.5em; margin-bottom: 0.25em; {% if property_path %}margin-left:4px;{% endif %} display:block;">{{ schema.title | get_translated_text }}</strong>
 <div style="{% if property_path %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em">
   {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}

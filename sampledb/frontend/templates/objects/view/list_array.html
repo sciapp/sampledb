@@ -1,12 +1,11 @@
+{% set container_style = schema.get('style') %}
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
   <div class="col-md-9 array-style-list">
   {% if data %}
     <ul style="padding-left: 1.25em">
       {% for item in data %}
-        {% set parent_style = schema.get('style') %}
         {% set schema = schema['items'] %}
-        {% set z = schema.update({'parent_style': parent_style}) %}
         {% set property_path = property_path + (loop.index0,) %}
         {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
         {% set data = item %}
@@ -14,7 +13,6 @@
           {% set diff = diff[loop.index0] %}
           {% if 'items' in previous_schema %}
             {% set previous_schema = previous_schema['items'] %}
-            {{ previous_schema.update({'parent_style': parent_style}) or '' }}
           {% else %}
             {% set previous_schema = none %}
           {% endif %}

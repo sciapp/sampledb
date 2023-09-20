@@ -1,3 +1,4 @@
+{% set container_style = schema.get('style') %}
 <div class="row" style="padding-right:0.75em">
   {% include "objects/property_label.html" %}
   {% set is_required = False %}
@@ -27,7 +28,6 @@
       <tbody>
         {% if data is not none %}
           {% for item in data %}
-            {% set parent_style = schema.get('style') %}
             {% set schema = schema['items'] %}
             {% set property_path = property_path + (loop.index0,) %}
             {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
@@ -37,7 +37,6 @@
               {% for property_name in item_property_names %}
                 <td>
                   {% set schema = schema.properties[property_name] %}
-                  {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set property_path = property_path + (property_name,) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% if data is not none and property_name in data %}
@@ -96,9 +95,7 @@
             <tr>
               {% for field_index, field in zip_longest(range(max_used_fields), item) %}
                 <td>
-                  {% set parent_style = schema.get('style') %}
                   {% set schema = schema["items"]["items"] %}
-                  {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set property_path = property_path + (item_index, field_index) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% set data = field %}

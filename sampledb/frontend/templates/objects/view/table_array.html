@@ -1,3 +1,4 @@
+{% set container_style = schema.get('style') %}
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
 </div>
@@ -32,7 +33,6 @@
           {% else %}
             {% set item = none %}
           {% endif %}
-          {% set parent_style = schema.get('style') %}
           {% set schema = schema['items'] %}
           {% set data = item %}
           {% if has_diff and diff | length > loop.index0  %}
@@ -65,14 +65,12 @@
               {% for property_name in item_property_names %}
                 <td>
                   {% set schema = schema.properties[property_name] %}
-                  {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set property_path = property_path + (entry_index, property_name) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% if diff is not none and previous_schema is not none and property_name in diff %}
                     {% set diff = diff[property_name] %}
                     {% if 'properties' in previous_schema and property_name in previous_schema['properties'] %}
                       {% set previous_schema = previous_schema['properties'][property_name] %}
-                      {{ previous_schema.update({'parent_style': parent_style}) or '' }}
                     {% else %}
                       {% set previous_schema = none %}
                     {% endif %}
@@ -152,9 +150,7 @@
               <tr class="{{ item_class }}">
               {% for field_index, field in zip_longest(range(max_used_fields), item) %}
                 <td>
-                  {% set parent_style = schema.get('style') %}
                   {% set schema = schema["items"]["items"] %}
-                  {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set property_path = property_path + (entry_index, loop.index0) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% set data = field %}
@@ -162,7 +158,6 @@
                     {% set diff = diff[loop.index0] %}
                     {% if 'items' in previous_schema %}
                       {% set previous_schema = previous_schema['items'] %}
-                      {{ previous_schema.update({'parent_style': parent_style}) or '' }}
                     {% else %}
                       {% set previous_schema = none %}
                     {% endif %}

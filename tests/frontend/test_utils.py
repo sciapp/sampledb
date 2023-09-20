@@ -129,9 +129,9 @@ def test_fingerprinted_static_uses(app):
                 assert len(matches) == 1
                 match = matches[0]
                 if match not in (
-                        'get_view_property_template(schema)',
-                        'get_form_property_template(schema)',
-                        'get_inline_edit_property_template(schema)'
+                        'get_view_property_template(schema, container_style)',
+                        'get_form_property_template(schema, container_style)',
+                        'get_inline_edit_property_template(schema, container_style)'
                 ):
                     assert match[0] in '\'"'
                     parent_template_name = match[1:-1]
