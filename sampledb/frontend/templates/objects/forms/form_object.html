@@ -6,16 +6,13 @@
 <div style="{% if property_path %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em">
   {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
-    {% set property_names = get_property_names_in_order(schema) %}
-    {% for property_name in property_names %}
+    {% for property_name in get_property_names_in_order(schema) %}
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set schema = schema.properties[property_name] %}
       {% set property_path = property_path + (property_name,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
-      {% if data is not none and property_name in data %}
-        {% set data = data[property_name] %}
-      {% else %}
-        {% set data = none %}
+      {% if data is not none %}
+        {% set data = data.get(property_name) %}
       {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
