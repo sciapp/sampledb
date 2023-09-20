@@ -1523,3 +1523,14 @@ def get_property_names_in_order(
         if property_name not in schema.get('propertyOrder', [])
     ]
     return property_names
+
+
+@JinjaFunction()
+def id_prefix_for_property_path(
+        property_path: typing.Tuple[typing.Union[str, int], ...],
+        id_prefix_root: str
+) -> str:
+    return '__'.join([
+        str(path_element)
+        for path_element in [id_prefix_root] + list(property_path)
+    ]) + '_'

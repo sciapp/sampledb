@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
-{% set id_prefix = "object_" %}
+{% set id_prefix_root = "object" %}
 {% set property_path = () %}
 
 {% block sidebar %}
@@ -333,8 +333,9 @@
         {% else %}
           {% set workflow_display_mode = True %}
           {% set object_id = elem.object_id %}
-          {% set id_prefix = "workflow_" + (elem.object_id | string) + "_" %}
+          {% set id_prefix_root = "workflow_" ~ elem.object_id %}
           {% set property_path = () %}
+          {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           {% set data = elem.object.data %}
           {% set schema = elem.object.schema %}
           {% set files = elem.files %}

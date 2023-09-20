@@ -5,8 +5,8 @@
   {% if data is not none %}
     {% for item in data %}
       {% set schema = schema['items'] %}
-      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
       {% set property_path = property_path + (loop.index0,) %}
+      {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {% set data = item %}
       {% if diff is not none and previous_schema is not none and not (diff is mapping) and diff | length > loop.index0  %}
         {% set diff = diff[loop.index0] %}
