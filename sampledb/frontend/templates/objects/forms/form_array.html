@@ -28,9 +28,7 @@
       {% set schema = schema['items'] %}
       {% set property_path = property_path + (loop.index0,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
-      {% if not using_compound_default %}
-        {{ form_elements.append({ "kind": "array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
-      {% endif %}
+      {{ form_elements.append({ "kind": "array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
       {% set data = item %}
 
       <div id="container_{{ id_prefix }}">
@@ -55,7 +53,6 @@
       </div>
     </div>
   {% endwith %}
-  {% set is_template = false %}
 
   <div class="form-group row clearfix" style="padding-right:0.75em">
     <div class="col-md-9 col-md-offset-3">
@@ -64,6 +61,4 @@
   </div>
 </div>
 
-{% if not is_template %}
-  {{ form_elements.append({ "kind": "array_add", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-{% endif %}
+{{ form_elements.append({ "kind": "array_add", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}

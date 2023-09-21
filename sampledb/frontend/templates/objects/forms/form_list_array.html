@@ -28,9 +28,7 @@
       {% set property_path = property_path + (loop.index0,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {% set data = item %}
-      {% if not is_template %}
-        {{ form_elements.append({ "kind": "list_array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
-      {% endif %}
+      {{ form_elements.append({ "kind": "list_array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
       <div class="col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %} container_{{ parent_prefix }}" id="container_{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em">
           {% include "objects/forms/form_any.html" %}
           <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
@@ -68,6 +66,4 @@
     <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-array-type="list" data-parent-prefix="{{ parent_prefix }}" data-id-prefix="{{ id_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" style="height:34px;" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %}><i class="fa fa-plus"></i></button>
   </div>
 </div>
-{% if not is_template %}
-  {{ form_elements.append({ "kind": "list_array_add", "parent_prefix": parent_prefix, "id_prefix": id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-{% endif %}
+{{ form_elements.append({ "kind": "list_array_add", "parent_prefix": parent_prefix, "id_prefix": id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}

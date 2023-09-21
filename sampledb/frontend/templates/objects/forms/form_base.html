@@ -129,28 +129,28 @@
 
     {% for element in form_elements %}
       {% if element['kind'] == "array_delete" %}
-        document.getElementById("{{ element['delete_button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, false));
+        $('[id="{{ element['delete_button_id'] }}"]').off('click').on('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, false));
       {% elif element['kind'] == "array_add" %}
-        document.getElementById("action_{{ element['parent_prefix'] }}_?__add").addEventListener('click', arrayFormAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="action_{{ element['parent_prefix'] }}_?__add"]').off('click').on('click', arrayFormAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_array_delete" %}
-        document.getElementById("{{ element['button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems'] }}, {{ element['maxItems'] }}, false));
+        $('[id="{{ element['button_id'] }}"]').off('click').on('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems'] }}, {{ element['maxItems'] }}, false));
       {% elif element['kind'] == "table_array_copy" %}
-        document.getElementById("{{ element['button_id'] }}").addEventListener('click', arrayFormTableCopyHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="{{ element['button_id'] }}"]').off('click').on('click', arrayFormTableCopyHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_array_add" %}
-        document.getElementById('action_{{ element['parent_prefix'] }}_?__add').addEventListener('click', arrayFormTableAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="action_{{ element['parent_prefix'] }}_?__add"]').off('click').on('click', arrayFormTableAddHandler("{{ element['parent_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "list_array_delete" %}
-        document.getElementById("{{ element['delete_button_id'] }}").addEventListener('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, true));
+        $('[id="{{ element['delete_button_id'] }}"]').off('click').on('click', arrayFormDeleteHandler("{{ element['prefix'] }}", {{ element['id'] }}, {{ element['minItems']}}, {{ element['maxItems'] }}, true));
       {% elif element['kind'] == "list_array_add" %}
-        document.getElementById("action_{{ element['id_prefix'] }}_?__add").addEventListener('click', arrayFormListAddHandler("{{ element['parent_prefix'] }}", "{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="action_{{ element['id_prefix'] }}_?__add"]').off('click').on('click', arrayFormListAddHandler("{{ element['parent_prefix'] }}", "{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_col_add" %}
-        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormColAddHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
-        updateTableFormButtons($('#{{ element["button_id"] }}').closest('table'), "{{ element['id_prefix'] }}");
+        $('[id="{{ element['button_id'] }}"]').off('click').on('click', tableFormColAddHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        updateTableFormButtons($('[id="{{ element["button_id"] }}"]').closest('table'), "{{ element['id_prefix'] }}");
       {% elif element['kind'] == "table_col_delete" %}
-        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormColDeleteHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="{{ element['button_id'] }}"]').off('click').on('click', tableFormColDeleteHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_row_add" %}
-        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormRowAddHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="{{ element['button_id'] }}"]').off('click').on('click', tableFormRowAddHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% elif element['kind'] == "table_row_delete" %}
-        document.getElementById("{{ element['button_id'] }}").addEventListener('click', tableFormRowDeleteHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
+        $('[id="{{ element['button_id'] }}"]').off('click').on('click', tableFormRowDeleteHandler("{{ element['id_prefix'] }}", {{ element['minItems'] }}, {{ element['maxItems'] }}));
       {% endif %}
     {% endfor %}
 
@@ -452,11 +452,11 @@
     const minItems = Number($(button).data('min-items'));
     const maxItems = Number($(button).data('max-items'));
     if(type === "array") {
-      $(button).click(arrayFormAddHandler($(button).data('parent-prefix'), minItems, maxItems));
+      $(button).off('click').on('click', arrayFormAddHandler($(button).data('parent-prefix'), minItems, maxItems));
     } else if(type === "list") {
-      $(button).click(arrayFormListAddHandler($(button).data('parent-prefix'), $(button).data('id-prefix'), minItems, maxItems));
+      $(button).off('click').on('click', arrayFormListAddHandler($(button).data('parent-prefix'), $(button).data('id-prefix'), minItems, maxItems));
     } else if(type === "table") {
-      $(button).click(arrayFormTableAddHandler($(button).data('parent-prefix'), minItems, maxItems));
+      $(button).off('click').on('click', arrayFormTableAddHandler($(button).data('parent-prefix'), minItems, maxItems));
     }
   }
 
@@ -471,7 +471,7 @@
       replaceTemplateIndex(clone, index_order_placeholder, element_id);
       template.before(clone);
 
-      $(`#action_${id_prefix}_${element_id}__delete`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, true));
+      $(`#action_${id_prefix}_${element_id}__delete`).off('click').on('click', arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, true));
       $(array).append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
       template.data('next-id', element_id + 1);
 
@@ -514,22 +514,22 @@
     clone.find('[data-is-default="default"]').each(function() {
       const parent_prefix = $(this).data('parent-prefix');
       if ($(this).attr('id').endsWith('__copy')) {
-        $(this).click(arrayFormTableCopyHandler(parent_prefix, $(this).data('min-items'), $(this).data('max-items')));
+        $(this).off('click').on('click', arrayFormTableCopyHandler(parent_prefix, $(this).data('min-items'), $(this).data('max-items')));
       } else {
-        $(this).click(arrayFormDeleteHandler(parent_prefix, $(this).data('element-id'), $(this).data('min-items'), $(this).data('max-items'), $(this).data('is-default') === 'list'));
+        $(this).off('click').on('click', arrayFormDeleteHandler(parent_prefix, $(this).data('element-id'), $(this).data('min-items'), $(this).data('max-items'), $(this).data('is-default') === 'list'));
       }
       updateArrayButtons(null, [], $(`.action_delete_${parent_prefix}`), $(this).data('min-items'), $(this).data('max-items'));
     });
     clone.find('[data-array-kind="table"]').not('[data-is-default="default"]').each(function() {
       if($(this).parents('.array-template').length > 0) return;
       if($(this).data('is-default') === "row-add") {
-        $(this).click(tableFormRowAddHandler($(this).data('id-prefix'), $(this).data('min-items'), $(this).data('max-items')));
+        $(this).off('click').on('click', tableFormRowAddHandler($(this).data('id-prefix'), $(this).data('min-items'), $(this).data('max-items')));
       } else if($(this).data('is-default') === "row-delete") {
-        $(this).click(tableFormRowDeleteHandler($(this).data('id-prefix')));
+        $(this).off('click').on('click', tableFormRowDeleteHandler($(this).data('id-prefix')));
       } else if($(this).data('is-default') === "col-add") {
-        $(this).click(tableFormColAddHandler($(this).data('id-prefix'), $(this).data('min-items'), $(this).data('max-items')));
+        $(this).off('click').on('click', tableFormColAddHandler($(this).data('id-prefix'), $(this).data('min-items'), $(this).data('max-items')));
       } else if($(this).data('is-default') === "col-delete") {
-        $(this).click(tableFormColDeleteHandler($(this).data('id-prefix')));
+        $(this).off('click').on('click', tableFormColDeleteHandler($(this).data('id-prefix')));
       }
       updateTableFormButtons($(this).closest('table'), $(this).data('id-prefix'));
     })
@@ -625,7 +625,7 @@
       replaceTemplateIndex(clone, index_order_placeholder, element_id);
 
       template.before(clone);
-      clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
+      clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).off('click').on('click', arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
 
       parent.closest('form').append(`<input type="hidden" value="action_${parent_prefix}_?__add" name="applied_action__${parent_prefix}_${element_id}__add">`);
       template.data('next-id', element_id + 1);
@@ -647,8 +647,8 @@
 
       replaceTemplateIndex(clone, index_order_placeholder, element_id);
 
-      clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).click(arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
-      clone.find(`[id="action_${parent_prefix}_${element_id}__copy"]`).click(arrayFormTableCopyHandler(parent_prefix, minItems, maxItems));
+      clone.find(`[id="action_${parent_prefix}_${element_id}__delete"]`).off('click').on('click', arrayFormDeleteHandler(parent_prefix, element_id, minItems, maxItems, false));
+      clone.find(`[id="action_${parent_prefix}_${element_id}__copy"]`).off('click').on('click', arrayFormTableCopyHandler(parent_prefix, minItems, maxItems));
       table.find('.array-template').before(clone);
       table.find('.array-template').data('next-id', element_id + 1);
 
@@ -793,7 +793,7 @@
       newRow.attr('data-row-id', table.data('row-next-id'));
       newRow.removeClass('array-template');
       replaceTemplateIndex(newRow, `!index${table.data('template-order-index')}!`, table.data('row-next-id'));
-      newRow.children('.control-buttons').find('button').click(tableFormRowDeleteHandler(id_prefix));
+      newRow.children('.control-buttons').find('button').off('click').on('click', tableFormRowDeleteHandler(id_prefix));
       body.append(newRow);
       table.data('row-next-id', table.data('row-next-id') + 1);
       updateTableFormHead(table, newRow.children().not('.control-buttons').length - headerSize);
