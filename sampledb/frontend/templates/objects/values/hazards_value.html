@@ -1,0 +1,14 @@
+{% if data is not none and "hazards" in data %}
+  {% if data["hazards"] %}
+    <span class="ghs-hazards">
+    {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
+    {% for hazard_index in data["hazards"] %}
+      <img src="{{ fingerprinted_static('sampledb/img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
+    {% endfor %}
+    </span>
+  {% else %}
+    &mdash;
+  {% endif %}
+{% else %}
+  {{ _('Unknown') }}
+{% endif %}

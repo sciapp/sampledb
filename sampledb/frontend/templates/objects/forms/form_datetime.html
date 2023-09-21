@@ -1,13 +1,5 @@
-<div class="form-group row error-parent" style="padding-right:0.75em">
-  {% include "objects/forms/property_label.html" %}
-  <div class="col-md-9">
-    <div class="input-group {% if is_template %} date-template {% else %} date {% endif %}" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none and 'utc_datetime' in data %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | default_format_datetime }}{% elif mode != 'edit' %}{{ datetime.datetime.utcnow() | default_format_datetime }}{% endif %}">
-        <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
-        <span class="input-group-addon">
-            <span class="glyphicon glyphicon-calendar"></span>
-        </span>
-    </div>
-    <span class="help-block error-note"></span>
-    {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
-  </div>
-</div>
+{% extends get_form_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/fields/datetime_field.html" %}
+{% endblock %}

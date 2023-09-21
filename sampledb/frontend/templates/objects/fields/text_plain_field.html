@@ -1,0 +1,11 @@
+<input
+  type="text"
+  class="form-control"
+  name="{{ id_prefix }}_text"
+  placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+  {% if id_prefix+'_text' in form_data %}
+    value="{{ form_data[id_prefix+'_text'] }}"
+  {% elif data is not none and "text" in data %}
+    value="{{ data.text | get_all_translated_texts('\n') }}"
+  {% endif %}
+/>

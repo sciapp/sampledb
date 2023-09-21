@@ -180,7 +180,7 @@ function updateMarkdownField(checkbox_id, mde_attribute, data_name, height) {
   })
   window.mde_fields[mde_attribute] = [];
   if ($('#' + checkbox_id).prop('checked')) {
-    $('.form-group[data-name="' +data_name + '"] [data-language-id]').each(function() {
+    $(`.form-group[data-name="${data_name}"] [data-language-id], .inline-edit-regular-property[data-name="${data_name}"] [data-language-id]`).each(function() {
       const textarea = $(this).find('textarea.form-control')[0];
       window.mde_fields[mde_attribute].push(initMarkdownField(textarea, height));
     });

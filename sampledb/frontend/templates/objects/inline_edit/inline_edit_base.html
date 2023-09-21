@@ -69,7 +69,7 @@
                 } else {
                     enabled_languages.push('en');
                 }
-                var parent_form_group = $(selectpicker).closest('.form-group');
+                var parent_form_group = $(selectpicker).closest('.form-group, .inline-edit-regular-property');
                 {% for language in languages %}
                     if (enabled_languages.includes("{{ language.lang_code }}")) {
                         parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();

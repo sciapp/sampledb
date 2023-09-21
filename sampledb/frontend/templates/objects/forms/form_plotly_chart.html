@@ -1,7 +1,5 @@
-<div class="form-group row" style="padding-right:0.75em">
-  {% include "objects/forms/property_label.html" %}
-  <div class="col-md-9 error-parent">
-    <textarea type="text" class="form-control plotly-chart-editor" name="{{ id_prefix }}_plotly" rows="5" placeholder="">{% if id_prefix+'_plotly' in form_data %}{{ form_data[id_prefix+'_plotly'] }}{% elif data is not none and "plotly" in data %}{{ data.plotly | to_json_no_extra_escapes(indent=None) }}{% endif %}</textarea>
-    <span class="error-note help-block"></span>
-  </div>
-</div>
+{% extends get_form_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/fields/plotly_chart_field.html" %}
+{% endblock %}

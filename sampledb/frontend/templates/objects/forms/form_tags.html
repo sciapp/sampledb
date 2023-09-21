@@ -1,8 +1,5 @@
-<div class="form-group row error-parent" style="padding-right:0.75em">
-  {% include "objects/forms/property_label.html" %}
-  <div class="col-md-9">
-    <input type="text" class="form-control" {% if id_prefix+'_tags' in form_data %}value="{{ form_data[id_prefix+'_tags'] }}"{% elif data is not none and "tags" in data %}value="{{ data.tags | join(', ') }}"{% endif %} data-role="tagsinput" id="{{ id_prefix }}_input" name="{{ id_prefix }}_tags"/>
-    <span class="error-note help-block"></span>
-    {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
-  </div>
-</div>
+{% extends get_form_property_template(schema) %}
+
+{% block property_field %}
+  {% include "objects/fields/tags_field.html" %}
+{% endblock %}

@@ -1,22 +1,9 @@
-<div class="row form-area" style="padding-right: 0.75em">
-    {# Label #}
-    {% include "objects/property_label.html" %}
-    {# View #}
-    <div class="view-switch">
-        <div class="col-md-9">
-            {% include "objects/view/object_reference_value.html" %}
-            <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
-            <div class="alert-upload-failed">
-                {{ _('Your input is not valid. Please check.') }}
-            </div>
-        </div>
-    </div>
-    {# Form #}
-    <div class="form-switch ">
-        <div class="col-md-9">
-            <div class="container-fluid" style="padding-right: 15px">
-                {% include 'objects/forms/form_table_object_reference_base.html' %}
-            </div>
-        </div>
-    </div>
-</div>
+{% extends get_inline_edit_property_template(schema) %}
+
+{% block property_value %}
+  {% include "objects/values/object_reference_value.html" %}
+{% endblock %}
+
+{% block property_field %}
+  {% include 'objects/fields/object_reference_base_field.html' %}
+{% endblock %}

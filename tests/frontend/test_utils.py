@@ -128,9 +128,14 @@ def test_fingerprinted_static_uses(app):
             if matches:
                 assert len(matches) == 1
                 match = matches[0]
-                assert match[0] in '\'"'
-                parent_template_name = match[1:-1]
-                template_parents[template_file_name] = parent_template_name
+                if match not in (
+                        'get_view_property_template(schema)',
+                        'get_form_property_template(schema)',
+                        'get_inline_edit_property_template(schema)'
+                ):
+                    assert match[0] in '\'"'
+                    parent_template_name = match[1:-1]
+                    template_parents[template_file_name] = parent_template_name
             uses_by_template[template_file_name] = []
             matches = re.findall(r'fingerprinted_static\((.*?)\)', template_file_content)
             if matches:

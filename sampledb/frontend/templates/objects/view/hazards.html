@@ -1,22 +1,5 @@
-<div class="row" style="padding-right:0.75em">
-  {% include "objects/property_label.html" %}
-  <div class="col-md-9">
-    {% if data is not none and "hazards" in data %}
-      {% if data["hazards"] %}
-        <div class="ghs-hazards">
-        {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
-        {% for hazard_index in data["hazards"] %}
-          <img src="{{ fingerprinted_static('sampledb/img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
-        {% endfor %}
-        </div>
-      {% else %}
-        &mdash;
-      {% endif %}
-    {% else %}
-      {{ _('Unknown') }}
-    {% endif %}
-    {% if data and data.export_edit_note %}
-      <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
-    {% endif %}
-  </div>
-</div>
+{% extends "objects/view/regular_property.html" %}
+
+{% block property_field %}
+  {% include "objects/values/hazards_value.html" %}
+{% endblock %}

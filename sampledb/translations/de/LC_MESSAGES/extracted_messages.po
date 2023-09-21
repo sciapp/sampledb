@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-07-18 12:39+0200\n"
+"POT-Creation-Date: 2023-09-13 09:37+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5129,6 +5129,34 @@ msgstr "Möchten Sie Lese-Berechtigungen anfragen?"
 msgid "Send Request"
 msgstr "Anfrage senden"
 
+msgid "Please upload a file."
+msgstr "Bitte laden Sie eine Datei hoch."
+
+msgid "This object does not pose any of these hazards."
+msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
+
+msgid "This object poses the following hazards:"
+msgstr "Dieses Objekt stellt folgende Gefahren dar:"
+
+msgid "No object selected"
+msgstr "Kein Objekt ausgewählt"
+
+msgid "All Actions"
+msgstr "Alle Aktionen"
+
+msgid "The following languages have been disabled for input:"
+msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
+
+msgid "Data (as CSV)"
+msgstr "Daten (als CSV)"
+
+msgid ""
+"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or "
+"relative time in seconds, and magnitude"
+msgstr ""
+"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
+" relative Zeitangabe in Sekunden und Wert"
+
 #, python-format
 msgid "Remove %(item_name)s"
 msgstr "%(item_name)s entfernen"
@@ -5179,9 +5207,6 @@ msgstr "Kein Projekt ausgewählt"
 msgid "Copy Permissions from other object"
 msgstr "Berechtigungen von anderem Objekt kopieren"
 
-msgid "No object selected"
-msgstr "Kein Objekt ausgewählt"
-
 msgid "Also grant READ permissions to all signed-in users"
 msgstr "Zusätzlich allen angemeldeten Nutzern LESE-Berechtigungen geben"
 
@@ -5204,18 +5229,6 @@ msgstr ""
 "Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
 "geben."
 
-msgid "Please upload a file."
-msgstr "Bitte laden Sie eine Datei hoch."
-
-msgid "This object does not pose any of these hazards."
-msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
-
-msgid "This object poses the following hazards:"
-msgstr "Dieses Objekt stellt folgende Gefahren dar:"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
-
 msgid "Calculated Value:"
 msgstr "Berechneter Wert:"
 
@@ -5229,19 +5242,6 @@ msgstr "Rezept anwenden"
 msgid "Field %(index)s"
 msgstr "Feld %(index)s"
 
-msgid "The following languages have been disabled for input:"
-msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
-
-msgid "Data (as CSV)"
-msgstr "Daten (als CSV)"
-
-msgid ""
-"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or "
-"relative time in seconds, and magnitude"
-msgstr ""
-"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
-" relative Zeitangabe in Sekunden und Wert"
-
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
 " this change."
@@ -5249,11 +5249,57 @@ msgstr ""
 "Es sind Fehler in anderen Feldern aufgetreten. Bitte klicken Sie auf "
 "\"Objekt bearbeiten\", um die Änderung durchzuführen."
 
+msgid "Unsupported item type for horizontal_table style."
+msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
+
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 
-msgid "Unsupported item type for horizontal_table style."
-msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
+msgid "Hidden File"
+msgstr "Versteckte Datei"
+
+msgid "Fullscreen Image Preview"
+msgstr "Vollbild-Vorschau"
+
+msgid "This file has not been shared."
+msgstr "Diese Datei wurde nicht geteilt."
+
+msgid "Timeseries"
+msgstr "Zeitreihe"
+
+msgid "value"
+msgid_plural "values"
+msgstr[0] "Wert"
+msgstr[1] "Werte"
+
+#, python-format
+msgid "within a period of %(time_s)s s"
+msgstr "in einem Zeitraum von %(time_s)s s"
+
+#, python-format
+msgid "between %(start_time)s and %(end_time)s on %(date)s"
+msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
+
+#, python-format
+msgid "between %(start_datetime)s and %(end_datetime)s"
+msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
+
+#, python-format
+msgid "at %(datetime)s"
+msgstr "am %(datetime)s"
+
+msgid "View chart"
+msgstr "Graph anzeigen"
+
+msgid "View table"
+msgstr "Tabelle anzeigen"
+
+msgid "Download data"
+msgstr "Daten herunterladen"
+
+#, python-format
+msgid "User #%(user_id)s from an ELN at %(eln_source_url)s"
+msgstr "Nutzer #%(user_id)s aus einem ELN auf %(eln_source_url)s"
 
 #, python-format
 msgid ""
@@ -5422,9 +5468,6 @@ msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
-
-msgid "Fullscreen Image Preview"
-msgstr "Vollbild-Vorschau"
 
 msgid "View information"
 msgstr "Informationen anzeigen"
@@ -5978,12 +6021,6 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
-msgid "Hidden File"
-msgstr "Versteckte Datei"
-
-msgid "This file has not been shared."
-msgstr "Diese Datei wurde nicht geteilt."
-
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
@@ -5999,43 +6036,6 @@ msgstr "Zeit"
 
 msgid "Value"
 msgstr "Wert"
-
-msgid "Timeseries"
-msgstr "Zeitreihe"
-
-msgid "value"
-msgid_plural "values"
-msgstr[0] "Wert"
-msgstr[1] "Werte"
-
-#, python-format
-msgid "within a period of %(time_s)s s"
-msgstr "in einem Zeitraum von %(time_s)s s"
-
-#, python-format
-msgid "between %(start_time)s and %(end_time)s on %(date)s"
-msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
-
-#, python-format
-msgid "between %(start_datetime)s and %(end_datetime)s"
-msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
-
-#, python-format
-msgid "at %(datetime)s"
-msgstr "am %(datetime)s"
-
-msgid "View chart"
-msgstr "Graph anzeigen"
-
-msgid "View table"
-msgstr "Tabelle anzeigen"
-
-msgid "Download data"
-msgstr "Daten herunterladen"
-
-#, python-format
-msgid "User #%(user_id)s from an ELN at %(eln_source_url)s"
-msgstr "Nutzer #%(user_id)s aus einem ELN auf %(eln_source_url)s"
 
 msgid "Address"
 msgstr "Adresse"

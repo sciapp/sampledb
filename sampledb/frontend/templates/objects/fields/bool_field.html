@@ -1,0 +1,7 @@
+<div class="checkbox">
+  <label>
+    <span class="sr-only">{{ schema.title | get_translated_text }}</span>
+    <input type="hidden" name="{{ id_prefix }}_hidden" value="checkbox exists">
+    <input type="checkbox" name="{{ id_prefix }}_value" {% if id_prefix+'_hidden' in form_data %}{% if id_prefix+'_value' in form_data%}checked="checked"{% endif %}{% elif data is not none and "value" in data and data.value%}checked="checked"{% elif "default" in schema and schema.default %}checked="checked"{% endif %}>
+  </label>
+</div>

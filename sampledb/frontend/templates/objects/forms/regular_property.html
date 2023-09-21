@@ -1,0 +1,15 @@
+<div class="form-group row error-parent" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
+  {% block property_label %}
+    {% include "objects/forms/property_label.html" %}
+  {% endblock %}
+  <div class="col-md-9">
+    {% block property_field %}
+    {% endblock %}
+    {% block property_errors %}
+    <span class="help-block error-note"></span>
+    {% endblock %}
+    {% if 'note' in schema %}
+      <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>
+    {% endif %}
+  </div>
+</div>

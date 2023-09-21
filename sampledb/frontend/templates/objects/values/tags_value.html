@@ -1,0 +1,7 @@
+{% if data.tags %}
+  {% for tag in data.tags %}
+    <a href="{{ url_for('.objects', q='#'+tag, advanced='on') }}" class="tag-link"><span class="tag label label-info">{{ tag }}</span></a>
+  {% endfor %}
+{% else %}
+    &mdash;
+{% endif %}
