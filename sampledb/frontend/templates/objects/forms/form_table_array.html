@@ -88,7 +88,7 @@
         {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
         {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
         {% set old_data = data %}
-        <tr id="container_{{ id_prefix }}" class="array-template" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
+        <tr id="container_{{ id_prefix }}" class="array-template" data-next-id="{{ numItems }}">
           <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
           {% set is_template = true %}
           {% set data = get_default_data(root_schema, property_path) %}

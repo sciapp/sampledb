@@ -45,7 +45,7 @@
     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
     {% set schema = schema['items'] %}
     {% set data = get_default_data(root_schema, property_path) %}
-    <div class="array-template" id="container_{{ id_prefix }}" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
+    <div class="array-template" id="container_{{ id_prefix }}" data-next-id="{{ numItems }}">
       <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
         <div class="pull-right" style="padding-right:0.75em"><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }} delete-button" data-array-type="array" data-prefix="{{ parent_prefix }}" name="action_{{ id_prefix }}_delete" {% if numItems <= minItems %} disabled="disabled" {% endif %} style="width:20em;">{{ _('Remove %(item_name)s', item_name=item_name) }}</button></div>
         <div class="clearfix" style="padding-bottom:0.75em"></div>
