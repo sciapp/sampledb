@@ -73,11 +73,9 @@
                   {% include "objects/forms/form_table_recipe.html" %}
                 </td>
               {% endif %}
-              {{ form_elements.append({ "kind": "table_array_copy", "button_id": "action_" + id_prefix + "_copy", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-              {{ form_elements.append({ "kind": "table_array_delete", "button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
               <td>
-                <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>&times;</button>
-                <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if is_template %}data-is-default="default"{% endif %}><i class="fa fa-clone"></i></button>
+                <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" {% endif %} data-object-form-button="table_array_delete" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}">&times;</button>
+                <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-object-form-button="table_array_copy" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if is_template %}data-is-default="default"{% endif %}><i class="fa fa-clone"></i></button>
               </td>
             </tr>
           {% endfor %}
@@ -135,12 +133,10 @@
           {% for property_name in item_property_names %}
             <th scope="col"></th>
           {% endfor %}
-          <th><button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}">+</button></th>
+          <th><button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-array-type="table" data-object-form-button="table_array_add" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}">+</button></th>
         </tr>
       </tfoot>
     </table>
-
-    {{ form_elements.append({ "kind": "table_array_add", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
 
   {% elif schema['items']['type'] == 'array' %}
     {% set next_col_id = data[0] | length if data is not none and data | length > 0 and data[0] is not none else 0 %}
@@ -165,10 +161,8 @@
             {% endfor %}
             <th class="control-buttons">
               <div class="btn-group pull-right" role="group" aria-label="Column Controls">
-                <button type="button" id="action_deletecolumn_{{ id_prefix }}" name="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger" {% if (data | length) == 0 or max_used_fields <= schema["items"].get("minItems", 0) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %} ><i class="fa fa-arrow-left"></i></button>
-                <button type="button" id="action_addcolumn_{{ id_prefix }}" name="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success" {% if (data | length) == 0 or ("maxItems" in schema["items"] and max_used_fields >= schema["items"]["maxItems"]) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-add" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %}><i class="fa fa-arrow-right"></i></button>
-                {{ form_elements.append({ "kind": "table_col_delete", "id_prefix": id_prefix, "button_id": "action_deletecolumn_" + id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-                {{ form_elements.append({ "kind": "table_col_add", "id_prefix": id_prefix, "button_id": "action_addcolumn_" + id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+                <button type="button" name="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger" {% if (data | length) == 0 or max_used_fields <= schema["items"].get("minItems", 0) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-delete" {% endif %} data-array-kind="table" data-object-form-button="table_col_delete" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" data-parent-prefix="{{ id_prefix }}" ><i class="fa fa-arrow-left"></i></button>
+                <button type="button" name="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success" {% if (data | length) == 0 or ("maxItems" in schema["items"] and max_used_fields >= schema["items"]["maxItems"]) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-add" {% endif %} data-array-kind="table" data-object-form-button="table_col_add" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" data-parent-prefix="{{ id_prefix }}"><i class="fa fa-arrow-right"></i></button>
               </div>
             </th>
           </tr>
@@ -199,8 +193,7 @@
                   </td>
                 {% endfor %}
               {% endif %}
-              <td class="control-buttons"><button type="button" class="btn btn-danger pull-right delete-row-button" data-row-index="{{ loop.index0 }}" id="action_deleterow_{{ id_prefix }}_{{ loop.index0 }}_" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="row-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %}>&times;</button></td>
-              {{ form_elements.append({ "kind": "table_row_delete", "id_prefix": id_prefix, "button_id": "action_deleterow_" + id_prefix + "_" ~ loop.index0 ~ "_", "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+              <td class="control-buttons"><button type="button" class="btn btn-danger pull-right delete-row-button" data-row-index="{{ loop.index0 }}" id="action_deleterow_{{ id_prefix }}_{{ loop.index0 }}_" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="row-delete" data-array-kind="table" {% endif %} data-object-form-button="table_row_delete" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" data-parent-prefix="{{ id_prefix }}">&times;</button></td>
             </tr>
           {% endfor %}
           <tr class="array-template" data-template-table-type="col">
@@ -258,8 +251,7 @@
           {% for i in range(max_used_fields) %}
             <th>{{ _('Field %(index)s', index=i + 1) }}</th>
           {% endfor %}
-          <th class="control-buttons"><button type="button" id="action_add_{{ parent_prefix }}" name="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right" {% if maxItems is not none and numItems >= maxItems %} {% endif %} data-is-default="row-add" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ parent_prefix }}">+</button></th>
-          {{ form_elements.append({ "kind": "table_row_add", "id_prefix": parent_prefix, "button_id": "action_add_" + parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+          <th class="control-buttons"><button type="button" id="action_add_{{ parent_prefix }}" name="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right" {% if maxItems is not none and numItems >= maxItems %} {% endif %} data-is-default="row-add" data-array-kind="table" data-object-form-button="table_row_add" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ parent_prefix }}" data-parent-prefix="{{ parent_prefix }}">+</button></th>
         </tr>
       </tfoot>
     </table>

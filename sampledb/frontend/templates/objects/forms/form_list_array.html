@@ -28,11 +28,10 @@
       {% set property_path = property_path + (loop.index0,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {% set data = item %}
-      {{ form_elements.append({ "kind": "list_array_delete", "delete_button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
       <div class="col-md-9 {% if loop.index0 %}col-md-offset-3{% endif %} container_{{ parent_prefix }}" id="container_{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em">
           {% include "objects/forms/form_any.html" %}
           <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-            <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height:34px;" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if using_compound_default %} data-is-default="default" data-array-kind="list" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}><i class="fa fa-minus"></i></button>
+            <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height:34px;" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if using_compound_default %} data-is-default="default" {% endif %} data-array-kind="list" data-object-form-button="list_array_delete" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-minus"></i></button>
           </div>
       </div>
     {% endfor %}
@@ -47,7 +46,7 @@
       <div class="col-md-9 col-md-offset-3 container_{{parent_prefix}}" id="container_{{ id_prefix }}" style="display: flex; padding-left: 2em; padding-right: 1.75em;">
         {% include get_form_template(schema, container_style) %}
         <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height: 34px;"><i class="fa fa-minus"></i></button>
+          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }}" style="height: 34px;" data-object-form-button="list_array_delete" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ '!index' ~ template_order_index ~ '!' }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-minus"></i></button>
         </div>
       </div>
       {% set schema = parent_schema %}
@@ -63,7 +62,6 @@
     {% endif %}
     </div>
     <div style="flex-grow: 0; flex-basis: 4em;"></div>
-    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-array-type="list" data-parent-prefix="{{ parent_prefix }}" data-id-prefix="{{ id_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" style="height:34px;" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %}><i class="fa fa-plus"></i></button>
+    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-array-type="list" data-object-form-button="list_array_add" data-parent-prefix="{{ parent_prefix }}" data-id-prefix="{{ id_prefix }}" data-default-items="{{ defaultItems }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" style="height:34px;" {% if maxItems is not none and numItems >= maxItems %} disabled="disabled" {% endif %}><i class="fa fa-plus"></i></button>
   </div>
 </div>
-{{ form_elements.append({ "kind": "list_array_add", "parent_prefix": parent_prefix, "id_prefix": id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
