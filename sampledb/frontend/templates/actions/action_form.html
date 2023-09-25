@@ -381,7 +381,7 @@
 
     </div>
     <div class="form-group col-md-12" style="display: flex; justify-content: flex-end">
-        <a href="{{ url_for('.actions') }}" class="btn btn-default" style="width:20em">{{ _("Cancel") }}</a>
+        <a href="{% if current_action %}{{ url_for('.action', action_id=current_action.id) }}{% else %}{{ url_for('.actions') }}{% endif %}" class="btn btn-default" style="width:20em">{{ _("Cancel") }}</a>
         <button type="submit" name="action_submit" class="btn btn-primary" style="width:20em; margin-left: 0.5em">{{ _(submit_text) }}</button>
     </div>
   </form>
