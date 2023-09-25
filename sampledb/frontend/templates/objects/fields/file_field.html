@@ -8,7 +8,7 @@
 
 {% set filepicker_options = [] %}
 {% if not is_required %}
-  {{ filepicker_options.append(('', '&mdash;' | safe, selected_file_id is none)) or '' }}
+  {% do filepicker_options.append(('', '&mdash;' | safe, selected_file_id is none)) %}
 {% endif %}
 {% if file_names_by_id %}
   {% for file_id, file_names in file_names_by_id.items() %}
@@ -19,7 +19,7 @@
       {% endif %}
     {% endfor %}
     {% if (ns.has_extension and file_id >= 0) or selected_file_id == file_id %}
-      {{ filepicker_options.append((file_id, file_names[1], selected_file_id == file_id)) or '' }}
+      {% do filepicker_options.append((file_id, file_names[1], selected_file_id == file_id)) %}
     {% endif %}
   {% endfor %}
 {% endif %}
@@ -40,4 +40,4 @@
 </div>
 
 
-{{ file_pickers.append({'id_prefix': id_prefix, 'context_id_token': context_id_token }) or '' }}
+{% do file_pickers.append({'id_prefix': id_prefix, 'context_id_token': context_id_token }) %}

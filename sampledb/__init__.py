@@ -103,7 +103,7 @@ def setup_jinja_environment(app: flask.Flask) -> None:
     else:
         jupyterhub_templates_url = None
 
-    app.jinja_env.add_extension('jinja2.ext.loopcontrols')
+    app.jinja_env.add_extension('jinja2.ext.do')
     app.jinja_env.policies['json.dumps_kwargs'] = {'ensure_ascii': False}
 
     app.jinja_env.globals.update(

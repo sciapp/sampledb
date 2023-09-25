@@ -883,7 +883,7 @@
     {% set allowed_language_ids = [] %}
     {% for language in all_languages %}
       {% if language.enabled_for_input %}
-        {{ allowed_language_ids.append(language.id) or '' }}
+        {% do allowed_language_ids.append(language.id) %}
       {% endif %}
     {% endfor %}
     {% if object_location_assignments %}
@@ -1024,7 +1024,7 @@
     {% if user_may_link_publication %}
       {% for message in get_flashed_messages() %}
       {% if 'Please enter a valid DOI' in message %}
-        {{ publication_form.errors.__setitem__(publication_form.doi.name, _('Please enter a valid DOI.')) or '' }}
+        {% do publication_form.errors.__setitem__(publication_form.doi.name, _('Please enter a valid DOI.')) %}
       {% endif %}
       {% endfor %}
       <form class="form" method="post" action="{{ url_for('frontend.post_object_publication', object_id=object_id) }}" id="assign-publication-form">
@@ -1799,7 +1799,7 @@
           {% for filter_label, entry_types in filter_type_list.items() %}
               "{{ filter_label }}": [
                   {% for entry_type in entry_types %}
-                      '{{ entry_type.name.lower() }}',{{ handled_entry_types.append(entry_type) or '' }}
+                      '{{ entry_type.name.lower() }}',{% do handled_entry_types.append(entry_type) %}
                   {% endfor %}
               ],
           {% endfor %}

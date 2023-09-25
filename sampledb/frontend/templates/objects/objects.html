@@ -1031,7 +1031,7 @@
   {% set allowed_language_ids = [] %}
   {% for language in all_languages %}
     {% if language.enabled_for_input %}
-      {{ allowed_language_ids.append(language.id) or '' }}
+      {% do allowed_language_ids.append(language.id) %}
     {% endif %}
   {% endfor %}
 
@@ -1472,14 +1472,14 @@
           {% set shares = get_shares_for_object(object.object_id) %}
           {% set components = [] %}
           {% if object.component is not none %}
-            {{ components.append(object.component) or '' }}
+            {% do components.append(object.component) %}
             <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared by %(component_name)s', component_name=object.component.get_name()) }}">
               <i class="fa fa-arrow-left"></i>&nbsp;<a href="{{ url_for('.component', component_id=object.component_id) }}">{{ object.component.get_name() }}</a>
             </span>
           {% endif %}
           {% for share in shares %}
             {% if share.component is not none %}
-              {{ components.append(share.component) or '' }}
+              {% do components.append(share.component) %}
               <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared with %(component_name)s', component_name=share.component.get_name()) }}">
                 <i class="fa fa-arrow-right"></i>&nbsp;<a href="{{ url_for('.component', component_id=share.component_id) }}">{{ share.component.get_name() }}</a>
               </span>

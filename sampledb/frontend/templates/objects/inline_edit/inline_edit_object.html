@@ -25,7 +25,7 @@
           <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
             {% include "objects/inline_edit/inline_edit_any.html" %}
           </div>
-          {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+          {% do form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) %}
         </div>
       {% else %}
         <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>

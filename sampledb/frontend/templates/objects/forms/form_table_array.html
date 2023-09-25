@@ -57,7 +57,7 @@
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
                       {% include "objects/forms/form_any.html" %}
                       {% if not is_template %}
-                        {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                        {% do form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) %}
                       {% endif %}
                     </div>
                     <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">

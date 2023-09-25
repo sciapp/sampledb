@@ -47,7 +47,7 @@
                   {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                       {% include "objects/inline_edit/inline_edit_any.html" %}
-                      {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      {% do form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) %}
                     </div>
                     <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
                       &mdash;
