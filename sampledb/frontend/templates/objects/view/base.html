@@ -13,6 +13,7 @@
 {% endblock %}
 
 {% set id_prefix = "object_" %}
+{% set property_path = () %}
 
 {% block sidebar %}
   <nav>
@@ -333,6 +334,7 @@
           {% set workflow_display_mode = True %}
           {% set object_id = elem.object_id %}
           {% set id_prefix = "workflow_" + (elem.object_id | string) + "_" %}
+          {% set property_path = () %}
           {% set data = elem.object.data %}
           {% set schema = elem.object.schema %}
           {% set files = elem.files %}

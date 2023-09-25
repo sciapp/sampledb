@@ -1,4 +1,3 @@
-<!-- array start -->
 <div class="form-group row">
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
@@ -23,277 +22,273 @@
     {% set data = compound_defaults[schema_path] %}
   {% endif %}
   {% if schema['items']['type'] == 'object' %}
-  {% set item_property_names = get_property_names_in_order(schema["items"]) %}
-  {% set table_prefix = 'table_' + id_prefix %}
-  <table class="table" id="{{ table_prefix }}">
-    <thead>
-      <tr>
-        {% for property_name in item_property_names %}
-          <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema["items"].properties[property_name] %}data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }} {% if 'tooltip' in schema["items"].properties[property_name] %}<i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span>{% endif %}</th>
-        {% endfor %}
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-    {% if data is not none %}
-      {% for item in data %}
-        {% set name = "item" %}
-        {% set tmp_style = schema.get('style') %}
-        {% set parent_schema = schema %}
-        {% set schema = schema['items'] %}
-        {% set parent_prefix = id_prefix %}
-        {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
-        {% set data = item %}
-        <tr id="container_{{ id_prefix }}">
-          <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
-        {% for property_name in item_property_names %}
-          <td>
-            {% set name = property_name %}
-            {% set parent_schema = schema %}
-            {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'parent_style': tmp_style}) %}
-            {% set parent_id_prefix = id_prefix %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% set schema_path = schema_path + '__' + name %}
-            {% if data is not none and property_name in data %}
-              {% set data = data[property_name] %}
-            {% else %}
-              {% set data = none %}
-            {% endif %}
-            {% if 'conditions' in schema %}
-              <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
-              {% include "objects/forms/form_any.html" %}
-              {% if not is_template %}
-                {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
-              {% endif %}
-              </div>
-              <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
-                &mdash;
-              </div>
-            {% else %}
-              {% include "objects/forms/form_any.html" %}
-            {% endif %}
-          </td>
-        {% endfor %}
-        {% if 'recipes' in schema %}
-          <td colspan="{{ item_property_names | length }}">
-            {% include "objects/forms/form_table_recipe.html" %}
-          </td>
-        {% endif %}
-        {% if not is_template %}
-          {{ form_elements.append({ "kind": "table_array_copy", "button_id": "action_" + id_prefix + "_copy", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-          {{ form_elements.append({ "kind": "table_array_delete", "button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
-        {% endif %}
-        <td>
-          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>&times;</button>
-          <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if is_template %}data-is-default="default"{% endif %}><i class="fa fa-clone"></i></button>
-        </td>
+    {% set item_property_names = get_property_names_in_order(schema["items"]) %}
+    {% set table_prefix = 'table_' + id_prefix %}
+    <table class="table" id="{{ table_prefix }}">
+      <thead>
+        <tr>
+          {% for property_name in item_property_names %}
+            <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema["items"].properties[property_name] %}data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }} {% if 'tooltip' in schema["items"].properties[property_name] %}<i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span>{% endif %}</th>
+          {% endfor %}
+          <th></th>
         </tr>
-      {% endfor %}
-    {% endif %}
-        {% set tmp_style = schema['style'] %}
-        {% set parent_schema = schema %}
+      </thead>
+      <tbody>
+        {% if data is not none %}
+          {% for item in data %}
+            {% set parent_style = schema.get('style') %}
+            {% set schema = schema['items'] %}
+            {% set parent_prefix = id_prefix %}
+            {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+            {% set property_path = property_path + (loop.index0,) %}
+            {% set data = item %}
+            <tr id="container_{{ id_prefix }}">
+              <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
+              {% for property_name in item_property_names %}
+                <td>
+                  {% set schema = schema.properties[property_name] %}
+                  {% set z = schema.update({'parent_style': parent_style}) %}
+                  {% set id_prefix = id_prefix + '_' + property_name + '_' %}
+                  {% set property_path = property_path + (property_name,) %}
+                  {% set schema_path = schema_path + '__' + property_name %}
+                  {% if data is not none and property_name in data %}
+                    {% set data = data[property_name] %}
+                  {% else %}
+                    {% set data = none %}
+                  {% endif %}
+                  {% if 'conditions' in schema %}
+                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+                      {% include "objects/forms/form_any.html" %}
+                      {% if not is_template %}
+                        {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      {% endif %}
+                    </div>
+                    <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                      &mdash;
+                    </div>
+                  {% else %}
+                    {% include "objects/forms/form_any.html" %}
+                  {% endif %}
+                </td>
+              {% endfor %}
+              {% if 'recipes' in schema %}
+                <td colspan="{{ item_property_names | length }}">
+                  {% include "objects/forms/form_table_recipe.html" %}
+                </td>
+              {% endif %}
+              {% if not is_template %}
+                {{ form_elements.append({ "kind": "table_array_copy", "button_id": "action_" + id_prefix + "_copy", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+                {{ form_elements.append({ "kind": "table_array_delete", "button_id": "action_" + id_prefix + "_delete", "prefix": parent_prefix, "id": loop.index0, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1 }) or '' }}
+              {% endif %}
+              <td>
+                <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" {% if numItems <= minItems %}disabled="disabled"{% endif %} {% if is_template %} data-is-default="default" data-array-kind="table" data-parent-prefix="{{ parent_prefix }}" data-element-id="{{ loop.index0 }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" {% endif %}>&times;</button>
+                <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" {% if is_template %}data-is-default="default"{% endif %}><i class="fa fa-clone"></i></button>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endif %}
+        {% set parent_style = schema.get('style') %}
         {% set schema = schema['items'] %}
         {% set parent_prefix = id_prefix %}
         {% set id_prefix = id_prefix + '_!index' ~ template_order_index ~ '!_' %}
+        {% set parent_property_path = property_path %}
+        {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
         {% set old_data = data %}
         <tr id="container_{{ id_prefix }}" class="array-template" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
           <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
           {% set is_template = true %}
           {% for property_name in item_property_names %}
-          <td>
-            {% set name = property_name %}
-            {% set parent_schema = schema %}
-            {% set schema = schema.properties[property_name] %}
-            {% set z = schema.update({'parent_style': tmp_style}) %}
-            {% set parent_id_prefix = id_prefix %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% set schema_path = schema_path + '__' + name %}
-            {% if data is not none and property_name in data %}
-              {% set data = data[property_name] %}
-            {% else %}
-              {% set data = none %}
-            {% endif %}
-            {% if 'conditions' in schema %}
-              <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-parent-id-prefix="{{ parent_id_prefix }}" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
-              {% include "objects/forms/form_any.html" %}
-              </div>
-              <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
-                &mdash;
-              </div>
-            {% else %}
-              {% include "objects/forms/form_any.html" %}
-            {% endif %}
-          </td>
+            <td>
+              {% set schema = schema.properties[property_name] %}
+              {% set z = schema.update({'parent_style': parent_style}) %}
+              {% set id_prefix = id_prefix + '_' + property_name + '_' %}
+              {% set property_path = property_path + (property_name,) %}
+              {% set schema_path = schema_path + '__' + property_name %}
+              {% if data is not none and property_name in data %}
+                {% set data = data[property_name] %}
+              {% else %}
+                {% set data = none %}
+              {% endif %}
+              {% if 'conditions' in schema %}
+                <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
+                {% include "objects/forms/form_any.html" %}
+                </div>
+                <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
+                  &mdash;
+                </div>
+              {% else %}
+                {% include "objects/forms/form_any.html" %}
+              {% endif %}
+            </td>
           {% endfor %}
-        {% if 'recipes' in schema %}
-          <td colspan="{{ item_property_names | length }}">
-            {% include "objects/forms/form_table_recipe.html" %}
+          {% if 'recipes' in schema %}
+            <td colspan="{{ item_property_names | length }}">
+              {% include "objects/forms/form_table_recipe.html" %}
+            </td>
+          {% endif %}
+          <td>
+            <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" disabled="disabled" {% if is_template %} {% endif %} >&times;</button>
+            <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-clone"></i></button>
           </td>
-        {% endif %}
-        <td>
-          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger pull-right form-delete-button action_delete_{{ parent_prefix }}" disabled="disabled" {% if is_template %} {% endif %} >&times;</button>
-          <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success pull-right form-copy-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}"><i class="fa fa-clone"></i></button>
-        </td>
           {% set is_template = false %}
         </tr>
-    </tbody>
-    {% set schema = old_schema %}
-    {% set data = old_data %}
-    {% set id_prefix = parent_prefix %}
-    <tfoot>
-      <tr>
-        {% for property_name in item_property_names %}
-          <th scope="col"></th>
-        {% endfor %}
-        <th><button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}">+</button></th>
-      </tr>
-    </tfoot>
-  </table>
+      </tbody>
+      {% set schema = old_schema %}
+      {% set data = old_data %}
+      {% set id_prefix = parent_prefix %}
+      {% set property_path = parent_property_path %}
+      <tfoot>
+        <tr>
+          {% for property_name in item_property_names %}
+            <th scope="col"></th>
+          {% endfor %}
+          <th><button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-array-type="table" data-parent-prefix="{{ parent_prefix }}" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}">+</button></th>
+        </tr>
+      </tfoot>
+    </table>
 
-  {% if not is_template %}
-    {{ form_elements.append({ "kind": "table_array_add", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-  {% endif %}
+    {% if not is_template %}
+      {{ form_elements.append({ "kind": "table_array_add", "parent_prefix": parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+    {% endif %}
 
   {% elif schema['items']['type'] == 'array' %}
-  {% set next_col_id = data[0] | length if data is not none and data | length > 0 and data[0] is not none else 0 %}
-  <input type="hidden" class="table-interaction" name="applied_action__{{ id_prefix }}__table_interaction" data-content="" value="">
-  <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}" data-col-next-id="{{ next_col_id }}" data-row-next-id="{{ data | length if data is not none else 0 }}">
-  {% set max_used_fields = 0 %}
-  {% if (data is none or is_template) and schema_path in compound_defaults %}
-    {% set data = compound_defaults[schema_path] %}
-  {% else %}
-    {% set data = {} if data is none else data %}
-  {% endif %}
-  {% if data is not none %}
-    {% set max_used_fields = [0] %}
-    {% for item in data %}
-      {% if (item | length) > max_used_fields[-1] %}
-        {% set tmp = max_used_fields.append(item | length) %}
-      {% endif %}
-    {% endfor %}
-    {% set max_used_fields = max_used_fields [-1] %}
-    <thead>
-    <tr>
-    {% for i in range(max_used_fields) %}
-      <th>{{ _('Field %(index)s', index=i + 1) }}</th>
-    {% endfor %}
-      <th class="control-buttons">
-        <div class="btn-group pull-right" role="group" aria-label="Column Controls">
-          <button type="button" id="action_deletecolumn_{{ id_prefix }}" name="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger" {% if (data | length) == 0 or max_used_fields <= schema["items"].get("minItems", 0) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %} ><i class="fa fa-arrow-left"></i></button>
-          <button type="button" id="action_addcolumn_{{ id_prefix }}" name="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success" {% if (data | length) == 0 or ("maxItems" in schema["items"] and max_used_fields >= schema["items"]["maxItems"]) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-add" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %}><i class="fa fa-arrow-right"></i></button>
-          {% if not is_template %}
-            {{ form_elements.append({ "kind": "table_col_delete", "id_prefix": id_prefix, "button_id": "action_deletecolumn_" + id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-            {{ form_elements.append({ "kind": "table_col_add", "id_prefix": id_prefix, "button_id": "action_addcolumn_" + id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-          {% endif %}
-        </div>
-      </th>
-    </tr>
-    </thead>
-    <tbody>
-    {% set parent_prefix = id_prefix %}
-    {% for item in data %}
-      {% set item_index = loop.index0 %}
-      <tr data-row-id="{{ loop.index0 }}">
-        <input type="hidden" name="{{ id_prefix }}_{{ loop.index0 }}__hidden" value="hidden" />
-      {% for field in item %}
-        <td>
-          {% set name = "field_".format(loop.index0) %}
-          {% set tmp_style = schema.get('style') %}
-          {% set parent_schema = schema %}
-          {% set schema = schema["items"]["items"] %}
-          {% set z = schema.update({'parent_style': tmp_style}) %}
-          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
-          {% set schema_path = schema_path + '__?' %}
-          {% set data = field %}
-          {% include "objects/forms/form_any.html" %}
-        </td>
-      {% endfor %}
-      {% if (item | length) < max_used_fields %}
-        {% for i in range((item | length), max_used_fields) %}
-        <td>
-          {% set name ="field_".format(loop.index0) %}
-          {% set tmp_style = schema.get('style') %}
-          {% set parent_schema = schema %}
-          {% set schema = schema["items"]["items"] %}
-          {% set z = schema.update({'parent_style': tmp_style}) %}
-          {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
-          {% set schema_path = schema_path + '__?' %}
-          {% set data = none %}
-          {% include "objects/forms/form_any.html" %}
-        </td>{% endfor %}
-      {% endif %}
-          <td class="control-buttons"><button type="button" class="btn btn-danger pull-right delete-row-button" data-row-index="{{ loop.index0 }}" id="action_deleterow_{{ id_prefix }}_{{ loop.index0 }}_" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="row-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %}>&times;</button></td>
-          {% if not is_template %}
-            {{ form_elements.append({ "kind": "table_row_delete", "id_prefix": id_prefix, "button_id": "action_deleterow_" + id_prefix + "_" ~ loop.index0 ~ "_", "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-          {% endif %}
-      </tr>
-    {% endfor %}
-    <tr class="array-template" data-template-table-type="col">
-      {% set is_template = true %}
-      {% set parent_prefix = id_prefix %}
-      {% set id_prefix = id_prefix + "_!index{}!_".format(template_order_index) %}
-      {% set row_prefix = id_prefix %}
-      {% set tableschema = schema %}
-      {% set parent_schema = tableschema %}
-        <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
-      <td class="array-col-template" id="col_template_{{ id_prefix }}">
-        {% set col_index = '!cindex{}!'.format(col_order_index) %}
-        {% set name ="field_".format(col_index) %}
-        {% set tmp_style = schema['style'] %}
-        {% set schema = tableschema["items"]["items"] %}
-        {% set z = schema.update({'parent_style': tmp_style}) %}
-        {% set id_prefix = row_prefix + '_{}_'.format(col_index) %}
-        {% set schema_path = schema_path + '__?' %}
-        {% set data = none %}
-        {% include "objects/forms/form_any.html" %}
-      </td>
-      {% set is_template = false %}
-    </tr>
-      <tr class="array-template" data-template-table-type="row" id="row_{{ row_prefix }}" data-row-id="!index{{template_order_index}}!">
-      {% set is_template = true %}
-      {% set col_index = '!cindex{}!'.format(col_order_index) %}
-      {% set name ="field_".format(col_index) %}
-      {% set tmp_style = tableschema['style'] %}
-      {% set z = schema.update({'parent_style': tmp_style}) %}
-      {% set maxColItems = tableschema['items'].get('maxItems', none) %}
-      {% set minColItems = tableschema['items'].get('minItems', 0) %}
-      {% set defaultColItems = tableschema['items'].get('defaultItems', minColItems) %}
-      {% if schema_path in compound_defaults %}
-        {% set data = tableschema['items']['default'] %}
-        {% for item in data %}
-          {% set data = item %}
-          <td>
-            {% set id_prefix = row_prefix + '_{}_'.format(loop.index0) %}
-            {% include "objects/forms/form_any.html" %}
-          </td>
-        {% endfor %}
+    {% set next_col_id = data[0] | length if data is not none and data | length > 0 and data[0] is not none else 0 %}
+    <input type="hidden" class="table-interaction" name="applied_action__{{ id_prefix }}__table_interaction" data-content="" value="">
+    <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}" data-col-next-id="{{ next_col_id }}" data-row-next-id="{{ data | length if data is not none else 0 }}">
+      {% set max_used_fields = 0 %}
+      {% if (data is none or is_template) and schema_path in compound_defaults %}
+        {% set data = compound_defaults[schema_path] %}
       {% else %}
-        {% set data = none %}
-        {% for i in range(defaultColItems) %}
-          {% set id_prefix = row_prefix + '_{}_'.format(i) %}
-          <td>
-            {% include "objects/forms/form_any.html" %}
-          </td>
-        {% endfor %}
+        {% set data = {} if data is none else data %}
       {% endif %}
-      <td class="control-buttons"><button type="button" class="btn btn-danger pull-right delete-row-button" id="action_deleterow_{{ row_prefix }}" data-is-default="row-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ row_prefix }}">&times;</button></td>
-      {% set is_template = false %}
-    </tr>
-    </tbody>
-  {% endif %}
-  <tfoot>
-  <tr>
-  {% for i in range(max_used_fields) %}
-    <th>{{ _('Field %(index)s', index=i + 1) }}</th>
-  {% endfor %}
-    <th class="control-buttons"><button type="button" id="action_add_{{ parent_prefix }}" name="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right" {% if maxItems is not none and numItems >= maxItems %} {% endif %} data-is-default="row-add" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ parent_prefix }}">+</button></th>
-    {% if not is_template %}
-      {{ form_elements.append({ "kind": "table_row_add", "id_prefix": parent_prefix, "button_id": "action_add_" + parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
-    {% endif %}
-  </tr>
-  </tfoot>
-  </table>
+      {% if data is not none %}
+        {% set max_used_fields = [0] %}
+        {% for item in data %}
+          {% if (item | length) > max_used_fields[-1] %}
+            {% set tmp = max_used_fields.append(item | length) %}
+          {% endif %}
+        {% endfor %}
+        {% set max_used_fields = max_used_fields [-1] %}
+        <thead>
+          <tr>
+            {% for i in range(max_used_fields) %}
+              <th>{{ _('Field %(index)s', index=i + 1) }}</th>
+            {% endfor %}
+            <th class="control-buttons">
+              <div class="btn-group pull-right" role="group" aria-label="Column Controls">
+                <button type="button" id="action_deletecolumn_{{ id_prefix }}" name="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger" {% if (data | length) == 0 or max_used_fields <= schema["items"].get("minItems", 0) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %} ><i class="fa fa-arrow-left"></i></button>
+                <button type="button" id="action_addcolumn_{{ id_prefix }}" name="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success" {% if (data | length) == 0 or ("maxItems" in schema["items"] and max_used_fields >= schema["items"]["maxItems"]) %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="col-add" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %}><i class="fa fa-arrow-right"></i></button>
+                {% if not is_template %}
+                  {{ form_elements.append({ "kind": "table_col_delete", "id_prefix": id_prefix, "button_id": "action_deletecolumn_" + id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+                  {{ form_elements.append({ "kind": "table_col_add", "id_prefix": id_prefix, "button_id": "action_addcolumn_" + id_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+                {% endif %}
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set parent_prefix = id_prefix %}
+          {% for item in data %}
+            {% set item_index = loop.index0 %}
+            <tr data-row-id="{{ loop.index0 }}">
+              <input type="hidden" name="{{ id_prefix }}_{{ loop.index0 }}__hidden" value="hidden" />
+              {% for field in item %}
+                <td>
+                  {% set parent_style = schema.get('style') %}
+                  {% set schema = schema["items"]["items"] %}
+                  {% set z = schema.update({'parent_style': parent_style}) %}
+                  {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
+                  {% set property_path = property_path + (item_index, loop.index0) %}
+                  {% set schema_path = schema_path + '__?' %}
+                  {% set data = field %}
+                  {% include "objects/forms/form_any.html" %}
+                </td>
+              {% endfor %}
+              {% if (item | length) < max_used_fields %}
+                {% for i in range((item | length), max_used_fields) %}
+                  <td>
+                    {% set parent_style = schema.get('style') %}
+                    {% set schema = schema["items"]["items"] %}
+                    {% set z = schema.update({'parent_style': parent_style}) %}
+                    {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
+                    {% set property_path = property_path + (item_index, i) %}
+                    {% set schema_path = schema_path + '__?' %}
+                    {% set data = none %}
+                    {% include "objects/forms/form_any.html" %}
+                  </td>
+                {% endfor %}
+              {% endif %}
+              <td class="control-buttons"><button type="button" class="btn btn-danger pull-right delete-row-button" data-row-index="{{ loop.index0 }}" id="action_deleterow_{{ id_prefix }}_{{ loop.index0 }}_" {% if numItems <= minItems %} disabled="disabled" {% endif %} {% if is_template %} data-is-default="row-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ id_prefix }}" {% endif %}>&times;</button></td>
+              {% if not is_template %}
+                {{ form_elements.append({ "kind": "table_row_delete", "id_prefix": id_prefix, "button_id": "action_deleterow_" + id_prefix + "_" ~ loop.index0 ~ "_", "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+              {% endif %}
+            </tr>
+          {% endfor %}
+          <tr class="array-template" data-template-table-type="col">
+            {% set is_template = true %}
+            {% set parent_prefix = id_prefix %}
+            {% set id_prefix = id_prefix + "_!index{}!_".format(template_order_index) %}
+            {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
+            {% set row_prefix = id_prefix %}
+            {% set row_property_path = property_path %}
+            {% set tableschema = schema %}
+            {% set parent_style = schema.get('style') %}
+            <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
+            <td class="array-col-template" id="col_template_{{ id_prefix }}">
+              {% set col_index = '!cindex{}!'.format(col_order_index) %}
+              {% set schema = tableschema["items"]["items"] %}
+              {% set z = schema.update({'parent_style': parent_style}) %}
+              {% set id_prefix = row_prefix + '_{}_'.format(col_index) %}
+              {% set property_path = row_property_path + (col_index,) %}
+              {% set schema_path = schema_path + '__?' %}
+              {% set data = none %}
+              {% include "objects/forms/form_any.html" %}
+            </td>
+            {% set is_template = false %}
+          </tr>
+          <tr class="array-template" data-template-table-type="row" id="row_{{ row_prefix }}" data-row-id="!index{{template_order_index}}!">
+            {% set is_template = true %}
+            {% set col_index = '!cindex{}!'.format(col_order_index) %}
+            {% set z = schema.update({'parent_style': parent_style}) %}
+            {% set maxColItems = tableschema['items'].get('maxItems', none) %}
+            {% set minColItems = tableschema['items'].get('minItems', 0) %}
+            {% set defaultColItems = tableschema['items'].get('defaultItems', minColItems) %}
+            {% if schema_path in compound_defaults %}
+              {% set data = tableschema['items']['default'] %}
+              {% for item in data %}
+                {% set data = item %}
+                <td>
+                  {% set id_prefix = row_prefix + '_{}_'.format(loop.index0) %}
+                  {% set property_path = row_property_path + (loop.index0,) %}
+                  {% include "objects/forms/form_any.html" %}
+                </td>
+              {% endfor %}
+            {% else %}
+              {% set data = none %}
+              {% for i in range(defaultColItems) %}
+                {% set id_prefix = row_prefix + '_{}_'.format(i) %}
+                {% set property_path = row_property_path + (i,) %}
+                <td>
+                  {% include "objects/forms/form_any.html" %}
+                </td>
+              {% endfor %}
+            {% endif %}
+            <td class="control-buttons"><button type="button" class="btn btn-danger pull-right delete-row-button" id="action_deleterow_{{ row_prefix }}" data-is-default="row-delete" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ row_prefix }}">&times;</button></td>
+            {% set is_template = false %}
+          </tr>
+        </tbody>
+      {% endif %}
+      <tfoot>
+        <tr>
+          {% for i in range(max_used_fields) %}
+            <th>{{ _('Field %(index)s', index=i + 1) }}</th>
+          {% endfor %}
+          <th class="control-buttons"><button type="button" id="action_add_{{ parent_prefix }}" name="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right" {% if maxItems is not none and numItems >= maxItems %} {% endif %} data-is-default="row-add" data-array-kind="table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems if maxItems is not none else -1 }}" data-id-prefix="{{ parent_prefix }}">+</button></th>
+          {% if not is_template %}
+            {{ form_elements.append({ "kind": "table_row_add", "id_prefix": parent_prefix, "button_id": "action_add_" + parent_prefix, "minItems": minItems, "maxItems": maxItems if maxItems is not none else -1}) or '' }}
+          {% endif %}
+        </tr>
+      </tfoot>
+    </table>
   {% endif %}
 </div>
-<!-- array end -->

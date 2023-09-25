@@ -1,5 +1,6 @@
 {% if data is not none and 'plotly' in data %}
   {% set plot_counter.value = plot_counter.value + 1 %}
+  {% set plot_id = id_prefix ~ '_plot' ~ plot_counter.value %}
   {% set plotly_chart_title = data.plotly | plotly_chart_get_title | striptags %}
   <div>
   {% if plotly_chart_title %}
@@ -9,13 +10,13 @@
   {% endif %}
 
   {% if data.plotly %}
-    <a id="plotly_info_link_{{ name }}_{{ plot_counter.value }}" data-hide-text="[{{ _('hide plot')}}]" data-show-text="[{{ _('show plot') }}]">[{{ _('show plot') }}]</a>
-    <div id="plotly_plot_div_{{ name }}_{{ plot_counter.value }}" style="display: none"></div>
+    <a id="plotly_info_link_{{ plot_id }}" data-hide-text="[{{ _('hide plot')}}]" data-show-text="[{{ _('show plot') }}]">[{{ _('show plot') }}]</a>
+    <div id="plotly_plot_div_{{ plot_id }}" style="display: none"></div>
 
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      window.plotly_charts.push(['plotly_plot_div_{{ name }}_{{ plot_counter.value }}', {{ data.plotly|tojson|safe }}]);
-      document.getElementById('plotly_info_link_{{ name }}_{{ plot_counter.value }}').addEventListener('click', function() {
-        sdbtoggle('{{ name }}_{{ plot_counter.value }}');
+      window.plotly_charts.push(['plotly_plot_div_{{ plot_id }}', {{ data.plotly|tojson|safe }}]);
+      document.getElementById('plotly_info_link_{{ plot_id }}').addEventListener('click', function() {
+        sdbtoggle('{{ plot_id }}');
       });
     </script>
   {% endif %}

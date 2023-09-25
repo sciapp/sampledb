@@ -1,6 +1,3 @@
-{% if hidden %}
-<div class="hidden show-more-{{ parent_id_prefix }}">
-{% endif %}
 {% if diff is not none and previous_schema is not none and ('_before' in diff or '_after' in diff) %}
   {% set current_schema = schema %}
   {% if '_before' in diff %}
@@ -37,7 +34,4 @@
   {% endif %}
 {% else %}
   {% include get_view_template(schema) %}
-{% endif %}
-{% if hidden %}
-</div>
 {% endif %}

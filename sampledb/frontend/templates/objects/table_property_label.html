@@ -1,0 +1,15 @@
+{% if 'tooltip' in schema %}
+  <span data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}">
+  {{ schema.title | get_translated_text }}
+    <i class="fa fa-question-circle" aria-hidden="true"></i>
+  </span>
+{% else %}
+  {{ schema.title | get_translated_text }}
+{% endif %}
+
+{% set search_url = get_table_search_url(property_path, schema) %}
+{% if search_url %}
+  <a href="{{ search_url }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>
+{% else %}
+  <i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
+{% endif %}

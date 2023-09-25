@@ -124,7 +124,7 @@
     });
 
     {% for form_condition in form_conditions %}
-      conditional_wrapper("{{ form_condition['parent_id_prefix'] }}", "{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
+      conditional_wrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
     {% endfor %}
 
     {% for element in form_elements %}
@@ -568,7 +568,7 @@
       $(`[name^="${old_prefix}_"]`).each(function(_, element) {
         element.name = tmp_prefix + element.name.substring(old_prefix.length);
       });
-      for (const data_attribute of ['id-prefix', 'parent-id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+      for (const data_attribute of ['id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
         $(`[data-${data_attribute}^="${old_prefix}_"], [data-${data_attribute}="${old_prefix}"]`).each(function(_, element) {
           $(element).attr(`data-${data_attribute}`, tmp_prefix + $(element).data(data_attribute).substring(old_prefix.length));
           $(element).data(data_attribute, $(element).attr(`data-${data_attribute}`));
@@ -592,7 +592,7 @@
       $(`[name^="${tmp_prefix}_"]`).each(function(_, element) {
         element.name = new_prefix + element.name.substring(tmp_prefix.length);
       });
-      for (const data_attribute of ['id-prefix', 'parent-id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+      for (const data_attribute of ['id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
         $(`[data-${data_attribute}^="${tmp_prefix}_"], [data-${data_attribute}="${tmp_prefix}"]`).each(function(_, element) {
           $(element).attr(`data-${data_attribute}`, new_prefix + $(element).data(data_attribute).substring(tmp_prefix.length));
           $(element).data(data_attribute, $(element).attr(`data-${data_attribute}`));
@@ -842,7 +842,7 @@
       if($(this).attr('name')) $(this).attr('name', $(this).attr('name').replaceAll(templateReplacement, id));
       if($(this).attr('class')) $(this).attr('class', $(this).attr('class').replaceAll(templateReplacement, id));
 
-      for (const data_attribute of ['parent-prefix', 'name', 'id-prefix', 'parent-id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+      for (const data_attribute of ['parent-prefix', 'name', 'id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
         if ($(this).attr(`data-${data_attribute}`)) {
           $(this).attr(`data-${data_attribute}`, $(this).attr(`data-${data_attribute}`).replaceAll(templateReplacement, id));
           $(this).data(data_attribute, $(this).attr(`data-${data_attribute}`));
@@ -1157,10 +1157,9 @@
 
   function applySchemaConditions(clone) {
     $(clone).find('.condition-wrapper').each(function() {
-      const parentIdPrefix = $(this).data('parent-id-prefix');
-      const idPrefix = $(this).data('id-prefix');
+      const id_prefix = $(this).data('id-prefix');
       const conditions = $(this).data('conditions');
-      conditional_wrapper(parentIdPrefix, idPrefix, conditions);
+      conditional_wrapper(id_prefix, conditions);
     });
 
     $.each(window.conditional_wrapper_scripts, function () {

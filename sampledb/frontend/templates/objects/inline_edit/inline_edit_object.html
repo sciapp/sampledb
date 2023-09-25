@@ -1,4 +1,3 @@
-<!-- object start -->
 {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title) and schema.title %}
   <span style="font-size:1.5em; padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
@@ -7,36 +6,30 @@
   <div style="margin-left: {{ -indent_level * 20 - 1 }}px; padding-left:{{ indent_level * 10 + 1 }}px">
     {% set show_indent_border = True %}
     <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
-    {% if search_query_attribute %}
-      {% set base_search_query_attribute = search_query_attribute %}
-    {% else %}
-      {% set base_search_query_attribute = "" %}
-    {% endif %}
     {% set property_names = get_property_names_in_order(schema) %}
     {% for property_name in property_names %}
       {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
-      {% set name = property_name %}
       {% set schema = schema.properties[property_name] %}
       {% set parent_id_prefix = id_prefix %}
-      {% set id_prefix = id_prefix + '_' + name + '_' %}
+      {% set id_prefix = id_prefix + '_' + property_name + '_' %}
+      {% set property_path = property_path + (property_name,) %}
       {% if data is not none and property_name in data %}
         {% set data = data[property_name] %}
       {% else %}
         {% set data = none %}
       {% endif %}
-      {% if base_search_query_attribute %}
-        {% set search_query_attribute = base_search_query_attribute + "." + name %}
-      {% else %}
-        {% set search_query_attribute = name %}
-      {% endif %}
       {% if 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-          {% include "objects/inline_edit/inline_edit_any.html" %}
-          {{ form_conditions.append({ "parent_id_prefix": parent_id_prefix, "id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+          <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+            {% include "objects/inline_edit/inline_edit_any.html" %}
+          </div>
+          {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
         </div>
       {% else %}
-        {% include "objects/inline_edit/inline_edit_any.html" %}
+        <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+          {% include "objects/inline_edit/inline_edit_any.html" %}
+        </div>
       {% endif %}
     {% endfor %}
     {% if schema.get("show_more") %}
@@ -54,4 +47,3 @@
     {% endif %}
   </div>
 </div>
-<!-- object end-->
