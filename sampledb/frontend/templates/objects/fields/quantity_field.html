@@ -25,7 +25,7 @@
           value="{{ unit }}"
         {% endif %}
       />
-      <span class="input-group-addon" style="min-width: 100px; text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}</span>
+      <span class="input-group-addon" style="{% if not container_style %}min-width: 100px;{% endif %} text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}</span>
     {% else %}
       {% if id_prefix + '_units' in form_data %}
         {% set selected_unit = form_data[id_prefix + '_units'] %}
