@@ -3,7 +3,7 @@
 {% block property_field %}
   {% if data is not none and 'plotly' in data and data.plotly != {} %}
     {% set plot_counter.value = plot_counter.value + 1 %}
-    {% set plot_id = id_prefix ~ '_plot' ~ plot.counter.value %}
+    {% set plot_id = id_prefix ~ '_plot' ~ plot_counter.value %}
     <div id="plotly_plot_div_{{ plot_id }}}"></div>
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       window.plotly_charts.push(['plotly_plot_div_{{ plot_id }}', {{ data.plotly|tojson|safe }}]);
