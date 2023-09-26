@@ -1030,6 +1030,8 @@ class VersionedJSONSerializableObjectTables:
 
             sorting_func = default_sorting_func
 
+        # set object_id_column to allow access to table.c.object_id in filter_func (e.g. for file search)
+        table.c.data.object_id_column = table.c.object_id
         select_statement = select_statement.where(filter_func(table.c.data))
         select_statement = select_statement.order_by(sorting_func(table.c, self._previous_table.c))
 

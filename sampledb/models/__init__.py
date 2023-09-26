@@ -10,6 +10,7 @@ from . import default_permissions
 from . import eln_imports
 from . import favorites
 from . import files
+from . import file_log
 from . import groups
 from . import group_categories
 from . import instruments
@@ -44,6 +45,7 @@ from .eln_imports import ELNImport, ELNImportObject, ELNImportAction
 from .favorites import FavoriteAction, FavoriteInstrument
 from .fed_logs import FedUserLogEntry, FedUserLogEntryType, FedObjectLogEntry, FedObjectLogEntryType, FedLocationLogEntryType, FedLocationLogEntry, FedActionLogEntryType, FedActionLogEntry, FedActionTypeLogEntry, FedActionTypeLogEntryType, FedInstrumentLogEntry, FedInstrumentLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType
 from .files import File
+from .file_log import FileLogEntry, FileLogEntryType
 from .groups import Group
 from .group_categories import GroupCategory
 from .instruments import Instrument
@@ -80,6 +82,7 @@ __all__ = [
     'eln_imports',
     'favorites',
     'files',
+    'file_log',
     'groups',
     'group_categories',
     'instruments',
@@ -120,6 +123,8 @@ __all__ = [
     'FavoriteAction',
     'FavoriteInstrument',
     'File',
+    'FileLogEntry',
+    'FileLogEntryType',
     'Group',
     'GroupCategory',
     'HTTPMethod',

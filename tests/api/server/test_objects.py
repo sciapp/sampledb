@@ -1124,6 +1124,74 @@ def test_search_objects(flask_server, auth, user, other_user, action):
     assert r.json() == {
         'message': 'Error: Unfinished text'
     }
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"test.txt" in files'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"http://example.org/test.txt" == file_name'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'file_name == "http://example.org/test.txt"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    sampledb.logic.files.create_url_file(
+        object_id=object.object_id,
+        user_id=user.id,
+        url='http://example.org/test.txt'
+    )
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"test.txt" in file_name'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': '"http://example.org/test.txt" == file_name'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'file_name == "http://example.org/test.txt"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
 
 
 def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, other_action):

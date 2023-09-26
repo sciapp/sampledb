@@ -6,12 +6,13 @@
 import datetime
 import json
 
+import flask
 import pytest
 import sqlalchemy as db
 
 import sampledb
 import sampledb.utils
-from sampledb.logic import datatypes, where_filters
+from sampledb.logic import datatypes, where_filters, files
 from sampledb.models.versioned_json_object_tables import VersionedJSONSerializableObjectTables, Object
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
@@ -262,3 +263,177 @@ def test_reference_equals(objects):
     assert found_object_ids == {
         object2.id, object3.id, object4.id, object5.id
     }
+
+
+def test_file_name_contains(flask_server):
+    user = sampledb.logic.users.create_user(
+        name="Test User",
+        email="example@example.org",
+        type=sampledb.logic.users.UserType.PERSON
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            "type": "object",
+            "title": "Test Object",
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": "Name"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    data = {
+        "name": {
+            "_type": "text",
+            "text": "Name"
+        }
+    }
+    flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST'] = {'/test/': [user.id]}
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_url_file(object_id=object1.object_id, user_id=user.id, url="http://example.org/test/test")
+    object2 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_url_file(object_id=object2.object_id, user_id=user.id, url="http://example.org/test/test2")
+    object3 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_database_file(object_id=object3.object_id, user_id=user.id, file_name="test.txt", save_content=lambda stream: None)
+    object4 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_database_file(object_id=object4.object_id, user_id=user.id, file_name="test2.txt", save_content=lambda stream: None)
+    object5 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_local_file_reference(object_id=object5.object_id, user_id=user.id, filepath="/test/test.txt")
+    object6 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_local_file_reference(object_id=object6.object_id, user_id=user.id, filepath="/test/test2.txt")
+    object7 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_contains(data, "test2"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {
+        object2.id, object4.id, object6.id
+    }
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_contains(data, "/test/"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {
+        object1.id, object2.id, object5.id, object6.id
+    }
+    sampledb.logic.files.hide_file(object_id=object1.id, file_id=0, user_id=user.id, reason='')
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_contains(data, "/test/"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {
+        object2.id, object5.id, object6.id
+    }
+    sampledb.db.session.add(sampledb.models.FileLogEntry(object_id=object1.id, file_id=0, user_id=user.id, type=sampledb.models.FileLogEntryType.UNHIDE_FILE, data={}))
+    sampledb.db.session.commit()
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_contains(data, "/test/"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {
+        object1.id, object2.id, object5.id, object6.id
+    }
+
+    files.create_url_file(object_id=object2.object_id, user_id=user.id, url="http://example.org/test/test2")
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_contains(data, "http://example.org/test/test2"))
+    found_object_ids = [
+        object.id
+        for object in found_objects
+    ]
+    assert found_object_ids == [object2.id]
+
+
+def test_file_name_equals(flask_server):
+    user = sampledb.logic.users.create_user(
+        name="Test User",
+        email="example@example.org",
+        type=sampledb.logic.users.UserType.PERSON
+    )
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            "type": "object",
+            "title": "Test Object",
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": "Name"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    data = {
+        "name": {
+            "_type": "text",
+            "text": "Name"
+        }
+    }
+    flask.current_app.config['DOWNLOAD_SERVICE_WHITELIST'] = {'/test/': [user.id]}
+    object1 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_url_file(object_id=object1.object_id, user_id=user.id, url="http://example.org/test/test")
+    object2 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_url_file(object_id=object2.object_id, user_id=user.id, url="http://example.org/test/test2")
+    object3 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_database_file(object_id=object3.object_id, user_id=user.id, file_name="test.txt", save_content=lambda stream: None)
+    object4 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_database_file(object_id=object4.object_id, user_id=user.id, file_name="test2.txt", save_content=lambda stream: None)
+    object5 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_local_file_reference(object_id=object5.object_id, user_id=user.id, filepath="/test/test.txt")
+    object6 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    files.create_local_file_reference(object_id=object6.object_id, user_id=user.id, filepath="/test/test2.txt")
+    object7 = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "http://example.org/test/test"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {object1.id}
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "test.txt"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {object3.id}
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "/test/test.txt"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {object5.id}
+    sampledb.logic.files.hide_file(object_id=object1.id, file_id=0, user_id=user.id, reason='')
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "http://example.org/test/test"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert not found_object_ids
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "test.txt"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {object3.id}
+    sampledb.db.session.add(sampledb.models.FileLogEntry(object_id=object1.id, file_id=0, user_id=user.id, type=sampledb.models.FileLogEntryType.UNHIDE_FILE, data={}))
+    sampledb.db.session.commit()
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "http://example.org/test/test"))
+    found_object_ids = {
+        object.id
+        for object in found_objects
+    }
+    assert found_object_ids == {object1.id}
+
+    files.create_url_file(object_id=object1.object_id, user_id=user.id, url="http://example.org/test/test")
+    found_objects = sampledb.models.objects.Objects.get_current_objects(lambda data: where_filters.file_name_equals(data, "http://example.org/test/test"))
+    found_object_ids = [
+        object.id
+        for object in found_objects
+    ]
+    assert found_object_ids == [object1.id]

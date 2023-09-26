@@ -1404,7 +1404,24 @@ def transform_binary_operation_to_query(
             str_operator = '=='
 
     if (left_operand_type, right_operand_type, str_operator) in binary_operator_handlers:
-        return binary_operator_handlers[(left_operand_type, right_operand_type, str_operator)](left_operand, operator, right_operand, outer_filter, search_notes)
+        expression, outer_filter = binary_operator_handlers[(left_operand_type, right_operand_type, str_operator)](left_operand, operator, right_operand, outer_filter, search_notes)
+        if str_operator.strip() in ('in', '==') and isinstance(left_operand, object_search_parser.Text) and isinstance(right_operand, Attribute) and right_operand.input_text.strip() == 'file_name':
+            if str_operator.strip() == 'in':
+                expression.value = db.or_(
+                    where_filters.file_name_contains(data, left_operand.value),
+                    expression.value
+                )
+            else:
+                expression.value = db.or_(
+                    where_filters.file_name_equals(data, left_operand.value),
+                    expression.value
+                )
+        if str_operator.strip() == '==' and isinstance(right_operand, object_search_parser.Text) and isinstance(left_operand, Attribute) and left_operand.input_text.strip() == 'file_name':
+            expression.value = db.or_(
+                where_filters.file_name_equals(data, right_operand.value),
+                expression.value
+            )
+        return expression, outer_filter
 
     search_notes.append(('error', "Unknown binary operation", start, end))
     if hasattr(left_operand, 'start_position') and hasattr(left_operand, 'input_text') and hasattr(right_operand, 'input_text'):

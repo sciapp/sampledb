@@ -20,6 +20,8 @@ import sqlalchemy as db
 from . import datatypes
 from . import languages
 from .utils import get_translated_text
+from ..models.files import File
+from ..models.file_log import FileLogEntry
 
 EPSILON = 1e-7
 
@@ -248,3 +250,64 @@ def tags_contain(db_obj: typing.Any, tag: str) -> typing.Any:
 
 def attribute_not_set(db_obj: typing.Any) -> typing.Any:
     return db_obj == db.null()
+
+
+def _has_file(db_obj: typing.Any, file_filter: db.ColumnElement[bool]) -> typing.Any:
+    matching_files = db.select(
+        File.object_id
+    ).distinct().outerjoin(
+        FileLogEntry,
+        db.and_(
+            FileLogEntry.object_id == File.object_id,
+            FileLogEntry.file_id == File.id,
+        )
+    ).where(
+        file_filter
+    ).group_by(
+        File.object_id,
+        File.id
+    ).having(
+        db.func.sum(  # pylint: disable=not-callable
+            db.case(
+                {
+                    'HIDE_FILE': 1,
+                    'UNHIDE_FILE': -1
+                },
+                else_=0,
+                value=FileLogEntry.type
+            )
+        ) == 0
+    ).subquery()
+    return db.and_(
+        db_obj.object_id_column == matching_files.c.object_id,
+    )
+
+
+def file_name_contains(db_obj: typing.Any, text: typing.Union[datatypes.Text, str]) -> typing.Any:
+    if isinstance(text, datatypes.Text):
+        text_str = get_translated_text(text.text)
+    else:
+        text_str = text
+    return _has_file(
+        db_obj,
+        db.or_(
+            File.data.op("->>")("url").cast(db.Text).like('%' + text_str + '%'),
+            File.data.op("->>")("original_file_name").cast(db.Text).like('%' + text_str + '%'),
+            File.data.op("->>")("filepath").cast(db.Text).like('%' + text_str + '%')
+        )
+    )
+
+
+def file_name_equals(db_obj: typing.Any, text: typing.Union[datatypes.Text, str]) -> typing.Any:
+    if isinstance(text, datatypes.Text):
+        text_str = get_translated_text(text.text)
+    else:
+        text_str = text
+    return _has_file(
+        db_obj,
+        db.or_(
+            File.data.op("->>")("url").cast(db.Text) == text_str,
+            File.data.op("->>")("original_file_name").cast(db.Text) == text_str,
+            File.data.op("->>")("filepath").cast(db.Text) == text_str
+        )
+    )
