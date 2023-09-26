@@ -1486,11 +1486,20 @@ function disableSchemaEditor() {
   schema_editor.hide();
   window.code_mirror_editor.setValue(input_schema.val());
   if (window.schema_editor_error_lines.length > 0) {
+    const error_line_ranges = [];
+    for (let i = 0; i < window.schema_editor_error_lines.length; i += 1) {
+      const error_line = window.schema_editor_error_lines[i];
+      if (error_line_ranges.length > 0 && error_line_ranges[error_line_ranges.length - 1][1] === error_line - 1) {
+        error_line_ranges[error_line_ranges.length - 1][1] = error_line;
+      } else {
+        error_line_ranges.push([error_line - 1, error_line]);
+      }
+    }
     let markers = [];
-    window.schema_editor_error_lines.forEach(function(error_line) {
+    error_line_ranges.forEach(function(error_line_range) {
       markers.push(window.code_mirror_editor.doc.markText(
-        {line: error_line - 1, ch: 0},
-        {line: error_line, ch: 0},
+        {line: error_line_range[0], ch: 0},
+        {line: error_line_range[1], ch: 0},
         {inclusiveRight: false, css:"background-color: #ffdddd !important"}
       ));
     });
