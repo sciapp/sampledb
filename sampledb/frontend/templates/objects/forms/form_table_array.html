@@ -15,11 +15,10 @@
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set col_order_index = col_order_index + 1 if col_order_index else 1 %}
 {% set parent_prefix = id_prefix %}
-{% set schema_path = schema_path + '__?' %}
 <div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
-  {% if is_template and schema_path in compound_defaults %}
-    {% set data = compound_defaults[schema_path] %}
+  {% if is_template and data is none %}
+    {% set data = get_default_data(root_schema, property_path) %}
   {% endif %}
   {% if schema['items']['type'] == 'object' %}
     {% set item_property_names = get_property_names_in_order(schema["items"]) %}
@@ -50,7 +49,6 @@
                   {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set id_prefix = id_prefix + '_' + property_name + '_' %}
                   {% set property_path = property_path + (property_name,) %}
-                  {% set schema_path = schema_path + '__' + property_name %}
                   {% if data is not none and property_name in data %}
                     {% set data = data[property_name] %}
                   {% else %}
@@ -97,13 +95,13 @@
         <tr id="container_{{ id_prefix }}" class="array-template" {% if data is none %} data-next-id="0" {% else %} data-next-id="{{ data|length }}" {% endif %}>
           <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
           {% set is_template = true %}
+          {% set data = get_default_data(root_schema, property_path) %}
           {% for property_name in item_property_names %}
             <td>
               {% set schema = schema.properties[property_name] %}
               {% set z = schema.update({'parent_style': parent_style}) %}
               {% set id_prefix = id_prefix + '_' + property_name + '_' %}
               {% set property_path = property_path + (property_name,) %}
-              {% set schema_path = schema_path + '__' + property_name %}
               {% if data is not none and property_name in data %}
                 {% set data = data[property_name] %}
               {% else %}
@@ -156,10 +154,8 @@
     <input type="hidden" class="table-interaction" name="applied_action__{{ id_prefix }}__table_interaction" data-content="" value="">
     <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}" data-col-next-id="{{ next_col_id }}" data-row-next-id="{{ data | length if data is not none else 0 }}">
       {% set max_used_fields = 0 %}
-      {% if (data is none or is_template) and schema_path in compound_defaults %}
-        {% set data = compound_defaults[schema_path] %}
-      {% else %}
-        {% set data = {} if data is none else data %}
+      {% if is_template and data is none %}
+        {% set data = get_default_data(root_schema, property_path) %}
       {% endif %}
       {% if data is not none %}
         {% set max_used_fields = [0] %}
@@ -199,7 +195,6 @@
                   {% set z = schema.update({'parent_style': parent_style}) %}
                   {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, loop.index0) %}
                   {% set property_path = property_path + (item_index, loop.index0) %}
-                  {% set schema_path = schema_path + '__?' %}
                   {% set data = field %}
                   {% include "objects/forms/form_any.html" %}
                 </td>
@@ -212,7 +207,6 @@
                     {% set z = schema.update({'parent_style': parent_style}) %}
                     {% set id_prefix = id_prefix + '_{}__{}_'.format(item_index, i) %}
                     {% set property_path = property_path + (item_index, i) %}
-                    {% set schema_path = schema_path + '__?' %}
                     {% set data = none %}
                     {% include "objects/forms/form_any.html" %}
                   </td>
@@ -240,8 +234,7 @@
               {% set z = schema.update({'parent_style': parent_style}) %}
               {% set id_prefix = row_prefix + '_{}_'.format(col_index) %}
               {% set property_path = row_property_path + (col_index,) %}
-              {% set schema_path = schema_path + '__?' %}
-              {% set data = none %}
+              {% set data = get_default_data(root_schema, property_path) %}
               {% include "objects/forms/form_any.html" %}
             </td>
             {% set is_template = false %}
@@ -253,8 +246,8 @@
             {% set maxColItems = tableschema['items'].get('maxItems', none) %}
             {% set minColItems = tableschema['items'].get('minItems', 0) %}
             {% set defaultColItems = tableschema['items'].get('defaultItems', minColItems) %}
-            {% if schema_path in compound_defaults %}
-              {% set data = tableschema['items']['default'] %}
+            {% set data = get_default_data(root_schema, row_property_path) %}
+            {% if data is not none %}
               {% for item in data %}
                 {% set data = item %}
                 <td>
@@ -264,10 +257,10 @@
                 </td>
               {% endfor %}
             {% else %}
-              {% set data = none %}
               {% for i in range(defaultColItems) %}
                 {% set id_prefix = row_prefix + '_{}_'.format(i) %}
                 {% set property_path = row_property_path + (i,) %}
+                {% set data = get_default_data(root_schema, row_property_path) %}
                 <td>
                   {% include "objects/forms/form_any.html" %}
                 </td>

@@ -6,22 +6,21 @@
   {% set minItems = schema.get('minItems', 0) %}
   {% set maxItems = schema.get('maxItems', None) %}
   {% set defaultItems = schema.get('defaultItems', 0)%}
-  {% if data is not none %}
-    {% set numItems = (data | length) %}
-  {% else %}
-    {% set numItems = 0 %}
-  {% endif %}
 </div>
 {% set parent_prefix = id_prefix %}
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
-{% set schema_path = schema_path + '__?' %}
 <div style="padding-left:2.5em;" id="container_{{ parent_prefix }}_elements" data-template-order-index="{{ template_order_index }}">
   <input type="hidden" name="{{ parent_prefix }}_hidden" value="array">
   {% set item_name = (schema['items'].title | get_translated_text) %}
   {% set using_compound_default = false %}
-  {% if is_template and schema_path in compound_defaults %}
-    {% set data = compound_defaults[schema_path] %}
-    {% set using_compound_default = true %}
+  {% if is_template and data is none %}
+    {% set data = get_default_data(root_schema, property_path) %}
+    {% set using_compound_default = data is not none %}
+  {% endif %}
+  {% if data is not none %}
+    {% set numItems = (data | length) %}
+  {% else %}
+    {% set numItems = 0 %}
   {% endif %}
   {% if data is not none %}
     {% for item in data %}
@@ -51,7 +50,7 @@
     {% set schema = schema['items'] %}
     {{ schema.update({'parent_style': parent_style}) or '' }}
     {% set data_backup = data %}
-    {% set data = none %}
+    {% set data = get_default_data(root_schema, property_path) %}
     {% set is_template = true %}
     <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
       <div class="pull-right" style="padding-right:0.75em"><button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger action_delete_{{ parent_prefix }} delete-button" data-array-type="array" data-prefix="{{ parent_prefix }}" name="action_{{ id_prefix }}_delete" {% if numItems <= minItems %} disabled="disabled" {% endif %} style="width:20em;">{{ _('Remove %(item_name)s', item_name=item_name) }}</button></div>

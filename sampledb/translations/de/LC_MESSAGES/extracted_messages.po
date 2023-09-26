@@ -5174,6 +5174,10 @@ msgstr "Nach Aktion filtern…"
 msgid "sets:"
 msgstr "setzt:"
 
+#, python-format
+msgid "Field %(index)s"
+msgstr "Feld %(index)s"
+
 msgid "New Object"
 msgstr "Neues Objekt"
 
@@ -5237,10 +5241,6 @@ msgstr "Formel:"
 
 msgid "Apply Recipe"
 msgstr "Rezept anwenden"
-
-#, python-format
-msgid "Field %(index)s"
-msgstr "Feld %(index)s"
 
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"

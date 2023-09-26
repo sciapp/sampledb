@@ -1,17 +1,9 @@
-{% if is_template and quantity_template.get(schema_path) %}
-  {% set default = quantity_template.get(schema_path) %}
-{% else %}
-  {% set default = none %}
-{% endif %}
-
 {% if schema['units'] in ("1", "") %}
   <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
     {% if id_prefix+'_magnitude' in form_data %}
       value="{{ form_data[id_prefix+'_magnitude'] }}"
     {% elif data is not none and "magnitude_in_base_units" in data %}
       value="{{ data.magnitude_in_base_units | babel_format_number }}"
-    {% elif default is not none and "magnitude_in_base_units" in default %}
-      value="{{ default.magnitude_in_base_units | babel_format_number }}"
     {% endif %}
   />
 {% else %}
@@ -22,8 +14,6 @@
         value="{{ form_data[id_prefix+'_magnitude'] }}"
       {% elif data is not none %}
         value="{% if (data | to_datatype).units in ('min', 'h') %}{{ data.magnitude_in_base_units | format_time((data | to_datatype).units, schema.get('display_digits')) }}{% else %}{{ (data | to_datatype).magnitude | babel_format_number }}{% endif %}"
-      {% elif default is not none %}
-        value="{% if (default | to_datatype).units in ('min', 'h') %}{{ default.magnitude_in_base_units | format_time(( default | to_datatype).units, schema.get('display_digits')) }}{% else %}{{ (default | to_datatype).magnitude | babel_format_number }}{% endif %}"
       {% endif %}
     />
     {% if schema['units'] is string or schema['units'] | length == 1 %}
@@ -31,8 +21,6 @@
       <input type="hidden" name="{{ id_prefix }}_units"
         {% if data is not none %}
           value="{{ (data | to_datatype).units }}"
-        {% elif default is not none %}
-          value="{{ (default | to_datatype).units }}"
         {% else %}
           value="{{ unit }}"
         {% endif %}
@@ -43,8 +31,6 @@
         {% set selected_unit = form_data[id_prefix + '_units'] %}
       {% elif data is not none %}
         {% set selected_unit = (data | to_datatype).units %}
-      {% elif default is not none %}
-        {% set selected_unit = (default | to_datatype).units %}
       {% else %}
         {% set selected_unit = schema['units'][0] %}
       {% endif %}

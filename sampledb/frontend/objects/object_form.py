@@ -19,7 +19,7 @@ from ...logic.actions import Action
 from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.users import get_users
-from ...logic.schemas import generate_placeholder, validate
+from ...logic.schemas import generate_placeholder
 from ...logic.objects import create_object, create_object_batch, update_object
 from ...logic.languages import get_language, get_languages, Language
 from ...logic.components import get_component
@@ -123,12 +123,9 @@ def show_object_form(
     if not isinstance(schema, dict):
         return flask.abort(400)
 
-    quantity_template, compound_defaults = _generate_template_defaults(schema)
     template_arguments.update({
         'data': data,
         'schema': schema,
-        'quantity_template': quantity_template,
-        'compound_defaults': compound_defaults
     })
 
     if object is None:
@@ -691,62 +688,6 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
     })
 
     return template_kwargs
-
-
-def _generate_template_defaults(schema: typing.Dict[str, typing.Any], path: typing.Optional[typing.List[str]] = None, contains_array: bool = False) -> typing.Tuple[typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]:
-    if path is None:
-        path = []
-    result_quantity = {}
-    result_compounds = {}
-
-    if schema['type'] == 'object':
-        for key, subschema in schema['properties'].items():
-            tmp_results = _generate_template_defaults(subschema, path + [key], contains_array)
-            result_quantity.update(tmp_results[0])
-            result_compounds.update(tmp_results[1])
-        if 'default' in schema and isinstance(schema['default'], dict) and contains_array:
-            result_compounds.update({
-                "__".join(path): schema['default']
-            })
-    elif schema['type'] == 'array':
-        if 'default' in schema and isinstance(schema['default'], list) and contains_array:
-            result_compounds.update({
-                "__".join(path + ['?']): schema['default']
-            })
-        contains_array = True
-        tmp_results = _generate_template_defaults(schema['items'], path + ['?'], contains_array)
-        result_quantity.update(tmp_results[0])
-        result_compounds.update(tmp_results[1])
-    elif schema['type'] == 'quantity':
-        if 'default' not in schema:
-            result_quantity["__".join(path)] = None
-            return result_quantity, result_compounds
-        if isinstance(schema['default'], dict):
-            default = copy.deepcopy(schema['default'])
-            if '_type' not in default:
-                default['_type'] = 'quantity'
-            validate(default, schema, path)
-            result_quantity["__".join(path)] = default
-        else:
-            magnitude_in_base_units = schema['default']
-            if isinstance(schema['units'], str):
-                units = schema['units']
-            else:
-                units = schema['units'][0]
-
-            try:
-                dimensionality = logic.schemas.utils.get_dimensionality_for_units(units)
-            except logic.errors.UndefinedUnitError:
-                raise logic.errors.SchemaError('invalid units', path)
-
-            result_quantity["__".join(path)] = {
-                '_type': 'quantity',
-                'dimensionality': dimensionality,
-                'units': units,
-                'magnitude_in_base_units': magnitude_in_base_units
-            }
-
-    return result_quantity, result_compounds
 
 
 def _get_title_by_property_path(

@@ -46,6 +46,7 @@ from ..logic.users import get_user, User
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
+from ..logic.schemas import get_default_data
 from ..logic.actions import Action
 from ..logic.action_types import ActionType
 from ..logic.instruments import Instrument
@@ -109,6 +110,7 @@ JinjaFunction()(generate_inline_script_nonce)
 JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
 JinjaFunction()(zip_longest)
+JinjaFunction()(get_default_data)
 
 
 qrcode_cache: typing.Dict[str, str] = {}
