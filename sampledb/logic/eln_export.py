@@ -30,6 +30,9 @@ def generate_ro_crate_metadata(
                 "conformsTo": {
                     "@id": "https://w3id.org/ro/crate/1.1"
                 },
+                "sdPublisher": {
+                    "@id": "SampleDB"
+                },
                 "dateCreated": datetime.datetime.now().isoformat()
             },
             {
@@ -37,15 +40,16 @@ def generate_ro_crate_metadata(
                 "@type": [
                     "Dataset"
                 ],
-                "sdPublisher": {
-                    "@type": "Organization",
-                    "name": "SampleDB",
-                    "logo": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/_static/img/logo.svg",
-                    "slogan": "SampleDB is a web-based electronic lab notebook with a focus on sample and measurement metadata.",
-                    "url": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
-                },
                 "version": "1.0",
                 "hasPart": []
+            },
+            {
+                "@type": "Organization",
+                "@id": "SampleDB",
+                "name": "SampleDB",
+                "logo": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/_static/img/logo.svg",
+                "slogan": "SampleDB is a web-based electronic lab notebook with a focus on sample and measurement metadata.",
+                "url": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
             },
         ]
     }
