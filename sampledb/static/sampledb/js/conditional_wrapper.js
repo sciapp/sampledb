@@ -14,7 +14,7 @@ if (!window.conditionalWrapperConditions) {
  * @param schemaConditions the conditions for the field
  */
 function conditionalWrapper (idPrefix, schemaConditions) {
-  if (typeof (idPrefix) !== 'string') {
+  if (typeof (idPrefix) !== 'string' || idPrefix.includes('!')) {
     return;
   }
   const parentIDPrefix = idPrefix.split('__').slice(0, -1).join('__') + '_';

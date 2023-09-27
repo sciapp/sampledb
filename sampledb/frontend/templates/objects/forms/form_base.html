@@ -1,7 +1,5 @@
 {% extends "base.html" %}
 
-{% set form_conditions = [] %}
-
 {% set file_pickers = [] %}
 
 {% set calculations = [] %}
@@ -203,9 +201,7 @@
       updateSelectLanguage(selectpicker);
     });
 
-    {% for form_condition in form_conditions %}
-      conditionalWrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
-    {% endfor %}
+    applySchemaConditions(document);
 
     setObjectFormButtonHandlers()
 

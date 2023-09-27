@@ -1,5 +1,4 @@
 {% extends "objects/view/base.html" %}
-{% set form_conditions = [] %}
 
 {% set file_pickers = [] %}
 
@@ -190,10 +189,11 @@
                 }
             }.bind(tagsinput));
         });
-      $(function () {
-        {% for form_condition in form_conditions %}
-          conditionalWrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
-        {% endfor %}
+      $('.condition-wrapper').each(function() {
+        const id_prefix = $(this).data('id-prefix');
+        const conditions = $(this).data('conditions');
+        conditional_wrapper(id_prefix, conditions);
+      });
 
         $.each(window.conditionalWrapperScripts, function () {
           this();

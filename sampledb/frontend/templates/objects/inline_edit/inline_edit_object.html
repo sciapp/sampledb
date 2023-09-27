@@ -25,7 +25,7 @@
           <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
             {% include "objects/inline_edit/inline_edit_any.html" %}
           </div>
-          {% do form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) %}
+          <input type="hidden" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
         </div>
       {% else %}
         <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
