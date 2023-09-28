@@ -115,11 +115,11 @@ function conditional_wrapper(id_prefix, schema_conditions) {
       else if(condition['type'] === 'object_equals')
         {
           let object_element = $(`[name="${parent_id_prefix}_${condition['property_name']}__oid"]`);
-
           let evaluateCondition = function () {
-            set_condition_entry(!object_element.prop('disabled') && (object_element.selectpicker('val') === (condition['object_id'] !== null ? condition['object_id'].toString() : '')));
+            set_condition_entry(!object_element.prop('disabled') && (object_element.val() === (condition['object_id'] !== null ? condition['object_id'].toString() : '')));
             update_conditions_result();
           }
+          object_element.on('object_change.sampledb', evaluateCondition);   // typeahead case
           object_element.on('changed.bs.select', evaluateCondition);
           object_element.on('loaded.bs.select', evaluateCondition);
           object_element.on('refreshed.bs.select', evaluateCondition);
