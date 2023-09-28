@@ -117,7 +117,7 @@ function conditional_wrapper(id_prefix, schema_conditions) {
           let object_element = $(`[name="${parent_id_prefix}_${condition['property_name']}__oid"]`);
 
           let evaluateCondition = function () {
-            set_condition_entry(!object_element.prop('disabled') && (object_element.selectpicker('val') === (condition['object_id'] !== undefined ? condition['object_id'].toString() : '')));
+            set_condition_entry(!object_element.prop('disabled') && (object_element.selectpicker('val') === (condition['object_id'] !== null ? condition['object_id'].toString() : '')));
             update_conditions_result();
           }
           object_element.on('changed.bs.select', evaluateCondition);
