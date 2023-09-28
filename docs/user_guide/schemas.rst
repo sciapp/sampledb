@@ -1483,7 +1483,7 @@ For this type of condition, the ``property_name`` attribute must be the name of 
       "object_id": 1
     }
 
-If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled if no user has been selected.
+If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled if no object has been selected.
 
 .. code-block:: javascript
     :caption: An object_equals condition for not having selected an object
