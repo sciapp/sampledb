@@ -274,12 +274,12 @@ function updateObjectPickers() {
         if (is_valid) {
           this.setCustomValidity('');
           form_group.removeClass('has-error');
-          form_group.find('.help-block').text('');
+          form_group.find('.error-note').first().text('');
           field.closest('.objectpicker-container').find('input[type="hidden"]').val(object_id);
         } else {
           this.setCustomValidity(window.object_picker_select_text);
           form_group.addClass('has-error');
-          form_group.find('.help-block').text('').first().text(window.object_picker_select_text);
+          form_group.find('.error-note').first().text('').first().text(window.object_picker_select_text);
           field.closest('.objectpicker-container').find('input[type="hidden"]').val('');
         }
       }
