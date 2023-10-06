@@ -750,6 +750,33 @@
     }
   }
 
+  function arrayFormDeleteHandler(prefix, id, minItems, maxItems, isListStyle) {
+    return function() {
+      $(`#action_${prefix}_${id}__delete`).closest("form").append(`<input type="hidden" value="" name="action_${prefix}_${id}___delete">`);
+      $(`#action_${prefix}_${id}__delete`).closest("form").append(`<input type="hidden" value="action_${prefix}_${id}__delete" name="applied_action__${prefix}_${id}__delete">`);
+      $(`#container_${prefix}_${id}_`).remove();
+      let current_length = $(`.action_delete_${prefix}`).length - 1;
+
+      if(isListStyle) {
+        if(current_length === 0) {
+          $(`#button_${prefix}_width`).removeClass('col-md-offset-3');
+        } else {
+          $(`#button_${prefix}_${id}_width`).addClass('col-md-offset-3');
+          $(`.container_${prefix}`).first().removeClass("col-md-offset-3");
+        }
+      }
+      const addButton = $(`[id="action_${prefix}_?__add"]`);
+      let copyButtons = [];
+      if (addButton.parent()[0].tagName === 'TH') {
+        copyButtons = addButton.closest('table').find('> tbody > tr > td:last-of-type .form-copy-button');
+      }
+      updateArrayButtons(addButton, copyButtons, $(`.action_delete_${prefix}`), minItems, maxItems);
+      updateArrayNames(prefix);
+      clearUnusedConditions();
+      setUpCalculations();
+    }
+  }
+
   function tableFormColAddHandler(id_prefix) {
     return function () {
       updateTableInteraction(id_prefix, $(this).attr('id'));
@@ -769,11 +796,23 @@
     }
   }
 
-  function updateTableInteraction(id_prefix, interactionId) {
-    const input = $(`[name="applied_action__${id_prefix}__table_interaction"]`);
-    let content = JSON.parse(input.data('content'));
-    content.interactions.push(interactionId);
-    input.data('content', JSON.stringify(content));
+  function tableFormColDeleteHandler(id_prefix) {
+    return function() {
+      updateTableInteraction(id_prefix, $(this).attr('id'));
+
+      const table = $(this).closest('table');
+      // remove column from all real rows
+      table.find('> tbody > tr').not('[data-template-table-type]').each(function() {
+        $(this).children().not('.control-buttons').last().remove();
+      });
+      // remove column from table header and footer
+      updateTableFormHead(table, -1);
+
+      updateTableFormButtons(table);
+      updateArrayNames(id_prefix);
+      clearUnusedConditions();
+      setUpCalculations();
+    }
   }
 
   function tableFormRowAddHandler(id_prefix) {
@@ -820,6 +859,32 @@
     }
   }
 
+  function tableFormRowDeleteHandler(id_prefix) {
+    return function() {
+      updateTableInteraction(id_prefix, $(this).attr('id'));
+
+      const table = $(this).closest('table');
+      // remove row containing the button
+      $(this).closest('tr').remove();
+      // remove all columns from table header and footer if this was the last real row
+      if(table.find('tbody > tr').not('.array-template').length === 0) {
+        updateTableFormHead(table, -table.find('> thead > tr > th').not('.control-buttons').length);
+      }
+
+      updateTableFormButtons(table);
+      updateArrayNames(id_prefix);
+      clearUnusedConditions();
+      setUpCalculations();
+    }
+  }
+
+  function updateTableInteraction(id_prefix, interactionId) {
+    const input = $(`[name="applied_action__${id_prefix}__table_interaction"]`);
+    let content = JSON.parse(input.data('content'));
+    content.interactions.push(interactionId);
+    input.data('content', JSON.stringify(content));
+  }
+
   function appendFieldToRow(row, table, row_id, col_id) {
     const new_td = table.find('> tbody > tr.array-template[data-template-table-type="col"] > td').clone(true);
     new_td.removeClass('array-col-template');
@@ -860,71 +925,6 @@
         }
       }
     });
-  }
-
-  function arrayFormDeleteHandler(prefix, id, minItems, maxItems, isListStyle) {
-    return function() {
-      $(`#action_${prefix}_${id}__delete`).closest("form").append(`<input type="hidden" value="" name="action_${prefix}_${id}___delete">`);
-      $(`#action_${prefix}_${id}__delete`).closest("form").append(`<input type="hidden" value="action_${prefix}_${id}__delete" name="applied_action__${prefix}_${id}__delete">`);
-      $(`#container_${prefix}_${id}_`).remove();
-      let current_length = $(`.action_delete_${prefix}`).length - 1;
-
-      if(isListStyle) {
-        if(current_length === 0) {
-          $(`#button_${prefix}_width`).removeClass('col-md-offset-3');
-        } else {
-          $(`#button_${prefix}_${id}_width`).addClass('col-md-offset-3');
-          $(`.container_${prefix}`).first().removeClass("col-md-offset-3");
-        }
-      }
-      const addButton = $(`[id="action_${prefix}_?__add"]`);
-      let copyButtons = [];
-      if (addButton.parent()[0].tagName === 'TH') {
-        copyButtons = addButton.closest('table').find('> tbody > tr > td:last-of-type .form-copy-button');
-      }
-      updateArrayButtons(addButton, copyButtons, $(`.action_delete_${prefix}`), minItems, maxItems);
-      updateArrayNames(prefix);
-      clearUnusedConditions();
-      setUpCalculations();
-    }
-  }
-
-  function tableFormRowDeleteHandler(id_prefix) {
-    return function() {
-      updateTableInteraction(id_prefix, $(this).attr('id'));
-
-      const table = $(this).closest('table');
-      // remove row containing the button
-      $(this).closest('tr').remove();
-      // remove all columns from table header and footer if this was the last real row
-      if(table.find('tbody > tr').not('.array-template').length === 0) {
-        updateTableFormHead(table, -table.find('> thead > tr > th').not('.control-buttons').length);
-      }
-
-      updateTableFormButtons(table);
-      updateArrayNames(id_prefix);
-      clearUnusedConditions();
-      setUpCalculations();
-    }
-  }
-
-  function tableFormColDeleteHandler(id_prefix) {
-    return function() {
-      updateTableInteraction(id_prefix, $(this).attr('id'));
-
-      const table = $(this).closest('table');
-      // remove column from all real rows
-      table.find('> tbody > tr').not('[data-template-table-type]').each(function() {
-        $(this).children().not('.control-buttons').last().remove();
-      });
-      // remove column from table header and footer
-      updateTableFormHead(table, -1);
-
-      updateTableFormButtons(table);
-      updateArrayNames(id_prefix);
-      clearUnusedConditions();
-      setUpCalculations();
-    }
   }
 
   function insertFormData() {
