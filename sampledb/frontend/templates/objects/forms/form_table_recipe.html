@@ -1,4 +1,4 @@
-<div id="{{ id_prefix }}_recipe_div" class="div-apply-recipe" data-toggle="tooltip" data-placement="top" title="">
+<div data-id-prefix="{{ id_prefix }}" class="div-apply-recipe" data-toggle="tooltip" data-placement="top" title="">
   <select class="selectpicker form-control" id="{{ id_prefix }}_recipe_input">
     {% for recipe in schema.recipes %}
       <option value={{ loop.index0 }}>{{ recipe.name }}</option>

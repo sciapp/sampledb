@@ -49,9 +49,11 @@
     window.fileEventHandler = fileEventHandler;
 
     import {
-      conditionalWrapper
+      conditionalWrapper,
+      applySchemaConditions
     } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
     window.conditionalWrapper = conditionalWrapper;
+    window.applySchemaConditions = applySchemaConditions;
 
     import {
       setupImageDragAndDrop
@@ -189,15 +191,7 @@
                 }
             }.bind(tagsinput));
         });
-      $('.condition-wrapper').each(function() {
-        const id_prefix = $(this).data('id-prefix');
-        const conditions = $(this).data('conditions');
-        conditional_wrapper(id_prefix, conditions);
-      });
-
-        $.each(window.conditionalWrapperScripts, function () {
-          this();
-        });
+        applySchemaConditions(document);
         // wrapped in an onload function to ensure this runs after the module has defined window.fileEventHandler
         {% for file_picker in file_pickers %}
           document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));

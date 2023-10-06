@@ -163,6 +163,24 @@ function conditionalWrapper (idPrefix, schemaConditions) {
   });
 }
 
+/**
+ * Apply schema conditions to condition wrapper elements in a given element.
+ * @param element a DOM element
+ */
+function applySchemaConditions (element) {
+  $(element).find('.condition-wrapper').each(function () {
+    const idPrefix = $(this).data('id-prefix');
+    const conditions = $(this).data('conditions');
+    conditionalWrapper(idPrefix, conditions);
+  });
+
+  $.each(window.conditionalWrapperScripts, function () {
+    this();
+  });
+  window.conditionalWrapperScripts = [];
+}
+
 export {
-  conditionalWrapper
+  conditionalWrapper,
+  applySchemaConditions
 };

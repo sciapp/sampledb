@@ -7,6 +7,7 @@
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
+    <input type="hidden" name="array_buttons" id="input-array_buttons" value="[]" />
     {% set id_prefix_root = "object" %}
     {% set property_path = () %}
     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
