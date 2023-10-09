@@ -6,16 +6,46 @@
 import datetime
 import typing
 
+import flask
+
 from . import object_permissions
 from . import users
-from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions
+from .users import get_user
+from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions, Objects
 from .. import db
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+def get_object_log_entries_by_user(user_id: int, after_id: int = 0) -> typing.List[ObjectLogEntry]:
+    user = get_user(user_id)
+    if user.has_admin_permissions:
+        object_log_entries = db.session.execute(db.select(ObjectLogEntry).where(ObjectLogEntry.id > after_id).order_by(db.desc(ObjectLogEntry.utc_datetime))).all()
+    else:
+        stmt = db.text("""
+            SELECT DISTINCT object_id
+            FROM user_object_permissions_by_all
+            WHERE (user_id = :user_id OR user_id IS NULL) AND (requires_anonymous_users IS FALSE OR :enable_anonymous_users IS TRUE) AND (requires_instruments IS FALSE OR :enable_instruments IS TRUE)
+        """).columns(
+            Objects._current_table.c.object_id,
+        ).subquery('readable_objects')
+        stmt = db.select(ObjectLogEntry).join(stmt).where(ObjectLogEntry.id > after_id).order_by(db.desc(ObjectLogEntry.utc_datetime))
+
+        object_log_entries = db.session.execute(stmt, {
+            'user_id': user_id,
+            'enable_anonymous_users': flask.current_app.config['ENABLE_ANONYMOUS_USERS'],
+            'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS'],
+            'after_id': after_id
+        }).all()
+    return _process_object_log_entries([row[0] for row in object_log_entries], user_id)
+
+
 def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
     object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
+    return _process_object_log_entries(object_log_entries, user_id)
+
+
+def _process_object_log_entries(object_log_entries: typing.List[ObjectLogEntry], user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
     processed_object_log_entries = []
     users_by_id: typing.Dict[typing.Optional[int], typing.Optional[users.User]] = {None: None}
     referenced_object_ids = {}
