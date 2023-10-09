@@ -271,17 +271,19 @@ function updateObjectPickers() {
           object_id = '';
         }
         let form_group = field.closest('.form-group')
+        let object_hidden_input = field.closest('.objectpicker-container').find('input[type="hidden"]');
         if (is_valid) {
           this.setCustomValidity('');
           form_group.removeClass('has-error');
           form_group.find('.error-note').first().text('');
-          field.closest('.objectpicker-container').find('input[type="hidden"]').val(object_id);
+          object_hidden_input.val(object_id);
         } else {
           this.setCustomValidity(window.object_picker_select_text);
           form_group.addClass('has-error');
           form_group.find('.error-note').first().text('').first().text(window.object_picker_select_text);
-          field.closest('.objectpicker-container').find('input[type="hidden"]').val('');
+          object_hidden_input.val('');
         }
+        object_hidden_input.trigger('object_change.sampledb');   // event to trigger object conditions evaluation if registered
       }
       $x.on('typeahead:selected', change_handler);
       $x.on('change', change_handler);
