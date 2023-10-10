@@ -10,6 +10,7 @@ Currently in development.
 - Allow automatic calculation of quantity values
 - Show object form errors as expandable alert message
 - Added file name search
+- Added object_log API endpoint
 
 Version 0.24.1
 --------------

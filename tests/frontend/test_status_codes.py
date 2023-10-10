@@ -332,6 +332,7 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/objects/{other_object_id}/permissions/users/{user_id}': 200,
         f'api/v1/objects/{other_object_id}/related_objects': 200,
         f'api/v1/objects/{other_object_id}/versions/0': 200,
+        'api/v1/object_log_entries/': 200,
         'api/v1/users/': 200,
         f'api/v1/users/{user_id}': 200,
         'api/v1/users/me': 200,

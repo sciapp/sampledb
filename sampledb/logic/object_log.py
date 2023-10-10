@@ -17,6 +17,17 @@ from .. import db
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
 
+def object_log_entry_to_json(log_entry: ObjectLogEntry) -> typing.Dict[str, typing.Any]:
+    return {
+        'log_entry_id': log_entry.id,
+        'type': log_entry.type.name,
+        'object_id': log_entry.object_id,
+        'user_id': log_entry.user_id,
+        'data': log_entry.data,
+        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+    }
+
+
 def get_object_log_entries_by_user(user_id: int, after_id: int = 0) -> typing.List[ObjectLogEntry]:
     user = get_user(user_id)
     if user.has_admin_permissions:
