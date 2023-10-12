@@ -75,8 +75,8 @@ analyze-js:
     # install static analysis packages
     - npm install -g jshint semistandard
     # run JSHint and semistandard for some JavaScript files
-    - jshint sampledb/static/sampledb/js/markdown_image_upload.js
-    - semistandard sampledb/static/sampledb/js/markdown_image_upload.js
+    - jshint sampledb/static/sampledb/js/markdown_image_upload.js sampledb/static/sampledb/js/calculation.js
+    - semistandard sampledb/static/sampledb/js/markdown_image_upload.js sampledb/static/sampledb/js/calculation.js
 
 .template-check-migrations:
   stage: test
