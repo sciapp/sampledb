@@ -42,7 +42,7 @@
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
@@ -56,6 +56,11 @@
       fileEventHandler
     } from "{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}";
     window.fileEventHandler = fileEventHandler;
+
+    import {
+      conditionalWrapper
+    } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
+    window.conditionalWrapper = conditionalWrapper;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
@@ -180,7 +185,7 @@
     });
 
     {% for form_condition in form_conditions %}
-      conditional_wrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
+      conditionalWrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
     {% endfor %}
 
     setObjectFormButtonHandlers()
@@ -229,11 +234,11 @@
       }
     })
 
-    $.each(window.conditional_wrapper_scripts, function () {
+    $.each(window.conditionalWrapperScripts, function () {
       this();
     });
 
-    window.conditional_wrapper_scripts = [];
+    window.conditionalWrapperScripts = [];
 
     setUpCalculations();
 
@@ -557,10 +562,10 @@
   }
 
   function clearUnusedConditions() {
-      if (window.conditional_wrapper_conditions) {
-        for (const id_prefix of Object.keys(window.conditional_wrapper_conditions)) {
+      if (window.conditionalWrapperConditions) {
+        for (const id_prefix of Object.keys(window.conditionalWrapperConditions)) {
           if ($(`[data-condition-wrapper-for^=${id_prefix}]`).length === 0) {
-            delete window.conditional_wrapper_conditions[id_prefix];
+            delete window.conditionalWrapperConditions[id_prefix];
           }
         }
       }
@@ -601,11 +606,11 @@
       $(`span[id^="${old_prefix}_"][id$="_calculation_help"]`).each(function(_, element) {
         $(element).attr('id', tmp_prefix + $(element).attr('id').substring(old_prefix.length));
       });
-      if (window.conditional_wrapper_conditions) {
-        for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
+      if (window.conditionalWrapperConditions) {
+        for (const [id_prefix, conditions] of Object.entries(window.conditionalWrapperConditions)) {
           if (id_prefix.startsWith(old_prefix)) {
-            delete window.conditional_wrapper_conditions[id_prefix];
-            window.conditional_wrapper_conditions[tmp_prefix + id_prefix.substring(old_prefix.length)] = conditions;
+            delete window.conditionalWrapperConditions[id_prefix];
+            window.conditionalWrapperConditions[tmp_prefix + id_prefix.substring(old_prefix.length)] = conditions;
           }
         }
       }
@@ -628,11 +633,11 @@
       $(`span[id^="${tmp_prefix}_"][id$="_calculation_help"]`).each(function(_, element) {
         $(element).attr('id', new_prefix + $(element).attr('id').substring(tmp_prefix.length));
       });
-      if (window.conditional_wrapper_conditions) {
-        for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
+      if (window.conditionalWrapperConditions) {
+        for (const [id_prefix, conditions] of Object.entries(window.conditionalWrapperConditions)) {
           if (id_prefix.startsWith(tmp_prefix)) {
-            delete window.conditional_wrapper_conditions[id_prefix];
-            window.conditional_wrapper_conditions[new_prefix + id_prefix.substring(tmp_prefix.length)] = conditions;
+            delete window.conditionalWrapperConditions[id_prefix];
+            window.conditionalWrapperConditions[new_prefix + id_prefix.substring(tmp_prefix.length)] = conditions;
           }
         }
       }
@@ -1182,13 +1187,13 @@
     $(clone).find('.condition-wrapper').each(function() {
       const id_prefix = $(this).data('id-prefix');
       const conditions = $(this).data('conditions');
-      conditional_wrapper(id_prefix, conditions);
+      conditionalWrapper(id_prefix, conditions);
     });
 
-    $.each(window.conditional_wrapper_scripts, function () {
+    $.each(window.conditionalWrapperScripts, function () {
       this();
     });
-    window.conditional_wrapper_scripts = [];
+    window.conditionalWrapperScripts = [];
   }
 
   function updateRecipeState(clone) {
