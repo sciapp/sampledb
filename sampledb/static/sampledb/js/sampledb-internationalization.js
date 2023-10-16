@@ -1,31 +1,38 @@
+'use strict';
+/* eslint-env jquery */
+/* globals InscrybMDE */
+
+import {
+  setupImageDragAndDrop
+} from './markdown_image_upload.js';
+
 const ENGLISH_ID = -99;
 
-function updateTranslationJSON() {
-  let translation_json = JSON.stringify(window.translations);
-  $('#input-translations').val(translation_json);
+function updateTranslationJSON () {
+  $('#input-translations').val(JSON.stringify(window.translations));
 }
 
-function setTranslationHandler(element) {
-  let language_id = $(element).data('languageId');
-  $(element).find('input, textarea.form-control').on('change', function() {
+function setTranslationHandler (element) {
+  const languageID = $(element).data('languageId');
+  $(element).find('input, textarea.form-control').on('change', function () {
     const input = $(this);
-    let translated_text = input.val();
-    let translation_attribute = input.data('translationAttribute');
-    let empty_text = input.data('emptyText');
-    let max_length = input.data('maxLength');
-    let max_length_text = input.data('maxLengthText');
-    let required_in_all_languages = input.data('requiredInAllLanguages') !== undefined;
+    const translatedText = input.val();
+    const translationAttribute = input.data('translationAttribute');
+    const emptyText = input.data('emptyText');
+    const maxLength = input.data('maxLength');
+    const maxLengthText = input.data('maxLengthText');
+    const requiredInAllLanguages = input.data('requiredInAllLanguages') !== undefined;
 
-    if ((required_in_all_languages || language_id === ENGLISH_ID) && translated_text === "" && empty_text) {
-      $(this).parent().addClass('has-error').next('.help-block').text(empty_text).css('color', 'red');
-    } else if (translated_text.length > max_length) {
-      $(this).parent().addClass('has-error').next('.help-block').text(max_length_text).css('color', 'red');
+    if ((requiredInAllLanguages || languageID === ENGLISH_ID) && translatedText === '' && emptyText) {
+      $(this).parent().addClass('has-error').next('.help-block').text(emptyText).css('color', 'red');
+    } else if (translatedText.length > maxLength) {
+      $(this).parent().addClass('has-error').next('.help-block').text(maxLengthText).css('color', 'red');
     } else {
-      $(this).parent().removeClass('has-error').next('.help-block').text("");
+      $(this).parent().removeClass('has-error').next('.help-block').text('');
     }
     window.translations.forEach(function (translation) {
-      if (translation.language_id === language_id || translation.language_id === language_id.toString()) {
-        translation[translation_attribute] = translated_text;
+      if (translation.language_id === languageID || translation.language_id === languageID.toString()) {
+        translation[translationAttribute] = translatedText;
       }
     });
     updateTranslationJSON();
@@ -33,59 +40,59 @@ function setTranslationHandler(element) {
   $(element).find('input, textarea.form-control').change();
 }
 
-function updateTranslationLanguages(language_select, template_id, input_id_prefix, translation_attributes) {
-  let existing_languages = [];
+function updateTranslationLanguages (languageSelect, templateID, inputIDPrefix, translationAttributes) {
+  const existingLanguages = [];
   $.each(window.translations, function (key, value) {
-     existing_languages.push("" + value.language_id);
-  })
+    existingLanguages.push('' + value.language_id);
+  });
   let selected = [ENGLISH_ID.toString()];
-  selected = selected.concat($(language_select).val());
-  let remove_languages = existing_languages.filter(n => !selected.includes(n));
-  let add_languages = selected.filter(n => !existing_languages.includes(n));
-  let form_group = $(language_select).parent().parent().parent();
-  for (const del_language of remove_languages){
-    let input_group = form_group.find('[data-language-id=' + del_language.toString() + ']');
-    if (input_group.length > 0) {
-      let translation_attribute = input_group.children('input, textarea').data('translationAttribute');
-      input_group.remove();
+  selected = selected.concat($(languageSelect).val());
+  const languagesToRemove = existingLanguages.filter(n => !selected.includes(n));
+  const languagesToAdd = selected.filter(n => !existingLanguages.includes(n));
+  const formGroup = $(languageSelect).parent().parent().parent();
+  for (const languageToRemove of languagesToRemove) {
+    const inputGroup = formGroup.find('[data-language-id=' + languageToRemove.toString() + ']');
+    if (inputGroup.length > 0) {
+      const translationAttribute = inputGroup.children('input, textarea').data('translationAttribute');
+      inputGroup.remove();
       window.translations.forEach(function (translation) {
-        if (translation.language_id.toString() === del_language) {
-          translation[translation_attribute] = '';
+        if (translation.language_id.toString() === languageToRemove) {
+          translation[translationAttribute] = '';
         }
       });
     }
   }
   for (const language of selected) {
-    if (!$('#' + input_id_prefix + language).length) {
-      $($('#' + template_id).html()).insertAfter(form_group.children().last());
-      let input_group = form_group.find('[data-language-id]').last();
-      let lang_name = window.languages.find(lang => lang.id.toString() === language).name;
-      $(input_group).children('input, textarea').attr('id', input_id_prefix + language);
-      $(input_group).children('.input-group-addon[data-name="language"]').text(lang_name);
-      $(input_group).attr('data-language-id', language);
-      setTranslationHandler(input_group);
+    if (!$('#' + inputIDPrefix + language).length) {
+      $($('#' + templateID).html()).insertAfter(formGroup.children().last());
+      const inputGroup = formGroup.find('[data-language-id]').last();
+      const languageName = window.languages.find(lang => lang.id.toString() === language).name;
+      $(inputGroup).children('input, textarea').attr('id', inputIDPrefix + language);
+      $(inputGroup).children('.input-group-addon[data-name="language"]').text(languageName);
+      $(inputGroup).attr('data-language-id', language);
+      setTranslationHandler(inputGroup);
     }
-    if (add_languages.includes(language)) {
+    if (languagesToAdd.includes(language)) {
       window.translations.push({
-        'language_id': language.toString(),
+        language_id: language.toString()
       });
-      for (const translation_attribute of translation_attributes) {
-        window.translations[window.translations.length - 1][translation_attribute] = '';
+      for (const translationAttribute of translationAttributes) {
+        window.translations[window.translations.length - 1][translationAttribute] = '';
       }
     }
   }
 }
 
-function getMarkdownButtonTranslation(button_text) {
-  if (window.markdown_button_translations && window.markdown_button_translations.hasOwnProperty(button_text)) {
-    return window.markdown_button_translations[button_text];
+function getMarkdownButtonTranslation (buttonText) {
+  if (window.markdown_button_translations && Object.prototype.hasOwnProperty.call(window.markdown_button_translations, buttonText)) {
+    return window.markdown_button_translations[buttonText];
   }
-  return button_text;
+  return buttonText;
 }
 
-function initMarkdownField(element, height) {
-  let mde_field = new InscrybMDE({
-    element: element,
+function initMarkdownField (element, height) {
+  const mdeField = new InscrybMDE({
+    element,
     indentWithTabs: false,
     spellChecker: false,
     status: false,
@@ -93,99 +100,107 @@ function initMarkdownField(element, height) {
     forceSync: true,
     autoDownloadFontAwesome: false,
     toolbar: [
-        {
-          name: "bold",
-          action: InscrybMDE.toggleBold,
-          className: "fa fa-bold",
-          title: getMarkdownButtonTranslation("Bold"),
+      {
+        name: 'bold',
+        action: InscrybMDE.toggleBold,
+        className: 'fa fa-bold',
+        title: getMarkdownButtonTranslation('Bold')
+      },
+      {
+        name: 'italic',
+        action: InscrybMDE.toggleItalic,
+        className: 'fa fa-italic',
+        title: getMarkdownButtonTranslation('Italic')
+      },
+      {
+        name: 'heading',
+        action: InscrybMDE.toggleHeadingSmaller,
+        className: 'fa fa-header',
+        title: getMarkdownButtonTranslation('Heading')
+      },
+      '|',
+      {
+        name: 'code',
+        action: InscrybMDE.toggleCodeBlock,
+        className: 'fa fa-code',
+        title: getMarkdownButtonTranslation('Code')
+      },
+      {
+        name: 'unordered-list',
+        action: InscrybMDE.toggleUnorderedList,
+        className: 'fa fa-list-ul',
+        title: getMarkdownButtonTranslation('Generic List')
+      },
+      {
+        name: 'ordered-list',
+        action: InscrybMDE.toggleOrderedList,
+        className: 'fa fa-list-ol',
+        title: getMarkdownButtonTranslation('Numbered List')
+      },
+      '|',
+      {
+        name: 'link',
+        action: InscrybMDE.drawLink,
+        className: 'fa fa-link',
+        title: getMarkdownButtonTranslation('Create Link')
+      },
+      {
+        name: 'image',
+        action: function uploadImage (editor) {
+          const fileInput = document.createElement('input');
+          fileInput.setAttribute('type', 'file');
+          fileInput.setAttribute('accept', '.png,.jpg,.jpeg');
+          fileInput.addEventListener('change', function () {
+            element.mdeField.codemirror.fileHandler(fileInput.files);
+          });
+          fileInput.click();
         },
-        {
-          name: "italic",
-          action: InscrybMDE.toggleItalic,
-          className: "fa fa-italic",
-          title: getMarkdownButtonTranslation("Italic"),
-        },
-        {
-          name: "heading",
-          action: InscrybMDE.toggleHeadingSmaller,
-          className: "fa fa-header",
-          title: getMarkdownButtonTranslation("Heading"),
-        },
-        "|",
-        {
-          name: "code",
-          action: InscrybMDE.toggleCodeBlock,
-          className: "fa fa-code",
-          title: getMarkdownButtonTranslation("Code"),
-        },
-        {
-          name: "unordered-list",
-          action: InscrybMDE.toggleUnorderedList,
-          className: "fa fa-list-ul",
-          title: getMarkdownButtonTranslation("Generic List"),
-        },
-        {
-          name: "ordered-list",
-          action: InscrybMDE.toggleOrderedList,
-          className: "fa fa-list-ol",
-          title: getMarkdownButtonTranslation("Numbered List"),
-        },
-        "|",
-        {
-          name: "link",
-          action: InscrybMDE.drawLink,
-          className: "fa fa-link",
-          title: getMarkdownButtonTranslation("Create Link"),
-        },
-        {
-          name: "image",
-          action: function uploadImage(editor) {
-            let file_input = document.createElement("input");
-            file_input.setAttribute("type", "file");
-            file_input.setAttribute("accept", ".png,.jpg,.jpeg");
-            file_input.addEventListener("change", function() {
-              element.mde_field.codemirror.fileHandler(file_input.files);
-            });
-            file_input.click();
-          },
-          className: "fa fa-picture-o",
-          title: getMarkdownButtonTranslation("Upload Image"),
-        },
-        {
-          name: "table",
-          action: InscrybMDE.drawTable,
-          className: "fa fa-table",
-          title: getMarkdownButtonTranslation("Insert Table"),
-        },
-        "|",
-        {
-          name: "preview",
-          action: InscrybMDE.togglePreview,
-          className: "fa fa-eye no-disable",
-          title: getMarkdownButtonTranslation("Toggle Preview"),
-          noDisable: true,
-        }
+        className: 'fa fa-picture-o',
+        title: getMarkdownButtonTranslation('Upload Image')
+      },
+      {
+        name: 'table',
+        action: InscrybMDE.drawTable,
+        className: 'fa fa-table',
+        title: getMarkdownButtonTranslation('Insert Table')
+      },
+      '|',
+      {
+        name: 'preview',
+        action: InscrybMDE.togglePreview,
+        className: 'fa fa-eye no-disable',
+        title: getMarkdownButtonTranslation('Toggle Preview'),
+        noDisable: true
+      }
     ]
   });
-  element.mde_field = mde_field;
-  mde_field.codemirror.on('change', function() {
+  element.mdeField = mdeField;
+  mdeField.codemirror.on('change', function () {
     $(element).change();
   });
-  return mde_field;
+  return mdeField;
 }
 
-function updateMarkdownField(checkbox_id, mde_attribute, data_name, height) {
-  window.mde_fields[mde_attribute].forEach(function (item){
+function updateMarkdownField (checkboxID, mdeAttribute, dataName, height) {
+  window.mdeFields[mdeAttribute].forEach(function (item) {
     item.toTextArea();
-  })
-  window.mde_fields[mde_attribute] = [];
-  if ($('#' + checkbox_id).prop('checked')) {
-    $(`.form-group[data-name="${data_name}"] [data-language-id], .inline-edit-regular-property[data-name="${data_name}"] [data-language-id]`).each(function() {
+  });
+  window.mdeFields[mdeAttribute] = [];
+  if ($('#' + checkboxID).prop('checked')) {
+    $(`.form-group[data-name="${dataName}"] [data-language-id], .inline-edit-regular-property[data-name="${dataName}"] [data-language-id]`).each(function () {
       const textarea = $(this).find('textarea.form-control')[0];
-      window.mde_fields[mde_attribute].push(initMarkdownField(textarea, height));
+      window.mdeFields[mdeAttribute].push(initMarkdownField(textarea, height));
     });
-    window.mde_fields[mde_attribute].forEach(function (item){
+    window.mdeFields[mdeAttribute].forEach(function (item) {
       setupImageDragAndDrop(item);
     });
   }
 }
+
+export {
+  updateTranslationJSON,
+  setTranslationHandler,
+  updateTranslationLanguages,
+  initMarkdownField,
+  updateMarkdownField
+};

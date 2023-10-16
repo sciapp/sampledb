@@ -40,7 +40,6 @@
   <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
@@ -65,10 +64,23 @@
       setupImageDragAndDrop
     } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
     window.setupImageDragAndDrop = setupImageDragAndDrop;
+
+    import {
+      updateTranslationJSON,
+      setTranslationHandler,
+      updateTranslationLanguages,
+      initMarkdownField,
+      updateMarkdownField
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
+    window.updateTranslationJSON = updateTranslationJSON;
+    window.setTranslationHandler = setTranslationHandler;
+    window.updateTranslationLanguages = updateTranslationLanguages;
+    window.initMarkdownField = initMarkdownField;
+    window.updateMarkdownField = updateMarkdownField;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
-  window.mde_fields = [];
+  window.mdeFields = [];
   let initPhase = true;
   let file_names_by_id = {};
   let form_data = {};
