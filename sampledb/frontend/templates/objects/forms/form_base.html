@@ -43,7 +43,6 @@
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
@@ -52,6 +51,11 @@
       setUpCalculation
     } from "{{ fingerprinted_static('sampledb/js/calculation.js') }}";
     window.setUpCalculation = setUpCalculation;
+
+    import {
+      fileEventHandler
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}";
+    window.fileEventHandler = fileEventHandler;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
@@ -182,7 +186,7 @@
     setObjectFormButtonHandlers()
 
     {% for file_picker in file_pickers %}
-      document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+      document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
     {% endfor %}
 
     {% for add_action, button_id in applied_add_actions.items() %}
@@ -1090,7 +1094,7 @@
         const input = parent.find('input:file');
         $(this).attr('class', $(this).data('template-class'));
         $(this).selectpicker();
-        input.change(fileEventHandler(input.data('id-prefix'), input.data('context-id-token'), "{{ url_for('.temporary_file_upload') }}"));
+        input.change(window.fileEventHandler(input.data('id-prefix'), input.data('context-id-token'), "{{ url_for('.temporary_file_upload') }}"));
       }
     });
 
