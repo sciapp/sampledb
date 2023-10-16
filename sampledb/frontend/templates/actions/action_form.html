@@ -19,9 +19,15 @@
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('codemirror/js/codemirror.min.js') }}"></script>
   <script src="{{ fingerprinted_static('codemirror/js/javascript.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      setupImageDragAndDrop
+    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
+    window.setupImageDragAndDrop = setupImageDragAndDrop;
+  </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   // translations of error / help messages used in the static schema_editor.js
   window.schema_editor_translations = {

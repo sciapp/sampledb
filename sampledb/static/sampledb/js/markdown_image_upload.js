@@ -6,7 +6,7 @@
  * Sets up an event handler for dragging images onto a markdown editor.
  * @param element the markdown editor as a jQuery element
  */
-function setupImageDragAndDrop (element) { // eslint-disable-line no-unused-vars
+function setupImageDragAndDrop (element) {
   element.codemirror.fileHandler = function (files) {
     if (files.length > 0) {
       const file = files[0];
@@ -33,3 +33,7 @@ function setupImageDragAndDrop (element) { // eslint-disable-line no-unused-vars
     return false;
   });
 }
+
+export {
+  setupImageDragAndDrop
+};

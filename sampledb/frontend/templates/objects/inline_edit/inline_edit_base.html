@@ -37,7 +37,6 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
     <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
     <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
@@ -55,6 +54,11 @@
       conditionalWrapper
     } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
     window.conditionalWrapper = conditionalWrapper;
+
+    import {
+      setupImageDragAndDrop
+    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
+    window.setupImageDragAndDrop = setupImageDragAndDrop;
   </script>
 
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
