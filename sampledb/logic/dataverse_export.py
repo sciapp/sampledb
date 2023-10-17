@@ -143,7 +143,7 @@ def get_property_export_default(
                 subschema = subschema['properties'][key]
             else:
                 subschema = subschema['items']
-        return subschema.get('dataverse_export', False)
+        return bool(subschema.get('dataverse_export', False))
     except Exception:
         return False
 

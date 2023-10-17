@@ -130,7 +130,7 @@ def _convert_metadata(
         schema: typing.Dict[str, typing.Any]
     ) -> str:
         if isinstance(data['text'], dict):
-            return data['text'].get('en', data['text'])
+            return str(data['text'].get('en', data['text']))
         if isinstance(data['text'], str):
             return data['text']
         return ''
@@ -422,7 +422,7 @@ def get_property_export_default(
                 subschema = subschema['properties'][key]
             else:
                 subschema = subschema['items']
-        return subschema.get('scicat_export', False)
+        return bool(subschema.get('scicat_export', False))
         # TODO: allow scicat_export in schemas
     except Exception:
         return False
