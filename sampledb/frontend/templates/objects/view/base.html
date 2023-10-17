@@ -1675,6 +1675,11 @@
     window.updateTranslationLanguages = updateTranslationLanguages;
     window.initMarkdownField = initMarkdownField;
     window.updateMarkdownField = updateMarkdownField;
+
+    import {
+      togglePlotlyChartDiv
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
+    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
