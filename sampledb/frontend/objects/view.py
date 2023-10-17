@@ -501,6 +501,12 @@ def print_object_label(object_id: int) -> FlaskResponseT:
     if not (action and action.type and action.type.enable_labels):
         flask.abort(403)
 
+    only_id_qr_code = False
+    add_label_number = False
+    add_maximum_label_number = False
+    create_only_qr_codes = False
+    show_id_on_label = True
+    label_quantity = 1
     if mode == 'fixed-width':
         create_mixed_labels = False
         create_long_labels = False
@@ -557,6 +563,39 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         if label_minimum_width > maximum_width:
             label_minimum_width = maximum_width
         qrcode_width = 0
+        ghs_classes_side_by_side = False
+        centered = False
+    elif mode == 'qr-code-width':
+        create_mixed_labels = False
+        create_long_labels = False
+        create_only_qr_codes = True
+        only_id_qr_code = flask.request.args.get('qr-code-content', 'object-url') == "object-id"
+        show_id_on_label = 'show-id-on-label' in flask.request.args
+        include_qrcode_in_long_labels = False
+        add_label_number = 'add-label-number' in flask.request.args
+        add_maximum_label_number = 'add-maximum-label-number' in flask.request.args
+        paper_format = flask.request.args.get('qr-code-paper-format', '')
+        if paper_format not in PAGE_SIZES:
+            paper_format = DEFAULT_PAPER_FORMAT
+        try:
+            qrcode_width = int(flask.request.args.get('qr-code-width', '7'))
+        except ValueError:
+            qrcode_width = 7
+        if qrcode_width < 4:
+            qrcode_width = 4
+
+        try:
+            label_quantity = int(flask.request.args.get('qr-code-number', '1'))
+        except ValueError:
+            label_quantity = 1
+        if label_quantity <= 0:
+            label_quantity = 1
+        elif label_quantity > 1000:
+            label_quantity = 1000
+
+        label_width = 0
+        label_minimum_width = qrcode_width
+        label_minimum_height = 0
         ghs_classes_side_by_side = False
         centered = False
     else:
@@ -617,13 +656,19 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         paper_format=paper_format,
         create_mixed_labels=create_mixed_labels,
         create_long_labels=create_long_labels,
+        create_only_qr_codes=create_only_qr_codes,
         include_qrcode_in_long_labels=include_qrcode_in_long_labels,
         label_width=label_width,
         label_minimum_height=label_minimum_height,
         label_minimum_width=label_minimum_width,
+        label_quantity=label_quantity,
         qrcode_width=qrcode_width,
         ghs_classes_side_by_side=ghs_classes_side_by_side,
-        centered=centered
+        centered=centered,
+        only_id_qr_code=only_id_qr_code,
+        add_label_number=add_label_number,
+        add_maximum_label_number=add_maximum_label_number,
+        show_id_on_label=show_id_on_label
     )
     return flask.send_file(
         io.BytesIO(pdf_data),
