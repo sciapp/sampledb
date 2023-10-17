@@ -18,7 +18,7 @@
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
-  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }};
     const available_permissions = ['none', 'read', 'write', 'grant'];

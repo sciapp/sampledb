@@ -1659,7 +1659,7 @@
     </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
