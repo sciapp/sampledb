@@ -514,7 +514,7 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   {% if object_link_form and not object_id and not current_user.is_readonly %}
-    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
   {% endif %}
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working

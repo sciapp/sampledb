@@ -40,8 +40,6 @@
   <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}" type="module"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
@@ -77,6 +75,11 @@
     window.updateTranslationLanguages = updateTranslationLanguages;
     window.initMarkdownField = initMarkdownField;
     window.updateMarkdownField = updateMarkdownField;
+
+    import {
+      updateObjectPickers
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}";
+    window.updateObjectPickers = updateObjectPickers;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
