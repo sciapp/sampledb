@@ -462,3 +462,19 @@ class ELNImportDoesNotExistError(Exception):
 
 class InvalidELNFileError(Exception):
     pass
+
+
+class WebhookAlreadyExistsError(Exception):
+    pass
+
+
+class WebhookDoesNotExistError(Exception):
+    pass
+
+
+class WebhookConnectionException(Exception):
+    pass
+
+
+class ObjectLogEntryDoesNotExistError(Exception):
+    pass

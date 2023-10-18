@@ -59,6 +59,7 @@ from . import units
 from . import users
 from . import user_log
 from . import utils
+from . import webhooks
 from . import where_filters
 
 from ..models.objects import Objects
@@ -126,6 +127,7 @@ __all__ = [
     'users',
     'user_log',
     'utils',
+    'webhooks',
     'where_filters',
 ]
 

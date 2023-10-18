@@ -8,8 +8,9 @@ import typing
 
 import flask
 
-from . import object_permissions
+from . import object_permissions, errors
 from . import users
+from .background_tasks.trigger_webhooks import post_trigger_object_log_webhooks
 from .users import get_user
 from ..models import ObjectLogEntry, ObjectLogEntryType, Permissions, Objects
 from .. import db
@@ -48,15 +49,10 @@ def get_object_log_entries_by_user(user_id: int, after_id: int = 0) -> typing.Li
             'enable_instruments': not flask.current_app.config['DISABLE_INSTRUMENTS'],
             'after_id': after_id
         }).all()
-    return _process_object_log_entries([row[0] for row in object_log_entries], user_id)
+    return process_object_log_entries([row[0] for row in object_log_entries], user_id)
 
 
-def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
-    object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
-    return _process_object_log_entries(object_log_entries, user_id)
-
-
-def _process_object_log_entries(object_log_entries: typing.List[ObjectLogEntry], user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
+def process_object_log_entries(object_log_entries: typing.List[ObjectLogEntry], user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
     processed_object_log_entries = []
     users_by_id: typing.Dict[typing.Optional[int], typing.Optional[users.User]] = {None: None}
     referenced_object_ids = {}
@@ -104,6 +100,18 @@ def _process_object_log_entries(object_log_entries: typing.List[ObjectLogEntry],
     return processed_object_log_entries
 
 
+def get_object_log_entry(object_log_entry_id: int, user_id: typing.Optional[int] = None) -> ObjectLogEntry:
+    object_log_entry = ObjectLogEntry.query.filter_by(id=object_log_entry_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).first()
+    if object_log_entry is None:
+        raise errors.ObjectLogEntryDoesNotExistError()
+    return process_object_log_entries([object_log_entry], user_id)[0]
+
+
+def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None) -> typing.List[ObjectLogEntry]:
+    object_log_entries = ObjectLogEntry.query.filter_by(object_id=object_id).order_by(db.desc(ObjectLogEntry.utc_datetime)).all()
+    return process_object_log_entries(object_log_entries, user_id)
+
+
 def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
     object_log_entry = ObjectLogEntry(
         type=type,
@@ -114,6 +122,7 @@ def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int,
     )
     db.session.add(object_log_entry)
     db.session.commit()
+    post_trigger_object_log_webhooks(object_log_entry)
 
 
 def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int] = None) -> None:

@@ -58,3 +58,12 @@ class CreateAPITokenForm(FlaskForm):
 class ManageTwoFactorAuthenticationMethodForm(FlaskForm):
     method_id = IntegerField(validators=[InputRequired()])
     action = StringField(validators=[InputRequired()])
+
+
+class AddWebhookForm(FlaskForm):
+    name = StringField(validators=[Length(min=0, max=100)])
+    address = StringField(validators=[Length(min=1, max=100)])
+
+
+class RemoveWebhookForm(FlaskForm):
+    id = IntegerField('Authentication_method_id', validators=[DataRequired()])

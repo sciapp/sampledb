@@ -444,7 +444,7 @@ def test_status_codes(flask_server, user, driver):
         'users/me/sign_in': 302,
         'users/me/sign_out': 200,
         'users/me/two_factor_authentication/totp/confirm': 302,
-        'users/me/two_factor_authentication/totp/setup': 200
+        'users/me/two_factor_authentication/totp/setup': 200,
     }
     for relative_url, expected_status_code in expected_status_codes.items():
         if relative_url.startswith('api/v1/'):

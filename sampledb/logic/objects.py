@@ -86,10 +86,6 @@ def create_object(
         validate_data=validate_data,
         data_validator_arguments=data_validator_arguments
     )
-    object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
-    user_log.create_object(object_id=object.object_id, user_id=user_id)
-    _update_object_references(object, user_id=user_id)
-    _send_user_references_notifications(object, user_id)
     if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
         object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
@@ -101,6 +97,10 @@ def create_object(
         object_permissions.set_initial_permissions(object)
     if permissions_for_all_users is not None:
         object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
+    object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
+    user_log.create_object(object_id=object.object_id, user_id=user_id)
+    _update_object_references(object, user_id=user_id)
+    _send_user_references_notifications(object, user_id)
     tags.update_object_tag_usage(object)
     return object
 
@@ -128,10 +128,10 @@ def create_eln_import_object(
         eln_object_id=eln_object_id,
         data_validator_arguments=data_validator_arguments
     )
-    object_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
-    user_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
     object_permissions.set_initial_permissions(object)
+    object_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
+    user_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
     tags.update_object_tag_usage(object)
     return object
 
@@ -250,7 +250,6 @@ def create_object_batch(
             batch_object_ids = [object.id for object in objects]
             user_log.create_batch(user_id=user_id, batch_object_ids=batch_object_ids)
             for object in objects:
-                object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
                 _send_user_references_notifications(object, user_id)
                 if copy_permissions_object_id is not None:
@@ -264,6 +263,7 @@ def create_object_batch(
                     object_permissions.set_initial_permissions(object)
                 if permissions_for_all_users is not None:
                     object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
+                object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 tags.update_object_tag_usage(object)
     return objects
 
