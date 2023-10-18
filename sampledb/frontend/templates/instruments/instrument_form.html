@@ -12,7 +12,7 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
     import {
