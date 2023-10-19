@@ -7,8 +7,9 @@
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
-    {% set id_prefix = "object_" %}
+    {% set id_prefix_root = "object" %}
     {% set property_path = () %}
+    {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
     {% include "objects/forms/form_any.html" %}
     <div class="form-group row clearfix" style="padding-right:0.75em">
       <div class="col-md-6 text-muted">* {{ _('required') }}</div>

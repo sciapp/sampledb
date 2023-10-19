@@ -113,7 +113,9 @@
   {% if instrument.object_id and instrument.show_linked_object_data %}
     <h2>{{ _('Information') }}</h2>
     {% if linked_object and linked_object.schema and linked_object.data %}
-      {% set id_prefix = "object_" %}
+      {% set id_prefix_root = "object" %}
+      {% set property_path = () %}
+      {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {# counter for plotly_chart_plots #}
       {% set object_id = instrument.object_id %}
       {% set schema = linked_object.schema %}

@@ -45,8 +45,9 @@
       </div>
     </div>
     {% endif %}
-    {% set id_prefix = "object_" %}
+    {% set id_prefix_root = "object" %}
     {% set property_path = () %}
+    {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
     {% include "objects/forms/form_any.html" %}
     <strong style="font-size:1.5em; margin-bottom: 1em; display:block;">{{ _('Initial Permissions') }}</strong>
     <div class="form-group clearfix" style="padding:0 0.75em">

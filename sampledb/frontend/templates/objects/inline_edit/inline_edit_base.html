@@ -10,8 +10,9 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/inline-edit.css') }}"/>
 {% endblock %}
 
-{% set id_prefix = "object_" %}
+{% set id_prefix_root = "object" %}
 {% set property_path = () %}
+{% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
 
 {% block includes %}
     {# counter for plotly_chart_plots #}

@@ -1,3 +1,4 @@
+{% set container_style = none %}
 {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title) and schema.title %}
   <span style="font-size:1.5em; padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
@@ -12,8 +13,8 @@
       {% set is_required = ('required' in schema and property_name in schema['required']) %}
       {% set schema = schema.properties[property_name] %}
       {% set parent_id_prefix = id_prefix %}
-      {% set id_prefix = id_prefix + '_' + property_name + '_' %}
       {% set property_path = property_path + (property_name,) %}
+      {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {% if data is not none and property_name in data %}
         {% set data = data[property_name] %}
       {% else %}
@@ -24,7 +25,7 @@
           <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
             {% include "objects/inline_edit/inline_edit_any.html" %}
           </div>
-          {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+          {% do form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) %}
         </div>
       {% else %}
         <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>

@@ -1,4 +1,4 @@
-{% extends get_view_property_template(schema) %}
+{% extends get_view_property_template(schema, container_style) %}
 
 {% block property_field %}
   {% include "objects/values/text_value.html" %}

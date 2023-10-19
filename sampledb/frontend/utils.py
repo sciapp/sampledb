@@ -564,21 +564,21 @@ def get_style_aliases(style: str) -> typing.List[str]:
     }.get(style, [style])
 
 
-def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any]) -> str:
+def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = str(schema["type"]) + ".html"
 
     file_order = [default_prefix + base_file]
-    if schema.get('parent_style'):
-        for parent_style in get_style_aliases(schema['parent_style']):
-            file_order.insert(0, (default_prefix + parent_style + "_" + base_file))
+    if container_style:
+        for container_style_alias in get_style_aliases(container_style):
+            file_order.insert(0, (default_prefix + container_style_alias + "_" + base_file))
     if schema.get('style'):
         for style in get_style_aliases(schema['style']):
             file_order.insert(0, (default_prefix + style + "_" + base_file))
-    if schema.get('parent_style') and schema.get('style'):
+    if container_style and schema.get('style'):
         for style in get_style_aliases(schema['style']):
-            for parent_style in get_style_aliases(schema['parent_style']):
-                file_order.insert(0, (default_prefix + parent_style + "_" + style + "_" + base_file))
+            for container_style_alias in get_style_aliases(container_style):
+                file_order.insert(0, (default_prefix + container_style_alias + "_" + style + "_" + base_file))
 
     for file in file_order:
         if os.path.exists(os.path.join(system_path, file)):
@@ -587,13 +587,13 @@ def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[
     return template_folder + default_prefix + base_file
 
 
-def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any]) -> str:
+def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
 
     file_order = ['regular_property.html']
-    if schema.get('parent_style'):
-        for parent_style in get_style_aliases(schema['parent_style']):
-            file_order.insert(0, parent_style + '_property.html')
+    if container_style:
+        for container_style_alias in get_style_aliases(container_style):
+            file_order.insert(0, container_style_alias + '_property.html')
     if schema.get('style'):
         for style in get_style_aliases(schema['style']):
             file_order.insert(0, style + '_property.html')
@@ -606,33 +606,33 @@ def get_property_template(template_folder: str, schema: typing.Dict[str, typing.
 
 
 @JinjaFunction()
-def get_form_property_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_property_template('objects/forms/', schema)
+def get_form_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template('objects/forms/', schema, container_style)
 
 
 @JinjaFunction()
-def get_view_property_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_property_template('objects/view/', schema)
+def get_view_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template('objects/view/', schema, container_style)
 
 
 @JinjaFunction()
-def get_inline_edit_property_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_property_template('objects/inline_edit/', schema)
+def get_inline_edit_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template('objects/inline_edit/', schema, container_style)
 
 
 @JinjaFunction()
-def get_form_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_template('objects/forms/', 'form_', schema)
+def get_form_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template('objects/forms/', 'form_', schema, container_style)
 
 
 @JinjaFunction()
-def get_view_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_template('objects/view/', '', schema)
+def get_view_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template('objects/view/', '', schema, container_style)
 
 
 @JinjaFunction()
-def get_inline_edit_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_template('objects/inline_edit/', 'inline_edit_', schema)
+def get_inline_edit_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template('objects/inline_edit/', 'inline_edit_', schema, container_style)
 
 
 @JinjaFunction()
@@ -1523,3 +1523,14 @@ def get_property_names_in_order(
         if property_name not in schema.get('propertyOrder', [])
     ]
     return property_names
+
+
+@JinjaFunction()
+def id_prefix_for_property_path(
+        property_path: typing.Tuple[typing.Union[str, int], ...],
+        id_prefix_root: str
+) -> str:
+    return '__'.join([
+        str(path_element)
+        for path_element in [id_prefix_root] + list(property_path)
+    ]) + '_'

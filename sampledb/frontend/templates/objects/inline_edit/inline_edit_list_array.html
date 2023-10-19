@@ -1,3 +1,4 @@
+{% set container_style = schema.get('style') %}
 <div class="row" style="padding-right: 0.75em">
   {% include "objects/property_label.html" %}
   {% set is_required = False %}
@@ -6,11 +7,9 @@
     {% if data is not none %}
       <ul style="padding-left: 1.25em">
         {% for item in data %}
-          {% set parent_style = schema.get('style') %}
           {% set schema = schema['items'] %}
-          {% set z = schema.update({'parent_style': parent_style}) %}
-          {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
           {% set property_path = property_path + (loop.index0,) %}
+          {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           {% set data = item %}
           <li>
             {% include "objects/inline_edit/inline_edit_any.html" %}

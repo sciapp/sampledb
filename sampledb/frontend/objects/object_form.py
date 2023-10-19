@@ -574,47 +574,6 @@ def _apply_action_to_form_data(action: str, form_data: typing.Dict[str, typing.A
     return new_form_data
 
 
-def _apply_action_to_data(action: str, data: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any]) -> None:
-    action_id_prefix, action_index_str, action_type = action[len('action_'):].rsplit('__', 2)
-    if action_type not in ('add', 'delete', 'addcolumn', 'deletecolumn'):
-        raise ValueError('invalid action')
-    sub_data, sub_schema = _get_sub_data_and_schema(data, schema, action_id_prefix.split('__', 1)[1])
-    if not isinstance(sub_data, list):
-        raise ValueError('invalid action')
-    if action_type in ('addcolumn', 'deletecolumn') and (sub_schema["style"] != "table" or sub_schema["items"]["type"] != "array"):
-        raise ValueError('invalid action')
-    num_existing_items = len(sub_data)
-    if action_type == 'add':
-        if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
-            sub_data.append(generate_placeholder(sub_schema["items"]))
-            if isinstance(sub_data[-1], list) and sub_schema.get('style') == 'table':
-                num_existing_columns = sub_schema["items"].get("minItems", 0)
-                for row in sub_data:
-                    num_existing_columns = max(num_existing_columns, len(row))
-                while len(sub_data[-1]) < num_existing_columns:
-                    sub_data[-1].append(None)
-    elif action_type == 'delete':
-        action_index = int(action_index_str)
-        if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
-            del sub_data[action_index]
-    else:
-        num_existing_columns = sub_schema["items"].get("minItems", 0)
-        for row in sub_data:
-            num_existing_columns = max(num_existing_columns, len(row))
-        if action_type == 'addcolumn':
-            if 'maxItems' not in sub_schema["items"] or num_existing_columns < sub_schema["items"]["maxItems"]:
-                num_existing_columns += 1
-                for row in sub_data:
-                    while len(row) < num_existing_columns:
-                        row.append(generate_placeholder(sub_schema["items"]["items"]))
-        elif action_type == 'deletecolumn':
-            if num_existing_columns > sub_schema.get("minItems", 0):
-                num_existing_columns -= 1
-                for row in sub_data:
-                    while len(row) > num_existing_columns:
-                        del row[-1]
-
-
 def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.Dict[str, typing.Any]:
     template_kwargs = {
         'datetime': datetime,

@@ -1,3 +1,4 @@
+{% set container_style = none %}
 {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title)  and schema.title %}
   <span style="{% if workflow_display_mode %}font-weight: bold;{% else %}font-size: 1.5em;{% endif %} padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
@@ -11,8 +12,8 @@
         {% set hidden = (not (workflow_display_mode and 'workflow_show_more' in schema.keys()) and 'show_more' in schema.keys() and property_name in schema['show_more']) or (workflow_display_mode and 'workflow_show_more' in schema.keys() and property_name in schema['workflow_show_more']) %}
         {% set schema = schema.properties[property_name] %}
         {% set parent_id_prefix = id_prefix %}
-        {% set id_prefix = id_prefix + '_' + property_name + '_' %}
         {% set property_path = property_path + (property_name,) %}
+        {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
         {% if data is not none and property_name in data %}
           {% set data = data[property_name] %}
         {% else %}

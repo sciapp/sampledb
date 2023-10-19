@@ -1,4 +1,4 @@
-{% extends get_form_property_template(schema) %}
+{% extends get_form_property_template(schema, container_style) %}
 
 {% block property_field %}
   {% include "objects/fields/bool_field.html" %}

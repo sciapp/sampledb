@@ -1,6 +1,6 @@
 <div>
   <label class="control-label" for="{{ id_prefix }}_data">{{ _('Data (as CSV)') }}</label>
-  <textarea type="text" class="form-control" id="{{ id_prefix }}_data" name="{{ id_prefix }}_data" rows="5" placeholder="{{ _('CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or relative time in seconds, and magnitude') }}">{% if id_prefix+'_data' in form_data %}{{ form_data[id_prefix+'_data'] }}{% elif data is not none and 'data' in data %}{{ data.data | to_timeseries_csv }}{% endif %}</textarea>
+  <textarea type="text" class="form-control" id="{{ id_prefix }}_data" name="{{ id_prefix }}_data" rows="5" placeholder="{{ _('CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or relative time in seconds, and magnitude') }}">{% if id_prefix+'_data' in form_data %}{{ form_data[id_prefix+'_data'] }}{% elif data is not none and data.data %}{{ data.data | to_timeseries_csv }}{% endif %}</textarea>
 </div>
 <div>
   <label class="control-label" for="{{ id_prefix }}_units">{{ _('Units') }}</label>

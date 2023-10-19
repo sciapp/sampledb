@@ -1,3 +1,4 @@
+{% set container_style = schema.get('style') %}
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
   {% set is_required = False %}
@@ -25,19 +26,18 @@
               {% for item in data %}
                 <td>
                   {% set schema = schema['items'].properties[property_name] %}
-                  {% set z = schema.update({'parent_style': 'horizontal_table'}) %}
                   {% if property_name in item %}
                     {% set data = item[property_name] %}
                   {% else %}
                     {% set data = none %}
                   {% endif %}
                   {% set entry_index = loop.index0 %}
-                  {% set id_prefix = id_prefix + '__' ~ loop.index0 ~ '__' + property_name + '_' %}
                   {% set property_path = property_path + (loop.index0, property_name,) %}
+                  {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                   {% if 'conditions' in schema %}
                     <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
                       {% include "objects/inline_edit/inline_edit_any.html" %}
-                      {{ form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) or '' }}
+                      {% do form_conditions.append({"id_prefix": id_prefix, "conditions": schema['conditions']}) %}
                     </div>
                     <div data-condition-replacement-for="{{ id_prefix }}" class="condition-replacement">
                       &mdash;
