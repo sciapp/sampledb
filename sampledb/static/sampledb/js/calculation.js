@@ -1,243 +1,267 @@
-function resolvePropertyPath(property_path) {
-  let resolved_property_path = [];
-  let relative_path_stack = [];
-  for (let path_element of property_path) {
-    if (path_element === '..') {
-      relative_path_stack.push(resolved_property_path.pop());
+'use strict';
+/* eslint-env jquery */
+/* globals math */
+
+/**
+ * Resolves a property path using relative path elements, e.g. .., +x or -x.
+ * @param propertyPath a property path
+ * @returns {*[]} the resolved property path
+ */
+function resolvePropertyPath (propertyPath) {
+  const resolvedPropertyPath = [];
+  const relativePathStack = [];
+  for (let pathElement of propertyPath) {
+    if (pathElement === '..') {
+      relativePathStack.push(resolvedPropertyPath.pop());
     } else {
-      if (relative_path_stack.length > 0) {
-        let relative_path_element = relative_path_stack.pop();
-        if (path_element.length > 1 && (path_element[0] === '+' || path_element[0] === '-')) {
-          let updated_path_element = Number.parseInt(relative_path_element) + Number.parseInt(path_element.substr(1)) * (path_element[0] === '-' ? -1 : 1);
-          if (Number.isFinite(updated_path_element)) {
-            path_element = updated_path_element;
+      if (relativePathStack.length > 0) {
+        const relativePathElement = relativePathStack.pop();
+        if (pathElement.length > 1 && (pathElement[0] === '+' || pathElement[0] === '-')) {
+          const updatedPathElement = Number.parseInt(relativePathElement) + Number.parseInt(pathElement.substr(1)) * (pathElement[0] === '-' ? -1 : 1);
+          if (Number.isFinite(updatedPathElement)) {
+            pathElement = updatedPathElement;
           }
         }
       }
-      resolved_property_path.push(path_element)
+      resolvedPropertyPath.push(pathElement);
     }
   }
-  return resolved_property_path;
+  return resolvedPropertyPath;
 }
 
-function getPropertySchema(root_schema, property_path) {
-  let property_schema = root_schema;
-  for (const path_element of property_path) {
-    if (property_schema['type'] === 'object') {
-      property_schema = property_schema['properties'][path_element];
+/**
+ * Gets the schema of a property.
+ * @param rootSchema the root schema
+ * @param propertyPath an absolute property path
+ * @returns {*} the property schema
+ */
+function getPropertySchema (rootSchema, propertyPath) {
+  let propertySchema = rootSchema;
+  for (const pathElement of propertyPath) {
+    if (propertySchema.type === 'object') {
+      propertySchema = propertySchema.properties[pathElement];
     } else {
-      property_schema = property_schema['items'];
+      propertySchema = propertySchema.items;
     }
   }
-  return property_schema;
+  return propertySchema;
 }
 
-function setUpCalculation(id_prefix, schema, root_schema) {
-  let property_names = schema.calculation.property_names;
-  let all_input_elements_available = true;
-  let input_elements = [];
-  let property_aliases = [];
-  if (Array.isArray(property_names)) {
-    fixed_property_names = {};
-    for (let property_name of property_names) {
-      fixed_property_names[property_name] = [property_name];
+/**
+ * Sets up the calculation for a form field.
+ * @param idPrefix the ID prefix of the field
+ * @param schema the schema for the field
+ * @param rootSchema the root schema
+ */
+function setUpCalculation (idPrefix, schema, rootSchema) { // eslint-disable-line no-unused-vars
+  let propertyNames = schema.calculation.property_names;
+  let allInputElementsAvailable = true;
+  const inputElements = [];
+  const propertyAliases = [];
+  if (Array.isArray(propertyNames)) {
+    const fixedPropertyNames = {};
+    for (const propertyName of propertyNames) {
+      fixedPropertyNames[propertyName] = [propertyName];
     }
-    property_names = fixed_property_names;
+    propertyNames = fixedPropertyNames;
   }
-  for (const property_alias in property_names) {
-    if (!property_names.hasOwnProperty(property_alias)) {
+  for (const propertyAlias in propertyNames) {
+    if (!Object.prototype.hasOwnProperty.call(propertyNames, propertyAlias)) {
       continue;
     }
-    let relative_property_path = property_names[property_alias];
-    if (typeof relative_property_path === "string") {
-       relative_property_path = [relative_property_path];
+    let relativePropertyPath = propertyNames[propertyAlias];
+    if (typeof relativePropertyPath === 'string') {
+      relativePropertyPath = [relativePropertyPath];
     }
-    let property_path = (id_prefix + '_').split('__');
-    property_path.shift();
-    property_path.pop();
-    property_path.push('..');
-    property_path = property_path.concat(relative_property_path);
-    property_path = resolvePropertyPath(property_path);
-    const property_id_prefix = 'object__' + property_path.join('__') + '_';
-    const property_id_prefixes = [];
-    if (property_path.includes('*')) {
-      const property_id_prefix_wildcard_prefix = property_id_prefix.split('*').shift();
-      const property_id_prefix_wildcard_suffix = property_id_prefix.split('*').pop();
-      const potential_property_magnitude_elements = $(`[name^="${property_id_prefix_wildcard_prefix}"][name$="${property_id_prefix_wildcard_suffix}_magnitude"]`);
-      potential_property_magnitude_elements.each(function(_, element) {
+    let propertyPath = (idPrefix + '_').split('__');
+    propertyPath.shift();
+    propertyPath.pop();
+    propertyPath.push('..');
+    propertyPath = propertyPath.concat(relativePropertyPath);
+    propertyPath = resolvePropertyPath(propertyPath);
+    const propertyIDPrefix = 'object__' + propertyPath.join('__') + '_';
+    const propertyIDPrefixes = [];
+    if (propertyPath.includes('*')) {
+      const propertyIDPrefixWildcardPrefix = propertyIDPrefix.split('*').shift();
+      const propertyIDPrefixWildcardSuffix = propertyIDPrefix.split('*').pop();
+      const potentialPropertyMagnitudeElements = $(`[name^="${propertyIDPrefixWildcardPrefix}"][name$="${propertyIDPrefixWildcardSuffix}_magnitude"]`);
+      potentialPropertyMagnitudeElements.each(function (_, element) {
         if (element.name.substr(element.name.length - '__magnitude'.length) !== '__magnitude') {
           return;
         }
-        const property_id_prefix = element.name.substring(0, element.name.length - '_magnitude'.length);
-        if (!property_id_prefix.startsWith('object__') || !property_id_prefix.endsWith('_')) {
+        const propertyIDPrefix = element.name.substring(0, element.name.length - '_magnitude'.length);
+        if (!propertyIDPrefix.startsWith('object__') || !propertyIDPrefix.endsWith('_')) {
           return;
         }
-        const property_id_prefix_parts = property_id_prefix.substring('object__'.length, property_id_prefix.length - 1).split('__');
-        if (property_id_prefix_parts.length !== property_path.length) {
+        const propertyIDPrefixParts = propertyIDPrefix.substring('object__'.length, propertyIDPrefix.length - 1).split('__');
+        if (propertyIDPrefixParts.length !== propertyPath.length) {
           return;
         }
-        for (let i = 0; i < property_id_prefix_parts.length; i++) {
-          if (property_path[i] === '*') {
-            const index = Number.parseInt(property_id_prefix_parts[i]);
-            if (!Number.isFinite(index) || index < 0 || index.toString() !== property_id_prefix_parts[i]) {
+        for (let i = 0; i < propertyIDPrefixParts.length; i++) {
+          if (propertyPath[i] === '*') {
+            const index = Number.parseInt(propertyIDPrefixParts[i]);
+            if (!Number.isFinite(index) || index < 0 || index.toString() !== propertyIDPrefixParts[i]) {
               return;
             }
-          } else if (property_path[i] !== property_id_prefix_parts[i]) {
+          } else if (propertyPath[i] !== propertyIDPrefixParts[i]) {
             return;
           }
         }
-        property_id_prefixes.push(property_id_prefix);
+        propertyIDPrefixes.push(propertyIDPrefix);
       });
     } else {
-      property_id_prefixes.push(property_id_prefix);
+      propertyIDPrefixes.push(propertyIDPrefix);
     }
     const elements = [];
-    property_id_prefixes.forEach(function(property_id_prefix) {
-      const property_magnitude_element = $(`[name="${property_id_prefix}_magnitude"]`);
-      const property_units_element = $(`[name="${property_id_prefix}_units"]`);
-      const property_unit = property_units_element.val();
-      const schema = getPropertySchema(root_schema, property_path);
-      let schema_unit = schema.units;
-      if (typeof schema_unit !== "string") {
-        schema_unit = schema_unit[0];
+    propertyIDPrefixes.forEach(function (propertyIDPrefix) {
+      const propertyMagnitudeElement = $(`[name="${propertyIDPrefix}_magnitude"]`);
+      const propertyUnitsElement = $(`[name="${propertyIDPrefix}_units"]`);
+      const propertyUnit = propertyUnitsElement.val();
+      const schema = getPropertySchema(rootSchema, propertyPath);
+      let schemaUnit = schema.units;
+      if (typeof schemaUnit !== 'string') {
+        schemaUnit = schemaUnit[0];
       }
-      if (property_magnitude_element.length === 1 && (schema_unit === property_unit || typeof property_unit === "undefined")) {
-        elements.push(property_magnitude_element);
+      if (propertyMagnitudeElement.length === 1 && (schemaUnit === propertyUnit || typeof propertyUnit === 'undefined')) {
+        elements.push(propertyMagnitudeElement);
       } else {
-        all_input_elements_available = false;
+        allInputElementsAvailable = false;
       }
     });
-    if (all_input_elements_available) {
-      property_aliases.push(property_alias);
-      input_elements.push(elements);
+    if (allInputElementsAvailable) {
+      propertyAliases.push(propertyAlias);
+      inputElements.push(elements);
     } else {
       break;
     }
   }
 
-  const target_element = $(`[name="${id_prefix}_magnitude"]`);
-  const target_units_element = $(`[name="${id_prefix}_units"]`);
-  const target_unit = target_units_element.val();
-  let schema_unit = schema.units;
-  if (typeof schema_unit !== "string") {
-    schema_unit = schema_unit[0];
+  const targetElement = $(`[name="${idPrefix}_magnitude"]`);
+  const targetUnitsElement = $(`[name="${idPrefix}_units"]`);
+  const targetUnit = targetUnitsElement.val();
+  let schemaUnit = schema.units;
+  if (typeof schemaUnit !== 'string') {
+    schemaUnit = schemaUnit[0];
   }
 
-  if (target_element.length === 1 && input_elements.every(function(elements) {return !elements.includes(target_element[0]);}) && (schema_unit === target_unit || typeof target_unit === "undefined") && all_input_elements_available) {
-    let evaluateCalculation = function (event, event_chain) {
-      if (!event_chain) {
-        event_chain = [];
+  if (targetElement.length === 1 && inputElements.every(function (elements) { return !elements.includes(targetElement[0]); }) && (schemaUnit === targetUnit || typeof targetUnit === 'undefined') && allInputElementsAvailable) {
+    const evaluateCalculation = function (event, eventChain) {
+      if (!eventChain) {
+        eventChain = [];
       }
       const formula = schema.calculation.formula;
-      let values = {};
-      let all_input_values_available = true;
-      for (i = 0; i < input_elements.length; i++) {
-        values[property_aliases[i]] = []
-        for (let j = 0; j < input_elements[i].length; j++) {
-          if (input_elements[i][j].prop('disabled')) {
+      const values = {};
+      let allInputValuesAvailable = true;
+      for (let i = 0; i < inputElements.length; i++) {
+        values[propertyAliases[i]] = [];
+        for (let j = 0; j < inputElements[i].length; j++) {
+          if (inputElements[i][j].prop('disabled')) {
             continue;
           }
-          let value_string = input_elements[i][j].val();
-          if (value_string === '') {
+          let valueString = inputElements[i][j].val();
+          if (valueString === '') {
             continue;
           }
-          value_string = value_string.trim();
-          if (window.local_decimal_delimiter !== ".") {
-            value_string = value_string.replace(window.local_decimal_delimiter, ".");
+          valueString = valueString.trim();
+          if (window.local_decimal_delimiter !== '.') {
+            valueString = valueString.replace(window.local_decimal_delimiter, '.');
           }
-          let value = parseFloat(value_string);
+          const value = parseFloat(valueString);
           if (!isFinite(value)) {
-            all_input_values_available = false;
+            allInputValuesAvailable = false;
             break;
           }
-          values[property_aliases[i]].push(value);
+          values[propertyAliases[i]].push(value);
         }
-        if (!all_input_values_available || values[property_aliases[i]].length === 0) {
-            all_input_values_available = false;
-            break;
+        if (!allInputValuesAvailable || values[propertyAliases[i]].length === 0) {
+          allInputValuesAvailable = false;
+          break;
         }
       }
-      if (all_input_values_available) {
+      if (allInputValuesAvailable) {
         let result = math.evaluate(formula, values);
-        if ("digits" in schema.calculation) {
+        if ('digits' in schema.calculation) {
           result = math.round(result, schema.calculation.digits);
         }
-        let result_string = String(result);
+        let resultString = String(result);
         if (!isFinite(result)) {
           if (isNaN(result)) {
-            result_string = '—';
+            resultString = '—';
           } else if (result > 0) {
-            result_string = '∞';
+            resultString = '∞';
           } else {
-            result_string = '-∞';
+            resultString = '-∞';
           }
         }
-        if (window.local_decimal_delimiter !== ".") {
-          result_string = result_string.replace('.', window.local_decimal_delimiter);
+        if (window.local_decimal_delimiter !== '.') {
+          resultString = resultString.replace('.', window.local_decimal_delimiter);
         }
-        const current_value_string = target_element.val();
-        if (result_string !== current_value_string) {
-          const previous_calculated_value_string = target_element.data('sampleDBCalculatedValue');
-          target_element.data('sampleDBCalculatedValue', result_string);
-          if (!event_chain.includes(target_element.attr('name')) && (current_value_string === previous_calculated_value_string || (current_value_string === '' && typeof previous_calculated_value_string === 'undefined')) && isFinite(result)) {
-            target_element.val(result_string);
+        const currentValueString = targetElement.val();
+        if (resultString !== currentValueString) {
+          const previousCalculatedValueString = targetElement.data('sampleDBCalculatedValue');
+          targetElement.data('sampleDBCalculatedValue', resultString);
+          if (!eventChain.includes(targetElement.attr('name')) && (currentValueString === previousCalculatedValueString || (currentValueString === '' && typeof previousCalculatedValueString === 'undefined')) && isFinite(result)) {
+            targetElement.val(resultString);
             // ensure the change is propagated to dependant fields
-            event_chain.push(target_element.attr('name'));
-            target_element.trigger('sampledb.calculation.change', [event_chain]);
+            eventChain.push(targetElement.attr('name'));
+            targetElement.trigger('sampledb.calculation.change', [eventChain]);
           } else {
-            const help_block = $(`#${id_prefix}_calculation_help`);
-            if (help_block.length === 1) {
-              help_block.find('span').text(result_string);
-              const help_block_button = help_block.find('button');
+            const helpBlock = $(`#${idPrefix}_calculation_help`);
+            if (helpBlock.length === 1) {
+              helpBlock.find('span').text(resultString);
+              const helpBlockButton = helpBlock.find('button');
               if (isFinite(result)) {
-                help_block_button.show();
+                helpBlockButton.show();
               } else {
-                help_block_button.hide();
+                helpBlockButton.hide();
               }
-              help_block_button.off('click');
-              help_block_button.on('click', function() {
-                target_element.val(result_string);
+              helpBlockButton.off('click');
+              helpBlockButton.on('click', function () {
+                targetElement.val(resultString);
                 // ensure the change is propagated to dependant fields
-                target_element.trigger('sampledb.calculation.change', [[target_element]]);
-                help_block.hide();
+                targetElement.trigger('sampledb.calculation.change', [[targetElement]]);
+                helpBlock.hide();
               });
-              help_block.show();
+              helpBlock.show();
             }
           }
         } else {
-          const help_block = $(`#${id_prefix}_calculation_help`);
-          if (help_block.length === 1) {
-            help_block.hide();
+          const helpBlock = $(`#${idPrefix}_calculation_help`);
+          if (helpBlock.length === 1) {
+            helpBlock.hide();
           }
         }
-
       }
-    }
-    target_element.on('change', function() {
-      const help_block = $(`#${id_prefix}_calculation_help`);
-      if (help_block.length === 1) {
-        const current_value_string = target_element.val();
-        const previous_calculated_value_string = target_element.data('sampleDBCalculatedValue');
-        if (current_value_string === previous_calculated_value_string) {
-          help_block.hide();
+    };
+    targetElement.on('change', function () {
+      const helpBlock = $(`#${idPrefix}_calculation_help`);
+      if (helpBlock.length === 1) {
+        const currentValueString = targetElement.val();
+        const previousCalculatedValueString = targetElement.data('sampleDBCalculatedValue');
+        if (currentValueString === previousCalculatedValueString) {
+          helpBlock.hide();
         }
       }
     });
-    target_element.off('sampledb.calculation.evaluate');
-    target_element.on('sampledb.calculation.evaluate', evaluateCalculation);
-    input_elements.forEach(function(elements) {
-      elements.forEach(function (input_element) {
-        input_element.on('change', function() {
-          input_element.trigger('sampledb.calculation.change', [[input_element.attr('name')]]);
+    targetElement.off('sampledb.calculation.evaluate');
+    targetElement.on('sampledb.calculation.evaluate', evaluateCalculation);
+    inputElements.forEach(function (elements) {
+      elements.forEach(function (inputElement) {
+        inputElement.on('change', function () {
+          inputElement.trigger('sampledb.calculation.change', [[inputElement.attr('name')]]);
         });
-        input_element.on('conditions_state_changed.sampledb', function() {
-          input_element.trigger('sampledb.calculation.change', [[input_element.attr('name')]]);
+        inputElement.on('conditions_state_changed.sampledb', function () {
+          inputElement.trigger('sampledb.calculation.change', [[inputElement.attr('name')]]);
         });
-        input_element.on('sampledb.calculation.change', function(event, event_chain) {
-          target_element.trigger('sampledb.calculation.evaluate', [event_chain]);
+        inputElement.on('sampledb.calculation.change', function (event, eventChain) {
+          targetElement.trigger('sampledb.calculation.evaluate', [eventChain]);
         });
       });
     });
     evaluateCalculation();
   }
 }
+
+export {
+  setUpCalculation
+};

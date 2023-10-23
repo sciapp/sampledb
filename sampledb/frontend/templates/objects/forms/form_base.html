@@ -40,16 +40,50 @@
   <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/calculation.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      setUpCalculation
+    } from "{{ fingerprinted_static('sampledb/js/calculation.js') }}";
+    window.setUpCalculation = setUpCalculation;
+
+    import {
+      fileEventHandler
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}";
+    window.fileEventHandler = fileEventHandler;
+
+    import {
+      conditionalWrapper
+    } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
+    window.conditionalWrapper = conditionalWrapper;
+
+    import {
+      setupImageDragAndDrop
+    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
+    window.setupImageDragAndDrop = setupImageDragAndDrop;
+
+    import {
+      updateTranslationJSON,
+      setTranslationHandler,
+      updateTranslationLanguages,
+      initMarkdownField,
+      updateMarkdownField
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
+    window.updateTranslationJSON = updateTranslationJSON;
+    window.setTranslationHandler = setTranslationHandler;
+    window.updateTranslationLanguages = updateTranslationLanguages;
+    window.initMarkdownField = initMarkdownField;
+    window.updateMarkdownField = updateMarkdownField;
+
+    import {
+      updateObjectPickers
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}";
+    window.updateObjectPickers = updateObjectPickers;
+  </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
-  window.mde_fields = [];
+  window.mdeFields = [];
   let initPhase = true;
   let file_names_by_id = {};
   let form_data = {};
@@ -170,13 +204,13 @@
     });
 
     {% for form_condition in form_conditions %}
-      conditional_wrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
+      conditionalWrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
     {% endfor %}
 
     setObjectFormButtonHandlers()
 
     {% for file_picker in file_pickers %}
-      document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+      document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
     {% endfor %}
 
     {% for add_action, button_id in applied_add_actions.items() %}
@@ -219,11 +253,11 @@
       }
     })
 
-    $.each(window.conditional_wrapper_scripts, function () {
+    $.each(window.conditionalWrapperScripts, function () {
       this();
     });
 
-    window.conditional_wrapper_scripts = [];
+    window.conditionalWrapperScripts = [];
 
     setUpCalculations();
 
@@ -547,10 +581,10 @@
   }
 
   function clearUnusedConditions() {
-      if (window.conditional_wrapper_conditions) {
-        for (const id_prefix of Object.keys(window.conditional_wrapper_conditions)) {
+      if (window.conditionalWrapperConditions) {
+        for (const id_prefix of Object.keys(window.conditionalWrapperConditions)) {
           if ($(`[data-condition-wrapper-for^=${id_prefix}]`).length === 0) {
-            delete window.conditional_wrapper_conditions[id_prefix];
+            delete window.conditionalWrapperConditions[id_prefix];
           }
         }
       }
@@ -591,11 +625,11 @@
       $(`span[id^="${old_prefix}_"][id$="_calculation_help"]`).each(function(_, element) {
         $(element).attr('id', tmp_prefix + $(element).attr('id').substring(old_prefix.length));
       });
-      if (window.conditional_wrapper_conditions) {
-        for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
+      if (window.conditionalWrapperConditions) {
+        for (const [id_prefix, conditions] of Object.entries(window.conditionalWrapperConditions)) {
           if (id_prefix.startsWith(old_prefix)) {
-            delete window.conditional_wrapper_conditions[id_prefix];
-            window.conditional_wrapper_conditions[tmp_prefix + id_prefix.substring(old_prefix.length)] = conditions;
+            delete window.conditionalWrapperConditions[id_prefix];
+            window.conditionalWrapperConditions[tmp_prefix + id_prefix.substring(old_prefix.length)] = conditions;
           }
         }
       }
@@ -618,11 +652,11 @@
       $(`span[id^="${tmp_prefix}_"][id$="_calculation_help"]`).each(function(_, element) {
         $(element).attr('id', new_prefix + $(element).attr('id').substring(tmp_prefix.length));
       });
-      if (window.conditional_wrapper_conditions) {
-        for (const [id_prefix, conditions] of Object.entries(window.conditional_wrapper_conditions)) {
+      if (window.conditionalWrapperConditions) {
+        for (const [id_prefix, conditions] of Object.entries(window.conditionalWrapperConditions)) {
           if (id_prefix.startsWith(tmp_prefix)) {
-            delete window.conditional_wrapper_conditions[id_prefix];
-            window.conditional_wrapper_conditions[new_prefix + id_prefix.substring(tmp_prefix.length)] = conditions;
+            delete window.conditionalWrapperConditions[id_prefix];
+            window.conditionalWrapperConditions[new_prefix + id_prefix.substring(tmp_prefix.length)] = conditions;
           }
         }
       }
@@ -1084,7 +1118,7 @@
         const input = parent.find('input:file');
         $(this).attr('class', $(this).data('template-class'));
         $(this).selectpicker();
-        input.change(fileEventHandler(input.data('id-prefix'), input.data('context-id-token'), "{{ url_for('.temporary_file_upload') }}"));
+        input.change(window.fileEventHandler(input.data('id-prefix'), input.data('context-id-token'), "{{ url_for('.temporary_file_upload') }}"));
       }
     });
 
@@ -1172,13 +1206,13 @@
     $(clone).find('.condition-wrapper').each(function() {
       const id_prefix = $(this).data('id-prefix');
       const conditions = $(this).data('conditions');
-      conditional_wrapper(id_prefix, conditions);
+      conditionalWrapper(id_prefix, conditions);
     });
 
-    $.each(window.conditional_wrapper_scripts, function () {
+    $.each(window.conditionalWrapperScripts, function () {
       this();
     });
-    window.conditional_wrapper_scripts = [];
+    window.conditionalWrapperScripts = [];
   }
 
   function updateRecipeState(clone) {

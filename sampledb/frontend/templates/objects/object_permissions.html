@@ -12,8 +12,8 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-toggle/js/bootstrap-toggle.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     let new_policy_selected_projects = {};
     let new_policy_selected_groups = {};

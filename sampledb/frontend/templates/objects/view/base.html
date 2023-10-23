@@ -1650,8 +1650,7 @@
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
@@ -1659,9 +1658,33 @@
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
-  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      updateTranslationJSON,
+      setTranslationHandler,
+      updateTranslationLanguages,
+      initMarkdownField,
+      updateMarkdownField
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
+    window.updateTranslationJSON = updateTranslationJSON;
+    window.setTranslationHandler = setTranslationHandler;
+    window.updateTranslationLanguages = updateTranslationLanguages;
+    window.initMarkdownField = initMarkdownField;
+    window.updateMarkdownField = updateMarkdownField;
+
+    import {
+      togglePlotlyChartDiv
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
+    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
+
+    import {
+      toggleShowMore
+    } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
+    window.toggleShowMore = toggleShowMore;
+  </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}

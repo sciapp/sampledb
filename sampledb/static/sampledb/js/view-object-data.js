@@ -1,7 +1,14 @@
+'use strict';
+/* eslint-env jquery */
+/* globals Plotly */
 
-function toggleShowMore(prefix) {
-  let properties = $('.show-more-' + prefix);
-  let btn = $('#show-more-' + prefix + '-btn');
+/**
+ * Toggles showing additional object properties.
+ * @param prefix the object prefix
+ */
+function toggleShowMore (prefix) {
+  const properties = $('.show-more-' + prefix);
+  const btn = $('#show-more-' + prefix + '-btn');
   if (properties.hasClass('hidden')) {
     properties.addClass('show').removeClass('hidden');
     btn.text(window.show_less_text);
@@ -11,8 +18,12 @@ function toggleShowMore(prefix) {
   }
 }
 
-$( document ).ready(function() {
-  $(window.plotly_charts).each(function(index, element) {
+$(document).ready(function () {
+  $(window.plotly_charts).each(function (index, element) {
     Plotly.newPlot(element[0], element[1]);
   });
 });
+
+export {
+  toggleShowMore
+};

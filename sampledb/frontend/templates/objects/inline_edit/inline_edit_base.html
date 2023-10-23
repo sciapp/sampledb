@@ -37,17 +37,31 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
     <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
     <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}"></script>
-    <script src="{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}"></script>
-    <script src="{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}"></script>
-    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}" type="module"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      fileEventHandler
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}";
+    window.fileEventHandler = fileEventHandler;
+
+    import {
+      conditionalWrapper
+    } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
+    window.conditionalWrapper = conditionalWrapper;
+
+    import {
+      setupImageDragAndDrop
+    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
+    window.setupImageDragAndDrop = setupImageDragAndDrop;
+  </script>
 
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-        window.mde_fields = [];
+        window.mdeFields = [];
 
         $(function () {
             $('.input-group.date').each(function () {
@@ -104,7 +118,7 @@
             select_language_selectpicker.each(function (_, selectpicker) {
                 updateSelectLanguage(selectpicker);
             });
-            $.each(window.conditional_wrapper_scripts, function () {
+            $.each(window.conditionalWrapperScripts, function () {
                 this();
             });
 
@@ -176,16 +190,18 @@
                 }
             }.bind(tagsinput));
         });
-      {% for form_condition in form_conditions %}
-        conditional_wrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
-      {% endfor %}
+      $(function () {
+        {% for form_condition in form_conditions %}
+          conditionalWrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
+        {% endfor %}
 
-      $.each(window.conditional_wrapper_scripts, function () {
-        this();
+        $.each(window.conditionalWrapperScripts, function () {
+          this();
+        });
+        // wrapped in an onload function to ensure this runs after the module has defined window.fileEventHandler
+        {% for file_picker in file_pickers %}
+          document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+        {% endfor %}
       });
-
-      {% for file_picker in file_pickers %}
-        document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
-      {% endfor %}
     </script>
 {% endblock %}

@@ -15,7 +15,6 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('css/custom.css') }}">
   {% endblock %}
   {% block head_scripts %}
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}"></script>
   {% endblock %}
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     window.application_root_path = '{{ url_for('frontend.index') }}';
