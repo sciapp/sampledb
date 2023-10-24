@@ -69,7 +69,7 @@ def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int,
         object_id=object_id,
         user_id=user_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(object_log_entry)
     db.session.commit()

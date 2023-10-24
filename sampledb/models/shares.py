@@ -45,7 +45,7 @@ class ObjectShare(Model):
             object_id=object_id,
             component_id=component_id,
             policy=policy,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             user_id=user_id
         )
 

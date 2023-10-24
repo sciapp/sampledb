@@ -54,7 +54,7 @@ def object(user: User, action: Action):
 
 
 def test_comments(user: User, object: Object):
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
     comment_id = comments.create_comment(object_id=object.object_id, user_id=user.id, content="Test 1")
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
@@ -65,14 +65,14 @@ def test_comments(user: User, object: Object):
     assert comment.object_id == object.object_id
     assert comment.content == "Test 1"
     assert comment.utc_datetime >= start_datetime
-    assert comment.utc_datetime <= datetime.datetime.utcnow()
+    assert comment.utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     comments.create_comment(object_id=object.object_id, user_id=user.id, content="Test 2")
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 2
     comment2, comment1 = comments.get_comments_for_object(object_id=object.object_id)
     assert comment1.content == "Test 2"
     assert comment2.content == "Test 1"
     assert comment2.utc_datetime >= start_datetime
-    assert comment2.utc_datetime <= datetime.datetime.utcnow()
+    assert comment2.utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_comment_invalid_object(user, object):
@@ -86,7 +86,7 @@ def test_create_comment_invalid_user(user, object):
 
 
 def test_create_fed_comment(user, object, component):
-    dt = datetime.datetime.utcnow()
+    dt = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
     comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id))
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
@@ -100,7 +100,7 @@ def test_create_fed_comment(user, object, component):
 
 
 def test_create_fed_comment_missing_user_id(object, component):
-    dt = datetime.datetime.utcnow()
+    dt = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
     comment = comments.get_comment(comments.create_comment(object.object_id, None, 'Comment text', dt, fed_id=1, component_id=component.id))
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
@@ -114,7 +114,7 @@ def test_create_fed_comment_missing_user_id(object, component):
 
 
 def test_get_fed_comment(object, user, component):
-    dt = datetime.datetime.utcnow()
+    dt = datetime.datetime.now(datetime.timezone.utc)
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 0
     comment = comments.get_comment(comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id))
     assert len(comments.get_comments_for_object(object_id=object.object_id)) == 1
@@ -122,14 +122,14 @@ def test_get_fed_comment(object, user, component):
 
 
 def test_get_fed_comment_missing_component(object, user, component):
-    dt = datetime.datetime.utcnow()
+    dt = datetime.datetime.now(datetime.timezone.utc)
     comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id)
     with pytest.raises(errors.ComponentDoesNotExistError):
         comments.get_comment(1, component.id + 1)
 
 
 def test_get_fed_comment_missing_comment(object, user, component):
-    dt = datetime.datetime.utcnow()
+    dt = datetime.datetime.now(datetime.timezone.utc)
     comments.create_comment(object.object_id, user.id, 'Comment text', dt, fed_id=1, component_id=component.id)
     with pytest.raises(errors.CommentDoesNotExistError):
         comments.get_comment(2, component.id)

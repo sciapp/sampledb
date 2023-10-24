@@ -123,7 +123,7 @@ class InstrumentLogEntryVersion(Model):
             log_entry_id=log_entry_id,
             version_id=version_id,
             content=content,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             content_is_markdown=content_is_markdown,
             event_utc_datetime=event_utc_datetime
         )

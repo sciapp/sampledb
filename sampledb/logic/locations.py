@@ -493,7 +493,7 @@ def assign_location_to_object(
         responsible_user_id=responsible_user_id,
         user_id=user_id,
         description=description,
-        utc_datetime=datetime.datetime.utcnow(),
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc),
         confirmed=(user_id == responsible_user_id),
         declined=False
     )

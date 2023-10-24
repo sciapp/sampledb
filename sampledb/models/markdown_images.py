@@ -44,7 +44,7 @@ class MarkdownImage(Model):
             file_name=file_name,
             content=content,
             user_id=user_id,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             permanent=permanent,
             component_id=component_id
         )

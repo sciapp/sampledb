@@ -223,7 +223,7 @@ def generate_api_access_token(
     :param description: an optional description
     :return: a dict containing the access token information
     """
-    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
     expiration_utc_datetime_str = expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
     access_token = secrets.token_hex(32)
@@ -258,7 +258,7 @@ def remove_expired_api_access_tokens() -> None:
     authentication_methods = Authentication.query.filter_by(
         type=AuthenticationType.API_ACCESS_TOKEN
     ).all()
-    current_utc_datetime = datetime.datetime.utcnow()
+    current_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     for authentication_method in authentication_methods:
         expiration_utc_datetime_str = authentication_method.login['expiration_utc_datetime']
         expiration_utc_datetime = datetime.datetime.strptime(
@@ -286,7 +286,7 @@ def refresh_api_access_token(api_refresh_token: str) -> typing.Optional[typing.D
             Authentication.type == AuthenticationType.API_ACCESS_TOKEN
         )
     ).all()
-    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+    expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
     expiration_utc_datetime_str = expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
 
     for authentication_method in authentication_methods:

@@ -312,7 +312,7 @@ def test_validate_address():
 def test_update_last_sync_timestamp():
     component = add_component(address='https://example.com', uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='')
     assert component.last_sync_timestamp is None
-    timestamp = datetime.datetime.utcnow()
+    timestamp = datetime.datetime.now(datetime.timezone.utc)
     component.update_last_sync_timestamp(last_sync_timestamp=timestamp)
     component = logic.components.get_component(component.id)
     assert component.last_sync_timestamp == timestamp

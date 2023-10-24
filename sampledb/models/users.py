@@ -5,7 +5,7 @@
 
 import enum
 import typing
-from datetime import datetime
+import datetime
 
 from sqlalchemy.orm import Mapped, Query, relationship
 
@@ -52,7 +52,7 @@ class User(Model):
     extra_fields: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    last_modified: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+    last_modified: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     component: Mapped[typing.Optional['Component']] = relationship('Component')
     last_modified_by_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     # named foreign key constraint to allow for manual deletion in empty_database()
@@ -77,7 +77,7 @@ class User(Model):
             extra_fields: typing.Optional[typing.Dict[str, str]] = None,
             fed_id: typing.Optional[int] = None,
             component_id: typing.Optional[int] = None,
-            last_modified: typing.Optional[datetime] = None,
+            last_modified: typing.Optional[datetime.datetime] = None,
             *,
             eln_import_id: typing.Optional[int] = None,
             eln_object_id: typing.Optional[str] = None,
@@ -92,7 +92,7 @@ class User(Model):
             extra_fields=extra_fields if extra_fields is not None else {},
             fed_id=fed_id,
             component_id=component_id,
-            last_modified=last_modified if last_modified is not None else datetime.utcnow(),
+            last_modified=last_modified if last_modified is not None else datetime.datetime.now(datetime.timezone.utc),
             eln_import_id=eln_import_id,
             eln_object_id=eln_object_id
         )
@@ -126,7 +126,7 @@ class UserInvitation(Model):
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     inviter_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    utc_datetime: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     accepted: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
 
     if typing.TYPE_CHECKING:
@@ -149,7 +149,7 @@ class UserFederationAlias(Model):
     role: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
     use_real_role: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
     extra_fields: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
-    last_modified: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+    last_modified: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     user: Mapped[User] = relationship('User')
     component: Mapped['Component'] = relationship('Component')
 
@@ -175,7 +175,7 @@ class UserFederationAlias(Model):
             role: typing.Optional[str] = None,
             use_real_role: bool = False,
             extra_fields: typing.Optional[typing.Dict[str, str]] = None,
-            last_modified: typing.Optional[datetime] = None):
+            last_modified: typing.Optional[datetime.datetime] = None):
         super().__init__(
             user_id=user_id,
             component_id=component_id,
@@ -190,7 +190,7 @@ class UserFederationAlias(Model):
             role=role,
             use_real_role=use_real_role,
             extra_fields=extra_fields if extra_fields is not None else {},
-            last_modified=last_modified if last_modified is not None else datetime.utcnow()
+            last_modified=last_modified if last_modified is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:

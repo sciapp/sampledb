@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime
 import typing
 from uuid import UUID
 
@@ -417,9 +417,9 @@ def _get_str(
 def _get_utc_datetime(
         utc_datetime_str: typing.Any,
         *,
-        default: datetime,
+        default: datetime.datetime,
         mandatory: bool = False
-) -> datetime:
+) -> datetime.datetime:
     ...
 
 
@@ -427,9 +427,9 @@ def _get_utc_datetime(
 def _get_utc_datetime(
         utc_datetime_str: typing.Any,
         *,
-        default: typing.Optional[datetime] = None,
+        default: typing.Optional[datetime.datetime] = None,
         mandatory: typing.Literal[True]
-) -> datetime:
+) -> datetime.datetime:
     ...
 
 
@@ -437,25 +437,25 @@ def _get_utc_datetime(
 def _get_utc_datetime(
         utc_datetime_str: typing.Any,
         *,
-        default: typing.Optional[datetime] = None,
+        default: typing.Optional[datetime.datetime] = None,
         mandatory: bool = False
-) -> typing.Optional[datetime]:
+) -> typing.Optional[datetime.datetime]:
     ...
 
 
 def _get_utc_datetime(
         utc_datetime_str: typing.Any,
         *,
-        default: typing.Optional[datetime] = None,
+        default: typing.Optional[datetime.datetime] = None,
         mandatory: bool = False
-) -> typing.Optional[datetime]:
+) -> typing.Optional[datetime.datetime]:
     if utc_datetime_str is None:
         if mandatory:
             raise errors.InvalidDataExportError('Missing timestamp')
         return default
     try:
-        dt = datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
-        if dt > datetime.utcnow() + timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA']):
+        dt = datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
+        if dt > datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA']):
             raise errors.InvalidDataExportError(f'Timestamp is in the future "{dt}"')
         return dt
     except ValueError:

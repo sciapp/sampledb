@@ -1832,7 +1832,7 @@ def test_object_federation_references(flask_server, user, simple_object, compone
         user_id=fed_user.id,
         data=fed_data,
         schema=simple_object.schema,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
@@ -1887,7 +1887,7 @@ def test_object_federation_references(flask_server, user, simple_object, compone
         user_id=fed_user.id,
         data=data,
         schema=REFERENCES_SCHEMA,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
     session = requests.session()

@@ -260,7 +260,7 @@ class VersionedJSONSerializableObjectTables:
         :param schema: a JSON schema describing data (may be None if action's schema is to be used)
         :param user_id: the ID of the user who created the object
         :param action_id: the ID of the action which was used to create the object
-        :param utc_datetime: the datetime (in UTC) when the object was created (optional, defaults to utcnow())
+        :param utc_datetime: the datetime (in UTC) when the object was created (optional, defaults to now(timezone.utc))
         :param fed_object_id: the ID of this object on a federated component
         :param fed_version_id: the version ID of this object on a federated component
         :param eln_import_id: the ID of an .eln file import
@@ -274,7 +274,7 @@ class VersionedJSONSerializableObjectTables:
         """
         assert connection is not None  # ensured by decorator
         if utc_datetime is None and fed_object_id is None:
-            utc_datetime = datetime.datetime.utcnow()
+            utc_datetime = datetime.datetime.now(datetime.timezone.utc)
         if schema is not None or data is not None:
             if schema is None and action_id is not None and self._action_schema_column is not None:
                 action = connection.execute(
@@ -363,7 +363,7 @@ class VersionedJSONSerializableObjectTables:
         :param data: a JSON serializable object containing the updated object data
         :param schema: a JSON schema describing data (optional, defaults to the current object schema)
         :param user_id: the ID of the user who updated the object
-        :param utc_datetime: the datetime (in UTC) when the object was updated (optional, defaults to utcnow())
+        :param utc_datetime: the datetime (in UTC) when the object was updated (optional, defaults to now(timezone.utc))
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param validate_schema: whether the schema should be validated
         :param validate_data: whether the data should be validated
@@ -372,7 +372,7 @@ class VersionedJSONSerializableObjectTables:
         """
         assert connection is not None  # ensured by decorator
         if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
+            utc_datetime = datetime.datetime.now(datetime.timezone.utc)
         if schema is not None or data is not None:
             if schema is None:
                 schema_row = connection.execute(
@@ -636,14 +636,14 @@ class VersionedJSONSerializableObjectTables:
         :param schema: a JSON schema describing data (optional, defaults to the current object schema)
         :param user_id: the ID of the user who updated the object
         :param utc_datetime: the datetime (in UTC) when the object was updated
-        :param utc_datetime_subversion: the datetime (in UTC) when the object update has been applied (optional, defaults to utcnow())
+        :param utc_datetime_subversion: the datetime (in UTC) when the object update has been applied (optional, defaults to now(timezone.utc))
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param allow_disabled_languages: whether using disabled languages should be allowed in this update
         :return: the updated object as object_type or None, if the object does not exist
         """
         assert connection is not None  # ensured by decorator
         if utc_datetime_subversion is None:
-            utc_datetime_subversion = datetime.datetime.utcnow()
+            utc_datetime_subversion = datetime.datetime.now(datetime.timezone.utc)
         if schema is None and self._action_schema_column is not None:
             action = connection.execute(
                 db

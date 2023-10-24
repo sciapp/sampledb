@@ -60,7 +60,7 @@ class File(Model):
             id=file_id,
             object_id=object_id,
             user_id=user_id,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             data=data,
             binary_data=binary_data,
             fed_id=fed_id,

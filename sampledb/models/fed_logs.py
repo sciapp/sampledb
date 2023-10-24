@@ -54,7 +54,7 @@ class FedUserLogEntry(Model):
             user_id=user_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -102,7 +102,7 @@ class FedObjectLogEntry(Model):
             object_id=object_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             user_id=user_id
         )
 
@@ -147,7 +147,7 @@ class FedLocationLogEntry(Model):
             location_id=location_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -191,7 +191,7 @@ class FedLocationTypeLogEntry(Model):
             location_type_id=location_type_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -235,7 +235,7 @@ class FedActionLogEntry(Model):
             action_id=action_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -279,7 +279,7 @@ class FedActionTypeLogEntry(Model):
             action_type_id=action_type_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -323,7 +323,7 @@ class FedInstrumentLogEntry(Model):
             instrument_id=instrument_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -367,7 +367,7 @@ class FedCommentLogEntry(Model):
             comment_id=comment_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -418,7 +418,7 @@ class FedFileLogEntry(Model):
             file_id=file_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -462,7 +462,7 @@ class FedObjectLocationAssignmentLogEntry(Model):
             object_location_assignment_id=object_location_assignment_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:

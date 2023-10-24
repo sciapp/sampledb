@@ -58,7 +58,7 @@ def component():
 def test_files(user: User, object: Object, tmpdir):
     files.FILE_STORAGE_PATH = tmpdir
 
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
     files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="test.png", save_content=lambda stream: stream.write(b"1"))
     assert len(files.get_files_for_object(object_id=object.object_id)) == 1
@@ -69,7 +69,7 @@ def test_files(user: User, object: Object, tmpdir):
     assert file.object_id == object.object_id
     assert file.original_file_name == "test.png"
     assert file.utc_datetime >= start_datetime
-    assert file.utc_datetime <= datetime.datetime.utcnow()
+    assert file.utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert file.real_file_name == tmpdir.join(str(object.action_id)).join(str(object.id)).join("0000_test.png")
     assert file.open().read() == b"1"
     files.create_local_file(object_id=object.object_id, user_id=user.id, file_name="example.txt", save_content=lambda stream: None)
@@ -80,7 +80,7 @@ def test_files(user: User, object: Object, tmpdir):
     assert file1.id == 1
     assert file2.id == 0
     assert file2.utc_datetime >= start_datetime
-    assert file2.utc_datetime <= datetime.datetime.utcnow()
+    assert file2.utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_invalid_file_name(user: User, object: Object, tmpdir):

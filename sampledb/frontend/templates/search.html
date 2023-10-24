@@ -110,7 +110,7 @@
         <div class="form-group row">
           <label class="col-md-2" style="font-weight: normal">{{ _('Date') }}</label>
           <div class="col-md-4">
-            <div class="input-group date" data-datetime="{{ datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') }}">
+            <div class="input-group date" data-datetime="{{ datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S') }}">
               <input type="text" class="form-control input-condition-field input-condition-datetime" autocomplete="off"/>
               <span class="input-group-addon">
                   <span class="glyphicon glyphicon-calendar"></span>

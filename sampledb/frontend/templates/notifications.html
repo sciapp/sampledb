@@ -58,7 +58,7 @@
                   {{ _('<a href="%(inviter_url)s">%(inviter_name)s</a> has invited you to the basic group "<a href="%(group_url)s">%(group_name)s</a>":', inviter_url=url_for('.user_profile', user_id=notification.data['inviter_id']), inviter_name=get_user(notification.data['inviter_id']).name, group_url=url_for('.group', group_id=notification.data['group_id']), group_name=get_group(notification.data['group_id']).name | get_translated_text) }}
                   {% if is_group_member(current_user.id, notification.data['group_id']) %}
                     {{ _('You are already a member of this basic group.') }}
-                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
+                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now(datetime.timezone.utc) %}
                     <a href="{{ notification.data['confirmation_url'] | safe }}">{{ _('Join Basic Group') }}</a>
                   {% else %}
                     {{ _('The invitation has expired at %(expiration_datetime)s.', expiration_datetime=notification.data['expiration_utc_datetime'] | babel_format_datetime) }}
@@ -72,7 +72,7 @@
                   {{ _('<a href="%(inviter_url)s">%(inviter_name)s</a> has invited you to the project group "<a href="%(project_url)s">%(project_name)s</a>":', inviter_url=url_for('.user_profile', user_id=notification.data['inviter_id']), inviter_name=get_user(notification.data['inviter_id']).name, project_url=url_for('.project', project_id=notification.data['project_id']), project_name=get_project(notification.data['project_id']).name | get_translated_text) }}
                   {% if is_project_member(current_user.id, notification.data['project_id']) %}
                     {{ _('You are already a member of this project group.')}}
-                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.utcnow() %}
+                  {% elif notification.data['expiration_utc_datetime'] is none or datetime.datetime.strptime(notification.data['expiration_utc_datetime'], '%Y-%m-%d %H:%M:%S') > datetime.datetime.now(datetime.timezone.utc) %}
                     <a href="{{ notification.data['confirmation_url'] | safe }}">{{ _('Join Project Group') }}</a>
                   {% else %}
                     {{ _('The invitation has expired at %(expiration_datetime)s.', expiration_datetime=notification.data['expiration_utc_datetime'] | babel_format_datetime) }}

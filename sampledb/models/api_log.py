@@ -61,7 +61,7 @@ class APILogEntry(Model):
             api_token_id=api_token_id,
             method=method,
             route=route,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
         )
 
     def __repr__(self) -> str:

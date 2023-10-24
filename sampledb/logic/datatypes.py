@@ -130,7 +130,7 @@ class DateTime:
 
     def __init__(self, utc_datetime: typing.Optional[datetime.datetime] = None) -> None:
         if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
+            utc_datetime = datetime.datetime.now(datetime.timezone.utc)
         self.utc_datetime = utc_datetime.replace(microsecond=0)
 
     def __repr__(self) -> str:

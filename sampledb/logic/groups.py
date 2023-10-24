@@ -77,7 +77,7 @@ class GroupInvitation:
     @property
     def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return bool(datetime.datetime.utcnow() >= expiration_datetime)
+        return bool(datetime.datetime.now(datetime.timezone.utc) >= expiration_datetime)
 
 
 def create_group(
@@ -310,7 +310,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
         group_id=group_id,
         user_id=user_id,
         inviter_id=inviter_id,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(invitation)
     db.session.commit()
@@ -324,7 +324,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
         secret_key=flask.current_app.config['SECRET_KEY']
     )
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
-    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=expiration_time_limit)
+    expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.group", group_id=group_id, token=token, _external=True)
     create_notification_for_being_invited_to_a_group(user_id, group_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
@@ -424,7 +424,7 @@ def get_group_invitations(
         group_invitations_query = group_invitations_query.filter_by(accepted=False)
     if not include_expired_invitations:
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
-        expired_invitation_datetime = datetime.datetime.utcnow() - datetime.timedelta(seconds=expiration_time_limit)
+        expired_invitation_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=expiration_time_limit)
         group_invitations_query = group_invitations_query.filter(groups.GroupInvitation.utc_datetime > expired_invitation_datetime)
     group_invitations = group_invitations_query.order_by(groups.GroupInvitation.utc_datetime).all()
     if not group_invitations:

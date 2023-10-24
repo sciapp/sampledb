@@ -75,7 +75,7 @@ def _store_new_log_entry(type: UserLogEntryType, user_id: int, data: typing.Dict
         type=type,
         user_id=user_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(user_log_entry)
     db.session.commit()

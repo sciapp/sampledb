@@ -45,7 +45,7 @@ class DataverseExport(Model):
             object_id=object_id,
             dataverse_url=dataverse_url,
             user_id=user_id,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             status=status
         )
 

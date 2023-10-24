@@ -42,7 +42,7 @@ def _get_header(component: Component) -> typing.Dict[str, typing.Any]:
             'major': PROTOCOL_VERSION_MAJOR,
             'minor': PROTOCOL_VERSION_MINOR
         },
-        'sync_timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'),
+        'sync_timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f'),
     }
 
 

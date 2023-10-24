@@ -220,7 +220,7 @@ def test_status_codes(flask_server, user, driver):
                     '_type': 'timeseries',
                     'units': 'm',
                     'data': [
-                        (datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'), 0, 0)
+                        (datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f'), 0, 0)
                     ]
                 }
             },

@@ -53,7 +53,7 @@ class Comment(Model):
             object_id=object_id,
             user_id=user_id,
             content=content,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             fed_id=fed_id,
             component_id=component_id
         )

@@ -93,7 +93,7 @@ def test_post_comments(flask_server, user: User, object_id: int):
         'csrf_token': csrf_token,
         content_name: 'Test Comment'
     }
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     r = session.post(flask_server.base_url + 'objects/{}/comments/'.format(object_id), data=data)
     assert r.status_code == 200
     assert len(sampledb.logic.comments.get_comments_for_object(object_id=object_id)) == 1
@@ -103,5 +103,5 @@ def test_post_comments(flask_server, user: User, object_id: int):
     assert comment.object_id == object_id
     assert comment.content == "Test Comment"
     assert comment.utc_datetime >= start_datetime
-    assert comment.utc_datetime <= datetime.datetime.utcnow()
+    assert comment.utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 

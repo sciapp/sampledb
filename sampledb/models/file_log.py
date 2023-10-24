@@ -62,7 +62,7 @@ class FileLogEntry(Model):
             file_id=file_id,
             user_id=user_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
         self.user: typing.Optional['User'] = None
 

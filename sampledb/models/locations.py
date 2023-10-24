@@ -195,7 +195,7 @@ class ObjectLocationAssignment(Model):
             responsible_user_id=responsible_user_id,
             user_id=user_id,
             description=description,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             confirmed=confirmed,
             fed_id=fed_id,
             component_id=component_id,

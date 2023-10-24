@@ -191,42 +191,42 @@ def test_quantity_between_excluding(objects):
 
 
 def test_datetime_equals(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime - datetime.timedelta(days=1))}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_equals(data['dt'], datatypes.DateTime(utc_datetime)))
 
 
 def test_datetime_less_than(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     assert [] == objects.get_current_objects(lambda data: where_filters.datetime_less_than(data['dt'], datatypes.DateTime(utc_datetime)))
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_less_than(data['dt'], datatypes.DateTime(utc_datetime + datetime.timedelta(days=1))))
 
 
 def test_datetime_less_than_equals(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_less_than_equals(data['dt'], datatypes.DateTime(utc_datetime)))
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_less_than_equals(data['dt'], datatypes.DateTime(utc_datetime + datetime.timedelta(seconds=1))))
 
 
 def test_datetime_greater_than(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     assert [] == objects.get_current_objects(lambda data: where_filters.datetime_greater_than(data['dt'], datatypes.DateTime(utc_datetime)))
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_greater_than(data['dt'], datatypes.DateTime(utc_datetime - datetime.timedelta(days=1))))
 
 
 def test_datetime_greater_than_equals(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_greater_than_equals(data['dt'], datatypes.DateTime(utc_datetime)))
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_greater_than_equals(data['dt'], datatypes.DateTime(utc_datetime - datetime.timedelta(seconds=1))))
 
 
 def test_datetime_between(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime - datetime.timedelta(days=1))}, schema={}, user_id=0)
     assert [object1] == objects.get_current_objects(lambda data: where_filters.datetime_between(data['dt'], datatypes.DateTime(utc_datetime - datetime.timedelta(seconds=1)), datatypes.DateTime(utc_datetime)))
@@ -234,7 +234,7 @@ def test_datetime_between(objects):
 
 
 def test_datetime_between_excluding(objects):
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     object1 = objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime)}, schema={}, user_id=0)
     objects.create_object(action_id=0, data={'dt': datatypes.DateTime(utc_datetime - datetime.timedelta(days=1))}, schema={}, user_id=0)
     assert [] == objects.get_current_objects(lambda data: where_filters.datetime_between(data['dt'], datatypes.DateTime(utc_datetime - datetime.timedelta(days=1)), datatypes.DateTime(utc_datetime), including=False))

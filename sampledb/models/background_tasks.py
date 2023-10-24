@@ -38,7 +38,7 @@ class BackgroundTask(Model):
 
     @staticmethod
     def delete_expired_tasks() -> None:
-        expired_tasks = BackgroundTask.query.filter(BackgroundTask.expiration_date <= datetime.datetime.utcnow()).all()
+        expired_tasks = BackgroundTask.query.filter(BackgroundTask.expiration_date <= datetime.datetime.now(datetime.timezone.utc)).all()
         for task in expired_tasks:
             db.session.delete(task)
         db.session.commit()

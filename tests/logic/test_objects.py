@@ -103,8 +103,8 @@ def test_create_object(user, action) -> None:
     assert object1.user_id is not None and object1.user_id == user.id
     assert object1.data == data
     assert object1.schema == action.schema
-    assert object1.utc_datetime < datetime.datetime.utcnow()
-    assert object1.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object1.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object1.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object1] == sampledb.logic.objects.get_objects()
     assert object1 == sampledb.logic.objects.get_object(object1.object_id)
 
@@ -149,8 +149,8 @@ def test_update_object(user, action, user2) -> None:
     assert object2.user_id is not None and object2.user_id == user2.id
     assert object2.data['name']['text'] == 'Modified Example'
     assert object2.schema == action.schema
-    assert object2.utc_datetime < datetime.datetime.utcnow()
-    assert object2.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object2.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object2.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object2] == sampledb.logic.objects.get_objects()
     assert object2 == sampledb.logic.objects.get_object(object2.object_id)
 

@@ -43,7 +43,7 @@ class SciCatExport(Model):
             scicat_pid=scicat_pid,
             user_id=user_id,
             type=type,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
