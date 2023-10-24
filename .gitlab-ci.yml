@@ -168,6 +168,28 @@ check-migrations-postgres-13:
     POSTGRES_HOST: postgres13
     SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres13:5432/postgres"
 
+check-migrations-postgres-14:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:14
+      alias: postgres14
+      variables:
+        POSTGRES_HOST: postgres14
+  variables:
+    POSTGRES_HOST: postgres14
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres14:5432/postgres"
+
+check-migrations-postgres-15:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:15
+      alias: postgres15
+      variables:
+        POSTGRES_HOST: postgres15
+  variables:
+    POSTGRES_HOST: postgres15
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres15:5432/postgres"
+
 check-translations:
   stage: test
   needs: []
