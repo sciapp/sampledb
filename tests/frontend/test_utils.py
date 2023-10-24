@@ -3,6 +3,8 @@ import glob
 import os.path
 import re
 
+import markupsafe
+
 import sampledb
 import sampledb.frontend.utils as utils
 
@@ -346,3 +348,416 @@ def test_custom_format_quantity_time():
     data['magnitude'] = 30 + 15 / 60 + 30.1 / 3600
     schema['display_digits'] = 5
     assert utils.custom_format_quantity(data, schema) == '30:15:30.10000\u202fh'
+
+
+def test_get_search_paths():
+    assert utils.get_search_paths([], []) == (
+        {},
+        {},
+        {}
+    )
+    all_action_types = sampledb.logic.action_types.get_action_types()
+    assert utils.get_search_paths([], all_action_types) == (
+        {},
+        {},
+        {
+            action_type.id: {}
+            for action_type in all_action_types
+        }
+    )
+    schema = {
+        "type": "object",
+        "title": "Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Text"
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    assert utils.get_search_paths([], all_action_types) == (
+        {},
+        {},
+        {
+            action_type.id: {}
+            for action_type in all_action_types
+        }
+    )
+    assert utils.get_search_paths([action], all_action_types) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Text"]
+            }
+        },
+        {
+            action.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    schema["properties"]["name"]["title"] = "Name"
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    assert utils.get_search_paths([action2], all_action_types) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Name"]
+            }
+        },
+        {
+            action2.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Name"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Name"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    assert utils.get_search_paths([action, action2], all_action_types) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Text", "Name"]
+            }
+        },
+        {
+            action.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                }
+            },
+            action2.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Name"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text", "Name"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+
+    schema = {
+        "type": "object",
+        "title": "Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Text"
+            },
+            "other": {
+                "type": "object_reference",
+                "title": "Object Reference"
+            }
+        },
+        "required": [
+            "name"
+        ]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    assert utils.get_search_paths([action], all_action_types) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Text"]
+            },
+            "other": {
+                "types": ["object_reference"],
+                "titles": ["Object Reference"]
+            }
+        },
+        {
+            action.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["object_reference"],
+                    "titles": ["Object Reference"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["object_reference"],
+                    "titles": ["Object Reference"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    schema["properties"]["other"]["type"] = "text"
+    action2 = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    assert utils.get_search_paths([action, action2], all_action_types, valid_property_types=("object_reference",)) == (
+        {
+            "other": {
+                "types": ["object_reference"],
+                "titles": ["Object Reference"]
+            }
+        },
+        {
+            action.id: {
+                "other": {
+                    "types": ["object_reference"],
+                    "titles": ["Object Reference"]
+                }
+            },
+            action2.id: {}
+        },
+        {
+            action_type.id: {
+                "other": {
+                    "types": ["object_reference"],
+                    "titles": ["Object Reference"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    assert utils.get_search_paths([action, action2], all_action_types, valid_property_types=("object_reference",), include_file_name=True) == (
+        {
+            "other": {
+                "types": ["object_reference"],
+                "titles": ["Object Reference"]
+            }
+        },
+        {
+            action.id: {
+                "other": {
+                    "types": ["object_reference"],
+                    "titles": ["Object Reference"]
+                }
+            },
+            action2.id: {}
+        },
+        {
+            action_type.id: {
+                "other": {
+                    "types": ["object_reference"],
+                    "titles": ["Object Reference"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    assert utils.get_search_paths([action, action2], all_action_types, valid_property_types=("text",), include_file_name=True) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Text"]
+            },
+            "other": {
+                "types": ["text"],
+                "titles": ["Object Reference"]
+            },
+            "file_name": {
+                "types": ["text"],
+                "titles": ["File Name"]
+            }
+        },
+        {
+            action.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "file_name": {
+                    "types": ["text"],
+                    "titles": ["File Name"]
+                }
+            },
+            action2.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["text"],
+                    "titles": ["Object Reference"]
+                },
+                "file_name": {
+                    "types": ["text"],
+                    "titles": ["File Name"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["text"],
+                    "titles": ["Object Reference"]
+                },
+                "file_name": {
+                    "types": ["text"],
+                    "titles": ["File Name"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    assert utils.get_search_paths([action, action2], all_action_types, valid_property_types=("text",), include_file_name=False) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Text"]
+            },
+            "other": {
+                "types": ["text"],
+                "titles": ["Object Reference"]
+            }
+        },
+        {
+            action.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                }
+            },
+            action2.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["text"],
+                    "titles": ["Object Reference"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["text"],
+                    "titles": ["Object Reference"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )
+    action_type = sampledb.logic.action_types.get_action_type(sampledb.logic.action_types.ActionType.SAMPLE_CREATION)
+    sampledb.logic.action_types.update_action_type(
+        action_type_id=action_type.id,
+        admin_only=action_type.admin_only,
+        show_on_frontpage=action_type.show_on_frontpage,
+        show_in_navbar=action_type.show_in_navbar,
+        enable_labels=action_type.enable_labels,
+        enable_files=False,
+        enable_locations=action_type.enable_locations,
+        enable_publications=action_type.enable_publications,
+        enable_comments=action_type.enable_comments,
+        enable_activity_log=action_type.enable_activity_log,
+        enable_related_objects=action_type.enable_related_objects,
+        enable_project_link=action_type.enable_project_link,
+        enable_instrument_link=action_type.enable_instrument_link,
+        disable_create_objects=action_type.disable_create_objects,
+        is_template=action_type.is_template,
+        usable_in_action_type_ids=[other_action_type.id for other_action_type in action_type.usable_in_action_types],
+        scicat_export_type=action_type.scicat_export_type,
+    )
+    all_action_types = sampledb.logic.action_types.get_action_types()
+    # reload actions so they have the updated type
+    action = sampledb.logic.actions.get_action(action.id)
+    action2 = sampledb.logic.actions.get_action(action2.id)
+    assert utils.get_search_paths([action, action2], all_action_types, valid_property_types=("text",), include_file_name=True) == (
+        {
+            "name": {
+                "types": ["text"],
+                "titles": ["Text"]
+            },
+            "other": {
+                "types": ["text"],
+                "titles": ["Object Reference"]
+            }
+        },
+        {
+            action.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                }
+            },
+            action2.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["text"],
+                    "titles": ["Object Reference"]
+                }
+            }
+        },
+        {
+            action_type.id: {
+                "name": {
+                    "types": ["text"],
+                    "titles": ["Text"]
+                },
+                "other": {
+                    "types": ["text"],
+                    "titles": ["Object Reference"]
+                }
+            } if action_type.id == sampledb.logic.action_types.ActionType.SAMPLE_CREATION else {}
+            for action_type in all_action_types
+        }
+    )

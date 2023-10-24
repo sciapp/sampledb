@@ -736,7 +736,8 @@ def get_search_paths(
             'object_reference',
             'sample',
             'measurement',
-        )
+        ),
+        include_file_name: bool = False
 ) -> typing.Tuple[typing.Dict[str, SearchPathInfo], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]]]:
     search_paths: typing.Dict[str, SearchPathInfo] = {}
     search_paths_by_action: typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]] = {}
@@ -749,6 +750,7 @@ def get_search_paths(
         search_paths_by_action[action.id] = {}
         if action.type_id not in search_paths_by_action_type:
             search_paths_by_action_type[action.type_id] = {}
+        property_infos = []
         for property_path, property_info in get_property_paths_for_schema(
                 schema=action.schema,
                 valid_property_types=set(valid_property_types),
@@ -763,20 +765,29 @@ def get_search_paths(
             if property_type in {'object_reference', 'sample', 'measurement'}:
                 # unify object_reference, sample and measurement
                 property_type = 'object_reference'
-            property_infos = SearchPathInfo(
+            property_infos.append((property_path, property_type, property_title))
+        if include_file_name and action.type and action.type.enable_files and 'text' in valid_property_types:
+            property_infos.append(('file_name', 'text', markupsafe.escape('File Name')))
+        for property_path, property_type, property_title in property_infos:
+            search_paths_by_action[action.id][property_path] = SearchPathInfo(
                 types=[property_type],
                 titles=[property_title]
             )
-            search_paths_by_action[action.id][property_path] = property_infos
             if property_path not in search_paths_by_action_type[action.type_id]:
-                search_paths_by_action_type[action.type_id][property_path] = property_infos
+                search_paths_by_action_type[action.type_id][property_path] = SearchPathInfo(
+                    types=[property_type],
+                    titles=[property_title]
+                )
             else:
                 if property_title not in search_paths_by_action_type[action.type_id][property_path]['titles']:
                     search_paths_by_action_type[action.type_id][property_path]['titles'].append(property_title)
                 if property_type not in search_paths_by_action_type[action.type_id][property_path]['types']:
                     search_paths_by_action_type[action.type_id][property_path]['types'].append(property_type)
             if property_path not in search_paths:
-                search_paths[property_path] = property_infos
+                search_paths[property_path] = SearchPathInfo(
+                    types=[property_type],
+                    titles=[property_title]
+                )
             else:
                 if property_title not in search_paths[property_path]['titles']:
                     search_paths[property_path]['titles'].append(property_title)
