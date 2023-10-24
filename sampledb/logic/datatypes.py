@@ -146,7 +146,7 @@ class DateTime:
 
     @classmethod
     def from_json(cls, obj: typing.Dict[str, str]) -> 'DateTime':
-        return cls(datetime.datetime.strptime(obj['utc_datetime'], cls.FORMAT_STRING))
+        return cls(datetime.datetime.strptime(obj['utc_datetime'], cls.FORMAT_STRING).replace(tzinfo=datetime.timezone.utc))
 
 
 @JSONEncoder.serializable_type('quantity')

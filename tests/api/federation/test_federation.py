@@ -132,7 +132,7 @@ def test_get_users(flask_server):
         'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
         'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
-    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
+    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc) <= ts_after_sync
 
     parameters = {
         'last_sync_timestamp': ts1.strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -149,7 +149,7 @@ def test_get_users(flask_server):
         'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
         'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
-    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
+    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc) <= ts_after_sync
 
     parameters = {
         'last_sync_timestamp': ts2.strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -166,7 +166,7 @@ def test_get_users(flask_server):
         'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
         'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
-    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
+    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc) <= ts_after_sync
 
     parameters = {
         'last_sync_timestamp': ts3.strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -183,7 +183,7 @@ def test_get_users(flask_server):
         'major': logic.federation.update.PROTOCOL_VERSION_MAJOR,
         'minor': logic.federation.update.PROTOCOL_VERSION_MINOR
     }
-    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f') <= ts_after_sync
+    assert ts_before_sync <= datetime.datetime.strptime(result['header']['sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc) <= ts_after_sync
 
     r = requests.get(flask_server.base_url + 'federation/v1/shares/users/', headers=headers)
     assert r.status_code == 200

@@ -3789,7 +3789,7 @@ def test_update_shares(component, users, groups, projects):
             assert sampledb.logic.shares.parse_object_share_import_status(kwargs['json']) is not None
         if 'json' in kwargs and 'utc_datetime' in kwargs['json']:
             utc_datetime_str = kwargs['json']['utc_datetime']
-            datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S')
+            datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
             kwargs['json']['utc_datetime'] = None
     assert request_data == [
         ((), {
@@ -4231,8 +4231,8 @@ def test_import_object_import_status(component):
     assert import_status['success']
     assert not import_status['notes']
     assert import_status['object_id'] == object.id
-    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') >= start_datetime
-    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now(datetime.timezone.utc)
+    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc) >= start_datetime
+    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc) <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_schema_entry_preprocessor(action):

@@ -50,7 +50,7 @@ def _get_last_sync(args: typing.Dict[str, typing.Any]) -> typing.Optional[dateti
     if 'last_sync_timestamp' not in args.keys():
         return None
     try:
-        return datetime.datetime.strptime(args['last_sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+        return datetime.datetime.strptime(args['last_sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc)
     except ValueError:
         return None
 

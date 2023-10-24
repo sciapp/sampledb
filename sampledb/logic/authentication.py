@@ -264,7 +264,7 @@ def remove_expired_api_access_tokens() -> None:
         expiration_utc_datetime = datetime.datetime.strptime(
             expiration_utc_datetime_str,
             '%Y-%m-%d %H:%M:%S'
-        )
+        ).replace(tzinfo=datetime.timezone.utc)
         if expiration_utc_datetime <= current_utc_datetime:
             db.session.delete(authentication_method)
     db.session.commit()

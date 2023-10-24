@@ -18,7 +18,7 @@ import typing
 from io import BytesIO
 from itertools import zip_longest
 from urllib.parse import quote_plus
-from datetime import datetime
+from datetime import datetime, timezone
 from math import log10, floor
 
 import flask
@@ -243,7 +243,8 @@ def custom_format_datetime(
             format2 = 'medium'
             return format_datetime(utc_datetime, format=format2)
         else:
-            utc_datetime = pytz.utc.localize(utc_datetime)
+            if utc_datetime.tzinfo is None:
+                utc_datetime = pytz.utc.localize(utc_datetime)
             local_datetime = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
             return local_datetime.strftime(format)
     except ValueError:
@@ -435,7 +436,7 @@ def custom_format_quantity(
 
 @JinjaFilter()
 def parse_datetime_string(datetime_string: str) -> datetime:
-    return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S')
+    return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
 
 
 @JinjaFilter()
@@ -1348,7 +1349,7 @@ def to_timeseries_data(
     relative_times: typing.List[typing.Union[int, float]] = []
     if isinstance(data['data'][0][0], str):
         entries = list(sorted(
-            (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
+            (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc), entry[1], entry[2])
             for entry in data['data']
         ))
         utc_datetimes = [
@@ -1425,7 +1426,7 @@ def to_timeseries_data(
         # convert datetimes to local timezone
         local_timezone = pytz.timezone(current_user.timezone or 'UTC')
         local_datetimes = [
-            pytz.utc.localize(utc_datetime).astimezone(local_timezone)
+            utc_datetime.astimezone(local_timezone)
             for utc_datetime in utc_datetimes
         ]
         time_strings = [
@@ -1466,12 +1467,11 @@ def to_timeseries_csv(
             # convert datetimes from UTC if necessary
             for row in rows:
                 try:
-                    parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
+                    utc_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
                 except ValueError:
                     continue
-                local_datetime = pytz.utc.localize(parsed_datetime)
-                utc_datetime = local_datetime.astimezone(user_timezone)
-                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+                local_datetime = utc_datetime.astimezone(user_timezone)
+                row[0] = local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
     csv_file = io.StringIO()
     writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(rows)

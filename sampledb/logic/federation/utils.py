@@ -454,7 +454,7 @@ def _get_utc_datetime(
             raise errors.InvalidDataExportError('Missing timestamp')
         return default
     try:
-        dt = datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S.%f')
+        dt = datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc)
         if dt > datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA']):
             raise errors.InvalidDataExportError(f'Timestamp is in the future "{dt}"')
         return dt

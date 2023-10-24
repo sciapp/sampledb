@@ -270,7 +270,7 @@ def test_hide_file(user: User, object: Object, tmpdir):
 
 
 def test_create_fed_url_file(object, user, component):
-    dt = datetime.datetime.fromtimestamp(1430674212)
+    dt = datetime.datetime.fromtimestamp(1430674212).replace(tzinfo=datetime.timezone.utc)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
     files.create_fed_file(
         object_id=object.object_id,
@@ -327,7 +327,7 @@ def test_create_fed_url_file(object, user, component):
 
 
 def test_create_fed_url_file_invalid_params(object, user, component):
-    dt = datetime.datetime.fromtimestamp(1430674212)
+    dt = datetime.datetime.fromtimestamp(1430674212).replace(tzinfo=datetime.timezone.utc)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
     with pytest.raises(TypeError):
         files.create_fed_file(
@@ -393,7 +393,7 @@ def test_create_fed_url_file_invalid_params(object, user, component):
 
 
 def test_create_fed_binary_file(object, user, component):
-    dt = datetime.datetime.fromtimestamp(1430674212)
+    dt = datetime.datetime.fromtimestamp(1430674212).replace(tzinfo=datetime.timezone.utc)
     binary_data = os.urandom(256)
     assert len(files.get_files_for_object(object_id=object.object_id)) == 0
     files.create_fed_file(
