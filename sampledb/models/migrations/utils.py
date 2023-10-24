@@ -193,3 +193,33 @@ def enum_value_migration(enum_name: str, value_name: str) -> bool:
         return False
     add_enum_value(enum_name, value_name)
     return True
+
+
+def timestamp_add_timezone_utc_migration(table_name: str, column_name: str) -> bool:
+    """
+    Perform a migration for converting a TIMESTAMP WITHOUT TIME ZONE column to
+    type TIMESTAMP WITH TIME ZONE using UTC for the conversion.
+
+    :param table_name: the name of the table
+    :param column_name: the name of the column to convert
+    :return: whether the migration was performed
+    """
+    if db.session.execute(
+        db.text("""
+            SELECT data_type
+            FROM information_schema.columns
+            WHERE table_name = :table_name AND column_name = :column_name
+        """),
+        params={
+            'table_name': table_name,
+            'column_name': column_name
+        }
+    ).scalar() == 'timestamp with time zone':
+        return False
+    db.session.execute(db.text(f"""
+        ALTER TABLE {table_name}
+        ALTER {column_name}
+        TYPE TIMESTAMP WITH TIME ZONE
+        USING {column_name} AT TIME ZONE 'UTC'
+    """))
+    return True

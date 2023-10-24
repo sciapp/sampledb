@@ -32,7 +32,7 @@ class Comment(Model):
     user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     author: Mapped[typing.Optional['User']] = relationship('User')
     content: Mapped[str] = db.Column(db.Text, nullable=False)
-    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     component: Mapped[typing.Optional['Component']] = relationship('Component')

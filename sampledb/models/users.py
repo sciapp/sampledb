@@ -52,7 +52,7 @@ class User(Model):
     extra_fields: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
-    last_modified: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    last_modified: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     component: Mapped[typing.Optional['Component']] = relationship('Component')
     last_modified_by_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     # named foreign key constraint to allow for manual deletion in empty_database()
@@ -126,7 +126,7 @@ class UserInvitation(Model):
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     inviter_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    utc_datetime: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     accepted: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
 
     if typing.TYPE_CHECKING:
@@ -149,7 +149,7 @@ class UserFederationAlias(Model):
     role: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
     use_real_role: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
     extra_fields: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False, default={}, server_default=db.text("'{}'::json"))
-    last_modified: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    last_modified: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     user: Mapped[User] = relationship('User')
     component: Mapped['Component'] = relationship('Component')
 

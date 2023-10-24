@@ -160,7 +160,7 @@ class VersionedJSONSerializableObjectTables:
             db.Column('data', postgresql.JSONB),
             db.Column('schema', postgresql.JSONB),
             db.Column('user_id', db.Integer),
-            db.Column('utc_datetime', db.DateTime),
+            db.Column('utc_datetime', db.TIMESTAMP(timezone=True)),
             db.Column('fed_object_id', db.Integer),
             db.Column('fed_version_id', db.Integer),
             db.Column('component_id', db.Integer),
@@ -183,7 +183,7 @@ class VersionedJSONSerializableObjectTables:
             db.Column('data', postgresql.JSONB, nullable=True),
             db.Column('schema', postgresql.JSONB, nullable=True),
             db.Column('user_id', db.Integer, nullable=True),
-            db.Column('utc_datetime', db.DateTime, nullable=True),
+            db.Column('utc_datetime', db.TIMESTAMP(timezone=True), nullable=True),
             db.Column('fed_object_id', db.Integer, nullable=True),
             db.Column('fed_version_id', db.Integer, nullable=True),
             db.Column('component_id', db.Integer, nullable=True),
@@ -205,8 +205,8 @@ class VersionedJSONSerializableObjectTables:
             db.Column('data', postgresql.JSONB, nullable=True),
             db.Column('schema', postgresql.JSONB, nullable=True),
             db.Column('user_id', db.Integer, nullable=True),
-            db.Column('utc_datetime', db.DateTime, nullable=True),
-            db.Column('utc_datetime_subversion', db.DateTime, nullable=False),
+            db.Column('utc_datetime', db.TIMESTAMP(timezone=True), nullable=True),
+            db.Column('utc_datetime_subversion', db.TIMESTAMP(timezone=True), nullable=False),
             db.PrimaryKeyConstraint('object_id', 'version_id', 'subversion_id')
         )
         if user_id_column is not None:

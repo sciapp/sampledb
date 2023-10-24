@@ -46,7 +46,7 @@ class UserLogEntry(Model):
     type: Mapped[UserLogEntryType] = db.Column(db.Enum(UserLogEntryType), nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     user: Mapped['User'] = relationship('User', back_populates="log_entries")
 
     if typing.TYPE_CHECKING:

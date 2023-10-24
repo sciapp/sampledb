@@ -44,7 +44,7 @@ class APILogEntry(Model):
     api_token_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('authentications.id'), nullable=False)
     method: Mapped[HTTPMethod] = db.Column(db.Enum(HTTPMethod), nullable=False)
     route: Mapped[str] = db.Column(db.String, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     api_token: Mapped['Authentication'] = relationship('Authentication', backref=db.backref("api_log_entries", cascade="all,delete"))
 
     if typing.TYPE_CHECKING:

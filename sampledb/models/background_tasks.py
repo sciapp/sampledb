@@ -31,7 +31,7 @@ class BackgroundTask(Model):
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
     status: Mapped[BackgroundTaskStatus] = db.Column(db.Enum(BackgroundTaskStatus), nullable=False)
     result: Mapped[typing.Optional[typing.Dict[str, typing.Any]]] = db.Column(db.JSON, nullable=True)
-    expiration_date: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    expiration_date: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["BackgroundTask"]]

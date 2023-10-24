@@ -26,7 +26,7 @@ class LocationLogEntry(Model):
     location_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
     user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["LocationLogEntry"]]

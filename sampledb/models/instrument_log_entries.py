@@ -101,9 +101,9 @@ class InstrumentLogEntryVersion(Model):
     log_entry_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(InstrumentLogEntry.id), primary_key=True)
     version_id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     content: Mapped[str] = db.Column(db.Text, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     content_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
-    event_utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    event_utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     categories: Mapped[typing.List[InstrumentLogCategory]] = relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
     log_entry: Mapped[InstrumentLogEntry] = relationship(InstrumentLogEntry, back_populates='versions')
 

@@ -23,7 +23,7 @@ class SciCatExport(Model):
     scicat_pid: Mapped[str] = db.Column(db.String, nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     type: Mapped[SciCatExportType] = db.Column(db.Enum(SciCatExportType), nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["SciCatExport"]]

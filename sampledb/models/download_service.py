@@ -18,8 +18,8 @@ class DownloadServiceJobFile(Model):
     id: Mapped[int] = db.Column(db.Integer, primary_key=True, autoincrement=True)
     object_id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     file_id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    creation: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
-    expiration: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    creation: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+    expiration: Mapped[datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["DownloadServiceJobFile"]]

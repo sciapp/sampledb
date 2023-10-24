@@ -27,7 +27,7 @@ class DataverseExport(Model):
     object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
     dataverse_url: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     status: Mapped[DataverseExportStatus] = db.Column(db.Enum(DataverseExportStatus), nullable=False)
 
     if typing.TYPE_CHECKING:

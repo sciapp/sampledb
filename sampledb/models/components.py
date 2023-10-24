@@ -19,7 +19,7 @@ class Component(Model):
     uuid: Mapped[str] = db.Column(db.Text, nullable=False, unique=True)
     name: Mapped[typing.Optional[str]] = db.Column(db.Text, nullable=True, unique=True)
     description: Mapped[str] = db.Column(db.Text, nullable=False, default='')
-    last_sync_timestamp: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    last_sync_timestamp: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     discoverable: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
     if typing.TYPE_CHECKING:
