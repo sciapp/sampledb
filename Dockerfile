@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.11-slim-bookworm
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
 LABEL org.opencontainers.image.source=https://github.com/sciapp/sampledb
