@@ -2336,6 +2336,8 @@ In some situations, e.g. for interactive applications that use the API, users ma
     :statuscode 201: the access token has been created successfully
 
 
+.. _api_object_log_entries:
+
 Object Log Entries
 ------------------
 
