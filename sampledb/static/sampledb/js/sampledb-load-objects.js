@@ -262,7 +262,7 @@ function updateObjectPickers () {
       );
       const changeHandler = function (event) {
         $x.blur();
-        const field = $(event.target);
+        const field = $(event.currentTarget);
         const text = field.typeahead('val');
         let isValid = false;
         let objectID = null;

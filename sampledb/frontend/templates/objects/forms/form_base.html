@@ -162,17 +162,9 @@
 
       $('#input-array_buttons').val(window.arrayButtons.join());
 
-      $('.table-interaction').each(function() {
-        $(this).val($(this).data('content'));
-      });
-
       $('.typeahead').each(function() {
         $(this).val($(this).typeahead('val'));
       });
-    });
-
-    $('.table-interaction').each(function() {
-      $(this).data('content', JSON.stringify({ interactions: [] }));
     });
 
     $('.input-group.date').each(function() {
@@ -630,7 +622,7 @@
    * @param event a PointerEvent
    */
   function arrayFormAddHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     const arrayContainer = button.closest('[data-array-container]');
     const arrayPrefix = arrayContainer.data('id-prefix');
     if (arrayPrefix.includes('!')) {
@@ -664,7 +656,7 @@
    * @param event a PointerEvent
    */
   function arrayFormTableCopyHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     // add a new row first, which will then be filled and moved
     arrayFormAddHandler(event);
     const arrayContainer = button.closest('[data-array-container]');
@@ -721,7 +713,7 @@
    * @param event a PointerEvent
    */
   function arrayFormDeleteHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     const arrayContainer = button.closest('[data-array-container]');
     const arrayPrefix = arrayContainer.data('id-prefix');
     if (arrayPrefix.includes('!')) {
@@ -750,7 +742,7 @@
    * @param event a PointerEvent
    */
   function tableFormColAddHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     const arrayContainer = button.closest('[data-array-container]');
     const arrayPrefix = arrayContainer.data('id-prefix');
     if (arrayPrefix.includes('!')) {
@@ -776,7 +768,7 @@
    * @param event a PointerEvent
    */
   function tableFormColDeleteHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     const arrayContainer = button.closest('[data-array-container]');
     const arrayPrefix = arrayContainer.data('id-prefix');
     if (arrayPrefix.includes('!')) {
@@ -802,7 +794,7 @@
    * @param event a PointerEvent
    */
   function tableFormRowAddHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     const arrayContainer = button.closest('[data-array-container]');
     const arrayPrefix = arrayContainer.data('id-prefix');
     if (arrayPrefix.includes('!')) {
@@ -851,7 +843,7 @@
    * @param event a PointerEvent
    */
   function tableFormRowDeleteHandler (event) {
-    const button = $(event.target);
+    const button = $(event.currentTarget);
     const arrayContainer = button.closest('[data-array-container]');
     const arrayPrefix = arrayContainer.data('id-prefix');
     if (arrayPrefix.includes('!')) {
@@ -932,11 +924,13 @@
         field.text(value);
       }
       field.val(value);
+      field.trigger('change');
     });
 
     $('[type="checkbox"]').each(function() {
       const name = $(this).attr('name');
       $(this).prop('checked', form_data.hasOwnProperty(name));
+      $(this).trigger('change');
     });
 
     $('.selectpicker').selectpicker('refresh');

@@ -169,8 +169,8 @@ function startEditing (formArea) {
         // Send actualized data
         stopEditing(initialFormData, editedFormData);
         // Remove event listener to avoid multiple reactions
-        event.target.removeEventListener('click', eventFunction);
-        event.target.removeEventListener('keyup', eventFunction);
+        document.removeEventListener('click', eventFunction);
+        document.removeEventListener('keyup', eventFunction);
       }
     }
   }
