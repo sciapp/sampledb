@@ -182,6 +182,8 @@ check-translations:
     - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_current_de.po
     # ensure there are no fuzzy translations
     - grep -zqv fuzzy extracted_messages_current_de.po
+    # ensure there are no disabled translations
+    - grep -zqv "#~ msgstr" extracted_messages_current_de.po
     # ensure there are no empty translations
     - "grep -zqvP 'msgstr \"\"\\n\\n' extracted_messages_current_de.po"
     # extract and update messages
