@@ -38,9 +38,9 @@ def file_info_to_json(file_info: File, include_content: bool = True) -> typing.D
             })
         if file_info.data:
             file_json['hash'] = file_info.data.get('hash')
-    if file_info.storage == 'url' and file_info.data is not None:
+    if file_info.storage == 'url' and file_info.url is not None:
         file_json.update({
-            'url': file_info.data['url']
+            'url': file_info.url
         })
     return file_json
 
