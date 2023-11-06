@@ -430,7 +430,7 @@ def create_multiple_labels(
             if create_only_qr_codes:
                 if only_id_qr_code:
                     if add_label_number:
-                        qr_data = f"{object_id}_{label_counter+1}_{quantity}"
+                        qr_data = f"{object_id}_{label_counter + 1}_{quantity}"
                     else:
                         qr_data = str(object_id)
                 else:
