@@ -250,14 +250,6 @@ def show_object_form(
 
     _update_recipes_for_input(schema)
 
-    add_actions, delete_actions, table_interaction = _get_sorted_applied_actions(form_data)
-
-    template_arguments.update({
-        'applied_add_actions': add_actions,
-        'applied_delete_actions': delete_actions,
-        'applied_table_interaction': table_interaction
-    })
-
     if object is None:
         # alternatives to default permissions
         user_groups = logic.groups.get_user_groups(flask_login.current_user.id)
@@ -284,27 +276,6 @@ def show_object_form(
             mode=mode,
             **template_arguments
         )
-
-
-def _get_sorted_applied_actions(
-        form_data: typing.Dict[str, typing.Any]
-) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
-    add_actions: dict[str, str] = {}
-    delete_actions: dict[str, str] = {}
-    table_interaction: dict[str, str] = {}
-    for key, value in form_data.items():
-        if key.startswith("applied_action__"):
-            if key.endswith("__add"):
-                add_actions[key] = value
-            elif key.endswith("__delete"):
-                delete_actions[key] = value
-            elif key.endswith("__table_interaction"):
-                table_interaction[key] = value
-    return (
-        dict(sorted(add_actions.items(), key=lambda k: str.count(k[0], "__"))),
-        dict(sorted(delete_actions.items(), key=lambda k: str.count(k[0], "__"))),
-        dict(sorted(table_interaction.items(), key=lambda k: str.count(k[0], "__")))
-    )
 
 
 def _apply_placeholder_data(

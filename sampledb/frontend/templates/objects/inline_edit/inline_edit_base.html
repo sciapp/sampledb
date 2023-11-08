@@ -1,5 +1,4 @@
 {% extends "objects/view/base.html" %}
-{% set form_conditions = [] %}
 
 {% set file_pickers = [] %}
 
@@ -50,9 +49,11 @@
     window.fileEventHandler = fileEventHandler;
 
     import {
-      conditionalWrapper
+      conditionalWrapper,
+      applySchemaConditions
     } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
     window.conditionalWrapper = conditionalWrapper;
+    window.applySchemaConditions = applySchemaConditions;
 
     import {
       setupImageDragAndDrop
@@ -147,7 +148,6 @@
                     }
                 });
             });
-        });
 
         var tags = new Bloodhound({
             initialize: true,
@@ -190,17 +190,14 @@
                 }
             }.bind(tagsinput));
         });
-      $(function () {
-        {% for form_condition in form_conditions %}
-          conditionalWrapper("{{ form_condition['id_prefix'] }}", {{ form_condition['conditions'] | encode_choices | tojson }});
-        {% endfor %}
-
-        $.each(window.conditionalWrapperScripts, function () {
-          this();
-        });
+        applySchemaConditions(document);
         // wrapped in an onload function to ensure this runs after the module has defined window.fileEventHandler
+        window.temporaryFileUploadURL = '{{ url_for(".temporary_file_upload") }}';
         {% for file_picker in file_pickers %}
-          document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+          {
+            const input = $('input[type="file"][data-id-prefix="{{ file_picker["id_prefix"] }}"]');
+            input.on('change', fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
+          }
         {% endfor %}
       });
     </script>

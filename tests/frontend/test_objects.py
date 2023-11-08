@@ -729,7 +729,7 @@ def test_edit_object_action_add(flask_server, driver, user):
     assert 'object__multilayer__2__films__0__elements__1' in driver.page_source
 
 
-def test_edit_object_applied_actions(flask_server, driver, user):
+def test_edit_object_array_buttons(flask_server, driver, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
     action = sampledb.logic.actions.create_action(
@@ -751,13 +751,15 @@ def test_edit_object_applied_actions(flask_server, driver, user):
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
     driver.get(flask_server.base_url + f'objects/{object.object_id}?mode=edit')
 
-    assert 'applied_action__object__multilayer__2__films__0__elements__1__add' not in driver.page_source
+    array_buttons = driver.execute_script("return window.arrayButtons")
+    assert 'action_object__multilayer__2__films__0__elements__?__add' not in array_buttons
     driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__?__add').click()
-    assert 'applied_action__object__multilayer__2__films__0__elements__1__add' in driver.page_source
-
-    assert 'applied_action__object__multilayer__2__films__0__elements__1__delete' not in driver.page_source
+    array_buttons = driver.execute_script("return window.arrayButtons")
+    assert 'action_object__multilayer__2__films__0__elements__?__add' in array_buttons
+    assert 'action_object__multilayer__2__films__0__elements__1__delete' not in array_buttons
     driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__1__delete').click()
-    assert 'applied_action__object__multilayer__2__films__0__elements__1__delete' in driver.page_source
+    array_buttons = driver.execute_script("return window.arrayButtons")
+    assert 'action_object__multilayer__2__films__0__elements__1__delete' in array_buttons
 
 
 def test_edit_object_action_delete(flask_server, driver, user):
@@ -783,14 +785,14 @@ def test_edit_object_action_delete(flask_server, driver, user):
     driver.get(flask_server.base_url + f'objects/{object.object_id}?mode=edit')
 
     # Try violating minItems first
-    assert driver.find_element(By.ID, 'container_object__multilayer__2__films__0__elements__0_')
+    assert driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__0__delete')
     driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__0__delete').click()
-    assert driver.find_element(By.ID, 'container_object__multilayer__2__films__0__elements__0_')
+    assert driver.find_element(By.ID, 'action_object__multilayer__2__films__0__elements__0__delete')
 
     # Delete something that may actually be deleted
-    assert driver.find_element(By.ID, 'container_object__multilayer__3_')
+    assert driver.find_element(By.ID, 'action_object__multilayer__3__delete')
     driver.find_element(By.ID, 'action_object__multilayer__3__delete').click()
-    assert not driver.find_elements(By.ID, 'container_object__multilayer__3_')
+    assert not driver.find_elements(By.ID, 'action_object__multilayer__3__delete')
 
 
 def test_new_object(flask_server, driver, user):
@@ -1074,9 +1076,9 @@ def test_new_object_javascript_fields_array(flask_server, driver, user):
     driver.find_element(By.ID, 'action_object__sample__?__add').click()
     driver.find_element(By.ID, 'action_object__choices__?__add').click()
 
-    assert not driver.find_element(By.ID, 'container_object__datetime__0_').find_elements(By.CLASS_NAME, 'bootstrap-datetimepicker-widget')
-    driver.find_element(By.ID, 'container_object__datetime__0_').find_element(By.CLASS_NAME, 'input-group-addon').click()
-    assert driver.find_element(By.ID, 'container_object__datetime__0_').find_element(By.CLASS_NAME, 'bootstrap-datetimepicker-widget') is not None
+    assert not driver.find_element(By.CSS_SELECTOR, '[data-array-container="list"][data-id-prefix="object__datetime_"] [data-array-item="list"]:not(.array-template)').find_elements(By.CLASS_NAME, 'bootstrap-datetimepicker-widget')
+    driver.find_element(By.CSS_SELECTOR, '[data-array-container="list"][data-id-prefix="object__datetime_"] [data-array-item="list"]:not(.array-template) .input-group-addon').click()
+    assert driver.find_element(By.CSS_SELECTOR, '[data-array-container="list"][data-id-prefix="object__datetime_"] [data-array-item="list"]:not(.array-template)').find_elements(By.CLASS_NAME, 'bootstrap-datetimepicker-widget') is not None
 
     datetime = driver.execute_script("return $('[name=\"object__datetime__0__datetime\"]').val()")
 

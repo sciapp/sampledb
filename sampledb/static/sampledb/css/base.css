@@ -1493,7 +1493,7 @@ table.diff tr.striped {
 }
 
 .array-template {
-    display: none;
+    display: none !important;
 }
 
 #object-form-errors-show-more-content, #object-form-errors-show-more-input {

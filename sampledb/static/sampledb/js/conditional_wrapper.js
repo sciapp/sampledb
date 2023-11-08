@@ -14,7 +14,7 @@ if (!window.conditionalWrapperConditions) {
  * @param schemaConditions the conditions for the field
  */
 function conditionalWrapper (idPrefix, schemaConditions) {
-  if (typeof (idPrefix) !== 'string') {
+  if (typeof (idPrefix) !== 'string' || idPrefix.includes('!')) {
     return;
   }
   const parentIDPrefix = idPrefix.split('__').slice(0, -1).join('__') + '_';
@@ -163,6 +163,24 @@ function conditionalWrapper (idPrefix, schemaConditions) {
   });
 }
 
+/**
+ * Apply schema conditions to condition wrapper elements in a given element.
+ * @param element a DOM element
+ */
+function applySchemaConditions (element) {
+  $(element).find('.condition-wrapper').each(function () {
+    const idPrefix = $(this).data('id-prefix');
+    const conditions = $(this).data('conditions');
+    conditionalWrapper(idPrefix, conditions);
+  });
+
+  $.each(window.conditionalWrapperScripts, function () {
+    this();
+  });
+  window.conditionalWrapperScripts = [];
+}
+
 export {
-  conditionalWrapper
+  conditionalWrapper,
+  applySchemaConditions
 };

@@ -3,19 +3,18 @@
 
 /**
  * Generates a file form field event handler with the parameters needed to upload temporary files bound to it.
- * @param idPrefix the ID prefix of the form field
  * @param contextIDToken the context ID token for this form
  * @param ajaxURL the URL to upload the file to
  * @returns {(function(): void)|*} the event handler
  */
-function fileEventHandler (idPrefix, contextIDToken, ajaxURL) {
+function fileEventHandler (contextIDToken, ajaxURL) {
   return function () {
     const fileInput = $(this);
-    const fileIDInput = $(`#${idPrefix}_file_id`);
+    const idPrefix = fileInput.data('id-prefix');
+    const fileIDInput = $(`[name="${idPrefix}_file_id"]`);
     const fileNameInput = $(this).closest('.input-group').find('input[type="text"]');
     fileIDInput.val('');
     fileNameInput.val('');
-    fileIDInput.find('option[data-sampledb-temporary-file]').remove();
     if (this.files.length === 1) {
       const file = this.files[0];
       const formData = new FormData();
@@ -32,12 +31,22 @@ function fileEventHandler (idPrefix, contextIDToken, ajaxURL) {
           temporaryFileOption.attr('value', '-' + data);
           temporaryFileOption.attr('data-sampledb-temporary-file', '1');
           temporaryFileOption.text(file.name);
-          fileIDInput.append(temporaryFileOption);
-          fileIDInput.prop('disabled', false);
-          fileIDInput.selectpicker('refresh');
-          fileIDInput.selectpicker('val', '-' + data);
-          fileIDInput.selectpicker('refresh');
-          fileInput.closest('.form-group').removeClass('has-error');
+          $('.template-file-select').each(function (_, element) {
+            const filePicker = $(element);
+            filePicker.append(temporaryFileOption.clone());
+          });
+          $('.selectpicker.file-select').each(function (_, element) {
+            const filePicker = $(element);
+            const hasOptions = filePicker.children('option').length !== 0;
+            filePicker.append(temporaryFileOption.clone());
+            filePicker.prop('disabled', false);
+            filePicker.selectpicker('refresh');
+            if (!hasOptions || fileIDInput[0] === filePicker[0]) {
+              filePicker.selectpicker('val', '-' + data);
+              filePicker.selectpicker('refresh');
+              filePicker.closest('.form-group').removeClass('has-error');
+            }
+          });
         },
         error: function (data) {
           fileInput.val('');

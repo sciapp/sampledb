@@ -6,7 +6,7 @@ import typing
 
 import bleach
 from markdown import markdown as _markdown_to_html
-from markdown.extensions.toc import TocExtension, slugify_unicode  # type: ignore
+from markdown.extensions.toc import TocExtension, slugify_unicode
 
 from .. import db
 from . import errors
