@@ -566,18 +566,23 @@ def get_style_aliases(style: str) -> typing.List[str]:
 
 
 def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template_impl(template_folder, default_prefix, schema['type'], schema.get('style'), container_style)
+
+
+@functools.cache
+def get_template_impl(template_folder: str, default_prefix: str, schema_type: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
-    base_file = str(schema["type"]) + ".html"
+    base_file = str(schema_type) + ".html"
 
     file_order = [default_prefix + base_file]
     if container_style:
         for container_style_alias in get_style_aliases(container_style):
             file_order.insert(0, (default_prefix + container_style_alias + "_" + base_file))
-    if schema.get('style'):
-        for style in get_style_aliases(schema['style']):
+    if schema_style:
+        for style in get_style_aliases(schema_style):
             file_order.insert(0, (default_prefix + style + "_" + base_file))
-    if container_style and schema.get('style'):
-        for style in get_style_aliases(schema['style']):
+    if container_style and schema_style:
+        for style in get_style_aliases(schema_style):
             for container_style_alias in get_style_aliases(container_style):
                 file_order.insert(0, (default_prefix + container_style_alias + "_" + style + "_" + base_file))
 
@@ -589,14 +594,19 @@ def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[
 
 
 def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template_impl(template_folder, schema.get('style'), container_style)
+
+
+@functools.cache
+def get_property_template_impl(template_folder: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
 
     file_order = ['regular_property.html']
     if container_style:
         for container_style_alias in get_style_aliases(container_style):
             file_order.insert(0, container_style_alias + '_property.html')
-    if schema.get('style'):
-        for style in get_style_aliases(schema['style']):
+    if schema_style:
+        for style in get_style_aliases(schema_style):
             file_order.insert(0, style + '_property.html')
 
     for file in file_order:
