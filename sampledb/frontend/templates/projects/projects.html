@@ -168,21 +168,6 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
-    import {
-      updateTranslationJSON,
-      setTranslationHandler,
-      updateTranslationLanguages,
-      initMarkdownField,
-      updateMarkdownField
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
-    window.updateTranslationJSON = updateTranslationJSON;
-    window.setTranslationHandler = setTranslationHandler;
-    window.updateTranslationLanguages = updateTranslationLanguages;
-    window.initMarkdownField = initMarkdownField;
-    window.updateMarkdownField = updateMarkdownField;
-  </script>
   <script type="application/json" data-sampledb-template-value="language_info">
     {
       "languages": [
@@ -200,45 +185,5 @@
   <script type="application/json" data-sampledb-template-value="show_create_form">
     {{ show_create_form | tojson }}
   </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  $(function (){
-    window.translations = [];
-
-    window.languages = window.template_values.language_info.languages;
-    updateTranslationJSON();
-
-    $('.select-language').selectpicker('val', ['' + window.template_values.language_info.english_id])
-
-    $('#select-language-name').on('change', function () {
-      updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
-    }).change();
-
-    $('#select-language-description').on('change', function () {
-      updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description']);
-    }).change();
-
-    $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id]').each(function () {
-      setTranslationHandler(this);
-    });
-
-    $('form').on('submit', function() {
-      $('input').change();
-      $('textarea').change();
-      window.translations = $.map(window.translations, function(translation, index){
-        if (translation.name  === '' && translation.description === '' && translation.language_id !== window.template_values.language_info.english_id){
-          return null;
-        }
-        return translation;
-      });
-      updateTranslationJSON();
-      return $(this).find('.has-error').length === 0;
-    });
-    if (window.template_values.language_info.show_create_form) {
-      const create_modal = $('#createProjectModal');
-      create_modal.removeClass('fade');
-      create_modal.modal('show');
-      create_modal.addClass('fade');
-    }
-  });
-</script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/projects.js') }}" type="module"></script>
 {% endblock %}
