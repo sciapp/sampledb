@@ -205,7 +205,10 @@
     applySchemaConditions(document);
 
     {% for file_picker in file_pickers %}
-      document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+      if (!"{{ file_picker["id_prefix"] }}".includes('!')) {
+        const input = $('input[type="file"][data-id-prefix="{{ file_picker["id_prefix"] }}"]');
+        input.on('change', fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
+      }
     {% endfor %}
 
     updateArrayButtonsHandlerWithinElement($(document));
@@ -702,7 +705,7 @@
     const sortedRowIndices = [];
     for (const row of tableBody.find('tr').not('.array-template')) {
       const rowPrefix = $(row).data('id-prefix');
-      const rowIndex = rowPrefix.split('__').slice(-2)[0];
+      const rowIndex = (rowPrefix + '_').split('__').slice(-2)[0];
       sortedRowIndices.push(Number.parseInt(rowIndex));
     }
     updateArrayIDPrefixes(arrayContainer, sortedRowIndices);
@@ -1041,11 +1044,14 @@
 
     $('.template-file-select').each(function () {
       if ($(this).parents('.array-template').length === 0) {
-        const parent = $(this).parent();
+        const filePicker = $(this);
+        const parent = filePicker.parent();
         const input = parent.find('input:file');
-        $(this).attr('class', $(this).data('template-class'));
-        $(this).selectpicker();
-        input.change(fileEventHandler(input.data('id-prefix'), input.data('context-id-token'), window.temporaryFileUploadURL));
+        const hasOptions = filePicker.children('option').length !== 0;
+        filePicker.prop('disabled', !hasOptions);
+        filePicker.attr('class', filePicker.data('template-class'));
+        filePicker.selectpicker();
+        input.change(fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
       }
     });
 

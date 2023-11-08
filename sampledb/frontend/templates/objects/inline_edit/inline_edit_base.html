@@ -192,8 +192,12 @@
         });
         applySchemaConditions(document);
         // wrapped in an onload function to ensure this runs after the module has defined window.fileEventHandler
+        window.temporaryFileUploadURL = '{{ url_for(".temporary_file_upload") }}';
         {% for file_picker in file_pickers %}
-          document.getElementById('{{ file_picker["id_prefix"] }}_file').addEventListener('change', window.fileEventHandler('{{ file_picker["id_prefix"] }}', '{{ file_picker["context_id_token"] }}', '{{ url_for(".temporary_file_upload") }}'));
+          {
+            const input = $('input[type="file"][data-id-prefix="{{ file_picker["id_prefix"] }}"]');
+            input.on('change', fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
+          }
         {% endfor %}
       });
     </script>

@@ -25,7 +25,7 @@
 {% endif %}
 
 <div class="input-group">
-  <select {% if is_template %} class="template-file-select" data-template-class="form-control selectpicker file-select" {% else %} class="form-control selectpicker file-select" {% endif %} id="{{ id_prefix }}_file_id" name="{{ id_prefix }}_file_id" data-live-search="true" {% if not filepicker_options %}disabled="disabled" data-none-selected-text="{{ _('Please upload a file.') }}"{% endif %}>
+  <select {% if is_template %} class="template-file-select" data-template-class="form-control selectpicker file-select" {% else %} class="form-control selectpicker file-select" {% endif %} name="{{ id_prefix }}_file_id" data-live-search="true" {% if not filepicker_options %}disabled="disabled" data-none-selected-text="{{ _('Please upload a file.') }}"{% endif %}>
     {% for value, text, is_selected in filepicker_options %}
       <option value="{{ value }}" {% if is_selected %} selected="selected" {% endif %}>{{ text }}</option>
     {% endfor %}
@@ -34,7 +34,7 @@
     <div class="btn-group" style="margin-bottom: 2px">
       <label class="btn btn-primary btn-file">
         {{ _('Browse...') }}
-        <input type="file" id="{{ id_prefix }}_file" data-id-prefix="{{ id_prefix }}" data-context-id-token="{{ context_id_token }}" {% if schema.get('extensions') is not none %}accept="{% for extension in schema.extensions %}{% if not loop.first %}, {% endif %}{% if extension[0] != '.' %}.{% endif %}{{ extension }}{% endfor %}"{% endif %} class="hidden"></label>
+        <input type="file" data-id-prefix="{{ id_prefix }}" data-context-id-token="{{ context_id_token }}" {% if schema.get('extensions') is not none %}accept="{% for extension in schema.extensions %}{% if not loop.first %}, {% endif %}{% if extension[0] != '.' %}.{% endif %}{{ extension }}{% endfor %}"{% endif %} class="hidden"></label>
     </div>
   </span>
 </div>
