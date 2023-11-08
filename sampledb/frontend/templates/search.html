@@ -198,21 +198,27 @@
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  <script type="application/json" data-sampledb-template-value="search_paths">
+    {
+      "all": {{ search_paths | tojson }},
+      "by_action": {{ search_paths_by_action | tojson }},
+      "by_action_type": {{ search_paths_by_action_type | tojson }}
+    }
+  </script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
   $(function () {
-
-    window.search_paths = {{ search_paths | tojson }};
-    window.search_paths_by_action = {{ search_paths_by_action | tojson }};
-    window.search_paths_by_action_type = {{ search_paths_by_action_type | tojson }};
+    window.search_paths = window.template_values.search_paths.all;
+    window.search_paths_by_action = window.template_values.search_paths.by_action;
+    window.search_paths_by_action_type = window.template_values.search_paths.by_action_type;
 
     var search_form = $('#form-search-standalone');
     var search_input = search_form.find('#search-field');
     var advanced_search_toggle = search_form.find('input[name=advanced]');
     function handle_advanced_search_toggle() {
       if ($(this).prop('checked')) {
-        search_input.attr('placeholder', '{{ _('Advanced Search…') }}');
+        search_input.attr('placeholder', window.template_values.translations.advanced_search);
       } else {
-        search_input.attr('placeholder', '{{ _('Search…') }}');
+        search_input.attr('placeholder', window.template_values.translations.search);
       }
     }
     advanced_search_toggle.on('change', handle_advanced_search_toggle);
