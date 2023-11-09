@@ -23,7 +23,7 @@ def search() -> FlaskResponseT:
 
     action_types = get_action_types(filter_fed_defaults=True)
 
-    search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(actions, action_types)
+    search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(actions, action_types, include_file_name=True)
 
     if None in search_paths_by_action_type:
         del search_paths_by_action_type[None]
