@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.11-slim-bookworm
 
 LABEL maintainer="f.rhiem@fz-juelich.de"
 LABEL org.opencontainers.image.source=https://github.com/sciapp/sampledb
@@ -21,9 +21,15 @@ RUN useradd -ms /bin/bash sampledb
 USER sampledb
 WORKDIR /home/sampledb
 
+# Set up virtual environment
+ENV VIRTUAL_ENV=/home/sampledb/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN  pip install --upgrade pip
+
 # Install required Python packages
 COPY requirements.txt requirements.txt
-RUN pip install --user --no-cache-dir --no-warn-script-location -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Clean up system packages that are no longer required
 USER root
@@ -42,7 +48,7 @@ ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5
 ENV SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files
 
 # Set the path for pybabel
-ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/.local/bin/pybabel
+ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/venv/bin/pybabel
 
 # Write Docker build arg SAMPLEDB_VERSION to environment to be read by sampledb/version.py.
 ARG SAMPLEDB_VERSION

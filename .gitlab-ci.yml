@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   services:
     - name: postgres:12
       alias: postgres-test
@@ -53,7 +53,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -81,7 +81,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -168,10 +168,32 @@ check-migrations-postgres-13:
     POSTGRES_HOST: postgres13
     SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres13:5432/postgres"
 
+check-migrations-postgres-14:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:14
+      alias: postgres14
+      variables:
+        POSTGRES_HOST: postgres14
+  variables:
+    POSTGRES_HOST: postgres14
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres14:5432/postgres"
+
+check-migrations-postgres-15:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:15
+      alias: postgres15
+      variables:
+        POSTGRES_HOST: postgres15
+  variables:
+    POSTGRES_HOST: postgres15
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres15:5432/postgres"
+
 check-translations:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -199,7 +221,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   services:
     - name: postgres:12
       alias: postgres-documentation
@@ -286,7 +308,7 @@ test-container-status:
 
 pages:
   stage: deploy
-  image: ubuntu:20.04
+  image: busybox
   only:
     - master
     - tags
@@ -300,7 +322,7 @@ pages:
 
 deploy-to-dev:
   stage: deploy
-  image: ubuntu:20.04
+  image: debian:bookworm
   environment: staging
   only:
     - develop@Scientific-IT-Systems/SampleDB
@@ -318,7 +340,7 @@ deploy-to-dev:
 
 deploy-to-github:
   stage: deploy
-  image: ubuntu:20.04
+  image: debian:bookworm
   variables:
     GIT_STRATEGY: none
   only:
@@ -386,7 +408,7 @@ deploy-to-dockerhub:
 
 deploy-to-pypi:
   stage: deploy
-  image: python:3
+  image: python:3.11-slim-bookworm
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
