@@ -36,7 +36,7 @@ class Action(Base):
 @pytest.fixture
 def engine():
     db_url = sampledb.config.SQLALCHEMY_DATABASE_URI
-    engine = db.create_engine(db_url)
+    engine = db.create_engine(db_url, **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS)
     sampledb.utils.empty_database(engine, only_delete=False)
     return engine
 
