@@ -56,7 +56,7 @@ def invitation() -> FlaskResponseT:
 
                 user_invitation = users.UserInvitation(
                     inviter_id=flask_login.current_user.id,
-                    utc_datetime=datetime.datetime.utcnow()
+                    utc_datetime=datetime.datetime.now(datetime.timezone.utc)
                 )
                 db.session.add(user_invitation)
                 db.session.commit()

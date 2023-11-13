@@ -377,7 +377,7 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
     def creation_time_key(object_id: int) -> datetime.datetime:
         initital_object_version = initital_object_version_by_id.get(object_id)
         if initital_object_version is None or initital_object_version.utc_datetime is None:
-            return datetime.datetime.max
+            return datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
         return initital_object_version.utc_datetime
 
     object_ids.sort(key=creation_time_key)

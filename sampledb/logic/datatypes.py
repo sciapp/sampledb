@@ -130,7 +130,7 @@ class DateTime:
 
     def __init__(self, utc_datetime: typing.Optional[datetime.datetime] = None) -> None:
         if utc_datetime is None:
-            utc_datetime = datetime.datetime.utcnow()
+            utc_datetime = datetime.datetime.now(datetime.timezone.utc)
         self.utc_datetime = utc_datetime.replace(microsecond=0)
 
     def __repr__(self) -> str:
@@ -146,7 +146,7 @@ class DateTime:
 
     @classmethod
     def from_json(cls, obj: typing.Dict[str, str]) -> 'DateTime':
-        return cls(datetime.datetime.strptime(obj['utc_datetime'], cls.FORMAT_STRING))
+        return cls(datetime.datetime.strptime(obj['utc_datetime'], cls.FORMAT_STRING).replace(tzinfo=datetime.timezone.utc))
 
 
 @JSONEncoder.serializable_type('quantity')

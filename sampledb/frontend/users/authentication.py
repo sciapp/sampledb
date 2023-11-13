@@ -102,7 +102,7 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
                         'method_id': two_factor_authentication_method.id,
                         'is_for_refresh': is_for_refresh,
                         'remember_me': form.remember_me.data,
-                        'expiration_datetime': (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
                     }
                     return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
                 return flask.render_template('two_factor_authentication/unsupported_method.html')

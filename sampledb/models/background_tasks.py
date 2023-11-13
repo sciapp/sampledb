@@ -31,14 +31,14 @@ class BackgroundTask(Model):
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
     status: Mapped[BackgroundTaskStatus] = db.Column(db.Enum(BackgroundTaskStatus), nullable=False)
     result: Mapped[typing.Optional[typing.Dict[str, typing.Any]]] = db.Column(db.JSON, nullable=True)
-    expiration_date: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    expiration_date: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["BackgroundTask"]]
 
     @staticmethod
     def delete_expired_tasks() -> None:
-        expired_tasks = BackgroundTask.query.filter(BackgroundTask.expiration_date <= datetime.datetime.utcnow()).all()
+        expired_tasks = BackgroundTask.query.filter(BackgroundTask.expiration_date <= datetime.datetime.now(datetime.timezone.utc)).all()
         for task in expired_tasks:
             db.session.delete(task)
         db.session.commit()

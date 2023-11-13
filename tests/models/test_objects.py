@@ -36,7 +36,7 @@ class Action(Base):
 @pytest.fixture
 def engine():
     db_url = sampledb.config.SQLALCHEMY_DATABASE_URI
-    engine = db.create_engine(db_url)
+    engine = db.create_engine(db_url, **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS)
     sampledb.utils.empty_database(engine, only_delete=False)
     return engine
 
@@ -83,8 +83,8 @@ def test_create_object(session: sessionmaker(), objects: VersionedJSONSerializab
     assert object1.user_id is not None and object1.user_id == user.id
     assert object1.data == {}
     assert object1.schema == {}
-    assert object1.utc_datetime < datetime.datetime.utcnow()
-    assert object1.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object1.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object1.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
 
@@ -101,8 +101,8 @@ def test_create_object_with_action_schema(session: sessionmaker(), objects: Vers
     assert object1.user_id is not None and object1.user_id == user.id
     assert object1.data == {}
     assert object1.schema == {}
-    assert object1.utc_datetime < datetime.datetime.utcnow()
-    assert object1.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object1.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object1.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
 
@@ -133,8 +133,8 @@ def test_update_object(session: sessionmaker(), objects: VersionedJSONSerializab
     assert object2.user_id is not None and object2.user_id == user2.id
     assert object2.data == {'test': 1}
     assert object2.schema == {}
-    assert object2.utc_datetime < datetime.datetime.utcnow()
-    assert object2.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object2.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object2.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object2] == objects.get_current_objects()
     assert object2 == objects.get_current_object(object2.object_id)
 
@@ -348,7 +348,7 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
 
 
 def test_get_previous_subversion(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
-    v1_datetime = datetime.datetime.utcnow()
+    v1_datetime = datetime.datetime.now(datetime.timezone.utc)
     v2_datetime = v1_datetime + datetime.timedelta(seconds=10)
     object = objects.create_object(action_id=None, data=None, schema=None, user_id=None, utc_datetime=v1_datetime, component_id=1, fed_object_id=1, fed_version_id=1)
     objects.update_object_version(object_id=object.object_id, version_id=object.version_id, action_id=None, data=None, schema=None, user_id=None, utc_datetime=v2_datetime)

@@ -37,7 +37,7 @@ def create_log_entry(
         api_token_id=api_token_id,
         method=method,
         route=route,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(api_log_entry)
     db.session.commit()

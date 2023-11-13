@@ -289,7 +289,7 @@ def check_config(
                 file=sys.stderr
             )
         elif can_run:
-            engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'])
+            engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'], **config['SQLALCHEMY_ENGINE_OPTIONS'])
             with engine.begin() as connection:
                 user_table_exists = bool(connection.execute(sqlalchemy.text(
                     "SELECT * "
@@ -518,6 +518,9 @@ SECRET_KEY = generate_secret_key(num_bits=256)
 # sameSite attribute for cookies
 # see: https://flask.palletsprojects.com/en/2.2.x/security/#set-cookie-options
 SESSION_COOKIE_SAMESITE = 'Lax'
+
+# SQLAlchemy settings
+SQLALCHEMY_ENGINE_OPTIONS = {'connect_args': {"options": "-c timezone=utc"}}
 
 # LDAP settings
 LDAP_NAME = None

@@ -299,7 +299,7 @@ def create_pdfexport(
     html = flask.render_template(
         'pdfexport/export.html',
         get_object_type_name=get_object_type_name,
-        export_date=datetime.datetime.utcnow(),
+        export_date=datetime.datetime.now(datetime.timezone.utc),
         get_object_if_current_user_has_read_permissions=get_object_if_current_user_has_read_permissions,
         objects=objects,
         get_user=get_user_if_exists,

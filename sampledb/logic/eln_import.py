@@ -129,7 +129,7 @@ def create_eln_import(
         user_id=user_id,
         file_name=file_name,
         binary_data=zip_bytes,
-        upload_utc_datetime=datetime.datetime.utcnow(),
+        upload_utc_datetime=datetime.datetime.now(datetime.timezone.utc),
         import_utc_datetime=None,
     )
     db.session.add(eln_import)
@@ -225,7 +225,7 @@ def import_eln_file(
     elif len(action_type_ids) != len(parsed_data.objects):
         return [], ['Invalid Action Type ID information for this ELN file']
 
-    eln_import.import_utc_datetime = datetime.datetime.utcnow()
+    eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     db.session.add(eln_import)
     db.session.commit()
 
@@ -827,7 +827,7 @@ def parse_eln_file(
 def remove_expired_eln_imports() -> None:
     expired_eln_imports = eln_imports.ELNImport.query.filter(db.and_(
         eln_imports.ELNImport.import_utc_datetime.is_(None),
-        eln_imports.ELNImport.upload_utc_datetime < datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        eln_imports.ELNImport.upload_utc_datetime < datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )).all()
     if expired_eln_imports:
         for eln_import in expired_eln_imports:

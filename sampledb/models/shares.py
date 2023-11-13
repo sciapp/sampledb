@@ -24,7 +24,7 @@ class ObjectShare(Model):
     object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False, primary_key=True)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Component.id), nullable=False, primary_key=True)
     policy: Mapped[typing.Dict[str, typing.Any]] = db.Column(postgresql.JSONB, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     component: Mapped[Component] = relationship('Component')
     user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     user: Mapped[typing.Optional['User']] = relationship('User')
@@ -45,7 +45,7 @@ class ObjectShare(Model):
             object_id=object_id,
             component_id=component_id,
             policy=policy,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             user_id=user_id
         )
 

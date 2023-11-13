@@ -3,7 +3,7 @@
 Logic module handling communication with other components in a SampleDB federation
 """
 import typing
-from datetime import datetime
+import datetime
 import io
 
 import requests
@@ -167,7 +167,7 @@ def import_updates(
 ) -> None:
     if flask.current_app.config['FEDERATION_UUID'] is None:
         raise errors.ComponentNotConfiguredForFederationError()
-    timestamp = datetime.utcnow()
+    timestamp = datetime.datetime.now(datetime.timezone.utc)
     components = None
     try:
         components = get('/federation/v1/shares/components/', component, ignore_last_sync_time=ignore_last_sync_time)

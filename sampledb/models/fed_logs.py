@@ -36,7 +36,7 @@ class FedUserLogEntry(Model):
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedUserLogEntry"]]
@@ -54,7 +54,7 @@ class FedUserLogEntry(Model):
             user_id=user_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -81,7 +81,7 @@ class FedObjectLogEntry(Model):
     object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('objects_current.object_id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     user: Mapped[typing.Optional['User']] = relationship('User')
 
@@ -102,7 +102,7 @@ class FedObjectLogEntry(Model):
             object_id=object_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             user_id=user_id
         )
 
@@ -129,7 +129,7 @@ class FedLocationLogEntry(Model):
     location_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedLocationLogEntry"]]
@@ -147,7 +147,7 @@ class FedLocationLogEntry(Model):
             location_id=location_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -173,7 +173,7 @@ class FedLocationTypeLogEntry(Model):
     location_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('location_types.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedLocationTypeLogEntry"]]
@@ -191,7 +191,7 @@ class FedLocationTypeLogEntry(Model):
             location_type_id=location_type_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -217,7 +217,7 @@ class FedActionLogEntry(Model):
     action_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('actions.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedActionLogEntry"]]
@@ -235,7 +235,7 @@ class FedActionLogEntry(Model):
             action_id=action_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -261,7 +261,7 @@ class FedActionTypeLogEntry(Model):
     action_type_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('action_types.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedActionTypeLogEntry"]]
@@ -279,7 +279,7 @@ class FedActionTypeLogEntry(Model):
             action_type_id=action_type_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -305,7 +305,7 @@ class FedInstrumentLogEntry(Model):
     instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('instruments.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedInstrumentLogEntry"]]
@@ -323,7 +323,7 @@ class FedInstrumentLogEntry(Model):
             instrument_id=instrument_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -349,7 +349,7 @@ class FedCommentLogEntry(Model):
     comment_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedCommentLogEntry"]]
@@ -367,7 +367,7 @@ class FedCommentLogEntry(Model):
             comment_id=comment_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -394,7 +394,7 @@ class FedFileLogEntry(Model):
     file_id: Mapped[int] = db.Column(db.Integer, nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedFileLogEntry"]]
@@ -418,7 +418,7 @@ class FedFileLogEntry(Model):
             file_id=file_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:
@@ -444,7 +444,7 @@ class FedObjectLocationAssignmentLogEntry(Model):
     object_location_assignment_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('object_location_assignments.id'), nullable=False)
     component_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FedObjectLocationAssignmentLogEntry"]]
@@ -462,7 +462,7 @@ class FedObjectLocationAssignmentLogEntry(Model):
             object_location_assignment_id=object_location_assignment_id,
             component_id=component_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
 
     def __repr__(self) -> str:

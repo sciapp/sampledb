@@ -53,7 +53,7 @@ def test_create_log_entry(instrument, instrument_responsible_user, other_user):
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 0
     instrument_log_entries.create_instrument_log_entry(instrument.id, instrument_responsible_user.id, "test")
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 1
-    event_utc_datetime = datetime.datetime.strptime("2021-02-21 02:21:20", "%Y-%m-%d %H:%M:%S")
+    event_utc_datetime = datetime.datetime.strptime("2021-02-21 02:21:20", "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc)
     instrument_log_entries.create_instrument_log_entry(instrument.id, other_user.id, "test2", event_utc_datetime=event_utc_datetime)
     assert len(instrument_log_entries.get_instrument_log_entries(instrument.id)) == 2
     log_entries = instrument_log_entries.get_instrument_log_entries(instrument.id)

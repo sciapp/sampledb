@@ -68,12 +68,12 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
         flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     try:
-        expiration_datetime = datetime.datetime.strptime(confirm_data['expiration_datetime'], '%Y-%m-%d %H:%M:%S')
+        expiration_datetime = datetime.datetime.strptime(confirm_data['expiration_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
     except Exception:
         flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
-    if expiration_datetime < datetime.datetime.utcnow():
+    if expiration_datetime < datetime.datetime.now(datetime.timezone.utc):
         flask.flash(_('This two factor authentication attempt has expired. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))

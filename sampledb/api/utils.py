@@ -41,11 +41,11 @@ def _resource_method_decorator(f: typing.Callable[[typing.Any], ResponseData]) -
                 headers: typing.Dict[str, str] = {}
                 if isinstance(response_data, tuple):
                     if len(response_data) == 1:
-                        message, = typing.cast(typing.Tuple[ResponseContent], response_data)
+                        message, = response_data
                     elif len(response_data) == 2:
-                        message, status = typing.cast(typing.Tuple[ResponseContent, int], response_data)
+                        message, status = response_data
                     elif len(response_data) == 3:
-                        message, status, headers = typing.cast(typing.Tuple[ResponseContent, int, typing.Dict[str, str]], response_data)
+                        message, status, headers = response_data
                     else:
                         message = None
                 else:

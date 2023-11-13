@@ -42,7 +42,7 @@ def _get_header(component: Component) -> typing.Dict[str, typing.Any]:
             'major': PROTOCOL_VERSION_MAJOR,
             'minor': PROTOCOL_VERSION_MINOR
         },
-        'sync_timestamp': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'),
+        'sync_timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f'),
     }
 
 
@@ -50,7 +50,7 @@ def _get_last_sync(args: typing.Dict[str, typing.Any]) -> typing.Optional[dateti
     if 'last_sync_timestamp' not in args.keys():
         return None
     try:
-        return datetime.datetime.strptime(args['last_sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+        return datetime.datetime.strptime(args['last_sync_timestamp'], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=datetime.timezone.utc)
     except ValueError:
         return None
 

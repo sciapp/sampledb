@@ -31,7 +31,7 @@ def _store_new_fed_user_log_entry(
         user_id=user_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -79,7 +79,7 @@ def _store_new_fed_object_log_entry(
         component_id=component_id,
         user_id=user_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -156,7 +156,7 @@ def _store_new_fed_location_log_entry(
         location_id=location_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -202,7 +202,7 @@ def _store_new_fed_location_type_log_entry(
         location_type_id=location_type_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -248,7 +248,7 @@ def _store_new_fed_action_log_entry(
         action_id=action_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -298,7 +298,7 @@ def _store_new_fed_action_type_log_entry(
         action_type_id=action_type_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -344,7 +344,7 @@ def _store_new_fed_instrument_log_entry(
         instrument_id=instrument_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -390,7 +390,7 @@ def _store_new_fed_comment_log_entry(
         comment_id=comment_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -429,7 +429,7 @@ def _store_new_fed_file_log_entry(
         object_id=object_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()
@@ -468,7 +468,7 @@ def _store_new_fed_object_location_assignment_log_entry(
         object_location_assignment_id=object_location_assignment_id,
         component_id=component_id,
         data=data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(log_entry)
     db.session.commit()

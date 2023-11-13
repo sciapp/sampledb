@@ -319,7 +319,7 @@ def remove_redundant_lists(
 def parse_date(text: str) -> typing.Optional[datatypes.DateTime]:
     for datetime_format in ['%Y-%m-%d', '%m/%d/%Y', '%d.%m.%Y']:
         try:
-            return datatypes.DateTime(datetime.datetime.strptime(text.strip(), datetime_format))
+            return datatypes.DateTime(datetime.datetime.strptime(text.strip(), datetime_format).replace(tzinfo=datetime.timezone.utc))
         except ValueError:
             pass
     return None

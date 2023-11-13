@@ -754,7 +754,7 @@ def object_data(base_url, driver):
                 'units': 'degC',
                 'data': [
                     [
-                        (datetime.datetime.utcnow() + datetime.timedelta(seconds=i * 5)).strftime('%Y-%m-%d %H:%M:%S.%f'),
+                        (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=i * 5)).strftime('%Y-%m-%d %H:%M:%S.%f'),
                         180 + random.uniform(-2, 2)
                     ]
                     for i in range(100)

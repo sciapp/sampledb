@@ -41,7 +41,7 @@ class UserInvitation:
     @property
     def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return bool(datetime.datetime.utcnow() >= expiration_datetime)
+        return bool(datetime.datetime.now(datetime.timezone.utc) >= expiration_datetime)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -363,7 +363,7 @@ def update_user(
         # ensure the updating user exists
         check_user_exists(updating_user_id)
 
-        user.last_modified = datetime.datetime.utcnow()
+        user.last_modified = datetime.datetime.now(datetime.timezone.utc)
         user.last_modified_by_id = updating_user_id
 
     for name, value in attributes.items():
@@ -553,7 +553,7 @@ def create_user(
         extra_fields=extra_fields,
         fed_id=fed_id,
         component_id=component_id,
-        last_modified=datetime.datetime.utcnow(),
+        last_modified=datetime.datetime.now(datetime.timezone.utc),
         eln_import_id=eln_import_id,
         eln_object_id=eln_object_id,
     )
@@ -876,7 +876,7 @@ def update_user_alias(
     alias.use_real_affiliation = use_real_affiliation
     alias.role = role
     alias.use_real_role = use_real_role
-    alias.last_modified = datetime.datetime.utcnow()
+    alias.last_modified = datetime.datetime.now(datetime.timezone.utc)
     db.session.add(alias)
     db.session.commit()
 

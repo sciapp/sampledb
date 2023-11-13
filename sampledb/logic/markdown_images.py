@@ -114,7 +114,7 @@ def find_referenced_markdown_images(html_content: str) -> typing.Set[str]:
 
 
 def _remove_expired_images() -> None:
-    expiration_datetime = datetime.datetime.utcnow() - datetime.timedelta(days=2)
+    expiration_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     expired_images = MarkdownImage.query.filter_by(permanent=False).filter(MarkdownImage.utc_datetime < expiration_datetime).all()
     for expired_image in expired_images:
         db.session.delete(expired_image)

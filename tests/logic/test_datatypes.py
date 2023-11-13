@@ -231,7 +231,7 @@ def test_quantity_invalid_data():
 
 
 def test_datetime_serialization():
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     s = json.dumps(datatypes.DateTime(utc_datetime), cls=datatypes.JSONEncoder)
     assert json.loads(s) == {
         '_type': 'datetime',
@@ -240,7 +240,7 @@ def test_datetime_serialization():
 
 
 def test_datetime_deserialization():
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     s = json.dumps(datatypes.DateTime(utc_datetime), cls=datatypes.JSONEncoder)
     dt = json.loads(s, object_hook=datatypes.JSONEncoder.object_hook)
     # The datetime objects are stored with a precision of 1 second
@@ -248,7 +248,7 @@ def test_datetime_deserialization():
 
 
 def test_datetime_equals():
-    utc_datetime = datetime.datetime.utcnow()
+    utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     assert datatypes.DateTime(utc_datetime) == datatypes.DateTime(utc_datetime)
     assert datatypes.DateTime(utc_datetime) != datatypes.DateTime(utc_datetime + datetime.timedelta(days=1))
 
@@ -260,7 +260,7 @@ def test_datetime_valid_data():
             'test': datatypes.DateTime.JSON_SCHEMA
         }
     }
-    data = {'test': datatypes.DateTime(datetime.datetime.utcnow())}
+    data = {'test': datatypes.DateTime(datetime.datetime.now(datetime.timezone.utc))}
     raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
     jsonschema.validate(raw_data, schema)
 

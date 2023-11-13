@@ -38,7 +38,7 @@ class FileLogEntry(Model):
     file_id: Mapped[int] = db.Column(db.Integer, nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FileLogEntry"]]
@@ -62,7 +62,7 @@ class FileLogEntry(Model):
             file_id=file_id,
             user_id=user_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
         self.user: typing.Optional['User'] = None
 

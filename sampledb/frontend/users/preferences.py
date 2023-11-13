@@ -94,7 +94,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                         'reason': 'activate_two_factor_authentication_method',
                         'user_id': method.user_id,
                         'method_id': method.id,
-                        'expiration_datetime': (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
                     }
                     return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
                 else:
@@ -107,7 +107,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                         'reason': 'deactivate_two_factor_authentication_method',
                         'user_id': method.user_id,
                         'method_id': method.id,
-                        'expiration_datetime': (datetime.datetime.utcnow() + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
                     }
                     return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
                 else:
