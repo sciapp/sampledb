@@ -3,30 +3,30 @@
 Webhooks
 ========
 
-Webhooks can be used to inform an external service about events right after they occurred.
-Currently only the object/activity log can be subscribed to, which contains log entries for object creation, updates, new references, comments, files and similar activity.
+Webhooks can be used to inform an external service about events right after they occur.
+Currently, only the object/activity log can be subscribed to, which contains log entries for object creation, updates, new references, comments, files, and similar activities.
 
-If webhooks are used, background tasks (see :ref:`SAMPLEDB_ENABLE_BACKGROUND_TASKS <miscellaneous_config>`) should be enabled to handle sending the messages in background without blocking operations which create object log entries.
+If webhooks are used, background tasks (see :ref:`SAMPLEDB_ENABLE_BACKGROUND_TASKS <miscellaneous_config>`) should be enabled to handle sending the messages in the background without blocking operations that create object log entries.
 
-By default only administrators are allowed to register webhooks. To allow other users using this feature the variable :ref:`SAMPLEDB_ENABLE_WEBHOOKS_FOR_USERS <miscellaneous_config>` has to be set.
+By default, only administrators are allowed to register webhooks. To allow other users to use this feature the variable :ref:`SAMPLEDB_ENABLE_WEBHOOKS_FOR_USERS <miscellaneous_config>` has to be set.
 
 Every webhook has a target URL to send a message to if the subscribed log was updated and a secret, to validate a message's contents.
 
 To configure webhooks visit the webhook section on your user preferences page.
-Right after creation the webhook secret is displayed to be copied and safely stored by you (see secret validation below).
-You can only setup one object log webhook per target.
+Right after creation, the webhook secret is displayed to be copied and safely stored by you (see secret validation below).
+You can only set up one object log webhook per target.
 
 Handling Webhook Messages
 -------------------------
 
-If a webhook has been registered by a user and a new entry in the subscribed log which the user is allowed to access, a HTTP POST request is sent to the Webhooks target URL.
+If a webhook has been registered by a user and a new entry in the subscribed log that the user is allowed to access, an HTTP POST request is sent to the webhook target URL.
 This message contains the object log entries data in JSON (see :ref:`Object Log Entries in the HTTP API section <api_object_log_entries>`) as well as two custom headers:
 
-    * ``X-Sampledb-Event-Type``: The name of the subscribed log. Currently ``Object Log`` is the only possible value.
+    * ``X-Sampledb-Event-Type``: The name of the subscribed log. Currently, ``Object Log`` is the only possible value.
     * ``X-Sampledb-Signature``: The signature based on the data and the webhooks secret, e.g. ``sha256=6b17ffb207aeb7145fe67a0b81ca75aa8415e70bbade2c9c5a7d3bb830add211``
 
-If you setup a server to handle the webhook messages you should still have in mind, that the communication between |service_name| and webhook handler might not always be possible.
-|service_name| does not retry if the communication was not successful.
+If you set up a server to handle the webhook messages you should still keep in mind, that the communication between |service_name| and the webhook handler might not always be possible.
+|service_name| does not retry if the communication is not successful.
 Therefore you should check for new events in the object log using the :ref:`object_log_entries API endpoint <api_object_log_entries>` regularly.
 
 Exemplary POST request:
