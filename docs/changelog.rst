@@ -7,6 +7,7 @@ Version 0.26
 Currently in development.
 
 - Show changes during schema upgrade
+- Added support for FIDO2 passkeys for authentication and two-factor authentication
 
 Version 0.25.3
 --------------

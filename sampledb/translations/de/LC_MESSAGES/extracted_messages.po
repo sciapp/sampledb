@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-11-16 08:54+0100\n"
+"POT-Creation-Date: 2023-11-20 14:02+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -118,6 +118,12 @@ msgid "You need GRANT permissions to edit the permissions for this action."
 msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
 "Aktion zu bearbeiten."
+
+msgid "Please enter at least 1 character."
+msgstr "Bitte geben Sie mindestens 1 Zeichen ein."
+
+msgid "Please enter at least 3 characters."
+msgstr "Bitte geben Sie mindestens 3 Zeichen ein."
 
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
@@ -2089,6 +2095,9 @@ msgstr "Authentifizierungsmethode"
 msgid "Other"
 msgstr "Andere"
 
+msgid "FIDO2 Passkey"
+msgstr "FIDO2 Passkey"
+
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
@@ -2133,8 +2142,11 @@ msgstr "Aktivieren"
 msgid "Disable this method before deleting it."
 msgstr "Deaktivieren Sie diese Methode um sie löschen zu können."
 
-msgid "Set up TOTP-based Two Factor Authentication"
+msgid "Set up TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+msgid "Set up FIDO2 Passkey for Two-Factor Authentication"
+msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
 
 msgid ""
 "Webhooks allow you to subscribe to the object log, as described in <a "
@@ -2345,11 +2357,11 @@ msgstr "Schließen"
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
-msgid "The password must be at least 3 characters long."
-msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
-
 msgid "Type"
 msgstr "Typ"
+
+msgid "The password must be at least 3 characters long."
+msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
 msgid "Add"
 msgstr "Hinzufügen"
@@ -2399,6 +2411,11 @@ msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
+
+msgid "The passkey failed to register with the following error:"
+msgstr ""
+"Das Registrieren des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -2711,6 +2728,17 @@ msgstr ""
 
 msgid "Remember me"
 msgstr "Angemeldet bleiben"
+
+msgid "or"
+msgstr "oder"
+
+msgid "Use Passkey"
+msgstr "Passkey nutzen"
+
+msgid "The passkey failed to authenticate with the following error:"
+msgstr ""
+"Die Authentisierung des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
 
 msgid "Sign Out"
 msgstr "Abmelden"
@@ -4665,9 +4693,6 @@ msgstr ""
 "Falls ein Nutzer in dieser Liste fehlt, geben Sie bitte dessen ID unten "
 "ein."
 
-msgid "or"
-msgstr "oder"
-
 msgid "Enter User ID"
 msgstr "Nutzer-ID eingeben"
 
@@ -6434,6 +6459,30 @@ msgstr ""
 msgid "Create Project Group"
 msgstr "Projektgruppe erstellen"
 
+msgid "Use FIDO2 Passkey"
+msgstr "FIDO2 Passkey verwenden"
+
+msgid ""
+"Please click \"Sign In\" and then use your FIDO2 passkey to complete the "
+"sign in process."
+msgstr ""
+"Bitte klicken Sie auf \"Anmelden\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um den Anmeldeprozess abzuschließen."
+
+msgid ""
+"Please click \"Confirm\" and then use your FIDO2 passkey to activate this"
+" two factor authentication method."
+msgstr ""
+"Bitte klicken Sie auf \"Bestätigen\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um die Zwei-Faktor-Authentisierungsmethode zu aktivieren."
+
+msgid ""
+"Please click \"Confirm\" and then use your FIDO2 passkey to deactivate "
+"this two factor authentication method."
+msgstr ""
+"Bitte klicken Sie auf \"Bestätigen\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um die Zwei-Faktor-Authentisierungsmethode zu aktivieren."
+
 msgid "Enter TOTP Verification Code"
 msgstr "TOTP Bestätigungscode eingeben"
 
@@ -6483,6 +6532,19 @@ msgstr ""
 "Bitte wählen Sie eine Zwei-Faktor-Authentisierungsmethode, um den "
 "Anmeldeprozess abzuschließen."
 
+msgid "Set Up FIDO2 Passkey for Two-Factor Authentication"
+msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
+
+msgid ""
+"Please enter a description for the passkey you wish to use and then click"
+" \"Set Up\"."
+msgstr ""
+"Bitte geben Sie eine Beschreibung für den Passkey, den Sie verwenden "
+"möchten, ein und klicken Sie dann auf \"Einrichten\"."
+
+msgid "Set Up"
+msgstr "Einrichten"
+
 msgid "Set Up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
 
@@ -6500,9 +6562,6 @@ msgstr "TOTP Setup QR Code"
 
 msgid "or enter the following setup key:"
 msgstr "oder geben Sie den folgenden Einrichtungsschlüssel ein:"
-
-msgid "Set Up"
-msgstr "Einrichten"
 
 msgid "Unsupported Two Factor Authentication Method"
 msgstr "Nicht unterstützte Zwei-Faktor-Authentisierungsmethode"
@@ -6538,6 +6597,9 @@ msgstr ""
 "Sie nutzen das Standard-Administrator-Passwort aus der SampleDB-"
 "Dokumentation. Bitte ändern Sie Ihr Passwort, bevor Sie diese SampleDB-"
 "Installation für andere verfügbar machen."
+
+msgid "No user was found for this passkey."
+msgstr "Für diesen Passkey wurde kein Nutzer gefunden."
 
 msgid "Please sign in again."
 msgstr "Bitte melden Sie sich erneut an."
@@ -6776,6 +6838,20 @@ msgstr ""
 
 msgid "The two factor authentication method has already been disabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde bereits deaktiviert."
+
+msgid "Successfully set up two-factor authentication."
+msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
+
+msgid "Failed to set up two-factor authentication."
+msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
+
+msgid ""
+"The passkey does not match the one stored for this two-factor "
+"authentication method, please try again."
+msgstr ""
+"Der Passkey passt nicht zu dem, der für diese Zwei-Faktor-"
+"Authentisierungsmethode abgespeichert wurde. Bitte versuchen Sie es "
+"erneut."
 
 #, python-format
 msgid "Unnamed Action (#%(action_id)s)"

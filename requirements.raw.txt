@@ -3,6 +3,7 @@ beautifulsoup4
 bleach
 CherryPy
 email-validator
+fido2
 Flask
 Flask-Babel
 Flask-HTTPAuth

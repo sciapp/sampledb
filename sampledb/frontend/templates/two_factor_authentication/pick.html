@@ -30,6 +30,16 @@
           {% endif %}
         </a>
       </div>
+    {% elif method.data.get('type') == 'fido2_passkey' %}
+      <div class="form-group">
+        <a href="{{ url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=method.id) }}" class="btn btn-primary" style="min-width: 204px">
+          {% if method.data.get('description') %}
+            <em>&quot;{{ method.data.description }}&quot;</em>
+          {% else %}
+            {{ _('FIDO2 Passkey') }}
+          {% endif %}
+        </a>
+      </div>
     {% endif %}
   {% endfor %}
   <div>

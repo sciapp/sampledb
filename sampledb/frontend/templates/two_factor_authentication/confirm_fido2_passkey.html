@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Use FIDO2 Passkey') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h1>{{ _('Use FIDO2 Passkey') }}</h1>
+  <form action="{{ url_for('frontend.confirm_fido2_passkey_two_factor_authentication', method_id=method_id) }}" method="post" id="fido2-authenticate-form">
+    {{ confirm_form.hidden_tag() }}
+    <p class="text-muted">
+      {% if reason == 'login' %}
+        {{ _('Please click "Sign In" and then use your FIDO2 passkey to complete the sign in process.') }}
+      {% elif reason == 'activate_two_factor_authentication_method' %}
+        {{ _('Please click "Confirm" and then use your FIDO2 passkey to activate this two factor authentication method.') }}
+      {% elif reason == 'deactivate_two_factor_authentication_method' %}
+        {% if method_to_deactivate.data.get('description') %}
+          {% set method_description = method_to_deactivate.data['description'] %}
+        {% elif method_to_deactivate.data.get('type') == 'totp' %}
+          {% set method_description = _('TOTP-based Two Factor Authentication') %}
+        {% else %}
+          {% set method_description = _('Unknown Two Factor Authentication Method') %}
+        {% endif %}
+        {{ _('Please click "Confirm" and then use your FIDO2 passkey to confirm that you want to deactivate <em>%(method_description)s</em>.', method_description=method_description) }}
+      {% endif %}
+    </p>
+    {% if description %}
+      <p>
+        <em>&quot;{{ description }}&quot;</em>
+      </p>
+    {% endif %}
+    <div class="help-block"></div>
+    <div>
+      <input type="submit" value="{% if reason == 'login' %}{{ _('Sign In') }}{% else %}{{ _('Confirm') }}{% endif %}" class="btn btn-primary" style="width:100px;" />
+      <a href="{{ url_for('.index') }}" class="btn btn-default" style="width:100px;">{{ _('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
+    <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+      import {
+        get,
+        parseRequestOptionsFromJSON,
+      } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
+
+      async function authenticate(e) {
+        e && e.preventDefault();
+        const options = {{ dict(options) | tojson }};
+        const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
+        const form = $('#fido2-authenticate-form');
+        form.removeClass('has-error');
+        const help_bock = form.find('.help-block');
+        help_bock.text('');
+        try {
+          const assertion = await get(publicKeyCredentialRequestOptions);
+          form.find('[name="assertion"]').val(JSON.stringify(assertion));
+          form[0].submit();
+          return true;
+        } catch (error) {
+          form.addClass('has-error');
+          help_bock.text("{{ _('The passkey failed to authenticate with the following error:') }}: " + error)
+          return false;
+        }
+      }
+
+      $("#fido2-authenticate-form").on('submit', authenticate);
+    </script>
+  {% endif %}
+{% endblock %}

@@ -2,11 +2,13 @@
 """
 
 """
+import typing
 
 import flask
 import flask_login
+from flask_babel import _
 from flask_wtf import FlaskForm
-from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField
+from wtforms import StringField, RadioField, PasswordField, SubmitField, IntegerField, HiddenField
 from wtforms.validators import DataRequired, Length, Email, ValidationError
 
 from .utils import validate_orcid
@@ -60,10 +62,29 @@ class LoginForm(FlaskForm):
 
 
 class AuthenticationForm(FlaskForm):
-    login = StringField('Login', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=3)])
+    login = StringField('Login')
+    password = PasswordField('Password')
+    description = StringField()
+    fido2_passkey_credentials = HiddenField()
     authentication_method = RadioField('Authentication Method', choices=[('E', 'Email'), ('L', 'LDAP')], default='E')
     submit = SubmitField('Login')
+
+    def validate(self, *args: typing.Any, **kwargs: typing.Any) -> bool:
+        is_valid = bool(super().validate(*args, **kwargs))
+        if not is_valid:
+            return False
+        if self.authentication_method.data in ('E', 'L'):
+            if not self.login.data:
+                is_valid = False
+                self.login.errors.append(_('Please enter at least 1 character.'))
+            if not self.password.data or len(self.password.data) < 3:
+                is_valid = False
+                self.password.errors.append(_('Please enter at least 3 characters.'))
+        if self.authentication_method.data == 'FIDO2_PASSKEY':
+            if not self.description.data:
+                is_valid = False
+                self.description.errors.append(_('Please enter at least 1 character.'))
+        return is_valid
 
 
 class AuthenticationMethodForm(FlaskForm):

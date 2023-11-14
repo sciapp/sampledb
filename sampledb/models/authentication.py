@@ -23,6 +23,7 @@ class AuthenticationType(enum.Enum):
     OTHER = 3
     API_TOKEN = 4
     API_ACCESS_TOKEN = 5
+    FIDO2_PASSKEY = 6
 
 
 class Authentication(Model):

@@ -1,14 +1,23 @@
+import base64
 import datetime
+import functools
 import secrets
 import typing
+import urllib.parse
 
 import bcrypt
 import flask
+import fido2.features
+from fido2.server import Fido2Server
+from fido2.webauthn import AttestationConveyancePreference, PublicKeyCredentialRpEntity, AttestedCredentialData
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
 from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod
 from . import errors, api_log
+
+# enable JSON mapping for webauthn options
+fido2.features.webauthn_json_mapping.enabled = True
 
 
 # number of rounds for generating new salts for hashing passwords with crypt
@@ -136,6 +145,81 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     )
     db.session.add(authentication)
     db.session.commit()
+
+
+def add_fido2_passkey(user_id: int, credential_data: AttestedCredentialData, description: str) -> None:
+    """
+    Add a FIDO2 passkey as an authentication method for a given user.
+
+    :param user_id: the ID of an existing user
+    :param credential_data: the passkey credential data
+    :param description: a description for the passkey
+    """
+    authentication = Authentication(
+        login={
+            'credential_id': base64.b64encode(credential_data.credential_id).decode('utf-8'),
+            'credential_data': base64.b64encode(credential_data).decode('utf-8'),
+            'description': description
+        },
+        authentication_type=AuthenticationType.FIDO2_PASSKEY,
+        confirmed=True,
+        user_id=user_id
+    )
+    db.session.add(authentication)
+    db.session.commit()
+
+
+def get_all_fido2_passkey_credentials() -> typing.Sequence[AttestedCredentialData]:
+    """
+    Get all known FIDO2 passkey credentials.
+
+    :return: a list of credentials
+    """
+    return [
+        AttestedCredentialData(base64.b64decode(authentication.login['credential_data'].encode('utf-8')))  # type: ignore
+        for authentication in Authentication.query.filter_by(type=AuthenticationType.FIDO2_PASSKEY).all()
+    ]
+
+
+def get_user_id_for_fido2_passkey_credential_id(credential_id: bytes) -> typing.Optional[int]:
+    """
+    Get the user ID for a given FIDO2 passkey credential ID.
+
+    :return: the user ID, or None if the credential ID is unknown
+    """
+    authentication = Authentication.query.filter(
+        db.and_(
+            Authentication.type == AuthenticationType.FIDO2_PASSKEY,
+            Authentication.login['credential_id'].astext == base64.b64encode(credential_id).decode('utf-8')
+        )
+    ).first()
+    if authentication is None:
+        return None
+    return authentication.user_id
+
+
+@functools.cache
+def _verify_origin(origin: str) -> bool:
+    origin_parsed = urllib.parse.urlparse(origin)
+    index_parsed = urllib.parse.urlparse(flask.url_for('.index', _external=True))
+    return origin_parsed.scheme == index_parsed.scheme and origin_parsed.netloc == index_parsed.netloc
+
+
+def get_webauthn_server() -> Fido2Server:
+    """
+    Get the FIDO2 webauthn server.
+
+    :return: a Fido2Server instance
+    """
+    rp = PublicKeyCredentialRpEntity(
+        name=flask.current_app.config['SERVICE_NAME'],
+        id=(flask.current_app.config['SERVER_NAME'] or '').split(':')[0]
+    )
+    return Fido2Server(
+        rp,
+        attestation=AttestationConveyancePreference.NONE,
+        verify_origin=_verify_origin
+    )
 
 
 def login(login: str, password: str) -> typing.Optional[logic.users.User]:
@@ -574,6 +658,45 @@ def create_totp_two_factor_authentication_method(
         data={
             'type': 'totp',
             'secret': secret,
+            'description': description.strip()
+        }
+    )
+
+
+def get_all_two_factor_fido2_passkey_credentials_for_user(
+        user_id: int
+) -> typing.Sequence[AttestedCredentialData]:
+    """
+    Get all FIDO2 passkey credentials for two-factor authentication methods for a given user.
+
+    :param user_id: the ID of an existing user
+    :return: a list of credentials
+    """
+    return [
+        AttestedCredentialData(base64.b64decode(authentication_method.data['credential_data'].encode('utf-8')))  # type: ignore[no-untyped-call]
+        for authentication_method in get_two_factor_authentication_methods(user_id)
+        if authentication_method.data.get('type') == 'fido2_passkey'
+    ]
+
+
+def create_fido2_passkey_two_factor_authentication_method(
+        user_id: int,
+        credential_data: AttestedCredentialData,
+        description: str = ''
+) -> TwoFactorAuthenticationMethod:
+    """
+    Create a new FIDO2 Passkey two-factor authentication method.
+
+    :param user_id: the ID of an existing user
+    :param credential_data: the credential data
+    :param description: a description
+    :return: the newly created method
+    """
+    return _create_two_factor_authentication_method(
+        user_id=user_id,
+        data={
+            'type': 'fido2_passkey',
+            'credential_data': base64.b64encode(credential_data).decode('utf-8'),
             'description': description.strip()
         }
     )
