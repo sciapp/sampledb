@@ -111,6 +111,8 @@ def parse_configuration_values() -> None:
         'ENABLE_CONTENT_SECURITY_POLICY',
         'ENABLE_ELN_FILE_IMPORT',
         'ENABLE_FEDERATION_DISCOVERABILITY',
+        'ENABLE_WEBHOOKS_FOR_USERS',
+        'WEBHOOKS_ALLOW_HTTP'
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -644,6 +646,9 @@ ENABLE_FEDERATION_DISCOVERABILITY = True
 ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False
+
+ENABLE_WEBHOOKS_FOR_USERS = False
+WEBHOOKS_ALLOW_HTTP = False
 
 ENABLE_BACKGROUND_TASKS = False
 

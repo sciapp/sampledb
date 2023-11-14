@@ -332,6 +332,7 @@ def test_status_codes(flask_server, user, driver):
         f'api/v1/objects/{other_object_id}/permissions/users/{user_id}': 200,
         f'api/v1/objects/{other_object_id}/related_objects': 200,
         f'api/v1/objects/{other_object_id}/versions/0': 200,
+        'api/v1/object_log_entries/': 200,
         'api/v1/users/': 200,
         f'api/v1/users/{user_id}': 200,
         'api/v1/users/me': 200,
@@ -443,7 +444,7 @@ def test_status_codes(flask_server, user, driver):
         'users/me/sign_in': 302,
         'users/me/sign_out': 200,
         'users/me/two_factor_authentication/totp/confirm': 302,
-        'users/me/two_factor_authentication/totp/setup': 200
+        'users/me/two_factor_authentication/totp/setup': 200,
     }
     for relative_url, expected_status_code in expected_status_codes.items():
         if relative_url.startswith('api/v1/'):

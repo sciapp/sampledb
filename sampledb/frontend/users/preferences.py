@@ -20,11 +20,12 @@ from .. import frontend
 from ..authentication_forms import ChangeUserForm, AuthenticationForm, AuthenticationMethodForm
 from ..users_forms import RequestPasswordResetForm, PasswordForm, AuthenticationPasswordForm
 from ..permission_forms import handle_permission_forms, set_up_permissions_forms
-from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm
+from .forms import NotificationModeForm, OtherSettingsForm, CreateAPITokenForm, ManageTwoFactorAuthenticationMethodForm, \
+    AddWebhookForm, RemoveWebhookForm
 from ..utils import get_groups_form_data
 
 from ... import logic
-from ...logic import user_log
+from ...logic import user_log, errors
 from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method
 from ...logic.users import get_user, get_users, User
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
@@ -35,7 +36,9 @@ from ...logic.groups import get_group
 from ...logic.notifications import get_notification_modes, set_notification_mode_for_type
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
+from ...logic.webhooks import get_webhooks, create_webhook, remove_webhook
 from ...models import Authentication, AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
+from ...models.webhooks import WebhookType
 from ...utils import FlaskResponseT
 
 
@@ -170,6 +173,17 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         project_group_filter=lambda group: group.id not in project_permissions
     )
 
+    may_use_webhooks = flask_login.current_user.is_admin or flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS']
+    webhooks = get_webhooks(user_id=flask_login.current_user.get_id())
+    show_add_form = False
+    webhook_secret = None
+    add_webhook_form = AddWebhookForm()
+    if add_webhook_form.address.data is None:
+        add_webhook_form.address.data = ''
+    if add_webhook_form.name.data is None:
+        add_webhook_form.name.data = ''
+    remove_webhook_form = RemoveWebhookForm()
+
     if 'change' not in flask.request.form:
         if change_user_form.name.data is None or change_user_form.name.data == "":
             change_user_form.name.data = user.name
@@ -231,6 +245,12 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
                     api_tokens=api_tokens,
                     api_access_tokens=api_access_tokens,
+                    webhooks=webhooks,
+                    may_use_webhooks=may_use_webhooks,
+                    add_webhook_form=add_webhook_form,
+                    show_add_form=show_add_form,
+                    remove_webhook_form=remove_webhook_form,
+                    webhook_secret=webhook_secret,
                 )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -347,6 +367,12 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
                     api_tokens=api_tokens,
                     api_access_tokens=api_access_tokens,
+                    webhooks=webhooks,
+                    may_use_webhooks=may_use_webhooks,
+                    add_webhook_form=add_webhook_form,
+                    show_add_form=show_add_form,
+                    remove_webhook_form=remove_webhook_form,
+                    webhook_secret=webhook_secret,
                 )
             user_log.edit_user_preferences(user_id=user_id)
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -409,6 +435,12 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     has_active_method=any(method.active for method in two_factor_authentication_methods),
                     api_tokens=api_tokens,
                     api_access_tokens=api_access_tokens,
+                    webhooks=webhooks,
+                    may_use_webhooks=may_use_webhooks,
+                    add_webhook_form=add_webhook_form,
+                    show_add_form=show_add_form,
+                    remove_webhook_form=remove_webhook_form,
+                    webhook_secret=webhook_secret,
                 )
             authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
         else:
@@ -462,6 +494,12 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 has_active_method=any(method.active for method in two_factor_authentication_methods),
                 api_tokens=api_tokens,
                 api_access_tokens=api_access_tokens,
+                webhooks=webhooks,
+                may_use_webhooks=may_use_webhooks,
+                add_webhook_form=add_webhook_form,
+                show_add_form=show_add_form,
+                remove_webhook_form=remove_webhook_form,
+                webhook_secret=webhook_secret,
             )
     if handle_permission_forms(
         default_permissions,
@@ -473,6 +511,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
     ):
         flask.flash(_("Successfully updated default permissions."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+
     if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
         for notification_type in NotificationType:
             if 'notification_mode_for_type_' + notification_type.name.lower() in flask.request.form:
@@ -558,6 +597,95 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
+
+    if 'remove_webhook' in flask.request.form and may_use_webhooks:
+        if remove_webhook_form.validate_on_submit():
+            try:
+                webhook_id = remove_webhook_form.id.data
+                remove_webhook(webhook_id)
+                flask.flash(_('Successfully removed the webhook.'), 'success')
+            except Exception:
+                flask.flash(_('Failed to remove the webhook.'), 'error')
+            return flask.redirect(flask.url_for('.user_preferences', user_id=user_id))
+    if 'add_webhook' in flask.request.form:
+        show_add_form = True
+        if add_webhook_form.validate_on_submit():
+            if not may_use_webhooks:
+                add_webhook_form.address.errors.append(_('You are not allowed to create Webhooks.'))
+                add_webhook_form.name.errors.append(_('You are not allowed to create Webhooks.'))
+                flask.render_template(
+                    'preferences.html',
+                    user=user,
+                    change_user_form=change_user_form,
+                    authentication_password_form=authentication_password_form,
+                    default_permissions_form=default_permissions_form,
+                    add_user_permissions_form=add_user_permissions_form,
+                    add_group_permissions_form=add_group_permissions_form,
+                    add_project_permissions_form=add_project_permissions_form,
+                    notification_mode_form=notification_mode_form,
+                    NotificationMode=NotificationMode,
+                    NotificationType=NotificationType,
+                    notification_modes=get_notification_modes(flask_login.current_user.id),
+                    user_settings=user_settings,
+                    other_settings_form=other_settings_form,
+                    all_timezones=all_timezones,
+                    your_locale=your_locale,
+                    supported_locales=SUPPORTED_LOCALES,
+                    allowed_language_codes=logic.locale.get_allowed_language_codes(),
+                    Permissions=Permissions,
+                    users=users,
+                    get_user=get_user,
+                    get_group=get_group,
+                    show_groups_form=show_groups_form,
+                    groups_treepicker_info=groups_treepicker_info,
+                    show_projects_form=show_projects_form,
+                    projects_treepicker_info=projects_treepicker_info,
+                    get_project=get_project,
+                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+                    user_permissions=user_permissions,
+                    group_permissions=group_permissions,
+                    project_permissions=project_permissions,
+                    all_user_permissions=all_user_permissions,
+                    authentication_method_form=authentication_method_form,
+                    authentication_form=authentication_form,
+                    create_api_token_form=create_api_token_form,
+                    created_api_token=created_api_token,
+                    confirmed_authentication_methods=confirmed_authentication_methods,
+                    authentications=authentication_methods,
+                    two_factor_authentication_methods=two_factor_authentication_methods,
+                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+                    has_active_method=any(method.active for method in two_factor_authentication_methods),
+                    api_tokens=api_tokens,
+                    api_access_tokens=api_access_tokens,
+                    webhooks=webhooks,
+                    may_use_webhooks=may_use_webhooks,
+                    add_webhook_form=add_webhook_form,
+                    show_add_form=show_add_form,
+                    remove_webhook_form=remove_webhook_form,
+                    webhook_secret=webhook_secret,
+                )
+            try:
+                name = add_webhook_form.name.data
+                address = add_webhook_form.address.data
+                if name == '':
+                    name = None
+                if address == '':
+                    address = None
+                new_webhook = create_webhook(type=WebhookType.OBJECT_LOG, user_id=flask_login.current_user.get_id(), target_url=address, name=name)
+            except errors.WebhookAlreadyExistsError:
+                add_webhook_form.address.errors.append(_('A webhook of this type with this target address already exists', service_name=flask.current_app.config['SERVICE_NAME']))
+            except errors.InsecureComponentAddressError:
+                add_webhook_form.address.errors.append(_('Only secure communication via https is allowed'))
+            except errors.InvalidComponentAddressError:
+                add_webhook_form.address.errors.append(_('This webhook address is invalid'))
+            except Exception:
+                add_webhook_form.name.errors.append(_('Failed to create webhook'))
+            else:
+                flask.flash(_('The webhook has been added successfully'), 'success')
+                show_add_form = False
+                webhooks = get_webhooks(user_id=flask_login.current_user.get_id())
+                webhook_secret = new_webhook.secret
+
     return flask.render_template(
         'preferences.html',
         user=user,
@@ -602,6 +730,12 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         has_active_method=any(method.active for method in two_factor_authentication_methods),
         api_tokens=api_tokens,
         api_access_tokens=api_access_tokens,
+        webhooks=webhooks,
+        may_use_webhooks=may_use_webhooks,
+        add_webhook_form=add_webhook_form,
+        show_add_form=show_add_form,
+        remove_webhook_form=remove_webhook_form,
+        webhook_secret=webhook_secret,
     )
 
 

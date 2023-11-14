@@ -72,6 +72,7 @@ Developer Guide
     :caption: Developer Guide
 
     developer_guide/api.rst
+    developer_guide/webhooks.rst
     developer_guide/contributing.rst
 
 .. raw:: html

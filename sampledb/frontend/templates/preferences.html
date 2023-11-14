@@ -14,6 +14,9 @@
           <li><a href="#2fa">{{ _('Two Factor Authentication') }}</a></li>
         </ul>
       </li>
+      {% if may_use_webhooks %}
+      <li><a href="#webhooks">{{ _('Webhooks') }}</a></li>
+      {% endif %}
       <li><a href="#notification_settings">{{ _('Notification Settings') }}</a></li>
       <li><a href="#default_permissions">{{ _('Default Permissions') }}</a></li>
       <li><a href="#other_settings">{{ _('Other Settings') }}</a></li>
@@ -263,6 +266,55 @@
   <div class="text-right">
     <a {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before adding a new one.') }}" {% else %}href="{{ url_for('.setup_totp_two_factor_authentication') }}"{% endif %} class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
   </div>
+
+  {% if may_use_webhooks %}
+    <h3 id="webhooks">{{ _('Webhooks') }}</h3>
+    <div>
+      <p>
+        <strong>{{ _('Note:')}}</strong> {{ _('Webhooks allow you to subscribe to the object log, as described in <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/webhooks.html">the documentation</a>.')}}
+      </p>
+        <table class="table">
+      {% if webhooks | length == 0 %}
+        {{ _('You have not yet created any webhooks.') }}
+      {% else %}
+         <thead>
+             <tr>
+                 <th>{{ _('Name') }}</th>
+                 <th>{{ _('Address') }}</th>
+                 <th>{{ _('Last Contact') }}</th>
+                 <th></th>
+             </tr>
+         </thead>
+         <tbody>
+           {% for webhook in webhooks %}
+           <tr>
+             <td>{{ webhook.name }}</td>
+             <td>{{ webhook.target_url }}</td>
+             <td>{% if not webhook.last_contact %}&mdash;{% else %}{{ webhook.last_contact }}{% endif %}</td>
+             <td class="text-right">
+               <div class="btn-group">
+                 <form method="post" name="form-remove-webhook" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
+                   {{ remove_webhook_form.csrf_token() }}
+                   <input class="form-control" type="hidden" name="{{remove_webhook_form.id.name}}" value={{webhook.id}}>
+                   <button type="submit" class="btn btn-danger" name="remove_webhook" value="remove"><i class="fa fa-times" aria-hidden="true"></i> {{ _('Remove') }}</button>
+                 </form>
+               </div>
+             </td>
+           </tr>
+           {% endfor %}
+         </tbody>
+      {% endif %}
+         <tfoot>
+           <tr>
+             <td></td>
+             <td></td>
+             <td></td>
+             <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#addWebhookModal"><i class="fa fa-plus" aria-hidden="true"></i> {{ _('Add Webhook') }}</button></td>
+           </tr>
+         </tfoot>
+      </table>
+    </div>
+  {% endif %}
 
   <h2 id="notification_settings">{{ _('Notification Settings')}}</h2>
   <p><strong>{{ _('Note:')}}</strong>
@@ -679,6 +731,73 @@
   </div>
 </div>
 {% endif %}
+
+{% if may_use_webhooks %}
+  <div class="modal fade" id="addWebhookModal" tabindex="-1" role="dialog" aria-labelledby="addWebhookModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="addWebhookModalLabel">{{ _('Add Webhook') }}</h4>
+        </div>
+        <form method="post" action="{{ url_for('.user_preferences', user_id=user.id) }}" class="form-horizontal">
+          {{ add_webhook_form.csrf_token() }}
+          <div class="modal-body">
+            <div class="form-group {% if add_webhook_form.name.errors %}has-error{% endif %}">
+              <label for="addWebhookName" class="col-sm-2 control-label">{{ _('Name') }}</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addWebhookName" name="{{ add_webhook_form.name.name }}" placeholder="{{ _('Name') }}" value="{{ add_webhook_form.name.data }}">
+                {% for error_message in add_webhook_form.name.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
+            <div class="form-group {% if add_webhook_form.address.errors %}has-error{% endif %}">
+              <label for="addWebhookTarget" class="col-sm-2 control-label">{{ _('Target Address') }}</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="addWebhookTarget" name="{{ add_webhook_form.address.name }}" placeholder="{{ _('Target Address') }}" value="{{ add_webhook_form.address.data }}">
+                {% for error_message in add_webhook_form.address.errors %}<span class="help-block">{{ error_message }}</span>{% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+            <button type="submit" class="btn btn-primary" name="add_webhook" value="add">{{ _('Create Webhook') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% if webhook_secret %}
+    <div class="modal fade" id="viewWebhookSecretModal" tabindex="-1" role="dialog" aria-labelledby="viewWebhookSecretModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="viewWebhookSecretModalLabel">{{ _('New Webhook Secret') }}</h4>
+          </div>
+          <div class="modal-body">
+            <div id="webhook-secret">
+              <div class="input-group">
+                <input type="text" readonly="readonly" class="disabled form-control" value="{{ webhook_secret }}"/>
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
+                </span>
+              </div>
+              <span class="help-block" id="webhook-secret-copy-notes"></span>
+            </div>
+            <span class="help-block">
+              {{ _('Make sure you save it &mdash; you won\'t be able to access it again.') }}
+              {{ _('See the <href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/developer_guide/webhooks.html#validation">documentation</a> on how to use and validate messages using a secret.') }}
+            </span>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="width:6em;">{{ _('Close') }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
@@ -720,6 +839,40 @@
   {% if create_api_token_form.description.errors %}
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   $('#createApiTokenModal').modal('show');
+  </script>
+  {% endif %}
+  {% if show_add_form %}
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+      $(document).ready(function() {
+        var add_modal = $('#addWebhookModal');
+        add_modal.removeClass('fade');
+        add_modal.modal('show');
+        add_modal.addClass('fade');
+      });
+    </script>
+  {% endif %}
+  {% if webhook_secret %}
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+      $('#viewWebhookSecretModal').modal('show');
+      $('#webhook-secret button').bind('click', function() {
+      var input = document.querySelector('#webhook-secret input');
+      input.setSelectionRange(0, input.value.length + 1);
+      $(input).focus();
+      try {
+        var success = document.execCommand('copy');
+        if (success) {
+          $('#webhook-secret-copy-notes').text("{{ _('Copied!') }}");
+          $('#webhook-secret').removeClass('has-error').addClass('has-success');
+        } else {
+          $('#webhook-secret-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
+          $('#webhook-secret').removeClass('has-success').addClass('has-error');
+        }
+      } catch (err) {
+          $('#webhook-secret-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
+          $('#webhook-secret').removeClass('has-success').addClass('has-error');
+      }
+    });
+
   </script>
   {% endif %}
 {% endblock %}

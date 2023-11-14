@@ -75,5 +75,5 @@ __all__ = [
     'users_forms',
     'errors',
     'utils',
-    'federation'
+    'federation',
 ]

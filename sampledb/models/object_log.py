@@ -69,5 +69,14 @@ class ObjectLogEntry(Model):
         )
         self.user: typing.Optional['User'] = None
 
+    def __eq__(self, other: typing.Any) -> bool:
+        return isinstance(other, ObjectLogEntry) and \
+            self.id == other.id and \
+            self.type == other.type and \
+            self.object_id == other.object_id and \
+            self.user_id == other.user_id and \
+            self.data == other.data and \
+            self.utc_datetime == other.utc_datetime
+
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_id={self.object_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-10-09 12:58+0200\n"
+"POT-Creation-Date: 2023-11-09 13:02+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2038,6 +2038,9 @@ msgstr "API Zugriffstoken"
 msgid "Two Factor Authentication"
 msgstr "Zwei-Faktor-Authentisierung"
 
+msgid "Webhooks"
+msgstr "Webhooks"
+
 msgid "Notification Settings"
 msgstr "Benachrichtigungs&shy;einstellungen"
 
@@ -2138,6 +2141,32 @@ msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu könne
 
 msgid "Set up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+msgid ""
+"Webhooks allow you to subscribe to the object log, as described in <a "
+"href=\"https://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html\">the "
+"documentation</a>."
+msgstr ""
+"Webhooks ermöglichen das Objekt-Log zu abonnieren, wie in <a href=\"https"
+"://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html\">der Dokumentation</a>"
+" beschrieben."
+
+msgid "You have not yet created any webhooks."
+msgstr "Sie haben bisher keine Webhooks erstellt."
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Last Contact"
+msgstr "Letzter Kontakt"
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Add Webhook"
+msgstr "Webhook hinzufügen"
 
 #, python-format
 msgid ""
@@ -2350,6 +2379,26 @@ msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
 "Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
 "zugreifen können."
+
+msgid "Target Address"
+msgstr "Zieladresse"
+
+msgid "Create Webhook"
+msgstr "Webhook erstellen"
+
+msgid "New Webhook Secret"
+msgstr "Neues Webhook Geheimnis"
+
+msgid ""
+"See the <href=\"https://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html#validation\">documentation</a>"
+" on how to use and validate messages using a secret."
+msgstr ""
+"Siehe dazu auch die <a href=href=\"https://scientific-it-systems.iffgit"
+".fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html#validation\">Dokumentation</a>"
+" darüber, wie diese Geheimnisse zur Validierung von Nachrichten verwendet"
+" werden können."
 
 msgid "Copied!"
 msgstr "Kopiert!"
@@ -3680,9 +3729,6 @@ msgstr "Kategorien"
 
 msgid "Members"
 msgstr "Mitglieder"
-
-msgid "Remove"
-msgstr "Entfernen"
 
 msgid "Edit Basic Group"
 msgstr "Einfache Gruppe bearbeiten"
@@ -6077,9 +6123,6 @@ msgstr "Zeit"
 msgid "Value"
 msgstr "Wert"
 
-msgid "Address"
-msgstr "Adresse"
-
 msgid "UUID"
 msgstr "UUID"
 
@@ -6650,6 +6693,27 @@ msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
 
 msgid "Successfully updated your settings."
 msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully removed the webhook."
+msgstr "Der Webhook wurde erfolgreich entfernt."
+
+msgid "Failed to remove the webhook."
+msgstr "Das Entfernen des Webhooks ist fehlgeschlagen."
+
+msgid "You are not allowed to create Webhooks."
+msgstr "Sie haben nicht die Berechtigung Webhooks zu registrieren."
+
+msgid "A webhook of this type with this target address already exists"
+msgstr "Ein Webhook für diesen Typ mit dieser Zieladresse existiert bereits"
+
+msgid "This webhook address is invalid"
+msgstr "Diese Webhook-Adresse ist ungültig"
+
+msgid "Failed to create webhook"
+msgstr "Das Registrieren des Webhooks ist fehlgeschlagen"
+
+msgid "The webhook has been added successfully"
+msgstr "Der Webhook wurde erfolgreich erstellt"
 
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."

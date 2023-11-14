@@ -2334,3 +2334,53 @@ In some situations, e.g. for interactive applications that use the API, users ma
     :>json string expiration_utc_datetime: the expiration date and time (in UTC)
     :>json string description: the given description
     :statuscode 201: the access token has been created successfully
+
+
+.. _api_object_log_entries:
+
+Object Log Entries
+------------------
+
+
+Reading the full accessible object log
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/object_log_entries/
+
+    Get a list of all object log entries for objects with at least read permission.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/object_log_entries/?after_id=3514 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "log_entry_id": 3515,
+                "type": "CREATE_OBJECT",
+                "object_id": 163,
+                "user_id": 12,
+                "data": {},
+                "utc_datetime": "2023-12-03 01:02:03"
+            }
+        ]
+
+    :<json number after_id: only log entries created after the entry with the id ``after_id`` are returned (optional)
+    :>json number log_entry_id: the log entry's ID
+    :>json string type: the type of the log entry
+    :>json number object_id: the ID of the object this log entry is related to
+    :>json string user_id: the ID of the user by whose activity the log entry was created
+    :>json string data: the data of the log entry, might be empty (``{}``)
+    :>json string utc_datetime: the timestamp of the log entry in UTC in format %Y-%m-%d %H:%M:%S
+    :statuscode 200: no error
