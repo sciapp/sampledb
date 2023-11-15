@@ -24,7 +24,7 @@ def object_log_entry_to_json(log_entry: ObjectLogEntry) -> typing.Dict[str, typi
         'type': log_entry.type.name,
         'object_id': log_entry.object_id,
         'user_id': log_entry.user_id,
-        'data': log_entry.data,
+        'data': {key: value for key, value in log_entry.data.items() if key not in ['object', 'sample', 'measurement']},
         'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
     }
 

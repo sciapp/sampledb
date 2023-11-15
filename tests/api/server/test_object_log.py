@@ -136,3 +136,162 @@ def test_get_object_log_entries(flask_server, auth, auth2, user, user2, object, 
     r = requests.get(flask_server.base_url + 'api/v1/object_log_entries/', params={'after_id': local_entry.id - 1}, auth=auth2)
     entries = r.json()
     assert len(entries) == 1  # ...but filters the results
+
+
+def test_object_log_entries_all_types(flask_server, auth, user, user2, object, action, app):
+    # CREATE_OBJECT on creation
+    # EDIT_OBJECT
+    sampledb.logic.objects.update_object(object.id, {'name': {'_type': 'text', 'text': 'Name'}}, user.id)
+    # RESTORE_OBJECT_VERSION
+    sampledb.logic.objects.restore_object_version(object.id, 0, user.id)
+    # POST_COMMENT
+    sampledb.logic.comments.create_comment(object.object_id, user.id, 'Testcomment')
+    # UPLOAD_FILE
+    sampledb.logic.files.create_url_file(object.object_id, user.id, 'https://example.com')
+    # ASSIGN_LOCATION
+    location = sampledb.logic.locations.create_location(
+        {'en': 'Location'},
+        {'en': 'Description'},
+        None,
+        user.id,
+        sampledb.logic.locations.LocationType.LOCATION
+    )
+    sampledb.logic.locations.assign_location_to_object(object.object_id, location.id, user.id, user.id, None)
+    # LINK_PUBLICATION
+    sampledb.logic.publications.link_publication_to_object(user.id, object.object_id, '10.1000/valid')
+    # LINK_PROJECT
+    project = sampledb.logic.projects.create_project('Project', 'This is a test project', user.id)
+    sampledb.logic.projects.link_project_and_object(project.id, object.object_id, user.id)
+    # UNLINK_PROJECT
+    sampledb.logic.projects.unlink_project_and_object(project.id, object.object_id, user.id)
+    # USE_OBJECT_IN_MEASUREMENT
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema={
+            'title': 'Example Measurement',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'object': {
+                    'title': 'Object',
+                    'type': 'sample'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    sampledb.logic.objects.create_object(
+        measurement_action.id,
+        {
+            'name': {
+                'text': 'Name',
+                '_type': 'text'
+            },
+            'object': {
+                'object_id': object.object_id,
+                '_type': 'sample'
+            }
+        },
+        user.id
+    )
+    # USE_OBJECT_IN_SAMPLE_CREATION
+    sample_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Measurement',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'object': {
+                    'title': 'Object',
+                    'type': 'sample'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    sampledb.logic.objects.create_object(
+        sample_action.id,
+        {
+            'name': {
+                'text': 'Name',
+                '_type': 'text'
+            },
+            'object': {
+                'object_id': object.object_id,
+                '_type': 'sample'
+            }
+        },
+        user.id
+    )
+    # REFERENCE_OBJECT_IN_METADATA
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Measurement',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                },
+                'object': {
+                    'title': 'Object',
+                    'type': 'object_reference'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    sampledb.logic.objects.create_object(
+        referencing_action.id,
+        {
+            'name': {
+                'text': 'Name',
+                '_type': 'text'
+            },
+            'object': {
+                'object_id': object.object_id,
+                '_type': 'object_reference'
+            }
+        },
+        user.id
+    )
+    # CREATE_BATCH
+    batch_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Measurement',
+            'type': 'object',
+            'batch': True,
+            'properties': {
+                'name': {
+                    'title': 'Object Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    sampledb.logic.objects.create_object_batch(
+        batch_action.id,
+        [{
+            'name': {
+                'text': 'Name',
+                '_type': 'text'
+            }
+        }],
+        user.id,
+        copy_permissions_object_id=object.object_id
+    )
+    # EXPORT_TO_DATAVERSE (fake entry for testing)
+    sampledb.logic.object_log.export_to_dataverse(user.id, object.object_id, 'https://example.com')
+    # IMPORT_FROM_ELN_FILE (fake entry for testing)
+    sampledb.logic.object_log.import_from_eln_file(user.id, object.object_id)
+    requests.get(flask_server.base_url + 'api/v1/object_log_entries/', auth=auth).json()
