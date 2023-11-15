@@ -1,7 +1,7 @@
 {% set container_style = schema.get('style') %}
 <div class="row" style="padding-right:0.75em">
   {% include "objects/property_label.html" %}
-  {% set is_required = False %}
+  {% set is_required = True %}
 </div>
 <div {% if schema.style == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
@@ -36,6 +36,7 @@
             <tr>
               {% for property_name in item_property_names %}
                 <td>
+                  {% set is_required = property_name in schema.get('required', ()) %}
                   {% set schema = schema.properties[property_name] %}
                   {% set property_path = property_path + (property_name,) %}
                   {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}

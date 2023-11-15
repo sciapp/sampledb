@@ -10,7 +10,7 @@
     {% set property_names = get_property_names_in_order(schema) %}
     {% for property_name in property_names %}
       {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
-      {% set is_required = ('required' in schema and property_name in schema['required']) %}
+      {% set is_required = property_name in schema.get('required', ()) %}
       {% set schema = schema.properties[property_name] %}
       {% set parent_id_prefix = id_prefix %}
       {% set property_path = property_path + (property_name,) %}
