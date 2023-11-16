@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-11-14 10:31+0100\n"
+"POT-Creation-Date: 2023-11-16 08:54+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2127,17 +2127,11 @@ msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode"
 msgid "Disable"
 msgstr "Deaktivieren"
 
-msgid "Disable the current method before enabling this one."
-msgstr "Deaktivieren Sie die aktuelle Methode um diese aktivieren zu können."
-
 msgid "Enable"
 msgstr "Aktivieren"
 
 msgid "Disable this method before deleting it."
 msgstr "Deaktivieren Sie diese Methode um sie löschen zu können."
-
-msgid "Disable the current method before adding a new one."
-msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu können."
 
 msgid "Set up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
@@ -6458,16 +6452,36 @@ msgstr ""
 " Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
 "aktivieren."
 
+#, python-format
 msgid ""
 "Please enter the TOTP verification code generated using an app such as "
-"Google Authenticator to deactivate this two factor authentication method."
+"Google Authenticator to confirm that you want to deactivate "
+"<em>%(method_description)s</em>."
 msgstr ""
 "Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
-" Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
-"deaktivieren."
+" Bestätigungscode ein, um die Deaktivierung von "
+"<em>%(method_description)s</em> zu bestätigen."
 
 msgid "Verification Code"
 msgstr "Bestätigungscode"
+
+msgid "Select a Two-Factor Authentication Method"
+msgstr "Zwei-Faktor-Authentisierungsmethode auswählen"
+
+#, python-format
+msgid ""
+"Please select a two-factor authentication method to confirm that you want"
+" to deactivate <em>%(method_description)s</em>."
+msgstr ""
+"Bitte wählen Sie eine Zwei-Faktor-Authentisierungsmethode, um die "
+"Deaktivierung von <em>%(method_description)s</em> zu bestätigen."
+
+msgid ""
+"Please select a two-factor authentication method to complete the sign in "
+"process."
+msgstr ""
+"Bitte wählen Sie eine Zwei-Faktor-Authentisierungsmethode, um den "
+"Anmeldeprozess abzuschließen."
 
 msgid "Set Up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
@@ -6746,13 +6760,6 @@ msgstr "Der Nutzer wurde deaktiviert."
 msgid "Successfully updated the user information."
 msgstr "Die Nutzerinformationen wurden erfolgreich geändert."
 
-msgid ""
-"You cannot set up a new two factor authentication method while another is"
-" active."
-msgstr ""
-"Sie können keine Zwei-Faktor-Authentisierungsmethode hinzufügen, während "
-"eine andere aktiv ist."
-
 msgid "Successfully set up two factor authentication."
 msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
 
@@ -6764,10 +6771,8 @@ msgstr ""
 "Der Zwei-Faktor-Authentisierungsversuch ist fehlgeschlagen. Bitte "
 "versuchen Sie es erneut."
 
-msgid "This two factor authentication attempt has expired. Please try again."
-msgstr ""
-"Der Zwei-Faktor-Authentisierungsversuch ist abgelaufen. Bitte versuchen "
-"Sie es erneut."
+msgid "The two factor authentication method has already been disabled."
+msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde bereits deaktiviert."
 
 #, python-format
 msgid "Unnamed Action (#%(action_id)s)"

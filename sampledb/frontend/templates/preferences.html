@@ -240,22 +240,24 @@
     {% for method in two_factor_authentication_methods %}
       <tr>
         <td>
-      {% if method.data.type == 'totp' %}
-          {{ _('TOTP-based Two Factor Authentication') }}
-      {% else %}
-          {{ _('Unknown Two Factor Authentication Method') }}
-      {% endif %}
+          {% if method.data.description %}
+            <em>{{ method.data.description }}</em>
+          {% elif method.data.type == 'totp' %}
+            {{ _('TOTP-based Two Factor Authentication') }}
+          {% else %}
+            {{ _('Unknown Two Factor Authentication Method') }}
+          {% endif %}
         </td>
         <td style="width: 1%; white-space: nowrap;">
           <form method="post">
             {{ manage_two_factor_authentication_method_form.hidden_tag() }}
             <input type="hidden" name="{{ manage_two_factor_authentication_method_form.method_id.name }}" value="{{ method.id }}">
       {% if method.active %}
-            <button type="submit" class="btn btn-default" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="disable">{{ _('Disable') }}</button>
+            <button type="submit" class="btn btn-default" style="min-width:8em" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="disable">{{ _('Disable') }}</button>
       {% else %}
-            <button type="submit" class="btn btn-default" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="enable" {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before enabling this one.') }}"{% endif %}>{{ _('Enable') }}</button>
+            <button type="submit" class="btn btn-default" style="min-width:8em" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="enable">{{ _('Enable') }}</button>
       {% endif %}
-            <button type="submit" class="btn btn-danger" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="delete" {% if method.active %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable this method before deleting it.') }}"{% endif %}>{{ _('Delete') }}</button>
+            <button type="submit" class="btn btn-danger" style="min-width:8em" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="delete" {% if method.active %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable this method before deleting it.') }}"{% endif %}>{{ _('Delete') }}</button>
           </form>
         </td>
       </tr>
@@ -264,7 +266,7 @@
   </table>
   {% endif %}
   <div class="text-right">
-    <a {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before adding a new one.') }}" {% else %}href="{{ url_for('.setup_totp_two_factor_authentication') }}"{% endif %} class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
+    <a href="{{ url_for('.setup_totp_two_factor_authentication') }}" class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
   </div>
 
   {% if may_use_webhooks %}
