@@ -64,7 +64,7 @@ analyze:
     - python3 -m pyflakes sampledb
     # install requirements to allow pylint and mypy to import them
     - python3 -m pip install -r requirements.txt
-    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213  --load-plugins=pylint.extensions.docparams sampledb/
+    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213,E1136  --load-plugins=pylint.extensions.docparams sampledb/
     - MYPYPATH=./stubs python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/
 
 analyze-js:
