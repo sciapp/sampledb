@@ -1,7 +1,7 @@
 {% set container_style = schema.get('style') %}
 <div class="row" style="padding-right: 0.75em">
   {% include "objects/property_label.html" %}
-  {% set is_required = False %}
+  {% set is_required = True %}
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   <div class="col-md-9 array-style-list">
     {% if data is not none %}

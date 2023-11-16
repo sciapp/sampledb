@@ -25,6 +25,7 @@
             {% if data is not none %}
               {% for item in data %}
                 <td>
+                  {% set is_required = property_name in schema['items'].get('required', ()) %}
                   {% set schema = schema['items'].properties[property_name] %}
                   {% if property_name in item %}
                     {% set data = item[property_name] %}

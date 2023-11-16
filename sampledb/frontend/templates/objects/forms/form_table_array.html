@@ -46,6 +46,7 @@
             <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
             {% for property_name in item_property_names %}
               <td>
+                {% set is_required = property_name in schema.get('required', ()) %}
                 {% set schema = schema.properties[property_name] %}
                 {% set property_path = property_path + (property_name,) %}
                 {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}

@@ -3,7 +3,7 @@
   {% if schema.title %}
     {% include "objects/property_label.html" %}
   {% endif %}
-  {% set is_required = False %}
+  {% set is_required = True %}
 </div>
 <div style="padding-left:2.5em;">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />

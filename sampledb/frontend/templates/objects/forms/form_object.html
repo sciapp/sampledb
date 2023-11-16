@@ -7,7 +7,7 @@
   {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
     {% for property_name in get_property_names_in_order(schema) %}
-      {% set is_required = ('required' in schema and property_name in schema['required']) %}
+      {% set is_required = property_name in schema.get('required', ()) %}
       {% set schema = schema.properties[property_name] %}
       {% set property_path = property_path + (property_name,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
