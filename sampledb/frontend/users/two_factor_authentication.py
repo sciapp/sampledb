@@ -48,7 +48,7 @@ def setup_totp_two_factor_authentication() -> FlaskResponseT:
             flask.session.pop('totp_secret')
             method = authentication.create_totp_two_factor_authentication_method(flask_login.current_user.id, secret, setup_form.description.data)
             authentication.activate_two_factor_authentication_method(method.id)
-            flask.flash(_('Successfully set up two factor authentication.'), 'success')
+            flask.flash(_('Successfully set up two-factor authentication.'), 'success')
             return flask.redirect(flask.url_for('.user_me_preferences'))
         else:
             flask.flash(_('The code was invalid, please try again.'), 'error')
@@ -93,7 +93,7 @@ def _parse_confirm_data() -> typing.Optional[typing.Tuple[User, str, bool, bool]
 def confirm_totp_two_factor_authentication() -> FlaskResponseT:
     confirm_data = _parse_confirm_data()
     if confirm_data is None:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     user, reason, is_for_refresh, remember_me = confirm_data
     if reason not in (
@@ -101,12 +101,12 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
         'activate_two_factor_authentication_method',
         'deactivate_two_factor_authentication_method'
     ):
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
     if reason in ('login', ) and flask_login.current_user.is_authenticated:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -114,7 +114,7 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
         'activate_two_factor_authentication_method',
         'deactivate_two_factor_authentication_method'
     ) and not flask_login.current_user.is_authenticated:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -134,7 +134,7 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
         for method in all_methods
     }.get(method_id)
     if method is None:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -147,22 +147,22 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
             for method in all_methods
         }.get(method_to_deactivate_id)
         if method_to_deactivate is None:
-            flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+            flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
             flask.session.pop('confirm_data')
             return flask.redirect(flask.url_for('.index'))
         if not method_to_deactivate.active:
-            flask.flash(_('The two factor authentication method has already been disabled.'), 'success')
+            flask.flash(_('The two-factor authentication method has already been disabled.'), 'success')
             return flask.redirect(flask.url_for('.user_me_preferences'))
     else:
         method_to_deactivate = None
 
     if method.data.get('type') != 'totp':
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
     if not method.data.get('secret'):
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -175,12 +175,12 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
                 return complete_sign_in(user, is_for_refresh, remember_me)
             elif reason == 'activate_two_factor_authentication_method':
                 authentication.activate_two_factor_authentication_method(method.id)
-                flask.flash(_('The two factor authentication method has been enabled.'), 'success')
+                flask.flash(_('The two-factor authentication method has been enabled.'), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             elif reason == 'deactivate_two_factor_authentication_method':
                 assert method_to_deactivate is not None
                 authentication.deactivate_two_factor_authentication_method(method_to_deactivate.id)
-                flask.flash(_('The two factor authentication method has been disabled.'), 'success')
+                flask.flash(_('The two-factor authentication method has been disabled.'), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             else:
                 return flask.abort(500)
@@ -248,7 +248,7 @@ def setup_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
 def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
     confirm_data = _parse_confirm_data()
     if confirm_data is None:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         return flask.redirect(flask.url_for('.index'))
     user, reason, is_for_refresh, remember_me = confirm_data
     if reason not in (
@@ -256,12 +256,12 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
         'activate_two_factor_authentication_method',
         'deactivate_two_factor_authentication_method'
     ):
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
     if reason in ('login', ) and flask_login.current_user.is_authenticated:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -269,7 +269,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
         'activate_two_factor_authentication_method',
         'deactivate_two_factor_authentication_method'
     ) and not flask_login.current_user.is_authenticated:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -289,7 +289,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
         for method in all_methods
     }.get(method_id)
     if method is None:
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -302,22 +302,22 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
             for method in all_methods
         }.get(method_to_deactivate_id)
         if method_to_deactivate is None:
-            flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+            flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
             flask.session.pop('confirm_data')
             return flask.redirect(flask.url_for('.index'))
         if not method_to_deactivate.active:
-            flask.flash(_('The two factor authentication method has already been disabled.'), 'success')
+            flask.flash(_('The two-factor authentication method has already been disabled.'), 'success')
             return flask.redirect(flask.url_for('.user_me_preferences'))
     else:
         method_to_deactivate = None
 
     if method.data.get('type') != 'fido2_passkey':
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
     if not method.data.get('credential_data'):
-        flask.flash(_('This two factor authentication attempt has failed. Please try again.'), 'error')
+        flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
@@ -338,12 +338,12 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
                 return complete_sign_in(user, is_for_refresh, remember_me)
             elif reason == 'activate_two_factor_authentication_method':
                 authentication.activate_two_factor_authentication_method(method.id)
-                flask.flash(_('The two factor authentication method has been enabled.'), 'success')
+                flask.flash(_('The two-factor authentication method has been enabled.'), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             elif reason == 'deactivate_two_factor_authentication_method':
                 assert method_to_deactivate is not None
                 authentication.deactivate_two_factor_authentication_method(method_to_deactivate.id)
-                flask.flash(_('The two factor authentication method has been disabled.'), 'success')
+                flask.flash(_('The two-factor authentication method has been disabled.'), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             else:
                 return flask.abort(500)

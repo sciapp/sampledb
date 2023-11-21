@@ -88,10 +88,10 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         if method is not None:
             if manage_two_factor_authentication_method_form.action.data == 'delete':
                 if method.active:
-                    flask.flash(_('You cannot delete an active two factor authentication method.'), 'error')
+                    flask.flash(_('You cannot delete an active two-factor authentication method.'), 'error')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
                 delete_two_factor_authentication_method(method_id)
-                flask.flash(_('The two factor authentication method has been deleted.'), 'success')
+                flask.flash(_('The two-factor authentication method has been deleted.'), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'enable':
                 flask.session['confirm_data'] = {
@@ -106,7 +106,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 else:
                     del flask.session['confirm_data']
                     activate_two_factor_authentication_method(method_id)
-                    flask.flash(_('The two factor authentication method has been enabled.'), 'success')
+                    flask.flash(_('The two-factor authentication method has been enabled.'), 'success')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'disable':
                 flask.session['confirm_data'] = {
@@ -129,7 +129,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                             return flask.redirect(flask.url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=two_factor_authentication_method.id))
                     del flask.session['confirm_data']
                     deactivate_two_factor_authentication_method(method_id)
-                    flask.flash(_('The two factor authentication method has been disabled.'), 'success')
+                    flask.flash(_('The two-factor authentication method has been disabled.'), 'success')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
                 return flask.render_template(
                     'two_factor_authentication/pick.html',

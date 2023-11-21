@@ -11,7 +11,7 @@
         <ul>
           <li><a href="#api_tokens">{{ _('API Tokens') }}</a></li>
           <li><a href="#api_access_tokens">{{ _('API Access Tokens') }}</a></li>
-          <li><a href="#2fa">{{ _('Two Factor Authentication') }}</a></li>
+          <li><a href="#2fa">{{ _('Two-Factor Authentication') }}</a></li>
         </ul>
       </li>
       {% if may_use_webhooks %}
@@ -227,7 +227,7 @@
   </div>
   {% endif %}
 
-  <h3 id="2fa">{{ _('Two Factor Authentication') }}</h3>
+  <h3 id="2fa">{{ _('Two-Factor Authentication') }}</h3>
   {% if two_factor_authentication_methods %}
   <table class="table">
     <thead>
@@ -243,11 +243,11 @@
           {% if method.data.description %}
             <em>{{ method.data.description }}</em>
           {% elif method.data.type == 'totp' %}
-            {{ _('TOTP-based Two Factor Authentication') }}
+            {{ _('TOTP-based Two-Factor Authentication') }}
           {% elif method.data.type == 'fido2_passkey' %}
             {{ _('FIDO2 Passkey') }}
           {% else %}
-            {{ _('Unknown Two Factor Authentication Method') }}
+            {{ _('Unknown Two-Factor Authentication Method') }}
           {% endif %}
         </td>
         <td style="width: 1%; white-space: nowrap;">

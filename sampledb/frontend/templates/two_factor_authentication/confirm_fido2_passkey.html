@@ -11,14 +11,14 @@
       {% if reason == 'login' %}
         {{ _('Please click "Sign In" and then use your FIDO2 passkey to complete the sign in process.') }}
       {% elif reason == 'activate_two_factor_authentication_method' %}
-        {{ _('Please click "Confirm" and then use your FIDO2 passkey to activate this two factor authentication method.') }}
+        {{ _('Please click "Confirm" and then use your FIDO2 passkey to activate this two-factor authentication method.') }}
       {% elif reason == 'deactivate_two_factor_authentication_method' %}
         {% if method_to_deactivate.data.get('description') %}
           {% set method_description = method_to_deactivate.data['description'] %}
         {% elif method_to_deactivate.data.get('type') == 'totp' %}
-          {% set method_description = _('TOTP-based Two Factor Authentication') %}
+          {% set method_description = _('TOTP-based Two-Factor Authentication') %}
         {% else %}
-          {% set method_description = _('Unknown Two Factor Authentication Method') %}
+          {% set method_description = _('Unknown Two-Factor Authentication Method') %}
         {% endif %}
         {{ _('Please click "Confirm" and then use your FIDO2 passkey to confirm that you want to deactivate <em>%(method_description)s</em>.', method_description=method_description) }}
       {% endif %}
