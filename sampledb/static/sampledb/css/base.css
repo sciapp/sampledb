@@ -1375,6 +1375,10 @@ code {
     background-color: #f3fff3;
 }
 
+.data-diff-both {
+    background-color: #fff7ee;
+}
+
 .data-diff-before .object-user-content,
 .data-diff-after .object-user-content,
 .data-diff-before pre,
@@ -1384,6 +1388,22 @@ code {
 
 .diff-modal-button {
     margin: 3px;
+}
+
+#main > .container .data-diff-before table {
+    background: linear-gradient(0deg, rgba(255,243,243,0) 0%, rgba(255,243,243,0.75) 20%, rgba(255,243,243,0.75) 80%, rgba(255,243,243,0) 100%);;
+}
+
+#main > .container .data-diff-both table {
+    background: linear-gradient(0deg, rgba(255,247,238,0) 0%, rgba(255,247,238,0.75) 20%, rgba(255,247,255,0.75) 80%, rgba(255,247,238,0) 100%);;
+}
+
+#main > .container .data-diff-after table {
+    background: linear-gradient(0deg, rgba(243,255,243,0) 0%, rgba(243,255,243,0.75) 20%, rgba(243,255,243,0.75) 80%, rgba(243,255,243,0) 100%);;
+}
+
+.data-diff-before .form-control, .data-diff-both .form-control, .data-diff-after .form-control {
+    background-color: transparent;
 }
 
 /* styles definition for Python difflib.HtmlDiff */

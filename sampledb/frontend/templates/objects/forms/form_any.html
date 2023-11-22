@@ -1,1 +1,30 @@
-{% include get_form_template(schema, container_style) %}
+{% if diff is not none and (data is none or schema is none or previous_schema is none or not is_deep_diff_possible(diff, schema, previous_schema)) %}
+  <div style="flex-grow: 1">
+    {% if previous_schema and ('_before' in diff or '_after' not in diff) %}
+      {% with %}
+        {% if '_before' in diff %}
+          {% set data = diff['_before'] %}
+        {% else %}
+          {% set data = apply_diff(data_before=data, data_diff=invert_diff(diff), schema_before=schema, validate_data_before=False) %}
+        {% endif %}
+        <div class="data-diff-before">
+          {% set indent_level = 0  %}
+          {% set hide_search_button = true %}
+          {% set diff = none %}
+          {% set schema = previous_schema %}
+          {% set previous_schema = none %}
+          {% include get_view_template(schema, container_style) %}
+        </div>
+      {% endwith %}
+    {% endif %}
+    {% if schema %}
+      {% set diff = none %}
+      {% set previous_schema = none %}
+      <div class="data-diff-after">
+        {% include get_form_template(schema, container_style) %}
+      </div>
+    {% endif %}
+  </div>
+{% elif schema %}
+  {% include get_form_template(schema, container_style) %}
+{% endif %}

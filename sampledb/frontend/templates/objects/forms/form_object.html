@@ -6,15 +6,21 @@
 <div style="{% if property_path %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em">
   {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
-    {% for property_name in get_property_names_in_order(schema) %}
+    {% for property_name in get_property_names_in_order(schema, previous_schema) %}
       {% set is_required = property_name in schema.get('required', ()) %}
-      {% set schema = schema.properties[property_name] %}
+      {% set schema = schema.properties.get(property_name) %}
       {% set property_path = property_path + (property_name,) %}
       {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
       {% if data is not none %}
         {% set data = data.get(property_name) %}
       {% endif %}
-      {% if 'conditions' in schema %}
+      {% if diff is not none %}
+        {% set diff = diff.get(property_name) %}
+      {% endif %}
+      {% if previous_schema is not none %}
+        {% set previous_schema = previous_schema.get('properties', {}).get(property_name) %}
+      {% endif %}
+      {% if schema and 'conditions' in schema %}
         <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
           {% include "objects/forms/form_any.html" %}
           <input type="hidden" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>

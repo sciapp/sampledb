@@ -128,7 +128,7 @@ def _try_convert_object_to_object(
                     upgrade_warnings.append(upgrade_warning)
     for property_name in new_schema['properties']:
         # check if any properties were explicitly not set
-        if property_name not in data and property_name not in new_schema.get('required', []) and property_name in previous_schema['properties']:
+        if property_name in new_data and property_name not in data and property_name not in new_schema.get('required', []) and property_name in previous_schema['properties']:
             del new_data[property_name]
     return new_data, upgrade_warnings
 

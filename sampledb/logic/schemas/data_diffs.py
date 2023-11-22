@@ -103,7 +103,11 @@ def _apply_object_diff(
         try:
             property_schema_before = schema_before['properties'][property_name]
         except Exception:
-            raise errors.DiffMismatchError()
+            if isinstance(property_diff, dict) and '_after' in property_diff and '_before' not in property_diff:
+                # the property did not exist before in this specific case, so an empty schema can be used
+                property_schema_before = {}
+            else:
+                raise errors.DiffMismatchError()
         value_after = apply_diff(value_before, property_diff, property_schema_before, validate_data_before=False)
         if value_after != VALUE_NOT_SET:
             data_after[property_name] = value_after
@@ -155,10 +159,11 @@ def _apply_generic_diff(
         schema_before: typing.Dict[str, typing.Any]
 ) -> typing.Any:
     if '_before' in data_diff:
-        try:
-            validate(data_diff['_before'], schema_before)
-        except Exception:
-            raise errors.DiffMismatchError()
+        if data_diff['_before'] is not None:
+            try:
+                validate(data_diff['_before'], schema_before)
+            except Exception:
+                raise errors.DiffMismatchError()
         if not _compare_generic_data(data_before, data_diff['_before']):
             raise errors.DiffMismatchError()
     else:
@@ -208,3 +213,30 @@ def apply_diff(
     if diff_type is GenericDiff:
         return _apply_generic_diff(data_before, typing.cast(GenericDiff, data_diff), schema_before)
     return VALUE_NOT_SET
+
+
+def invert_diff(
+        data_diff: typing.Optional[DataDiff]
+) -> typing.Optional[DataDiff]:
+    diff_type = _guess_type_of_diff(data_diff)
+    if diff_type is ArrayDiff:
+        array_diff = typing.cast(ArrayDiff, data_diff)
+        return [
+            invert_diff(data_diff=item_diff)
+            for item_diff in array_diff
+        ]
+    if diff_type is ObjectDiff:
+        object_diff = typing.cast(ObjectDiff, data_diff)
+        return {
+            property_name: invert_diff(data_diff=property_diff)
+            for property_name, property_diff in object_diff.items()
+        }
+    if diff_type is GenericDiff:
+        generic_diff = typing.cast(GenericDiff, data_diff)
+        inverted_data_diff = {}
+        if '_before' in generic_diff:
+            inverted_data_diff['_after'] = generic_diff['_before']
+        if '_after' in generic_diff:
+            inverted_data_diff['_before'] = generic_diff['_after']
+        return inverted_data_diff
+    return None

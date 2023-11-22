@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.26
+------------
+
+Currently in development.
+
+- Show changes during schema upgrade
+
 Version 0.25.3
 --------------
 

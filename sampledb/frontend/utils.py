@@ -45,6 +45,7 @@ from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
+from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.schemas import get_default_data
 from ..logic.actions import Action
@@ -111,6 +112,8 @@ JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
 JinjaFunction()(zip_longest)
 JinjaFunction()(get_default_data)
+JinjaFunction()(apply_diff)
+JinjaFunction()(invert_diff)
 
 
 qrcode_cache: typing.Dict[str, str] = {}
@@ -1536,7 +1539,8 @@ def safe_get_component_by_uuid(component_uuid: str) -> typing.Optional[Component
 
 @JinjaFunction()
 def get_property_names_in_order(
-        schema: typing.Dict[str, typing.Any]
+        schema: typing.Dict[str, typing.Any],
+        previous_schema: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> typing.Sequence[str]:
     property_names = [
         property_name
@@ -1547,6 +1551,10 @@ def get_property_names_in_order(
         for property_name in schema.get('properties', [])
         if property_name not in schema.get('propertyOrder', [])
     ]
+    if previous_schema:
+        for property_name in get_property_names_in_order(previous_schema):
+            if property_name not in property_names:
+                property_names.append(property_name)
     return property_names
 
 
@@ -1559,3 +1567,19 @@ def id_prefix_for_property_path(
         str(path_element)
         for path_element in [id_prefix_root] + list(property_path)
     ]) + '_'
+
+
+@JinjaFunction()
+def is_deep_diff_possible(
+        diff: DataDiff,
+        schema: typing.Dict[str, typing.Any],
+        previous_schema: typing.Dict[str, typing.Any]
+) -> bool:
+    if '_before' in diff or '_after' in diff:
+        return False
+    if schema.get('type') == previous_schema.get('type') == 'array':
+        if schema.get('style') != previous_schema.get('style'):
+            return False
+        if schema.get('style') == 'table' and schema.get('items', {}).get('type') != previous_schema.get('items', {}).get('type'):
+            return False
+    return True
