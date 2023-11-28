@@ -346,6 +346,9 @@ function updateObjectPickers () {
         $x.typeahead('val', '');
       }
     }
+    if (!isSelectpicker) {
+      $x.closest('.objectpicker-container').find('input[type="hidden"]').trigger('object_change.sampledb'); // event to trigger object conditions evaluation if registered
+    }
   });
 }
 
