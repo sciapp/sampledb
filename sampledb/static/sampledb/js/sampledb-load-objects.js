@@ -44,6 +44,8 @@ $(function () {
         if (!$x.hasClass('template-select') && !$x.hasClass('template-typeahead')) {
           $x.selectpicker('refresh');
         }
+      } else {
+        $x.closest('.objectpicker-container').find('input[type="hidden"]').trigger('object_change.sampledb'); // Replacing loaded.bs.select for typeahead condition validation
       }
       const perm = $x.data('sampledbRequiredPerm') || 1;
       minimumPermissions = minimumPermissions < perm ? minimumPermissions : perm;
