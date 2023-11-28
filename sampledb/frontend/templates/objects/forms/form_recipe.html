@@ -1,6 +1,6 @@
 <div class="form-group row" style="padding-right: 0.75em">
   <div data-id-prefix="{{ id_prefix }}" class="col-lg-4 col-lg-offset-8 div-apply-recipe" {% if not is_template %}data-toggle="tooltip"{% endif %} data-placement="left" title="" data-sampledb-recipes="{{ schema.recipes | stringify }}">
-    <select class="{% if not is_template %}selectpicker{% endif %} form-control" data-width="100%">
+    <select class="form-control" data-width="100%">
       {% for recipe in schema.recipes %}
         <option value="{{ loop.index0 }}">{{ recipe.name }}</option>
       {% endfor %}
@@ -9,18 +9,5 @@
             aria-label="{{ _('Apply Recipe') }}" name="apply" value="Apply Recipe">
       <span aria-hidden="true">{{ _('Apply Recipe') }}</span>
     </button>
-  {% if not is_template %}
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      document.getElementById('{{ id_prefix }}_recipe_input').addEventListener('change', function() {
-        refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});
-      });
-      window.addEventListener('load', function() {
-        refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});
-      });
-      document.getElementById('{{ id_prefix }}_recipe_button').addEventListener('click', function() {
-        applyRecipe("{{ id_prefix }}", {{ schema.recipes | tojson }}, false);
-      });
-    </script>
-  {% endif %}
   </div>
 </div>
