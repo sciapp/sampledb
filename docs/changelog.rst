@@ -4,7 +4,7 @@ Changelog
 Version 0.25
 ------------
 
-Currently in development.
+Released on December 4th, 2023.
 
 - Implement client-side array editing
 - Allow automatic calculation of quantity values
