@@ -24,6 +24,7 @@ from . import object_log, user_log, object_permissions, errors, users, actions, 
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
 from .utils import cache
+from ..logic.schemas.utils import data_iter
 
 
 def create_object(
@@ -85,10 +86,6 @@ def create_object(
         validate_data=validate_data,
         data_validator_arguments=data_validator_arguments
     )
-    object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
-    user_log.create_object(object_id=object.object_id, user_id=user_id)
-    _update_object_references(object, user_id=user_id)
-    _send_user_references_notifications(object, user_id)
     if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
         object_permissions.set_user_object_permissions(object.id, user_id, Permissions.GRANT)
@@ -100,6 +97,10 @@ def create_object(
         object_permissions.set_initial_permissions(object)
     if permissions_for_all_users is not None:
         object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
+    object_log.create_object(object_id=object.object_id, user_id=user_id, previous_object_id=previous_object_id)
+    user_log.create_object(object_id=object.object_id, user_id=user_id)
+    _update_object_references(object, user_id=user_id)
+    _send_user_references_notifications(object, user_id)
     tags.update_object_tag_usage(object)
     return object
 
@@ -127,10 +128,10 @@ def create_eln_import_object(
         eln_object_id=eln_object_id,
         data_validator_arguments=data_validator_arguments
     )
-    object_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
-    user_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
     _update_object_references(object, user_id=user_id)
     object_permissions.set_initial_permissions(object)
+    object_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
+    user_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
     tags.update_object_tag_usage(object)
     return object
 
@@ -249,7 +250,6 @@ def create_object_batch(
             batch_object_ids = [object.id for object in objects]
             user_log.create_batch(user_id=user_id, batch_object_ids=batch_object_ids)
             for object in objects:
-                object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 _update_object_references(object, user_id=user_id)
                 _send_user_references_notifications(object, user_id)
                 if copy_permissions_object_id is not None:
@@ -263,6 +263,7 @@ def create_object_batch(
                     object_permissions.set_initial_permissions(object)
                 if permissions_for_all_users is not None:
                     object_permissions.set_object_permissions_for_all_users(object.id, permissions_for_all_users)
+                object_log.create_batch(object_id=object.object_id, user_id=user_id, batch_object_ids=batch_object_ids)
                 tags.update_object_tag_usage(object)
     return objects
 
@@ -515,45 +516,6 @@ def get_objects(
     )
 
 
-def _get_object_properties(
-        object: Object
-) -> typing.List[typing.Tuple[typing.List[typing.Union[str, int]], typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]]:
-    """
-    Returns a list of all properties of an object, as 3-tuples consisting of
-    the path to the property, its schema and the actual data.
-
-    :param object: the object
-    :return: a list of one 3-tuples for reach of the object's properties
-    """
-    if object.data is None or object.schema is None:
-        return []
-
-    def iter_object_properties(
-            previous_path: typing.List[typing.Union[str, int]],
-            schema: typing.Dict[str, typing.Any],
-            data: typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]
-    ) -> typing.Iterator[typing.Tuple[typing.List[typing.Union[str, int]], typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]]:
-        if schema is None or data is None:
-            return
-        if schema['type'] == 'object':
-            for property_name in schema['properties']:
-                if property_name in data:
-                    for property in iter_object_properties(previous_path + [property_name], schema['properties'][property_name], data[property_name]):
-                        yield property
-        elif schema['type'] == 'array':
-            for index, item in enumerate(data):
-                for property in iter_object_properties(previous_path + [index], schema['items'], item):
-                    yield property
-        else:
-            # cast as data cannot be a list unless schema type is array
-            yield previous_path, schema, typing.cast(typing.Dict[str, typing.Any], data)
-
-    return [
-        (path, schema, data)
-        for path, schema, data in iter_object_properties([], object.schema, object.data)
-    ]
-
-
 @typing.overload
 def find_object_references(
         object: Object,
@@ -587,10 +549,12 @@ def find_object_references(
     :param find_previous_referenced_object_ids: whether to find previous referenced object ids
     :param include_fed_references: whether references on other components should be included
     """
+    if object.data is None:
+        return []
     referenced_object_ids = []
     referenced_object_id: typing.Union[int, typing.Tuple[int, typing.Optional[str]]]
-    for path, schema, data in _get_object_properties(object):
-        if schema['type'] in ('sample', 'measurement', 'object_reference') and data and data.get('object_id'):
+    for path, data in data_iter(data=object.data, filter_property_types={'sample', 'measurement', 'object_reference'}):
+        if isinstance(data, dict) and data.get('object_id') is not None:
             if 'component_uuid' in data and data['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
                 try:
                     component = get_component_by_uuid(data['component_uuid'])
@@ -628,7 +592,7 @@ def find_object_references(
                     else:
                         if previous_data is not None and 'object_id' in previous_data and previous_data['object_id'] is not None:
                             previous_referenced_object_id = previous_data['object_id']
-            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id, schema['type']))
+            referenced_object_ids.append((referenced_object_id, previous_referenced_object_id, data['_type']))
     return referenced_object_ids
 
 
@@ -675,12 +639,14 @@ def find_user_references(object: Object, find_previous_referenced_user_ids: bool
     Searches for references to users.
 
     :param object: the updated (or newly created) object
-    :param find_previous_referenced_user_ids: whether or not to find
-        previous referenced user ids
+    :param find_previous_referenced_user_ids: whether to find previous
+        referenced user ids
     """
+    if object.data is None:
+        return []
     referenced_user_ids = []
-    for path, schema, data in _get_object_properties(object):
-        if schema['type'] == 'user' and data is not None and data['user_id'] is not None:
+    for path, data in data_iter(data=object.data, filter_property_types={'user'}):
+        if isinstance(data, dict) and data.get('user_id') is not None:
             referenced_user_id = data['user_id']
             previous_referenced_user_id = None
             if find_previous_referenced_user_ids and object.version_id > 0:

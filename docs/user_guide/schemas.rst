@@ -42,31 +42,33 @@ Data types
 
 Currently, the following basic data types are supported for metadata:
 
-- Texts
-- Booleans
-- Quantities
-- Datetimes
-- Time Series
+- :ref:`Texts <metadata_texts>`
+- :ref:`Booleans <metadata_booleans>`
+- :ref:`Quantities <metadata_quantities>`
+- :ref:`Datetimes <metadata_datetimes>`
+- :ref:`Time Series <metadata_timeseries>`
 
 These can be used to form the following composite data types:
 
-- Arrays
-- Objects
+- :ref:`Arrays <metadata_arrays>`
+- :ref:`Objects <metadata_objects>`
 
 Additionally, there are special data types:
 
-- :ref:`Tags <tags>`
-- :ref:`Hazards <hazards>`
-- *plotly* Charts
-- User References
-- Object References
+- :ref:`Tags <metadata_tags>`
+- :ref:`Hazards <metadata_hazards>`
+- :ref:`plotly Charts <metadata_plotly_charts>`
+- :ref:`User References <metadata_user_references>`
+- :ref:`Object References <metadata_object_references>`
     - Sample References
     - Measurement References
     - Generic Object References
-- Schema Templates
-- Files
+- :ref:`Files <metadata_files>`
+- :ref:`Schema Templates <metadata_schema_templates>`
 
 In the following, each data type and the attributes in a schema of each type are listed.
+
+.. _metadata_objects:
 
 Objects
 ```````
@@ -255,6 +257,8 @@ workflow_show_more
 This attribute works the same as ``show_more``, but is only applied when the object is included in a workflow view.
 
 
+.. _metadata_arrays:
+
 Arrays
 ``````
 
@@ -357,6 +361,9 @@ conditions
 ^^^^^^^^^^
 
 This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
+
+
+.. _metadata_texts:
 
 Texts
 `````
@@ -511,6 +518,9 @@ This attribute is a boolean that sets whether or not the value of this property 
 
 .. note:: Setting ``choices``, ``multiline`` and ``markdown`` are all mutually exclusive.
 
+
+.. _metadata_booleans:
+
 Booleans
 ````````
 
@@ -564,6 +574,8 @@ default
 ^^^^^^^
 
 The default value for this property as a boolean, so ``true`` or ``false``.
+
+.. _metadata_quantities:
 
 Quantities
 ``````````
@@ -661,6 +673,76 @@ max_magnitude
 
 The maximum value for this property as a number. This should be a value in base units, so if ``units`` is set to ``nm`` and you want to set the maximum to 10nm, you need to set ``max_magnitude`` to ``0.00000001`` as it will be interpreted in meters.
 
+calculation
+^^^^^^^^^^^
+
+This JSON object defines how to automatically calculate a value for this property, depending on the values of other properties, if no different value has been provided by the user. The ``formula`` attribute defines the calculation logic and follows the syntax of ``math.evaluate`` from `Math.JS <https://mathjs.org/>`_. The ``property_names`` attribute contains names of other quantity properties, either as an array of names or as a JSON object mapping names used in the ``formula`` attribute to a path to another property, whose values are referenced in the ``formula`` attribute. Such paths are relative to the current property and contain strings for property names, ``".."`` for going up one level in the schema, integers for absolute array indices, strings containing ``+`` or ``-`` and an integer for relative array indices, or strings containing ``*`` to represent all array indices. The optional attribute ``digits`` may be an integer between 0 and 15 which defines the number of decimals the calculation result should be rounded to. The example below shows calculations for several properties referencing each other in the ``formula`` attribute:
+
+.. code-block:: javascript
+    :caption: An example schema with calculation attributes
+
+    {
+        "title": "Calculation Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "distance": {
+                "title": "Distance",
+                "type": "quantity",
+                "units": "m",
+                "calculation": {
+                    "property_names": [
+                        "time",
+                        "speed"
+                    ],
+                    "formula": "time * speed"
+                }
+            },
+            "time": {
+                "title": "Time",
+                "type": "quantity",
+                "units": "s",
+                "calculation": {
+                    "property_names": [
+                        "distance",
+                        "speed"
+                    ],
+                    "formula": "distance / speed"
+                }
+            },
+            "speed": {
+                "title": "Speed",
+                "type": "quantity",
+                "units": "m / s",
+                "calculation": {
+                    "property_names": {
+                        "d": ["distance"],
+                        "t": ["distance", "..", "time"]
+                    },
+                    "formula": "d / t"
+                }
+            }
+        },
+        "propertyOrder": [
+            "name",
+            "distance",
+            "time",
+            "speed"
+        ],
+        "required": [
+            "name"
+        ]
+    }
+
+
+.. note::
+
+    As the formula does not perform unit conversion, both the property this attribute is set for as well as the properties it depends on must have fixed units. If the units do not match, e.g. due to a schema upgrade, the calculation will not be performed.
+
+
 .. _metadata_quantity_object:
 
 Quantity Objects
@@ -681,6 +763,8 @@ When this is used as input for a quantity default value, a minimal set of parame
         "magnitude_in_base_units": 1.0,
         "dimensionality": "dimensionless"
     }
+
+.. _metadata_datetimes:
 
 Datetimes
 `````````
@@ -736,6 +820,9 @@ default
 
 A default value for the property, as a JSON string using ``YYYY-MM-DD hh:mm:ss`` notation and UTC, e.g. ``"2021-07-23 08:00:00"``. If no default is given, the current date and time when creating or editing an object using this schema will be used as the default.
 
+
+.. _metadata_tags:
+
 Tags
 ````
 
@@ -774,6 +861,14 @@ default
 ^^^^^^^
 
 A JSON array containing default tags as strings, e.g. ``[]`` or ``["demo", "documentation"]``. There must be no duplicates in the array and as noted above, tags are limited to lowercase characters, digits and underscores.
+
+
+.. seealso::
+
+    :ref:`Tags <tags>`
+
+
+.. _metadata_hazards:
 
 Hazards
 ```````
@@ -817,6 +912,13 @@ tooltip
 ^^^^^^^
 
 A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Hazards, as per supplier"`` or ``{"en": "Hazards, as per supplier"}``.
+
+.. seealso::
+
+    :ref:`Hazards <hazards>`
+
+
+.. _metadata_plotly_charts:
 
 plotly Charts
 `````````````
@@ -890,6 +992,9 @@ tooltip
 
 A tooltip to display when hovering the mouse cursor over the property title, as a JSON string or object, e.g. ``"Temperature curve, extracted from log file"`` or ``{"en": "Temperature curve, extracted from log file"}``.
 
+
+.. _metadata_user_references:
+
 User References
 ```````````````
 
@@ -943,6 +1048,9 @@ default
 ^^^^^^^
 
 A JSON number containing the user ID to be used as default selection, or a JSON string ``"self"`` to denote that the user who is currently creating or editing the object should be the default.
+
+
+.. _metadata_object_references:
 
 Object References
 `````````````````
@@ -1029,6 +1137,9 @@ Properties of this type are a special case of object reference, limited to refer
       "type": "measurement"
     }
 
+
+.. _metadata_timeseries:
+
 Time Series
 ```````````
 
@@ -1101,6 +1212,9 @@ This attribute allows to determine which statistics about the timeseries should 
 - ``"max"``: Maximum
 - ``"count"``: Count of values
 
+
+.. _metadata_files:
+
 Files
 `````
 
@@ -1149,6 +1263,9 @@ preview
 ^^^^^^^
 
 This attribute is a boolean that sets whether or not an image file should have a preview image displayed for this property. By default, it is set to ``false``.
+
+
+.. _metadata_schema_templates:
 
 Schema Templates
 ````````````````
@@ -1275,7 +1392,7 @@ Some properties might only sometimes be needed, based on some conditions, such a
           "type": "text",
           "choices": [
             {"en": "A"},
-            {"en": "B"},
+            {"en": "B"}
           ],
           "default": {"en": "A"}
         },
@@ -1366,7 +1483,7 @@ For this type of condition, the ``property_name`` attribute must be the name of 
       "object_id": 1
     }
 
-If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled if no user has been selected.
+If the ``object_id`` is set to ``null`` instead, the condition will be fulfilled if no object has been selected.
 
 .. code-block:: javascript
     :caption: An object_equals condition for not having selected an object

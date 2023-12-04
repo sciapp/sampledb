@@ -1,0 +1,43 @@
+{% set selected_file_id = none %}
+{% if form_data[id_prefix+'_file_id'] %}
+  {% set selected_file_id = form_data[id_prefix+'_file_id'] | int(None) %}
+{% endif %}
+{% if selected_file_id is none and data is not none and 'file_id' in data and data.file_id is not none%}
+  {% set selected_file_id = data.file_id %}
+{% endif %}
+
+{% set filepicker_options = [] %}
+{% if not is_required %}
+  {% do filepicker_options.append(('', '&mdash;' | safe, selected_file_id is none)) %}
+{% endif %}
+{% if file_names_by_id %}
+  {% for file_id, file_names in file_names_by_id.items() %}
+    {% set ns = namespace(has_extension=(schema.get('extensions') is none)) %}
+    {% for extension in schema.get('extensions', []) %}
+      {% if file_names[0].lower().endswith(extension.lower()) %}
+        {% set ns.has_extension = true %}
+      {% endif %}
+    {% endfor %}
+    {% if (ns.has_extension and file_id >= 0) or selected_file_id == file_id %}
+      {% do filepicker_options.append((file_id, file_names[1], selected_file_id == file_id)) %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+<div class="input-group">
+  <select {% if is_template %} class="template-file-select" data-template-class="form-control selectpicker file-select" {% else %} class="form-control selectpicker file-select" {% endif %} name="{{ id_prefix }}_file_id" data-live-search="true" {% if not filepicker_options %}disabled="disabled" data-none-selected-text="{{ _('Please upload a file.') }}"{% endif %}>
+    {% for value, text, is_selected in filepicker_options %}
+      <option value="{{ value }}" {% if is_selected %} selected="selected" {% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+  <span class="input-group-btn">
+    <div class="btn-group" style="margin-bottom: 2px">
+      <label class="btn btn-primary btn-file">
+        {{ _('Browse...') }}
+        <input type="file" data-id-prefix="{{ id_prefix }}" data-context-id-token="{{ context_id_token }}" {% if schema.get('extensions') is not none %}accept="{% for extension in schema.extensions %}{% if not loop.first %}, {% endif %}{% if extension[0] != '.' %}.{% endif %}{{ extension }}{% endfor %}"{% endif %} class="hidden"></label>
+    </div>
+  </span>
+</div>
+
+
+{% do file_pickers.append({'id_prefix': id_prefix, 'context_id_token': context_id_token }) %}

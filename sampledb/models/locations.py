@@ -165,7 +165,7 @@ class ObjectLocationAssignment(Model):
     responsible_user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     description: Mapped[typing.Optional[typing.Dict[str, str]]] = db.Column(postgresql.JSON, nullable=True)
-    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     confirmed: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
     location: Mapped[typing.Optional['Location']] = relationship('Location')
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
@@ -195,7 +195,7 @@ class ObjectLocationAssignment(Model):
             responsible_user_id=responsible_user_id,
             user_id=user_id,
             description=description,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             confirmed=confirmed,
             fed_id=fed_id,
             component_id=component_id,

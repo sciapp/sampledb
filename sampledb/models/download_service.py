@@ -3,7 +3,7 @@
 
 """
 import typing
-from datetime import datetime, timedelta
+import datetime
 
 import flask
 from sqlalchemy.orm import Mapped, Query
@@ -18,8 +18,8 @@ class DownloadServiceJobFile(Model):
     id: Mapped[int] = db.Column(db.Integer, primary_key=True, autoincrement=True)
     object_id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     file_id: Mapped[int] = db.Column(db.Integer, primary_key=True)
-    creation: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
-    expiration: Mapped[datetime] = db.Column(db.DateTime, nullable=False)
+    creation: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+    expiration: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["DownloadServiceJobFile"]]
@@ -38,8 +38,8 @@ class DownloadServiceJobFile(Model):
             id=job_id,
             object_id=object_id,
             file_id=file_id,
-            creation=datetime.utcnow(),
-            expiration=datetime.utcnow() + timedelta(seconds=flask.current_app.config['DOWNLOAD_SERVICE_TIME_LIMIT'])
+            creation=datetime.datetime.now(datetime.timezone.utc),
+            expiration=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=flask.current_app.config['DOWNLOAD_SERVICE_TIME_LIMIT'])
         )
 
     def __repr__(self) -> str:

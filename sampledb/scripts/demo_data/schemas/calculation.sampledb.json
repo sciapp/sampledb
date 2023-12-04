@@ -1,0 +1,175 @@
+{
+  "title": "Calculation Example",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Sample Name",
+      "type": "text",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "m":{
+      "title": "Distances",
+      "type": "array",
+       "items": {
+        "title": "Distance",
+        "units": "m",
+        "calculation": {
+          "property_names": {"s":  ["..", "s"], "mps": ["..", "mps"]},
+          "formula": "mps * s"
+        },
+        "type": "quantity",
+        "note": "Calculated as: Speed * Time"
+      }
+    },
+    "s": {
+      "title": "Time",
+      "units": "s",
+      "calculation": {
+        "property_names": {
+          "m": ["m", 0],
+          "mps": ["mps"]
+        },
+        "formula": "m / mps"
+      },
+      "type": "quantity",
+      "note": "Calculated as: Distance / Speed"
+    },
+    "mps": {
+      "title": "Speed",
+      "units": "m/s",
+      "calculation": {
+        "property_names": {
+          "m": ["m", 0],
+          "s": ["s"]
+        },
+        "formula": "m / s"
+      },
+      "type": "quantity",
+      "note": "Calculated as: Distance / Time"
+    },
+    "miles": {
+      "title": "Distance (Miles)",
+      "units": "mi",
+      "calculation": {
+        "property_names": ["kilometers"],
+        "digits": 2,
+        "formula": "kilometers / 1.609"
+      },
+      "type": "quantity",
+      "note": "Calculated from Distance (Kilometers)"
+    },
+    "kilometers": {
+      "title": "Distance (Kilometers)",
+      "units": "km",
+      "calculation": {
+        "property_names": ["miles"],
+        "digits": 2,
+        "formula": "miles * 1.609"
+      },
+      "type": "quantity",
+      "note": "Calculated from Distance (Miles)"
+    },
+    "centimeters": {
+      "title": "Distance (Centimeters)",
+      "units": "km",
+      "calculation": {
+        "property_names": ["kilometers"],
+        "formula": "kilometers * 100000"
+      },
+      "type": "quantity",
+      "note": "Calculated from Distance (Kilometers)"
+    },
+    "mean": {
+      "title": "Mean",
+      "type": "quantity",
+      "units": "1",
+      "note": "This is the mean of the golden ratio approximations in the table above.",
+      "calculation": {
+        "property_names": {
+          "Phi": [
+            "array",
+            "*",
+            "golden_ratio_approx"
+          ]
+        },
+        "formula": "mean(Phi)"
+      }
+    },
+    "stddev": {
+      "title": "Stddev",
+      "type": "quantity",
+      "units": "1",
+      "note": "This is the standard deviation of the golden ratio approximations in the table above.",
+      "calculation": {
+        "property_names": {
+          "Phi": [
+            "array",
+            "*",
+            "golden_ratio_approx"
+          ]
+        },
+        "formula": "std(Phi)"
+      }
+    },
+    "array": {
+      "title": "Array with Fibonacci quantities",
+      "type": "array",
+      "style": "table",
+      "default": [
+        {
+          "quantity": {
+            "_type": "quantity",
+            "magnitude": 1,
+            "units": "1"
+          }
+        },
+        {
+          "quantity": {
+            "_type": "quantity",
+            "magnitude": 1,
+            "units": "1"
+          }
+        }
+      ],
+      "items": {
+        "title": "Row",
+        "type": "object",
+        "properties": {
+          "quantity": {
+            "title": "Quantity",
+            "type": "quantity",
+            "units": "1",
+            "calculation": {
+              "property_names": {
+                "a": ["..", "-1", "quantity"],
+                "b": ["..", "-2", "quantity"]
+              },
+              "formula": "a + b"
+            }
+          },
+          "golden_ratio_approx": {
+            "title": "Golden Ratio (approx.)",
+            "type": "quantity",
+            "units": "1",
+            "calculation": {
+              "property_names": {
+                "a": [
+                  "quantity"
+                ],
+                "b": [
+                  "..",
+                  "-1",
+                  "quantity"
+                ]
+              },
+              "formula": "a / b"
+            }
+          }
+        }
+      }
+    }
+  },
+  "propertyOrder": ["name", "m", "s", "mps", "miles", "kilometers", "array", "mean", "stddev"],
+  "required": ["name"]
+}

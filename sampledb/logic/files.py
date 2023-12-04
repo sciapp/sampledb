@@ -54,8 +54,8 @@ class File:
     id: int
     object_id: int
     user_id: typing.Optional[int]
+    data: typing.Dict[str, typing.Any]
     utc_datetime: typing.Optional[datetime.datetime] = None
-    data: typing.Optional[typing.Dict[str, typing.Any]] = None
     binary_data: typing.Optional[bytes] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -96,8 +96,7 @@ class File:
             data = file.data
         else:
             data = {
-                'storage': 'local',
-                'original_file_name': ''
+                'storage': 'none'
             }
         if isinstance(data.get('hash'), dict):
             hash = File.HashInfo(

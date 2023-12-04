@@ -33,6 +33,7 @@ from . import languages
 from . import ldap
 from . import locale
 from . import locations
+from . import location_log
 from . import location_permissions
 from . import markdown_images
 from . import markdown_to_html
@@ -58,6 +59,7 @@ from . import units
 from . import users
 from . import user_log
 from . import utils
+from . import webhooks
 from . import where_filters
 
 from ..models.objects import Objects
@@ -99,6 +101,7 @@ __all__ = [
     'ldap',
     'locale',
     'locations',
+    'location_log',
     'location_permissions',
     'markdown_images',
     'markdown_to_html',
@@ -124,6 +127,7 @@ __all__ = [
     'users',
     'user_log',
     'utils',
+    'webhooks',
     'where_filters',
 ]
 

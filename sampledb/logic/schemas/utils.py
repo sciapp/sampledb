@@ -58,98 +58,118 @@ def get_property_paths_for_schema(
     to a set of valid types.
 
     :param schema: the schema to generate the dict for
-    :param valid_property_types: a list of property types, or None
+    :param valid_property_types: a set of property types, or None
     :param path: the path to this subschema, or None
     :param path_depth_limit: how deep paths may be, or None
     :return: the generated dict
     """
-    if path is None:
-        path = []
-    property_type = schema.get('type')
-    property_paths: typing.Dict[
-        typing.Sequence[typing.Optional[str]],
-        typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
-    ] = {}
-    if path_depth_limit is not None and len(path) > path_depth_limit:
-        return property_paths
-    if property_type == 'object':
-        property_paths.update(_get_property_paths_for_object_schema(
-            schema=schema,
-            valid_property_types=valid_property_types,
-            path=path,
-            path_depth_limit=path_depth_limit
-        ))
-    if property_type == 'array':
-        property_paths.update(_get_property_paths_for_array_schema(
-            schema=schema,
-            valid_property_types=valid_property_types,
-            path=path,
-            path_depth_limit=path_depth_limit
-        ))
-    if property_type is not None and (valid_property_types is None or property_type in valid_property_types):
-        property_paths[tuple(path)] = {
-            "type": property_type,
-            "title": schema.get('title')
+    return {
+        property_path: {
+            'type': property_schema.get('type'),
+            'title': property_schema.get('title')
         }
-    return property_paths
+        for property_path, property_schema in schema_iter(
+            schema=schema,
+            path=tuple(path or []),
+            filter_property_types=valid_property_types,
+            filter_path_depth_limit=path_depth_limit
+        )
+        if property_schema.get('type') is not None
+    }
 
 
-def _get_property_paths_for_object_schema(
+def schema_iter(
         schema: typing.Dict[str, typing.Any],
-        valid_property_types: typing.Optional[typing.Set[str]],
-        path: typing.List[typing.Optional[str]],
-        path_depth_limit: typing.Optional[int] = None
-) -> typing.Dict[
-    typing.Sequence[typing.Optional[str]],
-    typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
-]:
-    path = list(path)
-    if path_depth_limit is not None and len(path) + 1 > path_depth_limit:
-        # properties will have reached the path depth limit
-        return {}
-    if not isinstance(schema, dict):
-        return {}
-    if not schema.get('type') == 'object':
-        return {}
-    if not isinstance(schema.get('properties'), dict):
-        return {}
-    property_paths = {}
-    for property_name, property_schema in schema['properties'].items():
-        property_paths.update(get_property_paths_for_schema(
-            schema=property_schema,
-            valid_property_types=valid_property_types,
-            path=path + [property_name],
-            path_depth_limit=path_depth_limit
-        ))
-    return property_paths
+        *,
+        path: typing.Sequence[typing.Optional[str]] = (),
+        filter_path_depth_limit: typing.Optional[int] = None,
+        filter_property_types: typing.Optional[typing.Set[str]] = None,
+        filter_property_path: typing.Optional[typing.Sequence[typing.Optional[str]]] = None
+) -> typing.Iterator[typing.Tuple[typing.Sequence[typing.Optional[str]], typing.Dict[str, typing.Any]]]:
+    """
+    Iterate over a schema.
+
+    :param schema: the schema to iterate over
+    :param path: the path to this schema
+    :param filter_path_depth_limit: how deep paths may be, or None
+    :param filter_property_types: a set of property types to include in the
+        iterator, or None
+    :param filter_property_path: a path to return the schema and sub-schemas
+        for, or None
+    :return: an iterator over tuples of path and schema at that path
+    """
+    if filter_path_depth_limit is not None and len(path) > filter_path_depth_limit:
+        return
+    if filter_property_path is not None and path[:min(len(path), len(filter_property_path))] != filter_property_path[:min(len(path), len(filter_property_path))]:
+        return
+    schema_type = schema.get('type')
+    if (
+            (filter_property_types is None or schema_type in filter_property_types) and
+            (filter_property_path is None or path[:len(filter_property_path)] == filter_property_path)
+    ):
+        yield path, schema
+    if schema_type == 'object':
+        schema_properties = schema.get('properties')
+        if isinstance(schema_properties, dict):
+            for property_name, property_schema in schema_properties.items():
+                if isinstance(property_name, str) and isinstance(property_schema, dict):
+                    yield from schema_iter(
+                        schema=property_schema,
+                        path=tuple(path) + (property_name,),
+                        filter_path_depth_limit=filter_path_depth_limit,
+                        filter_property_types=filter_property_types,
+                        filter_property_path=filter_property_path
+                    )
+    if schema_type == 'array':
+        item_schema = schema.get('items')
+        if isinstance(item_schema, dict):
+            yield from schema_iter(
+                schema=item_schema,
+                path=tuple(path) + (None,),
+                filter_path_depth_limit=filter_path_depth_limit,
+                filter_property_types=filter_property_types,
+                filter_property_path=filter_property_path
+            )
 
 
-def _get_property_paths_for_array_schema(
-        schema: typing.Dict[str, typing.Any],
-        valid_property_types: typing.Optional[typing.Set[str]],
-        path: typing.List[typing.Optional[str]],
-        path_depth_limit: typing.Optional[int] = None
-) -> typing.Dict[
-    typing.Sequence[typing.Optional[str]],
-    typing.Dict[str, typing.Optional[typing.Union[str, typing.Dict[str, str]]]]
-]:
-    path = list(path)
-    if path_depth_limit is not None and len(path) + 1 > path_depth_limit:
-        # array items will have reached the path depth limit
-        return {}
-    if not isinstance(schema, dict):
-        return {}
-    if not schema.get('type') == 'array':
-        return {}
-    property_schema = schema.get('items')
-    if not isinstance(property_schema, dict):
-        return {}
+def data_iter(
+        data: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
+        *,
+        path: typing.Sequence[typing.Union[str, int]] = (),
+        filter_property_types: typing.Optional[typing.Set[str]] = None,
+) -> typing.Iterator[typing.Tuple[typing.Sequence[typing.Union[str, int]], typing.Union[typing.Dict[str, typing.Any], typing.Sequence[typing.Any]]]]:
+    """
+    Iterate over data.
 
-    property_paths = {}
-    property_paths.update(get_property_paths_for_schema(
-        schema=property_schema,
-        valid_property_types=valid_property_types,
-        path=path + [None],
-        path_depth_limit=path_depth_limit
-    ))
-    return property_paths
+    :param data: the data to iterate over
+    :param path: the path to this schema
+    :param filter_property_types: a set of property types to include in the
+        iterator, or None
+    :return: an iterator over tuples of path and data at that path
+    """
+    if isinstance(data, dict):
+        if '_type' in data:
+            data_type = data['_type']
+        else:
+            data_type = 'object'
+    elif isinstance(data, list):
+        data_type = 'array'
+    else:
+        return
+    if filter_property_types is None or data_type in filter_property_types:
+        yield path, data
+    if data_type == 'object' and isinstance(data, dict):
+        for property_name, property_data in data.items():
+            if isinstance(property_name, str) and isinstance(property_data, (dict, list)):
+                yield from data_iter(
+                    data=property_data,
+                    path=tuple(path) + (property_name,),
+                    filter_property_types=filter_property_types,
+                )
+    if data_type == 'array':
+        for index, item_data in enumerate(data):
+            yield from data_iter(
+                data=item_data,
+                path=tuple(path) + (index,),
+                filter_property_types=filter_property_types,
+            )

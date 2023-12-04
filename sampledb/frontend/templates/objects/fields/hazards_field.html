@@ -1,0 +1,47 @@
+<input type="hidden" name="{{ id_prefix }}_hidden" value="field exists" />
+<div class="radio">
+  <label>
+    <input type="radio" id="{{ id_prefix }}_hasnohazards" name="{{ id_prefix }}_hasnohazards" value="true" {% if (data is not none and "hazards" in data and not data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'true') %}checked="checked"{% endif %}>
+    {{ _('This object does not pose any of these hazards.')}}
+  </label>
+</div>
+<div class="radio">
+  <label>
+    <input type="radio" id="{{ id_prefix }}_hasnohazards" name="{{ id_prefix }}_hasnohazards" value="false" {% if (data is not none and "hazards" in data and data["hazards"] and id_prefix+'_hidden' not in form_data) or (id_prefix+'_hidden' in form_data and form_data.get(id_prefix+'_hasnohazards', '') == 'false') %}checked="checked"{% endif %}>
+    {{ _('This object poses the following hazards:') }}
+  </label>
+</div>
+<div class="ghs-hazards-selection">
+  {% set hazard_titles = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'} %}
+  {% for hazard_index in hazard_titles.keys() | sort %}
+    <label>
+      <input type="checkbox" id="{{ id_prefix }}_ghs0{{ hazard_index }}" name="{{ id_prefix }}_ghs0{{ hazard_index }}" {% if (data is not none and "hazards" in data and hazard_index in data["hazards"]) or (id_prefix+('_ghs0%d' | format(hazard_index)) in form_data) %}checked="checked"{% endif %}><span>{{ hazard_titles[hazard_index] }}</span><img src="{{ fingerprinted_static('sampledb/img/ghs0%d.png' | format(hazard_index)) }}" alt="GHS0{{ hazard_index }}" title="{{ hazard_titles[hazard_index] }}"/>
+    </label>
+  {% endfor %}
+</div>
+<script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  document.getElementById('{{ id_prefix }}_hasnohazards').addEventListener('change', function () {
+    setHasNoHazards(this);
+  });
+  for (let i = 1; i <= 9; i++) {
+    document.getElementById('{{ id_prefix }}_ghs0' + i).addEventListener('change', function () {
+      setHasHazard(this);
+    });
+  }
+  function setHasNoHazards(checkbox) {
+    if (checkbox.checked) {
+      var hazards_selection = $(checkbox).closest(".radio").parent().find(".ghs-hazards-selection");
+      $(hazards_selection).find('input').each(function () {
+        this.checked = false;
+      });
+    }
+  }
+  function setHasHazard(checkbox) {
+    var hazards_selection = $(checkbox).closest(".ghs-hazards-selection");
+    var has_hazards = $(hazards_selection).find('input').filter(function() { return this.checked}).length > 0;
+    var hasnohazards_true = $(hazards_selection).parent().find('input[name$="_hasnohazards"][value=true]')[0];
+    hasnohazards_true.checked = !has_hazards;
+    var hasnohazards_false = $(hazards_selection).parent().find('input[name$="_hasnohazards"][value=false]')[0];
+    hasnohazards_false.checked = has_hazards;
+  }
+</script>

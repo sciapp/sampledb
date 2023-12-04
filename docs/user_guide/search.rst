@@ -33,6 +33,8 @@ When an advanced search is used, |service_name| will show the search tree that t
 
     Advanced search tree for the query ``"Sb" in substance and (temperature < 110degC or temperature > 120degC)``
 
+In addition to attribute comparisons, the advanced search also allows searching for objects with files or links with a given name by using the special attribute ``file_name``, e.g. ``".dat" in file_name`` to find all objects with a file containing ``.dat`` in its name or ``file_name == "test.dat"`` to find all objects with a file named ``test.dat``.
+
 Search Query Builder
 ````````````````````
 

@@ -1,0 +1,5 @@
+{% if data is not none %}
+  <span data-utc-datetime="{{ data.utc_datetime | generic_format_datetime }}">{{ data.utc_datetime | babel_format_datetime }}</span>
+{% else %}
+  &mdash;
+{% endif %}

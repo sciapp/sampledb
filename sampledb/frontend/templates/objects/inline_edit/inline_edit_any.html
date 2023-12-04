@@ -1,16 +1,10 @@
-{% if hidden %}
-    <div class="hidden show-more-{{ parent_id_prefix }}">
-{% endif %}
 {% if schema["type"] in ["object", "array", "text", "quantity", "bool", "datetime", "user", "object_reference", "sample", "measurement", "hazards", "tags", "timeseries", "file"] %}
-    {% include get_inline_edit_template(schema) %}
+  {% include get_inline_edit_template(schema, container_style) %}
 {% else %}
-    <div class="hidden">
-        {% include get_form_template(schema) %}
-    </div>
-    <div style="padding-left: -15px">
-        {% include get_view_template(schema) %}
-    </div>
-{% endif %}
-{% if hidden %}
-</div>
+  <div class="hidden">
+    {% include get_form_template(schema, container_style) %}
+  </div>
+  <div style="padding-left: -15px">
+    {% include get_view_template(schema, container_style) %}
+  </div>
 {% endif %}

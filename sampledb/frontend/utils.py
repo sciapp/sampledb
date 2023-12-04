@@ -12,12 +12,13 @@ import json
 import base64
 import functools
 import hashlib
-import typing
-from io import BytesIO
 import os
 import re
+import typing
+from io import BytesIO
+from itertools import zip_longest
 from urllib.parse import quote_plus
-from datetime import datetime
+from datetime import datetime, timezone
 from math import log10, floor
 
 import flask
@@ -45,6 +46,7 @@ from ..logic.users import get_user, User
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.utils import get_property_paths_for_schema
+from ..logic.schemas import get_default_data
 from ..logic.actions import Action
 from ..logic.action_types import ActionType
 from ..logic.instruments import Instrument
@@ -107,6 +109,8 @@ JinjaFunction()(is_full_location_tree_hidden)
 JinjaFunction()(generate_inline_script_nonce)
 JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
+JinjaFunction()(zip_longest)
+JinjaFunction()(get_default_data)
 
 
 qrcode_cache: typing.Dict[str, str] = {}
@@ -239,7 +243,8 @@ def custom_format_datetime(
             format2 = 'medium'
             return format_datetime(utc_datetime, format=format2)
         else:
-            utc_datetime = pytz.utc.localize(utc_datetime)
+            if utc_datetime.tzinfo is None:
+                utc_datetime = pytz.utc.localize(utc_datetime)
             local_datetime = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
             return local_datetime.strftime(format)
     except ValueError:
@@ -431,7 +436,7 @@ def custom_format_quantity(
 
 @JinjaFilter()
 def parse_datetime_string(datetime_string: str) -> datetime:
-    return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S')
+    return datetime.strptime(datetime_string, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
 
 
 @JinjaFilter()
@@ -453,7 +458,7 @@ def convert_datetime_input(datetime_input: str) -> str:
 
 @JinjaFilter()
 def base64encode(value: typing.Any) -> str:
-    return base64.b64encode(json.dumps(value).encode('utf8')).decode('ascii')
+    return base64.b64encode(json.dumps(value, separators=(',', ':')).encode('utf8')).decode('ascii')
 
 
 @JinjaFilter('are_conditions_fulfilled')
@@ -560,21 +565,26 @@ def get_style_aliases(style: str) -> typing.List[str]:
     }.get(style, [style])
 
 
-def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any]) -> str:
+def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template_impl(template_folder, default_prefix, schema['type'], schema.get('style'), container_style)
+
+
+@functools.cache
+def get_template_impl(template_folder: str, default_prefix: str, schema_type: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
-    base_file = str(schema["type"]) + ".html"
+    base_file = str(schema_type) + ".html"
 
     file_order = [default_prefix + base_file]
-    if schema.get('parent_style'):
-        for parent_style in get_style_aliases(schema['parent_style']):
-            file_order.insert(0, (default_prefix + parent_style + "_" + base_file))
-    if schema.get('style'):
-        for style in get_style_aliases(schema['style']):
+    if container_style:
+        for container_style_alias in get_style_aliases(container_style):
+            file_order.insert(0, (default_prefix + container_style_alias + "_" + base_file))
+    if schema_style:
+        for style in get_style_aliases(schema_style):
             file_order.insert(0, (default_prefix + style + "_" + base_file))
-    if schema.get('parent_style') and schema.get('style'):
-        for style in get_style_aliases(schema['style']):
-            for parent_style in get_style_aliases(schema['parent_style']):
-                file_order.insert(0, (default_prefix + parent_style + "_" + style + "_" + base_file))
+    if container_style and schema_style:
+        for style in get_style_aliases(schema_style):
+            for container_style_alias in get_style_aliases(container_style):
+                file_order.insert(0, (default_prefix + container_style_alias + "_" + style + "_" + base_file))
 
     for file in file_order:
         if os.path.exists(os.path.join(system_path, file)):
@@ -583,19 +593,57 @@ def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[
     return template_folder + default_prefix + base_file
 
 
-@JinjaFunction()
-def get_form_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_template('objects/forms/', 'form_', schema)
+def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template_impl(template_folder, schema.get('style'), container_style)
+
+
+@functools.cache
+def get_property_template_impl(template_folder: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+    system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
+
+    file_order = ['regular_property.html']
+    if container_style:
+        for container_style_alias in get_style_aliases(container_style):
+            file_order.insert(0, container_style_alias + '_property.html')
+    if schema_style:
+        for style in get_style_aliases(schema_style):
+            file_order.insert(0, style + '_property.html')
+
+    for file in file_order:
+        if os.path.exists(os.path.join(system_path, file)):
+            return os.path.join(template_folder, file)
+
+    return os.path.join(template_folder + 'regular_property.html')
 
 
 @JinjaFunction()
-def get_view_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_template('objects/view/', '', schema)
+def get_form_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template('objects/forms/', schema, container_style)
 
 
 @JinjaFunction()
-def get_inline_edit_template(schema: typing.Dict[str, typing.Any]) -> str:
-    return get_template('objects/inline_edit/', 'inline_edit_', schema)
+def get_view_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template('objects/view/', schema, container_style)
+
+
+@JinjaFunction()
+def get_inline_edit_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_property_template('objects/inline_edit/', schema, container_style)
+
+
+@JinjaFunction()
+def get_form_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template('objects/forms/', 'form_', schema, container_style)
+
+
+@JinjaFunction()
+def get_view_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template('objects/view/', '', schema, container_style)
+
+
+@JinjaFunction()
+def get_inline_edit_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template('objects/inline_edit/', 'inline_edit_', schema, container_style)
 
 
 @JinjaFunction()
@@ -630,6 +678,11 @@ def get_templates(user_id: int) -> typing.List[Action]:
         for action in get_sorted_actions_for_user(user_id=user_id)
         if action.type is not None and action.type.is_template and action.schema
     ]
+
+
+@JinjaFunction()
+def get_local_decimal_delimiter() -> str:
+    return typing.cast(str, numbers.format_decimal(1.2346, locale=flask_babel.get_locale())[1:2])
 
 
 @JinjaFunction()
@@ -694,7 +747,8 @@ def get_search_paths(
             'object_reference',
             'sample',
             'measurement',
-        )
+        ),
+        include_file_name: bool = False
 ) -> typing.Tuple[typing.Dict[str, SearchPathInfo], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]]]:
     search_paths: typing.Dict[str, SearchPathInfo] = {}
     search_paths_by_action: typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]] = {}
@@ -707,6 +761,7 @@ def get_search_paths(
         search_paths_by_action[action.id] = {}
         if action.type_id not in search_paths_by_action_type:
             search_paths_by_action_type[action.type_id] = {}
+        property_infos = []
         for property_path, property_info in get_property_paths_for_schema(
                 schema=action.schema,
                 valid_property_types=set(valid_property_types),
@@ -721,20 +776,29 @@ def get_search_paths(
             if property_type in {'object_reference', 'sample', 'measurement'}:
                 # unify object_reference, sample and measurement
                 property_type = 'object_reference'
-            property_infos = SearchPathInfo(
+            property_infos.append((property_path, property_type, property_title))
+        if include_file_name and action.type and action.type.enable_files and 'text' in valid_property_types:
+            property_infos.append(('file_name', 'text', markupsafe.escape('File Name')))
+        for property_path, property_type, property_title in property_infos:
+            search_paths_by_action[action.id][property_path] = SearchPathInfo(
                 types=[property_type],
                 titles=[property_title]
             )
-            search_paths_by_action[action.id][property_path] = property_infos
             if property_path not in search_paths_by_action_type[action.type_id]:
-                search_paths_by_action_type[action.type_id][property_path] = property_infos
+                search_paths_by_action_type[action.type_id][property_path] = SearchPathInfo(
+                    types=[property_type],
+                    titles=[property_title]
+                )
             else:
                 if property_title not in search_paths_by_action_type[action.type_id][property_path]['titles']:
                     search_paths_by_action_type[action.type_id][property_path]['titles'].append(property_title)
                 if property_type not in search_paths_by_action_type[action.type_id][property_path]['types']:
                     search_paths_by_action_type[action.type_id][property_path]['types'].append(property_type)
             if property_path not in search_paths:
-                search_paths[property_path] = property_infos
+                search_paths[property_path] = SearchPathInfo(
+                    types=[property_type],
+                    titles=[property_title]
+                )
             else:
                 if property_title not in search_paths[property_path]['titles']:
                     search_paths[property_path]['titles'].append(property_title)
@@ -753,11 +817,11 @@ def get_num_deprecation_warnings() -> int:
 
 @JinjaFunction()
 def get_search_url(
-        attribute: str,
+        property_path: typing.Tuple[str, ...],
         data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
         metadata_language: typing.Optional[str] = None
 ) -> typing.Optional[str]:
-    search_query = get_search_query(attribute, data, metadata_language=metadata_language)
+    search_query = get_search_query(property_path, data, metadata_language=metadata_language)
     if search_query is None:
         return None
     return flask.url_for(
@@ -768,10 +832,14 @@ def get_search_url(
 
 
 def get_search_query(
-        attribute: str,
+        property_path: typing.Tuple[str, ...],
         data: typing.Optional[typing.Union[typing.List[typing.Any], typing.Dict[str, typing.Any]]],
         metadata_language: typing.Optional[str] = None
 ) -> typing.Optional[str]:
+    attribute = '.'.join(
+        str(path_element)
+        for path_element in property_path
+    )
     if data is None:
         return f'{attribute} == null'
     if isinstance(data, list):
@@ -807,6 +875,43 @@ def get_search_query(
             return f'{attribute} == "{str(title)}"'
         else:
             return f'{attribute} == ""'
+    # fallback: find all objects that have this attribute set
+    return f'!({attribute} == null)'
+
+
+@JinjaFunction()
+def get_table_search_url(
+        property_path: typing.Tuple[str, ...],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    search_query = get_table_search_query(property_path, schema)
+    if search_query is None:
+        return None
+    return flask.url_for(
+        '.objects',
+        q=search_query,
+        advanced='on'
+    )
+
+
+def get_table_search_query(
+        property_path: typing.Tuple[str, ...],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    attribute = '.'.join(
+        str(path_element)
+        for path_element in property_path
+    )
+    if schema.get('type') == 'text':
+        return f'{attribute} == ""'
+    if schema.get('type') == 'quantity':
+        if isinstance(schema['units'], str) and schema['units'].strip() != '1':
+            return f'{attribute} == 0{schema.get("units")}'
+        if isinstance(schema['units'], list) and len(schema['units']) == 1 and schema['units'][0].strip() != '1':
+            return f'{attribute} == 0{schema.get("units")}'
+        return f'{attribute} == 0'
+    if schema.get('type') == 'bool':
+        return f'{attribute} == True'
     # fallback: find all objects that have this attribute set
     return f'!({attribute} == null)'
 
@@ -1265,7 +1370,7 @@ def to_timeseries_data(
     relative_times: typing.List[typing.Union[int, float]] = []
     if isinstance(data['data'][0][0], str):
         entries = list(sorted(
-            (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f'), entry[1], entry[2])
+            (datetime.strptime(entry[0], '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc), entry[1], entry[2])
             for entry in data['data']
         ))
         utc_datetimes = [
@@ -1342,7 +1447,7 @@ def to_timeseries_data(
         # convert datetimes to local timezone
         local_timezone = pytz.timezone(current_user.timezone or 'UTC')
         local_datetimes = [
-            pytz.utc.localize(utc_datetime).astimezone(local_timezone)
+            utc_datetime.astimezone(local_timezone)
             for utc_datetime in utc_datetimes
         ]
         time_strings = [
@@ -1383,16 +1488,28 @@ def to_timeseries_csv(
             # convert datetimes from UTC if necessary
             for row in rows:
                 try:
-                    parsed_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
+                    utc_datetime = datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
                 except ValueError:
                     continue
-                local_datetime = pytz.utc.localize(parsed_datetime)
-                utc_datetime = local_datetime.astimezone(user_timezone)
-                row[0] = utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
+                local_datetime = utc_datetime.astimezone(user_timezone)
+                row[0] = local_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
     csv_file = io.StringIO()
     writer = csv.writer(csv_file, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerows(rows)
     return csv_file.getvalue()
+
+
+@JinjaFilter()
+def encode_choices(condition_list: list[dict[str, typing.Any]]) -> list[dict[str, typing.Any]]:
+    for condition in condition_list:
+        if condition['type'] == 'choice_equals':
+            condition['encoded_choice'] = base64encode(condition['choice'])
+    return condition_list
+
+
+@JinjaFilter()
+def stringify(json_object: list[dict[str, typing.Any]]) -> str:
+    return json.dumps(json_object, separators=(',', ':'))
 
 
 @JinjaFunction()
@@ -1411,3 +1528,30 @@ def safe_get_component_by_uuid(component_uuid: str) -> typing.Optional[Component
         return get_component_by_uuid(component_uuid=component_uuid)
     except errors.ComponentDoesNotExistError:
         return None
+
+
+@JinjaFunction()
+def get_property_names_in_order(
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Sequence[str]:
+    property_names = [
+        property_name
+        for property_name in schema.get('propertyOrder', [])
+        if property_name in schema.get('properties', [])
+    ] + [
+        property_name
+        for property_name in schema.get('properties', [])
+        if property_name not in schema.get('propertyOrder', [])
+    ]
+    return property_names
+
+
+@JinjaFunction()
+def id_prefix_for_property_path(
+        property_path: typing.Tuple[typing.Union[str, int], ...],
+        id_prefix_root: str
+) -> str:
+    return '__'.join([
+        str(path_element)
+        for path_element in [id_prefix_root] + list(property_path)
+    ]) + '_'

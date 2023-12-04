@@ -27,7 +27,7 @@ from ..logic.instruments import get_user_instruments, get_instrument
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
-from ..logic.schemas.templates import reverse_substitute_templates, enforce_permissions
+from ..logic.schemas.templates import reverse_substitute_templates, find_invalid_template_paths
 from ..logic.settings import get_user_setting
 from ..logic.users import get_users, get_user
 from ..logic.groups import get_group
@@ -458,7 +458,7 @@ def show_action_form(
                 error_message = f"Failed to parse as JSON: {str(e)}"
         if schema is not None:
             try:
-                invalid_template_paths = enforce_permissions(schema, flask_login.current_user.id)
+                invalid_template_paths = find_invalid_template_paths(schema, flask_login.current_user.id)
                 if invalid_template_paths:
                     raise errors.ValidationError('insufficient permissions for template action', invalid_template_paths[0])
                 validate_schema(schema, invalid_template_action_ids=[] if action is None else [action.id], strict=True)
@@ -469,7 +469,6 @@ def show_action_form(
                 else:
                     schema_json = json.dumps(schema, indent=2)
                     action_form.schema.data = schema_json
-                    all_lines = set(range(1, 1 + len(schema_json)))
                     for path in e.paths:
                         new_error_lines = _get_lines_for_path(schema, path)
                         if new_error_lines is None:

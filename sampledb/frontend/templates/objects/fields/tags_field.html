@@ -1,0 +1,1 @@
+<input type="text" class="form-control" {% if id_prefix+'_tags' in form_data %}value="{{ form_data[id_prefix+'_tags'] }}"{% elif data is not none and "tags" in data %}value="{{ data.tags | join(', ') }}"{% endif %} data-role="tagsinput" id="{{ id_prefix }}_input" name="{{ id_prefix }}_tags"/>

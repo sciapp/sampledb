@@ -50,7 +50,7 @@ def delete_expired_temporary_files() -> None:
     """
     time_limit = flask.current_app.config['TEMPORARY_FILE_TIME_LIMIT']
     db.session.query(temporary_files.TemporaryFile).filter(
-        temporary_files.TemporaryFile.utc_datetime < datetime.datetime.utcnow() - datetime.timedelta(seconds=time_limit)
+        temporary_files.TemporaryFile.utc_datetime < datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=time_limit)
     ).delete()
     db.session.commit()
 
@@ -89,7 +89,7 @@ def create_temporary_file(
         file_name=file_name,
         user_id=user_id,
         binary_data=binary_data,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(temporary_file)
     db.session.commit()

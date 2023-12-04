@@ -7,7 +7,7 @@ import inspect
 
 import pytest
 
-from sampledb.logic.schemas import generate_placeholder
+from sampledb.logic.schemas import generate_placeholder, get_default_data, validate_schema
 from sampledb.logic.errors import SchemaError
 import sampledb.logic
 import sampledb.models
@@ -415,3 +415,219 @@ def test_generate_file_object():
     }
     placeholder_object = generate_placeholder(object_schema)
     assert placeholder_object is None
+
+
+def test_get_default_data_object():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            }
+        },
+        'required': ['name']
+    }
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {'name': None}
+    assert get_default_data(schema, ('name',)) is None
+    assert get_default_data(schema, ('other',)) is None
+
+    schema['properties']['name']['default'] = {'en': 'Default'}
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': 'Default'}
+        }
+    }
+    assert get_default_data(schema, ('name',)) == {
+        '_type': 'text',
+        'text': {'en': 'Default'}
+    }
+    assert get_default_data(schema, ('other',)) is None
+
+    schema['default'] = {
+        'name': {
+            '_type': 'text',
+            'text': {'en': 'Other Default'}
+        }
+    }
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {
+        'name': {
+            '_type': 'text',
+            'text': {'en': 'Other Default'}
+        }
+    }
+    assert get_default_data(schema, ('name',)) == {
+        '_type': 'text',
+        'text': {'en': 'Other Default'}
+    }
+    assert get_default_data(schema, ('other',)) is None
+
+
+def test_get_default_data_array():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'array': {
+                'title': 'Array',
+                'type': 'array',
+                'items': {
+                    'title': 'Entry',
+                    'type': 'text'
+                }
+            }
+        },
+        'required': ['name']
+    }
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {'name': None, 'array': []}
+    assert get_default_data(schema, ('name',)) is None
+    assert get_default_data(schema, ('array',)) == []
+    assert get_default_data(schema, ('array', 0)) is None
+    assert get_default_data(schema, ('other',)) is None
+
+    schema['properties']['array']['items']['default'] = {'en': 'Entry Default'}
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {'name': None, 'array': []}
+    assert get_default_data(schema, ('name',)) is None
+    assert get_default_data(schema, ('array',)) == []
+    assert get_default_data(schema, ('array', 0)) == {
+        '_type': 'text',
+        'text': {'en': 'Entry Default'}
+    }
+    assert get_default_data(schema, ('other',)) is None
+
+    schema['properties']['array']['default'] = [
+        {
+            '_type': 'text',
+            'text': {'en': '1st Entry Default'}
+        },
+        {
+            '_type': 'text',
+            'text': {'en': '2nd Entry Default'}
+        }
+    ]
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {
+        'name': None,
+        'array': [
+            {
+                '_type': 'text',
+                'text': {'en': '1st Entry Default'}
+            },
+            {
+                '_type': 'text',
+                'text': {'en': '2nd Entry Default'}
+            }
+        ]
+    }
+    assert get_default_data(schema, ('array',)) == [
+        {
+            '_type': 'text',
+            'text': {'en': '1st Entry Default'}
+        },
+        {
+            '_type': 'text',
+            'text': {'en': '2nd Entry Default'}
+        }
+    ]
+    assert get_default_data(schema, ('array', 0)) == {
+        '_type': 'text',
+        'text': {'en': '1st Entry Default'}
+    }
+    assert get_default_data(schema, ('array', 1)) == {
+        '_type': 'text',
+        'text': {'en': '2nd Entry Default'}
+    }
+    assert get_default_data(schema, ('array', 2)) == {
+        '_type': 'text',
+        'text': {'en': 'Entry Default'}
+    }
+
+
+def test_get_default_data_object_array():
+    schema = {
+        'title': 'Object',
+        'type': 'object',
+        'properties': {
+            'name': {
+                'title': 'Name',
+                'type': 'text'
+            },
+            'array': {
+                'title': 'Array',
+                'type': 'array',
+                'items': {
+                    'title': 'Entry',
+                    'type': 'object',
+                    'properties': {
+                        'value': {
+                            'title': 'Value',
+                            'type': 'text'
+                        }
+                    }
+                }
+            }
+        },
+        'required': ['name']
+    }
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {'name': None, 'array': []}
+    assert get_default_data(schema, ('name',)) is None
+    assert get_default_data(schema, ('array',)) == []
+    assert get_default_data(schema, ('array', 0)) == {'value': None}
+    assert get_default_data(schema, ('array', 0, 'value')) is None
+
+    schema['properties']['array']['items']['properties']['value']['default'] = 'Default Value'
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {'name': None, 'array': []}
+    assert get_default_data(schema, ('name',)) is None
+    assert get_default_data(schema, ('array',)) == []
+    assert get_default_data(schema, ('array', 0)) == {
+        'value': {
+            '_type': 'text',
+            'text': 'Default Value'
+        }
+    }
+    assert get_default_data(schema, ('array', 0, 'value')) == {
+        '_type': 'text',
+        'text': 'Default Value'
+    }
+
+    schema['default'] = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
+        'array': [
+            {}
+        ]
+    }
+    validate_schema(schema)
+    assert get_default_data(schema, ()) == {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
+        'array': [
+            {}
+        ]
+    }
+    assert get_default_data(schema, ('name',)) == {
+        '_type': 'text',
+        'text': 'Name'
+    }
+    assert get_default_data(schema, ('array',)) == [
+        {}
+    ]
+    assert get_default_data(schema, ('array', 0)) == {}
+    assert get_default_data(schema, ('array', 0, 'value')) is None

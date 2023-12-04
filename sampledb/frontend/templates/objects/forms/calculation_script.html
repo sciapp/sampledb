@@ -1,0 +1,11 @@
+<script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  if (!window.calculation_scripts) {
+    window.calculation_scripts = [];
+  }
+  window.calculation_scripts.push(function () {
+    const id_prefix = "{{ id_prefix }}";
+    const schema = {{ schema | tojson }};
+    const root_schema = {{ root_schema | tojson }};
+    setUpCalculation(id_prefix, schema, root_schema);
+  });
+</script>

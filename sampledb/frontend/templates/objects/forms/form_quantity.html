@@ -1,35 +1,21 @@
-<div class="form-group{% if id_prefix+'_magnitude' in errors %} has-error{% elif id_prefix+'_magnitude' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
-  {% include "objects/forms/property_label.html" %}
-    <div class="col-md-9">
-    {% if schema['units'] in ("1", "") %}
-      <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text  }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none and "magnitude_in_base_units" in data %}value="{{ data.magnitude_in_base_units | babel_format_number }}"{% endif %}>
-    {% else %}
-      <div class="input-group">
-      <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}" {% if id_prefix+'_magnitude' in form_data %}value="{{ form_data[id_prefix+'_magnitude'] }}"{% elif data is not none %}value="{% if (data | to_datatype).units in ('min', 'h') %}{{ data.magnitude_in_base_units | format_time((data | to_datatype).units, schema.get('display_digits')) }}{% else %}{{ (data | to_datatype).magnitude | babel_format_number }}{% endif %}"{% endif %}>
-      {% if schema['units'] is string or schema['units'] | length == 1 %}
-        {% set unit = schema["units"] if schema["units"] is string else schema["units"][0] %}
-        <input type="hidden" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ unit }}{% endif %}"/>
-        <span class="input-group-addon" style="min-width: 100px; text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}</span>
+{% extends get_form_property_template(schema, container_style) %}
+
+{% block property_field %}
+  {% include "objects/fields/quantity_field.html" %}
+{% endblock %}
+
+{% block property_errors %}
+  {% if 'calculation' in schema %}
+    <div class="has-warning">
+      {% if 'units' in schema.calculation %}
+        {% set unit = schema.calculation.units %}
+      {% elif schema.units is string %}
+        {% set unit = schema.units %}
       {% else %}
-        {% if id_prefix + '_units' in form_data %}
-          {% set selected_unit = form_data[id_prefix + '_units'] %}
-        {% elif data is not none %}
-          {% set selected_unit = (data | to_datatype).units %}
-        {% else %}
-          {% set selected_unit = schema['units'][0] %}
-        {% endif %}
-        <select class="selectpicker" name="{{ id_prefix }}_units" data-style="btn-default unit-selectpicker">
-        {% for unit in schema['units'] %}
-          <option value="{{ unit }}" {% if unit == selected_unit %}selected="selected"{% endif %}>{{ unit | prettify_units }}</option>
-        {% endfor %}
-        {% if selected_unit not in schema['units'] %}
-          <option value="{{ selected_unit }}" selected="selected">{{ selected_unit | prettify_units }}</option>
-        {% endif %}
-        </select>
+        {% set unit = schema.units[0] %}
       {% endif %}
-      </div>
-    {% endif %}
-    {% if id_prefix+'_magnitude' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_magnitude'] }}</span>{% endif %}
-    {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
+      <span class="help-block" id="{{ id_prefix }}_calculation_help" style="display: none"><strong>{{ _('Calculated Value:') }}</strong> <span></span>&#8239;{{ unit | prettify_units }} ({{ _('Formula:') }} {{ schema.calculation.formula }}) <button type="button" class="btn btn-default btn-xs">{{ _('Apply') }}</button></span>
     </div>
-</div>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

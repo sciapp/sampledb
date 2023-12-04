@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   services:
     - name: postgres:12
       alias: postgres-test
@@ -53,7 +53,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -64,13 +64,24 @@ analyze:
     - python3 -m pyflakes sampledb
     # install requirements to allow pylint and mypy to import them
     - python3 -m pip install -r requirements.txt
-    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213  --load-plugins=pylint.extensions.docparams sampledb/
+    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213,E1136  --load-plugins=pylint.extensions.docparams sampledb/
     - MYPYPATH=./stubs python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/
+
+analyze-js:
+  stage: test
+  needs: []
+  image: node:lts
+  script:
+    # install static analysis packages
+    - npm install -g jshint semistandard
+    # run JSHint and semistandard for some JavaScript files
+    - jshint sampledb/static/sampledb/js/*.js
+    - semistandard sampledb/static/sampledb/js/*.js
 
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -157,10 +168,32 @@ check-migrations-postgres-13:
     POSTGRES_HOST: postgres13
     SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres13:5432/postgres"
 
+check-migrations-postgres-14:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:14
+      alias: postgres14
+      variables:
+        POSTGRES_HOST: postgres14
+  variables:
+    POSTGRES_HOST: postgres14
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres14:5432/postgres"
+
+check-migrations-postgres-15:
+  extends: .template-check-migrations
+  services:
+    - name: postgres:15
+      alias: postgres15
+      variables:
+        POSTGRES_HOST: postgres15
+  variables:
+    POSTGRES_HOST: postgres15
+    SAMPLEDB_SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:@postgres15:5432/postgres"
+
 check-translations:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -171,6 +204,8 @@ check-translations:
     - cp sampledb/translations/de/LC_MESSAGES/extracted_messages.po extracted_messages_current_de.po
     # ensure there are no fuzzy translations
     - grep -zqv fuzzy extracted_messages_current_de.po
+    # ensure there are no disabled translations
+    - grep -zqv "#~ msgstr" extracted_messages_current_de.po
     # ensure there are no empty translations
     - "grep -zqvP 'msgstr \"\"\\n\\n' extracted_messages_current_de.po"
     # extract and update messages
@@ -186,7 +221,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.11-slim-bullseye
+  image: python:3.11-slim-bookworm
   services:
     - name: postgres:12
       alias: postgres-documentation
@@ -273,7 +308,7 @@ test-container-status:
 
 pages:
   stage: deploy
-  image: ubuntu:20.04
+  image: busybox
   only:
     - master
     - tags
@@ -287,7 +322,7 @@ pages:
 
 deploy-to-dev:
   stage: deploy
-  image: ubuntu:20.04
+  image: debian:bookworm
   environment: staging
   only:
     - develop@Scientific-IT-Systems/SampleDB
@@ -305,7 +340,7 @@ deploy-to-dev:
 
 deploy-to-github:
   stage: deploy
-  image: ubuntu:20.04
+  image: debian:bookworm
   variables:
     GIT_STRATEGY: none
   only:
@@ -373,7 +408,7 @@ deploy-to-dockerhub:
 
 deploy-to-pypi:
   stage: deploy
-  image: python:3
+  image: python:3.11-slim-bookworm
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:

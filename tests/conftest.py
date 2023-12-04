@@ -112,7 +112,7 @@ def flask_server(worker_id):
 
 def create_app():
     logging.getLogger('flask.app').setLevel(logging.WARNING)
-    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI), only_delete=True)
+    sampledb.utils.empty_database(sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI, **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS), only_delete=True)
     sampledb_app = sampledb.create_app()
     sampledb_app.config['TESTING'] = True
 
@@ -181,7 +181,7 @@ def clear_cache_functions():
 
 def _create_empty_database_copy(app):
     database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
-    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI, **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS)
 
     # setup empty database
     sampledb.utils.empty_database(engine, only_delete=False)
@@ -200,7 +200,7 @@ def _create_empty_database_copy(app):
 
 def _restore_empty_database_copy():
     database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
-    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI + '_copy')
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI + '_copy', **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS)
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text('COMMIT'))
         for statement in [
@@ -215,7 +215,7 @@ def _restore_empty_database_copy():
 
 def _drop_empty_database_copy():
     database_name = sampledb.config.SQLALCHEMY_DATABASE_URI.rsplit('/')[-1]
-    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI)
+    engine = sqlalchemy.create_engine(sampledb.config.SQLALCHEMY_DATABASE_URI, **sampledb.config.SQLALCHEMY_ENGINE_OPTIONS)
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text('COMMIT'))
         for statement in [
@@ -229,7 +229,8 @@ def _drop_empty_database_copy():
 def mock_current_user():
     modules = [
         sampledb.frontend.utils,
-        sampledb.frontend.objects.object_form_parser
+        sampledb.frontend.objects.object_form_parser,
+        sampledb.logic.utils,
     ]
     current_user_backup = getattr(modules[0], 'current_user')
 

@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime
+import datetime
 import typing
 
 import flask
@@ -34,7 +34,7 @@ class ObjectVersionData(typing.TypedDict):
     user: typing.Optional[UserRef]
     data: typing.Optional[typing.Dict[str, typing.Any]]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
-    utc_datetime: typing.Optional[datetime]
+    utc_datetime: typing.Optional[datetime.datetime]
     import_notes: typing.List[str]
 
 
@@ -60,7 +60,7 @@ class ObjectData(typing.TypedDict):
 class SharedFileHideData(typing.TypedDict):
     user: UserRef
     reason: str
-    utc_datetime: datetime
+    utc_datetime: datetime.datetime
 
 
 class SharedFileData(typing.TypedDict):
@@ -77,7 +77,7 @@ class SharedCommentData(typing.TypedDict):
     component_uuid: str
     user: typing.Optional[UserRef]
     content: typing.Optional[str]
-    utc_datetime: datetime
+    utc_datetime: datetime.datetime
 
 
 class SharedObjectVersionData(typing.TypedDict):
@@ -202,7 +202,7 @@ def import_object(
         import_status['success'] = True
         import_status['notes'] = all_import_notes
         import_status['object_id'] = object.object_id
-        import_status['utc_datetime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        import_status['utc_datetime'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
     return object
 
@@ -630,10 +630,10 @@ def entry_preprocessor(
         refs: typing.List[typing.Tuple[str, int]],
         markdown_images: typing.Dict[str, str]
 ) -> None:
-    if type(data) == list:
+    if type(data) is list:
         for entry in data:
             entry_preprocessor(entry, refs, markdown_images)
-    elif type(data) == dict:
+    elif type(data) is dict:
         if '_type' not in data.keys():
             for key in data:
                 entry_preprocessor(data[key], refs, markdown_images)
@@ -685,10 +685,10 @@ def parse_entry(
         entry_data: typing.Any,
         component: Component
 ) -> None:
-    if type(entry_data) == list:
+    if type(entry_data) is list:
         for entry in entry_data:
             parse_entry(entry, component)
-    elif type(entry_data) == dict:
+    elif type(entry_data) is dict:
         if '_type' not in entry_data.keys():
             for key in entry_data:
                 parse_entry(entry_data[key], component)

@@ -1,117 +1,50 @@
-<!-- object start -->
+{% set container_style = none %}
 {% if ((show_object_title is none and config['SHOW_OBJECT_TITLE']) or show_object_title) and schema.title %}
-    <span style="font-size:1.5em; padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
+  <span style="font-size:1.5em; padding-left: {{ indent_level * 10 + 9 }}px; margin-bottom: 5px; margin-top: 10px; display:block;">{{ schema.title | get_translated_text }}</span>
 {% endif %}
 {% set indent_level = indent_level + 1 %}
 <div style="border-left: 1px solid {% if show_indent_border %}#dddddd{% else %}transparent{% endif %}; margin-left: {{ indent_level * 10 }}px">
-<div style="margin-left: {{ -indent_level * 20 - 1 }}px; padding-left:{{ indent_level * 10 + 1 }}px">
-  {% set show_indent_border = True %}
-  <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
-    {% if search_query_attribute %}
-        {% set base_search_query_attribute = search_query_attribute %}
-    {% else %}
-        {% set base_search_query_attribute = "" %}
-    {% endif %}
-    {% if "propertyOrder" not in schema %}
-        {% for property_name, property_schema in schema.properties.items() %}
-            {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
-            {% set is_required = ('required' in schema and property_name in schema['required']) %}
-            {% set name = property_name %}
-            {% set schema = property_schema %}
-            {% set parent_id_prefix = id_prefix %}
-            {% set id_prefix = id_prefix + '_' + name + '_' %}
-            {% if data is not none and property_name in data %}
-                {% set data = data[property_name] %}
-            {% else %}
-                {% set data = none %}
-            {% endif %}
-            {% if base_search_query_attribute %}
-                {% set search_query_attribute = base_search_query_attribute + "." + name %}
-            {% else %}
-                {% set search_query_attribute = name %}
-            {% endif %}
-            {% if 'conditions' in schema %}
-                <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                    {% include "objects/forms/conditional_wrapper_script.html" %}
-                </div>
-            {% else %}
-                {% include "objects/inline_edit/inline_edit_any.html" %}
-            {% endif %}
-        {% endfor %}
-    {% else %}
-        {% for property_name in schema.propertyOrder %}
-            {% if property_name in schema.properties %}
-                {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
-                {% set is_required = ('required' in schema and property_name in schema['required']) %}
-                {% set name = property_name %}
-                {% set schema = schema.properties[property_name] %}
-                {% set parent_id_prefix = id_prefix %}
-                {% set id_prefix = id_prefix + '_' + name + '_' %}
-                {% if data is not none and property_name in data %}
-                    {% set data = data[property_name] %}
-                {% else %}
-                    {% set data = none %}
-                {% endif %}
-                {% if base_search_query_attribute %}
-                    {% set search_query_attribute = base_search_query_attribute + "." + name %}
-                {% else %}
-                    {% set search_query_attribute = name %}
-                {% endif %}
-                {% if 'conditions' in schema %}
-                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                        {% include "objects/inline_edit/inline_edit_any.html" %}
-                        {% include "objects/forms/conditional_wrapper_script.html" %}
-                    </div>
-                {% else %}
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-        {% for property_name, property_schema in schema.properties.items() %}
-            {% if property_name not in schema.propertyOrder %}
-                {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
-                {% set is_required = ('required' in schema and property_name in schema['required']) %}
-                {% set name = property_name %}
-                {% set schema = property_schema %}
-                {% set parent_id_prefix = id_prefix %}
-                {% set id_prefix = id_prefix + '_' + name + '_' %}
-                {% if data is not none and property_name in data %}
-                    {% set data = data[property_name] %}
-                {% else %}
-                    {% set data = none %}
-                {% endif %}
-
-                {% if base_search_query_attribute %}
-                    {% set search_query_attribute = base_search_query_attribute + "." + name %}
-                {% else %}
-                    {% set search_query_attribute = name %}
-                {% endif %}
-
-                {% if 'conditions' in schema %}
-                    <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
-                        {% include "objects/inline_edit/inline_edit_any.html" %}
-                        {% include "objects/forms/conditional_wrapper_script.html" %}
-                    </div>
-                {% else %}
-                    {% include "objects/inline_edit/inline_edit_any.html" %}
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-    {% if schema.get("show_more") %}
-        <div class="row">
-            <div class="col-md-3" style="padding-rigth: 0px;"></div>
-            <div class="col-md-9" style="padding-left: 5px;">
-                <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs">{{ _('Show more') }}</button>
-                <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-                  document.getElementById('show-more-{{ id_prefix }}-btn').addEventListener('click', function() {
-                    toggleShowMore('{{id_prefix}}');
-                  })
-                </script>
-            </div>
+  <div style="margin-left: {{ -indent_level * 20 - 1 }}px; padding-left:{{ indent_level * 10 + 1 }}px">
+    {% set show_indent_border = True %}
+    <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
+    {% set property_names = get_property_names_in_order(schema) %}
+    {% for property_name in property_names %}
+      {% set hidden = 'show_more' in schema.keys() and property_name in schema['show_more'] %}
+      {% set is_required = property_name in schema.get('required', ()) %}
+      {% set schema = schema.properties[property_name] %}
+      {% set parent_id_prefix = id_prefix %}
+      {% set property_path = property_path + (property_name,) %}
+      {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
+      {% if data is not none and property_name in data %}
+        {% set data = data[property_name] %}
+      {% else %}
+        {% set data = none %}
+      {% endif %}
+      {% if 'conditions' in schema %}
+        <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper">
+          <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+            {% include "objects/inline_edit/inline_edit_any.html" %}
+          </div>
+          <input type="hidden" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
         </div>
+      {% else %}
+        <div {% if hidden %}class="hidden show-more-{{ parent_id_prefix }}"{% endif %}>
+          {% include "objects/inline_edit/inline_edit_any.html" %}
+        </div>
+      {% endif %}
+    {% endfor %}
+    {% if schema.get("show_more") %}
+      <div class="row">
+        <div class="col-md-3" style="padding-rigth: 0px;"></div>
+        <div class="col-md-9" style="padding-left: 5px;">
+          <button id="show-more-{{ id_prefix }}-btn" class="btn btn-default btn-xs">{{ _('Show more') }}</button>
+          <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+            document.getElementById('show-more-{{ id_prefix }}-btn').addEventListener('click', function() {
+              toggleShowMore('{{id_prefix}}');
+            })
+          </script>
+        </div>
+      </div>
     {% endif %}
+  </div>
 </div>
-</div>
-<!-- object end-->

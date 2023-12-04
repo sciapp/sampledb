@@ -369,7 +369,7 @@ def object_location_assignments(components, objects, locations, users):
 
 
 def test_import_user(user, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedUserLogEntry.query.all()) == 0
     fed_logs.import_user(user.id, component.id)
     log_entries = models.FedUserLogEntry.query.all()
@@ -379,7 +379,7 @@ def test_import_user(user, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_user_missing_data(user, component):
@@ -392,7 +392,7 @@ def test_import_user_missing_data(user, component):
 
 
 def test_update_user(user, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedUserLogEntry.query.all()) == 0
     fed_logs.update_user(user.id, component.id)
     log_entries = models.FedUserLogEntry.query.all()
@@ -402,7 +402,7 @@ def test_update_user(user, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_user_missing_data(user, component):
@@ -415,7 +415,7 @@ def test_update_user_missing_data(user, component):
 
 
 def test_create_ref_user(user, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedUserLogEntry.query.all()) == 0
     fed_logs.create_ref_user(user.id, component.id)
     log_entries = models.FedUserLogEntry.query.all()
@@ -425,7 +425,7 @@ def test_create_ref_user(user, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_ref_user_missing_data(user, component):
@@ -438,7 +438,7 @@ def test_create_ref_user_missing_data(user, component):
 
 
 def test_import_object(object, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedObjectLogEntry.query.all()) == 0
     fed_logs.import_object(object.id, component.id, [], None, 1)
     log_entries = models.FedObjectLogEntry.query.all()
@@ -448,7 +448,7 @@ def test_import_object(object, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {'import_notes': [], 'version_id': 1}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_missing_data(object, component):
@@ -461,7 +461,7 @@ def test_import_object_missing_data(object, component):
 
 
 def test_update_object(object, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedObjectLogEntry.query.all()) == 0
     fed_logs.update_object(object.id, component.id, [], None, 1)
     log_entries = models.FedObjectLogEntry.query.all()
@@ -471,7 +471,7 @@ def test_update_object(object, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {'import_notes': [], 'version_id': 1}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_object_missing_data(object, component):
@@ -484,7 +484,7 @@ def test_update_object_missing_data(object, component):
 
 
 def test_share_object(object, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedObjectLogEntry.query.all()) == 0
     fed_logs.share_object(object.id, component.id, None)
     log_entries = models.FedObjectLogEntry.query.all()
@@ -494,7 +494,7 @@ def test_share_object(object, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_share_object_missing_data(object, component):
@@ -507,7 +507,7 @@ def test_share_object_missing_data(object, component):
 
 
 def test_update_object_policy(object, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedObjectLogEntry.query.all()) == 0
     fed_logs.update_object_policy(object.id, component.id, None)
     log_entries = models.FedObjectLogEntry.query.all()
@@ -517,7 +517,7 @@ def test_update_object_policy(object, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_object_policy_missing_data(object, component):
@@ -530,7 +530,7 @@ def test_update_object_policy_missing_data(object, component):
 
 
 def test_import_location(location, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedLocationLogEntry.query.all()) == 0
     fed_logs.import_location(location.id, component.id)
     log_entries = models.FedLocationLogEntry.query.all()
@@ -540,7 +540,7 @@ def test_import_location(location, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_location_missing_data(location, component):
@@ -553,7 +553,7 @@ def test_import_location_missing_data(location, component):
 
 
 def test_update_location(location, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedLocationLogEntry.query.all()) == 0
     fed_logs.update_location(location.id, component.id)
     log_entries = models.FedLocationLogEntry.query.all()
@@ -563,7 +563,7 @@ def test_update_location(location, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_location_missing_data(location, component):
@@ -576,7 +576,7 @@ def test_update_location_missing_data(location, component):
 
 
 def test_create_ref_location(location, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedLocationLogEntry.query.all()) == 0
     fed_logs.create_ref_location(location.id, component.id)
     log_entries = models.FedLocationLogEntry.query.all()
@@ -586,7 +586,7 @@ def test_create_ref_location(location, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_ref_location_missing_data(location, component):
@@ -599,7 +599,7 @@ def test_create_ref_location_missing_data(location, component):
 
 
 def test_import_action(action, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedActionLogEntry.query.all()) == 0
     fed_logs.import_action(action.id, component.id, [])
     log_entries = models.FedActionLogEntry.query.all()
@@ -609,7 +609,7 @@ def test_import_action(action, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {'import_notes': []}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_missing_data(action, component):
@@ -622,7 +622,7 @@ def test_import_action_missing_data(action, component):
 
 
 def test_update_action(action, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedActionLogEntry.query.all()) == 0
     fed_logs.update_action(action.id, component.id, [])
     log_entries = models.FedActionLogEntry.query.all()
@@ -632,7 +632,7 @@ def test_update_action(action, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {'import_notes': []}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_action_missing_data(action, component):
@@ -645,7 +645,7 @@ def test_update_action_missing_data(action, component):
 
 
 def test_create_ref_action(action, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedActionLogEntry.query.all()) == 0
     fed_logs.create_ref_action(action.id, component.id)
     log_entries = models.FedActionLogEntry.query.all()
@@ -655,7 +655,7 @@ def test_create_ref_action(action, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_ref_action_missing_data(action, component):
@@ -668,7 +668,7 @@ def test_create_ref_action_missing_data(action, component):
 
 
 def test_import_action_type(action_type, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedActionTypeLogEntry.query.all()) == 0
     fed_logs.import_action_type(action_type.id, component.id)
     log_entries = models.FedActionTypeLogEntry.query.all()
@@ -678,7 +678,7 @@ def test_import_action_type(action_type, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_type_missing_data(action_type, component):
@@ -691,7 +691,7 @@ def test_import_action_type_missing_data(action_type, component):
 
 
 def test_update_action_type(action_type, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedActionTypeLogEntry.query.all()) == 0
     fed_logs.update_action_type(action_type.id, component.id)
     log_entries = models.FedActionTypeLogEntry.query.all()
@@ -701,7 +701,7 @@ def test_update_action_type(action_type, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_action_type_missing_data(action_type, component):
@@ -714,7 +714,7 @@ def test_update_action_type_missing_data(action_type, component):
 
 
 def test_create_ref_action_type(action_type, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedActionTypeLogEntry.query.all()) == 0
     fed_logs.create_ref_action_type(action_type.id, component.id)
     log_entries = models.FedActionTypeLogEntry.query.all()
@@ -724,7 +724,7 @@ def test_create_ref_action_type(action_type, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_ref_action_type_missing_data(action_type, component):
@@ -737,7 +737,7 @@ def test_create_ref_action_type_missing_data(action_type, component):
 
 
 def test_import_instrument(instrument, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedInstrumentLogEntry.query.all()) == 0
     fed_logs.import_instrument(instrument.id, component.id)
     log_entries = models.FedInstrumentLogEntry.query.all()
@@ -747,7 +747,7 @@ def test_import_instrument(instrument, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_instrument_missing_data(instrument, component):
@@ -760,7 +760,7 @@ def test_import_instrument_missing_data(instrument, component):
 
 
 def test_update_instrument(instrument, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedInstrumentLogEntry.query.all()) == 0
     fed_logs.update_instrument(instrument.id, component.id)
     log_entries = models.FedInstrumentLogEntry.query.all()
@@ -770,7 +770,7 @@ def test_update_instrument(instrument, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_instrument_missing_data(instrument, component):
@@ -783,7 +783,7 @@ def test_update_instrument_missing_data(instrument, component):
 
 
 def test_create_ref_instrument(instrument, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedInstrumentLogEntry.query.all()) == 0
     fed_logs.create_ref_instrument(instrument.id, component.id)
     log_entries = models.FedInstrumentLogEntry.query.all()
@@ -793,7 +793,7 @@ def test_create_ref_instrument(instrument, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_ref_instrument_missing_data(instrument, component):
@@ -806,7 +806,7 @@ def test_create_ref_instrument_missing_data(instrument, component):
 
 
 def test_import_comment(comment_id, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedCommentLogEntry.query.all()) == 0
     fed_logs.import_comment(comment_id, component.id)
     log_entries = models.FedCommentLogEntry.query.all()
@@ -816,7 +816,7 @@ def test_import_comment(comment_id, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_comment_missing_data(comment_id, component):
@@ -829,7 +829,7 @@ def test_import_comment_missing_data(comment_id, component):
 
 
 def test_update_comment(comment_id, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedCommentLogEntry.query.all()) == 0
     fed_logs.update_comment(comment_id, component.id)
     log_entries = models.FedCommentLogEntry.query.all()
@@ -839,7 +839,7 @@ def test_update_comment(comment_id, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_comment_missing_data(comment_id, component):
@@ -852,7 +852,7 @@ def test_update_comment_missing_data(comment_id, component):
 
 
 def test_import_file(file, object, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedFileLogEntry.query.all()) == 0
     fed_logs.import_file(file.id, object.object_id, component.id)
     log_entries = models.FedFileLogEntry.query.all()
@@ -862,7 +862,7 @@ def test_import_file(file, object, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_file_missing_data(file, object, component):
@@ -877,7 +877,7 @@ def test_import_file_missing_data(file, object, component):
 
 
 def test_update_file(file, object, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedFileLogEntry.query.all()) == 0
     fed_logs.update_file(file.id, object.object_id, component.id)
     log_entries = models.FedFileLogEntry.query.all()
@@ -887,7 +887,7 @@ def test_update_file(file, object, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_file_missing_data(file, object, component):
@@ -902,7 +902,7 @@ def test_update_file_missing_data(file, object, component):
 
 
 def test_import_object_location_assignment(object_location_assignment, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedObjectLocationAssignmentLogEntry.query.all()) == 0
     fed_logs.import_object_location_assignment(object_location_assignment.id, component.id)
     log_entries = models.FedObjectLocationAssignmentLogEntry.query.all()
@@ -912,7 +912,7 @@ def test_import_object_location_assignment(object_location_assignment, component
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_location_assignment_missing_data(object_location_assignment, component):
@@ -925,7 +925,7 @@ def test_import_object_location_assignment_missing_data(object_location_assignme
 
 
 def test_update_object_location_assignment(object_location_assignment, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedObjectLocationAssignmentLogEntry.query.all()) == 0
     fed_logs.update_object_location_assignment(object_location_assignment.id, component.id)
     log_entries = models.FedObjectLocationAssignmentLogEntry.query.all()
@@ -935,7 +935,7 @@ def test_update_object_location_assignment(object_location_assignment, component
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_object_location_assignment_missing_data(object_location_assignment, component):
@@ -955,28 +955,28 @@ def test_get_fed_user_log_entries_for_user(users, components):
         user_id=user1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedUserLogEntry(
         type=models.FedUserLogEntryType.UPDATE_USER,
         user_id=user1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedUserLogEntry(
         type=models.FedUserLogEntryType.IMPORT_USER,
         user_id=user1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedUserLogEntry(
         type=models.FedUserLogEntryType.IMPORT_USER,
         user_id=user2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -995,7 +995,7 @@ def test_get_fed_user_log_entries_for_user(users, components):
 
 
 def test_get_fed_user_log_entries_for_user_missing_data(user, component):
-    entry = models.FedUserLogEntry(type=models.FedUserLogEntryType.UPDATE_USER, user_id=user.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedUserLogEntry(type=models.FedUserLogEntryType.UPDATE_USER, user_id=user.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.UserDoesNotExistError):
@@ -1014,28 +1014,28 @@ def test_get_fed_user_log_entries_for_component(users, components):
         user_id=user1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedUserLogEntry(
         type=models.FedUserLogEntryType.UPDATE_USER,
         user_id=user1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedUserLogEntry(
         type=models.FedUserLogEntryType.IMPORT_USER,
         user_id=user1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedUserLogEntry(
         type=models.FedUserLogEntryType.IMPORT_USER,
         user_id=user2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1054,7 +1054,7 @@ def test_get_fed_user_log_entries_for_component(users, components):
 
 
 def test_get_fed_user_log_entries_for_component_missing_data(user, component):
-    entry = models.FedUserLogEntry(type=models.FedUserLogEntryType.UPDATE_USER, user_id=user.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedUserLogEntry(type=models.FedUserLogEntryType.UPDATE_USER, user_id=user.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1069,28 +1069,28 @@ def test_get_fed_object_log_entries_for_object(objects, components):
         object_id=object1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedObjectLogEntry(
         type=models.FedObjectLogEntryType.UPDATE_OBJECT,
         object_id=object1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedObjectLogEntry(
         type=models.FedObjectLogEntryType.IMPORT_OBJECT,
         object_id=object1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedObjectLogEntry(
         type=models.FedObjectLogEntryType.IMPORT_OBJECT,
         object_id=object2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1109,7 +1109,7 @@ def test_get_fed_object_log_entries_for_object(objects, components):
 
 
 def test_get_fed_object_log_entries_for_object_missing_data(object, component):
-    entry = models.FedObjectLogEntry(type=models.FedObjectLogEntryType.UPDATE_OBJECT, object_id=object.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedObjectLogEntry(type=models.FedObjectLogEntryType.UPDATE_OBJECT, object_id=object.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ObjectDoesNotExistError):
@@ -1128,28 +1128,28 @@ def test_get_fed_object_log_entries_for_component(objects, components):
         object_id=object1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedObjectLogEntry(
         type=models.FedObjectLogEntryType.UPDATE_OBJECT,
         object_id=object1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedObjectLogEntry(
         type=models.FedObjectLogEntryType.IMPORT_OBJECT,
         object_id=object1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedObjectLogEntry(
         type=models.FedObjectLogEntryType.IMPORT_OBJECT,
         object_id=object2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1168,7 +1168,7 @@ def test_get_fed_object_log_entries_for_component(objects, components):
 
 
 def test_get_fed_object_log_entries_for_component_missing_data(object, component):
-    entry = models.FedObjectLogEntry(type=models.FedObjectLogEntryType.UPDATE_OBJECT, object_id=object.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedObjectLogEntry(type=models.FedObjectLogEntryType.UPDATE_OBJECT, object_id=object.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1183,28 +1183,28 @@ def test_get_fed_location_log_entries_for_location(locations, components):
         location_id=location1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedLocationLogEntry(
         type=models.FedLocationLogEntryType.UPDATE_LOCATION,
         location_id=location1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedLocationLogEntry(
         type=models.FedLocationLogEntryType.IMPORT_LOCATION,
         location_id=location1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedLocationLogEntry(
         type=models.FedLocationLogEntryType.IMPORT_LOCATION,
         location_id=location2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1223,7 +1223,7 @@ def test_get_fed_location_log_entries_for_location(locations, components):
 
 
 def test_get_fed_location_log_entries_for_location_missing_data(location, component):
-    entry = models.FedLocationLogEntry(type=models.FedLocationLogEntryType.UPDATE_LOCATION, location_id=location.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedLocationLogEntry(type=models.FedLocationLogEntryType.UPDATE_LOCATION, location_id=location.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.LocationDoesNotExistError):
@@ -1242,28 +1242,28 @@ def test_get_fed_location_log_entries_for_component(locations, components):
         location_id=location1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedLocationLogEntry(
         type=models.FedLocationLogEntryType.UPDATE_LOCATION,
         location_id=location1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedLocationLogEntry(
         type=models.FedLocationLogEntryType.IMPORT_LOCATION,
         location_id=location1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedLocationLogEntry(
         type=models.FedLocationLogEntryType.IMPORT_LOCATION,
         location_id=location2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1282,7 +1282,7 @@ def test_get_fed_location_log_entries_for_component(locations, components):
 
 
 def test_get_fed_location_log_entries_for_component_missing_data(location, component):
-    entry = models.FedLocationLogEntry(type=models.FedLocationLogEntryType.UPDATE_LOCATION, location_id=location.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedLocationLogEntry(type=models.FedLocationLogEntryType.UPDATE_LOCATION, location_id=location.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1297,28 +1297,28 @@ def test_get_fed_action_log_entries_for_action(actions, components):
         action_id=action1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedActionLogEntry(
         type=models.FedActionLogEntryType.UPDATE_ACTION,
         action_id=action1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedActionLogEntry(
         type=models.FedActionLogEntryType.IMPORT_ACTION,
         action_id=action1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedActionLogEntry(
         type=models.FedActionLogEntryType.IMPORT_ACTION,
         action_id=action2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1337,7 +1337,7 @@ def test_get_fed_action_log_entries_for_action(actions, components):
 
 
 def test_get_fed_action_log_entries_for_action_missing_data(action, component):
-    entry = models.FedActionLogEntry(type=models.FedActionLogEntryType.UPDATE_ACTION, action_id=action.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedActionLogEntry(type=models.FedActionLogEntryType.UPDATE_ACTION, action_id=action.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ActionDoesNotExistError):
@@ -1356,28 +1356,28 @@ def test_get_fed_action_log_entries_for_component(actions, components):
         action_id=action1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedActionLogEntry(
         type=models.FedActionLogEntryType.UPDATE_ACTION,
         action_id=action1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedActionLogEntry(
         type=models.FedActionLogEntryType.IMPORT_ACTION,
         action_id=action1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedActionLogEntry(
         type=models.FedActionLogEntryType.IMPORT_ACTION,
         action_id=action2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1396,7 +1396,7 @@ def test_get_fed_action_log_entries_for_component(actions, components):
 
 
 def test_get_fed_action_log_entries_for_component_missing_data(action, component):
-    entry = models.FedActionLogEntry(type=models.FedActionLogEntryType.UPDATE_ACTION, action_id=action.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedActionLogEntry(type=models.FedActionLogEntryType.UPDATE_ACTION, action_id=action.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1411,28 +1411,28 @@ def test_get_fed_action_type_log_entries_for_action_type(action_types, component
         action_type_id=action_type1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedActionTypeLogEntry(
         type=models.FedActionTypeLogEntryType.UPDATE_ACTION_TYPE,
         action_type_id=action_type1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedActionTypeLogEntry(
         type=models.FedActionTypeLogEntryType.IMPORT_ACTION_TYPE,
         action_type_id=action_type1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedActionTypeLogEntry(
         type=models.FedActionTypeLogEntryType.IMPORT_ACTION_TYPE,
         action_type_id=action_type2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1451,7 +1451,7 @@ def test_get_fed_action_type_log_entries_for_action_type(action_types, component
 
 
 def test_get_fed_action_type_log_entries_for_action_type_missing_data(action_type, component):
-    entry = models.FedActionTypeLogEntry(type=models.FedActionTypeLogEntryType.UPDATE_ACTION_TYPE, action_type_id=action_type.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedActionTypeLogEntry(type=models.FedActionTypeLogEntryType.UPDATE_ACTION_TYPE, action_type_id=action_type.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ActionTypeDoesNotExistError):
@@ -1470,28 +1470,28 @@ def test_get_fed_action_type_log_entries_for_component(action_types, components)
         action_type_id=action_type1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedActionTypeLogEntry(
         type=models.FedActionTypeLogEntryType.UPDATE_ACTION_TYPE,
         action_type_id=action_type1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedActionTypeLogEntry(
         type=models.FedActionTypeLogEntryType.IMPORT_ACTION_TYPE,
         action_type_id=action_type1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedActionTypeLogEntry(
         type=models.FedActionTypeLogEntryType.IMPORT_ACTION_TYPE,
         action_type_id=action_type2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1510,7 +1510,7 @@ def test_get_fed_action_type_log_entries_for_component(action_types, components)
 
 
 def test_get_fed_action_type_log_entries_for_component_missing_data(action_type, component):
-    entry = models.FedActionTypeLogEntry(type=models.FedActionTypeLogEntryType.UPDATE_ACTION_TYPE, action_type_id=action_type.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedActionTypeLogEntry(type=models.FedActionTypeLogEntryType.UPDATE_ACTION_TYPE, action_type_id=action_type.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1525,28 +1525,28 @@ def test_get_fed_instrument_log_entries_for_instrument(instruments, components):
         instrument_id=instrument1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedInstrumentLogEntry(
         type=models.FedInstrumentLogEntryType.UPDATE_INSTRUMENT,
         instrument_id=instrument1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedInstrumentLogEntry(
         type=models.FedInstrumentLogEntryType.IMPORT_INSTRUMENT,
         instrument_id=instrument1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedInstrumentLogEntry(
         type=models.FedInstrumentLogEntryType.IMPORT_INSTRUMENT,
         instrument_id=instrument2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1565,7 +1565,7 @@ def test_get_fed_instrument_log_entries_for_instrument(instruments, components):
 
 
 def test_get_fed_instrument_log_entries_for_instrument_missing_data(instrument, component):
-    entry = models.FedInstrumentLogEntry(type=models.FedInstrumentLogEntryType.UPDATE_INSTRUMENT, instrument_id=instrument.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedInstrumentLogEntry(type=models.FedInstrumentLogEntryType.UPDATE_INSTRUMENT, instrument_id=instrument.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.InstrumentDoesNotExistError):
@@ -1584,28 +1584,28 @@ def test_get_fed_instrument_log_entries_for_component(instruments, components):
         instrument_id=instrument1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedInstrumentLogEntry(
         type=models.FedInstrumentLogEntryType.UPDATE_INSTRUMENT,
         instrument_id=instrument1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedInstrumentLogEntry(
         type=models.FedInstrumentLogEntryType.IMPORT_INSTRUMENT,
         instrument_id=instrument1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedInstrumentLogEntry(
         type=models.FedInstrumentLogEntryType.IMPORT_INSTRUMENT,
         instrument_id=instrument2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1624,7 +1624,7 @@ def test_get_fed_instrument_log_entries_for_component(instruments, components):
 
 
 def test_get_fed_instrument_log_entries_for_component_missing_data(instrument, component):
-    entry = models.FedInstrumentLogEntry(type=models.FedInstrumentLogEntryType.UPDATE_INSTRUMENT, instrument_id=instrument.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedInstrumentLogEntry(type=models.FedInstrumentLogEntryType.UPDATE_INSTRUMENT, instrument_id=instrument.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1639,28 +1639,28 @@ def test_get_fed_comment_log_entries_for_comment(comments, components):
         comment_id=comment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.UPDATE_COMMENT,
         comment_id=comment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1679,7 +1679,7 @@ def test_get_fed_comment_log_entries_for_comment(comments, components):
 
 
 def test_get_fed_comment_log_entries_for_comment_missing_data(comment_id, component):
-    entry = models.FedCommentLogEntry(type=models.FedCommentLogEntryType.UPDATE_COMMENT, comment_id=comment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedCommentLogEntry(type=models.FedCommentLogEntryType.UPDATE_COMMENT, comment_id=comment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.CommentDoesNotExistError):
@@ -1698,28 +1698,28 @@ def test_get_fed_comment_log_entries_for_component(comments, components):
         comment_id=comment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.UPDATE_COMMENT,
         comment_id=comment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1738,7 +1738,7 @@ def test_get_fed_comment_log_entries_for_component(comments, components):
 
 
 def test_get_fed_comment_log_entries_for_component_missing_data(comment_id, component):
-    entry = models.FedCommentLogEntry(type=models.FedCommentLogEntryType.UPDATE_COMMENT, comment_id=comment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedCommentLogEntry(type=models.FedCommentLogEntryType.UPDATE_COMMENT, comment_id=comment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1755,28 +1755,28 @@ def test_get_fed_comment_log_entries_for_object(comments, components):
         comment_id=comment3.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.UPDATE_COMMENT,
         comment_id=comment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedCommentLogEntry(
         type=models.FedCommentLogEntryType.IMPORT_COMMENT,
         comment_id=comment2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1798,7 +1798,7 @@ def test_get_fed_comment_log_entries_for_object_missing_data(comments, component
     object_id = comments[0].object_id
     invalid_object_id = max((c.object_id for c in comments)) + 1
     comment_id = comments[0].id
-    entry = models.FedCommentLogEntry(type=models.FedCommentLogEntryType.UPDATE_COMMENT, comment_id=comment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedCommentLogEntry(type=models.FedCommentLogEntryType.UPDATE_COMMENT, comment_id=comment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ObjectDoesNotExistError):
@@ -1817,28 +1817,28 @@ def test_get_fed_file_log_entries_for_file(files, components):
         file_id=file1.id, object_id=file1.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.UPDATE_FILE,
         file_id=file1.id, object_id=file1.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file1.id, object_id=file1.object_id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file2.id, object_id=file2.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1857,7 +1857,7 @@ def test_get_fed_file_log_entries_for_file(files, components):
 
 
 def test_get_fed_file_log_entries_for_file_missing_data(file, component):
-    entry = models.FedFileLogEntry(type=models.FedFileLogEntryType.UPDATE_FILE, file_id=file.id, object_id=file.object_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedFileLogEntry(type=models.FedFileLogEntryType.UPDATE_FILE, file_id=file.id, object_id=file.object_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.FileDoesNotExistError):
@@ -1880,28 +1880,28 @@ def test_get_fed_file_log_entries_for_component(files, components):
         file_id=file1.id, object_id=file1.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.UPDATE_FILE,
         file_id=file1.id, object_id=file1.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file1.id, object_id=file1.object_id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file2.id, object_id=file2.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1920,7 +1920,7 @@ def test_get_fed_file_log_entries_for_component(files, components):
 
 
 def test_get_fed_file_log_entries_for_component_missing_data(file, component):
-    entry = models.FedFileLogEntry(type=models.FedFileLogEntryType.UPDATE_FILE, file_id=file.id, object_id=file.object_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedFileLogEntry(type=models.FedFileLogEntryType.UPDATE_FILE, file_id=file.id, object_id=file.object_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -1937,28 +1937,28 @@ def test_get_fed_file_log_entries_for_object(files, components):
         file_id=file3.id, object_id=file3.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.UPDATE_FILE,
         file_id=file1.id, object_id=file1.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file1.id, object_id=file1.object_id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedFileLogEntry(
         type=models.FedFileLogEntryType.IMPORT_FILE,
         file_id=file2.id, object_id=file2.object_id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -1980,7 +1980,7 @@ def test_get_fed_file_log_entries_for_object_missing_data(files, component):
     object_id = files[0].object_id
     invalid_object_id = max((c.object_id for c in files)) + 1
     file_id = files[0].id
-    entry = models.FedFileLogEntry(type=models.FedFileLogEntryType.UPDATE_FILE, file_id=file_id, object_id=object_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedFileLogEntry(type=models.FedFileLogEntryType.UPDATE_FILE, file_id=file_id, object_id=object_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ObjectDoesNotExistError):
@@ -1999,28 +1999,28 @@ def test_get_fed_object_location_assignment_log_entries_for_assignment(object_lo
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.IMPORT_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.IMPORT_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -2039,7 +2039,7 @@ def test_get_fed_object_location_assignment_log_entries_for_assignment(object_lo
 
 
 def test_get_fed_object_location_assignment_log_entries_for_assignment_missing_data(object_location_assignment, component):
-    entry = models.FedObjectLocationAssignmentLogEntry(type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT, object_location_assignment_id=object_location_assignment.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedObjectLocationAssignmentLogEntry(type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT, object_location_assignment_id=object_location_assignment.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ObjectLocationAssignmentDoesNotExistError):
@@ -2058,28 +2058,28 @@ def test_get_fed_object_location_assignment_log_entries_for_component(object_loc
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.IMPORT_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.IMPORT_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=3)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=3)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -2098,7 +2098,7 @@ def test_get_fed_object_location_assignment_log_entries_for_component(object_loc
 
 
 def test_get_fed_object_location_assignment_log_entries_for_component_missing_data(object_location_assignment, component):
-    entry = models.FedObjectLocationAssignmentLogEntry(type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT, object_location_assignment_id=object_location_assignment.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedObjectLocationAssignmentLogEntry(type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT, object_location_assignment_id=object_location_assignment.id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ComponentDoesNotExistError):
@@ -2115,28 +2115,28 @@ def test_get_fed_object_location_assignment_log_entries_for_object(object_locati
         object_location_assignment_id=object_location_assignment3.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     entry2 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     entry3 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.IMPORT_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment1.id,
         component_id=component2.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     )
     entry4 = models.FedObjectLocationAssignmentLogEntry(
         type=models.FedObjectLocationAssignmentLogEntryType.IMPORT_OBJECT_LOCATION_ASSIGNMENT,
         object_location_assignment_id=object_location_assignment2.id,
         component_id=component1.id,
         data={},
-        utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     )
     db.session.add(entry1)
     db.session.add(entry2)
@@ -2158,7 +2158,7 @@ def test_get_fed_object_location_assignment_log_entries_for_object_missing_data(
     object_id = object_location_assignments[0].object_id
     invalid_object_id = max((c.object_id for c in object_location_assignments)) + 1
     object_location_assignment_id = object_location_assignments[0].id
-    entry = models.FedObjectLocationAssignmentLogEntry(type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT, object_location_assignment_id=object_location_assignment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.utcnow())
+    entry = models.FedObjectLocationAssignmentLogEntry(type=models.FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT, object_location_assignment_id=object_location_assignment_id, component_id=component.id, data={}, utc_datetime=datetime.datetime.now(datetime.timezone.utc))
     db.session.add(entry)
     db.session.commit()
     with pytest.raises(errors.ObjectDoesNotExistError):
@@ -2170,7 +2170,7 @@ def test_get_fed_object_location_assignment_log_entries_for_object_missing_data(
 
 
 def test_import_location_type(location_type, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedLocationTypeLogEntry.query.all()) == 0
     fed_logs.import_location_type(location_type.id, component.id)
     log_entries = models.FedLocationTypeLogEntry.query.all()
@@ -2180,11 +2180,11 @@ def test_import_location_type(location_type, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_location_type(location_type, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedLocationTypeLogEntry.query.all()) == 0
     fed_logs.update_location_type(location_type.id, component.id)
     log_entries = models.FedLocationTypeLogEntry.query.all()
@@ -2194,11 +2194,11 @@ def test_update_location_type(location_type, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_create_ref_location_type(location_type, component):
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.datetime.now(datetime.timezone.utc)
     assert len(models.FedLocationTypeLogEntry.query.all()) == 0
     fed_logs.create_ref_location_type(location_type.id, component.id)
     log_entries = models.FedLocationTypeLogEntry.query.all()
@@ -2208,4 +2208,4 @@ def test_create_ref_location_type(location_type, component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].data == {}
     assert log_entries[0].utc_datetime >= start_time
-    assert log_entries[0].utc_datetime < datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime < datetime.datetime.now(datetime.timezone.utc)

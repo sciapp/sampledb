@@ -1,0 +1,13 @@
+<textarea
+  style="resize: vertical; min-height: 171px;"
+  class="form-control {% if is_template %}template-markdown-editor{% endif %} text-markdown-field"
+  data-markdown-textarea="true"
+  name="{{ id_prefix }}_text"
+  placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+>
+  {%- if id_prefix+'_text' in form_data -%}
+    {{ form_data[id_prefix+'_text'] }}
+  {%- elif data is not none and "text" in data -%}
+    {{ data.text | get_all_translated_texts('\n') }}
+  {%- endif -%}
+</textarea>

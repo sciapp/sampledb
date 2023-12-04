@@ -1,0 +1,29 @@
+{% if 'choices' not in schema %}
+  {% if input_languages | length > 1 %}
+    <div class="row col-md-offset-4">
+      <select {% if is_template %} class="template-select" data-template-class="selectpicker col-md-12 select-language" {% else %} class="selectpicker col-md-12 select-language" {% endif %} multiple="multiple" style="padding-bottom: 5px;"  data-style="btn-default btn-xs" name="{{ id_prefix }}_text_languages">
+        {% for language in input_languages %}
+          <option value="{{ language.lang_code }}"
+          {% if language.id == ENGLISH.id %}
+            disabled="disabled" selected="selected"
+          {% elif id_prefix + '_text_languages' in form_data or id_prefix + '_text_en' in form_data %}
+            {% if language.lang_code in form_data[id_prefix+'_text_languages'] %}
+              selected="selected"
+            {% endif %}
+          {% elif data.text is not string and data.text is defined %}
+            {% if language.lang_code in data.text.keys() %}
+              selected="selected"
+            {% endif %}
+          {% endif %}
+          >
+            {{ language.names | get_translated_text }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  {% elif input_languages | length == 1 %}
+    <input type="hidden" value="{{ input_languages[0].lang_code }}" name="{{ id_prefix }}_text_languages" />
+  {% else %}
+    <input type="hidden" value="en" name="{{ id_prefix }}_text_languages" />
+  {% endif %}
+{% endif %}

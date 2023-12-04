@@ -1,5 +1,5 @@
 import typing
-from datetime import datetime
+import datetime
 
 import flask
 
@@ -17,7 +17,7 @@ from ... import db
 class FileHideData(typing.TypedDict):
     user: UserRef
     reason: str
-    utc_datetime: datetime
+    utc_datetime: datetime.datetime
 
 
 class FileData(typing.TypedDict):
@@ -25,7 +25,7 @@ class FileData(typing.TypedDict):
     component_uuid: str
     user: typing.Optional[UserRef]
     data: typing.Optional[typing.Dict[str, typing.Any]]
-    utc_datetime: datetime
+    utc_datetime: datetime.datetime
     hide: typing.Optional[FileHideData]
 
 
@@ -73,7 +73,7 @@ def parse_file(
         hide = FileHideData(
             user=_parse_user_ref(_get_dict(hidden_data.get('user'), mandatory=True)),
             reason=_get_str(hidden_data.get('reason'), default=''),
-            utc_datetime=_get_utc_datetime(hidden_data.get('utc_datetime'), default=datetime.utcnow())
+            utc_datetime=_get_utc_datetime(hidden_data.get('utc_datetime'), default=datetime.datetime.now(datetime.timezone.utc))
         )
     else:
         hide = None

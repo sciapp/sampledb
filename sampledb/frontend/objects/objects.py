@@ -293,7 +293,7 @@ def objects() -> FlaskResponseT:
                         if origin_type == 'local' and origin_id is None:
                             filter_origin_ids.append((origin_type, origin_id))
                             continue
-                        if origin_type == 'component' and type(origin_id) == int:
+                        if origin_type == 'component' and type(origin_id) is int:
                             filter_origin_ids.append((origin_type, origin_id))
                             continue
                         filter_origin_ids = None

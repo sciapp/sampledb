@@ -1,11 +1,34 @@
 {% extends "base.html" %}
 
+{% set file_pickers = [] %}
+
+{% set calculations = [] %}
+
 {% block stylesheets %}
   {{ super() }}
-    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}" />
-    <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}" />
+  <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+{% endblock %}
+
+
+{% block content %}
+  {% if errors_by_title %}
+    <div class="alert alert-danger" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      {{ _('The object could not be saved due to an error.') }}
+      <input type="checkbox" id="object-form-errors-show-more-input"/>
+      <label id="object-form-errors-show-more-label" for="object-form-errors-show-more-input"> {{ _('Show more') }}</label>
+      <div id="object-form-errors-show-more-content">
+        <ul>
+          {% for title in errors_by_title %}
+          <li><strong>{{ title}}</strong>: <ul>{% for message in errors_by_title[title] %}<li>{{ message }}</li>{% endfor %}</ul></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -15,13 +38,135 @@
   <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
+  <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      setUpCalculation
+    } from "{{ fingerprinted_static('sampledb/js/calculation.js') }}";
+    window.setUpCalculation = setUpCalculation;
+
+    import {
+      fileEventHandler
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}";
+    window.fileEventHandler = fileEventHandler;
+
+    import {
+      conditionalWrapper,
+      applySchemaConditions
+    } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
+    window.conditionalWrapper = conditionalWrapper;
+    window.applySchemaConditions = applySchemaConditions;
+
+    import {
+      setupImageDragAndDrop
+    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
+    window.setupImageDragAndDrop = setupImageDragAndDrop;
+
+    import {
+      updateTranslationJSON,
+      setTranslationHandler,
+      updateTranslationLanguages,
+      initMarkdownField,
+      updateMarkdownField
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
+    window.updateTranslationJSON = updateTranslationJSON;
+    window.setTranslationHandler = setTranslationHandler;
+    window.updateTranslationLanguages = updateTranslationLanguages;
+    window.initMarkdownField = initMarkdownField;
+    window.updateMarkdownField = updateMarkdownField;
+
+    import {
+      updateObjectPickers
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}";
+    window.updateObjectPickers = updateObjectPickers;
+  </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.mde_fields = [];
+  window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
+  window.array_table_header_text = "{{ _('Field %(index)s', index="INDEX_PLACEHOLDER") }}";
+  window.mdeFields = [];
+  let initPhase = true;
+  let file_names_by_id = {};
+  let form_data = {};
+  window.arrayButtons = [];
+  window.temporaryFileUploadURL = "{{ url_for('.temporary_file_upload') }}";
+  window.currentUserTimezone = "{{ current_user.timezone }}";
+  window.currentUserLanguageCode = "{{ get_user_language(current_user).lang_code }}";
+  window.currentUserDatetimeFormat = "{{ get_user_language(current_user).datetime_format_moment }}";
+
+  {% if file_names_by_id %}
+    file_names_by_id = {{ file_names_by_id | tojson }};
+  {% endif %}
+
+  {% if form_data %}
+    form_data = {{ form_data | tojson }};
+  {% endif %}
+
+  /**
+   * Updates the event handler of an array container button.
+   * @param button a DOM button
+   */
+  function updateArrayButtonsHandler (button) {
+    switch ($(button).data('object-form-button')) {
+      case 'array_add':
+      case 'list_array_add':
+      case 'table_array_add':
+        $(button).off('click').on('click', arrayFormAddHandler);
+        break;
+      case 'array_delete':
+      case 'list_array_delete':
+      case 'table_array_delete':
+        $(button).off('click').on('click', arrayFormDeleteHandler);
+        break;
+      case 'table_array_copy':
+        $(button).off('click').on('click', arrayFormTableCopyHandler);
+        break;
+      case 'table_col_add':
+        $(button).off('click').on('click', tableFormColAddHandler);
+        break;
+      case 'table_col_delete':
+        $(button).off('click').on('click', tableFormColDeleteHandler);
+        break;
+      case 'table_row_add':
+        $(button).off('click').on('click', tableFormRowAddHandler);
+        break;
+      case 'table_row_delete':
+        $(button).off('click').on('click', tableFormRowDeleteHandler);
+        break;
+    }
+  }
+
+  /**
+   * Updates the event handlers of the buttons for all array containers within a given element.
+   * @param element a jQuery element
+   */
+  function updateArrayButtonsHandlerWithinElement (element) {
+    if (element === undefined) {
+      element = $(document);
+    }
+    element.find('[data-object-form-button]').each(function (_, button) {
+      updateArrayButtonsHandler(button);
+    });
+  }
 
   $(function () {
+    $('form').on('submit', function() {
+      $('.array-template').remove();
+      $('input').not('[type="file"]').change();
+      $('textarea').change();
+      $('.col-diff').each(function() {
+        const value = Number($(this).data('value'));
+        const jsonProps = JSON.stringify({ value: value, button_id: (value >= 0) ? $(this).data('add-id') : $(this).data('delete-id') });
+        $(this).val(jsonProps);
+      });
+
+      $('#input-array_buttons').val(window.arrayButtons.join());
+
+      $('.typeahead').each(function() {
+        $(this).val($(this).typeahead('val'));
+      });
+    });
+
     $('.input-group.date').each(function() {
       $(this).datetimepicker({
         locale: "{{ get_user_language(current_user).lang_code }}",
@@ -32,7 +177,8 @@
       });
     });
 
-    $('textarea[data-markdown-textarea="true"]').each(function(_, element) {
+
+    $('textarea[data-markdown-textarea="true"]').not('.template-markdown-editor').each(function(_, element) {
       setupImageDragAndDrop(initMarkdownField(element, '100px'));
     });
 
@@ -48,53 +194,67 @@
       }
     });
 
-    function updateSelectLanguage(selectpicker) {
-      var enabled_languages = $(selectpicker).selectpicker('val');
-      if (!Array.isArray(enabled_languages)) {
-        return;
-      }
-      if (enabled_languages === '' || enabled_languages.length === 0) {
-        enabled_languages = ['en'];
-      } else {
-        enabled_languages.push('en');
-      }
-      var parent_form_group = $(selectpicker).closest('.form-group');
-      {% for language in languages %}
-        if (enabled_languages.includes("{{ language.lang_code }}")) {
-          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
-        } else {
-          parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
-        }
-      {% endfor %}
-
-      let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
-      if (disabled_languages_error.length === 1) {
-          let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
-          let all_disabled_languages_removed = true;
-          for (let i = 0; i < disabled_language_codes.length; i++) {
-              if (enabled_languages.includes(disabled_language_codes[i])) {
-                  all_disabled_languages_removed = false;
-                  break;
-              }
-          }
-          if (all_disabled_languages_removed) {
-              disabled_languages_error.hide();
-          } else {
-              disabled_languages_error.show();
-          }
-      }
-    }
-
     var select_language_selectpicker = $('.select-language')
     select_language_selectpicker.on('changed.bs.select', function() {
       updateSelectLanguage(this);
-    });
+    })
     select_language_selectpicker.each(function(_, selectpicker) {
       updateSelectLanguage(selectpicker);
     });
-    $.each(window.conditional_wrapper_scripts, function () {
+
+    applySchemaConditions(document);
+
+    {% for file_picker in file_pickers %}
+      if (!"{{ file_picker["id_prefix"] }}".includes('!')) {
+        const input = $('input[type="file"][data-id-prefix="{{ file_picker["id_prefix"] }}"]');
+        input.on('change', fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
+      }
+    {% endfor %}
+
+    updateArrayButtonsHandlerWithinElement($(document));
+
+    // set initial disabled / enabled state for all array buttons
+    updateArrayButtonsEnabledWithinElement($(document));
+
+    const arrayButtons = {{ (form_data or {}).get('array_buttons', '') | tojson }};
+    if (arrayButtons !== '') {
+      $.each(arrayButtons.split(','), function(_, button_id) {
+        $(`[id="${button_id}"`).click();
+      });
+    }
+    window.initPhase = false;
+
+    updateRecipeState($('.div-apply-recipe:visible'));
+
+    updateJSInteractiveFields();
+    insertFormData();
+    replaceMarkdownTemplates();
+    showErrors();
+
+    $('select.file-select').each(function() {
+      if($(this).parents('.array-template').length > 0) return;
+      const name = $(this).attr('name');
+      if(form_data[name]) {
+        const value = form_data[name]
+        const option = $('<option></option>');
+        option.attr('value', value);
+        option.attr('data-sampledb-temporary-file', '1');
+        option.text(file_names_by_id[value][0]);
+        $(this).append(option)
+        $(this).prop('disabled', false);
+        $(this).selectpicker('refresh');
+        $(this).selectpicker('val', form_data[name]);
+        $(this).selectpicker('refresh');
+      }
+    })
+
+    $.each(window.conditionalWrapperScripts, function () {
       this();
     });
+
+    window.conditionalWrapperScripts = [];
+
+    setUpCalculations();
 
     $('div.objectpicker').each(function () {
       let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
@@ -122,6 +282,43 @@
       });
     });
   });
+
+  function updateSelectLanguage(selectpicker) {
+    var enabled_languages = $(selectpicker).selectpicker('val');
+    if (!Array.isArray(enabled_languages)) {
+      return;
+    }
+    if (enabled_languages === '' || enabled_languages.length === 0) {
+      enabled_languages = ['en'];
+    } else {
+      enabled_languages.push('en');
+    }
+    var parent_form_group = $(selectpicker).closest('.form-group');
+    {% for language in languages %}
+      if (enabled_languages.includes("{{ language.lang_code }}")) {
+        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
+      } else {
+        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
+      }
+    {% endfor %}
+
+    let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
+    if (disabled_languages_error.length === 1) {
+        let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
+        let all_disabled_languages_removed = true;
+        for (let i = 0; i < disabled_language_codes.length; i++) {
+            if (enabled_languages.includes(disabled_language_codes[i])) {
+                all_disabled_languages_removed = false;
+                break;
+            }
+        }
+        if (all_disabled_languages_removed) {
+            disabled_languages_error.hide();
+        } else {
+            disabled_languages_error.show();
+        }
+    }
+  }
 
   var tags = new Bloodhound({
     initialize: true,
@@ -164,30 +361,32 @@
   });
 
   function refreshRecipeTooltip(id_prefix, recipes, showTooltip=false) {
-    let div = $('#' + id_prefix + '_recipe_div');
-    let input = $('#' + id_prefix + '_recipe_input');
+    const recipe_div = $(`.div-apply-recipe[data-id-prefix=${id_prefix}]`);
+    let input = recipe_div.find('select').first();
     let recipe = recipes[input.val()];
     let changedValues = []
     let recipeName = recipe['name'];
     for (const [_, value] of Object.entries(recipe['property_values'])) {
       changedValues.push(value['title'])
     }
-    div.attr('title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
-    div.attr('data-original-title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
-    div.tooltip('hide');
+    recipe_div.attr('title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    recipe_div.attr('data-original-title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    recipe_div.tooltip('hide');
   }
 
-  $('document').ready(function() {$("select[id$='_recipe_input']").change();})
+  $('document').ready(function() {$(".div-apply-recipe select").change();})
 
   function applyRecipe(id_prefix, recipes, isTable) {
+    const recipe_div = $(`.div-apply-recipe[data-id-prefix=${id_prefix}]`);
+    let input = recipe_div.find('select').first();
     let codeMirrors = {};
     $('.CodeMirror').each(function(i, el){
       codeMirrors[el.CodeMirror.getTextArea().name] = el.CodeMirror
     });
-    for (const [property, value] of Object.entries(recipes[$('#' + id_prefix + '_recipe_input').val()]['property_values'])) {
+    for (const [property, value] of Object.entries(recipes[input.val()]['property_values'])) {
       if (!isTable && value['value'] !== null && (value['type'] === 'text' || value['type'] === 'multiline' || value['type'] === 'markdown') && value['value'].constructor === Object) {
-        let language_select = $('#' + id_prefix + '_' + property + '_-select-language');
-        if (language_select.length == 1) {
+        let language_select = $(`[name="${id_prefix}_${property}__text_languages"]`);
+        if (language_select.length === 1) {
           let selected_languages = language_select.val();
           if (selected_languages === '' || selected_languages.length === 0) {
             selected_languages = ['en'];
@@ -291,6 +490,704 @@
           break;
       }
     }
+  }
+
+  /**
+   * Returns the add, copy and delete buttons of an array container (not for array tables).
+   * @param arrayContainer a jQuery array container element
+   * @returns {Array} add button, copy buttons and delete buttons
+   */
+  function getArrayButtons (arrayContainer) {
+    const addButton = arrayContainer.find('[data-object-form-button$="_add"]').filter(function (_, button) {
+      return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
+    });
+    const copyButtons = arrayContainer.find('[data-object-form-button$="_copy"]').filter(function (_, button) {
+      return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
+    });
+    const deleteButtons = arrayContainer.find('[data-object-form-button$="_delete"]').filter(function (_, button) {
+      return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
+    });
+    return [addButton, copyButtons, deleteButtons];
+  }
+
+
+  /**
+   * Applies modifications needed for user interaction to a new element.
+   * @param clone a jQuery element
+   * @param arrayContainer a jQuery array container element
+   */
+  function applyInteractionModifications (clone, arrayContainer) {
+    updateJSInteractiveFields();
+    applySchemaConditions(clone);
+    applySchemaCalculations(clone);
+    updateLanguageSelects(clone);
+    updateRecipeState(clone);
+    updateArrayButtonsEnabled(arrayContainer);
+
+    updateArrayButtonsHandlerWithinElement(clone);
+    updateArrayButtonsEnabledWithinElement(clone);
+    replaceMarkdownTemplates();
+  }
+
+  function clearUnusedConditions() {
+      if (window.conditionalWrapperConditions) {
+        for (const id_prefix of Object.keys(window.conditionalWrapperConditions)) {
+          if ($(`[data-condition-wrapper-for^=${id_prefix}]`).length === 0) {
+            delete window.conditionalWrapperConditions[id_prefix];
+          }
+        }
+      }
+  }
+
+  /**
+   * Replaces one ID prefix with another for a collection of elements and the condition list.
+   * @param elements a collection of jQuery elements
+   * @param oldIDPrefix the ID prefix to replace
+   * @param newIDPrefix the ID prefix to replace it with
+   */
+  function replaceIDPrefix (elements, oldIDPrefix, newIDPrefix) {
+    elements.filter(`[name^="${oldIDPrefix}_"]`).each(function (_, element) {
+      element.name = newIDPrefix + element.name.substring(oldIDPrefix.length);
+    });
+    elements.filter(`[name^="typeahead_text_${oldIDPrefix}_"]`).each(function (_, element) {
+      element.name = 'typeahead_text_' + newIDPrefix + element.name.substring('typeahead_text_'.length + oldIDPrefix.length);
+    });
+    elements.filter(`[id^="action_${oldIDPrefix}_"]`).each(function (_, element) {
+      element.id = 'action_' + newIDPrefix + element.id.substring('action_'.length + oldIDPrefix.length);
+    });
+    for (const dataAttribute of ['id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+      elements.filter(`[data-${dataAttribute}^="${oldIDPrefix}_"], [data-${dataAttribute}="${oldIDPrefix}"]`).each(function (_, element) {
+        $(element).attr(`data-${dataAttribute}`, newIDPrefix + $(element).data(dataAttribute).substring(oldIDPrefix.length));
+        $(element).data(dataAttribute, $(element).attr(`data-${dataAttribute}`));
+      });
+    }
+    elements.filter(`span[id^="${oldIDPrefix}_"][id$="_calculation_help"]`).each(function (_, element) {
+      $(element).attr('id', newIDPrefix + $(element).attr('id').substring(oldIDPrefix.length));
+    });
+    if (window.conditionalWrapperConditions) {
+      for (const [idPrefix, conditions] of Object.entries(window.conditionalWrapperConditions)) {
+        if (idPrefix.startsWith(oldIDPrefix)) {
+          delete window.conditionalWrapperConditions[idPrefix];
+          window.conditionalWrapperConditions[newIDPrefix + idPrefix.substring(oldIDPrefix.length)] = conditions;
+        }
+      }
+    }
+  }
+
+  /**
+   * Update ID prefixes to ensure array indices do not have gaps and start at 0.
+   * @param arrayContainer a jQuery array container element
+   * @param sortedArrayIndices an optional array of sorted indices
+   */
+  function updateArrayIDPrefixes (arrayContainer, sortedArrayIndices) {
+    const prefix = arrayContainer.data('id-prefix');
+    if (sortedArrayIndices === undefined) {
+      const elements = arrayContainer.find(`[name^="${prefix}_"]`);
+      const usedArrayIndices = [];
+      elements.each(function (_, element) {
+        const indexString = element.name.substring(prefix.length + 1).split('_', 1)[0];
+        const index = Number.parseInt(indexString);
+        if (index.toString() === indexString && !usedArrayIndices.includes(index)) {
+          usedArrayIndices.push(index);
+        }
+      });
+      // custom comparator to sort numbers numerically instead of lexicographically
+      usedArrayIndices.sort(function (a, b) {
+        return a - b;
+      });
+      sortedArrayIndices = usedArrayIndices;
+    }
+    // replace ID prefixes using a temporary prefix to avoid conflicts
+    for (let i = 0; i < sortedArrayIndices.length; i++) {
+      const oldIDPrefix = `${prefix}_${sortedArrayIndices[i]}_`;
+      const tmpIDPrefix = `updateArrayIDPrefixes_tmpIDPrefix_${i}_`;
+      replaceIDPrefix(arrayContainer.find('*'), oldIDPrefix, tmpIDPrefix);
+    }
+    for (let i = 0; i < sortedArrayIndices.length; i++) {
+      const tmpIDPrefix = `updateArrayIDPrefixes_tmpIDPrefix_${i}_`;
+      const newIDPrefix = `${prefix}_${i}_`;
+      replaceIDPrefix(arrayContainer.find('*'), tmpIDPrefix, newIDPrefix);
+    }
+  }
+
+  /**
+   * Replace an index placeholder with the actual index for an element and its descendents.
+   * @param element a jQuery element
+   * @param indexPlaceholder the index placeholder to replace
+   * @param index the index to replace the placeholder with
+   */
+  function replaceTemplateIndex (element, indexPlaceholder, index) {
+    const arrayContainer = element.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    replaceIDPrefix(element.find('*').add(element), `${arrayPrefix}_${indexPlaceholder}_`, `${arrayPrefix}_${index}_`);
+  }
+
+  /**
+   * Handles array add button events.
+   * @param event a PointerEvent
+   */
+  function arrayFormAddHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+    const indexOrderPlaceholder = `!index${arrayContainer.data('template-order-index')}!`;
+    // the template is the .array-template element which has the current array container as the closest container
+    // it is not always a direct child of arrayContainer, though, e.g. table rows are located in a tbody tag
+    const template = arrayContainer.find('.array-template').filter(function (_, element) {
+      return $(element).closest('[data-array-container]')[0] === arrayContainer[0];
+    });
+    const clone = $(template.clone(true));
+    clone.removeClass('array-template');
+    const existingDeleteButtons = getArrayButtons(arrayContainer)[2];
+    // array has one more delete button than items because of the array template
+    const nextIndex = existingDeleteButtons.length - 1;
+
+    template.before(clone);
+    replaceTemplateIndex(clone, indexOrderPlaceholder, nextIndex);
+    applyInteractionModifications(clone, arrayContainer);
+
+    if (arrayContainer.data('array-container') === 'list') {
+      // the first entry of a list is right of the label, all others need an additional offset
+      arrayContainer.children('div').not('.control-label').addClass('col-md-offset-3').first().removeClass('col-md-offset-3');
+    }
+  }
+
+  /**
+   * Handles object table array copy button events.
+   * @param event a PointerEvent
+   */
+  function arrayFormTableCopyHandler (event) {
+    const button = $(event.currentTarget);
+    // add a new row first, which will then be filled and moved
+    arrayFormAddHandler(event);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    const tableBody = button.closest('tbody');
+    const sourceRow = button.closest('tr');
+    const targetRow = tableBody.children('tr').not('.array-template').last();
+    // move target row right behind source row
+    sourceRow.after(targetRow);
+    const sourceFieldPrefix = sourceRow.data('id-prefix');
+    const targetFieldPrefix = targetRow.data('id-prefix');
+    const targetFields = targetRow.find(`[name^="${targetFieldPrefix}"]`);
+    for (const targetField of targetFields) {
+      const sourceFieldName = sourceFieldPrefix + targetField.name.substring(targetFieldPrefix.length);
+      const sourceField = $(`[name=${sourceFieldName}]`)[0];
+      if (sourceField.tagName === 'INPUT' || sourceField.tagName === 'TEXTAREA') {
+        if (sourceField.type === 'checkbox') {
+          $(targetField).prop('checked', $(sourceField).prop('checked'));
+        } else {
+          $(targetField).val($(sourceField).val());
+        }
+        if (sourceField.tagName === 'INPUT' && sourceField.name.endsWith('__oid')) {
+          // typeahead fields have an additional text field that needs to be copied
+          const targetFieldTextInput = $(targetField).closest('.objectpicker-container').find('.typeahead[name^="typeahead_text_"]');
+          const sourceFieldTextInput = $(sourceField).closest('.objectpicker-container').find('.typeahead[name^="typeahead_text_"]');
+          targetFieldTextInput.typeahead('val', sourceFieldTextInput.typeahead('val'));
+        }
+      } else if (sourceField.tagName === 'SELECT') {
+        const sourceValue = $(sourceField).selectpicker('val');
+        if ($(targetField).find(`option[value="${sourceValue}"]`).length === 0) {
+          $(targetField).append($(sourceField).find('option:selected').clone());
+          $(targetField).prop('disabled', $(sourceField).prop('disabled'));
+          $(targetField).selectpicker('refresh');
+        }
+        $(targetField).selectpicker('val', $(sourceField).selectpicker('val'));
+      }
+      $(targetField).trigger('change');
+    }
+    // update array ID prefixes to match the changed order of rows
+    const sortedRowIndices = [];
+    for (const row of tableBody.find('tr').not('.array-template')) {
+      const rowPrefix = $(row).data('id-prefix');
+      const rowIndex = (rowPrefix + '_').split('__').slice(-2)[0];
+      sortedRowIndices.push(Number.parseInt(rowIndex));
+    }
+    updateArrayIDPrefixes(arrayContainer, sortedRowIndices);
+  }
+
+  /**
+   * Handles array delete button events.
+   * @param event a PointerEvent
+   */
+  function arrayFormDeleteHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+    button.closest('[data-array-item]').remove();
+    if (arrayContainer.data('array-container') === 'list') {
+      const [addButton, _copyButtons, deleteButtons] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
+      // array has one more delete button than items because of the array template
+      const numItems = deleteButtons.length - 1;
+      if (numItems === 0) {
+        addButton.parent().removeClass('col-md-offset-3');
+      } else {
+        deleteButtons.first().parent().parent().removeClass('col-md-offset-3');
+      }
+    }
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    clearUnusedConditions();
+    setUpCalculations();
+  }
+
+  /**
+   * Handles array table add column button events.
+   * @param event a PointerEvent
+   */
+  function tableFormColAddHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+
+    // add new column to table header and footer
+    updateTableFormHead(arrayContainer, +1);
+    // add new column to all real rows
+    const columnIndex = arrayContainer.find('> thead > tr > th').not('.control-buttons').length - 1;
+    arrayContainer.find('> tbody > tr').not('[data-template-table-type]').each(function () {
+      appendFieldToRow($(this), arrayContainer, $(this).data('row-id'), columnIndex);
+    });
+
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    updateJSInteractiveFields();
+  }
+
+  /**
+   * Handles array table delete column button events.
+   * @param event a PointerEvent
+   */
+  function tableFormColDeleteHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+
+    // remove column from all real rows
+    arrayContainer.find('> tbody > tr').not('[data-template-table-type]').each(function () {
+      $(this).children().not('.control-buttons').last().remove();
+    });
+    // remove column from table header and footer
+    updateTableFormHead(arrayContainer, -1);
+
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    clearUnusedConditions();
+    setUpCalculations();
+  }
+
+  /**
+   * Handles array table add row button events.
+   * @param event a PointerEvent
+   */
+  function tableFormRowAddHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+
+    const existingRows = arrayContainer.find('> tbody > tr').not('.array-template');
+    const templateRow = arrayContainer.find('> tbody > tr.array-template[data-template-table-type="row"]');
+    const numHeaderCols = arrayContainer.find('> thead > tr > th').not('.control-buttons').length;
+
+    const rowIndex = existingRows.length;
+    const newRow = templateRow.clone();
+    newRow.attr('data-row-id', rowIndex);
+    newRow.removeClass('array-template');
+    newRow.removeAttr('data-template-table-type');
+    replaceTemplateIndex(newRow, `!index${arrayContainer.data('template-order-index')}!`, rowIndex);
+    updateArrayButtonsHandlerWithinElement(newRow);
+    arrayContainer.find('> tbody').append(newRow);
+
+    const numRowCols = newRow.find('> td').not('.control-buttons').length;
+    if (numRowCols > numHeaderCols) {
+      // the new row has more columns than the current table, e.g. because of the default number of columns
+      // add new columns to table header and footer
+      updateTableFormHead(arrayContainer, numRowCols - numHeaderCols);
+      // add them to all previously existing rows (if any)
+      for (let columnIndex = numHeaderCols; columnIndex < numRowCols; columnIndex++) {
+        existingRows.each(function (_, row) {
+          appendFieldToRow($(row), arrayContainer, $(row).data('row-id'), columnIndex);
+        });
+      }
+    } else {
+      // add columns to the new row until it has as many as all other real rows
+      for (let columnIndex = numRowCols; columnIndex < numHeaderCols; columnIndex++) {
+        appendFieldToRow(newRow, arrayContainer, rowIndex, columnIndex);
+      }
+    }
+
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    updateJSInteractiveFields();
+  }
+
+  /**
+   * Handles array table delete row button events.
+   * @param event a PointerEvent
+   */
+  function tableFormRowDeleteHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+
+    // remove row containing the button
+    button.closest('tr').remove();
+    // remove all columns from table header and footer if this was the last real row
+    if (arrayContainer.find('tbody > tr').not('.array-template').length === 0) {
+      updateTableFormHead(arrayContainer, -arrayContainer.find('> thead > tr > th').not('.control-buttons').length);
+    }
+
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    clearUnusedConditions();
+    setUpCalculations();
+  }
+
+  /**
+   * Adds a new field to an array table row.
+   * @param row a jQuery row element to add the field to
+   * @param table a jQuery array table element
+   * @param rowIndex the index of the row
+   * @param columnIndex the index of the new column
+   */
+  function appendFieldToRow (row, table, rowIndex, columnIndex) {
+    const td = table.find('> tbody > tr.array-template[data-template-table-type="col"] > td').clone(true);
+    td.removeClass('array-col-template');
+    td.insertBefore(row.children().last());
+    replaceTemplateIndex(td, `!index${table.data('template-order-index')}!`, rowIndex);
+    replaceTemplateIndex(td, `${rowIndex}__!cindex${table.data('col-order-index')}!`, columnIndex);
+  }
+
+  /**
+   * Updates array table header and footer.
+   * @param table a jQuery array table element
+   * @param diff how many columns to add (or remove) to the header/footer
+   */
+  function updateTableFormHead (table, diff) {
+    const headerRow = table.find('thead > tr');
+    const footerRow = table.find('tfoot > tr');
+    if (diff < 0) {
+      for (let i = 0; i < -diff; i++) {
+        headerRow.children().not('.control-buttons').last().remove();
+        footerRow.children().not('.control-buttons').last().remove();
+      }
+    } else {
+      const numColumns = headerRow.children().not('.control-buttons').length;
+      for (let columnIndex = numColumns; columnIndex < numColumns + diff; columnIndex++) {
+        const headerText = window.array_table_header_text.replace('INDEX_PLACEHOLDER', columnIndex + 1);
+        headerRow.children().last().before($('<th>').text(headerText));
+        footerRow.children().last().before($('<th>').text(headerText));
+      }
+    }
+  }
+
+  function insertFormData() {
+    {% if form_data is not none and form_data|length > 0 %}
+    const form_data = {{ form_data | tojson }};
+
+    $.each(form_data, function(key, value) {
+      const field = $(`[name="${key}"]`);
+      if (field.length === 0) {
+        return;
+      }
+      if(field.hasClass('objectpicker')) {
+        field.data('sampledb-default-selected', value);
+      } else if(field.hasClass('choicepicker')) {
+        field.data('sampledb-default', value);
+        field.selectpicker('val', value);
+      } else if(field.parents('.date').length > 0) {
+        field.val(value);
+      } else if(field.hasClass('typeahead')) {
+        field.attr('data-previous-data', value);
+      } else if(field.data('markdown-textarea')) {
+        field.text(value);
+      }
+      field.val(value);
+      field.trigger('change');
+    });
+
+    $('[type="checkbox"]').each(function() {
+      const name = $(this).attr('name');
+      $(this).prop('checked', form_data.hasOwnProperty(name));
+      $(this).trigger('change');
+    });
+
+    $('.selectpicker').selectpicker('refresh');
+    {% endif %}
+  }
+
+  function showErrors() {
+    {% if errors is not none %}
+    const errors = {{ errors | tojson }};
+    const form_data = {{ form_data | tojson }};
+
+    $.each(form_data, function(key, value) {
+      if(errors.hasOwnProperty(key)) return;
+      const errorParent = $(`[name="${key}"]`).closest('.error-parent');
+      errorParent.addClass('has-success');
+    });
+
+    $.each(errors, function(key, value) {
+      const errorParent = $(`[name="${key}"]`).closest('.error-parent');
+      if(errorParent.hasClass('has-success')) errorParent.removeClass('has-success');
+      errorParent.addClass('has-error');
+      errorParent.find('.error-note').html(`<strong>{{ _('Error:') }} </strong>${value}`);
+    });
+
+    {% endif %}
+  }
+
+  /**
+   * Updates the enabled/disabled state of the buttons for an array container.
+   * @param arrayContainer a jQuery array container element
+   */
+  function updateArrayButtonsEnabled (arrayContainer) {
+    if ($(arrayContainer).data('array-container') === 'array-table') {
+      const numRows = arrayContainer.find('> tbody [data-object-form-button="table_row_delete"]').length - 1;
+      const numColumns = arrayContainer.find('> thead > tr > th').not('.control-buttons').length;
+
+      const minRows = arrayContainer.data('min-rows');
+      const maxRows = arrayContainer.data('max-rows');
+      const minColumns = arrayContainer.data('min-cols');
+      const maxColumns = arrayContainer.data('max-cols');
+
+      const addColumnButton = arrayContainer.find('[data-object-form-button="table_col_add"]');
+      const deleteColumnButton = arrayContainer.find('[data-object-form-button="table_col_delete"]');
+      const addRowButton = arrayContainer.find('[data-object-form-button="table_row_add"]');
+      const deleteRowButtons = arrayContainer.find('[data-object-form-button="table_row_delete"]');
+
+      deleteRowButtons.prop('disabled', numRows <= minRows);
+      addRowButton.prop('disabled', maxRows !== -1 && numRows >= maxRows);
+
+      if (numRows === 0) {
+        // tables without rows also do not have columns
+        addColumnButton.prop('disabled', true);
+        deleteColumnButton.prop('disabled', true);
+        updateTableFormHead(arrayContainer, -numColumns);
+      } else {
+        addColumnButton.prop('disabled', maxColumns !== -1 && numColumns >= maxColumns);
+        deleteColumnButton.prop('disabled', numColumns <= minColumns);
+      }
+    } else {
+      const [addButton, copyButtons, deleteButtons] = getArrayButtons(arrayContainer);
+
+      // array has one more delete button than items because of the array template
+      const numItems = deleteButtons.length - 1;
+      const minItems = arrayContainer.data('min-items');
+      const maxItems = arrayContainer.data('max-items');
+      addButton.prop('disabled', maxItems !== -1 && numItems >= maxItems);
+      copyButtons.prop('disabled', maxItems !== -1 && numItems >= maxItems);
+      deleteButtons.prop('disabled', numItems <= minItems);
+    }
+  }
+
+  /**
+   * Updates the enabled/disabled state of the buttons for all array containers within a given element.
+   * @param element a jQuery element
+   */
+  function updateArrayButtonsEnabledWithinElement (element) { // eslint-disable-line no-unused-vars
+    element.find('[data-array-container]').each(function (_, arrayContainer) {
+      updateArrayButtonsEnabled($(arrayContainer));
+    });
+  }
+
+  function updateLanguageSelects(clone) {
+    clone.find('select').each(function() {
+      if($(this).hasClass('select-language')) {
+        $(this).on('changed.bs.select', function() {
+          updateSelectLanguage(this);
+        });
+
+        updateSelectLanguage($(this));
+      }
+    });
+  }
+
+  /**
+   * Initializes fields created as templates.
+   */
+  function updateJSInteractiveFields () {
+    const objectpickers = [];
+    $('.template-select').each(function () {
+      if ($(this).parents('.array-template').length === 0) {
+        $(this).attr('class', $(this).data('template-class'));
+        $(this).removeData('template-class');
+        if ($(this).hasClass('objectpicker')) {
+          objectpickers.push($(this));
+        }
+      }
+    });
+
+    $('.template-file-select').each(function () {
+      if ($(this).parents('.array-template').length === 0) {
+        const filePicker = $(this);
+        const parent = filePicker.parent();
+        const input = parent.find('input:file');
+        const hasOptions = filePicker.children('option').length !== 0;
+        filePicker.prop('disabled', !hasOptions);
+        filePicker.attr('class', filePicker.data('template-class'));
+        filePicker.selectpicker();
+        input.change(fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
+      }
+    });
+
+    $('.template-typeahead-container').each(function () {
+      if ($(this).parents('.array-template').length === 0) {
+        $(this).removeClass('template-typeahead-container');
+        $(this).addClass('objectpicker-container');
+        const inputChild = $(this).find('.template-typeahead');
+        inputChild.removeClass('template-typeahead');
+        inputChild.addClass('typeahead');
+      }
+    });
+
+    $('.date-template').each(function () {
+      if ($(this).parents('.array-template').length === 0) {
+        $(this).removeClass('date-template');
+        $(this).addClass('date');
+        $(this).datetimepicker({
+          locale: window.currentUserLanguageCode,
+          format: window.currentUserDatetimeFormat,
+          date: $(this).attr('data-datetime'),
+          timeZone: window.currentUserTimezone,
+          showTodayButton: true
+        });
+      }
+    });
+
+    $('.objectpicker').each(function () {
+      $(this).data('sampledb-default-selected', $(this).val());
+    });
+
+    updateObjectPickers();
+
+    $.each(objectpickers, function () {
+      if ($(this).closest('.error-parent').find('.objectpicker-filter-button').length === 0) {
+        addActionFilterButton($(this).parents('.bootstrap-select'));
+      }
+    });
+
+    $('.choicepicker').each(function () {
+      if ($(this).parents('.array-template').length === 0) {
+        if ($(this).data('sampledb-default')) {
+          $(this).selectpicker('val', $(this).data('sampledb-default'));
+          $(this).removeAttr('data-sampledb-default');
+          $(this).removeData('sampledb-default');
+        }
+      }
+    });
+
+    $('.selectpicker').selectpicker('refresh');
+    $('[data-toggle="tooltip"]').tooltip('hide');
+  }
+
+  /**
+   * Initialize markdown editor fields created as templates.
+   */
+  function replaceMarkdownTemplates () {
+    if (!window.initPhase) {
+      $('.template-markdown-editor').each(function (_, element) {
+        if ($(this).parents('.array-template').length === 0) {
+          $(this).removeClass('template-markdown-editor');
+          setupImageDragAndDrop(initMarkdownField(element, '100px'));
+        }
+      });
+    }
+  }
+
+  function addActionFilterButton(picker) {
+    let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
+    picker.append(filter_button);
+    let objectpicker = picker.find('.selectpicker');
+    let actionpicker = picker.next('.objectpicker-actionpicker');
+
+    filter_button.tooltip();
+    filter_button.on('click', function() {
+      actionpicker.selectpicker('toggle');
+    });
+    actionpicker.on('hidden.bs.select', function() {
+      let action_id = actionpicker.selectpicker('val');
+      if (action_id === "") {
+        objectpicker.find('option').prop('disabled', false);
+      } else {
+        objectpicker.find('option').prop('disabled', true);
+        objectpicker.find('option[data-action-id="' + action_id + '"]').prop('disabled', false);
+      }
+      objectpicker.find('option[value=""]').prop('disabled', false);
+      objectpicker.selectpicker('refresh');
+      objectpicker.selectpicker('toggle');
+      if (objectpicker.selectpicker('val') === null) {
+        objectpicker.selectpicker('val', '-');
+      }
+    });
+  }
+
+  function applySchemaCalculations(clone) {
+    $(clone).find('.calculation-wrapper').each(function() {
+      const id_prefix = $(this).data('id-prefix');
+      const schema = $(this).data('schema');
+      const root_schema = $(this).data('root-schema');
+      window.calculation_scripts.push(function () {
+        setUpCalculation(id_prefix, schema, root_schema);
+      });
+    });
+    setUpCalculations();
+  }
+
+  function setUpCalculations() {
+    if (!window.calculation_scripts) {
+      window.calculation_scripts = [];
+    }
+    $.each(window.calculation_scripts, function () {
+      this();
+    });
+  }
+
+  function updateRecipeState(clone) {
+    if (!clone.data('id-prefix')) {
+      return;
+    }
+    const id_prefix = clone.data('id-prefix');
+    const recipe_div = $(`.div-apply-recipe[data-id-prefix=${id_prefix}]`);
+    if (recipe_div.length === 0) {
+      return;
+    }
+    recipe_div.attr('data-toggle', 'tooltip');
+    recipe_div.tooltip();
+    const recipes = recipe_div.data('sampledb-recipes');
+    refreshRecipeTooltip(id_prefix, recipes);
+    recipe_div.children('select').first().on('change', function() {
+      refreshRecipeTooltip(id_prefix, recipes);
+    }).addClass('selectpicker').selectpicker();
+    recipe_div.children('button.input-group-button-for-selectpicker').first().on('click', function() {
+      applyRecipe(id_prefix, recipes, false);
+    });
   }
 </script>
 {% endblock %}

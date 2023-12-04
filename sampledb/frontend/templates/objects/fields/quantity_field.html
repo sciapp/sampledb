@@ -1,0 +1,55 @@
+{% if schema['units'] in ("1", "") %}
+  <input type="text" class="form-control" name="{{ id_prefix }}_magnitude" placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+    {% if id_prefix+'_magnitude' in form_data %}
+      value="{{ form_data[id_prefix+'_magnitude'] }}"
+    {% elif data is not none and "magnitude_in_base_units" in data %}
+      value="{{ data.magnitude_in_base_units | babel_format_number }}"
+    {% endif %}
+  />
+{% else %}
+  <div class="input-group">
+    <input type="text" class="form-control" name="{{ id_prefix }}_magnitude"
+      placeholder="{{ (schema.placeholder or schema.title) | get_translated_text }}"
+      {% if id_prefix+'_magnitude' in form_data %}
+        value="{{ form_data[id_prefix+'_magnitude'] }}"
+      {% elif data is not none %}
+        value="{% if (data | to_datatype).units in ('min', 'h') %}{{ data.magnitude_in_base_units | format_time((data | to_datatype).units, schema.get('display_digits')) }}{% else %}{{ (data | to_datatype).magnitude | babel_format_number }}{% endif %}"
+      {% endif %}
+    />
+    {% if schema['units'] is string or schema['units'] | length == 1 %}
+      {% set unit = schema["units"] if schema["units"] is string else schema["units"][0] %}
+      <input type="hidden" name="{{ id_prefix }}_units"
+        {% if data is not none %}
+          value="{{ (data | to_datatype).units }}"
+        {% else %}
+          value="{{ unit }}"
+        {% endif %}
+      />
+      <span class="input-group-addon" style="{% if not container_style %}min-width: 100px;{% endif %} text-align:left">{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}</span>
+    {% else %}
+      {% if id_prefix + '_units' in form_data %}
+        {% set selected_unit = form_data[id_prefix + '_units'] %}
+      {% elif data is not none %}
+        {% set selected_unit = (data | to_datatype).units %}
+      {% else %}
+        {% set selected_unit = schema['units'][0] %}
+      {% endif %}
+      <select {% if is_template %} class="template-select" data-template-class="selectpicker" {% else %} class="selectpicker" {% endif %} name="{{ id_prefix }}_units" data-style="btn-default unit-selectpicker">
+        {% for unit in schema['units'] %}
+          <option value="{{ unit }}" {% if unit == selected_unit %}selected="selected"{% endif %}>{{ unit | prettify_units }}</option>
+        {% endfor %}
+        {% if selected_unit not in schema['units'] %}
+          <option value="{{ selected_unit }}" selected="selected">{{ selected_unit | prettify_units }}</option>
+        {% endif %}
+      </select>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if template_mode != 'inline_edit' and 'calculation' in schema %}
+  {% if is_template %}
+    <input type="hidden" class="calculation-wrapper" data-id-prefix="{{ id_prefix }}" data-schema="{{ schema | stringify }}" data-root-schema="{{ root_schema | stringify }}">
+  {% else %}
+    {% include "objects/forms/calculation_script.html" %}
+  {% endif %}
+{% endif %}

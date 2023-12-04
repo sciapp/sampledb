@@ -10,7 +10,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}

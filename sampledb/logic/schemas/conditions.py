@@ -3,7 +3,7 @@
 Helper functions for conditional properties
 
 New condition types also need to be implemented in JavaScript in:
-sampledb/frontend/templates/objects/forms/conditional_wrapper_script.html
+sampledb/static/sampledb/js/conditional_wrapper.js
 """
 
 import typing

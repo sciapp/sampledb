@@ -2,6 +2,7 @@
 !.gitignore
 !.gitlab-ci.yml
 !.dockerignore
+!.jshintrc
 _*
 !__init__.py
 !__init__.pyi

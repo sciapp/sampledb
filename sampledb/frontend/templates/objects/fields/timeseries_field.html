@@ -1,0 +1,30 @@
+<div>
+  <label class="control-label" for="{{ id_prefix }}_data">{{ _('Data (as CSV)') }}</label>
+  <textarea type="text" class="form-control" id="{{ id_prefix }}_data" name="{{ id_prefix }}_data" rows="5" placeholder="{{ _('CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or relative time in seconds, and magnitude') }}">{% if id_prefix+'_data' in form_data %}{{ form_data[id_prefix+'_data'] }}{% elif data is not none and data.data %}{{ data.data | to_timeseries_csv }}{% endif %}</textarea>
+</div>
+<div>
+  <label class="control-label" for="{{ id_prefix }}_units">{{ _('Units') }}</label>
+  {% if schema['units'] is string or schema['units'] | length == 1 %}
+    {% set unit = schema["units"] if schema["units"] is string else schema["units"][0] %}
+    <input type="hidden" id="{{ id_prefix }}_units" name="{{ id_prefix }}_units" value="{% if data is not none %}{{ (data | to_datatype).units }}{% else %}{{ unit }}{% endif %}"/>
+    <input type="text" class="form-control" value="{% if data is not none %}{{ (data | to_datatype).units | prettify_units }}{% else %}{{ unit | prettify_units  }}{% endif %}"  disabled="disabled"/>
+  {% else %}
+    <div class="from-control">
+      {% if id_prefix + '_units' in form_data %}
+        {% set selected_unit = form_data[id_prefix + '_units'] %}
+      {% elif data is not none %}
+        {% set selected_unit = (data | to_datatype).units %}
+      {% else %}
+        {% set selected_unit = schema['units'][0] %}
+      {% endif %}
+      <select class="selectpicker" id="{{ id_prefix }}_units" name="{{ id_prefix }}_units" data-style="btn-default unit-selectpicker" data-width="100%">
+      {% for unit in schema['units'] %}
+        <option value="{{ unit }}" {% if unit == selected_unit %}selected="selected"{% endif %}>{{ unit | prettify_units }}</option>
+      {% endfor %}
+      {% if selected_unit not in schema['units'] %}
+        <option value="{{ selected_unit }}" selected="selected">{{ selected_unit | prettify_units }}</option>
+      {% endif %}
+      </select>
+    </div>
+  {% endif %}
+</div>

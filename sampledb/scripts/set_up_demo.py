@@ -338,6 +338,16 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
+        with open(os.path.join(schema_directory, 'calculation.sampledb.json'), 'r', encoding='utf-8') as schema_file:
+            schema = json.load(schema_file)
+        action = create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema=schema
+        )
+        set_action_translation(Language.ENGLISH, action.id, "Calculation Demo Action", "", )
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+        sampledb.db.session.commit()
+
         with open(os.path.join(schema_directory, 'other_sample.sampledb.json'), 'r', encoding='utf-8') as schema_file:
             schema = json.load(schema_file)
         action = create_action(
@@ -796,7 +806,7 @@ This example shows how Markdown can be used for instrument Notes.
                 'data': {'name': {'_type': 'text', 'text': 'Shared Sample'}},
                 'schema': {'title': 'Sampling', 'type': 'object', 'properties': {'name': {'title': 'Additional Note', 'type': 'text'}}, 'required': ['name']},
                 'user': {'user_id': 2, 'component_uuid': UUID},
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
             }],
             'action': {'action_id': 1, 'component_uuid': UUID},
             'policy': {
@@ -811,7 +821,7 @@ This example shows how Markdown can be used for instrument Notes.
                 'data': {'name': {'_type': 'text', 'text': 'Shared Measurement'}, 'sample1': {'_type': 'sample', 'object_id': 1, 'component_uuid': UUID}, 'sample2': {'_type': 'sample', 'object_id': 3, 'component_uuid': UUID, 'export_edit_note': 'This internal sample was not exported.'}},
                 'schema': {'title': 'Special Measurement', 'type': 'object', 'properties': {'name': {'title': 'Additional Note', 'type': 'text'}, 'sample1': {'title': 'Sample 1', 'type': 'sample'}, 'sample2': {'title': 'Sample 2', 'type': 'sample'}}, 'required': ['name']},
                 'user': {'user_id': 1, 'component_uuid': UUID},
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
             }],
             'action': {'action_id': 1, 'component_uuid': UUID},
             'policy': {
@@ -828,21 +838,21 @@ This example shows how Markdown can be used for instrument Notes.
                     'component_uuid': UUID,
                     'user': {'user_id': 1, 'component_uuid': UUID},
                     'content': 'I want to comment here.',
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 },
                 {
                     'comment_id': 2,
                     'component_uuid': UUID,
                     'user': None,
                     'content': 'Another important comment by an anonymous user.',
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 },
                 {
                     'comment_id': 3,
                     'component_uuid': UUID,
                     'user': {'user_id': 4, 'component_uuid': UUID},
                     'content': 'You might be interested in my specific comment regarding this object.',
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 }
             ],
             'object_location_assignments': [
@@ -854,7 +864,7 @@ This example shows how Markdown can be used for instrument Notes.
                     'location': {'location_id': 1, 'component_uuid': UUID},
                     'description': {'en': ''},
                     'confirmed': True,
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 },
                 {
                     'id': 2,
@@ -864,7 +874,7 @@ This example shows how Markdown can be used for instrument Notes.
                     'location': {'location_id': 2, 'component_uuid': UUID},
                     'description': {'en': ''},
                     'confirmed': False,
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 }
             ],
             'files': [
@@ -873,7 +883,7 @@ This example shows how Markdown can be used for instrument Notes.
                     'component_uuid': UUID,
                     'user': {'user_id': 3, 'component_uuid': UUID},
                     'data': {"storage": "url", "url": "https://example.com/file"},
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 }
             ]
         }, component)
@@ -885,7 +895,7 @@ This example shows how Markdown can be used for instrument Notes.
                 'schema': {'title': 'Sampling', 'type': 'object',
                            'properties': {'name': {'title': 'Additional Note', 'type': 'text'}}, 'required': ['name']},
                 'user': {'user_id': 2, 'component_uuid': UUID},
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
             }],
             'action': {'action_id': 3, 'component_uuid': UUID},
             'policy': {
@@ -902,7 +912,7 @@ This example shows how Markdown can be used for instrument Notes.
                 'data': {'name': {'_type': 'text', 'text': 'Shared Object with File References'}, 'file_a': {'_type': 'file', 'file_id': 1, 'component_uuid': component.uuid}, 'file_b': {'_type': 'file', 'file_id': 2, 'component_uuid': component.uuid}},
                 'schema': {'title': 'Object Information', 'type': 'object', 'properties': {'name': {'title': 'Name', 'type': 'text'}, 'file_a': {'title': 'File A', 'type': 'file'}, 'file_b': {'title': 'File B', 'type': 'file'}}, 'required': ['name']},
                 'user': {'user_id': 1, 'component_uuid': UUID},
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
             }],
             'action': {'action_id': 1, 'component_uuid': UUID},
             'policy': {
@@ -921,7 +931,7 @@ This example shows how Markdown can be used for instrument Notes.
                     'component_uuid': UUID,
                     'user': {'user_id': 1, 'component_uuid': UUID},
                     'data': {"storage": "federation", "original_file_name": "example.txt"},
-                    'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f')
                 }
             ]
         }, component)
@@ -1007,7 +1017,7 @@ This example shows how Markdown can be used for instrument Notes.
             import_status={
                 'success': False,
                 'notes': ['Demo import error'],
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
                 'object_id': None
             }
         )
@@ -1017,7 +1027,7 @@ This example shows how Markdown can be used for instrument Notes.
             import_status={
                 'success': True,
                 'notes': ['Demo import note'],
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
                 'object_id': 14
             }
         )
@@ -1027,7 +1037,7 @@ This example shows how Markdown can be used for instrument Notes.
             import_status={
                 'success': True,
                 'notes': [],
-                'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+                'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
                 'object_id': 14
             }
         )
@@ -1062,7 +1072,7 @@ This example shows how Markdown can be used for instrument Notes.
         pressure_data: typing.List[typing.Tuple[str, float]] = []
         random.seed(0)
         for i in range(1000):
-            utc_datetime_string = (datetime.datetime.utcnow() + datetime.timedelta(milliseconds=i * 30)).strftime('%Y-%m-%d %H:%M:%S.%f')
+            utc_datetime_string = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(milliseconds=i * 30)).strftime('%Y-%m-%d %H:%M:%S.%f')
             if i == 0:
                 temperature_magnitude = 20.0
             else:
@@ -1285,7 +1295,7 @@ This example shows how Markdown can be used for instrument Notes.
             object_id=independent_object.id,
             user_id=basic_user.id,
             content='This is a test comment',
-            utc_datetime=datetime.datetime.utcnow() - datetime.timedelta(days=2),
+            utc_datetime=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2),
         )
         sampledb.logic.files.create_url_file(
             object_id=independent_object.id,

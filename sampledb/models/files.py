@@ -24,13 +24,17 @@ class File(Model):
             '(fed_id IS NOT NULL AND component_id IS NOT NULL) OR (user_id IS NOT NULL AND utc_datetime IS NOT NULL)',
             name='files_not_null_check'
         ),
+        db.CheckConstraint(
+            '(fed_id IS NOT NULL AND component_id IS NOT NULL) OR data IS NOT NULL',
+            name='files_not_null_check_data'
+        ),
         db.UniqueConstraint('fed_id', 'object_id', 'component_id', name='files_fed_id_component_id_key')
     )
 
     id: Mapped[int] = db.Column(db.Integer, primary_key=True)
     object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), primary_key=True)
     user_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.DateTime, nullable=True)
+    utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     data: Mapped[typing.Optional[typing.Dict[str, typing.Any]]] = db.Column(db.JSON, nullable=True)
     binary_data: Mapped[typing.Optional[bytes]] = db.deferred(db.Column(db.LargeBinary, nullable=True))
     fed_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
@@ -56,7 +60,7 @@ class File(Model):
             id=file_id,
             object_id=object_id,
             user_id=user_id,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow(),
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
             data=data,
             binary_data=binary_data,
             fed_id=fed_id,

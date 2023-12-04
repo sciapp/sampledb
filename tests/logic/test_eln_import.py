@@ -48,7 +48,7 @@ def eln_import_id(user):
         user_id=user.id,
         file_name='test.eln',
         binary_data=b'test',
-        upload_utc_datetime=datetime.datetime.utcnow(),
+        upload_utc_datetime=datetime.datetime.now(datetime.timezone.utc),
         import_utc_datetime=None
     )
     db.session.add(eln_import)
@@ -65,8 +65,8 @@ def test_create_eln_import(user, eln_zip_bytes):
     assert eln_import.user_id == user.id
     assert eln_import.file_name == 'test.zip'
     assert eln_import.imported is False
-    assert eln_import.upload_utc_datetime < datetime.datetime.utcnow()
-    assert eln_import.upload_utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(minutes=1)
+    assert eln_import.upload_utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert eln_import.upload_utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=1)
 
 
 def test_get_eln_import(user, sampledb_eln_import_id):
@@ -82,7 +82,7 @@ def test_remove_expired_eln_imports(user):
         user_id=user.id,
         file_name='test.zip',
         binary_data=b'test',
-        upload_utc_datetime=datetime.datetime.utcnow(),
+        upload_utc_datetime=datetime.datetime.now(datetime.timezone.utc),
         import_utc_datetime=None
     )
     db.session.add(eln_import)
@@ -94,13 +94,13 @@ def test_remove_expired_eln_imports(user):
     assert sampledb.models.ELNImport.query.filter_by(id=eln_import_id).first() is not None
 
     eln_import = sampledb.models.ELNImport.query.filter_by(id=eln_import_id).first()
-    eln_import.import_utc_datetime = datetime.datetime.utcnow()
+    eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     db.session.add(eln_import)
     db.session.commit()
     logic.eln_import.remove_expired_eln_imports()
     assert sampledb.models.ELNImport.query.filter_by(id=eln_import_id).first() is not None
 
-    eln_import.upload_utc_datetime = datetime.datetime.utcnow() - datetime.timedelta(days=2)
+    eln_import.upload_utc_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)
     logic.eln_import.remove_expired_eln_imports()
     assert sampledb.models.ELNImport.query.filter_by(id=eln_import_id).first() is not None
 

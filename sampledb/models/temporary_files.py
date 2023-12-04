@@ -18,7 +18,7 @@ class TemporaryFile(Model):
     context_id: Mapped[str] = db.Column(db.String, nullable=False)
     file_name: Mapped[str] = db.Column(db.String, nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     binary_data: Mapped[bytes] = db.deferred(db.Column(db.LargeBinary, nullable=False))
     uploader: Mapped['User'] = relationship('User')
 

@@ -8,15 +8,12 @@ Flask-Babel
 Flask-HTTPAuth
 Flask-Login
 Flask-Mail
-# Flask-MonitoringDashboard from git, as version 3.1.1 still uses a function that was removed from Flask
-Flask-MonitoringDashboard @ git+https://github.com/flask-dashboard/Flask-MonitoringDashboard.git@7630227e9f961584a7b61d1f7c237789bcaced59
+Flask-MonitoringDashboard
 Flask-SQLAlchemy
 Flask-WTF
 itsdangerous
-jsonschema
 kaleido
 ldap3
-lxml
 Markdown
 Pillow
 Pint

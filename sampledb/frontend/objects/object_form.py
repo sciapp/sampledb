@@ -40,8 +40,7 @@ def show_object_form(
         placeholder_data: typing.Optional[typing.Dict[typing.Sequence[typing.Union[str, int]], typing.Any]] = None,
         possible_object_id_properties: typing.Optional[typing.Dict[str, typing.Any]] = None,
         passed_object_ids: typing.Optional[typing.List[int]] = None,
-        show_selecting_modal: bool = False,
-        previous_data_actions: typing.Optional[typing.List[typing.Any]] = None
+        show_selecting_modal: bool = False
 ) -> FlaskResponseT:
 
     if object is None:
@@ -145,14 +144,8 @@ def show_object_form(
             'instrument_log_categories': instrument_log_categories,
         })
 
-    # handle previous actions, e.g. adding or deleting table rows
-    updated_form_data, serialized_previous_actions = _apply_previous_data_actions(previous_data_actions, data, schema, form_data)
-    if updated_form_data is None:
-        return flask.abort(400)
-    form_data = updated_form_data
     template_arguments.update({
         'form_data': form_data,
-        'previous_actions': serialized_previous_actions,
     })
 
     template_arguments.update(get_object_form_template_kwargs(object.id if object is not None else None))
@@ -171,6 +164,9 @@ def show_object_form(
             return flask.jsonify({
                 'errors': errors
             }), 400
+        template_arguments.update({
+            'errors_by_title': get_errors_by_title(errors, schema)
+        })
         if object_data is not None and not errors:
             object_data = typing.cast(typing.Dict[str, typing.Any], object_data)
             for markdown in logic.markdown_to_html.get_markdown_from_object_data(object_data):
@@ -280,42 +276,6 @@ def show_object_form(
             mode=mode,
             **template_arguments
         )
-
-
-def _apply_previous_data_actions(
-        previous_data_actions: typing.Optional[typing.List[typing.Any]],
-        data: typing.Dict[str, typing.Any],
-        schema: typing.Dict[str, typing.Any],
-        form_data: typing.Dict[str, typing.Any]
-) -> typing.Union[typing.Tuple[typing.Dict[str, typing.Any], str], typing.Tuple[None, None]]:
-    if not previous_data_actions:
-        apply_previous_actions = True
-        previous_data_actions = []
-    else:
-        apply_previous_actions = False
-    serializer = itsdangerous.URLSafeSerializer(flask.current_app.config['SECRET_KEY'])
-
-    if 'previous_actions' in form_data:
-        try:
-            previous_data_actions = serializer.loads(form_data['previous_actions'])
-        except itsdangerous.BadData:
-            return None, None
-    if not isinstance(previous_data_actions, list):
-        return None, None
-
-    if any(name.startswith('action_object__') and (name.endswith('__delete') or name.endswith('__add') or name.endswith('__addcolumn') or name.endswith('__deletecolumn')) for name in form_data):
-        data_action = [name for name in form_data if name.startswith('action_')][0]
-        previous_data_actions.append(data_action)
-
-    if previous_data_actions and apply_previous_actions and isinstance(data, dict):
-        try:
-            for data_action in previous_data_actions:
-                _apply_action_to_data(data_action, data, schema)
-            form_data = _apply_action_to_form_data(previous_data_actions[-1], form_data)
-        except ValueError:
-            return None, None
-    serialized_previous_actions = typing.cast(str, serializer.dumps(previous_data_actions))
-    return form_data, serialized_previous_actions
 
 
 def _apply_placeholder_data(
@@ -585,47 +545,6 @@ def _apply_action_to_form_data(action: str, form_data: typing.Dict[str, typing.A
     return new_form_data
 
 
-def _apply_action_to_data(action: str, data: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any]) -> None:
-    action_id_prefix, action_index_str, action_type = action[len('action_'):].rsplit('__', 2)
-    if action_type not in ('add', 'delete', 'addcolumn', 'deletecolumn'):
-        raise ValueError('invalid action')
-    sub_data, sub_schema = _get_sub_data_and_schema(data, schema, action_id_prefix.split('__', 1)[1])
-    if not isinstance(sub_data, list):
-        raise ValueError('invalid action')
-    if action_type in ('addcolumn', 'deletecolumn') and (sub_schema["style"] != "table" or sub_schema["items"]["type"] != "array"):
-        raise ValueError('invalid action')
-    num_existing_items = len(sub_data)
-    if action_type == 'add':
-        if 'maxItems' not in sub_schema or num_existing_items < sub_schema["maxItems"]:
-            sub_data.append(generate_placeholder(sub_schema["items"]))
-            if isinstance(sub_data[-1], list) and sub_schema.get('style') == 'table':
-                num_existing_columns = sub_schema["items"].get("minItems", 0)
-                for row in sub_data:
-                    num_existing_columns = max(num_existing_columns, len(row))
-                while len(sub_data[-1]) < num_existing_columns:
-                    sub_data[-1].append(None)
-    elif action_type == 'delete':
-        action_index = int(action_index_str)
-        if ('minItems' not in sub_schema or num_existing_items > sub_schema["minItems"]) and action_index < num_existing_items:
-            del sub_data[action_index]
-    else:
-        num_existing_columns = sub_schema["items"].get("minItems", 0)
-        for row in sub_data:
-            num_existing_columns = max(num_existing_columns, len(row))
-        if action_type == 'addcolumn':
-            if 'maxItems' not in sub_schema["items"] or num_existing_columns < sub_schema["items"]["maxItems"]:
-                num_existing_columns += 1
-                for row in sub_data:
-                    while len(row) < num_existing_columns:
-                        row.append(generate_placeholder(sub_schema["items"]["items"]))
-        elif action_type == 'deletecolumn':
-            if num_existing_columns > sub_schema.get("minItems", 0):
-                num_existing_columns -= 1
-                for row in sub_data:
-                    while len(row) > num_existing_columns:
-                        del row[-1]
-
-
 def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.Dict[str, typing.Any]:
     template_kwargs = {
         'datetime': datetime,
@@ -699,3 +618,69 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
     })
 
     return template_kwargs
+
+
+def _get_title_by_property_path(
+        schema: typing.Any,
+        property_path: typing.Sequence[str],
+        *,
+        index: typing.Optional[str] = None,
+        is_root_object: bool = True
+) -> str:
+    if not isinstance(schema, dict):
+        return ''
+    schema_title = get_translated_text(schema.get('title', ''))
+    if index:
+        schema_title += ' #' + index
+    if len(property_path) == 0 or not schema_title:
+        return schema_title
+    if schema.get('type') == 'array':
+        return ('' if is_root_object else f'{schema_title} ➜ ') + _get_title_by_property_path(schema.get('items'), property_path[1:], is_root_object=False, index=property_path[0])
+    if schema.get('type') == 'object':
+        property_schemas = schema.get('properties')
+        if isinstance(property_schemas, dict):
+            return ('' if is_root_object else f'{schema_title} ➜ ') + _get_title_by_property_path(property_schemas.get(property_path[0]), property_path[1:], is_root_object=False)
+    return ''
+
+
+def get_errors_by_title(
+        errors: typing.Dict[str, str],
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Dict[str, typing.Set[str]]:
+    # filter out errors for required fields or None array entries with existing error messages
+    missing_required_fields = {}
+    invalid_type_entries = {}
+    for name, message in errors.items():
+        if name.startswith('object__') and name.endswith('__hidden') and message.startswith('missing required property "'):
+            parent_property_path = name.split('__')[1:-1]
+            property_name = message.split('"')[1]
+            missing_required_fields[tuple(parent_property_path + [property_name])] = (name, message)
+        if name.startswith('object__') and name.endswith('__hidden') and message.startswith('invalid type (at '):
+            parent_property_path = name.split('__')[1:-1]
+            property_name = message.split('(at ')[1].split(')')[0]
+            invalid_type_entries[tuple(parent_property_path + [property_name])] = (name, message)
+    ignorable_errors = set()
+    for name, message in errors.items():
+        if name.startswith('object__'):
+            property_path = tuple(name.split('__')[1:-1])
+            for potential_ignorable_errors in (missing_required_fields, invalid_type_entries):
+                if tuple(property_path) in potential_ignorable_errors:
+                    ignorable_errors.add(potential_ignorable_errors[property_path])
+
+    # construct title -> error messages dict
+    errors_by_title: typing.Dict[str, typing.Set[str]] = {}
+    for name, message in errors.items():
+        if (name, message) in ignorable_errors:
+            continue
+        title = ''
+        if name.startswith('object__'):
+            property_path = tuple(name.split('__')[1:-1])
+            if property_path:
+                title = _get_title_by_property_path(schema, property_path)
+        if not title:
+            title = _('Unknown (%(name)s)', name=name)
+        if title in errors_by_title:
+            errors_by_title[title].update(message.splitlines())
+        else:
+            errors_by_title[title] = set(message.splitlines())
+    return errors_by_title

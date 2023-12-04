@@ -1,47 +1,57 @@
-<!-- array start -->
+{% set container_style = none %}
 <div class="form-group row">
   <div class="col-md-3 control-label">
     {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>
-{% set is_required = True %}
-{% set minItems = schema.get('minItems', 0) %}
-{% set maxItems = schema.get('maxItems', None) %}
-{% if data is not none %}
-{% set numItems = (data | length) %}
-{% else %}
-{% set numItems = 0 %}
-{% endif %}
+  {% set is_required = True %}
+  {% set minItems = schema.get('minItems', 0) %}
+  {% set maxItems = schema.get('maxItems', -1) %}
+  {% set defaultItems = schema.get('defaultItems', minItems)%}
 </div>
-<div style="padding-left:2.5em;">
-  <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
-  {% set itemName = (schema['items'].title | get_translated_text) %}
+{% set parent_prefix = id_prefix %}
+{% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
+<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="array" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}">
+  <input type="hidden" name="{{ parent_prefix }}_hidden" value="array">
+  {% set item_name = (schema['items'].title | get_translated_text) %}
+  {% if is_template and data is none %}
+    {% set data = get_default_data(root_schema, property_path) %}
+  {% endif %}
   {% if data is not none %}
-    {% for item in data %}
-      {% set name = "item" %}
-      {% set tmp_style = schema['style'] %}
-      {% set schema = schema['items'] %}
-      {% set z = schema.update({'parent_style': tmp_style}) %}
-      {% set id_prefix = id_prefix + '_{}_'.format(loop.index0) %}
+    {% set numItems = (data | length) %}
+  {% else %}
+    {% set numItems = 0 %}
+  {% endif %}
+  {% if data is none %}
+    {% set data = [] %}
+  {% endif %}
+  {% for item in data + [None] %}
+    {% set schema = schema['items'] %}
+    {% set data = item %}
+    {% if loop.last %}
+      {% set is_template = True %}
+      {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
+      {% set data = get_default_data(root_schema, property_path) %}
+    {% else %}
+      {% set property_path = property_path + (loop.index0,) %}
       {% set data = item %}
-        <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
-        {% if numItems > minItems %}
-        <div class="pull-right" style="padding-right:0.75em"><button type="submit" name="action_{{ id_prefix }}_delete" class="btn btn-danger" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
-        {% else %}
-          <div class="pull-right" style="padding-right:0.75em"><button type="button" class="btn btn-danger disabled" style="width:20em;">{{ _('Remove %(item_name)s', item_name=itemName) }}</button></div>
-        {% endif %}
+    {% endif %}
+    {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
+    <div data-id-prefix="{{ id_prefix }}" data-array-item="array" {% if loop.last %}class="array-template"{% endif %}>
+      <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
+        <div class="pull-right" style="padding-right:0.75em">
+          <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger delete-button" style="width:20em;" data-object-form-button="array_delete" data-element-id="{{ property_path[-1] }}">
+            {{ _('Remove %(item_name)s', item_name=item_name) }}
+          </button>
+        </div>
         <div class="clearfix" style="padding-bottom:0.75em"></div>
         {% include "objects/forms/form_any.html" %}
-        </div>
-    {% endfor %}
-  {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
   <div class="form-group row clearfix" style="padding-right:0.75em">
     <div class="col-md-9 col-md-offset-3">
-  {% if maxItems is none or numItems < maxItems %}
-    <button type="submit" name="action_{{ id_prefix }}_?__add" class="btn btn-success pull-right" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
-  {% else %}
-    <button type="button" class="btn btn-success pull-right disabled" style="width:20em">{{ _('Add %(item_name)s', item_name=itemName) }}</button>
-  {% endif %}
+      <button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-object-form-button="array_add" style="width:20em">{{ _('Add %(item_name)s', item_name=item_name) }}</button>
     </div>
   </div>
 </div>
-<!-- array end -->

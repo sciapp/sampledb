@@ -293,7 +293,7 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         raise ValidationError('text must be str or a dictionary', path)
     choices = schema.get('choices', None)
     if choices and instance['text'] not in choices:
-        raise ValidationError(_('The text must be one of %(choices)s.', choices=choices), path)
+        raise ValidationError(_('The text must be one of: %(choices)s.', choices=', '.join(get_translated_text(choice) for choice in choices)), path)
     min_length = schema.get('minLength', 0)
     max_length = schema.get('maxLength', None)
 
@@ -653,7 +653,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
         if 'action_id' in schema:
-            if type(schema['action_id']) == int:
+            if type(schema['action_id']) is int:
                 valid_action_ids = [schema['action_id']]
             else:
                 valid_action_ids = schema['action_id']
@@ -663,7 +663,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 if object.action_id not in valid_action_ids:
                     raise ValidationError('object has wrong action', path)
         if 'action_type_id' in schema:
-            if type(schema['action_type_id']) == int:
+            if type(schema['action_type_id']) is int:
                 valid_action_type_ids = [schema['action_type_id']]
             else:
                 valid_action_type_ids = schema['action_type_id']

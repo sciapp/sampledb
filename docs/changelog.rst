@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 0.25
+------------
+
+Released on December 4th, 2023.
+
+- Implement client-side array editing
+- Allow automatic calculation of quantity values
+- Show object form errors as expandable alert message
+- Added file name search
+- Added object_log API endpoint
+- Added object log webhooks
 
 Version 0.24.1
 --------------

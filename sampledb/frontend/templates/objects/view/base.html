@@ -12,12 +12,16 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
-{% set id_prefix = "object_" %}
+{% set id_prefix_root = "object" %}
+{% set property_path = () %}
 
 {% block sidebar %}
   <nav>
     <ul>
       <li><a href="#information">{{ _('Information') }}</a></li>
+      {% if schema and 'workflow_view' in schema and workflow | length > 0 %}
+      <li><a href="#workflow">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</a></li>
+      {% endif %}
       <li><a href="#files">{{ _('Files') }}</a></li>
       <li><a href="#locations">{{ _('Locations') }}</a></li>
       <li><a href="#publications">{{ _('Publications') }}</a></li>
@@ -260,7 +264,7 @@
     {% endif %}
   </div>
   {% if schema and 'workflow_view' in schema and workflow | length > 0 %}
-    <h2>{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</h2>
+    <h2 id="workflow">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</h2>
     {# counter for plotly_chart_plots #}
     {% set plot_counter = namespace(value=0) %}
     {% for elem in workflow %}
@@ -332,7 +336,9 @@
         {% else %}
           {% set workflow_display_mode = True %}
           {% set object_id = elem.object_id %}
-          {% set id_prefix = "workflow_" + (elem.object_id | string) + "_" %}
+          {% set id_prefix_root = "workflow_" ~ elem.object_id %}
+          {% set property_path = () %}
+          {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           {% set data = elem.object.data %}
           {% set schema = elem.object.schema %}
           {% set files = elem.files %}
@@ -400,11 +406,11 @@
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top"><i class="fa fa-download"></i></a>
                   {% endif %}
                   {% elif file.storage == 'url' %}
-                  <span data-placement="top" data-trigger="manual" title="{{ _('Copied successfully') }}"><span data-url="{{ file.data['url'] }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
-                    {% if file.data['url'].split(':')[0].lower() in ['http', 'https'] %}
-                      <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                  <span data-placement="top" data-trigger="manual" title="{{ _('Copied successfully') }}"><span data-url="{{ file.url }}" class="btn btn-link copy-external-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Copy link to clipboard') }}"><i class="fa fa-clipboard"></i></span></span>
+                    {% if file.url.split(':')[0].lower() in ['http', 'https'] %}
+                      <a href="{{ file.url }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
                     {% else %}
-                      <a href="{{ file.data['url'] }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
+                      <a href="{{ file.url }}" target="_blank" class="btn btn-link" style="padding-top:0;padding-bottom:0;visibility: hidden" data-toggle="tooltip" data-placement="top" title="{{ _('Open external link') }}"><i class="fa fa-external-link"></i></a>
                     {% endif %}
                   {% endif %}
                   {% endwith %}
@@ -779,7 +785,75 @@
                 </div>
               </div>
             </div>
-          </div>
+            <hr />
+            <div class="radio">
+              <label class="control-label"><input type="radio" name="mode" value="qr-code-width">{{ _('QR Code labels') }}</label>
+            </div>
+            <span class="help-block">{{ _('This will generate labels with a qr code and an optional id and label number.') }}</span>
+            <div class="form-group">
+              <label for="input-qr-code-paper-format" class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
+              <div class="col-sm-8">
+                <select class="selectpicker form-control" id="input-qr-code-paper-format" name="qr-code-paper-format">
+                  <option value="DIN A4 (Portrait)" selected="selected">{{ _('DIN A4 (Portrait)') }}</option>
+                  <option value="DIN A4 (Landscape)">{{ _('DIN A4 (Landscape)') }}</option>
+                  <option value="Letter (Portrait)">{{ _('Letter / ANSI A (Portrait)') }}</option>
+                  <option value="Letter (Landscape)">{{ _('Letter / ANSI A (Landscape)') }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-qr-code-width" class="control-label col-sm-4">{{ _('QR Code Width:') }}</label>
+              <div class="col-sm-8">
+                <div class="input-group">
+                  <input type="number" class="form-control" aria-label="QR Code Width" value="7" min="4" name="qr-code-width" id="input-qr-code-width">
+                  <span class="input-group-addon">mm</span>
+                </div>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="input-qr-code-number" class="control-label col-sm-4">{{ _('Number of Labels:') }}</label>
+              <div class="col-sm-8">
+                <input type="number" class="form-control" aria-label="Number of Labels" value="1" min="1" max="1000" name="qr-code-number" id="input-qr-code-number">
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-sm-4">{{ _('QR Code Content:') }}</label>
+              <div class="col-sm-4 radio">
+                <label style="font-weight: normal;"><input type="radio" name="qr-code-content" value="object-url" checked="checked"> {{ _('Full Object URL') }}</label>
+              </div>
+              <div class="col-sm-4 radio">
+                <label style="font-weight: normal;"><input type="radio" name="qr-code-content" value="object-id"> {{ _('Only Object ID') }}</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="show-id-on-label" checked="checked"> {{ _('Show ID on labels') }}
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="add-label-number"> {{ _('Add Label Number') }}
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-4 col-sm-8">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" name="add-maximum-label-number"> {{ _('Add Maximum Label Number') }}
+                  </label>
+                </div>
+              </div>
+            </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
             <button class="btn btn-primary" type="submit">{{ _('Generate Labels') }}</button>
@@ -788,6 +862,7 @@
         </div>
       </div>
     </div>
+  </div>
   {% endif %}
   {% if object_qrcode %}
     <div class="modal fade" id="mobileObjectLinkModal" tabindex="-1" role="dialog" aria-labelledby="mobileObjectLinkModalLabel">
@@ -811,7 +886,7 @@
     {% set allowed_language_ids = [] %}
     {% for language in all_languages %}
       {% if language.enabled_for_input %}
-        {{ allowed_language_ids.append(language.id) or '' }}
+        {% do allowed_language_ids.append(language.id) %}
       {% endif %}
     {% endfor %}
     {% if object_location_assignments %}
@@ -952,7 +1027,7 @@
     {% if user_may_link_publication %}
       {% for message in get_flashed_messages() %}
       {% if 'Please enter a valid DOI' in message %}
-        {{ publication_form.errors.__setitem__(publication_form.doi.name, _('Please enter a valid DOI.')) or '' }}
+        {% do publication_form.errors.__setitem__(publication_form.doi.name, _('Please enter a valid DOI.')) %}
       {% endif %}
       {% endfor %}
       <form class="form" method="post" action="{{ url_for('frontend.post_object_publication', object_id=object_id) }}" id="assign-publication-form">
@@ -1578,8 +1653,7 @@
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
@@ -1587,9 +1661,33 @@
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
-  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      updateTranslationJSON,
+      setTranslationHandler,
+      updateTranslationLanguages,
+      initMarkdownField,
+      updateMarkdownField
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
+    window.updateTranslationJSON = updateTranslationJSON;
+    window.setTranslationHandler = setTranslationHandler;
+    window.updateTranslationLanguages = updateTranslationLanguages;
+    window.initMarkdownField = initMarkdownField;
+    window.updateMarkdownField = updateMarkdownField;
+
+    import {
+      togglePlotlyChartDiv
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
+    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
+
+    import {
+      toggleShowMore
+    } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
+    window.toggleShowMore = toggleShowMore;
+  </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
    window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
@@ -1608,6 +1706,7 @@
       {% if action is not none and action.type.enable_labels and not is_archived %}
       $('#form-generate-labels').on('submit', validateLabelsForm);
       $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
+      $('#objectLabelModal input[name="add-label-number"]').on('change', updateQRCodeLabelsCheckbox);
       {% endif %}
 
       function updateObjectLocationTranslationJSON() {
@@ -1726,7 +1825,7 @@
           {% for filter_label, entry_types in filter_type_list.items() %}
               "{{ filter_label }}": [
                   {% for entry_type in entry_types %}
-                      '{{ entry_type.name.lower() }}',{{ handled_entry_types.append(entry_type) or '' }}
+                      '{{ entry_type.name.lower() }}',{% do handled_entry_types.append(entry_type) %}
                   {% endfor %}
               ],
           {% endfor %}
@@ -2152,6 +2251,55 @@
          labels_form.find('select[name="mixed-paper-format"]').closest('.form-group').addClass('has-success');
         }
       }
+
+      if (labels_form.find('input[name="mode"][value="qr-code-width"]').is(":checked")) {
+        var input_qr_code_width = labels_form.find('input[name="qr-code-width"]');
+        var input_qr_code_width_group = labels_form.find('input[name="qr-code-width"]').closest('.form-group');
+        var input_qr_code_number = labels_form.find('input[name="qr-code-number"]');
+        var input_qr_code_number_group = labels_form.find('input[name="qr-code-number"]').closest('.form-group');
+        var input_qr_code_content = labels_form.find('input[name="qr-code-content"]:checked');
+        var input_qr_code_content_group = labels_form.find('input[name="qr-code-content"]:checked').closest('.form-group');
+
+        var paper_format = labels_form.find('select[name="qr-code-paper-format"] > option:checked').val();
+        var qr_code_width = input_qr_code_width.val();
+        var qr_code_number = input_qr_code_number.val();
+        var qr_code_content = input_qr_code_content.val();
+
+
+        if(!PAGE_SIZES.hasOwnProperty(paper_format)) {
+          var paper_format_group = labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group');
+          paper_format_group.addClass('has-error');
+          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+          is_valid = false;
+        } else {
+          labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group').addClass('has-success');
+        }
+
+        if(!isNaN(qr_code_width) && qr_code_width >= 4) {
+          input_qr_code_width_group.addClass('has-success');
+        } else {
+          input_qr_code_width_group.addClass('has-error');
+          input_qr_code_width_group.find('.help-block').text("{{ _('Please enter a number greater or equal to {value}.') }}".replace("{value}", "4"));
+          is_valid = false;
+        }
+
+        if(!isNaN(qr_code_number) && qr_code_number >= 1 && qr_code_number <= 1000) {
+          input_qr_code_number_group.addClass('has-success');
+        } else {
+          input_qr_code_number_group.addClass('has-error');
+          input_qr_code_number_group.find('.help-block').text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "1").replace("{maximum}", "1000"));
+          is_valid = false;
+        }
+
+        if(qr_code_content  === 'object-url' || qr_code_content === 'object-id') {
+          input_qr_code_width_group.addClass('has-success');
+        } else {
+          input_qr_code_width_group.addClass('has-error');
+          input_qr_code_width_group.find('.help-block').text("{{ _('Please select which data should be stored in the qr codes.') }}");
+          is_valid = false;
+        }
+      }
+
       if (labels_form.find('input[name="mode"]:checked').length == 0) {
         labels_form.find('input[name="mode"]').closest('.radio').addClass('has-error');
         is_valid = false;
@@ -2175,8 +2323,25 @@
       labels_form.find('input[name="include-qrcode"]').prop('disabled', !is_minimum_height);
       labels_form.find('input[name="label-minimum-width"]').prop('disabled', !is_minimum_height);
       labels_form.find('select[name="height-paper-format"]').prop('disabled', !is_minimum_height).selectpicker('refresh');
+      var is_qr_code = labels_form.find('input[name="mode"][value="qr-code-width"]').is(":checked");
+      var show_label_number = labels_form.find('input[name="show-label-number"]').is(":checked");
+      labels_form.find('select[name="qr-code-paper-format"]').prop('disabled', !is_qr_code).selectpicker('refresh');
+      labels_form.find('input[name="qr-code-width"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="qr-code-number"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="qr-code-content"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="show-id-on-label"]').prop('disabled', !is_qr_code);
+      labels_form.find('input[name="add-label-number"]').prop('disabled', !is_qr_code);
+      updateQRCodeLabelsCheckbox();
     }
     updateLabelsForm();
+
+    function updateQRCodeLabelsCheckbox() {
+      var labels_form = $('#form-generate-labels');
+      var is_qr_code = labels_form.find('input[name="mode"][value="qr-code-width"]').is(":checked");
+      var show_label_number = labels_form.find('input[name="add-label-number"]').is(":checked");
+      labels_form.find('input[name="add-maximum-label-number"]').prop('disabled', !is_qr_code || !show_label_number);
+    }
+
     {% endif %}
   {% endif %}
    $( document ).ready(function() {

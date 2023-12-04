@@ -103,8 +103,8 @@ def test_create_object(user, action) -> None:
     assert object1.user_id is not None and object1.user_id == user.id
     assert object1.data == data
     assert object1.schema == action.schema
-    assert object1.utc_datetime < datetime.datetime.utcnow()
-    assert object1.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object1.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object1.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object1] == sampledb.logic.objects.get_objects()
     assert object1 == sampledb.logic.objects.get_object(object1.object_id)
 
@@ -149,8 +149,8 @@ def test_update_object(user, action, user2) -> None:
     assert object2.user_id is not None and object2.user_id == user2.id
     assert object2.data['name']['text'] == 'Modified Example'
     assert object2.schema == action.schema
-    assert object2.utc_datetime < datetime.datetime.utcnow()
-    assert object2.utc_datetime > datetime.datetime.utcnow() - datetime.timedelta(seconds=5)
+    assert object2.utc_datetime < datetime.datetime.now(datetime.timezone.utc)
+    assert object2.utc_datetime > datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
     assert [object2] == sampledb.logic.objects.get_objects()
     assert object2 == sampledb.logic.objects.get_object(object2.object_id)
 
@@ -567,3 +567,37 @@ def test_check_object_version_exists(object):
     )
     sampledb.logic.objects.check_object_version_exists(object.id, 0)
     sampledb.logic.objects.check_object_version_exists(object.id, 1)
+
+
+def test_get_object_log_entries_by_user(object, action, user2):
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id)
+    assert entries == []  # user2 has no read access
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(object.user_id)
+    assert len(entries) == 1
+    assert entries == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)    # only object creation
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(object.user_id, entries[0].object_id)
+    assert entries == []  # There is no object log_entry > 1
+    sampledb.logic.comments.create_comment(object.id, object.user_id, content='Comment')
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(object.user_id)
+    assert len(entries) == 2
+    assert entries == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)  # object creation and comment
+    object2 = create_object(user_id=user2.id, action_id=action.id, data={
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        }
+    })
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(object.user_id)
+    assert len(entries) == 2
+    assert entries == sampledb.logic.object_log.get_object_log_entries(object.object_id, object.user_id)  # new object by other user should not affect this result...
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id)
+    assert len(entries) == 1
+    assert entries == sampledb.logic.object_log.get_object_log_entries(object2.object_id, object2.user_id)  # ...but user2 is allowed to read it
+    sampledb.logic.users.set_user_administrator(user2.id, True)
+    sampledb.logic.settings.set_user_settings(user2.id, {'USE_ADMIN_PERMISSIONS': True})
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id)
+    assert len(entries) == 3    # user2 became admin and is able to access all object log entries...
+    entries = sampledb.logic.object_log.get_object_log_entries_by_user(user2.id, after_id=entries[0].id - 1)
+    assert len(entries) == 1    # ...but filters the results
+    with pytest.raises(sampledb.logic.errors.UserDoesNotExistError):
+        sampledb.logic.object_log.get_object_log_entries_by_user(user2.id + 1)

@@ -65,7 +65,7 @@ def _guess_type_of_data(data: typing.Any) -> typing.Optional[str]:
     if isinstance(data, list):
         return 'array'
     if isinstance(data, dict):
-        return data.get('_type', 'object')
+        return str(data.get('_type', 'object'))
     return None
 
 

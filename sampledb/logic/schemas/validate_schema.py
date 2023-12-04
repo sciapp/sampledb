@@ -16,6 +16,7 @@ from ..errors import ValidationError, ActionDoesNotExistError, InvalidNumberErro
 from .utils import units_are_valid
 from .validate import validate
 from .templates import substitute_templates
+from . import calculations
 from .conditions import validate_condition_schema
 from ..languages import get_language_codes
 from .. import datatypes
@@ -27,6 +28,7 @@ def validate_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.Optional[typing.List[str]] = None,
         *,
+        root_schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
         parent_conditions: typing.Optional[typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]]] = None,
         invalid_template_action_ids: typing.Sequence[int] = (),
         strict: bool = False,
@@ -37,12 +39,17 @@ def validate_schema(
 
     :param schema: the sampledb object schema
     :param path: the path to this subschema
+    :param root_schema: the root object schema
     :param parent_conditions: conditions defined in parent objects
     :param invalid_template_action_ids: IDs of actions that may not be used as templates to prevent recursion
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :param all_language_codes: the set of existing language codes, or None
     :raise ValidationError: if the schema is invalid.
     """
+    if root_schema is None:
+        if path:
+            raise ValidationError('missing root schema', path)
+        root_schema = schema
     if all_language_codes is None:
         all_language_codes = get_language_codes()
     if path is None:
@@ -72,9 +79,9 @@ def validate_schema(
     if path == [] and schema['type'] != 'object':
         raise ValidationError('invalid schema (root must be an object)', path)
     if schema['type'] == 'array':
-        return _validate_array_schema(schema, path, invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes)
+        return _validate_array_schema(schema, path, invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes, root_schema=root_schema)
     elif schema['type'] == 'object':
-        return _validate_object_schema(schema, path, invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes)
+        return _validate_object_schema(schema, path, invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes, root_schema=root_schema)
     elif schema['type'] == 'text':
         return _validate_text_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'datetime':
@@ -82,7 +89,7 @@ def validate_schema(
     elif schema['type'] == 'bool':
         return _validate_bool_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'quantity':
-        return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
+        return _validate_quantity_schema(schema, path, all_language_codes=all_language_codes, strict=strict, root_schema=root_schema)
     elif schema['type'] == 'sample':
         return _validate_sample_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
     elif schema['type'] == 'measurement':
@@ -207,6 +214,7 @@ def _validate_array_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
+        root_schema: typing.Dict[str, typing.Any],
         invalid_template_action_ids: typing.Sequence[int] = (),
         strict: bool,
         all_language_codes: typing.Set[str]
@@ -263,7 +271,7 @@ def _validate_array_schema(
     if has_default_items and has_max_items:
         if schema['defaultItems'] > schema['maxItems']:
             raise ValidationError('defaultItems must be less than or equal to maxItems', path)
-    validate_schema(schema['items'], path + ['[?]'], invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes)
+    validate_schema(schema['items'], path + ['[?]'], invalid_template_action_ids=invalid_template_action_ids, strict=strict, all_language_codes=all_language_codes, root_schema=root_schema)
     if 'default' in schema:
         if has_default_items:
             raise ValidationError('default and defaultItems are mutually exclusive', path)
@@ -307,6 +315,7 @@ def _validate_object_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
+        root_schema: typing.Dict[str, typing.Any],
         invalid_template_action_ids: typing.Sequence[int] = (),
         strict: bool,
         all_language_codes: typing.Set[str]
@@ -358,6 +367,7 @@ def _validate_object_schema(
     if not isinstance(schema['properties'], dict):
         raise ValidationError('properties must be dict', path)
     property_conditions: typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]] = []
+    property_calculations: typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]] = []
     property_schemas = {}
     for property_name, property_schema in schema['properties'].items():
         property_name_valid = True
@@ -384,13 +394,16 @@ def _validate_object_schema(
             parent_conditions=property_conditions,
             invalid_template_action_ids=invalid_template_action_ids,
             strict=strict,
-            all_language_codes=all_language_codes
+            all_language_codes=all_language_codes,
+            root_schema=root_schema
         )
         property_schemas[property_name] = property_schema
     for condition_path, condition in property_conditions:
         if not isinstance(condition, dict) or not isinstance(condition.get('type'), str):
             raise ValidationError('condition must be a dict containing the key type', condition_path)
         validate_condition_schema(condition, property_schemas, condition_path)
+    for calculation_path, calculation in property_calculations:
+        calculations.validate_calculation(calculation, root_schema, calculation_path)
 
     if 'required' in schema:
         if not isinstance(schema['required'], list):
@@ -505,9 +518,9 @@ def _validate_object_schema(
         for key in id_keys:
             if key in schema['workflow_view'] and not (
                 schema['workflow_view'][key] is None or
-                type(schema['workflow_view'][key]) == int or
-                type(schema['workflow_view'][key]) == list and all(
-                    type(action_type_id) == int for action_type_id in schema['workflow_view'][key]
+                type(schema['workflow_view'][key]) is int or
+                type(schema['workflow_view'][key]) is list and all(
+                    type(action_type_id) is int for action_type_id in schema['workflow_view'][key]
                 )
             ):
                 raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
@@ -583,7 +596,7 @@ def _validate_text_schema(
         for i, choice in enumerate(schema['choices']):
             if not isinstance(choice, str) and not isinstance(choice, dict):
                 raise ValidationError('choice must be str or dict', path + [str(i)])
-            if choice_type is not None and type(choice) != choice_type:
+            if choice_type is not None and type(choice) is not choice_type:
                 raise ValidationError('choices must be either all str or all dict', path + [str(i)])
             choice_type = type(choice)
             if isinstance(choice, dict):
@@ -709,6 +722,7 @@ def _validate_quantity_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
         *,
+        root_schema: typing.Dict[str, typing.Any],
         all_language_codes: typing.Set[str],
         strict: bool
 ) -> None:
@@ -721,7 +735,7 @@ def _validate_quantity_schema(
     :param strict: whether the schema should be evaluated in strict mode, or backwards compatible otherwise
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip', 'display_digits', 'min_magnitude', 'max_magnitude'}
+    valid_keys = {'type', 'title', 'units', 'default', 'note', 'placeholder', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip', 'display_digits', 'min_magnitude', 'max_magnitude', 'calculation'}
     required_keys = {'type', 'title', 'units'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -799,6 +813,8 @@ def _validate_quantity_schema(
     if strict:
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
+    if 'calculation' in schema:
+        calculations.validate_calculation(schema['calculation'], root_schema, path)
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
@@ -893,17 +909,17 @@ def _validate_object_reference_schema(
 
     if 'action_type_id' in schema and not (
             schema['action_type_id'] is None or
-            type(schema['action_type_id']) == int or
-            type(schema['action_type_id']) == list and all(
-                type(action_type_id) == int for action_type_id in schema['action_type_id']
+            type(schema['action_type_id']) is int or
+            type(schema['action_type_id']) is list and all(
+                type(action_type_id) is int for action_type_id in schema['action_type_id']
             )
     ):
         raise ValidationError('action_type_id must be int, None or a list of ints', path)
     if 'action_id' in schema and not (
             schema['action_id'] is None or
-            type(schema['action_id']) == int or
-            type(schema['action_id']) == list and all(
-                type(action_type_id) == int for action_type_id in schema['action_id']
+            type(schema['action_id']) is int or
+            type(schema['action_id']) is list and all(
+                type(action_type_id) is int for action_type_id in schema['action_id']
             )
     ):
         raise ValidationError('action_id must be int, None or a list of ints', path)

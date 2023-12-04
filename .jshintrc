@@ -1,0 +1,11 @@
+{
+  "esversion": 6,
+  "curly": true,
+  "eqeqeq": true,
+  "latedef": "nofunc",
+  "nocomma": true,
+  "strict": "global",
+  "loopfunc": true,
+  "browser": true,
+  "jquery": true
+}

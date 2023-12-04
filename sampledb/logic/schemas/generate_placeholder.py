@@ -13,6 +13,41 @@ from .utils import get_dimensionality_for_units
 from ..users import check_user_exists
 
 
+def get_default_data(
+        schema: typing.Dict[str, typing.Any],
+        property_path: typing.Tuple[typing.Union[str, int], ...]
+) -> typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]]:
+    """
+    Return the default data for given schema and property path.
+
+    :param schema: the sampledb object schema
+    :param property_path: the path in the schema to generate a value for
+    :return: the default data at the given path or None, if there is no default for that path
+    """
+    current_default_data = generate_placeholder(schema)
+    has_default_value = current_default_data is not None
+    current_schema: typing.Dict[str, typing.Any] = schema
+    for path_element in property_path:
+        if current_schema['type'] == 'array':
+            current_schema = current_schema.get('items', {})
+        else:
+            current_schema = current_schema.get('properties', {}).get(path_element)
+        if not current_schema:
+            return None
+        if has_default_value:
+            if isinstance(current_default_data, dict) and isinstance(path_element, str):
+                current_default_data = current_default_data.get(path_element)
+            elif isinstance(current_default_data, list) and isinstance(path_element, int) and 0 <= path_element < len(current_default_data):
+                current_default_data = current_default_data[path_element]
+            else:
+                current_default_data = None
+                has_default_value = False
+        if not has_default_value:
+            current_default_data = generate_placeholder(current_schema)
+            has_default_value = current_default_data is not None
+    return current_default_data
+
+
 def generate_placeholder(
         schema: typing.Dict[str, typing.Any],
         path: typing.Optional[typing.List[str]] = None

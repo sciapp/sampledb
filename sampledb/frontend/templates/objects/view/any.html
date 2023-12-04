@@ -1,20 +1,17 @@
-{% if hidden %}
-<div class="hidden show-more-{{ parent_id_prefix }}">
-{% endif %}
 {% if diff is not none and previous_schema is not none and ('_before' in diff or '_after' in diff) %}
   {% set current_schema = schema %}
   {% if '_before' in diff %}
     <div class="data-diff-before">
     {% set data = diff['_before'] %}
     {% set schema = previous_schema %}
-    {% include get_view_template(schema) %}
+    {% include get_view_template(schema, container_style) %}
     </div>
   {% endif %}
   {% if '_after' in diff %}
     <div class="data-diff-after">
     {% set data = diff['_after'] %}
     {% set schema = current_schema %}
-    {% include get_view_template(schema) %}
+    {% include get_view_template(schema, container_style) %}
     </div>
   {% endif %}
   {% if '_before' in diff and '_after' in diff %}
@@ -36,8 +33,5 @@
     </div>
   {% endif %}
 {% else %}
-  {% include get_view_template(schema) %}
-{% endif %}
-{% if hidden %}
-</div>
+  {% include get_view_template(schema, container_style) %}
 {% endif %}

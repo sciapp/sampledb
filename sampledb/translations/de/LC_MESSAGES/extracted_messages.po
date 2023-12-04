@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-07-04 21:13+0200\n"
+"POT-Creation-Date: 2023-11-14 10:31+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.12.1\n"
+"Generated-By: Babel 2.13.1\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -1061,6 +1061,10 @@ msgstr ""
 msgid "The maximum number of objects in one batch is %(max_batch_size)s."
 msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
 
+#, python-format
+msgid "Unknown (%(name)s)"
+msgstr "Unbekannt (%(name)s)"
+
 msgid ""
 "Please select at least one hazard or confirm that the object poses no "
 "hazards."
@@ -2034,6 +2038,9 @@ msgstr "API Zugriffstoken"
 msgid "Two Factor Authentication"
 msgstr "Zwei-Faktor-Authentisierung"
 
+msgid "Webhooks"
+msgstr "Webhooks"
+
 msgid "Notification Settings"
 msgstr "Benachrichtigungs&shy;einstellungen"
 
@@ -2134,6 +2141,32 @@ msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu könne
 
 msgid "Set up TOTP-based Two Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+msgid ""
+"Webhooks allow you to subscribe to the object log, as described in <a "
+"href=\"https://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html\">the "
+"documentation</a>."
+msgstr ""
+"Webhooks ermöglichen das Objekt-Log zu abonnieren, wie in <a href=\"https"
+"://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html\">der Dokumentation</a>"
+" beschrieben."
+
+msgid "You have not yet created any webhooks."
+msgstr "Sie haben bisher keine Webhooks erstellt."
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Last Contact"
+msgstr "Letzter Kontakt"
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Add Webhook"
+msgstr "Webhook hinzufügen"
 
 #, python-format
 msgid ""
@@ -2346,6 +2379,26 @@ msgid "Make sure you save it &mdash; you won't be able to access it again."
 msgstr ""
 "Bitte sichern Sie das API Token &mdash; Sie werden nicht erneut darauf "
 "zugreifen können."
+
+msgid "Target Address"
+msgstr "Zieladresse"
+
+msgid "Create Webhook"
+msgstr "Webhook erstellen"
+
+msgid "New Webhook Secret"
+msgstr "Neues Webhook Geheimnis"
+
+msgid ""
+"See the <href=\"https://scientific-it-systems.iffgit.fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html#validation\">documentation</a>"
+" on how to use and validate messages using a secret."
+msgstr ""
+"Siehe dazu auch die <a href=href=\"https://scientific-it-systems.iffgit"
+".fz-"
+"juelich.de/SampleDB/developer_guide/webhooks.html#validation\">Dokumentation</a>"
+" darüber, wie diese Geheimnisse zur Validierung von Nachrichten verwendet"
+" werden können."
 
 msgid "Copied!"
 msgstr "Kopiert!"
@@ -3676,9 +3729,6 @@ msgstr "Kategorien"
 
 msgid "Members"
 msgstr "Mitglieder"
-
-msgid "Remove"
-msgstr "Entfernen"
 
 msgid "Edit Basic Group"
 msgstr "Einfache Gruppe bearbeiten"
@@ -5125,6 +5175,34 @@ msgstr "Möchten Sie Lese-Berechtigungen anfragen?"
 msgid "Send Request"
 msgstr "Anfrage senden"
 
+msgid "Please upload a file."
+msgstr "Bitte laden Sie eine Datei hoch."
+
+msgid "This object does not pose any of these hazards."
+msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
+
+msgid "This object poses the following hazards:"
+msgstr "Dieses Objekt stellt folgende Gefahren dar:"
+
+msgid "No object selected"
+msgstr "Kein Objekt ausgewählt"
+
+msgid "All Actions"
+msgstr "Alle Aktionen"
+
+msgid "The following languages have been disabled for input:"
+msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
+
+msgid "Data (as CSV)"
+msgstr "Daten (als CSV)"
+
+msgid ""
+"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or "
+"relative time in seconds, and magnitude"
+msgstr ""
+"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
+" relative Zeitangabe in Sekunden und Wert"
+
 #, python-format
 msgid "Remove %(item_name)s"
 msgstr "%(item_name)s entfernen"
@@ -5132,6 +5210,13 @@ msgstr "%(item_name)s entfernen"
 #, python-format
 msgid "Add %(item_name)s"
 msgstr "%(item_name)s hinzufügen"
+
+msgid "The object could not be saved due to an error."
+msgstr "Das Objekt konnte aufgrund eines Fehlers nicht gespeichert werden."
+
+#, python-format
+msgid "Field %(index)s"
+msgstr "Feld %(index)s"
 
 msgid "Filter by Action…"
 msgstr "Nach Aktion filtern…"
@@ -5172,9 +5257,6 @@ msgstr "Kein Projekt ausgewählt"
 msgid "Copy Permissions from other object"
 msgstr "Berechtigungen von anderem Objekt kopieren"
 
-msgid "No object selected"
-msgstr "Kein Objekt ausgewählt"
-
 msgid "Also grant READ permissions to all signed-in users"
 msgstr "Zusätzlich allen angemeldeten Nutzern LESE-Berechtigungen geben"
 
@@ -5197,37 +5279,14 @@ msgstr ""
 "Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
 "geben."
 
-msgid "Please upload a file."
-msgstr "Bitte laden Sie eine Datei hoch."
+msgid "Calculated Value:"
+msgstr "Berechneter Wert:"
 
-msgid "This object does not pose any of these hazards."
-msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
-
-msgid "This object poses the following hazards:"
-msgstr "Dieses Objekt stellt folgende Gefahren dar:"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
+msgid "Formula:"
+msgstr "Formel:"
 
 msgid "Apply Recipe"
 msgstr "Rezept anwenden"
-
-#, python-format
-msgid "Field %(index)s"
-msgstr "Feld %(index)s"
-
-msgid "The following languages have been disabled for input:"
-msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
-
-msgid "Data (as CSV)"
-msgstr "Daten (als CSV)"
-
-msgid ""
-"CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or "
-"relative time in seconds, and magnitude"
-msgstr ""
-"CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
-" relative Zeitangabe in Sekunden und Wert"
 
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
@@ -5236,11 +5295,57 @@ msgstr ""
 "Es sind Fehler in anderen Feldern aufgetreten. Bitte klicken Sie auf "
 "\"Objekt bearbeiten\", um die Änderung durchzuführen."
 
+msgid "Unsupported item type for horizontal_table style."
+msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
+
 msgid "Your input is not valid. Please check."
 msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 
-msgid "Unsupported item type for horizontal_table style."
-msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
+msgid "Hidden File"
+msgstr "Versteckte Datei"
+
+msgid "Fullscreen Image Preview"
+msgstr "Vollbild-Vorschau"
+
+msgid "This file has not been shared."
+msgstr "Diese Datei wurde nicht geteilt."
+
+msgid "Timeseries"
+msgstr "Zeitreihe"
+
+msgid "value"
+msgid_plural "values"
+msgstr[0] "Wert"
+msgstr[1] "Werte"
+
+#, python-format
+msgid "within a period of %(time_s)s s"
+msgstr "in einem Zeitraum von %(time_s)s s"
+
+#, python-format
+msgid "between %(start_time)s and %(end_time)s on %(date)s"
+msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
+
+#, python-format
+msgid "between %(start_datetime)s and %(end_datetime)s"
+msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
+
+#, python-format
+msgid "at %(datetime)s"
+msgstr "am %(datetime)s"
+
+msgid "View chart"
+msgstr "Graph anzeigen"
+
+msgid "View table"
+msgstr "Tabelle anzeigen"
+
+msgid "Download data"
+msgstr "Daten herunterladen"
+
+#, python-format
+msgid "User #%(user_id)s from an ELN at %(eln_source_url)s"
+msgstr "Nutzer #%(user_id)s aus einem ELN auf %(eln_source_url)s"
 
 #, python-format
 msgid ""
@@ -5256,6 +5361,9 @@ msgstr "Version #%(version_id)s"
 
 msgid "Show Changes"
 msgstr "Änderungen anzeigen"
+
+msgid "Workflow"
+msgstr "Workflow"
 
 msgid "Activity Log"
 msgstr "Aktivitäts-Log"
@@ -5388,9 +5496,6 @@ msgstr "Notebook erstellen"
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
 
-msgid "Workflow"
-msgstr "Workflow"
-
 #, python-format
 msgid ""
 "Referenced by the metadata of %(object_name)s (#%(object_id)s) and "
@@ -5409,9 +5514,6 @@ msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
-
-msgid "Fullscreen Image Preview"
-msgstr "Vollbild-Vorschau"
 
 msgid "View information"
 msgstr "Informationen anzeigen"
@@ -5560,6 +5662,40 @@ msgid ""
 msgstr ""
 "Dies wird vertikal orientierte Etiketten mit einer minimalen Höhe und "
 "einer optionalen Mindestbreite erstellen."
+
+msgid "QR Code labels"
+msgstr "QR-Code-Etiketten"
+
+msgid ""
+"This will generate labels with a qr code and an optional id and label "
+"number."
+msgstr ""
+"Dies wird Etiketten mit einem QR Code und einer optionalen ID und "
+"Etikettennummer erzeugen."
+
+msgid "QR Code Width:"
+msgstr "QR-Code-Breite:"
+
+msgid "Number of Labels:"
+msgstr "Anzahl an Etiketten:"
+
+msgid "QR Code Content:"
+msgstr "QR Code Inhalt:"
+
+msgid "Full Object URL"
+msgstr "Gesamte Objekt-URL"
+
+msgid "Only Object ID"
+msgstr "Nur Objekt-ID"
+
+msgid "Show ID on labels"
+msgstr "ID auf Etiketten anzeigen"
+
+msgid "Add Label Number"
+msgstr "Etikettennummer hinzufügen"
+
+msgid "Add Maximum Label Number"
+msgstr "Maximale Etikettennummer hinzufügen"
 
 msgid "Object QR Code"
 msgstr "Objekt QR Code"
@@ -5965,11 +6101,11 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
-msgid "Hidden File"
-msgstr "Versteckte Datei"
+msgid "Please enter a number greater or equal to {value}."
+msgstr "Bitte geben Sie eine Zahl größer oder gleich {value} ein."
 
-msgid "This file has not been shared."
-msgstr "Diese Datei wurde nicht geteilt."
+msgid "Please select which data should be stored in the qr codes."
+msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
 
 msgid "hide plot"
 msgstr "Plot ausblenden"
@@ -5986,46 +6122,6 @@ msgstr "Zeit"
 
 msgid "Value"
 msgstr "Wert"
-
-msgid "Timeseries"
-msgstr "Zeitreihe"
-
-msgid "value"
-msgid_plural "values"
-msgstr[0] "Wert"
-msgstr[1] "Werte"
-
-#, python-format
-msgid "within a period of %(time_s)s s"
-msgstr "in einem Zeitraum von %(time_s)s s"
-
-#, python-format
-msgid "between %(start_time)s and %(end_time)s on %(date)s"
-msgstr "zwischen %(start_time)s und %(end_time)s am %(date)s"
-
-#, python-format
-msgid "between %(start_datetime)s and %(end_datetime)s"
-msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
-
-#, python-format
-msgid "at %(datetime)s"
-msgstr "am %(datetime)s"
-
-msgid "View chart"
-msgstr "Graph anzeigen"
-
-msgid "View table"
-msgstr "Tabelle anzeigen"
-
-msgid "Download data"
-msgstr "Daten herunterladen"
-
-#, python-format
-msgid "User #%(user_id)s from an ELN at %(eln_source_url)s"
-msgstr "Nutzer #%(user_id)s aus einem ELN auf %(eln_source_url)s"
-
-msgid "Address"
-msgstr "Adresse"
 
 msgid "UUID"
 msgstr "UUID"
@@ -6598,6 +6694,27 @@ msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
 msgid "Successfully updated your settings."
 msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
 
+msgid "Successfully removed the webhook."
+msgstr "Der Webhook wurde erfolgreich entfernt."
+
+msgid "Failed to remove the webhook."
+msgstr "Das Entfernen des Webhooks ist fehlgeschlagen."
+
+msgid "You are not allowed to create Webhooks."
+msgstr "Sie haben nicht die Berechtigung Webhooks zu registrieren."
+
+msgid "A webhook of this type with this target address already exists"
+msgstr "Ein Webhook für diesen Typ mit dieser Zieladresse existiert bereits"
+
+msgid "This webhook address is invalid"
+msgstr "Diese Webhook-Adresse ist ungültig"
+
+msgid "Failed to create webhook"
+msgstr "Das Registrieren des Webhooks ist fehlgeschlagen"
+
+msgid "The webhook has been added successfully"
+msgstr "Der Webhook wurde erfolgreich erstellt"
+
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."
 
@@ -6729,7 +6846,7 @@ msgstr ""
 "%(dimensionality1)s nach %(dimensionality2)s konvertieren."
 
 #, python-format
-msgid "The text must be one of %(choices)s."
+msgid "The text must be one of: %(choices)s."
 msgstr "Der Text muss einer der folgenden sein: %(choices)s."
 
 #, python-format

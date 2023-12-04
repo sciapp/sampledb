@@ -73,7 +73,7 @@ def handle_dataverse_export_task(
 
     if not credentials_are_valid:
         if task_id:
-            expiration_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+            expiration_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
             task_result = {
                 "error_message": validation_error,
                 "expiration_date": expiration_date
@@ -114,7 +114,7 @@ def handle_dataverse_export_task(
                     DataverseExport.query.filter_by(object_id=object_id).first()
                 )
 
-            expiration_date = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+            expiration_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
             BackgroundTask.query.filter_by(id=task_id).update({
                 "result": {
                     f"{result_key}": url_or_error

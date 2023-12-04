@@ -231,6 +231,8 @@ Monitoring Dashboard
    * - SAMPLEDB_MONITORINGDASHBOARD_DATABASE
      - The database URL for the monitoring dashboard (default: ``sqlite:///flask_monitoringdashboard.db``)
 
+.. _miscellaneous_config:
+
 Miscellaneous
 -------------
 
@@ -305,5 +307,9 @@ Miscellaneous
      - Time that temporary files uploaded when editing an object are stored, in seconds (default: 604800 seconds / 7 days).
    * - SAMPLEDB_ENABLE_ELN_FILE_IMPORT
      - If set, .eln files can be imported by users (default: False). :ref:`Importing .eln files <eln_import>` is currently experimental and not recommended for production systems, as the file format is still a work in progress.
+   * - SAMPLEDB_ENABLE_WEBHOOKS_FOR_USERS
+     - If set, "normal" users can register webhooks (default: False). If this option is not set or set to ``false`` only administrators are allowed to register webhooks. See :ref:`Webhooks <webhooks>`.
+   * - SAMPLEDB_WEBHOOKS_ALLOW_HTTP
+     - If set, using webhook targets that do not support https is allowed (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

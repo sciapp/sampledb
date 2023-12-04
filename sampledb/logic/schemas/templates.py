@@ -2,8 +2,9 @@ import typing
 
 from .. import actions
 from ... import logic
-from ..errors import InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError
+from ..errors import InvalidNumberError, InvalidTemplateIDError, RecursiveTemplateError, ValidationError
 from ...models import ActionType, Permissions
+from .utils import schema_iter
 
 # keys and properties that only can be used in root objects
 
@@ -84,9 +85,8 @@ def substitute_templates(
 
 
 def reverse_substitute_templates(schema: typing.Dict[str, typing.Any]) -> None:
-    if schema.get('type') == 'array' and 'items' in schema and isinstance(schema['items'], dict):
-        reverse_substitute_templates(schema['items'])
-    if schema.get('type') == 'object':
+    root_schema = schema
+    for _, schema in schema_iter(root_schema, filter_property_types={'object'}):
         if 'template' in schema:
             # ensure the action exists
             actions.check_action_exists(schema['template'])
@@ -99,10 +99,6 @@ def reverse_substitute_templates(schema: typing.Dict[str, typing.Any]) -> None:
                     schema[key] = []
                 else:
                     del schema[key]
-        elif 'properties' in schema:
-            for property_schema in schema['properties'].values():
-                if type(property_schema) is dict:
-                    reverse_substitute_templates(property_schema)
 
 
 def update_schema_using_template_action(
@@ -110,9 +106,8 @@ def update_schema_using_template_action(
         template_action_id: int,
         template_action_schema: typing.Dict[str, typing.Any]
 ) -> typing.Dict[str, typing.Any]:
-    if schema.get('type') == 'array' and 'items' in schema and isinstance(schema['items'], dict):
-        schema['items'] = update_schema_using_template_action(schema['items'], template_action_id, template_action_schema)
-    if schema.get('type') == 'object':
+    root_schema = schema
+    for _, schema in schema_iter(root_schema, filter_property_types={'object'}):
         if schema.get('template') == template_action_id:
             if schema.get('title'):
                 title = schema['title']
@@ -121,34 +116,33 @@ def update_schema_using_template_action(
             schema.update(template_action_schema)
             if title is not None:
                 schema['title'] = title
-        elif 'properties' in schema:
-            for property_name, property_schema in schema['properties'].items():
-                if type(property_schema) is dict:
-                    schema['properties'][property_name] = update_schema_using_template_action(property_schema, template_action_id, template_action_schema)
-    return schema
+    return root_schema
 
 
-def enforce_permissions(
+def find_invalid_template_paths(
         schema: typing.Dict[str, typing.Any],
-        user_id: int,
-        path: typing.Sequence[str] = ()
+        user_id: int
 ) -> typing.Sequence[typing.List[str]]:
-    path = list(path)
-    invalid_template_paths = []
-    if schema.get('type') == 'object' and schema.get('properties'):
-        for property_name, property_schema in schema['properties'].items():
-            if property_schema.get('type') == 'object':
-                if property_schema.get('template'):
-                    template_action_id = property_schema['template']
-                    if type(template_action_id) is int:
-                        template_action_permissions = logic.action_permissions.get_user_action_permissions(template_action_id, user_id)
-                        if Permissions.READ not in template_action_permissions:
-                            invalid_template_paths.append(path + [property_name])
-                else:
-                    invalid_template_paths.extend(enforce_permissions(property_schema, user_id, path + [property_name]))
-            elif property_schema.get('type') == 'array':
-                invalid_template_paths.extend(enforce_permissions(property_schema, user_id, path + [property_name]))
-    if schema.get('type') == 'array' and schema.get('items'):
-        invalid_template_paths.extend(enforce_permissions(schema['items'], user_id, path + ['[?]']))
+    """
+    Find all property paths to object schemas with an invalid template action.
 
+    :param schema: the schema to check for invalid template paths
+    :param user_id: the user ID to check permissions with
+    :return: a list of property paths for invalid templates
+    """
+    invalid_template_paths = []
+    if not isinstance(schema, dict):
+        raise ValidationError('schema must be dict', [])
+    for property_path, property_schema in schema_iter(schema, filter_property_types={'object'}):
+        template_action_id = property_schema.get('template')
+        if type(template_action_id) is int:
+            template_action_permissions = logic.action_permissions.get_user_action_permissions(
+                action_id=template_action_id,
+                user_id=user_id
+            )
+            if Permissions.READ not in template_action_permissions:
+                invalid_template_paths.append([
+                    path_element or '[?]'
+                    for path_element in property_path
+                ])
     return invalid_template_paths

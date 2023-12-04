@@ -1,0 +1,26 @@
+{% set selected_user_id = none %}
+{% if form_data[id_prefix+'_uid'] %}
+  {% set selected_user_id = form_data[id_prefix+'_uid'] | int(None) %}
+{% endif %}
+{% if selected_user_id is none and data is not none and data.user_id %}
+  {% set selected_user_id = data.user_id %}
+{% endif %}
+{% if selected_user_id is none %}
+  {% set selected_user = None %}
+{% else %}
+  {% set selected_user = get_user_if_exists(selected_user_id) %}
+{% endif %}
+
+<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker" {% else %} class="form-control selectpicker" {% endif %} name="{{ id_prefix }}_uid" data-live-search="true">
+  <option value="" {% if selected_user is none %}selected="selected"{% endif %}>&mdash;</option>
+  {% if selected_user is not none and selected_user not in users %}
+    <option {% if selected_user.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ selected_user_id }}" selected="selected">
+      {{ selected_user.get_name(include_ref=True) }}
+    </option>
+  {% endif %}
+  {% for user in users %}
+      <option {% if user.component_id is not none %}data-icon="fa fa-share-alt"{% elif user.eln_import_id is not none %}data-icon="fa fa-file-archive-o"{% endif %} value="{{ user.id }}" {% if user == selected_user %}selected="selected"{% endif %}>
+        {{ user.get_name(include_ref=True) }}
+      </option>
+  {% endfor %}
+</select>

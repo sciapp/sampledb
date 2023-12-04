@@ -1,0 +1,6 @@
+<div class="input-group {% if is_template %} date-template {% else %} date {% endif %}" data-datetime="{% if id_prefix+'_datetime' in form_data %}{{ form_data[id_prefix+'_datetime'] | convert_datetime_input }}{% elif data is not none and 'utc_datetime' in data %}{{ data.utc_datetime | default_format_datetime }}{% elif 'default' in schema %}{{ schema.default | default_format_datetime }}{% elif mode != 'edit' %}{{ datetime.datetime.now(datetime.timezone.utc) | default_format_datetime }}{% endif %}">
+  <input type="text" class="form-control" name="{{ id_prefix }}_datetime"/>
+  <span class="input-group-addon">
+    <span class="glyphicon glyphicon-calendar"></span>
+  </span>
+</div>

@@ -1,0 +1,21 @@
+<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker" {% endif %} {% if data.text %} data-sampledb-default="{{ data.text }}" {% else %} data-sampledb-default="{{ schema['default'] }}" {% endif %} name="{{ id_prefix }}_text">
+  {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
+    {% if not is_required %}
+      <option value="">&mdash;</option>
+    {% endif %}
+  {% else %}
+    {% if not (is_template and schema['default'] and is_required) %}
+      <option selected="selected" value="">&mdash;</option>
+    {% endif %}
+  {% endif %}
+  {% for option in schema.choices %}
+    {% if id_prefix+'_text' in form_data %}
+      {% set is_selected = form_data[id_prefix+'_text'] == ( option | to_string_if_dict ) %}
+    {% elif data is not none and "text" in data %}
+      {% set is_selected = data.text == option %}
+    {% else %}
+      {% set is_selected = false %}
+    {% endif %}
+    <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" {% if is_selected %}selected="selected"{% endif %}>{{ option | get_translated_text }}</option>
+  {% endfor %}
+</select>

@@ -84,7 +84,7 @@ class ProjectInvitation:
     @property
     def expired(self) -> bool:
         expiration_datetime = self.utc_datetime + datetime.timedelta(seconds=flask.current_app.config['INVITATION_TIME_LIMIT'])
-        return bool(datetime.datetime.utcnow() >= expiration_datetime)
+        return bool(datetime.datetime.now(datetime.timezone.utc) >= expiration_datetime)
 
 
 def create_project(
@@ -400,7 +400,7 @@ def invite_user_to_project(
         project_id=project_id,
         user_id=user_id,
         inviter_id=inviter_id,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     db.session.add(invitation)
     db.session.commit()
@@ -416,7 +416,7 @@ def invite_user_to_project(
         secret_key=flask.current_app.config['SECRET_KEY']
     )
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
-    expiration_utc_datetime = datetime.datetime.utcnow() + datetime.timedelta(seconds=expiration_time_limit)
+    expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.project", project_id=project_id, token=token, _external=True)
     create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
 
@@ -892,7 +892,7 @@ def get_project_invitations(
         project_invitations_query = project_invitations_query.filter_by(accepted=False)
     if not include_expired_invitations:
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
-        expired_invitation_datetime = datetime.datetime.utcnow() - datetime.timedelta(seconds=expiration_time_limit)
+        expired_invitation_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=expiration_time_limit)
         project_invitations_query.filter(projects.ProjectInvitation.utc_datetime > expired_invitation_datetime)
     project_invitations = project_invitations_query.order_by(projects.ProjectInvitation.utc_datetime).all()
     if not project_invitations:

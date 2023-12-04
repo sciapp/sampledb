@@ -11,14 +11,14 @@
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
       Plotly.setPlotConfig({locale: 'de'})
     </script>
   {% endif %}
-  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }};
     const available_permissions = ['none', 'read', 'write', 'grant'];
@@ -1031,7 +1031,7 @@
   {% set allowed_language_ids = [] %}
   {% for language in all_languages %}
     {% if language.enabled_for_input %}
-      {{ allowed_language_ids.append(language.id) or '' }}
+      {% do allowed_language_ids.append(language.id) %}
     {% endif %}
   {% endfor %}
 
@@ -1472,14 +1472,14 @@
           {% set shares = get_shares_for_object(object.object_id) %}
           {% set components = [] %}
           {% if object.component is not none %}
-            {{ components.append(object.component) or '' }}
+            {% do components.append(object.component) %}
             <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared by %(component_name)s', component_name=object.component.get_name()) }}">
               <i class="fa fa-arrow-left"></i>&nbsp;<a href="{{ url_for('.component', component_id=object.component_id) }}">{{ object.component.get_name() }}</a>
             </span>
           {% endif %}
           {% for share in shares %}
             {% if share.component is not none %}
-              {{ components.append(share.component) or '' }}
+              {% do components.append(share.component) %}
               <span data-toggle="tooltip" data-placement="top" title="{{ _('Shared with %(component_name)s', component_name=share.component.get_name()) }}">
                 <i class="fa fa-arrow-right"></i>&nbsp;<a href="{{ url_for('.component', component_id=share.component_id) }}">{{ share.component.get_name() }}</a>
               </span>
@@ -1543,10 +1543,12 @@
           {% if object.display_properties[property_name] is not none %}
             {% set metadata_language = none %}
             {% set object_id = object.object_id %}
-            {% set id_prefix = 'object' + (object_id | string) + '__' + property_name + '_' %}
+            {% set id_prefix_root = "object" ~ object_id %}
+            {% set property_path = (property_name,) %}
+            {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
             {% set data = object.display_properties[property_name][0] %}
             {% set schema = object.display_properties[property_name][1] %}
-            {% set z = schema.update({'parent_style': 'table'}) %}
+            {% set container_style = 'table' %}
             <td>
             {% include "objects/view/any.html" %}
             </td>

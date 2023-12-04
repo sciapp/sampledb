@@ -1,0 +1,42 @@
+{% if data is not none and "file_id" in data and data.file_id is not none %}
+  {% if "component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID'] %}
+    {% set component_uuid = data.component_uuid %}
+  {% else %}
+    {% set component_uuid = none %}
+  {% endif %}
+  {% set ns = namespace(found=false) %}
+  {% for file in files %}
+    {% if (component_uuid is none and file.id == data.file_id) or (component_uuid is not none and file.fed_id == data.file_id) %}
+      {% set ns.found = true %}
+      {% if file.is_hidden %}
+        {{ _('Hidden File') }}
+      {% else %}
+        <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">{{ file.title }}</a>
+        {% if file | is_image and schema.preview %}
+          <br />
+          <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:{% if container_style %}100px{% else %}100%{% endif %};" class="show-fullscreen-image-preview"/>
+          <span class="fullscreen-image-preview">
+            <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
+            <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}">
+              <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
+            </a>
+            <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ _('Fullscreen Image Preview')}}">
+          </span>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+  {% if not ns.found %}
+    {% if component_uuid is none %}
+      {{ _('File') }} #{{ data.file_id }}
+    {% else %}
+      {% set component = get_component_by_uuid(component_uuid) %}
+      <i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ data.file_id }} @ {{ component.get_name() }}"></i> {{ _('File') }} #{{ data.file_id }} @ <a href="{{ url_for('.component', component_id=component.id) }}">{{ component.get_name() }}</a>
+      {% if not data.export_edit_note %}
+        <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ _('This file has not been shared.')}}</p>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% else %}
+    &mdash;
+{% endif %}

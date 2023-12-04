@@ -1487,6 +1487,44 @@ table.diff tr.striped {
 #activity_log_show_all_wrapper {
     margin: -1.5em 1.5em 1.5em 1.5em;
 }
+
 #activity_log_show_all_toggle {
+  display: none;
+}
+
+.array-template {
+    display: none !important;
+}
+
+#object-form-errors-show-more-content, #object-form-errors-show-more-input {
     display: none;
 }
+#object-form-errors-show-more-input:checked ~ #object-form-errors-show-more-content {
+    display: block;
+}
+#object-form-errors-show-more-input:checked ~ #object-form-errors-show-more-label {
+    display: none;
+}
+
+.form-delete-button {
+    margin-left: 4px;
+}
+
+.form-copy-button {
+    padding: 6px 9.2px;
+}
+
+textarea.text-multiline-field,
+textarea.text-markdown-field {
+    resize: vertical;
+}
+
+.form-list-property textarea.text-multiline-field{
+    min-height:2.5em;
+    height:4em;
+}
+
+.form-list-property textarea.text-markdown-field {
+    min-height: 171px;
+}
+

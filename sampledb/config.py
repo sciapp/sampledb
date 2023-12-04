@@ -111,6 +111,8 @@ def parse_configuration_values() -> None:
         'ENABLE_CONTENT_SECURITY_POLICY',
         'ENABLE_ELN_FILE_IMPORT',
         'ENABLE_FEDERATION_DISCOVERABILITY',
+        'ENABLE_WEBHOOKS_FOR_USERS',
+        'WEBHOOKS_ALLOW_HTTP'
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -289,7 +291,7 @@ def check_config(
                 file=sys.stderr
             )
         elif can_run:
-            engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'])
+            engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'], **config['SQLALCHEMY_ENGINE_OPTIONS'])
             with engine.begin() as connection:
                 user_table_exists = bool(connection.execute(sqlalchemy.text(
                     "SELECT * "
@@ -519,6 +521,9 @@ SECRET_KEY = generate_secret_key(num_bits=256)
 # see: https://flask.palletsprojects.com/en/2.2.x/security/#set-cookie-options
 SESSION_COOKIE_SAMESITE = 'Lax'
 
+# SQLAlchemy settings
+SQLALCHEMY_ENGINE_OPTIONS = {'connect_args': {"options": "-c timezone=utc"}}
+
 # LDAP settings
 LDAP_NAME = None
 LDAP_SERVER = None
@@ -641,6 +646,9 @@ ENABLE_FEDERATION_DISCOVERABILITY = True
 ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False
+
+ENABLE_WEBHOOKS_FOR_USERS = False
+WEBHOOKS_ALLOW_HTTP = False
 
 ENABLE_BACKGROUND_TASKS = False
 

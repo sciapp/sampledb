@@ -1,5 +1,7 @@
 {% extends "objects/view/base.html" %}
 
+{% set file_pickers = [] %}
+
 {% block stylesheets %}
     {{ super() }}
     <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-tagsinput/css/bootstrap-tagsinput.css') }}"/>
@@ -7,7 +9,9 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/inline-edit.css') }}"/>
 {% endblock %}
 
-{% set id_prefix = "object_" %}
+{% set id_prefix_root = "object" %}
+{% set property_path = () %}
+{% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
 
 {% block includes %}
     {# counter for plotly_chart_plots #}
@@ -17,7 +21,6 @@
     <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form" autocomplete="off">
         {{ form.csrf_token() }}
         <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
-        {% set id_prefix = "object_" %}
         {% include "objects/inline_edit/inline_edit_any.html" %}
     </form>
 {% endblock %}
@@ -33,15 +36,33 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
     <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
     <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
     <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
-    <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}"></script>
-    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}" type="module"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      fileEventHandler
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-file-form-handler.js') }}";
+    window.fileEventHandler = fileEventHandler;
+
+    import {
+      conditionalWrapper,
+      applySchemaConditions
+    } from "{{ fingerprinted_static('sampledb/js/conditional_wrapper.js') }}";
+    window.conditionalWrapper = conditionalWrapper;
+    window.applySchemaConditions = applySchemaConditions;
+
+    import {
+      setupImageDragAndDrop
+    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
+    window.setupImageDragAndDrop = setupImageDragAndDrop;
+  </script>
 
     <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-        window.mde_fields = [];
+        window.mdeFields = [];
 
         $(function () {
             $('.input-group.date').each(function () {
@@ -64,7 +85,7 @@
                 } else {
                     enabled_languages.push('en');
                 }
-                var parent_form_group = $(selectpicker).closest('.form-group');
+                var parent_form_group = $(selectpicker).closest('.form-group, .inline-edit-regular-property');
                 {% for language in languages %}
                     if (enabled_languages.includes("{{ language.lang_code }}")) {
                         parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
@@ -98,7 +119,7 @@
             select_language_selectpicker.each(function (_, selectpicker) {
                 updateSelectLanguage(selectpicker);
             });
-            $.each(window.conditional_wrapper_scripts, function () {
+            $.each(window.conditionalWrapperScripts, function () {
                 this();
             });
 
@@ -127,7 +148,6 @@
                     }
                 });
             });
-        });
 
         var tags = new Bloodhound({
             initialize: true,
@@ -170,6 +190,15 @@
                 }
             }.bind(tagsinput));
         });
-
+        applySchemaConditions(document);
+        // wrapped in an onload function to ensure this runs after the module has defined window.fileEventHandler
+        window.temporaryFileUploadURL = '{{ url_for(".temporary_file_upload") }}';
+        {% for file_picker in file_pickers %}
+          {
+            const input = $('input[type="file"][data-id-prefix="{{ file_picker["id_prefix"] }}"]');
+            input.on('change', fileEventHandler(input.data('context-id-token'), window.temporaryFileUploadURL));
+          }
+        {% endfor %}
+      });
     </script>
 {% endblock %}

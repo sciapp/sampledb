@@ -1,22 +1,9 @@
-<div class="row form-area" style="padding-right: 0.75em">
-  {# Label #}
-  {% include "objects/property_label.html" %}
-  {# View #}
-  <div class="view-switch col-md-9">
-    {% include "objects/view/timeseries_value.html" %}
-    <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
-    <div class="alert-upload-failed">
-      {{ _('Your input is not valid. Please check.') }}
-    </div>
-  </div>
-  {# Form #}
-  <div class="form-switch col-md-9">
-    {% include "objects/forms/form_timeseries_field.html" %}
-    {% if id_prefix+'_data' in errors %}
-      <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors[id_prefix+'_data'] }}</span>
-    {% endif %}
-    {% if 'note' in schema %}
-      <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>
-    {% endif %}
-  </div>
-</div>
+{% extends get_inline_edit_property_template(schema, container_style) %}
+
+{% block property_value %}
+  {% include "objects/values/timeseries_value.html" %}
+{% endblock %}
+
+{% block property_field %}
+  {% include 'objects/fields/timeseries_field.html' %}
+{% endblock %}

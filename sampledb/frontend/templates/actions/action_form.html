@@ -19,9 +19,22 @@
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('codemirror/js/codemirror.min.js') }}"></script>
   <script src="{{ fingerprinted_static('codemirror/js/javascript.min.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}"></script>
-  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}" type="module"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
+    import {
+      updateTranslationJSON,
+      setTranslationHandler,
+      updateTranslationLanguages,
+      initMarkdownField,
+      updateMarkdownField
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
+    window.updateTranslationJSON = updateTranslationJSON;
+    window.setTranslationHandler = setTranslationHandler;
+    window.updateTranslationLanguages = updateTranslationLanguages;
+    window.initMarkdownField = initMarkdownField;
+    window.updateMarkdownField = updateMarkdownField;
+  </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   // translations of error / help messages used in the static schema_editor.js
   window.schema_editor_translations = {
@@ -83,7 +96,7 @@
   {% endfor %}
   ];
 
-  window.mde_fields = {
+  window.mdeFields = {
     'descriptions': [],
     'short_descriptions': []
   };
@@ -381,7 +394,7 @@
 
     </div>
     <div class="form-group col-md-12" style="display: flex; justify-content: flex-end">
-        <a href="{{ url_for('.actions') }}" class="btn btn-default" style="width:20em">{{ _("Cancel") }}</a>
+        <a href="{% if current_action %}{{ url_for('.action', action_id=current_action.id) }}{% else %}{{ url_for('.actions') }}{% endif %}" class="btn btn-default" style="width:20em">{{ _("Cancel") }}</a>
         <button type="submit" name="action_submit" class="btn btn-primary" style="width:20em; margin-left: 0.5em">{{ _(submit_text) }}</button>
     </div>
   </form>

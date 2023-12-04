@@ -262,9 +262,9 @@ def markdown_action():
 
 @pytest.fixture
 def markdown_images(user):
-    markdown_image_1 = MarkdownImage(64 * 'a' + '.png', b'1', user.id, datetime.datetime.utcnow(), True)
-    markdown_image_2 = MarkdownImage(64 * 'b' + '.png', b'2', user.id, datetime.datetime.utcnow(), True)
-    markdown_image_3 = MarkdownImage(64 * 'c' + '.png', b'3', user.id, datetime.datetime.utcnow(), True)
+    markdown_image_1 = MarkdownImage(64 * 'a' + '.png', b'1', user.id, datetime.datetime.now(datetime.timezone.utc), True)
+    markdown_image_2 = MarkdownImage(64 * 'b' + '.png', b'2', user.id, datetime.datetime.now(datetime.timezone.utc), True)
+    markdown_image_3 = MarkdownImage(64 * 'c' + '.png', b'3', user.id, datetime.datetime.now(datetime.timezone.utc), True)
 
     db.session.add(markdown_image_1)
     db.session.add(markdown_image_2)
@@ -1153,7 +1153,7 @@ def _invalid_datetime_test(data, key, parse_function, mandatory=False):
     with pytest.raises(errors.InvalidDataExportError):
         parse_function(test_data)
 
-    dt = datetime.datetime.utcnow() + datetime.timedelta(days=2)
+    dt = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=2)
     test_data[key] = dt.strftime('%Y-%m-%d %H:%M:%S.%f')
     with pytest.raises(errors.InvalidDataExportError):
         parse_function(test_data)
@@ -1166,7 +1166,7 @@ def _invalid_datetime_test(data, key, parse_function, mandatory=False):
 
 def test_import_simple_object(component):
     object_data = deepcopy(OBJECT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
@@ -1179,12 +1179,12 @@ def test_import_simple_object(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_object_version(component):
     old_object_data = deepcopy(OBJECT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_object = parse_import_object(old_object_data, component)
 
     object_data = deepcopy(OBJECT_DATA)
@@ -1227,12 +1227,12 @@ def test_update_object_version(component):
     assert log_entries[1].component_id == object.component_id
     assert log_entries[1].object_id == object.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedObjectLogEntryType.UPDATE_OBJECT
     assert log_entries[0].component_id == object.component_id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -1251,7 +1251,7 @@ def test_parse_simple_object_invalid(component):
 def test_import_simple_object_no_schema(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['schema']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     del object_data['versions'][0]['data']
     _check_object(object_data, component)
@@ -1265,13 +1265,13 @@ def test_import_simple_object_no_schema(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_simple_object_no_data(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['data']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
@@ -1284,13 +1284,13 @@ def test_import_simple_object_no_data(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_simple_object_no_user(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['user']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
@@ -1303,13 +1303,13 @@ def test_import_simple_object_no_user(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_simple_object_no_action(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['action']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
@@ -1322,13 +1322,13 @@ def test_import_simple_object_no_action(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_simple_object_no_utc_datetime(component):
     object_data = deepcopy(OBJECT_DATA)
     del object_data['versions'][0]['utc_datetime']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     _check_object(object_data, component)
 
@@ -1341,7 +1341,7 @@ def test_import_simple_object_no_utc_datetime(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_markdown_image(component):
@@ -1514,7 +1514,7 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
         user_id=fed_user.id,
         data=fed_data,
         schema=simple_object.schema,
-        utc_datetime=datetime.datetime.utcnow()
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
     )
     object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=object_permissions.Permissions.READ)
     data = deepcopy(REFERENCES_TABLE_LIST_DATA_FRAME)
@@ -1605,7 +1605,7 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
             'version_id': 0,
             'data': data,
             'schema': REFERENCES_TABLE_LIST_SCHEMA,
-            'utc_datetime': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f'),
+            'utc_datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f'),
         }],
         'policy': {}
     }, component)
@@ -1613,7 +1613,7 @@ def test_import_object_table_list_references(component, user, fed_user, simple_o
 
 def test_import_action(component):
     action_data = deepcopy(ACTION_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(action_data)
 
@@ -1626,7 +1626,7 @@ def test_import_action(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_template_action_without_template(component):
@@ -1637,7 +1637,7 @@ def test_import_template_action_without_template(component):
         'template': {'action_id': 123, 'component_uuid': UUID_1},
         'properties': {'text': {'title': 'Template Text', 'type': 'text'}}
     }
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(action_data)
 
@@ -1650,7 +1650,7 @@ def test_import_template_action_without_template(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_template_action_with_template(component):
@@ -1669,7 +1669,7 @@ def test_import_template_action_with_template(component):
         'template': {'action_id': 123, 'component_uuid': UUID_1},
         'properties': {'text': {'title': 'Template Text', 'type': 'text'}}
     }
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     template_action = parse_import_action(template_data, component)
     action = parse_import_action(action_data, component)
     # resolve template reference for _check_action
@@ -1694,7 +1694,7 @@ def test_import_template_action_with_template(component):
     assert log_entries[0].component_id == template_action.component.id
     assert log_entries[0].action_id == template_action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
     log_entries = get_fed_action_log_entries_for_action(action.id)
     assert len(log_entries) == 1
@@ -1702,12 +1702,12 @@ def test_import_template_action_with_template(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_action(component):
     old_action_data = deepcopy(ACTION_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_action = parse_import_action(old_action_data, component)
 
     action_data = deepcopy(ACTION_DATA)
@@ -1762,12 +1762,12 @@ def test_update_action(component):
     assert log_entries[1].component_id == action.component.id
     assert log_entries[1].action_id == action.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedActionLogEntryType.UPDATE_ACTION
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -1803,7 +1803,7 @@ def test_parse_action_invalid_data():
 def test_import_action_no_description_is_markdown(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['description_is_markdown']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     action_data['description_is_markdown'] = False
     _check_action(action_data)
@@ -1817,13 +1817,13 @@ def test_import_action_no_description_is_markdown(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_no_short_description_is_markdown(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['short_description_is_markdown']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     action_data['short_description_is_markdown'] = False
     _check_action(action_data)
@@ -1837,13 +1837,13 @@ def test_import_action_no_short_description_is_markdown(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_no_instrument(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['instrument']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(action_data)
 
@@ -1856,13 +1856,13 @@ def test_import_action_no_instrument(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_no_schema(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['schema']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(action_data)
 
@@ -1875,13 +1875,13 @@ def test_import_action_no_schema(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_no_user(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['user']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(action_data)
 
@@ -1894,13 +1894,13 @@ def test_import_action_no_user(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_no_is_hidden(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['is_hidden']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     action_data['is_hidden'] = False
     _check_action(action_data)
@@ -1914,13 +1914,13 @@ def test_import_action_no_is_hidden(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_no_translations(component):
     action_data = deepcopy(ACTION_DATA)
     del action_data['translations']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(action_data)
 
@@ -1933,14 +1933,14 @@ def test_import_action_no_translations(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_type(component):
     # default action_types
     num_types = len(action_types.get_action_types())
     action_type_data = deepcopy(ACTION_TYPE_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action_type = parse_import_action_type(action_type_data, component)
     _check_action_type(action_type_data)
 
@@ -1953,7 +1953,7 @@ def test_import_action_type(component):
     assert log_entries[0].component_id == action_type.component_id
     assert log_entries[0].action_type_id == action_type.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_default_action_type(component):
@@ -1961,7 +1961,7 @@ def test_import_default_action_type(component):
         num_types = len(action_types.get_action_types())
         action_type_data = deepcopy(ACTION_TYPE_DATA)
         action_type_data['action_type_id'] = action_type_id
-        start_datetime = datetime.datetime.utcnow()
+        start_datetime = datetime.datetime.now(datetime.timezone.utc)
         action_type = parse_import_action_type(action_type_data, component)
         _check_action_type(action_type_data)
 
@@ -1974,7 +1974,7 @@ def test_import_default_action_type(component):
         assert log_entries[0].component_id == action_type.component_id
         assert log_entries[0].action_type_id == action_type.id
         assert log_entries[0].utc_datetime >= start_datetime
-        assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+        assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_action_type(component):
@@ -1982,7 +1982,7 @@ def test_update_action_type(component):
     num_types = len(action_types.get_action_types())
 
     old_action_type_data = deepcopy(ACTION_TYPE_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_action_type = parse_import_action_type(old_action_type_data, component)
 
     action_type_data = deepcopy(ACTION_TYPE_DATA)
@@ -2021,12 +2021,12 @@ def test_update_action_type(component):
     assert log_entries[1].component_id == action_type.component_id
     assert log_entries[1].action_type_id == action_type.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedActionTypeLogEntryType.UPDATE_ACTION_TYPE
     assert log_entries[0].component_id == action_type.component_id
     assert log_entries[0].action_type_id == action_type.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2064,7 +2064,7 @@ def test_parse_action_type_invalid_data(component):
 
 def test_import_instrument(component):
     instrument_data = deepcopy(INSTRUMENT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     instrument = parse_import_instrument(instrument_data, component)
     _check_instrument(instrument_data)
 
@@ -2077,12 +2077,12 @@ def test_import_instrument(component):
     assert log_entries[0].component_id == instrument.component.id
     assert log_entries[0].instrument_id == instrument.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_instrument(component):
     old_instrument_data = deepcopy(INSTRUMENT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_instrument = parse_import_instrument(old_instrument_data, component)
 
     instrument_data = deepcopy(INSTRUMENT_DATA)
@@ -2115,12 +2115,12 @@ def test_update_instrument(component):
     assert log_entries[1].component_id == instrument.component.id
     assert log_entries[1].instrument_id == instrument.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedInstrumentLogEntryType.UPDATE_INSTRUMENT
     assert log_entries[0].component_id == instrument.component.id
     assert log_entries[0].instrument_id == instrument.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2148,7 +2148,7 @@ def test_parse_instrument_invalid_data():
 def test_import_instrument_no_description_is_markdown(component):
     instrument_data = deepcopy(INSTRUMENT_DATA)
     del instrument_data['description_is_markdown']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     instrument = parse_import_instrument(instrument_data, component)
     instrument_data['description_is_markdown'] = False
     _check_instrument(instrument_data)
@@ -2162,13 +2162,13 @@ def test_import_instrument_no_description_is_markdown(component):
     assert log_entries[0].component_id == instrument.component.id
     assert log_entries[0].instrument_id == instrument.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_instrument_no_short_description_is_markdown(component):
     instrument_data = deepcopy(INSTRUMENT_DATA)
     del instrument_data['short_description_is_markdown']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     instrument = parse_import_instrument(instrument_data, component)
     instrument_data['short_description_is_markdown'] = False
     _check_instrument(instrument_data)
@@ -2182,13 +2182,13 @@ def test_import_instrument_no_short_description_is_markdown(component):
     assert log_entries[0].component_id == instrument.component.id
     assert log_entries[0].instrument_id == instrument.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_instrument_no_is_hidden(component):
     instrument_data = deepcopy(INSTRUMENT_DATA)
     del instrument_data['is_hidden']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     instrument = parse_import_instrument(instrument_data, component)
     instrument_data['is_hidden'] = False
     _check_instrument(instrument_data)
@@ -2202,13 +2202,13 @@ def test_import_instrument_no_is_hidden(component):
     assert log_entries[0].component_id == instrument.component.id
     assert log_entries[0].instrument_id == instrument.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_instrument_no_translations(component):
     instrument_data = deepcopy(INSTRUMENT_DATA)
     del instrument_data['translations']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     instrument = parse_import_instrument(instrument_data, component)
     _check_instrument(instrument_data)
 
@@ -2221,12 +2221,12 @@ def test_import_instrument_no_translations(component):
     assert log_entries[0].component_id == instrument.component.id
     assert log_entries[0].instrument_id == instrument.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_user(component):
     user_data = deepcopy(USER_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     user = parse_import_user(user_data, component)
     _check_user(user_data)
 
@@ -2239,12 +2239,12 @@ def test_import_user(component):
     assert log_entries[0].component_id == user.component.id
     assert log_entries[0].user_id == user.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_user(component):
     old_user_data = deepcopy(USER_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_user = parse_import_user(old_user_data, component)
 
     user_data = deepcopy(USER_DATA)
@@ -2265,12 +2265,12 @@ def test_update_user(component):
     assert log_entries[1].component_id == user.component.id
     assert log_entries[1].user_id == user.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedUserLogEntryType.UPDATE_USER
     assert log_entries[0].component_id == user.component.id
     assert log_entries[0].user_id == user.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2293,7 +2293,7 @@ def test_parse_user_invalid_data(component):
 def test_import_user_no_name(component):
     user_data = deepcopy(USER_DATA)
     del user_data['name']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     user = parse_import_user(user_data, component)
     _check_user(user_data)
 
@@ -2306,13 +2306,13 @@ def test_import_user_no_name(component):
     assert log_entries[0].component_id == user.component.id
     assert log_entries[0].user_id == user.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_user_no_email(component):
     user_data = deepcopy(USER_DATA)
     del user_data['email']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     user = parse_import_user(user_data, component)
     _check_user(user_data)
 
@@ -2325,13 +2325,13 @@ def test_import_user_no_email(component):
     assert log_entries[0].component_id == user.component.id
     assert log_entries[0].user_id == user.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_user_no_affiliation(component):
     user_data = deepcopy(USER_DATA)
     del user_data['affiliation']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     user = parse_import_user(user_data, component)
     _check_user(user_data)
 
@@ -2344,13 +2344,13 @@ def test_import_user_no_affiliation(component):
     assert log_entries[0].component_id == user.component.id
     assert log_entries[0].user_id == user.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_location_type(component):
     num_default_location_types = len(logic.locations.get_location_types())
     location_type_data = deepcopy(LOCATION_TYPE_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location_type = parse_import_location_type(location_type_data, component)
     _check_location_type(location_type_data)
 
@@ -2362,13 +2362,13 @@ def test_import_location_type(component):
     assert log_entries[0].component_id == location_type.component.id
     assert log_entries[0].location_type_id == location_type.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_location_type(component):
     num_default_location_types = len(logic.locations.get_location_types())
     old_location_type_data = deepcopy(LOCATION_TYPE_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_location_type = parse_import_location_type(old_location_type_data, component)
 
     location_type_data = deepcopy(LOCATION_TYPE_DATA)
@@ -2387,12 +2387,12 @@ def test_update_location_type(component):
     assert log_entries[1].component_id == location_type.component.id
     assert log_entries[1].location_type_id == location_type.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedLocationTypeLogEntryType.UPDATE_LOCATION_TYPE
     assert log_entries[0].component_id == location_type.component.id
     assert log_entries[0].location_type_id == location_type.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2410,7 +2410,7 @@ def test_parse_location_type_invalid_data():
 
 def test_import_location(component):
     location_data = deepcopy(LOCATION_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location = parse_import_location(location_data, component)
     _check_location(location_data)
 
@@ -2422,14 +2422,14 @@ def test_import_location(component):
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_location_unknown_language(component):
     location_data = deepcopy(LOCATION_DATA)
     location_data['name']['se'] = 'Plats'
     location_data['description']['se'] = 'Beskrivning'
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location = parse_import_location(location_data, component)
     _check_location(location_data)
 
@@ -2441,12 +2441,12 @@ def test_import_location_unknown_language(component):
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_location(component):
     old_location_data = deepcopy(LOCATION_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_location = parse_import_location(old_location_data, component)
 
     location_data = deepcopy(LOCATION_DATA)
@@ -2469,12 +2469,12 @@ def test_update_location(component):
     assert log_entries[1].component_id == location.component.id
     assert log_entries[1].location_id == location.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedLocationLogEntryType.UPDATE_LOCATION
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2492,7 +2492,7 @@ def test_parse_location_invalid_data():
 def test_import_location_no_name(component):
     location_data = deepcopy(LOCATION_DATA)
     del location_data['name']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location = parse_import_location(location_data, component)
     _check_location(location_data)
 
@@ -2504,13 +2504,13 @@ def test_import_location_no_name(component):
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_location_no_description(component):
     location_data = deepcopy(LOCATION_DATA)
     del location_data['description']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location = parse_import_location(location_data, component)
     _check_location(location_data)
 
@@ -2522,13 +2522,13 @@ def test_import_location_no_description(component):
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_location_no_parent_location(component):
     location_data = deepcopy(LOCATION_DATA)
     del location_data['parent_location']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location = parse_import_location(location_data, component)
     _check_location(location_data)
 
@@ -2541,13 +2541,13 @@ def test_import_location_no_parent_location(component):
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_location_no_location_type(component):
     location_data = deepcopy(LOCATION_DATA)
     del location_data['location_type']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     location = parse_import_location(location_data, component)
     _check_location(location_data)
 
@@ -2559,7 +2559,7 @@ def test_import_location_no_location_type(component):
     assert log_entries[0].component_id == location.component.id
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_locations_check_for_cyclic_dependencies():
@@ -2659,7 +2659,7 @@ def test_locations_check_for_cyclic_dependencies_cyclic_including_local_location
 
 def test_import_comment(simple_object, component):
     comment_data = deepcopy(COMMENT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     comment = parse_import_comment(comment_data, simple_object, component)
     _check_comment(comment_data)
 
@@ -2672,12 +2672,12 @@ def test_import_comment(simple_object, component):
     assert log_entries[0].component_id == comment.component.id
     assert log_entries[0].comment_id == comment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_comment(simple_object, component):
     old_comment_data = deepcopy(COMMENT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_comment = parse_import_comment(old_comment_data, simple_object, component)
 
     comment_data = deepcopy(COMMENT_DATA)
@@ -2701,12 +2701,12 @@ def test_update_comment(simple_object, component):
     assert log_entries[1].component_id == comment.component.id
     assert log_entries[1].comment_id == comment.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedCommentLogEntryType.UPDATE_COMMENT
     assert log_entries[0].component_id == comment.component.id
     assert log_entries[0].comment_id == comment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2726,7 +2726,7 @@ def test_parse_comment_invalid_data(simple_object, component):
 def test_import_comment_no_user(simple_object, component):
     comment_data = deepcopy(COMMENT_DATA)
     del comment_data['user']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     comment = parse_import_comment(comment_data, simple_object, component)
     _check_comment(comment_data)
 
@@ -2739,12 +2739,12 @@ def test_import_comment_no_user(simple_object, component):
     assert log_entries[0].component_id == comment.component.id
     assert log_entries[0].comment_id == comment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_file_url(simple_object, component):
     file_data = deepcopy(FILE_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     file = parse_import_file(file_data, simple_object, component)
     _check_file(file_data, simple_object.id)
 
@@ -2757,12 +2757,12 @@ def test_import_file_url(simple_object, component):
     assert log_entries[0].component_id == file.component_id
     assert log_entries[0].file_id == file.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_file_url(simple_object, component):
     old_file_data = deepcopy(FILE_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_file = parse_import_file(old_file_data, simple_object, component)
 
     file_data = deepcopy(FILE_DATA)
@@ -2786,12 +2786,12 @@ def test_update_file_url(simple_object, component):
     assert log_entries[1].component_id == file.component_id
     assert log_entries[1].file_id == file.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedFileLogEntryType.UPDATE_FILE
     assert log_entries[0].component_id == file.component_id
     assert log_entries[0].file_id == file.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2856,7 +2856,7 @@ def test_parse_file_invalid_data(simple_object, component):
 def test_parse_file_no_user(simple_object, component):
     file_data = deepcopy(FILE_DATA)
     del file_data['user']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     file = parse_import_file(file_data, simple_object, component)
     _check_file(file_data, simple_object.id)
 
@@ -2869,12 +2869,12 @@ def test_parse_file_no_user(simple_object, component):
     assert log_entries[0].component_id == file.component_id
     assert log_entries[0].file_id == file.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_location_assignment(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
 
@@ -2887,12 +2887,12 @@ def test_import_object_location_assignment(simple_object, component):
     assert log_entries[0].component_id == assignment.component.id
     assert log_entries[0].object_location_assignment_id == assignment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_update_object_location_assignment(simple_object, component):
     old_assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_assignment = parse_import_object_location_assignment(old_assignment_data, simple_object, component)
 
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
@@ -2924,12 +2924,12 @@ def test_update_object_location_assignment(simple_object, component):
     assert log_entries[1].component_id == assignment.component.id
     assert log_entries[1].object_location_assignment_id == assignment.id
     assert log_entries[1].utc_datetime >= start_datetime
-    assert log_entries[1].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[1].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].type == FedObjectLocationAssignmentLogEntryType.UPDATE_OBJECT_LOCATION_ASSIGNMENT
     assert log_entries[0].component_id == assignment.component.id
     assert log_entries[0].object_location_assignment_id == assignment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
 
 
@@ -2956,7 +2956,7 @@ def test_parse_object_location_assignment_invalid_data(simple_object):
 def test_import_object_location_assignment_no_user(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['user']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
 
@@ -2969,13 +2969,13 @@ def test_import_object_location_assignment_no_user(simple_object, component):
     assert log_entries[0].component_id == assignment.component.id
     assert log_entries[0].object_location_assignment_id == assignment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_location_assignment_no_responsible_user(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['responsible_user']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
 
@@ -2988,13 +2988,13 @@ def test_import_object_location_assignment_no_responsible_user(simple_object, co
     assert log_entries[0].component_id == assignment.component.id
     assert log_entries[0].object_location_assignment_id == assignment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_location_assignment_no_location(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['location']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
 
@@ -3007,13 +3007,13 @@ def test_import_object_location_assignment_no_location(simple_object, component)
     assert log_entries[0].component_id == assignment.component.id
     assert log_entries[0].object_location_assignment_id == assignment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_location_assignment_no_description(simple_object, component):
     assignment_data = deepcopy(OBJECT_LOCATION_ASSIGNMENT_DATA)
     del assignment_data['description']
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     assignment = parse_import_object_location_assignment(assignment_data, simple_object, component)
     _check_object_location_assignment(assignment_data)
 
@@ -3026,7 +3026,7 @@ def test_import_object_location_assignment_no_description(simple_object, compone
     assert log_entries[0].component_id == assignment.component.id
     assert log_entries[0].object_location_assignment_id == assignment.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_shared_object_preprocessor(complex_object, app):
@@ -3789,7 +3789,7 @@ def test_update_shares(component, users, groups, projects):
             assert sampledb.logic.shares.parse_object_share_import_status(kwargs['json']) is not None
         if 'json' in kwargs and 'utc_datetime' in kwargs['json']:
             utc_datetime_str = kwargs['json']['utc_datetime']
-            datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S')
+            datetime.datetime.strptime(utc_datetime_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
             kwargs['json']['utc_datetime'] = None
     assert request_data == [
         ((), {
@@ -3908,10 +3908,10 @@ def test_import_object_invalid_permission(component, user):
 
 def test_import_object_timestamp(component, user):
     object_data = deepcopy(OBJECT_DATA)
-    object_data['versions'][0]['utc_datetime'] = (datetime.datetime.utcnow() + datetime.timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA'] + 300)).strftime('%Y-%m-%d %H:%M:%S.%f')
+    object_data['versions'][0]['utc_datetime'] = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA'] + 300)).strftime('%Y-%m-%d %H:%M:%S.%f')
     with pytest.raises(errors.InvalidDataExportError):
         parse_import_object(object_data, component)
-    object_data['versions'][0]['utc_datetime'] = (datetime.datetime.utcnow() + datetime.timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA'] - 150)).strftime('%Y-%m-%d %H:%M:%S.%f')
+    object_data['versions'][0]['utc_datetime'] = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=flask.current_app.config['VALID_TIME_DELTA'] - 150)).strftime('%Y-%m-%d %H:%M:%S.%f')
     parse_import_object(object_data, component)
     _check_object(object_data, component)
 
@@ -4083,7 +4083,7 @@ def test_import_object_unknown_language(component):
             },
         }
     }
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     object = parse_import_object(object_data, component)
     _check_object(ref_object_data, component)
 
@@ -4096,7 +4096,7 @@ def test_import_object_unknown_language(component):
     assert log_entries[0].component_id == component.id
     assert log_entries[0].object_id == object.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_action_unknown_language(component):
@@ -4206,7 +4206,7 @@ def test_import_action_unknown_language(component):
         },
         'required': ['name']
     }
-    start_datetime = datetime.datetime.utcnow()
+    start_datetime = datetime.datetime.now(datetime.timezone.utc)
     action = parse_import_action(action_data, component)
     _check_action(ref_action_data)
 
@@ -4219,20 +4219,20 @@ def test_import_action_unknown_language(component):
     assert log_entries[0].component_id == action.component.id
     assert log_entries[0].action_id == action.id
     assert log_entries[0].utc_datetime >= start_datetime
-    assert log_entries[0].utc_datetime <= datetime.datetime.utcnow()
+    assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_import_object_import_status(component):
     object_data = deepcopy(OBJECT_DATA)
-    start_datetime = datetime.datetime.utcnow() - datetime.timedelta(seconds=1)
+    start_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
     object_data = logic.federation.objects.parse_object(object_data, component)
     import_status = {}
     object = logic.federation.objects.import_object(object_data, component, import_status=import_status)
     assert import_status['success']
     assert not import_status['notes']
     assert import_status['object_id'] == object.id
-    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') >= start_datetime
-    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.utcnow()
+    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc) >= start_datetime
+    assert datetime.datetime.strptime(import_status['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc) <= datetime.datetime.now(datetime.timezone.utc)
 
 
 def test_schema_entry_preprocessor(action):

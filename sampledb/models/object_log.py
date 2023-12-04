@@ -47,7 +47,7 @@ class ObjectLogEntry(Model):
     object_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Objects.object_id_column), nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
-    utc_datetime: Mapped[datetime.datetime] = db.Column(db.DateTime, nullable=False)
+    utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ObjectLogEntry"]]
@@ -65,9 +65,18 @@ class ObjectLogEntry(Model):
             object_id=object_id,
             user_id=user_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.utcnow()
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
         )
         self.user: typing.Optional['User'] = None
+
+    def __eq__(self, other: typing.Any) -> bool:
+        return isinstance(other, ObjectLogEntry) and \
+            self.id == other.id and \
+            self.type == other.type and \
+            self.object_id == other.object_id and \
+            self.user_id == other.user_id and \
+            self.data == other.data and \
+            self.utc_datetime == other.utc_datetime
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, type={self.type}, object_id={self.object_id}, user_id={self.user_id}, utc_datetime={self.utc_datetime}, data={self.data})>'
