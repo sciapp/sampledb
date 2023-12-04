@@ -1,6 +1,6 @@
 <div class="form-group row" style="padding-right: 0.75em">
-  <div data-id-prefix="{{ id_prefix }}" class="col-lg-4 col-lg-offset-8 div-apply-recipe" {% if not is_template %}data-toggle="tooltip"{% endif %} data-placement="left" title="" data-sampledb-recipes="{{ schema.recipes | stringify }}">
-    <select class="form-control" data-width="100%">
+  <div data-id-prefix="{{ id_prefix }}" style="padding-right: 15px" class="pull-right div-apply-recipe" {% if not is_template %}data-toggle="tooltip"{% endif %} data-placement="left" title="" data-sampledb-recipes="{{ schema.recipes | stringify }}">
+    <select class="form-control">
       {% for recipe in schema.recipes %}
         <option value="{{ loop.index0 }}">{{ recipe.name }}</option>
       {% endfor %}
