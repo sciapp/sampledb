@@ -69,7 +69,7 @@ function conditionalWrapper (idPrefix, schemaConditions) {
         conditionWrapperElement.hide();
         $(`[data-condition-replacement-for="${idPrefix}"]`).removeClass('hidden').show();
       }
-      $(`[data-condition-wrapper-for="${idPrefix}"] input, [data-condition-wrapper-for="${idPrefix}"] textarea, [data-condition-wrapper-for="${idPrefix}"] select`).prop('disabled', !allConditionsFulfilled).attr('data-sampledb-disabled-by-condition', !allConditionsFulfilled).trigger('conditions_state_changed.sampledb');
+      $(`[data-condition-wrapper-for="${idPrefix}"] input, [data-condition-wrapper-for="${idPrefix}"] textarea, [data-condition-wrapper-for="${idPrefix}"] select`).prop('disabled', !allConditionsFulfilled).attr('data-sampledb-disabled-by-condition', !allConditionsFulfilled).data('sampledb-disabled-by-condition', !allConditionsFulfilled).trigger('conditions_state_changed.sampledb');
       $(`[data-condition-wrapper-for="${idPrefix}"] select`).not('.template-select').selectpicker('refresh');
     }
 
@@ -116,10 +116,10 @@ function conditionalWrapper (idPrefix, schemaConditions) {
       } else if (condition.type === 'object_equals') {
         const objectElement = $(`[name="${parentIDPrefix}_${condition.property_name}__oid"]`);
         const evaluateCondition = function () {
-          setConditionEntry(!objectElement.prop('disabled') && (objectElement.val() === (condition.object_id !== null ? condition.object_id.toString() : '')));
+          setConditionEntry(!objectElement.data('sampledb-disabled-by-condition') && ((objectElement.val() === (condition.object_id !== null ? condition.object_id.toString() : '')) || (objectElement.val() === condition.object_id)));
           updateConditionsResult();
         };
-        objectElement.on('object_change.sampledb', evaluateCondition); // typeahead case
+        objectElement.on('object_change.sampledb', evaluateCondition); // typeahead cases
         objectElement.on('changed.bs.select', evaluateCondition);
         objectElement.on('loaded.bs.select', evaluateCondition);
         objectElement.on('refreshed.bs.select', evaluateCondition);
