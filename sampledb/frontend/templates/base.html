@@ -340,11 +340,14 @@
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(function() {
-      window.template_values = {};
+      window._template_values = {};
       $("script[type='application/json'][data-sampledb-template-value]").each(function (_, element) {
         const $element = $(element);
-        window.template_values[$element.data('sampledb-template-value')] = JSON.parse($element.text());
+        window._template_values[$element.data('sampledb-template-value')] = JSON.parse($element.text());
       });
+      window.getTemplateValue = function(name) {
+        return window._template_values[name];
+      }
     });
   </script>
   <script type="module" src="{{ fingerprinted_static('sampledb/js/base.js') }}"></script>

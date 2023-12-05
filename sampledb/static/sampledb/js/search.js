@@ -2,9 +2,9 @@
 /* eslint-env jquery */
 
 $(function () {
-  window.search_paths = window.template_values.search_paths.all;
-  window.search_paths_by_action = window.template_values.search_paths.by_action;
-  window.search_paths_by_action_type = window.template_values.search_paths.by_action_type;
+  window.search_paths = window.getTemplateValue('search_paths').all;
+  window.search_paths_by_action = window.getTemplateValue('search_paths').by_action;
+  window.search_paths_by_action_type = window.getTemplateValue('search_paths').by_action_type;
 
   const searchForm = $('#form-search-standalone');
   const searchInput = searchForm.find('#search-field');
@@ -15,9 +15,9 @@ $(function () {
    */
   function handleAdvancedSearchToggle () {
     if ($(advancedSearchToggle).prop('checked')) {
-      searchInput.attr('placeholder', window.template_values.translations.advanced_search);
+      searchInput.attr('placeholder', window.getTemplateValue('translations').advanced_search);
     } else {
-      searchInput.attr('placeholder', window.template_values.translations.search);
+      searchInput.attr('placeholder', window.getTemplateValue('translations').search);
     }
   }
   advancedSearchToggle.on('change', handleAdvancedSearchToggle);

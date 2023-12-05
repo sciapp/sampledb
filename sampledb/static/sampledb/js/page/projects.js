@@ -10,10 +10,10 @@ import {
 $(function () {
   window.translations = [];
 
-  window.languages = window.template_values.language_info.languages;
+  window.languages = window.getTemplateValue('language_info').languages;
   updateTranslationJSON();
 
-  $('.select-language').selectpicker('val', ['' + window.template_values.language_info.english_id]);
+  $('.select-language').selectpicker('val', ['' + window.getTemplateValue('language_info').english_id]);
 
   $('#select-language-name').on('change', function () {
     updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
@@ -31,7 +31,7 @@ $(function () {
     $('input').change();
     $('textarea').change();
     window.translations = $.map(window.translations, function (translation, index) {
-      if (translation.name === '' && translation.description === '' && translation.language_id !== window.template_values.language_info.english_id) {
+      if (translation.name === '' && translation.description === '' && translation.language_id !== window.getTemplateValue('language_info').english_id) {
         return null;
       }
       return translation;
@@ -40,7 +40,7 @@ $(function () {
     return $(this).find('.has-error').length === 0;
   });
 
-  if (window.template_values.language_info.show_create_form) {
+  if (window.getTemplateValue('language_info').show_create_form) {
     const createModal = $('#createProjectModal');
     createModal.removeClass('fade');
     createModal.modal('show');

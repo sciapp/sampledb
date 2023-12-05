@@ -11,7 +11,7 @@ $(function () {
     const numWriteGroups = $('.permissions_group_write:checked').length;
     const numGrantGroups = $('.permissions_group_grant:checked').length;
     if (numGrantUsers === 0 && (numReadUsers + numWriteUsers + numReadGroups + numWriteGroups + numGrantGroups) !== 0) {
-      $('#alert-no-grant-user').html(`<div class="alert alert-danger alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>${window.template_values.min_grant_user_warning}</div>`);
+      $('#alert-no-grant-user').html(`<div class="alert alert-danger alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>${window.getTemplateValue('min_grant_user_warning')}</div>`);
       return false;
     }
     if (numReadUsers + numWriteUsers + numGrantUsers + numReadGroups + numWriteGroups + numGrantGroups === 0) {
