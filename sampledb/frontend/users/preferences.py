@@ -96,27 +96,38 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     flask.session['confirm_data'] = {
                         'reason': 'activate_two_factor_authentication_method',
                         'user_id': method.user_id,
-                        'method_id': method.id,
                         'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
                     }
-                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
+                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication', method_id=method.id))
                 else:
                     activate_two_factor_authentication_method(method_id)
                     flask.flash(_('The two factor authentication method has been enabled.'), 'success')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'disable':
-                if method.data.get('type') == 'totp':
-                    flask.session['confirm_data'] = {
-                        'reason': 'deactivate_two_factor_authentication_method',
-                        'user_id': method.user_id,
-                        'method_id': method.id,
-                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
-                else:
+                flask.session['confirm_data'] = {
+                    'reason': 'deactivate_two_factor_authentication_method',
+                    'user_id': method.user_id,
+                    'method_to_deactivate_id': method.id,
+                    'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                }
+                usable_active_two_factor_authentication_methods = [
+                    other_method
+                    for other_method in two_factor_authentication_methods
+                    if other_method.active and other_method.data.get('type') in ('totp',)
+                ]
+                if len(usable_active_two_factor_authentication_methods) < 2:
+                    if usable_active_two_factor_authentication_methods:
+                        two_factor_authentication_method = usable_active_two_factor_authentication_methods[0]
+                        if two_factor_authentication_method.data.get('type') == 'totp':
+                            return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication', method_id=two_factor_authentication_method.id))
                     deactivate_two_factor_authentication_method(method_id)
                     flask.flash(_('The two factor authentication method has been disabled.'), 'success')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
+                return flask.render_template(
+                    'two_factor_authentication/pick.html',
+                    methods=usable_active_two_factor_authentication_methods,
+                    method_to_deactivate=method
+                )
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
     api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()

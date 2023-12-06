@@ -12,6 +12,9 @@
     <div class="form-group {% if setup_form.is_submitted() %}has-error{% endif %}">
       <input type="text" autocomplete="off" placeholder="{{ _('Verification Code') }}" name="{{ setup_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
     </div>
+    <div class="form-group">
+      <input type="text" placeholder="{{ _('Description') }}" name="{{ setup_form.description.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
+    </div>
     <div>
       <input type="submit" value="{{ _('Set Up') }}" class="btn btn-primary" style="width:100px;" />
       <a href="{{ url_for('.user_me_preferences') }}" class="btn btn-default" style="width:100px;">{{ _('Cancel') }}</a>

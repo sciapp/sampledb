@@ -11,7 +11,7 @@ import flask_login
 from flask_babel import _, lazy_gettext, refresh
 
 from .. import frontend
-from ...logic.authentication import login, get_active_two_factor_authentication_method
+from ...logic.authentication import login, get_active_two_factor_authentication_methods
 from ...logic.users import get_user, User
 from ...frontend.users_forms import SigninForm, SignoutForm
 from ... import login_manager
@@ -93,20 +93,26 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
                         ),
                         'warning'
                     )
-            two_factor_authentication_method = get_active_two_factor_authentication_method(user.id)
-            if two_factor_authentication_method is not None:
+            two_factor_authentication_methods = get_active_two_factor_authentication_methods(user.id)
+            if not two_factor_authentication_methods:
+                return complete_sign_in(user, is_for_refresh, form.remember_me.data)
+            flask.session['confirm_data'] = {
+                'reason': 'login',
+                'user_id': user.id,
+                'is_for_refresh': is_for_refresh,
+                'remember_me': form.remember_me.data,
+                'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            if len(two_factor_authentication_methods) == 1:
+                two_factor_authentication_method = two_factor_authentication_methods[0]
                 if two_factor_authentication_method.data.get('type') == 'totp':
-                    flask.session['confirm_data'] = {
-                        'reason': 'login',
-                        'user_id': two_factor_authentication_method.user_id,
-                        'method_id': two_factor_authentication_method.id,
-                        'is_for_refresh': is_for_refresh,
-                        'remember_me': form.remember_me.data,
-                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
+                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication', method_id=two_factor_authentication_method.id))
+                del flask.session['confirm_data']
                 return flask.render_template('two_factor_authentication/unsupported_method.html')
-            return complete_sign_in(user, is_for_refresh, form.remember_me.data)
+            return flask.render_template(
+                'two_factor_authentication/pick.html',
+                methods=two_factor_authentication_methods
+            )
         has_errors = True
     elif form.errors:
         has_errors = True

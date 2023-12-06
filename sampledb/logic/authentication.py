@@ -454,18 +454,21 @@ def is_login_available(login: str) -> bool:
 
 def _create_two_factor_authentication_method(
         user_id: int,
-        data: typing.Dict[str, typing.Any]
+        data: typing.Dict[str, typing.Any],
+        active: bool = False
 ) -> TwoFactorAuthenticationMethod:
     """
-    Create a new two factor authentication method.
+    Create a new two-factor authentication method.
 
     :param user_id: the ID of an existing user
     :param data: the method data
+    :param active: whether the new method should be active
     :return: the newly created method
     """
     two_factor_authentication_method = TwoFactorAuthenticationMethod(
         user_id=user_id,
-        data=data
+        data=data,
+        active=active
     )
     db.session.add(two_factor_authentication_method)
     db.session.commit()
@@ -473,71 +476,75 @@ def _create_two_factor_authentication_method(
 
 
 def get_two_factor_authentication_methods(
-        user_id: int
+        user_id: int,
+        active: typing.Optional[bool] = None
 ) -> typing.List[TwoFactorAuthenticationMethod]:
     """
-    Get all two factor authentication methods for a user.
+    Get all two-factor authentication methods for a user.
 
     :param user_id: the ID of an existing user
+    :param active: whether the queries need to be active, or None
     :return: a list containing all methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
+    query = TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id)
+    if active is not None:
+        query = query.filter_by(active=active)
+    return query.order_by(TwoFactorAuthenticationMethod.id).all()
 
 
-def get_active_two_factor_authentication_method(
+def get_active_two_factor_authentication_methods(
         user_id: int
-) -> typing.Optional[TwoFactorAuthenticationMethod]:
+) -> typing.Sequence[TwoFactorAuthenticationMethod]:
     """
-    Get the currently active two factor authentication method, or None.
+    Get the currently active two-factor authentication methods.
 
     :param user_id: the ID of an existing user
-    :return: the active method
+    :return: a list of active methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
+    return get_two_factor_authentication_methods(user_id=user_id, active=True)
+
+
+def _set_two_factor_authentication_method_active(
+        id: int,
+        active: bool
+) -> None:
+    method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
+    if method is None:
+        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
+    method.active = active
+    db.session.add(method)
+    db.session.commit()
 
 
 def activate_two_factor_authentication_method(
         id: int
 ) -> None:
     """
-    Activate a two factor authentication method and deactivate all others.
+    Activate a two-factor authentication method.
 
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
     """
-    activated_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
-    if activated_method is None:
-        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
-    activated_method.active = True
-    for method in TwoFactorAuthenticationMethod.query.filter_by(user_id=activated_method.user_id).all():
-        if method.id != id:
-            method.active = False
-        db.session.add(method)
-    db.session.commit()
+    _set_two_factor_authentication_method_active(id, active=True)
 
 
 def deactivate_two_factor_authentication_method(
         id: int
 ) -> None:
     """
-    Deactivate a two factor authentication method.
+    Deactivate a two-factor authentication method.
 
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
     """
-    deactivated_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
-    if deactivated_method is None:
-        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
-    deactivated_method.active = False
-    db.session.add(deactivated_method)
-    db.session.commit()
+    _set_two_factor_authentication_method_active(id, active=False)
 
 
 def delete_two_factor_authentication_method(
         id: int
 ) -> None:
     """
-    Delete a two factor authentication method.
+    Delete a two-factor authentication method.
 
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
@@ -551,19 +558,22 @@ def delete_two_factor_authentication_method(
 
 def create_totp_two_factor_authentication_method(
         user_id: int,
-        secret: str
+        secret: str,
+        description: str = ''
 ) -> TwoFactorAuthenticationMethod:
     """
-    Create a new TOTP-based two factor authentication method.
+    Create a new TOTP-based two-factor authentication method.
 
     :param user_id: the ID of an existing user
     :param secret: the TOTP secret
+    :param description: a description
     :return: the newly created method
     """
     return _create_two_factor_authentication_method(
         user_id=user_id,
         data={
             'type': 'totp',
-            'secret': secret
+            'secret': secret,
+            'description': description.strip()
         }
     )
