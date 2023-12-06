@@ -6,26 +6,26 @@ $(function () {
   $('[data-toggle="tooltip"]').tooltip();
 
   // update timezone for users who use the auto_tz setting
-  if (window.getTemplateValue('current_user').is_authenticated) {
-    if (window.getTemplateValue('current_user').settings.auto_tz) {
+  if (window.getTemplateValue('current_user.is_authenticated')) {
+    if (window.getTemplateValue('current_user.settings.auto_tz')) {
       const tz = moment.tz.guess(true);
-      if (tz !== window.getTemplateValue('current_user').settings.timezone) {
-        $.post(window.getTemplateValue('current_user').timezone_url, {
+      if (tz !== window.getTemplateValue('current_user.settings.timezone')) {
+        $.post(window.getTemplateValue('current_user.timezone_url'), {
           timezone: tz,
-          csrf_token: window.getTemplateValue('current_user').timezone_csrf_token
+          csrf_token: window.getTemplateValue('current_user.timezone_csrf_token')
         });
       }
     }
   }
 
   // localize datetimes for anonymous users if the timezone has not been set in the config
-  if (window.getTemplateValue('current_user').has_timezone) {
+  if (window.getTemplateValue('current_user.has_timezone')) {
     $('span[data-utc-datetime]').each(function (_, element) {
       const utcDatetimeStr = $(element).data('utcDatetime');
       const utcDatetime = moment.utc(utcDatetimeStr);
       const localDatetime = utcDatetime.local();
-      const langCode = window.getTemplateValue('current_user').language.lang_code;
-      const format = window.getTemplateValue('current_user').language.datetime_format_moment_output;
+      const langCode = window.getTemplateValue('current_user.language.lang_code');
+      const format = window.getTemplateValue('current_user.language.datetime_format_moment_output');
       element.innerText = localDatetime.locale(langCode).format(format);
     });
   }
@@ -68,9 +68,9 @@ $(function () {
   // update text for search field when advanced search is toggled
   $('#input-search-advanced').on('change', function () {
     if (this.checked) {
-      $('#input-search').attr('placeholder', window.getTemplateValue('translations').advanced_search);
+      $('#input-search').attr('placeholder', window.getTemplateValue('translations.advanced_search'));
     } else {
-      $('#input-search').attr('placeholder', window.getTemplateValue('translations').advanced_search);
+      $('#input-search').attr('placeholder', window.getTemplateValue('translations.search'));
     }
   }).change();
 
@@ -89,7 +89,7 @@ $(function () {
   });
 
   // show urgent notifications
-  if (window.getTemplateValue('notifications').num_urgent_notifications) {
+  if (window.getTemplateValue('notifications.num_urgent_notifications')) {
     const urgentNotificationModal = $('#urgentNotificationModal');
     urgentNotificationModal.on('shown.bs.modal', function () {
       urgentNotificationModal.focus();
@@ -106,7 +106,7 @@ $(function () {
         urgentNotificationModal.modal();
       }, 60 * 60 * 1000);
     });
-    let hideNotifications = window.getTemplateValue('notifications').hide_notifications;
+    let hideNotifications = window.getTemplateValue('notifications.hide_notifications');
     let hidingTime = Cookies.get('sampledb-hide-urgent-notifications-until');
     if (hidingTime) {
       hidingTime = moment(hidingTime);

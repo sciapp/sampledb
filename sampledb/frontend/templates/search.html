@@ -192,18 +192,19 @@
   </form>
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("search_paths.all", search_paths) %}
+  {% do set_template_value("search_paths.by_action", search_paths_by_action) %}
+  {% do set_template_value("search_paths.by_action_type", search_paths_by_action_type) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
-  <script type="application/json" data-sampledb-template-value="search_paths">
-    {
-      "all": {{ search_paths | tojson }},
-      "by_action": {{ search_paths_by_action | tojson }},
-      "by_action_type": {{ search_paths_by_action_type | tojson }}
-    }
-  </script>
   <script src="{{ fingerprinted_static('sampledb/js/search.js') }}" type="module"></script>
 {% endblock %}

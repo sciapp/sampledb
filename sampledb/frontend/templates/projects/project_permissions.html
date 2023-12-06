@@ -7,12 +7,15 @@
     <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("min_grant_user_warning", _('At least one user needs to have grant permissions for this project group.')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="application/json" data-sampledb-template-value="min_grant_user_warning">
-    {{ _('At least one user needs to have grant permissions for this project group.') | tojson }}
-  </script>
   <script type="module" src="{{ fingerprinted_static('sampledb/js/page/project_permissions.js') }}"></script>
 {% endblock %}
 

@@ -165,25 +165,21 @@
 <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% for lang in languages %}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+
+  {% do set_template_value("show_create_form", show_create_form) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="application/json" data-sampledb-template-value="language_info">
-    {
-      "languages": [
-        {% for lang in languages %}
-            {
-                "id": "{{ lang.id }}",
-                "name": "{{ lang.names | get_translated_text }}",
-                "lang_code": "{{ lang.lang_code }}"
-            }{% if not loop.last %},{% endif %}
-        {% endfor %}
-      ],
-      "english_id": {{ ENGLISH.id }}
-    }
-  </script>
-  <script type="application/json" data-sampledb-template-value="show_create_form">
-    {{ show_create_form | tojson }}
-  </script>
   <script src="{{ fingerprinted_static('sampledb/js/page/projects.js') }}" type="module"></script>
 {% endblock %}

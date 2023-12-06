@@ -1583,3 +1583,26 @@ def is_deep_diff_possible(
         if schema.get('style') == 'table' and schema.get('items', {}).get('type') != previous_schema.get('items', {}).get('type'):
             return False
     return True
+
+
+@JinjaFunction()
+def set_template_value(
+        name: str,
+        value: typing.Any
+) -> None:
+    if not hasattr(flask.g, 'template_values'):
+        flask.g.template_values = {}
+    if flask.g.template_values is None:
+        raise errors.TemplateValueError()
+    if name in flask.g.template_values:
+        raise errors.TemplateValueError()
+    flask.g.template_values[name] = value
+
+
+@JinjaFunction()
+def get_template_values() -> typing.Any:
+    if not hasattr(flask.g, 'template_values'):
+        flask.g.template_values = {}
+    template_values = flask.g.template_values
+    flask.g.template_values = None
+    return template_values

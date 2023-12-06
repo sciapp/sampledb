@@ -298,59 +298,46 @@
 </div>
 {% endif %}
 
- {% block scripts %}
+
+{% block template_values %}
+  {% do set_template_value("translations.search", _('Search…')) %}
+  {% do set_template_value("translations.advanced_search", _('Advanced Search…')) %}
+
+  {% do set_template_value("current_user.is_authenticated", current_user.is_authenticated) %}
+  {% if current_user.is_authenticated %}
+    {% with user_settings = get_user_settings() %}
+      {% do set_template_value("current_user.settings.auto_tz", user_settings['AUTO_TZ']) %}
+      {% do set_template_value("current_user.settings.timezone", user_settings['TIMEZONE']) %}
+    {% endwith %}
+    {% do set_template_value("current_user.timezone_url", url_for('frontend.set_timezone')) %}
+    {% do set_template_value("current_user.timezone_csrf_token", TimezoneForm().csrf_token.current_token) %}
+  {% endif %}
+  {% do set_template_value("current_user.has_timezone", current_user.timezone is none) %}
+  {% do set_template_value("current_user.language.lang_code", get_user_language(current_user).lang_code) %}
+  {% do set_template_value("current_user.language.datetime_format_moment_output", get_user_language(current_user).datetime_format_moment_output) %}
+
+  {% do set_template_value("notifications.num_urgent_notifications", num_urgent_notifications) %}
+  {% do set_template_value("notifications.hide_notifications", "hide_notifications" in request.args) %}
+
+  {% set template_values = get_template_values() %}
+  <script type="application/json" id="sampledb-template-values">
+    {{ template_values | tojson }}
+  </script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+    window._template_values = JSON.parse(document.getElementById("sampledb-template-values").innerText);
+    window.getTemplateValue = function(name) {
+      return window._template_values[name];
+    }
+  </script>
+{% endblock %}
+
+{% block scripts %}
   <script src="{{ fingerprinted_static('jquery/js/jquery.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap/js/bootstrap.min.js') }}"></script>
   <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
   <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
-
-
-  <script type="application/json" data-sampledb-template-value="translations">
-    {
-      "search": "{{ _('Search…') }}",
-      "advanced_search": "{{ _('Advanced Search…') }}"
-    }
-  </script>
-  <script type="application/json" data-sampledb-template-value="current_user">
-    {
-      "is_authenticated": {{ current_user.is_authenticated | tojson }},
-      {% if current_user.is_authenticated %}
-        "settings": {
-          {% with user_settings = get_user_settings() %}
-            "auto_tz": {{ user_settings['AUTO_TZ'] | tojson }},
-            "timezone": {{ user_settings['TIMEZONE'] | tojson }}
-          {% endwith %}
-        },
-        "timezone_url": "{{ url_for('frontend.set_timezone') }}",
-        "timezone_csrf_token": "{{ TimezoneForm().csrf_token.current_token }}",
-      {% endif %}
-      "has_timezone": {{ (current_user.timezone is none) | tojson }},
-      "language": {
-        "lang_code": "{{ get_user_language(current_user).lang_code }}",
-        "datetime_format_moment_output": "{{ get_user_language(current_user).datetime_format_moment_output }}"
-      }
-    }
-  </script>
-  <script type="application/json" data-sampledb-template-value="notifications">
-    {
-      "num_urgent_notifications": {{ num_urgent_notifications | tojson }},
-      "hide_notifications": {{ ("hide_notifications" in request.args) | tojson }}
-    }
-  </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    $(function() {
-      window._template_values = {};
-      $("script[type='application/json'][data-sampledb-template-value]").each(function (_, element) {
-        const $element = $(element);
-        window._template_values[$element.data('sampledb-template-value')] = JSON.parse($element.text());
-      });
-      window.getTemplateValue = function(name) {
-        return window._template_values[name];
-      }
-    });
-  </script>
   <script type="module" src="{{ fingerprinted_static('sampledb/js/base.js') }}"></script>
-  {% endblock %}
+{% endblock %}
 </body>
 </html>
