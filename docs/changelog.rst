@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.25.2
+--------------
+
+Currently in development.
+
+- Fixed bool fields with defaults
+
 Version 0.25.1
 --------------
 
