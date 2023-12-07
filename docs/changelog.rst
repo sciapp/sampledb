@@ -4,7 +4,7 @@ Changelog
 Version 0.25.1
 --------------
 
-Currently in development.
+Released on December 7th, 2023.
 
 - Fixed choice_equals conditions nested in any, all or not conditions
 
