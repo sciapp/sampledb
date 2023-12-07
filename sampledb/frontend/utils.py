@@ -1504,6 +1504,10 @@ def encode_choices(condition_list: list[dict[str, typing.Any]]) -> list[dict[str
     for condition in condition_list:
         if condition['type'] == 'choice_equals':
             condition['encoded_choice'] = base64encode(condition['choice'])
+        if condition['type'] == 'not':
+            condition['condition'] = encode_choices([condition['condition']])[0]
+        if condition['type'] in ('any', 'all'):
+            condition['conditions'] = encode_choices(condition['conditions'])
     return condition_list
 
 

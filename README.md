@@ -65,7 +65,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.25.0
+    sciapp/sampledb:0.25.1
 ```
 
 ### Once it's started
