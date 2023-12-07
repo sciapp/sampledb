@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.25.2
+--------------
+
+Released on December 7th, 2023.
+
+- Fixed bool fields with defaults
+
 Version 0.25.1
 --------------
 
