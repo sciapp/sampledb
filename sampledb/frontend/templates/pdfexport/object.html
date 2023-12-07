@@ -3,7 +3,7 @@
   <li>{{ _('This object has been imported without data.') }}</li>
 {% elif 'propertyOrder' not in schema %}
   {% for property_name in schema['properties'] %}
-    {% if property_name not in schema['propertyOrder'] %}
+    {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
       {% with schema = schema['properties'][property_name] %}
       {% with data = data[property_name] %}
         <li>{{ schema.title | get_translated_text(metadata_language) }}: {% include "pdfexport/any.html" %}</li>
@@ -13,6 +13,7 @@
   {% endfor %}
 {% else %}
   {% for property_name in schema['propertyOrder'] %}
+    {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
       {% with schema = schema['properties'][property_name] %}
       {% if data is not none and property_name in data %}
         {% set data = data[property_name] %}
@@ -21,9 +22,10 @@
       {% endif %}
         <li>{{ schema.title | get_translated_text(metadata_language) }}: {% include "pdfexport/any.html" %}</li>
       {% endwith %}
+    {% endif %}
   {% endfor %}
   {% for property_name in schema['properties'] %}
-    {% if property_name not in schema['propertyOrder'] %}
+    {% if property_name not in schema['propertyOrder'] and data | are_conditions_fulfilled(schema.properties[property_name]) %}
       {% with schema = schema['properties'][property_name] %}
       {% if data is not none and property_name in data %}
         {% set data = data[property_name] %}
