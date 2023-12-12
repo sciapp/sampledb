@@ -340,6 +340,68 @@ def check_config(
 
         show_config_info = True
 
+    if can_run:
+        engine = sqlalchemy.create_engine(config['SQLALCHEMY_DATABASE_URI'], **config['SQLALCHEMY_ENGINE_OPTIONS'])
+        with engine.begin() as connection:
+            files_table_with_data_exists = bool(connection.execute(sqlalchemy.text(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_name = 'files' AND column_name = 'data'
+                """
+            )).scalar())
+            if files_table_with_data_exists:
+                local_files_exist = bool(connection.execute(sqlalchemy.text(
+                    """
+                    SELECT COUNT(*)
+                    FROM files
+                    WHERE data->>'storage' = 'local'
+                    """
+                )).scalar())
+            else:
+                # if there is no file table with a data column, local files may
+                # still exist from a version of SampleDB before the data column
+                # was added
+                local_files_exist = bool(connection.execute(sqlalchemy.text(
+                    """
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
+                    WHERE table_name = 'files' AND column_name = 'original_file_name'
+                    """
+                )).scalar())
+            if local_files_exist:
+                print(
+                    ansi_color(
+                        'There are files with "local" storage. These are not '
+                        'supported anymore starting with SampleDB 0.26.0. '
+                        'Please move them to "database" storage using an '
+                        'earlier version of SampleDB. For more information, '
+                        'see: '
+                        'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage'
+                        '\n',
+                        color=31
+                    ),
+                    file=sys.stderr
+                )
+                can_run = False
+                show_config_info = True
+            elif 'FILE_STORAGE_PATH' in defined_config_keys:
+                print(
+                    ansi_color(
+                        'FILE_STORAGE_PATH is set, however files with "local" storage '
+                        'are not supported anymore starting with SampleDB 0.26.0. '
+                        'Please unset the FILE_STORAGE_PATH config variable and do '
+                        'not mount a directory for local file storage. For more '
+                        'information, see: '
+                        'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage'
+                        '\n',
+                        color=31
+                    ),
+                    file=sys.stderr
+                )
+                can_run = False
+                show_config_info = True
+
     if config['PDFEXPORT_LOGO_URL'] is not None:
         logo_url = config['PDFEXPORT_LOGO_URL']
         logo_image = None
@@ -430,25 +492,6 @@ def check_config(
             )
             can_run = False
             show_config_info = True
-
-    try:
-        os.makedirs(config['FILE_STORAGE_PATH'], exist_ok=True)
-        test_file_path = os.path.join(config['FILE_STORAGE_PATH'], '.exists')
-        if os.path.exists(test_file_path):
-            os.remove(test_file_path)
-        with open(test_file_path, 'ab'):
-            # open the file to check that it exists
-            pass
-    except Exception:
-        print(
-            ansi_color(
-                'Failed to write to the directory given as FILE_STORAGE_PATH.\n',
-                color=31
-            ),
-            file=sys.stderr
-        )
-        can_run = False
-        show_config_info = True
 
     if not isinstance(config['INVITATION_TIME_LIMIT'], int) or config['INVITATION_TIME_LIMIT'] <= 0:
         print(
@@ -554,11 +597,6 @@ SERVICE_LEGAL_NOTICE = None
 SERVICE_PRIVACY_POLICY = None
 SERVICE_ACCESSIBILITY = None
 SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
-
-# location for storing files
-# in this directory, per-action subdirectories will be created, containing
-# per-object subdirectories, containing the actual files
-FILE_STORAGE_PATH = '/tmp/sampledb/'
 
 # a map of file extensions and the MIME types they should be handled as
 # this is used to determine which user uploaded files should be served as

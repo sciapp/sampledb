@@ -8,6 +8,7 @@ Currently in development.
 
 - Show changes during schema upgrade
 - Added support for FIDO2 passkeys for authentication and two-factor authentication
+- Fully remove support for files with local storage (see: https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage)
 
 Version 0.25.3
 --------------

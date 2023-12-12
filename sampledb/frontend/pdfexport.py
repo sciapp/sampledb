@@ -68,7 +68,7 @@ def create_pdfexport(
                 object_id = int(object_id_str)
                 file_id = int(file_id_str)
                 file = exported_files[(object_id, file_id)]
-                if file.storage in {'local', 'database'} and not file.is_hidden:
+                if file.storage == 'database' and not file.is_hidden:
                     for file_extension, mime_type in IMAGE_FORMATS.items():
                         if file.original_file_name.endswith(file_extension):
                             image_data = file.open(read_only=True).read()

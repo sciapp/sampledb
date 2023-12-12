@@ -238,7 +238,7 @@ class File(Resource):
                 "message": f"file {file_id} of object {object_id} does not exist"
             }, 404
 
-        if file.storage in {'database', 'local'}:
+        if file.storage == 'database':
             try:
                 with file.open() as f:
                     response = flask.make_response(f.read())

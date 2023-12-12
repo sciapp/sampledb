@@ -34,7 +34,7 @@ def object_files(object_id: int) -> FlaskResponseT:
         for file in files:
             if file.is_hidden:
                 continue
-            if file.storage in {'local', 'database', 'federation'}:
+            if file.storage in {'database', 'federation'}:
                 try:
                     file_bytes = file.open(read_only=True).read()
                 except Exception:
@@ -59,7 +59,7 @@ def object_file(object_id: int, file_id: int) -> FlaskResponseT:
         return flask.abort(404)
     if file.is_hidden:
         return flask.abort(403)
-    if file.storage in ('local', 'database', 'federation'):
+    if file.storage in ('database', 'federation'):
         if 'preview' in flask.request.args:
             file_extension = os.path.splitext(file.original_file_name)[1]
             mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)

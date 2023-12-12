@@ -146,7 +146,7 @@ def get_export_infos(
                     'uploader_id': file_info.user_id,
                     'utc_datetime': file_info.utc_datetime.replace(tzinfo=None).isoformat() if file_info.utc_datetime else None
                 })
-                if file_info.storage in {'local', 'database'}:
+                if file_info.storage == 'database':
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
                     try:
                         file_bytes = file_info.open(read_only=True).read()

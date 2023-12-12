@@ -212,8 +212,7 @@ def test_get_user_valid_api_token(user):
         assert sampledb.logic.dataverse_export.get_user_valid_api_token('mock://dataverse', user.id) == '00000000-0000-0000-0000-000000000000'
 
 
-def test_export(user, action, tmpdir, app):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
+def test_export(user, action, app):
 
     data = {
         'name': {
@@ -240,8 +239,8 @@ def test_export(user, action, tmpdir, app):
         }
     }
     object = sampledb.logic.objects.create_object(user_id=user.id, action_id=action.id, data=data)
-    example_file = sampledb.logic.files.create_local_file(object.id, user.id, 'example1.txt', lambda io: io.write(b'Example Content'))
-    sampledb.logic.files.create_local_file(object.id, user.id, 'example2.txt', lambda io: io.write(b'Example Content'))
+    example_file = sampledb.logic.files.create_database_file(object.id, user.id, 'example1.txt', lambda io: io.write(b'Example Content'))
+    sampledb.logic.files.create_database_file(object.id, user.id, 'example2.txt', lambda io: io.write(b'Example Content'))
     app.config['SERVER_NAME'] = 'http://localhost'
     with app.app_context():
         with requests_mock.Mocker() as m:

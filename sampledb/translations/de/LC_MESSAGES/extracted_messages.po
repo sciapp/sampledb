@@ -3575,13 +3575,6 @@ msgid "Warnings"
 msgstr "Warnungen"
 
 msgid ""
-"Some objects have files in <code>local</code> storage, please move them "
-"to <code>database</code> storage."
-msgstr ""
-"Manche Objekte haben Dateien mit <code>local</code> Speicherung, bitte "
-"übertragen Sie diese zu <code>database</code> Speicherung."
-
-msgid ""
 "There are numeric tags, please evaluate if these are necessary for your "
 "use case and set the configuration value <code>ENABLE_NUMERIC_TAGS</code>"
 " to <code>False</code> to disable them."

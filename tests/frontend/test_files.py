@@ -25,9 +25,7 @@ def user(flask_server):
     return user
 
 
-def test_get_file_list(flask_server, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_get_file_list(flask_server, user):
     schema = {
         'title': 'Example Object',
         'type': 'object',
@@ -61,7 +59,7 @@ def test_get_file_list(flask_server, user, tmpdir):
     file_table = document.find('table', {'id': 'file_table'})
     assert file_table is None
 
-    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_database_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
     assert r.status_code == 200
@@ -73,9 +71,7 @@ def test_get_file_list(flask_server, user, tmpdir):
     assert any('example_file.txt' in str(cell) for cell in file_table_rows[0].find_all('td'))
 
 
-def test_get_file(flask_server, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_get_file(flask_server, user):
     schema = {
         'title': 'Example Object',
         'type': 'object',
@@ -98,16 +94,14 @@ def test_get_file(flask_server, user, tmpdir):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
 
-    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_database_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}/files/0'.format(object.id))
     assert r.status_code == 200
     assert r.content == 'Example Content'.encode('utf-8')
 
 
-def test_upload_files(flask_server, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_upload_files(flask_server, user):
     schema = {
         'title': 'Example Object',
         'type': 'object',
@@ -171,9 +165,7 @@ def test_upload_files(flask_server, user, tmpdir):
     assert file2.open().read().decode('utf-8') == 'Second Example Content'
 
 
-def test_update_file_information(flask_server, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_update_file_information(flask_server, user):
     schema = {
         'title': 'Example Object',
         'type': 'object',
@@ -202,7 +194,7 @@ def test_update_file_information(flask_server, user, tmpdir):
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
 
-    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_database_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}'.format(object.id))
     assert r.status_code == 200
@@ -220,9 +212,7 @@ def test_update_file_information(flask_server, user, tmpdir):
     assert file.description == 'Description'
 
 
-def test_update_url_file_information(flask_server, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_update_url_file_information(flask_server, user):
     schema = {
         'title': 'Example Object',
         'type': 'object',
@@ -288,9 +278,7 @@ def test_update_url_file_information(flask_server, user, tmpdir):
     assert file.description == 'Description'
 
 
-def test_download_zip_archive(flask_server, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_download_zip_archive(flask_server, user):
     schema = {
         'title': 'Example Object',
         'type': 'object',
@@ -322,7 +310,7 @@ def test_download_zip_archive(flask_server, user, tmpdir):
     zip_file = zipfile.ZipFile(zip_bytes)
     assert zip_file.namelist() == []
 
-    sampledb.logic.files.create_local_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
+    sampledb.logic.files.create_database_file(object.id, user.id, 'example_file.txt', lambda stream: stream.write('Example Content'.encode('utf-8')))
 
     r = session.get(flask_server.base_url + 'objects/{}/files/'.format(object.id))
     assert r.status_code == 200

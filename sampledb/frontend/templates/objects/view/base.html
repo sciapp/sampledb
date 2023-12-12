@@ -394,7 +394,7 @@
                 <span class="pull-right" style="display:flex;">
                   <button type="button" class="btn btn-link button-file-info" style="padding-top:0;padding-bottom:0;" data-file_id="{{ file.id }}" data-toggle="tooltip" data-placement="top" title="{{ _('View information') }}"><i class="fa fa-info"></i></button>
                   {% with file_component = get_component_or_none(file.component_id) %}
-                  {% if file.storage == 'local' or file.storage == 'database' or file.storage == 'federation' %}
+                  {% if file.storage == 'database' or file.storage == 'federation' %}
                   {% if file | has_preview and (file.storage != 'federation' or (file_component and file_component.address and file_component.import_token_available)) %}
                   <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" class="btn btn-link" style="padding-top:0;padding-bottom:0;" data-toggle="tooltip" data-placement="top" title="{{ _('View preview') }}"><i class="fa fa-search"></i></a>
                   {% else %}
@@ -477,7 +477,7 @@
                     <div class="col-sm-3 text-right"><label>{{ _('Title') }}:</label></div>
                     <div class="col-sm-9"><span class="file-info-view-mode">{% if file.title %}{{ file.title }}{% else %}&mdash;{% endif %}</span><span class="file-info-edit-mode"><input type="text" name="{{ file_information_form.title.name }}" class="input-file-info-title" style="width:100%" value="{% if file.title %}{{ file.title }}{% endif %}"></span></div>
                   </div>
-                  {% if file.storage == 'local' or file.storage == 'database' %}
+                  {% if file.storage == 'database' %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Name') }}:</label></div>
                     <div class="col-sm-9">{{ file.original_file_name }}</div>
@@ -570,7 +570,7 @@
                     <button type="button" class="btn btn-primary file-info-view-mode button-file-info-edit">{{ _('Edit') }}</button>
                     <button type="button" class="btn btn-default file-info-view-mode button-file-info-hide">{{ _('Hide') }}</button>
                     {% endif %}
-                    {% if file.storage == 'local' or file.storage == 'database' %}
+                    {% if file.storage == 'database' %}
                     <a href="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}" class="btn btn-default file-info-view-mode">{{ _('Download') }}</a>
                     {% endif %}
                     <button type="button" class="btn btn-default file-info-view-mode" data-dismiss="modal">{{ _('Close') }}</button>
@@ -1228,7 +1228,7 @@
               <td>
                 {% for file in files %}
                   {% if file.id == object_log_entry.data['file_id'] %}
-                    {% if file.storage == 'local' or file.storage == 'database' %}
+                    {% if file.storage == 'database' %}
                       {% if action is not none and action.type.enable_files %}
                         {{ _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) }}
                       {% else %}
@@ -1623,7 +1623,7 @@
               <table style="width: 100%">
                 <tbody>
                   {% for file in files %}
-                    {% if not (file.is_hidden or file.storage in ['local', 'url']) %}
+                    {% if not (file.is_hidden or file.storage == 'url') %}
                       <tr>
                         <td><label>{{ file.title }}</label></td>
                         <td><label><input type="checkbox" id="data_download_service_checked_{{ file.id }}" name="data_download_service_checked_{{ file.id }}" data-object-id="{{ file.id }}"></label></td>

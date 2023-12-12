@@ -1062,363 +1062,357 @@ def save_cropped_screenshot_as_file(driver, file_name, box):
     image.save(file_name)
 
 
-temp_dir = tempfile.mkdtemp()
-try:
-    os.mkdir(os.path.join(temp_dir, 'uploaded_files'))
-    sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
-    app = tests.conftest.create_app()
-    with app.app_context():
-        user = sampledb.models.User(
-            name="Example User",
-            email="example@example.com",
-            type=sampledb.models.UserType.PERSON
-        )
-        sampledb.db.session.add(user)
-        sampledb.db.session.commit()
-        assert user.id is not None
+app = tests.conftest.create_app()
+with app.app_context():
+    user = sampledb.models.User(
+        name="Example User",
+        email="example@example.com",
+        type=sampledb.models.UserType.PERSON
+    )
+    sampledb.db.session.add(user)
+    sampledb.db.session.commit()
+    assert user.id is not None
 
-        admin = sampledb.models.User(
-            name="Administrator",
-            email="admin@example.com",
-            type=sampledb.models.UserType.PERSON
-        )
-        admin.is_admin = True
-        sampledb.db.session.add(admin)
-        sampledb.db.session.commit()
-        assert user.id is not None
+    admin = sampledb.models.User(
+        name="Administrator",
+        email="admin@example.com",
+        type=sampledb.models.UserType.PERSON
+    )
+    admin.is_admin = True
+    sampledb.db.session.add(admin)
+    sampledb.db.session.commit()
+    assert user.id is not None
 
-        other_user = sampledb.models.User(
-            name="Other User",
-            email="example@example.com",
-            type=sampledb.models.UserType.PERSON
-        )
-        sampledb.db.session.add(other_user)
-        sampledb.db.session.commit()
-        assert other_user.id is not None
+    other_user = sampledb.models.User(
+        name="Other User",
+        email="example@example.com",
+        type=sampledb.models.UserType.PERSON
+    )
+    sampledb.db.session.add(other_user)
+    sampledb.db.session.commit()
+    assert other_user.id is not None
 
-        group = sampledb.logic.groups.create_group(
-            name={"en": "Example Group"},
-            description={"en": "An example group for the documentation"},
-            initial_user_id=user.id
-        )
+    group = sampledb.logic.groups.create_group(
+        name={"en": "Example Group"},
+        description={"en": "An example group for the documentation"},
+        initial_user_id=user.id
+    )
 
-        group1 = sampledb.logic.groups.create_group(
-            name={"en": "Work Group 1"},
-            description={"en": ""},
-            initial_user_id=user.id
-        )
-        group2 = sampledb.logic.groups.create_group(
-            name={"en": "Work Group 2"},
-            description={"en": ""},
-            initial_user_id=user.id
-        )
-        group3 = sampledb.logic.groups.create_group(
-            name={"en": "Demo University Students"},
-            description={"en": ""},
-            initial_user_id=user.id
-        )
-        category1 = sampledb.logic.group_categories.create_group_category(
-            name={
-                'en': 'Internal Groups'
-            }
-        )
-        category2 = sampledb.logic.group_categories.create_group_category(
-            name={
-                'en': 'External Groups'
-            }
-        )
-        category3 = sampledb.logic.group_categories.create_group_category(
-            name={
-                'en': 'Demo Institute'
-            },
-            parent_category_id=category1.id
-        )
-        sampledb.logic.group_categories.set_basic_group_categories(group1.id, (category3.id,))
-        sampledb.logic.group_categories.set_basic_group_categories(group2.id, (category3.id,))
-        sampledb.logic.group_categories.set_basic_group_categories(group3.id, (category2.id,))
-
-        project = sampledb.logic.projects.create_project(
-            name={"en": "Example Project"},
-            description={"en": "An example project for the documentation"},
-            initial_user_id=user.id
-        )
-
-        instrument = sampledb.logic.instruments.create_instrument()
-        sampledb.logic.instrument_translations.set_instrument_translation(sampledb.models.Language.ENGLISH,
-                                                                          instrument.id,
-                                                                          name="Example Instrument",
-                                                                          description="This is an example instrument for the documentation.")
-        schema = {
-            'title': "Sample Information",
-            'type': 'object',
-            'properties': {
-                'name': {
-                    'title': 'Sample Name',
-                    'type': 'text'
-                },
-                'tags': {
-                    'title': 'Tags',
-                    'type': 'tags'
-                },
-                'hazards': {
-                    'title': 'GHS Hazards',
-                    'type': 'hazards'
-                }
-            },
-            'workflow_view': {
-                'referencing_action_type_id': -98
-            },
-            'required': ['name', 'hazards'],
-            'propertyOrder': ['name', 'tags', 'hazards']
+    group1 = sampledb.logic.groups.create_group(
+        name={"en": "Work Group 1"},
+        description={"en": ""},
+        initial_user_id=user.id
+    )
+    group2 = sampledb.logic.groups.create_group(
+        name={"en": "Work Group 2"},
+        description={"en": ""},
+        initial_user_id=user.id
+    )
+    group3 = sampledb.logic.groups.create_group(
+        name={"en": "Demo University Students"},
+        description={"en": ""},
+        initial_user_id=user.id
+    )
+    category1 = sampledb.logic.group_categories.create_group_category(
+        name={
+            'en': 'Internal Groups'
         }
-        instrument_action = sampledb.logic.actions.create_action(
-            action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
-            schema=schema,
-            instrument_id=instrument.id
-        )
+    )
+    category2 = sampledb.logic.group_categories.create_group_category(
+        name={
+            'en': 'External Groups'
+        }
+    )
+    category3 = sampledb.logic.group_categories.create_group_category(
+        name={
+            'en': 'Demo Institute'
+        },
+        parent_category_id=category1.id
+    )
+    sampledb.logic.group_categories.set_basic_group_categories(group1.id, (category3.id,))
+    sampledb.logic.group_categories.set_basic_group_categories(group2.id, (category3.id,))
+    sampledb.logic.group_categories.set_basic_group_categories(group3.id, (category2.id,))
 
-        sampledb.logic.action_translations.set_action_translation(
-            sampledb.models.Language.ENGLISH,
-            instrument_action.id,
-            name="Sample Creation",
-            description="This is an example action"
-        )
-        sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
-        data = {
+    project = sampledb.logic.projects.create_project(
+        name={"en": "Example Project"},
+        description={"en": "An example project for the documentation"},
+        initial_user_id=user.id
+    )
+
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instrument_translations.set_instrument_translation(sampledb.models.Language.ENGLISH,
+                                                                      instrument.id,
+                                                                      name="Example Instrument",
+                                                                      description="This is an example instrument for the documentation.")
+    schema = {
+        'title': "Sample Information",
+        'type': 'object',
+        'properties': {
             'name': {
-                '_type': 'text',
-                'text': 'Demo Sample'
+                'title': 'Sample Name',
+                'type': 'text'
             },
             'tags': {
-                '_type': 'tags',
-                'tags': ['demo', 'other_tag', 'ombe-1']
+                'title': 'Tags',
+                'type': 'tags'
             },
             'hazards': {
-                '_type': 'hazards',
-                'hazards': [5, 9]
+                'title': 'GHS Hazards',
+                'type': 'hazards'
             }
-        }
-        object = sampledb.logic.objects.create_object(
-            action_id=instrument_action.id,
-            data=data,
-            user_id=user.id,
-            previous_object_id=None,
-            schema=schema
-        )
+        },
+        'workflow_view': {
+            'referencing_action_type_id': -98
+        },
+        'required': ['name', 'hazards'],
+        'propertyOrder': ['name', 'tags', 'hazards']
+    }
+    instrument_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema,
+        instrument_id=instrument.id
+    )
 
-        measurement_schema = {
-            'title': "Measurement",
-            'type': 'object',
-            'properties': {
-                'name': {
-                    'title': 'Measurement Name',
-                    'type': 'text'
-                },
-                'sample': {
-                    'title': 'Sample',
-                    'type': 'object_reference',
-                    'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
-                },
-                'value': {
-                    'title': 'Value',
-                    'type': 'quantity',
-                    'units': 'nm'
-                },
-                'notes': {
-                    'title': 'Notes',
-                    'type': 'text',
-                    'markdown': True
-                },
-                'tags': {
-                    'title': 'Tags',
-                    'type': 'tags'
-                }
-            },
-            'required': ['name', 'sample', 'value'],
-            'propertyOrder': ['name', 'sample', 'value', 'notes', 'tags'],
-            'workflow_show_more': ['notes', 'sample']
+    sampledb.logic.action_translations.set_action_translation(
+        sampledb.models.Language.ENGLISH,
+        instrument_action.id,
+        name="Sample Creation",
+        description="This is an example action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(instrument_action.id, sampledb.models.Permissions.READ)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Demo Sample'
+        },
+        'tags': {
+            '_type': 'tags',
+            'tags': ['demo', 'other_tag', 'ombe-1']
+        },
+        'hazards': {
+            '_type': 'hazards',
+            'hazards': [5, 9]
         }
-        measurement_action = sampledb.logic.actions.create_action(
-            action_type_id=sampledb.models.ActionType.MEASUREMENT,
-            schema=measurement_schema,
-            instrument_id=instrument.id
-        )
+    }
+    object = sampledb.logic.objects.create_object(
+        action_id=instrument_action.id,
+        data=data,
+        user_id=user.id,
+        previous_object_id=None,
+        schema=schema
+    )
 
-        sampledb.logic.action_translations.set_action_translation(
-            sampledb.models.Language.ENGLISH,
-            measurement_action.id,
-            name="Measurement",
-            description="This is an example measurement action"
-        )
-        sampledb.logic.action_permissions.set_action_permissions_for_all_users(measurement_action.id, sampledb.models.Permissions.READ)
-        measurement_data = {
+    measurement_schema = {
+        'title': "Measurement",
+        'type': 'object',
+        'properties': {
             'name': {
-                'text': 'Meas-Demo-1',
-                '_type': 'text'
+                'title': 'Measurement Name',
+                'type': 'text'
             },
             'sample': {
-                'object_id': object.object_id,
-                '_type': 'object_reference'
+                'title': 'Sample',
+                'type': 'object_reference',
+                'action_type_id': sampledb.models.ActionType.SAMPLE_CREATION
             },
             'value': {
-                'magnitude': 1.2,
-                'units': 'nm',
-                '_type': 'quantity',
+                'title': 'Value',
+                'type': 'quantity',
+                'units': 'nm'
             },
             'notes': {
-                'text': '## Measurement Notes\n* P1\n* P2',
-                'is_markdown': True,
-                '_type': 'text'
+                'title': 'Notes',
+                'type': 'text',
+                'markdown': True
             },
             'tags': {
-                'tags': ['demo', 'other_tag', 'meas'],
-                '_type': 'tags'
+                'title': 'Tags',
+                'type': 'tags'
             }
+        },
+        'required': ['name', 'sample', 'value'],
+        'propertyOrder': ['name', 'sample', 'value', 'notes', 'tags'],
+        'workflow_show_more': ['notes', 'sample']
+    }
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.MEASUREMENT,
+        schema=measurement_schema,
+        instrument_id=instrument.id
+    )
+
+    sampledb.logic.action_translations.set_action_translation(
+        sampledb.models.Language.ENGLISH,
+        measurement_action.id,
+        name="Measurement",
+        description="This is an example measurement action"
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(measurement_action.id, sampledb.models.Permissions.READ)
+    measurement_data = {
+        'name': {
+            'text': 'Meas-Demo-1',
+            '_type': 'text'
+        },
+        'sample': {
+            'object_id': object.object_id,
+            '_type': 'object_reference'
+        },
+        'value': {
+            'magnitude': 1.2,
+            'units': 'nm',
+            '_type': 'quantity',
+        },
+        'notes': {
+            'text': '## Measurement Notes\n* P1\n* P2',
+            'is_markdown': True,
+            '_type': 'text'
+        },
+        'tags': {
+            'tags': ['demo', 'other_tag', 'meas'],
+            '_type': 'tags'
         }
-        measurement_object_1 = sampledb.logic.objects.create_object(
-            action_id=measurement_action.id,
-            data=measurement_data,
+    }
+    measurement_object_1 = sampledb.logic.objects.create_object(
+        action_id=measurement_action.id,
+        data=measurement_data,
+        user_id=user.id,
+        previous_object_id=None,
+        schema=measurement_schema
+    )
+
+    measurement_data['name']['text'] = 'Meas-Demo-2'
+    measurement_data['value']['magnitude'] = 1.5
+    del measurement_data['value']['magnitude_in_base_units']
+    measurement_data['notes']['text'] = ''
+    measurement_object_2 = sampledb.logic.objects.create_object(
+        action_id=measurement_action.id,
+        data=measurement_data,
+        user_id=user.id,
+        previous_object_id=None,
+        schema=measurement_schema
+    )
+
+    component = sampledb.logic.components.add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', 'Example SampleDB', 'https://example.com', 'Example SampleDB instance.')
+    sampledb.logic.component_authentication.add_token_authentication(component.id, secrets.token_hex(32), 'Export Token')
+    sampledb.logic.component_authentication.add_own_token_authentication(component.id, secrets.token_hex(32), 'Import Token')
+    component2 = sampledb.logic.components.add_component('4d0d72c2-9447-45f4-9997-362416e7cd44', 'Other SampleDB', None, None)
+    sampledb.logic.component_authentication.add_token_authentication(component2.id, secrets.token_hex(32), 'Export Token')
+    sampledb.logic.component_authentication.add_own_token_authentication(component2.id, secrets.token_hex(32), 'Import Token')
+    sampledb.logic.components.add_or_update_component_info(
+        uuid=component2.uuid,
+        name=component2.name,
+        address=None,
+        discoverable=True,
+        distance=2,
+        source_uuid=component.uuid
+    )
+    sampledb.logic.components.add_or_update_component_info(
+        uuid='e1b93d06-fcaf-4f24-b674-9de86d8cfdc7',
+        name='Third SampleDB',
+        address=None,
+        discoverable=True,
+        distance=2,
+        source_uuid=component.uuid
+    )
+
+    campus = sampledb.logic.locations.create_location(
+        name={"en": "Campus A"},
+        description={"en": ""},
+        parent_location_id=None,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    building_1 = sampledb.logic.locations.create_location(
+        name={"en": "Building 1"},
+        description={"en": ""},
+        parent_location_id=campus.id,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    room_42 = sampledb.logic.locations.create_location(
+        name={"en": "Room 42"},
+        description={"en": "Demo Laboratory"},
+        parent_location_id=building_1.id,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    room_43 = sampledb.logic.locations.create_location(
+        name={"en": "Room 43"},
+        description={"en": "Demo Storage Room"},
+        parent_location_id=building_1.id,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    sampledb.logic.locations.create_location(
+        name={"en": "Box Demo-1"},
+        description={"en": ""},
+        parent_location_id=room_43.id,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    sampledb.logic.locations.create_location(
+        name={"en": "Box Demo-2"},
+        description={"en": ""},
+        parent_location_id=room_43.id,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    sampledb.logic.locations.create_location(
+        name={"en": "Box Demo-3"},
+        description={"en": ""},
+        parent_location_id=room_43.id,
+        user_id=user.id,
+        type_id=sampledb.logic.locations.LocationType.LOCATION
+    )
+    for location in sampledb.logic.locations.get_locations():
+        sampledb.logic.location_permissions.set_user_location_permissions(
+            location_id=location.id,
             user_id=user.id,
-            previous_object_id=None,
-            schema=measurement_schema
+            permissions=sampledb.models.Permissions.GRANT
         )
 
-        measurement_data['name']['text'] = 'Meas-Demo-2'
-        measurement_data['value']['magnitude'] = 1.5
-        del measurement_data['value']['magnitude_in_base_units']
-        measurement_data['notes']['text'] = ''
-        measurement_object_2 = sampledb.logic.objects.create_object(
-            action_id=measurement_action.id,
-            data=measurement_data,
-            user_id=user.id,
-            previous_object_id=None,
-            schema=measurement_schema
-        )
-
-        component = sampledb.logic.components.add_component('28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', 'Example SampleDB', 'https://example.com', 'Example SampleDB instance.')
-        sampledb.logic.component_authentication.add_token_authentication(component.id, secrets.token_hex(32), 'Export Token')
-        sampledb.logic.component_authentication.add_own_token_authentication(component.id, secrets.token_hex(32), 'Import Token')
-        component2 = sampledb.logic.components.add_component('4d0d72c2-9447-45f4-9997-362416e7cd44', 'Other SampleDB', None, None)
-        sampledb.logic.component_authentication.add_token_authentication(component2.id, secrets.token_hex(32), 'Export Token')
-        sampledb.logic.component_authentication.add_own_token_authentication(component2.id, secrets.token_hex(32), 'Import Token')
-        sampledb.logic.components.add_or_update_component_info(
-            uuid=component2.uuid,
-            name=component2.name,
-            address=None,
-            discoverable=True,
-            distance=2,
-            source_uuid=component.uuid
-        )
-        sampledb.logic.components.add_or_update_component_info(
-            uuid='e1b93d06-fcaf-4f24-b674-9de86d8cfdc7',
-            name='Third SampleDB',
-            address=None,
-            discoverable=True,
-            distance=2,
-            source_uuid=component.uuid
-        )
-
-        campus = sampledb.logic.locations.create_location(
-            name={"en": "Campus A"},
-            description={"en": ""},
-            parent_location_id=None,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        building_1 = sampledb.logic.locations.create_location(
-            name={"en": "Building 1"},
-            description={"en": ""},
-            parent_location_id=campus.id,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        room_42 = sampledb.logic.locations.create_location(
-            name={"en": "Room 42"},
-            description={"en": "Demo Laboratory"},
-            parent_location_id=building_1.id,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        room_43 = sampledb.logic.locations.create_location(
-            name={"en": "Room 43"},
-            description={"en": "Demo Storage Room"},
-            parent_location_id=building_1.id,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        sampledb.logic.locations.create_location(
-            name={"en": "Box Demo-1"},
-            description={"en": ""},
-            parent_location_id=room_43.id,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        sampledb.logic.locations.create_location(
-            name={"en": "Box Demo-2"},
-            description={"en": ""},
-            parent_location_id=room_43.id,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        sampledb.logic.locations.create_location(
-            name={"en": "Box Demo-3"},
-            description={"en": ""},
-            parent_location_id=room_43.id,
-            user_id=user.id,
-            type_id=sampledb.logic.locations.LocationType.LOCATION
-        )
-        for location in sampledb.logic.locations.get_locations():
-            sampledb.logic.location_permissions.set_user_location_permissions(
-                location_id=location.id,
-                user_id=user.id,
-                permissions=sampledb.models.Permissions.GRANT
-            )
-
-        os.makedirs('docs/static/img/generated', exist_ok=True)
-        options = Options()
-        options.add_argument("--lang=en-US")
-        # disable Chrome sandbox for root in GitLab CI
-        if 'CI' in os.environ and getpass.getuser() == 'root':
-            options.add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-gpu')
-            options.add_argument('--disable-dev-shm-usage')
-        with contextlib.contextmanager(tests.conftest.create_flask_server)(app) as flask_server:
-            with contextlib.closing(Chrome(options=options)) as driver:
-                time.sleep(5)
-                object_list(flask_server.base_url, driver)
-                object_data(flask_server.base_url, driver)
-                create_object_form(flask_server.base_url, driver)
-                schema_editor2(flask_server.base_url, driver)
-                federation_permissions(flask_server.base_url, driver)
-                federation_user_alias(flask_server.base_url, driver)
-                api_token_list(flask_server.base_url, driver)
-                action_list(flask_server.base_url, driver)
-                object_list_filters(flask_server.base_url, driver)
-                object_permissions2(flask_server.base_url, driver)
-                object_permissions(flask_server.base_url, driver)
-                default_permissions(flask_server.base_url, driver)
-                guest_invitation(flask_server.base_url, driver)
-                action(flask_server.base_url, driver, instrument_action)
-                hazards_input(flask_server.base_url, driver, instrument_action)
-                tags_input(flask_server.base_url, driver, object)
-                workflow(flask_server.base_url, driver, object, measurement_object_1, measurement_object_2)
-                comments(flask_server.base_url, driver, object)
-                activity_log(flask_server.base_url, driver, object)
-                files(flask_server.base_url, driver, object)
-                file_information(flask_server.base_url, driver, object)
-                labels(flask_server.base_url, driver, object)
-                advanced_search_by_property(flask_server.base_url, driver, object)
-                advanced_search_visualization(flask_server.base_url, driver)
-                location_assignments(flask_server.base_url, driver, object, room_42)
-                locations(flask_server.base_url, driver)
-                schema_editor(flask_server.base_url, driver)
-                unread_notification_icon(flask_server.base_url, driver)
-                disable_schema_editor(flask_server.base_url, driver)
-                translations(flask_server.base_url, driver)
-                other_database(flask_server.base_url, driver)
-                group_categories(flask_server.base_url, driver, [category1, category2, category3])
-                search_query_builder(flask_server.base_url, driver)
-                federation_graph(flask_server.base_url, driver)
-finally:
-    shutil.rmtree(temp_dir)
+    os.makedirs('docs/static/img/generated', exist_ok=True)
+    options = Options()
+    options.add_argument("--lang=en-US")
+    # disable Chrome sandbox for root in GitLab CI
+    if 'CI' in os.environ and getpass.getuser() == 'root':
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-dev-shm-usage')
+    with contextlib.contextmanager(tests.conftest.create_flask_server)(app) as flask_server:
+        with contextlib.closing(Chrome(options=options)) as driver:
+            time.sleep(5)
+            object_list(flask_server.base_url, driver)
+            object_data(flask_server.base_url, driver)
+            create_object_form(flask_server.base_url, driver)
+            schema_editor2(flask_server.base_url, driver)
+            federation_permissions(flask_server.base_url, driver)
+            federation_user_alias(flask_server.base_url, driver)
+            api_token_list(flask_server.base_url, driver)
+            action_list(flask_server.base_url, driver)
+            object_list_filters(flask_server.base_url, driver)
+            object_permissions2(flask_server.base_url, driver)
+            object_permissions(flask_server.base_url, driver)
+            default_permissions(flask_server.base_url, driver)
+            guest_invitation(flask_server.base_url, driver)
+            action(flask_server.base_url, driver, instrument_action)
+            hazards_input(flask_server.base_url, driver, instrument_action)
+            tags_input(flask_server.base_url, driver, object)
+            workflow(flask_server.base_url, driver, object, measurement_object_1, measurement_object_2)
+            comments(flask_server.base_url, driver, object)
+            activity_log(flask_server.base_url, driver, object)
+            files(flask_server.base_url, driver, object)
+            file_information(flask_server.base_url, driver, object)
+            labels(flask_server.base_url, driver, object)
+            advanced_search_by_property(flask_server.base_url, driver, object)
+            advanced_search_visualization(flask_server.base_url, driver)
+            location_assignments(flask_server.base_url, driver, object, room_42)
+            locations(flask_server.base_url, driver)
+            schema_editor(flask_server.base_url, driver)
+            unread_notification_icon(flask_server.base_url, driver)
+            disable_schema_editor(flask_server.base_url, driver)
+            translations(flask_server.base_url, driver)
+            other_database(flask_server.base_url, driver)
+            group_categories(flask_server.base_url, driver, [category1, category2, category3])
+            search_query_builder(flask_server.base_url, driver)
+            federation_graph(flask_server.base_url, driver)

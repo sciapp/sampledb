@@ -20,9 +20,7 @@ def user(flask_server):
 
 
 @pytest.fixture
-def eln_zip_bytes(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def eln_zip_bytes(user, app):
     set_up_state(user)
 
     server_name = app.config['SERVER_NAME']

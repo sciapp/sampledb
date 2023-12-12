@@ -39,7 +39,6 @@ from .. import db
 from ..models import files
 from ..models.file_log import FileLogEntry, FileLogEntryType
 
-FILE_STORAGE_PATH: typing.Optional[str] = None
 MAX_NUM_FILES: int = 10000
 
 SUPPORTED_HASH_ALGORITHMS = ['sha256', 'sha512']
@@ -121,24 +120,12 @@ class File:
     def storage(self) -> str:
         if self.data is None:
             return 'none'
-        return str(self.data.get('storage', 'local'))
+        return str(self.data.get('storage', 'none'))
 
     @property
     def original_file_name(self) -> str:
-        if self.data is not None and self.storage in {'local', 'database', 'federation'}:
+        if self.data is not None and self.storage in {'database', 'federation'}:
             return str(self.data.get('original_file_name', ''))
-        else:
-            raise InvalidFileStorageError()
-
-    @property
-    def real_file_name(self) -> str:
-        if self.storage == 'local':
-            # ensure that 4 digits are enough for every valid file ID
-            assert MAX_NUM_FILES <= 10000
-            object = objects.get_object(self.object_id)
-            action_id = object.action_id
-            prefixed_file_name = f'{self.id:04d}_{self.original_file_name}'
-            return os.path.join(FILE_STORAGE_PATH or '', str(action_id), str(self.object_id), prefixed_file_name)
         else:
             raise InvalidFileStorageError()
 
@@ -177,7 +164,7 @@ class File:
         if self._cache.title is None:
             self._cache.title = self.real_title
             if self._cache.title is None:
-                if self.storage in {'local', 'database', 'federation'}:
+                if self.storage in {'database', 'federation'}:
                     return self.original_file_name
                 elif self.storage == 'local_reference':
                     return self.filepath
@@ -259,16 +246,7 @@ class File:
         return None
 
     def open(self, read_only: bool = True) -> typing.BinaryIO:
-        if self.storage == 'local':
-            file_name = self.real_file_name
-            if read_only:
-                mode = 'rb'
-            else:
-                # before creating the file, the parent directories need exist
-                os.makedirs(os.path.dirname(file_name), exist_ok=True)
-                mode = 'xb'
-            return typing.cast(typing.BinaryIO, open(file_name, mode))
-        elif self.storage == 'database':
+        if self.storage == 'database':
             if self.binary_data is not None:
                 return io.BytesIO(self.binary_data)
             else:
@@ -297,63 +275,6 @@ class File:
             return file_data
         else:
             raise InvalidFileStorageError()
-
-
-def create_local_file(
-        object_id: int,
-        user_id: int,
-        file_name: str,
-        save_content: typing.Callable[[typing.BinaryIO], None],
-        hash: typing.Optional[File.HashInfo] = None
-) -> File:
-    """
-    Create a new local file and add it to the object and user logs.
-
-    The function will call save_content with the opened file (in binary mode).
-
-    :param object_id: the ID of an existing object
-    :param user_id: the ID of an existing user
-    :param file_name: the original file name
-    :param save_content: a function which will save the file's content to the
-        given stream. The function will be called at most once.
-    :param hash: the hash info for this file
-    :return: the newly created file
-    :raise errors.ObjectDoesNotExistError: when no object with the given
-        object ID exists
-    :raise errors.UserDoesNotExistError: when no user with the given user ID
-        exists
-    :raise errors.FileNameTooLongError: when the file name is longer than 150
-        bytes when encoded as UTF-8
-    :raise errors.TooManyFilesForObjectError: when there are already 10000
-        files for the object with the given id
-    :raise errors.FileCreationError: if creating the file has failed
-    """
-    # ensure that the file name is valid
-    if len(file_name.encode('utf8')) > 150:
-        raise FileNameTooLongError()
-
-    db_file = _create_db_file(
-        object_id=object_id,
-        user_id=user_id,
-        data={
-            'storage': 'local',
-            'original_file_name': file_name,
-            'hash': {
-                'algorithm': hash.algorithm,
-                'hexdigest': hash.hexdigest
-            } if hash is not None else None
-        }
-    )
-    file = File.from_database(db_file)
-    try:
-        with file.open(read_only=False) as storage_file:
-            save_content(storage_file)
-    except Exception as exc:
-        db.session.delete(db_file)
-        db.session.commit()
-        raise errors.FileCreationError() from exc
-    _create_file_logs(file)
-    return file
 
 
 def create_local_file_reference(

@@ -241,8 +241,6 @@ Miscellaneous
 
    * - Variable Name
      - Description
-   * - SAMPLEDB_FILE_STORAGE_PATH
-     - A path to the directory that uploaded files should be stored in
    * - SAMPLEDB_SERVER_NAME
      - The server name for Flask. See: https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
    * - SAMPLEDB_SQLALCHEMY_DATABASE_URI
