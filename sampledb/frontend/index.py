@@ -24,8 +24,6 @@ def index() -> FlaskResponseT:
                 continue
             if action.admin_only and not flask_login.current_user.is_admin:
                 continue
-            if action.type.admin_only and not flask_login.current_user.is_admin:
-                continue
             if action.disable_create_objects:
                 continue
             if action.type.disable_create_objects:
