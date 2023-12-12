@@ -589,6 +589,11 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
       toggleShowMore
     } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
     window.toggleShowMore = toggleShowMore;
+
+    import {
+      togglePlotlyChartDiv
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
+    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
