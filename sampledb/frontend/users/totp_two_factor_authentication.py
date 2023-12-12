@@ -51,7 +51,8 @@ def setup_totp_two_factor_authentication() -> FlaskResponseT:
     return flask.render_template(
         'two_factor_authentication/set_up_totp.html',
         setup_form=setup_form,
-        qrcode_url=qrcode_url
+        qrcode_url=qrcode_url,
+        secret=secret
     ), 200, {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
