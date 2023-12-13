@@ -77,7 +77,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
                 {
                     'version_id': 1,
                     'log_entry_id': log_entry.id,
-                    'utc_datetime': log_entry.versions[0].utc_datetime.isoformat(),
+                    'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
                     'content': "Example Log Entry",
                     'categories': []
                 }
@@ -108,7 +108,7 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
             {
                 'version_id': 1,
                 'log_entry_id': log_entry.id,
-                'utc_datetime': log_entry.versions[0].utc_datetime.isoformat(),
+                'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
                 'content': "Example Log Entry 2",
                 'categories': [
                     {
@@ -162,7 +162,7 @@ def test_get_instrument_log_entry(flask_server, auth, user):
             {
                 'version_id': 1,
                 'log_entry_id': log_entry.id,
-                'utc_datetime': log_entry.versions[0].utc_datetime.isoformat(),
+                'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
                 'content': "Example Log Entry",
                 'categories': []
             }
