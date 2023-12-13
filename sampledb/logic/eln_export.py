@@ -222,6 +222,7 @@ def generate_ro_crate_metadata(
                     "dateCreated": file_info['utc_datetime'],
                     "contentType": file_type,
                     "contentSize": len(file_content),
+                    "contentUrl": flask.url_for('frontend.object_file', object_id=object_info['id'], file_id=file_info['id'], _external=True),
                     "sha256": file_hash
                 })
                 result_files[file_name] = file_content
