@@ -37,7 +37,7 @@ def instrument_log_entry_version_to_json(version: instrument_log_entries.Instrum
     return {
         'log_entry_id': version.log_entry_id,
         'version_id': version.version_id,
-        'utc_datetime': version.utc_datetime.isoformat(),
+        'utc_datetime': version.utc_datetime.replace(tzinfo=None).isoformat(),
         'content': version.content,
         'categories': [
             category_to_json(category)
