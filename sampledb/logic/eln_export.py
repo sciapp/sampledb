@@ -73,6 +73,7 @@ def generate_ro_crate_metadata(
         ro_crate_metadata["@graph"].append({
             "@id": f"./objects/{object_info['id']}",
             "@type": "Dataset",
+            "identifier": f"{object_info['id']}",
             "name": f"{get_translated_text(object_info['versions'][-1]['data'].get('name', {}).get('text', {}), 'en')}" if object_info['versions'][-1]['data'] is not None else '',
             "description": f"Object #{object_info['id']}",
             "dateCreated": object_info['versions'][0]['utc_datetime'],
