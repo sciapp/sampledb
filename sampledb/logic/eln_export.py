@@ -10,6 +10,7 @@ import flask
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
+from .objects import find_object_references
 
 
 def generate_ro_crate_metadata(
@@ -56,7 +57,10 @@ def generate_ro_crate_metadata(
     directory_datasets = {
         "sampledb_export": ro_crate_metadata["@graph"][1]
     }
-
+    exported_object_ids = {
+        object_info['id']
+        for object_info in infos['objects']
+    }
     for object_info in infos['objects']:
         if object_info['action_id'] is not None:
             action = get_action(object_info['action_id'])
@@ -82,6 +86,7 @@ def generate_ro_crate_metadata(
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
             "genre": object_type,
             "keywords": "",
+            "mentions": [],
             "comment": [],
             "hasPart": [
                 {
@@ -97,6 +102,17 @@ def generate_ro_crate_metadata(
         current_version_info = object_info['versions'][-1]
         if current_version_info.get('data') and isinstance(current_version_info['data'].get('tags'), dict) and current_version_info['data']['tags'].get('_type') == 'tags' and current_version_info['data']['tags'].get('tags'):
             ro_crate_metadata["@graph"][-1]["keywords"] = ', '.join(current_version_info['data']['tags']['tags'])
+        if current_version_info.get('data'):
+            referenced_object_ids = find_object_references(
+                object_id=typing.cast(int, object_info['id']),
+                version_id=typing.cast(int, current_version_info['id']),
+                object_data=typing.cast(typing.Optional[typing.Dict[str, typing.Any]], current_version_info['data']),
+                find_previous_referenced_object_ids=False,
+                include_fed_references=False
+            )
+            for referenced_object_id, _previously_reference_object_id, _object_reference_type in referenced_object_ids:
+                if referenced_object_id in exported_object_ids:
+                    ro_crate_metadata["@graph"][-1]["mentions"].append(f"./objects/{referenced_object_id}")
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/files"] = ro_crate_metadata["@graph"][-1]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/comments"] = ro_crate_metadata["@graph"][-1]
         directory_datasets["sampledb_export"]["hasPart"].append({
