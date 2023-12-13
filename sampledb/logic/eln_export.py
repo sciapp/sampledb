@@ -81,6 +81,7 @@ def generate_ro_crate_metadata(
             "author": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
             "genre": object_type,
+            "keywords": "",
             "comment": [],
             "hasPart": [
                 {
@@ -93,6 +94,9 @@ def generate_ro_crate_metadata(
                 }
             ]
         })
+        current_version_info = object_info['versions'][-1]
+        if current_version_info.get('data') and isinstance(current_version_info['data'].get('tags'), dict) and current_version_info['data']['tags'].get('_type') == 'tags' and current_version_info['data']['tags'].get('tags'):
+            ro_crate_metadata["@graph"][-1]["keywords"] = ', '.join(current_version_info['data']['tags']['tags'])
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/files"] = ro_crate_metadata["@graph"][-1]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/comments"] = ro_crate_metadata["@graph"][-1]
         directory_datasets["sampledb_export"]["hasPart"].append({
