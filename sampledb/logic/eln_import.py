@@ -4,9 +4,11 @@ import hashlib
 import io
 import json
 import os.path
+import string
 import typing
 import zipfile
 
+import flask
 from flask_babel import gettext
 
 from .. import db
@@ -616,6 +618,45 @@ def parse_eln_file(
                     'required': ['name'],
                     'propertyOrder': ['name', 'description', 'import_note']
                 }
+                if 'keywords' in object_node:
+                    typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])['tags'] = {
+                        'type': 'tags',
+                        'title': {
+                            'en': 'Tags',
+                            'de': 'Tags'
+                        }
+                    }
+                    typing.cast(typing.List[str], fallback_schema['propertyOrder']).append('tags')
+                    if isinstance(object_node['keywords'], list):
+                        keywords = [
+                            keyword
+                            for keyword in object_node['keywords']
+                            if isinstance(keyword, str)
+                        ]
+                    elif isinstance(object_node['keywords'], str):
+                        keywords = [
+                            keyword
+                            for keyword in object_node['keywords'].split(',')
+                        ]
+                    else:
+                        keywords = []
+                    tags = []
+                    for keyword in keywords:
+                        keyword = keyword.strip().lower()
+                        # skip duplicate tags
+                        if keyword in tags:
+                            continue
+                        # skip tags with invalid characters
+                        if any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in keyword):
+                            continue
+                        # skip numeric tags unless enabled
+                        if all(c in string.digits for c in keyword) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
+                            continue
+                        tags.append(keyword)
+                    fallback_data['tags'] = {
+                        '_type': 'tags',
+                        'tags': tags
+                    }
 
                 _eln_assert(isinstance(object_node.get('hasPart', []), list), "Invalid parts list for Dataset")
                 for object_part_ref in object_node.get('hasPart', []):
