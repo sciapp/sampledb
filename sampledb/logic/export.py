@@ -40,8 +40,9 @@ def get_export_infos(
     relevant_location_ids = set()
     relevant_markdown_images = set()
     objects = logic.object_permissions.get_objects_with_permissions(
-        user_id,
-        Permissions.READ
+        user_id=user_id,
+        permissions=Permissions.READ,
+        object_ids=object_ids
     )
     infos = {}
     object_infos: typing.List[typing.Dict[str, typing.Any]] = []
@@ -165,29 +166,27 @@ def get_export_infos(
 
     if include_actions:
         action_infos = []
-        for action_info in logic.actions.get_actions():
+        for action_info in logic.action_permissions.get_actions_with_permissions(user_id=user_id, permissions=Permissions.READ):
             if action_info.id in relevant_action_ids:
-                action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
-                if Permissions.READ in action_permissions:
-                    if action_info.user_id is not None:
-                        relevant_user_ids.add(action_info.user_id)
-                    if action_info.instrument_id is not None:
-                        relevant_instrument_ids.add(action_info.instrument_id)
-                    action_infos.append({
-                        'id': action_info.id,
-                        'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
-                        'name': action_info.name.get('en'),
-                        'user_id': action_info.user_id,
-                        'instrument_id': action_info.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
-                        'description': action_info.description.get('en'),
-                        'description_is_markdown': action_info.description_is_markdown,
-                        'short_description': action_info.short_description.get('en'),
-                        'short_description_is_markdown': action_info.short_description_is_markdown
-                    })
-                    if action_info.description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en', ''))))
-                    if action_info.short_description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en', ''))))
+                if action_info.user_id is not None:
+                    relevant_user_ids.add(action_info.user_id)
+                if action_info.instrument_id is not None:
+                    relevant_instrument_ids.add(action_info.instrument_id)
+                action_infos.append({
+                    'id': action_info.id,
+                    'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
+                    'name': action_info.name.get('en'),
+                    'user_id': action_info.user_id,
+                    'instrument_id': action_info.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
+                    'description': action_info.description.get('en'),
+                    'description_is_markdown': action_info.description_is_markdown,
+                    'short_description': action_info.short_description.get('en'),
+                    'short_description_is_markdown': action_info.short_description_is_markdown
+                })
+                if action_info.description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en', ''))))
+                if action_info.short_description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en', ''))))
         infos['actions'] = action_infos
 
     if include_instruments and not flask.current_app.config['DISABLE_INSTRUMENTS']:
