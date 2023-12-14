@@ -944,6 +944,8 @@ Reading a list of all log entries for an instrument
                 "utc_datetime": "2020-08-19T12:13:14.123456",
                 "author": 1,
                 "content": "Example Log Entry 1",
+                "event_utc_datetime": "2020-08-03T12:13:14.123456",
+                "content_is_markdown": false
                 "categories": []
             },
             {
@@ -951,6 +953,8 @@ Reading a list of all log entries for an instrument
                 "utc_datetime": "2020-08-19T13:14:15.123456",
                 "author": 1,
                 "content": "Example Log Entry 2",
+                "event_utc_datetime": null,
+                "content_is_markdown": false,
                 "categories": [
                     {
                         "category_id": 1
@@ -997,6 +1001,8 @@ Reading an instrument log entry
             "utc_datetime": "2020-08-19T13:14:15.123456",
             "author": 1,
             "content": "Example Log Entry 2",
+            "event_utc_datetime": "2020-08-03T12:13:14.123456",
+            "content_is_markdown": false,
             "categories": [
                 {
                     "category_id": 1
@@ -1012,6 +1018,8 @@ Reading an instrument log entry
     :>json number log_entry_id: the log entry's ID
     :>json string utc_datetime: the date and time of the log entry in UTC in ISO format
     :>json string content: the log entry's content
+    :>json string event_utc_datetime: the date and time of the event in UTC in ISO format if set, else ``null``
+    :>json string content_is_markdown: whether the log entry's content is markdown
     :>json number author: the user ID of the log entry's author
     :>json list categories: the log entry's categories
     :statuscode 200: no error

@@ -43,6 +43,8 @@ def instrument_log_entry_version_to_json(version: instrument_log_entries.Instrum
             category_to_json(category)
             for category in version.categories
         ],
+        'event_utc_datetime': version.event_utc_datetime.replace(tzinfo=None).isoformat() if version.event_utc_datetime is not None else None,
+        'content_is_markdown': version.content_is_markdown,
     }
 
 
