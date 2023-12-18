@@ -449,3 +449,57 @@ def test_enforce_permissions():
     ]
     sampledb.logic.action_permissions.set_user_action_permissions(action.id, user.id, sampledb.models.permissions.Permissions.READ)
     assert sampledb.logic.schemas.templates.find_invalid_template_paths(schema, user.id) == []
+
+def test_find_used_template_ids():
+    assert sampledb.logic.schemas.templates.find_used_template_ids({
+        "type": "object",
+        "title": "Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            }
+        },
+        "required": ["name"]
+    }) == set()
+    assert sampledb.logic.schemas.templates.find_used_template_ids({
+        "type": "object",
+        "title": "Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "included_template": {
+                "type": "object",
+                "title": "Name",
+                "template": 1,
+                "properties": {}
+            }
+        },
+        "required": ["name"]
+    }) == {1}
+    assert sampledb.logic.schemas.templates.find_used_template_ids({
+        "type": "object",
+        "title": "Object",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "included_template": {
+                "type": "object",
+                "title": "Name",
+                "template": 1,
+                "properties": {
+                    "nested_template": {
+                        "type": "object",
+                        "title": "Name",
+                        "template": 2,
+                        "properties": {}
+                    }
+                }
+            }
+        },
+        "required": ["name"]
+    }) == {1, 2}
