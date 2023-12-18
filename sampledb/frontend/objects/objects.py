@@ -11,7 +11,6 @@ import flask_login
 import markupsafe
 import werkzeug
 from flask_babel import _
-from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
@@ -1099,7 +1098,6 @@ def objects() -> FlaskResponseT:
         PAGE_SIZES=PAGE_SIZES,
         HORIZONTAL_LABEL_MARGIN=HORIZONTAL_LABEL_MARGIN,
         VERTICAL_LABEL_MARGIN=VERTICAL_LABEL_MARGIN,
-        mm=mm,
         edit_permissions=edit_permissions,
         edit_permissions_form=edit_permissions_form,
         current_permissions_special_groups=current_permissions_special_groups,

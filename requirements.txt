@@ -75,7 +75,6 @@ pysaml2==7.5.2
 python-dateutil==2.9.0.post0
 pytz==2025.1
 qrcode==8.0
-reportlab==4.3.0
 requests==2.32.3
 scipy==1.15.1
 setuptools==75.8.0

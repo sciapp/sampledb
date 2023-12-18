@@ -1,0 +1,257 @@
+{% extends "labels/base.html" %}
+
+{% block style %}
+    @page {
+        size: {{ paper_width }}mm {{ paper_height }}mm;
+        margin: 9.522mm 5mm 2mm 1.25mm;
+    }
+    /* Prevent outputting more than one page (workaround) */
+    body {
+        height: {{body_height}};
+    }
+    .label {
+        margin: 1.2mm 0.9mm 0.5mm 1.7mm;;
+        display:inline-block;
+        min-height: {{min_label_height}}mm;
+        width: {{box_width}}mm;
+        border: 1.5px solid black;
+        line-height: 3.325mm;
+        overflow: hidden;
+        position: relative;
+    }
+    .label:has(.centeredghsbox) {
+      margin-bottom: 0.6mm;
+    }
+    .label.ghs_classes_side_by_side {
+      margin-bottom: 0.4mm;
+    }
+    .label:before {
+        content: '';
+        display: block;
+        position: absolute;
+        box-sizing: border-box;
+        min-height: {{min_label_height}}mm;
+        height: 100%;
+        z-index: 0;
+    }
+    .label:before {
+        margin-left: 0;
+        width: 17.9mm;
+        border-left: none;
+        border-right: 1.5px solid black;
+    }
+    .label.centered:before {
+        border-left: none;
+        border-right: none;
+    }
+    .label.ghs_classes_side_by_side:before {
+        margin-left: 18.45mm;
+        width: 19.5mm;
+        border-left: 1.5px solid black;
+        border-right: 1.5px solid black;
+    }
+    .label.centered.ghs_classes_side_by_side:before {
+        margin-left: 0.15mm;
+        width: 50%;
+        border-left: none;
+        border-right: 1.5px solid black;
+    }
+    .labeltext {
+        position: relative;
+        z-index: 1;
+    }
+    .boxname {
+        border-bottom: 1.5px solid black;
+        display: flex;
+        flex-direction: column;
+        min-height: 3mm;
+        width: {{box_width - 2}}mm;
+        text-align: center;
+        overflow-wrap: break-word;
+        padding: 0.5mm 1mm 0.5mm 1mm;
+        background-color: white;
+    }
+    .boxinfo {
+        border-bottom: 1.5px solid black;
+        min-height: 6.75mm;
+        width: {{box_width}}mm;
+        text-align: center;
+        border-top: none;
+        padding: 0.75mm 0mm 0.5mm 0mm;
+        background-color: white;
+    }
+    .boxqrcode {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: {{boxqrcode_height}}mm;
+        font-size: 8px;
+        padding-top: 1.25mm;
+    }
+    .qrouterbox > .boxqrcode {
+        height: 19.25mm;
+        width: 17.5mm;
+    }
+    .label .boxqrcode {
+        padding-right: 1.5px;
+    }
+    .label.side_by_side_always .boxqrcode {
+        width: 17.5mm;
+    }
+    .label.centered .boxqrcode {
+        width: 100%;
+    }
+    .label.centered:has(.centeredghsbox) .boxqrcode {
+        border-bottom: 1.5px solid black;
+        padding-right: 0;
+    }
+    .label.ghs_classes_side_by_side .boxqrcode {
+        width: 17.75mm;
+    }
+    .label.centered.ghs_classes_side_by_side .boxqrcode {
+        padding-right: 5mm;
+        border-bottom: none;
+        width: 50%;
+        align-items: flex-end;
+    }
+    .label_number{
+        width: 15mm;
+        line-height: 1;
+    }
+    .qrouterbox{
+        border-bottom: 1.5px solid black;
+        border-top: none;
+        height: {{boxqrcode_height}}mm;
+        width: {{box_width}}mm;
+    }
+    .boxghs {
+        position: relative;
+        width: {{ghs_box_width}}mm;
+    }
+    .label.ghs_classes_side_by_side .boxghs {
+        padding-left: 1.85mm;
+    }
+    .label.centered.ghs_classes_side_by_side .boxghs {
+        width: 50%;
+        padding-left: 0;
+    }
+    .label.centered.ghs_classes_side_by_side .centeredghsbox {
+        margin: 0;
+        margin-left: -1.25mm;
+    }
+    .boxsidebyside{
+        border-top: none;
+        width: {{box_width}}mm;
+        display: flex;
+        flex-direction: row;
+    }
+    .labelcontainer {
+        border: none;
+        width: {{outer_box_width}}mm;
+        text-align: center;
+    }
+    .centeredghsbox {
+        position: relative;
+        width: {{ ghs_width * 2 }}mm;
+        margin: 0 auto;
+        padding-bottom: 3.05mm;
+    }
+    .centeredghsbox:has(:nth-child(1):nth-last-child(1)), .centeredghsbox:has(:nth-child(1):nth-last-child(2)) {
+        height: {{ ghs_width }}mm;
+    }
+    .centeredghsbox:has(:nth-child(1):nth-last-child(3)) {
+        height: {{ 1.5 * ghs_width }}mm;
+    }
+    .centeredghsbox:has(:nth-child(1):nth-last-child(4)) {
+        height: {{ 2 * ghs_width }}mm;
+    }
+    .centeredghsbox:has(:nth-child(1):nth-last-child(5)), .centeredghsbox:has(:nth-child(1):nth-last-child(6)) {
+        height: {{ 2.5 * ghs_width }}mm;
+    }
+    .centeredghsbox:has(:nth-child(1):nth-last-child(7)) {
+        height: {{ 3 * ghs_width }}mm;
+    }
+    .centeredghsbox:has(:nth-child(1):nth-last-child(8)), .centeredghsbox:has(:nth-child(1):nth-last-child(9)) {
+        height: {{ 3.5 * ghs_width }}mm;
+    }
+    .centeredghsbox .ghs {
+        position: absolute;
+    }
+    .centeredghsbox .ghs:nth-child(1) {
+        top: 1.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(3) {
+        top: 6mm;
+    }
+    .centeredghsbox .ghs:nth-child(4) {
+        top: 10.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(6) {
+        top: 15mm;
+    }
+    .centeredghsbox .ghs:nth-child(7) {
+        top: 19.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(8), .centeredghsbox .ghs:nth-child(9) {
+        top: 24mm;
+    }
+    .centeredghsbox .ghs:nth-child(1), .centeredghsbox .ghs:nth-child(4), .centeredghsbox .ghs:nth-child(7) {
+        left: {{ ghs_width / 2 }}mm;
+    }
+    .centeredghsbox .ghs:nth-child(3), .centeredghsbox .ghs:nth-child(6), .centeredghsbox .ghs:nth-child(9) {
+        left: {{ ghs_width }}mm;
+    }
+    /* special case with only two GHS symbols */
+    .centeredghsbox .ghs:nth-child(1):nth-last-child(2), .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
+        top: 1.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(1):nth-last-child(2) {
+        left: 0;
+    }
+    .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
+        left: {{ ghs_width }}mm;
+    }
+{% endblock %}
+
+{% block body %}
+    <div class="labelcontainer">
+        {% for object_index in range(0,object_amount) %}
+        {%- for i in range(num_labels) -%}
+        <div class="label {% if centered %}centered{% endif %} {% if ghs_classes_side_by_side and hazard_list[object_index] | length > 0 %}ghs_classes_side_by_side{% endif %} {% if ghs_classes_side_by_side %} side_by_side_always {% endif %}">
+            <div class="labeltext">
+                <div class="boxname"><b>{{ object_name_list[object_index] }}</b></div>
+                <div class="boxinfo">
+                    {{ username_list[object_index] }}<br>
+                    {{ creation_date_list[object_index] }}
+                </div>
+                {%- if not ghs_classes_side_by_side and not centered -%}
+                    <div class="qrouterbox" style="{% if ghs_amount_list[object_index] < 1 %} border-bottom: none; {% endif %}">
+                {%- endif -%}
+                {%- if ghs_classes_side_by_side and hazard_list[object_index] | length > 0 -%}
+                    <div class="boxsidebyside">
+                {%- endif -%}
+                <div class="boxqrcode">
+                    <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }});"></div>
+                    <div class="label_number">#{{ sample_code_list[object_index] }}</div>
+                </div>
+                {%- if not ghs_classes_side_by_side and not centered -%}
+                    </div>
+                {%- endif -%}
+                   {% if hazard_list[object_index] | length > 0 %}
+                    <div class="boxghs">
+                  <div class="centeredghsbox">
+                      {%- for hazard_code in hazard_list[object_index] -%}
+                          <div class="ghs ghs0{{hazard_code}}"></div>
+                      {%- endfor -%}
+                  </div>
+                </div>
+                {% endif %}
+                {%- if ghs_classes_side_by_side and hazard_list[object_index] | length > 0 -%}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {%- endfor -%}
+        {% endfor %}
+    </div>
+{% endblock %}

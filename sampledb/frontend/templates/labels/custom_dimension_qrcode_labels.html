@@ -1,0 +1,98 @@
+<html lang="en">
+    <head>
+        <title>{{ service_name }}</title>
+        <style>
+            @font-face {
+                font-family: NimbusSans;
+                src: url({{ FONT_URIS["NimbusSans-Regular.otf"] }});
+            }
+            @font-face {
+                font-family: NimbusSans;
+                src: url({{ FONT_URIS["NimbusSans-Bold.otf"] }});
+                font-weight: bold;
+            }
+            @page {
+                size: {{ paper_width }}mm {{ paper_height }}mm;
+                margin: {{page_margin[0] / 2}}mm 0 {{page_margin[0] / 2}}mm {{page_margin[1] / 2}}mm ;
+            }
+            body {
+                font-size: 8pt;
+                font-family: NimbusSans, sans-serif;
+                line-height: 0;
+                margin: 0;
+            }
+            .qrcode {
+                width: {{qrcode_width}}mm;
+                height: {{qrcode_width}}mm;
+                background-size: contain;
+                position: absolute;
+                top: {{qr_code_top}}mm;
+                left: 0.25px;
+                margin-left: 0.75mm;
+            }
+            .label {
+                display: inline-block;
+                position: relative;
+                height: {{box_height}}mm;
+                width: {{box_width}}mm;
+                vertical-align: middle;
+                line-height: initial;
+                padding-left: {{qrcode_width + 0.5}}mm;
+                box-sizing: border-box;
+                margin: {{vertical_label_margin / 2}}mm {{horizontal_label_margin / 2}}mm;
+                padding-top: 0.5mm;
+            }
+            .labelText{
+                display: flex;
+                flex-direction: column;
+                line-height: 3.325mm;
+                height: 100%;
+                justify-content: center;
+                white-space: nowrap;
+                margin-left: 1mm;
+                font-weight: bold;
+            }
+            .labelText > div {
+                display: flex;
+                align-items: center;
+                flex-grow: 1;
+                min-width: 0;
+                overflow: hidden;
+            }
+            .labelText > div:last-child > div {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        </style>
+    </head>
+    <body>
+        {% for label_index in range(num_labels) -%}
+            <div class="label">
+                <div class="qrcode" style="background-image: url({{ qr_code_uri[label_index] }})"></div>
+                <div class="labelText">
+                    <div>
+                        <div>
+                            {%- if show_id or add_label_nr -%}
+                                {%- if show_id -%}
+                                    #{{object_id}}
+                                {%- endif -%}
+                                {%- if add_label_nr -%}
+                                    <!-- For the right amount of leading zeros -->
+                                    {{ ("%0" ~ quantity_digits ~ "d") | format(label_index + 1) }}
+                                    {%- if add_maximum_label_nr -%}
+                                        _{{num_labels}}
+                                    {%- endif -%}
+                                {%- endif -%}
+                            {%- else -%}
+                                {{object_name}}
+                            {%- endif -%}
+                        </div>
+                    </div>
+                    {%- if show_id or add_label_nr -%}
+                        <div><div>{{object_name}}</div></div>
+                    {%- endif -%}
+                </div>
+            </div>
+        {%- endfor -%}
+    </body>
+</html>

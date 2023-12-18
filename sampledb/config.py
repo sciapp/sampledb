@@ -20,7 +20,6 @@ import pytz.exceptions
 import requests
 import sqlalchemy
 from PIL import Image
-from reportlab.lib.units import mm
 
 from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
 from .frontend.labels import PAGE_SIZE_KEYS, PAGE_SIZES
@@ -235,8 +234,8 @@ def is_label_paper_formats_valid() -> bool:
             print(ansi_color(f'LABEL_PAPER_FORMATS: invalid paper_format in format definition {i}.\n', color=31))
             return False
         page_size = PAGE_SIZES[PAGE_SIZE_KEYS[format_definition['paper_format']]]
-        page_width = page_size[0] / mm
-        page_height = page_size[1] / mm
+        page_width = page_size[0]
+        page_height = page_size[1]
         used_page_width = format_definition['labels_in_row'] * format_definition['label_width'] + (format_definition['labels_in_row'] - 1) * format_definition['margin_horizontal']
         used_page_height = format_definition['labels_in_col'] * format_definition['label_height'] + (format_definition['labels_in_col'] - 1) * format_definition['margin_vertical']
         if page_width < used_page_width or page_height < used_page_height:

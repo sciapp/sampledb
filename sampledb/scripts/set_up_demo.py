@@ -1788,4 +1788,5 @@ This example shows how Markdown can be used for instrument Notes.
             },
             user_id=instrument_responsible_user.id
         )
+
     print("Success: set up demo data", flush=True)

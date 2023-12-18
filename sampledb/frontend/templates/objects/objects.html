@@ -31,8 +31,8 @@
     {% for paper_format in PAGE_SIZES %}
       {% do page_sizes.update({
         paper_format: [
-          PAGE_SIZES[paper_format][0] / mm,
-          PAGE_SIZES[paper_format][1] / mm
+          PAGE_SIZES[paper_format][0],
+          PAGE_SIZES[paper_format][1]
         ]
       }) %}
     {% endfor %}
