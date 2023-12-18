@@ -3,47 +3,39 @@
 {% block style %}
     @page {
         size: {{ paper_width }}mm {{ paper_height }}mm;
-        margin: 9.522mm 5mm 7.5mm 4.075mm;
+        margin: 7.5mm 5mm 7.5mm 1.5mm;
     }
     .label {
-        margin: 1.2mm 1.3mm 1.2mm 1.7mm;
+        margin: 2mm 1.5mm;
         display: flex;
         flex-direction: column;
         align-items: center;
         border: none;
-        min-height: {{box_height}}mm;
+        height: {{box_height}}mm;
         width: {{box_width}}mm;
-        border: 1.5px solid black;
     }
     .boxname {
-        border-bottom: 1.5px solid black;
-        display: flex;
-        flex-direction: column;
-        min-height: 3mm;
-        width: {{box_width - 2}}mm;
+        border: 1.5px solid black;
+        height: 4mm;
+        width: {{box_width}}mm;
         text-align: center;
-        overflow-wrap: break-word;
-        padding: 0.5mm 1mm 0.5mm 1mm;
     }
     .boxinfo {
-        border-bottom: 1.5px solid black;
-        min-height: 7mm;
-        width: {{box_width - 2}}mm;
+        border: 1.5px solid black;
+        height: 8mm;
+        width: {{box_width}}mm;
         text-align: center;
         border-top: none;
-        padding: 0.5mm 1mm 0.5mm 1mm;
     }
     .boxqrcode {
         display: flex;
         flex-direction: column;
         align-items: center;
-        height: 18mm;
+        height: 21mm;
         width: {{qrcode_box_width}}mm;
-        font-size: 8px;
-        padding-top: 1mm;
     }
     .boxsidebyside > .boxqrcode {
-        height: {{box_side_by_side_height - 2}}mm;
+        height: {{box_side_by_side_height}}mm;
     }
     .boxqrcodeCSBSwghs {
         border-right: 1.5px solid black;
@@ -52,19 +44,21 @@
         width: {{box_width}}mm;
     }
     .boxqrcodeCnotSBS {
-        border-bottom: 1.5px solid black;
+        border: 1.5px solid black;
         border-top: none;
     }
     .boxqrcodenotCSBS {
         border-right: 1.5px solid black;
     }
     .boxqrcodenotCnotSBS {
-        border-right: 1.5px solid black;
+        border: 1.5px solid black;
+        border-top: none;
+        border-left: none;
     }
     .qrouterbox{
-        border-bottom: 1.5px solid black;
+        border: 1.5px solid black;
         border-top: none;
-        height: 19mm;
+        height: 21mm;
         width: {{box_width}}mm;
     }
     .boxghs {
@@ -75,24 +69,29 @@
         height: {{box_side_by_side_height}}mm;
     }
     .boxghsCnotSBS {
+        border: 1.5px solid black;
         border-top: none;
         height: {{ghs_height}}mm;
     }
     .boxghsnotCSBS{
         border-right: 1.5px solid black;
-        height: {{box_side_by_side_height - 1.5}}mm;
+        height: {{box_side_by_side_height}}mm;
     }
     .boxghsnotCnotSBS {
         border-right: 1.5px solid black;
-        height: {{ghs_height + 0.5}}mm;
+        border-bottom: 1.5px solid black;
+        height: {{ghs_height}}mm;
     }
     .ghsouterbox{
+        border: 1.5px solid black;
+        border-top: none;
         height: {{ghs_height}}mm;
-        width: {{box_width - 0.45}}mm;
+        width: {{box_width}}mm;
     }
     .boxsidebyside{
+        border: 1.5px solid black;
         border-top: none;
-        height: {{box_side_by_side_height - 1.5}}mm;
+        height: {{box_side_by_side_height}}mm;
         width: {{box_width}}mm;
         display: flex;
         flex-direction: row;
@@ -115,32 +114,32 @@
         position: absolute;
     }
     .centeredghsbox .ghs:nth-child(1) {
-        top: 1.5mm;
+        top: 2mm;
     }
     .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(3) {
-        top: 6mm;
+        top: 6.5mm;
     }
     .centeredghsbox .ghs:nth-child(4) {
-        top: 10.5mm;
+        top: 11mm;
     }
     .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(6) {
-        top: 15mm;
+        top: 15.5mm;
     }
-    .centeredghsbox .ghs:nth-child(7) {
-        top: 19.5mm;
+    .centeredghsbox .ghs:nth-child(7)
+        top: 20mm;
     }
     .centeredghsbox .ghs:nth-child(8), .centeredghsbox .ghs:nth-child(9) {
-        top: 24mm;
+        top: 24.5mm;
     }
     .centeredghsbox .ghs:nth-child(1), .centeredghsbox .ghs:nth-child(4), .centeredghsbox .ghs:nth-child(7) {
         left: {{ ghs_width / 2 }}mm;
     }
-    .centeredghsbox .ghs:nth-child(3), .centeredghsbox .ghs:nth-child(6), .centeredghsbox .ghs:nth-child(9) {
+    .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(8) {
         left: {{ ghs_width }}mm;
     }
     /* special case with only two GHS symbols */
     .centeredghsbox .ghs:nth-child(1):nth-last-child(2), .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
-        top: 5mm;
+        top: 5.5mm;
     }
     .centeredghsbox .ghs:nth-child(1):nth-last-child(2) {
         left: 0;
@@ -155,7 +154,7 @@
         {% for object_index in range(0,object_amount) %}
         {%- for i in range(0,page_amount) -%}
         <div class="label">
-            <div class="labeltext" style="padding: 0mm;">
+            <div class="labeltext">
                 <div class="boxname"><b>{{ object_name_list[object_index] }}</b></div>
                 <div class="boxinfo">
                     {{ username_list[object_index] }}<br>
@@ -186,19 +185,14 @@
                     {% endif %}
                 {% endif %}
                 ">
-                <div style="position: absolute; top: 1mm; right: 1mm;"></div>
-                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.75mm"></div>
+                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
                 #{{ sample_code_list[object_index] }}
                 </div>
                 {%- if not ghs_classes_side_by_side and not centered -%}
                     </div>
                 {%- endif -%}
                 {%- if not ghs_classes_side_by_side and not centered -%}
-                    {%- if has_ghs[object_index] -%}
-                        <div class="ghsouterbox">
-                    {%- else -%}
-                        <div>
-                    {%- endif -%}
+                    <div class="ghsouterbox">
                 {%- endif -%}
                     <div class="boxghs
                 {% if ghs_amount_list[object_index] > 0 %}
@@ -233,6 +227,5 @@
         </div>
         {%- endfor -%}
         {% endfor %}
-    </div>
     </div>
 {% endblock %}

@@ -9,6 +9,7 @@ import os
 import typing
 
 from PIL import Image
+from reportlab.lib.pagesizes import A4, LETTER
 from weasyprint import HTML
 
 import qrcode
@@ -16,15 +17,12 @@ import qrcode.image.pil
 
 import flask
 
-
 DEFAULT_PAPER_FORMAT = 'DIN A4 (Portrait)'
-inch = 72.0
-mm = (inch / 2.54) * 0.1
 PAGE_SIZES = {
-    'DIN A4 (Portrait)': (210 * mm, 297 * mm),
-    'DIN A4 (Landscape)': (297 * mm, 210 * mm),
-    'Letter (Portrait)': (8.5 * inch, 11 * inch),
-    'Letter (Landscape)': (11 * inch, 8.5 * inch)
+    'DIN A4 (Portrait)': A4,
+    'DIN A4 (Landscape)': (A4[1], A4[0]),
+    'Letter (Portrait)': LETTER,
+    'Letter (Landscape)': (LETTER[1], LETTER[0])
 }
 
 PAGE_SIZE_KEYS = ['DIN A4 (Portrait)', 'DIN A4 (Landscape)', 'Letter (Portrait)', 'Letter (Landscape)']
@@ -141,12 +139,6 @@ def create_multiple_labels(
         "Letter (Landscape)": [215.9, 279.4]
     }
 
-    with open(os.path.join(os.path.dirname(__file__), "..", "static", "sampledb", "fonts", "NimbusSanL-Reg.otf"), "rb") as font_file:
-        regular_font = 'data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8')
-
-    with open(os.path.join(os.path.dirname(__file__), "..", "static", "sampledb", "fonts", "NimbusSanL-Bol.otf"), "rb") as font_file:
-        bold_font = 'data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8')
-
     paper_height = paper_formats[paper_format][0]
     paper_width = paper_formats[paper_format][1]
 
@@ -162,11 +154,11 @@ def create_multiple_labels(
     qr_code_uri_list = []
     ghs_amount_list = []
     ghs_width = 9.0
+    qrcode_width = 12.0
 
     if create_long_labels:
-        text_extra_width_list = []
+        box_width_list = []
         tmp_index = 0
-        qrcode_width = 12.5
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
             object_name_list.append(object_specifications[object_id]["object_name"])
@@ -182,32 +174,28 @@ def create_multiple_labels(
             image_stream.seek(0)
             qr_code_uri_list.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
-            text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
             if include_qrcode_in_long_labels:
-                text_extra_width_list[tmp_index] = text_extra_width_list[tmp_index] + qrcode_width + 1
+                label_width = 2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
+                    max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
+                        len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2
+                if len(hazard_list[tmp_index]) == 0:
+                    label_width += 2
+            else:
+                label_width = ghs_width * len(hazard_list[tmp_index]) + (
+                    max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
+                        len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2
+
+            box_width_list.append(max(label_width, min_label_width))
+
             tmp_index += 1
 
-        page_amounts: typing.Dict[str, typing.List[int]] = {
-            "DIN A4 (Portrait)": [21, 16],
-            "DIN A4 (Landscape)": [14, 11],
-            "Letter (Portrait)": [19, 15],
-            "Letter (Landscape)": [15, 11]
-        }
-
         if include_qrcode_in_long_labels:
-            box_height = 11.69
-            label_margin = [horizontal_label_margin / 2 + 0.3, horizontal_label_margin + 0.3]
-            page_margin = [9.55, 5, 5, 4.9]
+            box_height = 4 * 3.0
         else:
-            box_height = 7.7
-            label_margin = [horizontal_label_margin / 2 + 0.544, horizontal_label_margin + 0.3]
-            page_margin = [9.9, 5, 5, 5]
+            box_height = 3 * 3.0
 
         if fill_single_page:
-            if include_qrcode_in_long_labels:
-                label_amount = page_amounts[paper_format][1]
-            else:
-                label_amount = page_amounts[paper_format][0]
+            label_amount = (2 + int((paper_height - 15) / (box_height + (2 * vertical_label_margin))))
         else:
             label_amount = quantity
 
@@ -216,43 +204,42 @@ def create_multiple_labels(
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
                                      hazard_list=hazard_list, qrcode_width=qrcode_width, ghs_width=ghs_width,
                                      object_id_list=sample_code_list, qr_code_uri_list=qr_code_uri_list,
-                                     object_amount=object_amount,
+                                     object_amount=object_amount, box_width_list=box_width_list,
                                      include_qrcode=include_qrcode_in_long_labels, box_height=box_height,
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
-                                     GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
-                                     min_label_width=min_label_width, text_extra_width_list=text_extra_width_list,
-                                     regular_font=regular_font, bold_font=bold_font, label_margin=label_margin,
-                                     page_margin=page_margin)
+                                     GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin)
 
     elif create_mixed_labels:
         has_ghs_list = []
 
-        first_box_min_width_list = []
-        second_box_min_width_list = []
+        first_box_width_list = []
+        second_box_width_list = []
+        third_box_width_list = []
+        third_box_height_list = []
         third_box_qrcode_box_height_list = []
         third_box_ghs_box_height_list = []
+        forth_box_width_list = []
+        forth_box_height_list = []
         fourth_box_qrcode_box_height_list = []
         fourth_box_ghs_box_height_list = []
+        fifth_box_width_list = []
         fifth_box_height_list = []
         fifth_box_qrcode_box_width_list = []
         fifth_box_ghs_box_width_list = []
         fifth_inner_box_height_list = []
+        sixth_box_width_list = []
         sixth_box_height_list = []
         sixth_inner_box_height_list = []
-        outer_box_height_list = []
 
-        group_box_height_list = []
-        text_extra_width_list = []
-        text_extra_width_list_qr = []
-
-        third_box_width = 17.5
-        forth_box_width = 19.55
-        fifth_box_width = 39.5
-        sixth_box_width = 74.5
         outer_box_width = 200.0
+        outer_box_height = 60.0
         sixth_box_qrcode_box_width = 20.0
         sixth_box_ghs_box_width = 20.0
-        qrcode_width = 12.5
+
+        if fill_single_page:
+            set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height))
+        else:
+            set_amount = quantity
 
         tmp_index = 0
 
@@ -273,63 +260,66 @@ def create_multiple_labels(
 
             ghs_height = 17.0 + int((len(hazard_list[tmp_index]) - 1) / 3) * 9
 
-            first_box_min_width_list.append(ghs_width * len(hazard_list[tmp_index]))
+            first_box_width_list.append(ghs_width * len(hazard_list[tmp_index]) + (
+                max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
+                    len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2)
 
-            second_box_min_width_list.append(2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]))
+            second_box_width_list.append(2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
+                max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
+                    len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2)
+            if len(hazard_list[tmp_index]) == 0:
+                second_box_width_list[tmp_index] += 2
 
-            text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
-            text_extra_width_list_qr.append(len(hazard_list[tmp_index]) * ghs_width + qrcode_width)
+            third_box_width_list.append(max(15.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
+                                                      len(creation_date_list[tmp_index]),
+                                                      len(str(sample_code_list[tmp_index]))) * 2))
+            third_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
 
+            forth_box_width_list.append(max(18.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
+                                                      len(creation_date_list[tmp_index]),
+                                                      len(str(sample_code_list[tmp_index]))) * 2))
+            forth_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
+
+            fifth_box_width_list.append(max(45.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
+                                                      len(creation_date_list[tmp_index]),
+                                                      len(str(sample_code_list[tmp_index]))) * 2))
             fifth_box_height_list.append(max(50.0, 12.0 + math.ceil(ghs_height)))
+            fifth_box_qrcode_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
+            fifth_box_ghs_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
 
-            if len(hazard_list[tmp_index]) > 0:
-                fifth_box_qrcode_box_width_list.append(fifth_box_width / 2.0)
-                fifth_box_ghs_box_width_list.append(fifth_box_width / 2.0)
-            else:
-                fifth_box_qrcode_box_width_list.append(fifth_box_width)
-                fifth_box_ghs_box_width_list.append(0)
-
+            sixth_box_width_list.append(
+                max(80.0 - ((third_box_width_list[tmp_index] - 20) + (forth_box_width_list[tmp_index] - 20)),
+                    max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
+                        len(creation_date_list[tmp_index]),
+                        len(str(sample_code_list[tmp_index]))) * 2))
             sixth_box_height_list.append(max(50.0, 12.0 + math.ceil(ghs_height)))
 
             ghs_amount_list.append(len(hazard_list[tmp_index]))
 
-            third_box_qrcode_box_height_list.append(18.25)
-            fourth_box_qrcode_box_height_list.append(20.0)
-
             if ghs_amount_list[tmp_index] > 0:
                 has_ghs_list.append(True)
+                third_box_qrcode_box_height_list.append(20.0)
+                third_box_ghs_box_height_list.append(22.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
-                third_box_ghs_box_height_list.append(16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
-                fourth_box_ghs_box_height_list.append(16.5 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                fourth_box_qrcode_box_height_list.append(23.0)
+                fourth_box_ghs_box_height_list.append(19.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
-                fifth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
-                sixth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
+                fifth_inner_box_height_list.append(max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
+                sixth_inner_box_height_list.append(max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
 
-                outer_box_height_list.append(26.0 + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / third_box_width) +
-                                             int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                outer_box_height = 60.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9
             else:
                 has_ghs_list.append(False)
+                third_box_qrcode_box_height_list.append(40.0)
                 third_box_ghs_box_height_list.append(0.0)
+
+                fourth_box_qrcode_box_height_list.append(40.0)
                 fourth_box_ghs_box_height_list.append(0.0)
 
                 fifth_inner_box_height_list.append(22.0)
                 sixth_inner_box_height_list.append(22.0)
-                outer_box_height_list.append(60)
-
-            group_box_height_list.append(outer_box_height_list[tmp_index] + 25)
 
             tmp_index += 1
-
-        if fill_single_page:
-            page_amounts: typing.Dict[str, int] = {
-                "DIN A4 (Portrait)": 3,
-                "DIN A4 (Landscape)": 2,
-                "Letter (Portrait)": 2,
-                "Letter (Landscape)": 2
-            }
-            set_amount = page_amounts[paper_format]
-        else:
-            set_amount = quantity
 
         object_amount = len(username_list)
         html = flask.render_template("labels/MixedFormats.html",
@@ -340,15 +330,17 @@ def create_multiple_labels(
                                      horizontal_label_margin=horizontal_label_margin,
                                      vertical_label_margin=vertical_label_margin,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS,
+                                     third_box_height_list=third_box_height_list,
+                                     forth_box_height_list=forth_box_height_list,
                                      fifth_box_height_list=fifth_box_height_list,
                                      sixth_box_height_list=sixth_box_height_list,
-                                     first_box_min_width_list=first_box_min_width_list,
-                                     second_box_min_width_list=second_box_min_width_list,
-                                     third_box_width=third_box_width,
-                                     forth_box_width=forth_box_width,
-                                     fifth_box_width=fifth_box_width,
-                                     sixth_box_width=sixth_box_width,
-                                     outer_box_width=outer_box_width, outer_box_height_list=outer_box_height_list,
+                                     first_box_width_list=first_box_width_list,
+                                     second_box_width_list=second_box_width_list,
+                                     third_box_width_list=third_box_width_list,
+                                     forth_box_width_list=forth_box_width_list,
+                                     fifth_box_width_list=fifth_box_width_list,
+                                     sixth_box_width_list=sixth_box_width_list,
+                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
                                      ghs_width=ghs_width,
                                      fifth_box_qrcode_box_width_list=fifth_box_qrcode_box_width_list,
                                      fifth_box_ghs_box_width_list=fifth_box_ghs_box_width_list,
@@ -360,11 +352,7 @@ def create_multiple_labels(
                                      third_box_ghs_box_height_list=third_box_ghs_box_height_list,
                                      fourth_box_qrcode_box_height_list=fourth_box_qrcode_box_height_list,
                                      fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
-                                     object_amount=object_amount, group_box_height_list=group_box_height_list,
-                                     ghs_amount_list=ghs_amount_list,
-                                     regular_font=regular_font, bold_font=bold_font,
-                                     qrcode_width=qrcode_width, text_extra_width_list=text_extra_width_list,
-                                     text_extra_width_list_qr=text_extra_width_list_qr)
+                                     object_amount=object_amount)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
@@ -372,16 +360,40 @@ def create_multiple_labels(
         object_url = object_specifications[object_id]["object_url"]
         qr_code_uri = []
 
-        for quantity_index in range(1, quantity + 1):
-            if custom_qr_code_texts and f"{object_id}_{quantity_index}" in custom_qr_code_texts:
-                url = custom_qr_code_texts[f"{object_id}_{quantity_index}"]
-            elif only_id_qr_code and add_label_number:
-                url = f"{object_id} {quantity_index}"
-                if add_maximum_label_number:
-                    url += f"_{quantity}"
-            else:
-                url = f"{object_id if only_id_qr_code else object_url}"
-            image = qrcode.make(url, border=1)
+        object_ids = sorted(list(object_specifications.keys()))
+        object_specification = object_specifications[object_id]
+        label_counter = 0
+        while label_counter < quantity * len(object_ids) or fill_single_page:
+            if ((label_counter % quantity) == 0 and (
+                not fill_single_page or label_counter == 0)) or add_label_number or qr_code_uri is None:
+                object_id = object_ids[min(int(label_counter / quantity), len(object_ids) - 1)]
+                object_specification = object_specifications[object_id]
+                if custom_qr_code_texts and f"{object_id}_{label_counter + 1}" in custom_qr_code_texts and qr_code_width > 0:
+                    # arbitrary limit of 1000 characters
+                    qr_data = custom_qr_code_texts[f"{object_id}_{label_counter + 1}"][:1000]
+                    qr = qrcode.QRCode(
+                        box_size=qr_code_width,
+                        border=0
+                    )
+                    qr.add_data(qr_data)
+                    image = qr.make_image(fill_color="black", back_color="white")
+                elif create_only_qr_codes:
+                    if only_id_qr_code:
+                        if add_label_number:
+                            qr_data = f"{object_id}_{label_counter + 1}_{quantity}"
+                        else:
+                            qr_data = str(object_id)
+                    else:
+                        qr_data = object_specification["object_url"]
+                    qr = qrcode.QRCode(
+                        box_size=qr_code_width,
+                        border=0
+                    )
+                    qr.add_data(qr_data)
+                    image = qr.make_image(fill_color="black", back_color="white")
+                else:
+                    image = qrcode.make(object_specification["object_url"])
+
             image_stream = io.BytesIO()
             image.save(image_stream, format='png')
             image_stream.seek(0)
@@ -464,11 +476,10 @@ def create_multiple_labels(
             text_top -= 0.5
             text_name_top += 0.5
         qr_code_top = (box_height - qr_code_width) / 2
-        out_box_width = paper_width - 13.5
+        outer_box_width = paper_width
+        out_box_width = paper_width - 11.5
         out_box_height = paper_height - 4.5
         text_width = box_width - qr_code_width - 1.5
-        if not show_id_on_label and not add_label_number:
-            text_top = (qr_code_width - 2) / 2
         html = flask.render_template("labels/QRCode.html", qr_code_uri=qr_code_uri, object_id=object_id,
                                      box_width=box_width,
                                      box_height=box_height, paper_width=paper_width, paper_height=paper_height,
@@ -479,15 +490,13 @@ def create_multiple_labels(
                                      text_left=text_left, text_top=text_top, text_name_top=text_name_top,
                                      out_box_width=out_box_width, out_box_height=out_box_height,
                                      has_label_dimension=has_label_dimension, text_width=text_width,
-                                     qr_code_top=qr_code_top, labels_on_page=labels_on_page,
-                                     regular_font=regular_font, bold_font=bold_font)
+                                     qr_code_top=qr_code_top, labels_on_page=labels_on_page)
 
     else:
         box_width = max(label_width, min_label_width)
         ghs_width = qr_code_width / 2
         qrcode_box_width = box_width
         ghs_box_width = box_width
-        qrcode_width = 15
 
         if centered:
             if ghs_classes_side_by_side:
@@ -497,13 +506,9 @@ def create_multiple_labels(
             qrcode_box_width = qr_code_width
             ghs_box_width = ghs_width * 2
 
-        row_amount = int(math.floor((paper_width - 6.5) / (box_width + 5)))
+        row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
 
         tmp_index = 0
-        max_box_height = 0.0
-        max_ghs_height = 0.0
-        max_box_height_amount = 0.0
-
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
             object_name_list.append(object_specifications[object_id]["object_name"])
@@ -532,48 +537,37 @@ def create_multiple_labels(
                 if min_label_height > ghs_height + 33:
                     ghs_height += min_label_height - (ghs_height + 33)
 
-            box_side_by_side_height = max(21, math.ceil(max_ghs_height), box_height - 12)
+            box_side_by_side_height = max(21, math.ceil(ghs_height), box_height - 12)
+            column_amount = int(math.floor((paper_height - 15) / (box_height + 5)))
 
-            box_height_amount = box_height + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / box_width)
+            if quantity == 1 and fill_single_page:
+                page_amount = row_amount * column_amount
+                outer_box_width = paper_width - 10
+                outer_box_height = paper_height - 15
+            else:
+                page_amount = quantity
+                outer_box_width = paper_width - 10
+                outer_box_height = ((quantity // 4) + 1) * box_height + 5
 
             tmp_index += 1
-            if box_height > max_box_height:
-                max_box_height = box_height
-            if ghs_height > max_ghs_height:
-                max_ghs_height = ghs_height
-            if box_height_amount > max_box_height_amount:
-                max_box_height_amount = box_height_amount
 
         object_amount = len(username_list)
 
-        column_amount = int(math.floor((paper_height - 15) / (max_box_height_amount + 5)))
-        if quantity == 1 and fill_single_page:
-            page_amount = row_amount * column_amount
-            outer_box_width = paper_width - 10
-            outer_box_height = paper_height - 15
-        else:
-            page_amount = quantity
-            outer_box_width = paper_width - 10
-            outer_box_height = ((quantity // 4) + 1) * max_box_height + 5
-
         if not fill_single_page:
-            outer_box_height = (((quantity * object_amount) // 4) + 1) * max_box_height + 5
-
-        has_ghs = [len(hazard_list[hazard_index]) > 0 for hazard_index in range(0, len(hazard_list))]
+            outer_box_height = (((quantity * object_amount) // 4) + 1) * box_height + 5
 
         html = flask.render_template("labels/FixedWidth.html",
                                      box_width=box_width, object_amount=object_amount,
-                                     box_height=max_box_height, qr_code_uri_list=qr_code_uri_list,
-                                     qrcode_width=qrcode_width, paper_width=paper_width, paper_height=paper_height,
+                                     box_height=box_height, qr_code_uri_list=qr_code_uri_list,
+                                     qrcode_width=qr_code_width, paper_width=paper_width, paper_height=paper_height,
                                      hazard_list=hazard_list, GHS_IMAGE_URIS=GHS_IMAGE_URIS, ghs_width=ghs_width,
                                      sample_code_list=sample_code_list, username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
-                                     ghs_amount_list=ghs_amount_list, ghs_height=max_ghs_height, has_ghs=has_ghs,
+                                     ghs_amount_list=ghs_amount_list, ghs_height=ghs_height,
                                      ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered,
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,
-                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
-                                     regular_font=regular_font, bold_font=bold_font)
+                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height)
 
     # return html.encode()
 
