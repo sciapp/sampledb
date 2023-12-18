@@ -296,8 +296,8 @@ def test_object_list_generate_multiple_labels_mixed_formats(object, flask_server
         reader = pypdf.PdfReader(file)
         assert len(reader.pages) == 1
         assert reader.pages[0].extract_text().count(object.name) == 6
-        assert float(reader.pages[0].mediabox.width) == round(A4[0], 4)
-        assert float(reader.pages[0].mediabox.height) == round(A4[1], 4)
+        assert round(float(reader.pages[0].mediabox.width), 4) == round(A4[0], 4)
+        assert round(float(reader.pages[0].mediabox.height), 4) == round(A4[1], 4)
 
 
 def test_object_list_generate_multiple_labels_fixed_widths(object, flask_server, driver, user):
@@ -382,8 +382,8 @@ def test_object_list_generate_multiple_labels_fixed_widths(object, flask_server,
         reader = pypdf.PdfReader(file)
         assert len(reader.pages) == 1
         assert reader.pages[0].extract_text().count(object.name) == 5
-        assert float(reader.pages[0].mediabox.width) == round(A4[1], 4)
-        assert float(reader.pages[0].mediabox.height) == round(A4[0], 4)
+        assert round(float(reader.pages[0].mediabox.width), 4) == round(A4[1], 4)
+        assert round(float(reader.pages[0].mediabox.height), 4) == round(A4[0], 4)
 
 
 def test_object_list_generate_multiple_labels_minimal_height(object, flask_server, driver, user):
@@ -456,8 +456,8 @@ def test_object_list_generate_multiple_labels_minimal_height(object, flask_serve
         reader = pypdf.PdfReader(file)
         assert len(reader.pages) == 1
         assert reader.pages[0].extract_text().count(object.name) == 5
-        assert float(reader.pages[0].mediabox.width) == round(LETTER[0], 4)
-        assert float(reader.pages[0].mediabox.height) == round(LETTER[1], 4)
+        assert round(float(reader.pages[0].mediabox.width), 4) == round(LETTER[0], 4)
+        assert round(float(reader.pages[0].mediabox.height), 4) == round(LETTER[1], 4)
 
 
 def test_object_list_change_signed_in_min_permission(object, flask_server, driver, user):
