@@ -75,6 +75,8 @@ def get_export_infos(
                     'data': object_version.data
                 }
             )
+            if object_version.schema:
+                relevant_action_ids.update(logic.schemas.templates.find_used_template_ids(object_version.schema))
 
             for referenced_user_id, _ in logic.objects.find_user_references(object_version, False):
                 relevant_user_ids.add(referenced_user_id)
