@@ -21,6 +21,7 @@ from .. import db
 from .units import prettify_units
 from .utils import get_translated_text
 from . import actions, datatypes, object_log, users, objects, errors, object_permissions, files, settings
+from .schemas.utils import data_iter
 from ..models import DataverseExport, DataverseExportStatus, Permissions, ObjectLogEntryType
 
 
@@ -28,57 +29,29 @@ DATAVERSE_TIMEOUT = 30
 
 
 def flatten_metadata(
-        metadata: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]],
-        path: typing.Optional[typing.List[typing.Union[str, int]]] = None
+        metadata: typing.Union[typing.Dict[str, typing.Any], typing.List[typing.Any]]
 ) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
     """
     Convert nested object data to a generator yielding the property data and path.
 
     :param metadata: the nested object data
-    :param path: the path to start at, or None
     :return: the generator for property data, whitelist path and title path
     """
-    if path is None:
-        path = []
-    if isinstance(metadata, list):
-        yield from _flatten_metadata_array(metadata, path)
-    elif isinstance(metadata, dict) and '_type' not in metadata:
-        yield from _flatten_metadata_object(metadata, path)
-    elif isinstance(metadata, dict) and '_type' in metadata and metadata['_type'] == 'timeseries':
-        yield from _flatten_metadata_timeseries(metadata, path)
-    else:
-        yield metadata, path, path
-
-
-def _flatten_metadata_array(
-        metadata: typing.List[typing.Any],
-        path: typing.List[typing.Union[str, int]]
-) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
-    for index, value in enumerate(metadata):
-        yield from flatten_metadata(value, path + [index])
-
-
-def _flatten_metadata_object(
-        metadata: typing.Dict[str, typing.Any],
-        path: typing.List[typing.Union[str, int]]
-) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
-    for key, value in metadata.items():
-        yield from flatten_metadata(value, path + [key])
-
-
-def _flatten_metadata_timeseries(
-        metadata: typing.Dict[str, typing.Any],
-        path: typing.List[typing.Union[str, int]]
-) -> typing.Generator[typing.Tuple[typing.Dict[str, typing.Any], typing.List[typing.Union[str, int]], typing.List[typing.Union[str, int]]], None, None]:
-    for row in metadata['data']:
-        utc_datetime_string, magnitude = row[:2]
-        row_metadata = {
-            '_type': 'quantity',
-            'units': metadata['units'],
-            'dimensionality': metadata['dimensionality'],
-            'magnitude': magnitude
-        }
-        yield row_metadata, path, path + [utc_datetime_string]
+    for property_path, property_data in data_iter(metadata):
+        if not isinstance(property_data, dict) or '_type' not in property_data:
+            continue
+        if property_data['_type'] == 'timeseries':
+            for row in property_data['data']:
+                utc_datetime_string, magnitude = row[:2]
+                row_metadata = {
+                    '_type': 'quantity',
+                    'units': property_data['units'],
+                    'dimensionality': property_data['dimensionality'],
+                    'magnitude': magnitude
+                }
+                yield row_metadata, list(property_path), list(property_path) + [utc_datetime_string]
+        else:
+            yield property_data, list(property_path), list(property_path)
 
 
 def _translations_to_str(
