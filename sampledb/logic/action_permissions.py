@@ -158,13 +158,13 @@ def _is_user_responsible_for_actions_instruments(
     }
 
 
-def get_actions_with_permissions(user_id: int, permissions: Permissions, action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
+def get_actions_with_permissions(user_id: typing.Optional[int], permissions: Permissions, action_type_id: typing.Optional[int] = None) -> typing.List[Action]:
     """
     Get all actions which a user has the given permissions for.
 
     Return an empty list if called with Permissions.NONE.
 
-    :param user_id: the ID of an existing user
+    :param user_id: the ID of an existing user, or None
     :param permissions: the minimum permissions required for the actions for
         the given user
     :param action_type_id: None or the ID of an existing action type
@@ -175,13 +175,20 @@ def get_actions_with_permissions(user_id: int, permissions: Permissions, action_
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
     """
-    # ensure that the user can be found
-    users.check_user_exists(user_id)
+    if user_id is not None:
+        # ensure that the user can be found
+        users.check_user_exists(user_id)
     if permissions == Permissions.NONE:
         return []
+    all_actions = actions.get_actions(action_type_id=action_type_id)
+    action_permissions = get_user_permissions_for_multiple_actions(
+        action_ids=[action.id for action in all_actions],
+        user_id=user_id,
+        max_permissions=permissions
+    )
     actions_with_permissions = []
-    for action in actions.get_actions(action_type_id=action_type_id):
-        if permissions in get_user_action_permissions(user_id=user_id, action_id=action.id):
+    for action in all_actions:
+        if permissions in action_permissions.get(action.id, Permissions.NONE):
             actions_with_permissions.append(action)
     return actions_with_permissions
 
