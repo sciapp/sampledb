@@ -3,7 +3,7 @@ import json
 import pytest
 
 import sampledb
-from sampledb.logic.schemas.data_diffs import calculate_diff, apply_diff, VALUE_NOT_SET
+from sampledb.logic.schemas.data_diffs import calculate_diff, apply_diff, VALUE_NOT_SET, invert_diff
 from sampledb.logic.errors import DiffMismatchError
 
 
@@ -387,3 +387,75 @@ def test_data_diffs():
     }
     with pytest.raises(DiffMismatchError):
         assert VALUE_NOT_SET == apply_diff(data_before, data_diff, schema_before)
+
+
+def test_invert_diff():
+    data_before = {
+        "name": {
+            "_type": "text",
+            "text": "Diff Debugging Test"
+        },
+        "table": [
+            {
+                "a": {
+                    "_type": "text",
+                    "text": "A"
+                },
+                "b": {
+                    "_type": "text",
+                    "text": "B"
+                }
+            },
+            {
+                "b": {
+                    "_type": "text",
+                    "text": "B2"
+                }
+            }
+        ]
+    }
+    data_after = {
+        "name": {
+            "_type": "text",
+            "text": "Diff Debugging Test"
+        },
+        "table": [
+            None,
+            None
+        ]
+    }
+    data_diff = calculate_diff(data_before=data_before, data_after=data_after)
+    inverse_data_diff = calculate_diff(data_before=data_after, data_after=data_before)
+    assert invert_diff(data_diff=data_diff) == inverse_data_diff
+
+def test_apply_diff_with_missing_property():
+    data_before = {}
+    data_after = {
+        'a': {
+            '_type': 'text',
+            'text': ''
+        }
+    }
+    schema_before = {
+        'type': 'object',
+        'title': 'Object',
+        'properties': {}
+    }
+    data_diff = calculate_diff(
+        data_before=data_before,
+        data_after=data_after
+    )
+    assert data_diff == {
+        'a': {
+            '_after': {
+                '_type': 'text',
+                'text': ''
+            }
+        }
+    }
+    assert apply_diff(
+        data_before=data_before,
+        data_diff=data_diff,
+        schema_before=schema_before,
+        validate_data_before=False
+    ) == data_after

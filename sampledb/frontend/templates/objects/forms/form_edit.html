@@ -4,6 +4,10 @@
 
 {% block content %}
   {{ super() }}
+  {% set plot_counter = namespace(value=0) %}
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+    window.plotly_charts = [];
+  </script>
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
@@ -12,7 +16,7 @@
     {% set property_path = () %}
     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
     {% include "objects/forms/form_any.html" %}
-    <div class="form-group row clearfix" style="padding-right:0.75em">
+    <div class="form-group row clearfix" style="padding-right:0.75em; margin-top: 15px">
       <div class="col-md-6 text-muted">* {{ _('required') }}</div>
       <div class="col-md-3">
         <a href="{{ url_for('.object', object_id=object_id) }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
@@ -22,5 +26,29 @@
       </div>
     </div>
   </form>
+  {% include "objects/view/timeseries_modals.html" %}
 {% endblock %}
 
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
+  {% if get_user_language(current_user).lang_code == 'de' %}
+    <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
+    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+      Plotly.setPlotConfig({locale: 'de'})
+    </script>
+  {% endif %}
+  <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    import {
+      togglePlotlyChartDiv
+    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
+    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
+
+    import {
+      toggleShowMore
+    } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
+    window.toggleShowMore = toggleShowMore;
+  </script>
+{% endblock %}

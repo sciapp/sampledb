@@ -15,8 +15,14 @@
   {% if data is none %}
     {% set data = [] %}
   {% endif %}
+  {% if diff is none %}
+    {% set diff = [] %}
+  {% endif %}
+  {% if previous_schema %}
+    {% set previous_schema = previous_schema.get('items') %}
+  {% endif %}
   {% set parent_prefix = id_prefix %}
-  {% for item in data + [None] %}
+  {% for item, item_diff in (zip_longest(data, diff) | list) + [(None, None)] %}
     {% set schema = schema['items'] %}
     {% if loop.last %}
       {% set is_template = True %}
@@ -26,7 +32,8 @@
       {% set property_path = property_path + (loop.index0,) %}
     {% endif %}
     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
-     {% set data = item %}
+    {% set data = item %}
+    {% set diff = item_diff %}
      <div class="col-md-9 {% if loop.index0 or loop.last %}col-md-offset-3{% endif %} {% if loop.last %}array-template{% endif %}" {% if loop.last %}disabled="disabled"{% endif %} data-id-prefix="{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em" data-array-item="list">
       {% include "objects/forms/form_any.html" %}
       <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">

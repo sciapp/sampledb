@@ -67,6 +67,10 @@ def show_object_form(
         'form': form,
     })
 
+    template_arguments.update({
+        'previous_schema': None,
+        'diff': None
+    })
     if should_upgrade_schema:
         # edit object with schema upgrade
         mode = 'upgrade'
@@ -76,6 +80,10 @@ def show_object_form(
         data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, object.schema, action.schema)
         for upgrade_warning in upgrade_warnings:
             flask.flash(upgrade_warning, 'warning')
+        template_arguments.update({
+            'previous_schema': object.schema,
+            'diff': logic.schemas.calculate_diff(object.data, data)
+        })
     elif object is not None:
         # edit object
         mode = 'edit'

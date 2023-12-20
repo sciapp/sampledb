@@ -13,6 +13,9 @@
   {% if data is none %}
     {% set data = [] %}
   {% endif %}
+  {% if diff is none %}
+    {% set diff = [] %}
+  {% endif %}
 </div>
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set col_order_index = col_order_index + 1 if col_order_index else 1 %}
@@ -20,19 +23,22 @@
 <div style="padding-left:2.5em;">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if schema['items']['type'] == 'object' %}
-    {% set item_property_names = get_property_names_in_order(schema["items"]) %}
+    {% set item_property_names = get_property_names_in_order(schema["items"], previous_schema["items"]) %}
     <table class="table" id="table_{{ table_prefix }}" data-id-prefix="{{ id_prefix }}" data-template-order-index="{{ template_order_index }}" data-array-container="object-table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}">
       <thead>
         <tr>
           {% for property_name in item_property_names %}
-            <th scope="col">{% if schema["items"].properties[property_name].title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema["items"].properties[property_name] %}data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }} {% if 'tooltip' in schema["items"].properties[property_name] %}<i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span>{% endif %}</th>
+            <th scope="col">{% if schema["items"].properties.get(property_name, {}).title %}<span {% if (property_name in schema['items'].get('required', ()) and (schema["items"].properties[property_name].type != "text" or schema["items"].properties[property_name].choices) and schema["items"].properties[property_name].type != "array") or schema["items"].properties[property_name].minLength or schema["items"].properties[property_name].minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema["items"].properties[property_name] %}data-toggle="tooltip" data-placement="top" title="{{ schema["items"].properties[property_name].tooltip | get_translated_text }}"{% endif %}>{{ schema["items"].properties[property_name].title | get_translated_text }} {% if 'tooltip' in schema["items"].properties[property_name] %}<i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span>{% elif previous_schema and previous_schema['items'].properties.get(property_name, {}).title %}{{ previous_schema['items'].properties[property_name].title | get_translated_text }}{% else %}{{ property_name }}{% endif %}</th>
           {% endfor %}
           <th style="width: 1px"></th>
         </tr>
       </thead>
       <tbody>
-        {% for item in data + [None] %}
+        {% for item, item_diff in (zip_longest(data, diff) | list) + [(None, None)] %}
           {% set schema = schema['items'] %}
+          {% if previous_schema %}
+            {% set previous_schema = previous_schema.get('items') %}
+          {% endif %}
           {% if loop.last %}
             {% set is_template = true %}
             {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
@@ -43,19 +49,24 @@
           {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           <tr data-id-prefix="{{ id_prefix }}" data-array-item="object-table" {% if loop.last %}class="array-template"{% endif %}>
             {% set data = item %}
+            {% set diff = item_diff %}
             <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
             {% for property_name in item_property_names %}
-              <td>
+              <td {% if diff and diff.get(property_name) %}{% if '_after' in diff.get(property_name) and '_before' in diff.get(property_name) %}class="data-diff-both"{% elif '_after' in diff.get(property_name) %}class="data-diff-after"{% elif '_before' in diff.get(property_name) %}class="data-diff-before"{% endif %}{% endif %}>
                 {% set is_required = property_name in schema.get('required', ()) %}
                 {% set schema = schema.properties[property_name] %}
                 {% set property_path = property_path + (property_name,) %}
                 {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
-                {% if data is not none and property_name in data %}
-                  {% set data = data[property_name] %}
-                {% else %}
-                  {% set data = none %}
+                {% if data is not none %}
+                  {% set data = data.get(property_name) %}
                 {% endif %}
-                {% if 'conditions' in schema %}
+                {% if diff is not none %}
+                  {% set diff = diff.get(property_name) %}
+                {% endif %}
+                {% if previous_schema is not none %}
+                  {% set previous_schema = previous_schema.get('properties', {}).get(property_name) %}
+                {% endif %}
+                {% if schema and 'conditions' in schema %}
                   <div data-condition-wrapper-for="{{ id_prefix }}" class="condition-wrapper" data-id-prefix="{{ id_prefix}}" data-conditions='{{ schema["conditions"] | encode_choices | stringify }}'>
                     {% include "objects/forms/form_any.html" %}
                   </div>
@@ -99,7 +110,12 @@
     {% set max_used_fields = [0] %}
     {% for item in data %}
       {% if (item | length) > max_used_fields[-1] %}
-        {% set tmp = max_used_fields.append(item | length) %}
+        {% do max_used_fields.append(item | length) %}
+      {% endif %}
+    {% endfor %}
+    {% for item in diff %}
+      {% if (item | length) > max_used_fields[-1] %}
+        {% do max_used_fields.append(item | length) %}
       {% endif %}
     {% endfor %}
     {% set max_used_fields = max_used_fields [-1] %}
@@ -119,7 +135,10 @@
       </thead>
       <tbody>
         {% set parent_prefix = id_prefix %}
-        {% for item in data + [None] %}
+        {% if previous_schema is not none %}
+          {% set previous_schema = previous_schema.get('items', {}).get('items') %}
+        {% endif %}
+        {% for item, item_diff in (zip_longest(data, diff) | list) + [(None, None)] %}
           {% if loop.last %}
             {% set is_template = True %}
             {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
@@ -130,10 +149,14 @@
           {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
           <tr data-row-id="{{ property_path[-1] }}" {% if loop.last %}class="array-template" data-template-table-type="row"{% endif %}>
             <input type="hidden" name="{{ id_prefix }}_hidden" value="hidden" />
-            {% for field_index, field in zip_longest(range(max_used_fields), item) %}
+            {% if item_diff is none %}
+              {% set item_diff = [] %}
+            {% endif %}
+            {% for field_index, field, field_diff in zip_longest(range(max_used_fields), item, item_diff) %}
               <td>
                 {% set schema = schema["items"]["items"] %}
                 {% set data = field %}
+                {% set diff = field_diff %}
                 {% set property_path = property_path + (loop.index0,) %}
                 {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
                 {% include "objects/forms/form_any.html" %}
@@ -150,6 +173,7 @@
               {% set schema = schema["items"]["items"] %}
               {% set property_path = property_path + ('!index' ~ template_order_index ~ '!', '!cindex' ~ col_order_index ~ '!',) %}
               {% set data = get_default_data(root_schema, property_path) %}
+              {% set diff = none %}
               {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
               {% include "objects/forms/form_any.html" %}
             {% endwith %}
