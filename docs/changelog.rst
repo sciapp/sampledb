@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 0.25.3
+--------------
+
+Released on December 20th, 2023.
+
+- Fixed showing plotly plots on instrument page
+- Fixed datetime format in HTTP API
+- Fixed user interface issues related to admin-only action types
+- Fixed handling of defaults during complex schema upgrades
+
 Version 0.25.2
 --------------
 

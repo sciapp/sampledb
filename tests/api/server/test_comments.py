@@ -2,6 +2,7 @@
 """
 
 """
+import datetime
 
 import requests
 import pytest
@@ -164,13 +165,12 @@ def test_get_comments(flask_server, object, auth, user):
     assert r.status_code == 200
     result_json = r.json()
     assert len(result_json) == 1
-    assert 'utc_datetime' in result_json[0]
-    del result_json[0]['utc_datetime']
     assert result_json == [
         {
             'object_id': object.id,
             'comment_id': comment_id,
             'user_id': user.id,
+            'utc_datetime': sampledb.logic.comments.get_comment(comment_id).utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
             'content': content
         }
     ]

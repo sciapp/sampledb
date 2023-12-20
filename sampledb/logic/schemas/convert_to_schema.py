@@ -45,7 +45,7 @@ def convert_to_schema(
         if result:
             return result
     if previous_schema['type'] != new_schema['type']:
-        return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' from type '%(type1)s' to type '%(type2)s'.", title=get_translated_text(new_schema['title']), type1=previous_schema['type'], type2=new_schema['type'])]
+        return copy.deepcopy(generate_placeholder(new_schema)), [_("Unable to convert property '%(title)s' from type '%(type1)s' to type '%(type2)s'.", title=get_translated_text(new_schema['title']), type1=previous_schema['type'], type2=new_schema['type'])]
     if new_schema['type'] == 'text' and 'choices' in new_schema and isinstance(data, dict):
         result = _try_convert_text_to_choices(data, new_schema)
         if result:
@@ -72,7 +72,7 @@ def convert_to_schema(
         result = _try_convert_array_to_array(data, new_schema, previous_schema)
         if result:
             return result
-    return generate_placeholder(new_schema), [_("Unable to convert property '%(title)s' of type '%(type)s'.", title=get_translated_text(new_schema['title']), type=new_schema['type'])]
+    return copy.deepcopy(generate_placeholder(new_schema)), [_("Unable to convert property '%(title)s' of type '%(type)s'.", title=get_translated_text(new_schema['title']), type=new_schema['type'])]
 
 
 def _try_convert_text_to_tags(
@@ -111,7 +111,7 @@ def _try_convert_object_to_object(
         previous_schema: typing.Dict[str, typing.Any]
 ) -> typing.Optional[typing.Tuple[typing.Dict[str, typing.Any], typing.Sequence[str]]]:
     upgrade_warnings = []
-    new_data = generate_placeholder(new_schema)
+    new_data = copy.deepcopy(generate_placeholder(new_schema))
     if not isinstance(new_data, dict):
         return None
     for property_name, property_value in data.items():
