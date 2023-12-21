@@ -750,6 +750,7 @@ def get_search_paths(
             'object_reference',
             'sample',
             'measurement',
+            'tags',
         ),
         include_file_name: bool = False
 ) -> typing.Tuple[typing.Dict[str, SearchPathInfo], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]]]:

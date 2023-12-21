@@ -103,7 +103,8 @@
               <option value="15" data-type="object_reference" data-show-field="object_reference" data-operator="!=">{{ _('is object reference not equal to') }}</option>
               <option value="16" data-type="user" data-show-field="user" data-operator="==">{{ _('is user reference equal to') }}</option>
               <option value="17" data-type="user" data-show-field="user" data-operator="!=">{{ _('is user reference not equal to') }}</option>
-              <option value="18" data-type="all" data-operator="== null">{{ _('is not set') }}</option>
+              <option value="18" data-type="tags" data-show-field="tag" data-operator="#" data-property-name="tags">{{ _('has tag') }}</option>
+              <option value="19" data-type="all" data-operator="== null">{{ _('is not set') }}</option>
             </select>
           </div>
         </div>
@@ -147,6 +148,12 @@
             <select class="form-control input-condition-field input-condition-object_reference" name="{{ id_prefix }}_uid" data-live-search="true" data-none-selected-text="&mdash;" data-sampledb-default-selected="" data-sampledb-required-perm="1">
               <option value="" selected="selected">&mdash;</option>
             </select>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-md-2" style="font-weight: normal">{{ _('Tag') }}</label>
+          <div class="col-md-4">
+            <input type="text" class="form-control input-condition-field input-condition-tag" value="" autocomplete="off" />
           </div>
         </div>
       </div>
@@ -246,7 +253,7 @@
         var property_types = search_paths[property_name].types;
         condition.find('option').each(function(_, option) {
           option = $(option);
-          if (property_types.includes(option.data('type')) || option.data('type') === 'all') {
+          if ((property_types.includes(option.data('type')) || option.data('type') === 'all') && (!option.data('property-name') || option.data('property-name') === property_name)) {
             valid_options.push(option.val());
           } else {
             option.hide();
@@ -297,6 +304,15 @@
             search_query = operand + " " + operator + " " + property_name;
           } else {
             search_query = property_name + " " + operator + " " + operand;
+          }
+          if (operator === "#" && property_name === "tags") {
+            let valid_tag = "";
+            for (const char of operand.toLowerCase()) {
+              if ("abcdefghijklmnopqrstuvwxyz0123456789_-äöüß".includes(char)) {
+                valid_tag += char;
+              }
+            }
+            search_query = operator + valid_tag;
           }
         } else {
           if (reverse_operator) {
