@@ -189,6 +189,10 @@ def test_import_elabftw_eln_file(user):
                 'en': 'The metadata for this object could not be imported.',
                 'de': 'Die Metadaten für dieses Objekt konnten nicht importiert werden.'
             }
+        },
+        'tags': {
+            '_type': 'tags',
+            'tags': []
         }
     }
 
@@ -226,5 +230,9 @@ def test_import_kadi4mat_eln_file(user):
                 'en': 'The metadata for this object could not be imported.',
                 'de': 'Die Metadaten für dieses Objekt konnten nicht importiert werden.'
             }
+        },
+        'tags': {
+            '_type': 'tags',
+            'tags': ['characterization', 'experiment']
         }
     }
