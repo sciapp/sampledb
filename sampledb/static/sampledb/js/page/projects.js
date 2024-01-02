@@ -40,7 +40,7 @@ $(function () {
     return $(this).find('.has-error').length === 0;
   });
 
-  if (window.getTemplateValue('language_info.show_create_form')) {
+  if (window.getTemplateValue('show_create_form')) {
     const createModal = $('#createProjectModal');
     createModal.removeClass('fade');
     createModal.modal('show');
