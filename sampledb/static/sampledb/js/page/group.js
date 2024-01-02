@@ -1,3 +1,5 @@
+'use strict';
+/* eslint-env jquery */
 
 import {
   updateTranslationJSON,
@@ -5,7 +7,7 @@ import {
   updateTranslationLanguages
 } from '../sampledb-internationalization.js';
 
-$(function (){
+$(function () {
   window.translations = window.getTemplateValue('translations');
 
   window.languages = window.getTemplateValue('language_info.languages');
@@ -20,20 +22,20 @@ $(function (){
     updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description']);
   }).change();
 
-  $('[data-name="input-names"] [data-language-id], [data-name="input-descriptions"] [data-language-id]').each(function() {
+  $('[data-name="input-names"] [data-language-id], [data-name="input-descriptions"] [data-language-id]').each(function () {
     setTranslationHandler(this);
   });
 
-  $('form').on('submit', function() {
+  $('form').on('submit', function () {
     $('input').change();
     $('textarea').change();
     updateTranslationJSON();
     return $(this).find('.has-error').length === 0;
-  })
+  });
   if (window.getTemplateValue('show_edit_form')) {
-    var edit_modal = $('#editGroupModal');
-    edit_modal.removeClass('fade');
-    edit_modal.modal('show');
-    edit_modal.addClass('fade');
+    const editModal = $('#editGroupModal');
+    editModal.removeClass('fade');
+    editModal.modal('show');
+    editModal.addClass('fade');
   }
 });
