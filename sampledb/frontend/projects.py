@@ -364,9 +364,9 @@ def project(project_id: int) -> FlaskResponseT:
                 flask.flash(_('This project group does not exist.'), 'error')
                 return flask.redirect(flask.url_for('.projects'))
             except logic.errors.ProjectAlreadyExistsError:
-                edit_project_form.name.errors.append(_('A project group with this name already exists.'))
+                edit_project_form.translations.errors.append(_('A project group with this name already exists.'))
             except logic.errors.InvalidProjectNameError:
-                edit_project_form.name.errors.append(_('This project group name is invalid.'))
+                edit_project_form.translations.errors.append(_('This project group name is invalid.'))
             else:
                 flask.flash(_('Project group information updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))

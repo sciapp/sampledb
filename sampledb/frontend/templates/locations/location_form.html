@@ -243,8 +243,8 @@ $(function (){
       <input type="hidden" id="input-translations" name="{{ location_form.translations.name }}" value="">
 
       <div id="capacity-field-list">
-      <label>{{ _('Storage Capacities') }}</label>
       {% if not (location_types | length == 1 and location_form.type.data == location_types[0].id | string and not location_types[0].enable_capacities) %}
+        <label>{{ _('Storage Capacities') }}</label>
         {% for action_type in valid_action_types %}
           {% for entry in location_form.capacities.entries %}
             {% if entry.action_type_id.data == action_type.id %}
