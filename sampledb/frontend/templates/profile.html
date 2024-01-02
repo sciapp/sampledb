@@ -226,10 +226,5 @@
 
 {% block scripts %}
   {{ super() }}
-
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    if (window.getTemplateValue('show_edit_form')) {
-      $('#editProfileModal').modal();
-    }
-  </script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/profile.js') }}" type="module"></script>
 {% endblock %}
