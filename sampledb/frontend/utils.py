@@ -563,6 +563,7 @@ def to_datatype(obj: typing.Any) -> typing.Any:
 
 def get_style_aliases(style: str) -> typing.List[str]:
     return {
+        'choice': ['list', 'choice'],
         'horizontal_table': ['table', 'horizontal_table'],
         'full_width_table': ['table']
     }.get(style, [style])

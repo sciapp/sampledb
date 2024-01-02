@@ -1355,4 +1355,33 @@ This example shows how Markdown can be used for instrument Notes.
         object = sampledb.logic.objects.create_object(multi_measurement_action.id, data, instrument_responsible_user.id)
         sampledb.logic.object_permissions.set_object_permissions_for_all_users(object.id, sampledb.models.Permissions.READ)
 
+        choice_array_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                'title': 'Example Object',
+                'type': 'object',
+                'properties': {
+                    'name': {
+                        'title': 'Object Name',
+                        'type': 'text',
+                        'languages': ['en', 'de']
+                    },
+                    'choice_array': {
+                        'title': 'Choice Array',
+                        'type': 'array',
+                        'style': 'choice',
+                        'items': {
+                            'title': 'Choice Item',
+                            'type': 'text',
+                            'choices': [{'en': 'A'}, {'en': 'B'}, {'en': 'C'}, {'en': 'D (en)', 'de': 'D (de)'}]
+                        }
+                    }
+                },
+                'required': ['name'],
+                'propertyOrder': ['name', 'choice_array']
+            }
+        )
+        set_action_translation(Language.ENGLISH, choice_array_action.id, name="Choice Array Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(choice_array_action.id, sampledb.models.Permissions.READ)
+
     print("Success: set up demo data", flush=True)

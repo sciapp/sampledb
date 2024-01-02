@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.27.0
+------------
+
+Currently under development.
+
+- Added ``choice`` array style for multi selection dropdowns
+
 Version 0.26
 ------------
 
