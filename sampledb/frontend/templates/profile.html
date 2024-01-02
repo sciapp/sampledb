@@ -218,12 +218,18 @@
   {% endif %}
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("show_edit_form", user_profile_form and request.form.get(user_profile_form.action.name) == 'edit_profile') %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
 
-  {% if user_profile_form and request.form.get(user_profile_form.action.name) == 'edit_profile' %}
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+    if (window.getTemplateValue('show_edit_form')) {
       $('#editProfileModal').modal();
-    </script>
-  {% endif %}
+    }
+  </script>
 {% endblock %}
