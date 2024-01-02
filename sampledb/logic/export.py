@@ -70,7 +70,7 @@ def get_export_infos(
                 {
                     'id': object_version.version_id,
                     'user_id': object_version.user_id,
-                    'utc_datetime': object_version.utc_datetime.isoformat() if object_version.utc_datetime is not None else None,
+                    'utc_datetime': object_version.utc_datetime.replace(tzinfo=None).isoformat() if object_version.utc_datetime is not None else None,
                     'schema': object_version.schema,
                     'data': object_version.data
                 }
@@ -91,7 +91,7 @@ def get_export_infos(
                 'id': comment.id,
                 'author_id': comment.user_id,
                 'content': comment.content,
-                'utc_datetime': comment.utc_datetime.isoformat() if comment.utc_datetime is not None else None
+                'utc_datetime': comment.utc_datetime.replace(tzinfo=None).isoformat() if comment.utc_datetime is not None else None
             })
 
         for location_assignment in logic.locations.get_object_location_assignments(object.id):
@@ -114,7 +114,7 @@ def get_export_infos(
                 'assigning_user_id': location_assignment.user_id,
                 'responsible_user_id': location_assignment.responsible_user_id,
                 'location_id': location_assignment.location_id,
-                'utc_datetime': location_assignment.utc_datetime.isoformat() if location_assignment.utc_datetime is not None else None,
+                'utc_datetime': location_assignment.utc_datetime.replace(tzinfo=None).isoformat() if location_assignment.utc_datetime is not None else None,
                 'status': status
             })
 
@@ -133,7 +133,7 @@ def get_export_infos(
             if (publication_info.doi, publication_info.title) in publication_log_entries:
                 publication_log_entry = publication_log_entries[(publication_info.doi, publication_info.title)]
                 object_infos[-1]['publications'][-1]['user_id'] = publication_log_entry.user_id
-                object_infos[-1]['publications'][-1]['utc_datetime'] = publication_log_entry.utc_datetime.isoformat()
+                object_infos[-1]['publications'][-1]['utc_datetime'] = publication_log_entry.utc_datetime.replace(tzinfo=None).isoformat()
 
         for file_info in logic.files.get_files_for_object(object.id):
             if not file_info.is_hidden:
@@ -144,7 +144,7 @@ def get_export_infos(
                     'title': file_info.title,
                     'description': file_info.description,
                     'uploader_id': file_info.user_id,
-                    'utc_datetime': file_info.utc_datetime.isoformat() if file_info.utc_datetime else None
+                    'utc_datetime': file_info.utc_datetime.replace(tzinfo=None).isoformat() if file_info.utc_datetime else None
                 })
                 if file_info.storage in {'local', 'database'}:
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
@@ -225,7 +225,7 @@ def get_export_infos(
                                 'log_entry_id': log_entry.id,
                                 'version_id': version.version_id,
                                 'content': version.content,
-                                'utc_datetime': version.utc_datetime.isoformat(),
+                                'utc_datetime': version.utc_datetime.replace(tzinfo=None).isoformat(),
                                 'categories': []
                             })
                             for category in version.categories:
