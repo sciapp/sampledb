@@ -268,53 +268,5 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
-    import {
-      updateTranslationJSON,
-      setTranslationHandler,
-      updateTranslationLanguages,
-      initMarkdownField,
-      updateMarkdownField
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
-    window.updateTranslationJSON = updateTranslationJSON;
-    window.setTranslationHandler = setTranslationHandler;
-    window.updateTranslationLanguages = updateTranslationLanguages;
-    window.initMarkdownField = initMarkdownField;
-    window.updateMarkdownField = updateMarkdownField;
-  </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-$(function (){
-  window.translations = window.getTemplateValue('translations');
-
-  window.languages = window.getTemplateValue('language_info.languages');
-  updateTranslationJSON();
-  $('#select-language-name').selectpicker('val', window.getTemplateValue('name_language_ids').map(String));
-  $('#select-language-description').selectpicker('val', window.getTemplateValue('description_language_ids').map(String));
-
-  $('#select-language-name').on('change', function () {
-    updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
-  }).change();
-  $('#select-language-description').on('change', function () {
-    updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description']);
-  }).change();
-
-  $('[data-name="input-names"] [data-language-id], [data-name="input-descriptions"] [data-language-id]').each(function() {
-    setTranslationHandler(this);
-  });
-
-  $('form').on('submit', function() {
-    $('input').change();
-    $('textarea').change();
-    updateTranslationJSON();
-    return $(this).find('.has-error').length === 0;
-  })
-  if (window.getTemplateValue('show_edit_form')) {
-    var edit_modal = $('#editGroupModal');
-    edit_modal.removeClass('fade');
-    edit_modal.modal('show');
-    edit_modal.addClass('fade');
-  }
-});
-</script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/group.js') }}" type="module"></script>
 {% endblock %}
