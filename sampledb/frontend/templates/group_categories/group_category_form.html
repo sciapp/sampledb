@@ -7,6 +7,12 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
@@ -17,7 +23,7 @@
         let language_ids = $.map(language_picker.selectpicker('val'), function(language_id) {
           return +language_id;
         });
-        language_ids.push({{ ENGLISH.id }});
+        language_ids.push(window.getTemplateValue('language_info.english_id'));
         $('[data-language-id]').each(function(_, e) {
           let element = $(e);
           if (language_ids.includes(+element.data('languageId'))) {
