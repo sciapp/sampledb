@@ -8,6 +8,26 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-toggle/css/bootstrap-toggle.min.css') }}" />
 {% endblock %}
 
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% for lang in languages %}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+
+  {% do set_template_value("translations", translations) %}
+  {% if submit_text == 'Create' %}
+    {% do set_template_value("name_language_ids", [ENGLISH.id]) %}
+    {% do set_template_value("description_language_ids", [ENGLISH.id]) %}
+  {% else %}
+    {% do set_template_value("name_language_ids", name_language_ids) %}
+    {% do set_template_value("description_language_ids", description_language_ids) %}
+  {% endif %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
@@ -28,36 +48,22 @@
     window.updateMarkdownField = updateMarkdownField;
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.translations = {{ translations | tojson }};
+$(function (){
+  window.translations = window.getTemplateValue('translations');
   if (window.translations.length === 0) {
     window.translations.push({
-      'language_id': "{{ ENGLISH.id }}",
+      'language_id': '' + window.getTemplateValue('language_info.english_id'),
       'lang_name': '',
       'name': '',
       'description': ''
     });
   }
 
-  window.languages = [
-    {% for lang in languages %}
-      {
-          'id': '{{ lang.id }}',
-          'name': '{{ lang.names | get_translated_text }}',
-          'lang_code': '{{ lang.lang_code }}'
-      },
-    {% endfor %}
-  ];
-
-$(function (){
+  window.languages = window.getTemplateValue('language_info.languages');
   updateTranslationJSON();
 
-  {% if submit_text == 'Create' %}
-    $('#select-language-name').selectpicker('val', ['{{ ENGLISH.id }}']);
-    $('#select-language-description').selectpicker('val', ['{{ ENGLISH.id }}']);
-  {% else %}
-    $('#select-language-name').selectpicker('val', [ {% for id in name_language_ids %} '{{ id }}', {% endfor %}]);
-    $('#select-language-description').selectpicker('val', [ {% for id in description_language_ids %} '{{ id }}', {% endfor %}]);
-  {% endif %}
+  $('#select-language-name').selectpicker('val', window.getTemplateValue('name_language_ids').map(String));
+  $('#select-language-description').selectpicker('val', window.getTemplateValue('description_language_ids').map(String));
 
   $('#select-language-name').on('change', function () {
     updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
@@ -74,7 +80,7 @@ $(function (){
     $('input').change();
     $('textarea').change();
     window.translations = $.map(window.translations, function(translation, index){
-      if (translation.name  === '' && translation.description === '' && translation.language_id !== {{ ENGLISH.id }}){
+      if (translation.name  === '' && translation.description === '' && translation.language_id !== window.getTemplateValue('language_info.english_id')){
         return null;
       }
       return translation
