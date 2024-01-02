@@ -508,7 +508,21 @@
   {% endif %}
 {% endblock %}
 
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% for lang in languages %}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
 
+  {% do set_template_value("translations", translations) %}
+  {% do set_template_value("name_language_ids", name_language_ids) %}
+  {% do set_template_value("description_language_ids", description_language_ids) %}
+  {% do set_template_value("show_edit_form", show_edit_form) %}
+
+  {{ super() }}
+{% endblock %}
 
 {% block scripts %}
   {{ super() }}
@@ -532,24 +546,14 @@
     window.updateMarkdownField = updateMarkdownField;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-
-window.translations = {{ translations | tojson }};
-
-window.languages = [
-  {% for lang in languages %}
-      {
-          'id': '{{ lang.id }}',
-          'name': '{{ lang.names | get_translated_text }}',
-          'lang_code': '{{ lang.lang_code }}'
-      },
-  {% endfor %}
-];
-
 $(function (){
+  window.translations = window.getTemplateValue('translations');
+
+  window.languages = window.getTemplateValue('language_info.languages');
   updateTranslationJSON();
 
-  $('#select-language-name').selectpicker('val', [{% for id in name_language_ids %} '{{ id }}', {% endfor %}]);
-  $('#select-language-description').selectpicker('val', [{% for id in description_language_ids %} '{{ id }}', {% endfor %}]);
+  $('#select-language-name').selectpicker('val', window.getTemplateValue('name_language_ids').map(String));
+  $('#select-language-description').selectpicker('val', window.getTemplateValue('description_language_ids').map(String));
 
   $('#select-language-name').on('change', function () {
     updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description']);
@@ -567,7 +571,7 @@ $(function (){
     $('input').change();
     $('textarea').change();
     window.translations = $.map(window.translations, function(translation, index){
-      if (translation.name  === '' && translation.description === '' && translation.language_id !== {{ ENGLISH.id }}){
+      if (translation.name  === '' && translation.description === '' && translation.language_id !== ('' + window.getTemplateValue('language_info.english_id'))) {
         return null;
       }
       return translation;
@@ -575,17 +579,13 @@ $(function (){
     updateTranslationJSON();
     return $(this).find('.has-error').length === 0;
   })
- });
 
+  if (window.getTemplateValue('show_edit_form')) {
+    var edit_modal = $('#editProjectModal');
+    edit_modal.removeClass('fade');
+    edit_modal.modal('show');
+    edit_modal.addClass('fade');
+  }
+});
 </script>
-  {% if show_edit_form %}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    $(document).ready(function() {
-      var edit_modal = $('#editProjectModal');
-      edit_modal.removeClass('fade');
-      edit_modal.modal('show');
-      edit_modal.addClass('fade');
-    });
-  </script>
-  {% endif %}
 {% endblock %}
