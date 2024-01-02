@@ -335,11 +335,11 @@ The objects directory contains files uploaded for the objects in data.json.
 """
     if user_id is not None:
         readme_text += f"""
-This archive was created for user #{user_id} at {datetime.datetime.now().isoformat()}.
+This archive was created for user #{user_id} at {datetime.datetime.now(datetime.timezone.utc).isoformat()}.
 """
     else:
         readme_text += f"""
-This archive was created for an anonymous user at {datetime.datetime.now().isoformat()}.
+This archive was created for an anonymous user at {datetime.datetime.now(datetime.timezone.utc).isoformat()}.
 """
 
     archive_files["sampledb_export/README.txt"] = readme_text
