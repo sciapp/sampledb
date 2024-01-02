@@ -1,19 +1,22 @@
-$(function() {
-  let file_upload = $('#input-file-upload');
-  let file_submit = $('#button-file-submit');
-  let file_text = $('#input-file-text');
-  function changeHandler() {
-    var files = file_upload[0].files;
+'use strict';
+/* eslint-env jquery */
+
+$(function () {
+  const fileUpload = $('#input-file-upload');
+  const fileSubmit = $('#button-file-submit');
+  const fileText = $('#input-file-text');
+  function changeHandler () {
+    const files = fileUpload[0].files;
     if (files.length === 1) {
-      file_text.val(files[0].name);
-      file_submit.prop('disabled', false);
-      file_submit.removeClass('disabled');
+      fileText.val(files[0].name);
+      fileSubmit.prop('disabled', false);
+      fileSubmit.removeClass('disabled');
     } else {
-      file_text.val("");
-      file_submit.prop('disabled', true);
-      file_submit.addClass('disabled');
+      fileText.val('');
+      fileSubmit.prop('disabled', true);
+      fileSubmit.addClass('disabled');
     }
   }
-  file_upload.on('change', changeHandler);
+  fileUpload.on('change', changeHandler);
   changeHandler();
 });
