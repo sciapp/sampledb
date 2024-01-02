@@ -1,10 +1,13 @@
+'use strict';
+/* eslint-env jquery */
+
 import {
   updateTranslationJSON,
   setTranslationHandler,
-  updateTranslationLanguages,
+  updateTranslationLanguages
 } from '../sampledb-internationalization.js';
 
-$(function (){
+$(function () {
   window.translations = window.getTemplateValue('translations');
 
   window.languages = window.getTemplateValue('language_info.languages');
@@ -25,23 +28,23 @@ $(function (){
     setTranslationHandler(this);
   });
 
-  $('form').on('submit', function() {
+  $('form').on('submit', function () {
     $('input').change();
     $('textarea').change();
-    window.translations = $.map(window.translations, function(translation, index){
-      if (translation.name  === '' && translation.description === '' && translation.language_id !== ('' + window.getTemplateValue('language_info.english_id'))) {
+    window.translations = $.map(window.translations, function (translation, index) {
+      if (translation.name === '' && translation.description === '' && translation.language_id !== ('' + window.getTemplateValue('language_info.english_id'))) {
         return null;
       }
       return translation;
     });
     updateTranslationJSON();
     return $(this).find('.has-error').length === 0;
-  })
+  });
 
   if (window.getTemplateValue('show_edit_form')) {
-    var edit_modal = $('#editProjectModal');
-    edit_modal.removeClass('fade');
-    edit_modal.modal('show');
-    edit_modal.addClass('fade');
+    const editModal = $('#editProjectModal');
+    editModal.removeClass('fade');
+    editModal.modal('show');
+    editModal.addClass('fade');
   }
 });
