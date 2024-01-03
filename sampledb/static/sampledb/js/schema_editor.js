@@ -214,7 +214,7 @@ function enableSchemaEditor () {
         }
         schema.properties.tags = {
           type: 'tags',
-          title:  window.getTemplateValue('tags_translations')
+          title: window.getTemplateValue('tags_translations')
         };
         if (!('required' in schema)) {
           schema.required = [];

@@ -1,3 +1,6 @@
+'use strict';
+/* eslint-env jquery */
+
 import {
   updateTranslationJSON,
   setTranslationHandler,
@@ -6,11 +9,11 @@ import {
 } from '../sampledb-internationalization.js';
 
 window.mdeFields = {
-  'descriptions': [],
-  'short_descriptions': []
+  descriptions: [],
+  short_descriptions: []
 };
 
-$(function(){
+$(function () {
   window.languages = window.getTemplateValue('language_info.languages');
 
   window.translations = window.getTemplateValue('translations');
@@ -38,27 +41,27 @@ $(function(){
     setTranslationHandler(element);
   });
 
-  $('form').on('submit', function() {
+  $('form').on('submit', function () {
     $('input').change();
     $('textarea').change();
-     window.translations = $.map(window.translations, function(translation, index){
-       if (translation.name  === '' && translation.description === '' &&
-           translation.short_description === '' && +translation.language_id !== window.getTemplateValue('language_info.english_id')){
-           return null;
-       }
-       return translation
+    window.translations = $.map(window.translations, function (translation, index) {
+      if (translation.name === '' && translation.description === '' &&
+           translation.short_description === '' && +translation.language_id !== window.getTemplateValue('language_info.english_id')) {
+        return null;
+      }
+      return translation;
     });
     updateTranslationJSON();
     return $(this).find('.has-error').length === 0;
   });
 
-  function updateDescriptionMarkdown() {
+  function updateDescriptionMarkdown () {
     updateMarkdownField('input-markdown', 'descriptions', 'input-descriptions', '300px');
   }
   $('#input-markdown').change(updateDescriptionMarkdown);
   updateDescriptionMarkdown();
 
-  function updateShortDescriptionMarkdown() {
+  function updateShortDescriptionMarkdown () {
     updateMarkdownField('input-short-description-is-markdown', 'short_descriptions', 'input-short-descriptions', '100px');
   }
   $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
