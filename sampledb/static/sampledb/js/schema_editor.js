@@ -108,11 +108,11 @@ function enableSchemaEditor () {
       const title = titleInput.val();
       let hasError = false;
       if (title === '' && langCode === 'en') {
-        titleHelp.text(window.schema_editor_translations.enter_title);
+        titleHelp.text(window.getTemplateValue('translations.enter_title'));
         titleGroup.addClass('has-error');
         hasError = true;
       } else if (/^\\s+$/.test(title)) {
-        titleHelp.text(window.schema_editor_translations.title_must_not_be_whitespace);
+        titleHelp.text(window.getTemplateValue('translations.title_must_not_be_whitespace'));
         titleGroup.addClass('has-error');
         hasError = true;
       } else if (title !== '') {
@@ -166,7 +166,7 @@ function enableSchemaEditor () {
         }
         schema.properties.hazards = {
           type: 'hazards',
-          title: window.schema_editor_hazards_translations
+          title: window.getTemplateValue('hazards_translations')
         };
         if (!('required' in schema)) {
           schema.required = [];
@@ -214,7 +214,7 @@ function enableSchemaEditor () {
         }
         schema.properties.tags = {
           type: 'tags',
-          title: window.schema_editor_tags_translations
+          title:  window.getTemplateValue('tags_translations')
         };
         if (!('required' in schema)) {
           schema.required = [];
@@ -319,19 +319,19 @@ function enableSchemaEditor () {
     helpParent.removeClass('has-error');
     let hasError = false;
     if (!('properties' in schema)) {
-      helpBlock.text(window.schema_editor_translations.objects_need_one_property);
+      helpBlock.text(window.getTemplateValue('translations.objects_need_one_property'));
       helpParent.addClass('has-error');
       hasError = true;
     } else if (!('name' in schema.properties)) {
-      helpBlock.html(window.schema_editor_translations.object_must_have_name_text);
+      helpBlock.html(window.getTemplateValue('translations.object_must_have_name_text'));
       helpParent.addClass('has-error');
       hasError = true;
     } else if (!('type' in schema.properties.name) || schema.properties.name.type !== 'text' || ('multiline' in schema.properties.name && schema.properties.name.multiline) || ('markdown' in schema.properties.name && schema.properties.name.markdown) || 'choices' in schema.properties.name) {
-      helpBlock.html(window.schema_editor_translations.object_name_must_be_text);
+      helpBlock.html(window.getTemplateValue('translations.object_name_must_be_text'));
       helpParent.addClass('has-error');
       hasError = true;
     } else if (!('required' in schema) || !schema.required.includes('name')) {
-      helpBlock.html(window.schema_editor_translations.object_name_must_be_required);
+      helpBlock.html(window.getTemplateValue('translations.object_name_must_be_required'));
       helpParent.addClass('has-error');
       hasError = true;
     }
@@ -599,7 +599,7 @@ function enableSchemaEditor () {
 
       if (hasMinLength) {
         if (isNaN(minLength)) {
-          minLengthHelp.text(window.schema_editor_translations.enter_number);
+          minLengthHelp.text(window.getTemplateValue('translations.enter_number'));
           minLengthGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -609,7 +609,7 @@ function enableSchemaEditor () {
             minLengthHelp.text('');
             minLengthGroup.removeClass('has-error');
           } else {
-            minLengthHelp.text(window.schema_editor_translations.enter_nonnegative_number);
+            minLengthHelp.text(window.getTemplateValue('translations.enter_nonnegative_number'));
             minLengthGroup.addClass('has-error');
             hasError = true;
           }
@@ -628,7 +628,7 @@ function enableSchemaEditor () {
 
       if (hasMaxLength) {
         if (isNaN(maxLength)) {
-          maxLengthHelp.text(window.schema_editor_translations.enter_number);
+          maxLengthHelp.text(window.getTemplateValue('translations.enter_number'));
           maxLengthGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -638,7 +638,7 @@ function enableSchemaEditor () {
             maxLengthHelp.text('');
             maxLengthGroup.removeClass('has-error');
           } else {
-            maxLengthHelp.text(window.schema_editor_translations.enter_nonnegative_number);
+            maxLengthHelp.text(window.getTemplateValue('translations.enter_nonnegative_number'));
             maxLengthGroup.addClass('has-error');
             hasError = true;
           }
@@ -649,9 +649,9 @@ function enableSchemaEditor () {
         maxLengthGroup.removeClass('has-error');
       }
       if ('minLength' in propertySchema && 'maxLength' in propertySchema && propertySchema.minLength > propertySchema.maxLength) {
-        minLengthHelp.text(window.schema_editor_translations.enter_at_most_max_length);
+        minLengthHelp.text(window.getTemplateValue('translations.enter_at_most_max_length'));
         minLengthGroup.addClass('has-error');
-        maxLengthHelp.text(window.schema_editor_translations.enter_at_least_min_length);
+        maxLengthHelp.text(window.getTemplateValue('translations.enter_at_least_min_length'));
         maxLengthGroup.addClass('has-error');
         hasError = true;
       }
@@ -667,22 +667,22 @@ function enableSchemaEditor () {
       const nameHelp = nameGroup.find('.help-block');
       if (name !== realPath[realPath.length - 1] && name in schema.properties) {
         name = realPath[realPath.length - 1];
-        nameHelp.text(window.schema_editor_translations.name_must_be_unique);
+        nameHelp.text(window.getTemplateValue('translations.name_must_be_unique'));
         nameGroup.addClass('has-error');
         hasError = true;
       } else if (name === 'hazards' || name === 'tags') {
         name = realPath[realPath.length - 1];
-        nameHelp.text(window.schema_editor_translations.name_must_not_be_hazards_or_tags);
+        nameHelp.text(window.getTemplateValue('translations.name_must_not_be_hazards_or_tags'));
         nameGroup.addClass('has-error');
         hasError = true;
       } else if (!/^[A-Za-z].*$/.test(name)) {
         name = realPath[realPath.length - 1];
-        nameHelp.text(window.schema_editor_translations.name_must_begin_with_character);
+        nameHelp.text(window.getTemplateValue('translations.name_must_begin_with_character'));
         nameGroup.addClass('has-error');
         hasError = true;
       } else if (!/^.*[A-Za-z0-9]$/.test(name)) {
         name = realPath[realPath.length - 1];
-        nameHelp.text(window.schema_editor_translations.name_must_end_with_character_or_number);
+        nameHelp.text(window.getTemplateValue('translations.name_must_end_with_character_or_number'));
         nameGroup.addClass('has-error');
         hasError = true;
       } else if (/^[A-Za-z0-9_]*$/.test(name) && !/^[A-Za-z0-9]*__[A-Za-z0-9_]*$/.test(name)) {
@@ -690,7 +690,7 @@ function enableSchemaEditor () {
         nameGroup.removeClass('has-error');
       } else {
         name = realPath[realPath.length - 1];
-        nameHelp.text(window.schema_editor_translations.name_must_contain_valid_chars);
+        nameHelp.text(window.getTemplateValue('translations.name_must_contain_valid_chars'));
         nameGroup.addClass('has-error');
         hasError = true;
       }
@@ -702,11 +702,11 @@ function enableSchemaEditor () {
         const titleHelp = titleGroup.find('.help-block');
         const title = titleInput.val();
         if (title === '' && langCode === 'en') {
-          titleHelp.text(window.schema_editor_translations.title_must_not_be_empty);
+          titleHelp.text(window.getTemplateValue('translations.title_must_not_be_empty'));
           titleGroup.addClass('has-error');
           hasError = true;
         } else if (/^\\s+$/.test(title)) {
-          titleHelp.text(window.schema_editor_translations.title_must_not_be_whitespace);
+          titleHelp.text(window.getTemplateValue('translations.title_must_not_be_whitespace'));
           titleGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -726,11 +726,11 @@ function enableSchemaEditor () {
         const noteHelp = noteGroup.find('.help-block');
         const note = noteInput.val();
         if (hasNote && note === '' && langCode === 'en') {
-          noteHelp.text(window.schema_editor_translations.note_must_not_be_empty);
+          noteHelp.text(window.getTemplateValue('translations.note_must_not_be_empty'));
           noteGroup.addClass('has-error');
           hasError = true;
         } else if (hasNote && /^\\s+$/.test(note)) {
-          noteHelp.text(window.schema_editor_translations.note_must_not_be_whitespace);
+          noteHelp.text(window.getTemplateValue('translations.note_must_not_be_whitespace'));
           noteGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -749,11 +749,11 @@ function enableSchemaEditor () {
         const tooltipHelp = tooltipGroup.find('.help-block');
         const tooltip = tooltipInput.val();
         if (hasTooltip && tooltip === '' && langCode === 'en') {
-          tooltipHelp.text(window.schema_editor_translations.tooltip_must_not_be_empty);
+          tooltipHelp.text(window.getTemplateValue('translations.tooltip_must_not_be_empty'));
           tooltipGroup.addClass('has-error');
           hasError = true;
         } else if (hasTooltip && /^\\s+$/.test(tooltip)) {
-          tooltipHelp.text(window.schema_editor_translations.tooltip_must_not_be_whitespace);
+          tooltipHelp.text(window.getTemplateValue('translations.tooltip_must_not_be_whitespace'));
           tooltipGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -886,7 +886,7 @@ function enableSchemaEditor () {
       }
       choices = nonEmptyChoices;
       if (choices.length === 0) {
-        choicesHelp.text(window.schema_editor_translations.choices_must_not_be_empty);
+        choicesHelp.text(window.getTemplateValue('translations.choices_must_not_be_empty'));
         choicesGroup.addClass('has-error');
         hasError = true;
       } else {
@@ -971,7 +971,7 @@ function enableSchemaEditor () {
       if (templateInput.is(':visible')) {
         const newTemplateID = templateInput.selectpicker('val');
         if (newTemplateID === '' || Number.isNaN(Number.parseInt(newTemplateID))) {
-          templateHelp.text(window.schema_editor_translations.schema_template_must_be_set);
+          templateHelp.text(window.getTemplateValue('translations.schema_template_must_be_set'));
           templateGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -1065,7 +1065,7 @@ function enableSchemaEditor () {
         unitsHelp.text('');
         unitsGroup.removeClass('has-error');
       } else {
-        unitsHelp.text(window.schema_editor_translations.enter_units);
+        unitsHelp.text(window.getTemplateValue('translations.enter_units'));
         unitsGroup.addClass('has-error');
         hasError = true;
       }
@@ -1077,7 +1077,7 @@ function enableSchemaEditor () {
       const displayDigitsHelp = displayDigitsGroup.find('.help-block');
       if (hasDisplayDigits) {
         if (isNaN(displayDigitsValue) || displayDigitsValue === null || displayDigitsValue === '' || Number.parseInt(displayDigitsValue) < 0 || Number.parseInt(displayDigitsValue) > 15) {
-          displayDigitsHelp.text(window.schema_editor_translations.enter_display_digits);
+          displayDigitsHelp.text(window.getTemplateValue('translations.enter_display_digits'));
           displayDigitsGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -1099,7 +1099,7 @@ function enableSchemaEditor () {
 
       if (hasDefault) {
         if (isNaN(defaultValue) || defaultValue === null || defaultValue === '') {
-          defaultHelp.text(window.schema_editor_translations.enter_default_magnitude);
+          defaultHelp.text(window.getTemplateValue('translations.enter_default_magnitude'));
           defaultGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -1147,7 +1147,7 @@ function enableSchemaEditor () {
         unitsHelp.text('');
         unitsGroup.removeClass('has-error');
       } else {
-        unitsHelp.text(window.schema_editor_translations.enter_units);
+        unitsHelp.text(window.getTemplateValue('translations.enter_units'));
         unitsGroup.addClass('has-error');
         hasError = true;
       }
@@ -1159,7 +1159,7 @@ function enableSchemaEditor () {
       const displayDigitsHelp = displayDigitsGroup.find('.help-block');
       if (hasDisplayDigits) {
         if (isNaN(displayDigitsValue) || displayDigitsValue === null || displayDigitsValue === '' || Number.parseInt(displayDigitsValue) < 0 || Number.parseInt(displayDigitsValue) > 15) {
-          displayDigitsHelp.text(window.schema_editor_translations.enter_display_digits);
+          displayDigitsHelp.text(window.getTemplateValue('translations.enter_display_digits'));
           displayDigitsGroup.addClass('has-error');
           hasError = true;
         } else {
@@ -1201,7 +1201,7 @@ function enableSchemaEditor () {
           extensionsGroup.removeClass('has-error');
         } else {
           delete propertySchema.extensions;
-          extensionsHelp.text(window.schema_editor_translations.enter_extensions);
+          extensionsHelp.text(window.getTemplateValue('translations.enter_extensions'));
           extensionsGroup.addClass('has-error');
           hasError = true;
         }
@@ -1393,7 +1393,7 @@ function enableSchemaEditor () {
       if (window.schema_editor_error_message !== null && window.schema_editor_error_message === ('invalid units (at ' + path[0] + ')')) {
         const unitsGroup = unitsInput.parent();
         unitsGroup.addClass('has-error');
-        unitsGroup.find('.help-block').text(window.schema_editor_translations.enter_valid_units);
+        unitsGroup.find('.help-block').text(window.getTemplateValue('translations.enter_valid_units'));
         window.schema_editor_errors[path.join('__') + '__specific'] = true;
         unitsInput.on('change', function () {
           window.schema_editor_error_message = null;
@@ -1546,6 +1546,9 @@ function disableSchemaEditor () {
 }
 
 $(function () {
+  window.schema_editor_error_message = window.getTemplateValue('error_message');
+  window.schema_editor_error_lines = window.getTemplateValue('error_lines');
+  window.schema_editor_initial_content = null;
   window.code_mirror_editor = CodeMirror.fromTextArea($('#input-schema')[0], {
     lineNumbers: true,
     mode: { name: 'javascript', json: true },
