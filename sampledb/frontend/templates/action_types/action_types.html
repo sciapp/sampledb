@@ -5,9 +5,7 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ fingerprinted_static('sortable/js/Sortable.min.js') }}"></script>
-    {% if current_user.is_admin and not current_user.is_readonly %}
-      <script src="{{ fingerprinted_static('sampledb/js/page/action_types.js') }}" type="module"></script>
-    {% endif %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/action_types.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}

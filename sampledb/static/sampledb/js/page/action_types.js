@@ -1,12 +1,14 @@
 $(document).ready(function() {
+  if ($('#sortingModal').length > 0) {
     let elem = document.getElementById('actionTypesModalList');
     let options = {
-        handle: '.handle',
-        animation: 150,
-        dataIdAttr: 'data-id'
+      handle: '.handle',
+      animation: 150,
+      dataIdAttr: 'data-id'
     }
     let sortable = new Sortable(elem, options);
-    $('#form-sort-order').on('submit', function() {
-        document.getElementById('encoded_order').value = sortable.toArray().join();
+    $('#form-sort-order').on('submit', function () {
+      document.getElementById('encoded_order').value = sortable.toArray().join();
     });
+  }
 });
