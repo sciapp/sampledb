@@ -84,33 +84,42 @@
   {% endif %}
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("federation_uuid", config['FEDERATION_UUID']) %}
+  {% do set_template_value("show_add_form", show_add_form) %}
+  {% do set_template_value("nodes", nodes) %}
+  {% do set_template_value("edges", edges) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('visjs/js/vis-network.min.js') }}"></script>
   <script nonce="{{ generate_inline_script_nonce() }}">
-    {% if show_add_form %}
-    $(document).ready(function() {
-      var add_modal = $('#addComponentModal');
-      add_modal.removeClass('fade');
-      add_modal.modal('show');
-      add_modal.addClass('fade');
-    });
-    {% endif %}
-    {% if config['FEDERATION_UUID'] is not none %}
-    $('span.copy-uuid').on('click', function () {
-      var button = $(this);
-      navigator.clipboard.writeText(button.attr('data-uuid')).then(
-        () => {
-          var wrapper = button.parent();
-          button.tooltip('hide');
-          wrapper.tooltip('show');
-          setTimeout(function () {
-            wrapper.tooltip('hide');
-          }, 500);
-        }
-      );
-    });
-    {% endif %}
+    if (window.getTemplateValue('show_add_form')) {
+      $(document).ready(function () {
+        var add_modal = $('#addComponentModal');
+        add_modal.removeClass('fade');
+        add_modal.modal('show');
+        add_modal.addClass('fade');
+      });
+    }
+    if (window.getTemplateValue('federation_uuid') === null) {
+      $('span.copy-uuid').on('click', function () {
+        var button = $(this);
+        navigator.clipboard.writeText(button.attr('data-uuid')).then(
+          () => {
+            var wrapper = button.parent();
+            button.tooltip('hide');
+            wrapper.tooltip('show');
+            setTimeout(function () {
+              wrapper.tooltip('hide');
+            }, 500);
+          }
+        );
+      });
+    }
     $(function() {
       let address_input = $('#addComponentAddress');
       let uuid_input = $('#addComponentUUID');
@@ -148,54 +157,54 @@
         name_group.removeClass('has-error').removeClass('has-success');
         name_group.find('.help-block').remove();
       });
-      {% if nodes and edges %}
-      // create an array with nodes
-      let nodes = new vis.DataSet(
-        {{ nodes | tojson }}
-      );
-      // create an array with edges
-      let edges = new vis.DataSet(
-        {{ edges | tojson }}
-      );
+      if (window.getTemplateValue('nodes').length > 0 && window.getTemplateValue('edges').length > 0) {
+        // create an array with nodes
+        let nodes = new vis.DataSet(
+          window.getTemplateValue('nodes')
+        );
+        // create an array with edges
+        let edges = new vis.DataSet(
+          window.getTemplateValue('edges')
+        );
 
-      // create a network
-      let container = document.getElementById("graph");
-      let data = {
-        nodes: nodes,
-        edges: edges
-      };
-      let options = {
-        layout: {
-          randomSeed: 9 // prevent the graph from being random
-        },
-        interaction: {
-          zoomView: false,
-          dragView: false,
-          dragNodes: false,
-          selectable: false,
-          tooltipDelay: 0
-        },
-        nodes: {
-          shape: 'box',
-          color: {
-            background: '#ffffff',
-            border: '#222222'
-          }
-        },
-        edges: {
-          arrowStrikethrough: false,
-          arrows: {
-            to: {
-              scaleFactor: 0.25
-            },
-            from: {
-              scaleFactor: 0.25
+        // create a network
+        let container = document.getElementById("graph");
+        let data = {
+          nodes: nodes,
+          edges: edges
+        };
+        let options = {
+          layout: {
+            randomSeed: 9 // prevent the graph from being random
+          },
+          interaction: {
+            zoomView: false,
+            dragView: false,
+            dragNodes: false,
+            selectable: false,
+            tooltipDelay: 0
+          },
+          nodes: {
+            shape: 'box',
+            color: {
+              background: '#ffffff',
+              border: '#222222'
+            }
+          },
+          edges: {
+            arrowStrikethrough: false,
+            arrows: {
+              to: {
+                scaleFactor: 0.25
+              },
+              from: {
+                scaleFactor: 0.25
+              }
             }
           }
-        }
-      };
-      let network = new vis.Network(container, data, options);
-      {% endif %}
+        };
+        let network = new vis.Network(container, data, options);
+      }
     });
   </script>
 {% endblock %}
