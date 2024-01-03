@@ -121,7 +121,7 @@
       <div class="col-sm-8">
         <select class="selectpicker" id="input-component" name="{{ add_alias_form.component.name }}" data-width="100%" data-live-search="true">
           {% for component in addable_components %}
-            <option value="{{ component.id }}"{% if add_alias_form.component.data == component.id %}selected="selected"{% endif %}>{{ component.get_name() }}</option>
+            <option value="{{ component.id }}" {% if add_alias_form.component.data == component.id %}selected="selected"{% endif %}>{{ component.get_name() }}</option>
           {% endfor %}
         </select>
         {% if add_alias_form.component.errors %}
@@ -323,16 +323,27 @@
     </div>
     {% endif %}
 {% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("aliases_by_component", aliases_by_component) %}
+  {% do set_template_value("component_names", component_names) %}
+  {% do set_template_value("user_data", user_data) %}
+  {% do set_template_value("show_edit_form", show_edit_form) %}
+  {% do set_template_value("translations.edit_alias", _('Edit Alias:')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    var aliases_by_component = {{ aliases_by_component | tojson }};
-    var component_names = {{ component_names | tojson }};
-    var user_data = {{ user_data | tojson }};
+    var aliases_by_component = window.getTemplateValue('aliases_by_component');
+    var component_names = window.getTemplateValue('component_names');
+    var user_data = window.getTemplateValue('user_data');
     function setEditAliasForm(component_id) {
       copyAliasFrom(component_id, '-edit');
-      $('#editAliasModalLabel').text('{{ _('Edit Alias:') }} ' + component_names[component_id]);
+      $('#editAliasModalLabel').text(window.getTemplateValue('translations.edit_alias') + component_names[component_id]);
       $('#input-component-edit').val(component_id);
       let copy_from_select = $('#input-copy-from-edit');
       copy_from_select.find('option').prop('disabled', false);
@@ -374,9 +385,9 @@
     }
     for (const field of ['name', 'affiliation', 'role']) {
       useRealDataInputChanged(field, '-add');
-      {% if show_edit_form %}
-      useRealDataInputChanged(field, '-edit');
-      {% endif %}
+      if (window.getTemplateValue('show_edit_form')) {
+        useRealDataInputChanged(field, '-edit');
+      }
     }
 
     $(function() {
@@ -431,18 +442,14 @@
       $('.button-edit-alias').on('click', function() {
         setEditAliasForm($(this).data('componentId'));
       });
+      if (window.getTemplateValue('show_edit_form')) {
+        var edit_modal = $('#editAliasModal');
+        edit_modal.removeClass('fade');
+        edit_modal.modal('show');
+        edit_modal.addClass('fade');
+      }
     });
   </script>
-  {% if show_edit_form %}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    $(document).ready(function() {
-      var edit_modal = $('#editAliasModal');
-      edit_modal.removeClass('fade');
-      edit_modal.modal('show');
-      edit_modal.addClass('fade');
-    });
-  </script>
-  {% endif %}
 {% endblock %}
 {% block stylesheets %}
   {{ super() }}
