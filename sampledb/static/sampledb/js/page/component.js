@@ -1,18 +1,21 @@
+'use strict';
+/* eslint-env jquery */
+
 $(document).ready(function () {
   if (window.getTemplateValue('show_edit_form')) {
-    var edit_modal = $('#editComponentModal');
-    edit_modal.removeClass('fade');
-    edit_modal.modal('show');
-    edit_modal.addClass('fade');
+    const editModal = $('#editComponentModal');
+    editModal.removeClass('fade');
+    editModal.modal('show');
+    editModal.addClass('fade');
   }
   if (window.getTemplateValue('created_api_token')) {
     $('#viewApiTokenModal').modal('show');
     $('#api-token button').bind('click', function () {
-      var input = document.querySelector('#api-token input');
+      const input = document.querySelector('#api-token input');
       input.setSelectionRange(0, input.value.length + 1);
       $(input).focus();
       try {
-        var success = document.execCommand('copy');
+        const success = document.execCommand('copy');
         if (success) {
           $('#api-token-copy-notes').text(window.getTemplateValue('translations.copied'));
           $('#api-token').removeClass('has-error').addClass('has-success');
@@ -34,10 +37,10 @@ if (window.getTemplateValue('add_own_api_token_form_has_errors')) {
   $('#createOwnApiTokenModal').modal('show');
 }
 $('span.copy-uuid').on('click', function () {
-  var button = $(this);
+  const button = $(this);
   navigator.clipboard.writeText(button.attr('data-uuid')).then(
     () => {
-      var wrapper = button.parent();
+      const wrapper = button.parent();
       button.tooltip('hide');
       wrapper.tooltip('show');
       setTimeout(function () {
