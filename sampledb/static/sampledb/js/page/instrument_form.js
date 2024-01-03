@@ -1,3 +1,6 @@
+'use strict';
+/* eslint-env jquery */
+
 import {
   updateTranslationJSON,
   setTranslationHandler,
@@ -6,60 +9,59 @@ import {
 } from '../sampledb-internationalization.js';
 
 window.mdeFields = {
-  'descriptions': [],
-  'short_descriptions': [],
-  'notes': []
+  descriptions: [],
+  short_descriptions: [],
+  notes: []
 };
 window.new_category_counter = -1;
-$(function() {
+$(function () {
   window.translations = window.getTemplateValue('translations');
   window.categories = window.getTemplateValue('categories');
 
   window.languages = window.getTemplateValue('language_info.languages');
-  function updateCategoryJSON() {
-    var category_json = JSON.stringify(window.categories);
-    $('#input-categories').val(category_json);
+  function updateCategoryJSON () {
+    $('#input-categories').val(JSON.stringify(window.categories));
   }
 
   updateCategoryJSON();
   updateTranslationJSON();
-  function updateEventHandler() {
-    $('[data-category-id][data-category-id!=""]').each(function() {
-      $(this).find('input').on('change', function() {
-        var category_element = $(this).closest('[data-category-id]');
-        var category_id = category_element.attr('data-category-id');
-        var category_title = category_element.find('input[type="text"]').val().trim();
-        if (category_title === "") {
-          category_element.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_category_title'));
-        } else if (category_title.length > 100) {
-          category_element.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_shorter_category_title'));
+  function updateEventHandler () {
+    $('[data-category-id][data-category-id!=""]').each(function () {
+      $(this).find('input').on('change', function () {
+        const categoryElement = $(this).closest('[data-category-id]');
+        const categoryID = categoryElement.attr('data-category-id');
+        const categoryTitle = categoryElement.find('input[type="text"]').val().trim();
+        if (categoryTitle === '') {
+          categoryElement.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_category_title'));
+        } else if (categoryTitle.length > 100) {
+          categoryElement.parent().addClass('has-error').find('.help-block').html(window.getTemplateValue('translations.enter_shorter_category_title'));
         } else {
-          category_element.parent().removeClass('has-error').find('.help-block').html("");
+          categoryElement.parent().removeClass('has-error').find('.help-block').html('');
         }
-        window.categories.forEach(function(category) {
-          if (category.id === category_id) {
-            category.title = category_title;
+        window.categories.forEach(function (category) {
+          if (category.id === categoryID) {
+            category.title = categoryTitle;
           }
         });
         updateCategoryJSON();
       }).change();
-      $(this).find('select').on('change', function() {
-        var category_element = $(this).closest('[data-category-id]');
-        var category_id = category_element.attr('data-category-id');
-        var category_theme = category_element.find('option:selected').val();
-        window.categories.forEach(function(category) {
-          if (category.id === category_id) {
-            category.theme = category_theme;
+      $(this).find('select').on('change', function () {
+        const categoryElement = $(this).closest('[data-category-id]');
+        const categoryID = categoryElement.attr('data-category-id');
+        const categoryTheme = categoryElement.find('option:selected').val();
+        window.categories.forEach(function (category) {
+          if (category.id === categoryID) {
+            category.theme = categoryTheme;
           }
         });
         updateCategoryJSON();
       });
-      $(this).find('.button-delete-category').on('click', function() {
-        var category_element = $(this).closest('[data-category-id]');
-        var category_id = category_element.attr('data-category-id');
-        category_element.parent().remove();
-        window.categories = window.categories.filter(function(category) {
-          return category.id !== category_id;
+      $(this).find('.button-delete-category').on('click', function () {
+        const categoryElement = $(this).closest('[data-category-id]');
+        const categoryID = categoryElement.attr('data-category-id');
+        categoryElement.parent().remove();
+        window.categories = window.categories.filter(function (category) {
+          return category.id !== categoryID;
         });
         updateCategoryJSON();
       });
@@ -69,9 +71,9 @@ $(function() {
     $($('#instrument-log-category-template').html()).insertBefore($(this).parent());
     $(this).parent().prev('.form-group').find('.input-group').attr('data-category-id', window.new_category_counter);
     window.categories.push({
-      'id': window.new_category_counter.toString(),
-      'title': '',
-      'theme': window.getTemplateValue('default_theme_name')
+      id: window.new_category_counter.toString(),
+      title: '',
+      theme: window.getTemplateValue('default_theme_name')
     });
     window.new_category_counter -= 1;
     $('[data-category-id][data-category-id!=""] select').addClass('selectpicker');
@@ -110,27 +112,27 @@ $(function() {
   });
   updateEventHandler();
 
-  $('form').on('submit', function() {
+  $('form').on('submit', function () {
     $('input').change();
     $('textarea').change();
     updateTranslationJSON();
     return $(this).find('.has-error').length === $(this).find('.has-error-static').length;
-  })
+  });
 
-  function updateDescriptionMarkdown() {
+  function updateDescriptionMarkdown () {
     updateMarkdownField('input-markdown', 'descriptions', 'input-descriptions', '300px');
   }
 
   $('#input-markdown').change(updateDescriptionMarkdown);
   updateDescriptionMarkdown();
 
-  function updateShortDescriptionMarkdown() {
+  function updateShortDescriptionMarkdown () {
     updateMarkdownField('input-short-description-is-markdown', 'short_descriptions', 'input-short-descriptions', '100px');
   }
   $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
   updateShortDescriptionMarkdown();
 
-  function updateNotesMarkdown() {
+  function updateNotesMarkdown () {
     updateMarkdownField('input-notes-is-markdown', 'notes', 'input-notes', '300px');
   }
   $('#input-notes-is-markdown').change(updateNotesMarkdown);
