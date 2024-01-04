@@ -2660,6 +2660,9 @@ msgstr "ist eine Referenz zu dem Nutzer"
 msgid "is user reference not equal to"
 msgstr "ist eine Referenz zu einem anderen Nutzer als"
 
+msgid "has tag"
+msgstr "hat Tag"
+
 msgid "is not set"
 msgstr "ist nicht gesetzt"
 
@@ -2671,6 +2674,9 @@ msgstr "Physikalische Größe"
 
 msgid "Object Reference"
 msgstr "Objektreferenz"
+
+msgid "Tag"
+msgstr "Tag"
 
 msgid "Object must meet all conditions (and)"
 msgstr "Objekt muss alle Bedingungen erfüllen (and)"

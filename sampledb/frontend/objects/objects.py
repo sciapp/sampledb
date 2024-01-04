@@ -114,6 +114,7 @@ def objects() -> FlaskResponseT:
             'measurement',
             'plotly_chart',
             'timeseries',
+            'tags',
         )
     )
 

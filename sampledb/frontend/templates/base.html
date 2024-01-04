@@ -86,15 +86,6 @@
       </ul>
       {% else %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left" id="nav-search">
-        {% if action_id %}
-          <input type="hidden" name="action" value="{{ action_id }}" id="input-search-action-id" />
-        {% endif %}
-        {% if project_id %}
-          <input type="hidden" name="action" value="{{ project_id }}" id="input-search-project-id" />
-        {% endif %}
-        {% if action_type %}
-          <input type="hidden" name="t" value="{{ action_type.id }}" id="input-search-action-type" />
-        {% endif %}
         <div class="input-group">
           <input type="text" id="input-search" class="form-control" placeholder="{{ _('Search…') }}" name="q" {% if search_query %} value="{{ search_query }}"{% endif %}>
           <span class="input-group-btn">
