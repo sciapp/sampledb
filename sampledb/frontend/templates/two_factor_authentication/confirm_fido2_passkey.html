@@ -5,6 +5,9 @@
 {% block content %}
 <div class="text-center">
   <h1>{{ _('Use FIDO2 Passkey') }}</h1>
+  <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
+    <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
+  </div>
   <form action="{{ url_for('frontend.confirm_fido2_passkey_two_factor_authentication', method_id=method_id) }}" method="post" id="fido2-authenticate-form">
     {{ confirm_form.hidden_tag() }}
     <p class="text-muted">
@@ -39,34 +42,39 @@
 
 {% block scripts %}
   {{ super() }}
-  {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
-    <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-      import {
-        get,
-        parseRequestOptionsFromJSON,
-      } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    import {
+      get,
+      supported,
+      parseRequestOptionsFromJSON,
+    } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
 
-      async function authenticate(e) {
-        e && e.preventDefault();
-        const options = {{ dict(options) | tojson }};
-        const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
-        const form = $('#fido2-authenticate-form');
-        form.removeClass('has-error');
-        const help_bock = form.find('.help-block');
-        help_bock.text('');
-        try {
-          const assertion = await get(publicKeyCredentialRequestOptions);
-          form.find('[name="assertion"]').val(JSON.stringify(assertion));
-          form[0].submit();
-          return true;
-        } catch (error) {
-          form.addClass('has-error');
-          help_bock.text("{{ _('The passkey failed to authenticate with the following error:') }}: " + error)
-          return false;
-        }
+    async function authenticate(e) {
+      e && e.preventDefault();
+      const options = {{ dict(options) | tojson }};
+      const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
+      const form = $('#fido2-authenticate-form');
+      form.removeClass('has-error');
+      const help_bock = form.find('.help-block');
+      help_bock.text('');
+      try {
+        const assertion = await get(publicKeyCredentialRequestOptions);
+        form.find('[name="assertion"]').val(JSON.stringify(assertion));
+        form[0].submit();
+        return true;
+      } catch (error) {
+        form.addClass('has-error');
+        help_bock.text("{{ _('The passkey failed to authenticate with the following error:') }}: " + error)
+        return false;
       }
-
-      $("#fido2-authenticate-form").on('submit', authenticate);
-    </script>
-  {% endif %}
+    }
+    $(function() {
+      if (supported()) {
+        $("#fido2-authenticate-form").on('submit', authenticate);
+      } else {
+        $('#alert-fido2-not-supported').show();
+        $('#fido2-authenticate-form input').prop('disabled', true);
+      }
+    });
+  </script>
 {% endblock %}

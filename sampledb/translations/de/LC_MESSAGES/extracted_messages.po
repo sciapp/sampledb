@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-11-21 08:52+0100\n"
+"POT-Creation-Date: 2024-01-04 11:30+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2732,6 +2732,17 @@ msgstr "Angemeldet bleiben"
 msgid "or"
 msgstr "oder"
 
+msgid "Error:"
+msgstr "Fehler:"
+
+#, python-format
+msgid ""
+"Your browser does not support WebAuthn, which is required for using FIDO2"
+" Passkeys in %(service_name)s."
+msgstr ""
+"Für die Verwendung von FIDO2 Passkeys in %(service_name)s wird WebAuthn "
+"vorausgesetzt, WebAuthn wird jedoch nicht von Ihrem Browser unterstützt."
+
 msgid "Use Passkey"
 msgstr "Passkey nutzen"
 
@@ -4801,9 +4812,6 @@ msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
 
 msgid "The minimum width must be a number greater or equal to 0."
 msgstr "Die Mindestbreite muss eine Zahl größer oder gleich 0 sein."
-
-msgid "Error:"
-msgstr "Fehler:"
 
 msgid "Query:"
 msgstr "Abfrage:"

@@ -5,6 +5,9 @@
 {% block content %}
 <div class="text-center">
   <h1>{{ _('Set Up FIDO2 Passkey for Two-Factor Authentication') }}</h1>
+  <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
+    <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
+  </div>
   <form action="{{ url_for('frontend.setup_fido2_passkey_two_factor_authentication') }}" method="post" id="setup-form">
     <p class="text-muted">{{ _('Please enter a description for the passkey you wish to use and then click "Set Up".') }}</p>
     {{ setup_form.hidden_tag() }}
@@ -25,6 +28,7 @@
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     import {
       create,
+      supported,
       parseCreationOptionsFromJSON
     } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
 
@@ -48,7 +52,8 @@
     }
 
     $(function() {
-      $('#setup-form').on('submit', function(event) {
+      if (supported()) {
+        $('#setup-form').on('submit', function (event) {
           event && event.preventDefault();
           if ($("#input-passkey-description").val() === "") {
             $('#descriptionFormGroup').addClass('has-error').find('.help-block').text("{{ _('Please enter at least 1 character.') }}");
@@ -57,7 +62,11 @@
             $('#descriptionFormGroup').removeClass('has-error').find('.help-block').text('');
             return register();
           }
-      });
+        });
+      } else {
+        $('#alert-fido2-not-supported').show();
+        $('#setup-form input').prop('disabled', true);
+      }
     });
   </script>
 {% endblock %}

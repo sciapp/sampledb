@@ -65,7 +65,10 @@
           {{ _('or') }}
         </div>
       </div>
-      <form class="form-horizontal" method="post" id="fido2-authenticate-form" style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center">
+      <form class="form-horizontal" method="post" id="fido2-authenticate-form" style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column">
+        <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
+            <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
+        </div>
         {{ passkey_form.hidden_tag() }}
         <div class="help-block"></div>
         <button type="submit" class="btn btn-primary">{{ _('Use Passkey') }}</button>
@@ -80,6 +83,7 @@
     <script type="module" nonce="{{ generate_inline_script_nonce() }}">
       import {
         get,
+        supported,
         parseRequestOptionsFromJSON,
       } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
 
@@ -103,7 +107,14 @@
         }
       }
 
-      $("#fido2-authenticate-form").on('submit', authenticate);
+      $(function() {
+        if (supported()) {
+          $("#fido2-authenticate-form").on('submit', authenticate);
+        } else {
+          $('#alert-fido2-not-supported').show();
+          $('#fido2-authenticate-form button').prop('disabled', true);
+        }
+      });
     </script>
   {% endif %}
 {% endblock %}
