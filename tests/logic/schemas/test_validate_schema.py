@@ -531,7 +531,7 @@ def test_validate_datetime_schema_invalid_default_type():
     schema = {
         'title': 'Example',
         'type': 'datetime',
-        'default': datetime.datetime.now()
+        'default': datetime.datetime.now(datetime.timezone.utc)
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))

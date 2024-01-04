@@ -163,8 +163,8 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
         object_url=object_url,
         object_name=object_name,
         object_name_is_str=isinstance(object_name, str),
-        created=creation_datetime,
-        modified=modification_datetime,
+        created=creation_datetime.replace(tzinfo=None) if creation_datetime is not None else None,
+        modified=modification_datetime.replace(tzinfo=None) if modification_datetime is not None else None,
         creators=[
             {
                 'name': user.name,

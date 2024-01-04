@@ -603,7 +603,7 @@ def test_validate_datetime_invalid_datetime_type():
     }
     instance = {
         '_type': 'datetime',
-        'utc_datetime': datetime.datetime.now()
+        'utc_datetime': datetime.datetime.now(datetime.timezone.utc)
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
