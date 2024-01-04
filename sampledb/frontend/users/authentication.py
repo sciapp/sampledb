@@ -58,8 +58,11 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     return url.startswith(server_path) and all(c in '/=?&_.+-' or c.isalnum() for c in url)
 
 
-def _redirect_to_next_url() -> FlaskResponseT:
-    next_url = flask.request.args.get('next', flask.url_for('.index'))
+def _redirect_to_next_url(
+        next_url: typing.Optional[str] = None
+) -> FlaskResponseT:
+    if next_url is None:
+        next_url = flask.request.args.get('next', flask.url_for('.index'))
     index_url = flask.url_for('.index')
     if not _is_url_safe_for_redirect(next_url):
         next_url = index_url
@@ -107,7 +110,8 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
                 'user_id': user.id,
                 'is_for_refresh': is_for_refresh,
                 'remember_me': form.remember_me.data,
-                'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S'),
+                'next_url': flask.request.args.get('next', '/')
             }
             if len(two_factor_authentication_methods) == 1:
                 two_factor_authentication_method = two_factor_authentication_methods[0]
@@ -154,7 +158,13 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
     )
 
 
-def complete_sign_in(user: typing.Optional[User], is_for_refresh: bool, remember_me: bool) -> FlaskResponseT:
+def complete_sign_in(
+        user: typing.Optional[User],
+        is_for_refresh: bool,
+        remember_me: bool,
+        *,
+        next_url: typing.Optional[str] = None
+) -> FlaskResponseT:
     if not user:
         flask.flash(_('Please sign in again.'), 'error')
         flask_login.logout_user()
@@ -164,7 +174,7 @@ def complete_sign_in(user: typing.Optional[User], is_for_refresh: bool, remember
     else:
         flask_login.login_user(user, remember=remember_me)
         refresh()
-    return _redirect_to_next_url()
+    return _redirect_to_next_url(next_url)
 
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])
