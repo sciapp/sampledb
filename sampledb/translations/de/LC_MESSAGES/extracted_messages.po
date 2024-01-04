@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-11-16 08:54+0100\n"
+"POT-Creation-Date: 2024-01-04 14:41+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -118,6 +118,12 @@ msgid "You need GRANT permissions to edit the permissions for this action."
 msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
 "Aktion zu bearbeiten."
+
+msgid "Please enter at least 1 character."
+msgstr "Bitte geben Sie mindestens 1 Zeichen ein."
+
+msgid "Please enter at least 3 characters."
+msgstr "Bitte geben Sie mindestens 3 Zeichen ein."
 
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
@@ -2035,7 +2041,7 @@ msgstr "API Token"
 msgid "API Access Tokens"
 msgstr "API Zugriffstoken"
 
-msgid "Two Factor Authentication"
+msgid "Two-Factor Authentication"
 msgstr "Zwei-Faktor-Authentisierung"
 
 msgid "Webhooks"
@@ -2089,6 +2095,9 @@ msgstr "Authentifizierungsmethode"
 msgid "Other"
 msgstr "Andere"
 
+msgid "FIDO2 Passkey"
+msgstr "FIDO2 Passkey"
+
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
@@ -2118,10 +2127,10 @@ msgstr ""
 msgid "Expiration Datetime"
 msgstr "Ablaufzeitpunkt"
 
-msgid "TOTP-based Two Factor Authentication"
+msgid "TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
 
-msgid "Unknown Two Factor Authentication Method"
+msgid "Unknown Two-Factor Authentication Method"
 msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode"
 
 msgid "Disable"
@@ -2133,8 +2142,11 @@ msgstr "Aktivieren"
 msgid "Disable this method before deleting it."
 msgstr "Deaktivieren Sie diese Methode um sie löschen zu können."
 
-msgid "Set up TOTP-based Two Factor Authentication"
+msgid "Set up TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+msgid "Set up FIDO2 Passkey for Two-Factor Authentication"
+msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
 
 msgid ""
 "Webhooks allow you to subscribe to the object log, as described in <a "
@@ -2345,11 +2357,21 @@ msgstr "Schließen"
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
+msgid "Type"
+msgstr "Typ"
+
 msgid "The password must be at least 3 characters long."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
-msgid "Type"
-msgstr "Typ"
+#, python-format
+msgid ""
+"When signing in with a FIDO2 Passkey, %(service_name)s will "
+"<strong>not</strong> use any additional two-factor authentication methods"
+" configured in your preferences."
+msgstr ""
+"Wenn Sie sich mit einem FIDO2 Passkey anmelden, wird "
+"%(service_name)szusätzlich in Ihren Einstellungen eingerichtete Zwei-"
+"Faktor-Authentisierungsmethoden <strong>nicht</strong> verwenden."
 
 msgid "Add"
 msgstr "Hinzufügen"
@@ -2399,6 +2421,11 @@ msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
+
+msgid "The passkey failed to register with the following error:"
+msgstr ""
+"Das Registrieren des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -2717,6 +2744,28 @@ msgstr ""
 
 msgid "Remember me"
 msgstr "Angemeldet bleiben"
+
+msgid "or"
+msgstr "oder"
+
+msgid "Error:"
+msgstr "Fehler:"
+
+#, python-format
+msgid ""
+"Your browser does not support WebAuthn, which is required for using FIDO2"
+" Passkeys in %(service_name)s."
+msgstr ""
+"Für die Verwendung von FIDO2 Passkeys in %(service_name)s wird WebAuthn "
+"vorausgesetzt, WebAuthn wird jedoch nicht von Ihrem Browser unterstützt."
+
+msgid "Use Passkey"
+msgstr "Passkey nutzen"
+
+msgid "The passkey failed to authenticate with the following error:"
+msgstr ""
+"Die Authentisierung des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
 
 msgid "Sign Out"
 msgstr "Abmelden"
@@ -4671,9 +4720,6 @@ msgstr ""
 "Falls ein Nutzer in dieser Liste fehlt, geben Sie bitte dessen ID unten "
 "ein."
 
-msgid "or"
-msgstr "oder"
-
 msgid "Enter User ID"
 msgstr "Nutzer-ID eingeben"
 
@@ -4782,9 +4828,6 @@ msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
 
 msgid "The minimum width must be a number greater or equal to 0."
 msgstr "Die Mindestbreite muss eine Zahl größer oder gleich 0 sein."
-
-msgid "Error:"
-msgstr "Fehler:"
 
 msgid "Query:"
 msgstr "Abfrage:"
@@ -6440,6 +6483,32 @@ msgstr ""
 msgid "Create Project Group"
 msgstr "Projektgruppe erstellen"
 
+msgid "Use FIDO2 Passkey"
+msgstr "FIDO2 Passkey verwenden"
+
+msgid ""
+"Please click \"Sign In\" and then use your FIDO2 passkey to complete the "
+"sign in process."
+msgstr ""
+"Bitte klicken Sie auf \"Anmelden\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um den Anmeldeprozess abzuschließen."
+
+msgid ""
+"Please click \"Confirm\" and then use your FIDO2 passkey to activate this"
+" two-factor authentication method."
+msgstr ""
+"Bitte klicken Sie auf \"Bestätigen\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um die Zwei-Faktor-Authentisierungsmethode zu aktivieren."
+
+#, python-format
+msgid ""
+"Please click \"Confirm\" and then use your FIDO2 passkey to confirm that "
+"you want to deactivate <em>%(method_description)s</em>."
+msgstr ""
+"Bitte klicken Sie auf \"Bestätigen\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um die Deaktivierung von <em>%(method_description)s</em> zu "
+"bestätigen"
+
 msgid "Enter TOTP Verification Code"
 msgstr "TOTP Bestätigungscode eingeben"
 
@@ -6452,7 +6521,7 @@ msgstr ""
 
 msgid ""
 "Please enter the TOTP verification code generated using an app such as "
-"Google Authenticator to activate this two factor authentication method."
+"Google Authenticator to activate this two-factor authentication method."
 msgstr ""
 "Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
 " Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
@@ -6489,7 +6558,20 @@ msgstr ""
 "Bitte wählen Sie eine Zwei-Faktor-Authentisierungsmethode, um den "
 "Anmeldeprozess abzuschließen."
 
-msgid "Set Up TOTP-based Two Factor Authentication"
+msgid "Set Up FIDO2 Passkey for Two-Factor Authentication"
+msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
+
+msgid ""
+"Please enter a description for the passkey you wish to use and then click"
+" \"Set Up\"."
+msgstr ""
+"Bitte geben Sie eine Beschreibung für den Passkey, den Sie verwenden "
+"möchten, ein und klicken Sie dann auf \"Einrichten\"."
+
+msgid "Set Up"
+msgstr "Einrichten"
+
+msgid "Set Up TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
 
 msgid ""
@@ -6507,15 +6589,12 @@ msgstr "TOTP Setup QR Code"
 msgid "or enter the following setup key:"
 msgstr "oder geben Sie den folgenden Einrichtungsschlüssel ein:"
 
-msgid "Set Up"
-msgstr "Einrichten"
-
-msgid "Unsupported Two Factor Authentication Method"
+msgid "Unsupported Two-Factor Authentication Method"
 msgstr "Nicht unterstützte Zwei-Faktor-Authentisierungsmethode"
 
 #, python-format
 msgid ""
-"The two factor authentication method set up for your account is currently"
+"The two-factor authentication method set up for your account is currently"
 " unsupported. Please <a "
 "href=\"mailto:%(contact_email)s?subject=%(service_name)s\"> contact an "
 "administrator</a>."
@@ -6544,6 +6623,9 @@ msgstr ""
 "Sie nutzen das Standard-Administrator-Passwort aus der SampleDB-"
 "Dokumentation. Bitte ändern Sie Ihr Passwort, bevor Sie diese SampleDB-"
 "Installation für andere verfügbar machen."
+
+msgid "No user was found for this passkey."
+msgstr "Für diesen Passkey wurde kein Nutzer gefunden."
 
 msgid "Please sign in again."
 msgstr "Bitte melden Sie sich erneut an."
@@ -6659,16 +6741,16 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
-msgid "You cannot delete an active two factor authentication method."
+msgid "You cannot delete an active two-factor authentication method."
 msgstr "Sie können eine aktive Zwei-Faktor-Authentisierungsmethode nicht löschen."
 
-msgid "The two factor authentication method has been deleted."
+msgid "The two-factor authentication method has been deleted."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde gelöscht."
 
-msgid "The two factor authentication method has been enabled."
+msgid "The two-factor authentication method has been enabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde aktiviert."
 
-msgid "The two factor authentication method has been disabled."
+msgid "The two-factor authentication method has been disabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde deaktiviert."
 
 msgid "Something went wrong, please try again."
@@ -6769,19 +6851,30 @@ msgstr "Der Nutzer wurde deaktiviert."
 msgid "Successfully updated the user information."
 msgstr "Die Nutzerinformationen wurden erfolgreich geändert."
 
-msgid "Successfully set up two factor authentication."
+msgid "Successfully set up two-factor authentication."
 msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
 
 msgid "The code was invalid, please try again."
 msgstr "Der Code war ungültig. Bitte versuchen Sie es erneut."
 
-msgid "This two factor authentication attempt has failed. Please try again."
+msgid "This two-factor authentication attempt has failed. Please try again."
 msgstr ""
 "Der Zwei-Faktor-Authentisierungsversuch ist fehlgeschlagen. Bitte "
 "versuchen Sie es erneut."
 
-msgid "The two factor authentication method has already been disabled."
+msgid "The two-factor authentication method has already been disabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde bereits deaktiviert."
+
+msgid "Failed to set up two-factor authentication."
+msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
+
+msgid ""
+"The passkey does not match the one stored for this two-factor "
+"authentication method, please try again."
+msgstr ""
+"Der Passkey passt nicht zu dem, der für diese Zwei-Faktor-"
+"Authentisierungsmethode abgespeichert wurde. Bitte versuchen Sie es "
+"erneut."
 
 #, python-format
 msgid "Unnamed Action (#%(action_id)s)"

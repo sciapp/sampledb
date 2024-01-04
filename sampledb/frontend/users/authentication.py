@@ -4,16 +4,19 @@
 """
 
 import datetime
+import json
 import typing
 
 import flask
 import flask_login
 from flask_babel import _, lazy_gettext, refresh
+from fido2.webauthn import UserVerificationRequirement
 
 from .. import frontend
-from ...logic.authentication import login, get_active_two_factor_authentication_methods
+from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server
 from ...logic.users import get_user, User
-from ...frontend.users_forms import SigninForm, SignoutForm
+from ..users_forms import SigninForm, SignoutForm
+from .forms import WebAuthnLoginForm
 from ... import login_manager
 from ...utils import FlaskResponseT
 
@@ -56,8 +59,11 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     return url.startswith(server_path) and all(c in '/=?&_.+-' or c.isalnum() for c in url)
 
 
-def _redirect_to_next_url() -> FlaskResponseT:
-    next_url = flask.request.args.get('next', flask.url_for('.index'))
+def _redirect_to_next_url(
+        next_url: typing.Optional[str] = None
+) -> FlaskResponseT:
+    if next_url is None:
+        next_url = flask.request.args.get('next', flask.url_for('.index'))
     index_url = flask.url_for('.index')
     if not _is_url_safe_for_redirect(next_url):
         next_url = index_url
@@ -66,6 +72,10 @@ def _redirect_to_next_url() -> FlaskResponseT:
 
 def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
     form = SigninForm()
+    passkey_form = WebAuthnLoginForm()
+    all_credentials = get_all_fido2_passkey_credentials()
+    server = get_webauthn_server()
+
     has_errors = False
     if form.validate_on_submit():
         username = form.username.data
@@ -101,25 +111,62 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
                 'user_id': user.id,
                 'is_for_refresh': is_for_refresh,
                 'remember_me': form.remember_me.data,
-                'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S'),
+                'next_url': flask.request.args.get('next', '/')
             }
             if len(two_factor_authentication_methods) == 1:
                 two_factor_authentication_method = two_factor_authentication_methods[0]
                 if two_factor_authentication_method.data.get('type') == 'totp':
                     return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication', method_id=two_factor_authentication_method.id))
+                if two_factor_authentication_method.data.get('type') == 'fido2_passkey':
+                    return flask.redirect(flask.url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=two_factor_authentication_method.id))
                 del flask.session['confirm_data']
                 return flask.render_template('two_factor_authentication/unsupported_method.html')
             return flask.render_template(
                 'two_factor_authentication/pick.html',
-                methods=two_factor_authentication_methods
+                methods=two_factor_authentication_methods,
             )
         has_errors = True
     elif form.errors:
         has_errors = True
-    return flask.render_template('sign_in.html', form=form, is_for_refresh=is_for_refresh, has_errors=has_errors)
+    if passkey_form.validate_on_submit() and flask.current_app.config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION']:
+        try:
+            credential = server.authenticate_complete(
+                flask.session.pop("webauthn_state"),
+                credentials=all_credentials,
+                response=json.loads(passkey_form.assertion.data),
+            )
+            user_id = get_user_id_for_fido2_passkey_credential_id(credential.credential_id)
+        except Exception:
+            user_id = None
+        if user_id is not None:
+            user = get_user(user_id)
+            return complete_sign_in(user, is_for_refresh, False)
+        flask.flash(_('No user was found for this passkey.'), 'error')
+        return flask.redirect(flask.url_for('frontend.sign_in'))
+
+    options, state = server.authenticate_begin(
+        credentials=all_credentials,
+        user_verification=UserVerificationRequirement.REQUIRED,
+    )
+    flask.session["webauthn_state"] = state
+    return flask.render_template(
+        'sign_in.html',
+        form=form,
+        is_for_refresh=is_for_refresh,
+        has_errors=has_errors,
+        passkey_form=passkey_form,
+        options=options
+    )
 
 
-def complete_sign_in(user: typing.Optional[User], is_for_refresh: bool, remember_me: bool) -> FlaskResponseT:
+def complete_sign_in(
+        user: typing.Optional[User],
+        is_for_refresh: bool,
+        remember_me: bool,
+        *,
+        next_url: typing.Optional[str] = None
+) -> FlaskResponseT:
     if not user:
         flask.flash(_('Please sign in again.'), 'error')
         flask_login.logout_user()
@@ -129,7 +176,7 @@ def complete_sign_in(user: typing.Optional[User], is_for_refresh: bool, remember
     else:
         flask_login.login_user(user, remember=remember_me)
         refresh()
-    return _redirect_to_next_url()
+    return _redirect_to_next_url(next_url)
 
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])

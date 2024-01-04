@@ -25,8 +25,8 @@ def main(arguments: typing.List[str]) -> None:
     with app.app_context():
         active_methods = get_active_two_factor_authentication_methods(user_id)
         if not active_methods:
-            print("Error: the user does not have two factor authentication enabled", file=sys.stderr)
+            print("Error: the user does not have two-factor authentication enabled", file=sys.stderr)
             sys.exit(1)
         for active_method in active_methods:
             deactivate_two_factor_authentication_method(active_method.id)
-        print("Success: two factor authentication has been disabled for the user")
+        print("Success: two-factor authentication has been disabled for the user")

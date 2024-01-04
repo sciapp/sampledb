@@ -112,7 +112,8 @@ def parse_configuration_values() -> None:
         'ENABLE_ELN_FILE_IMPORT',
         'ENABLE_FEDERATION_DISCOVERABILITY',
         'ENABLE_WEBHOOKS_FOR_USERS',
-        'WEBHOOKS_ALLOW_HTTP'
+        'WEBHOOKS_ALLOW_HTTP',
+        'ENABLE_FIDO2_PASSKEY_AUTHENTICATION',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -673,6 +674,8 @@ TEMPORARY_FILE_TIME_LIMIT = 7 * 24 * 60 * 60
 ENABLE_CONTENT_SECURITY_POLICY = True
 
 ENABLE_ELN_FILE_IMPORT = False
+
+ENABLE_FIDO2_PASSKEY_AUTHENTICATION = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

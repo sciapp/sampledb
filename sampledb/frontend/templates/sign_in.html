@@ -22,40 +22,99 @@
     {% endif %}
   </div>
   {% endif %}
-  <form class="form-horizontal" method="post" id="form-signin">
-    {{ form.csrf_token() }}
-    <div class="form-group{% if has_errors %} has-error{% endif %}">
-      <label for="input-username" class="col-sm-4 control-label">{{ _('Username / Email') }}</label>
-      <div class="col-sm-8">
-        <input type="text" class="form-control" id="input-username" name="username" placeholder="{{ _('Username / Email') }}">
-      </div>
-    </div>
-    <div class="form-group{% if has_errors %} has-error{% endif %}">
-      <label for="input-password" class="col-sm-4 control-label">{{ _('Password') }}</label>
-      <div class="col-sm-8">
-        <input type="password" class="form-control" id="input-password" name="password" placeholder="{{ _('Password') }}">
-      </div>
-    </div>
-    {% if not is_for_refresh %}
-    <div class="form-group">
-      <div class="col-sm-offset-4 col-sm-4">
-        <div class="checkbox">
-          <label>
-            <input type="checkbox" id="input-rememberme" name="remember_me"> {{ _('Remember me')}}
-          </label>
+  <div style="display: flex; align-items: stretch">
+    <form class="form-horizontal" method="post" id="form-signin" style=" flex: 1">
+      {{ form.csrf_token() }}
+      <div class="form-group{% if has_errors %} has-error{% endif %}">
+        <label for="input-username" class="col-sm-4 control-label">{{ _('Username / Email') }}</label>
+        <div class="col-sm-8">
+          <input type="text" class="form-control" id="input-username" name="username" placeholder="{{ _('Username / Email') }}">
         </div>
       </div>
-      <div class="col-sm-4">
-        <div id="link-request-password-reset">
-          <a href="{{ url_for('frontend.user_me_preferences')}}" {% if not has_errors %}style="color:#cccccc;"{% endif %}>{{ _('Forgot your password?')}} </a>
+      <div class="form-group{% if has_errors %} has-error{% endif %}">
+        <label for="input-password" class="col-sm-4 control-label">{{ _('Password') }}</label>
+        <div class="col-sm-8">
+          <input type="password" class="form-control" id="input-password" name="password" placeholder="{{ _('Password') }}">
         </div>
       </div>
-    </div>
-    {% endif %}
-    <div class="form-group">
-      <div class="col-sm-offset-4 col-sm-8">
-        <button type="submit" class="btn btn-primary">{{ _('Sign in') }}</button>
+      {% if not is_for_refresh %}
+      <div class="form-group">
+        <div class="col-sm-offset-4 col-sm-4">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" id="input-rememberme" name="remember_me"> {{ _('Remember me')}}
+            </label>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div id="link-request-password-reset">
+            <a href="{{ url_for('frontend.user_me_preferences')}}" {% if not has_errors %}style="color:#cccccc;"{% endif %}>{{ _('Forgot your password?')}} </a>
+          </div>
+        </div>
       </div>
-    </div>
-  </form>
+      {% endif %}
+      <div class="form-group">
+        <div class="col-sm-offset-4 col-sm-8">
+          <button type="submit" class="btn btn-primary">{{ _('Sign in') }}</button>
+        </div>
+      </div>
+    </form>
+    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
+      <div style="border-left: 1px solid #ccc; width: 0; margin: 40px; display: flex; justify-content: center; flex-direction: column">
+        <div class="text-muted" style="width: 40px; margin-left:-20px; background: linear-gradient(transparent, white, white, transparent); text-align: center; padding: 40px 0; flex:0">
+          {{ _('or') }}
+        </div>
+      </div>
+      <form class="form-horizontal" method="post" id="fido2-authenticate-form" style="text-align: center; flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column">
+        <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
+            <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
+        </div>
+        {{ passkey_form.hidden_tag() }}
+        <div class="help-block"></div>
+        <button type="submit" class="btn btn-primary">{{ _('Use Passkey') }}</button>
+      </form>
+  {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
+    <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+      import {
+        get,
+        supported,
+        parseRequestOptionsFromJSON,
+      } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
+
+      async function authenticate(e) {
+        e && e.preventDefault();
+        const options = {{ dict(options) | tojson }};
+        const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
+        const form = $('#fido2-authenticate-form');
+        form.removeClass('has-error');
+        const help_bock = form.find('.help-block');
+        help_bock.text('');
+        try {
+          const assertion = await get(publicKeyCredentialRequestOptions);
+          form.find('[name="assertion"]').val(JSON.stringify(assertion));
+          form[0].submit();
+          return true;
+        } catch (error) {
+          form.addClass('has-error');
+          help_bock.text("{{ _('The passkey failed to authenticate with the following error:') }}: " + error)
+          return false;
+        }
+      }
+
+      $(function() {
+        if (supported()) {
+          $("#fido2-authenticate-form").on('submit', authenticate);
+        } else {
+          $('#alert-fido2-not-supported').show();
+          $('#fido2-authenticate-form button').prop('disabled', true);
+        }
+      });
+    </script>
+  {% endif %}
 {% endblock %}
