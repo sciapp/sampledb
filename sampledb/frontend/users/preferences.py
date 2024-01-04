@@ -12,7 +12,7 @@ import typing
 import flask
 from flask_babel import refresh, _, lazy_gettext
 import flask_login
-from fido2.webauthn import PublicKeyCredentialUserEntity, ResidentKeyRequirement
+from fido2.webauthn import PublicKeyCredentialUserEntity, ResidentKeyRequirement, UserVerificationRequirement
 import sqlalchemy.sql.expression
 import pytz
 
@@ -154,12 +154,13 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
     all_credentials = get_all_fido2_passkey_credentials()
     options, state = server.register_begin(
         PublicKeyCredentialUserEntity(
-            id=str(flask_login.current_user.id).encode('utf-8'),
+            id=f"signin-{flask_login.current_user.id}".encode('utf-8'),
             name=f"{flask_login.current_user.name} ({flask_login.current_user.email})",
             display_name=flask_login.current_user.name,
         ),
         credentials=all_credentials,
         resident_key_requirement=ResidentKeyRequirement.PREFERRED,
+        user_verification=UserVerificationRequirement.REQUIRED
     )
     if not authentication_form.validate_on_submit():
         flask.session["webauthn_enroll_state"] = state

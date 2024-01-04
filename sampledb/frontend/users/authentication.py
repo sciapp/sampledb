@@ -10,6 +10,7 @@ import typing
 import flask
 import flask_login
 from flask_babel import _, lazy_gettext, refresh
+from fido2.webauthn import UserVerificationRequirement
 
 from .. import frontend
 from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server
@@ -145,7 +146,8 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
         return flask.redirect(flask.url_for('frontend.sign_in'))
 
     options, state = server.authenticate_begin(
-        credentials=all_credentials
+        credentials=all_credentials,
+        user_verification=UserVerificationRequirement.REQUIRED,
     )
     flask.session["webauthn_state"] = state
     return flask.render_template(

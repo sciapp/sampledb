@@ -640,6 +640,7 @@
                     {% if error_add %} <span class='help-block'>{{error_add}} </span> {%endif%}
                     {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                   <span class='help-block'></span>
+                  <div class="text-muted">{{ _('Note:') }} {{ _('When signing in with a FIDO2 Passkey, %(service_name)s will <strong>not</strong> use any additional two-factor authentication methods configured in your preferences.', service_name=service_name) }}</div>
                 </div>
             </div>
       </div>
@@ -894,6 +895,7 @@
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     import {
       create,
+      supported,
       parseCreationOptionsFromJSON
     } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
 
@@ -905,7 +907,7 @@
       const help_block = type_form_group.find('.help-block');
       help_block.text('');
       try {
-        const publicKeyCredentialCreationOptions = parseCreationOptionsFromJSON(options)
+        const publicKeyCredentialCreationOptions = parseCreationOptionsFromJSON(options);
         const credential = await create(publicKeyCredentialCreationOptions);
         form.find("[name='fido2_passkey_credentials']").val(JSON.stringify(credential));
         form[0].submit();
@@ -919,7 +921,7 @@
 
     $(function() {
       const add_authentication_method_type_select = $('#addAuthenticationMethodTypeSelect');
-      add_authentication_method_type_select.on('changed.bs.select', function() {
+      add_authentication_method_type_select.on('changed.bs.select', function () {
         if (add_authentication_method_type_select.val() === 'FIDO2_PASSKEY') {
           $('#addAuthenticationMethodDescriptionGroup').show().find('input').prop('disabled', false);
           $('#addAuthenticationMethodLoginGroup, #addAuthenticationMethodPasswordGroup').hide().find('input').prop('disabled', true);
@@ -928,20 +930,29 @@
           $('#addAuthenticationMethodDescriptionGroup').hide().find('input').prop('disabled', true);
           $('#addAuthenticationMethodLoginGroup, #addAuthenticationMethodPasswordGroup').show().find('input').prop('disabled', false);
         }
-      }).trigger('changed.bs.select');
-      $('#form-add-authentication-methods').on('submit', function(event) {
-        if (add_authentication_method_type_select.val() === 'FIDO2_PASSKEY') {
-          event && event.preventDefault();
-          if ($("#input-passkey-description").val() === "") {
-            $('#addAuthenticationMethodDescriptionGroup').addClass('has-error').find('.help-block:last').text("{{ _('Please enter at least 1 character.') }}");
-            return false;
-          } else {
-            $('#addAuthenticationMethodDescriptionGroup').removeClass('has-error').find('.help-block:last').text('');
-            return register();
-          }
-        }
-        return true;
       });
+      if (supported()) {
+        $('#form-add-authentication-methods').on('submit', function (event) {
+          if (add_authentication_method_type_select.val() === 'FIDO2_PASSKEY') {
+            event && event.preventDefault();
+            if ($("#input-passkey-description").val() === "") {
+              $('#addAuthenticationMethodDescriptionGroup').addClass('has-error').find('.help-block:last').text("{{ _('Please enter at least 1 character.') }}");
+              return false;
+            } else {
+              $('#addAuthenticationMethodDescriptionGroup').removeClass('has-error').find('.help-block:last').text('');
+              return register();
+            }
+          }
+          return true;
+        });
+      } else {
+        if (add_authentication_method_type_select.val() === 'FIDO2_PASSKEY') {
+          add_authentication_method_type_select.val('E');
+        }
+        add_authentication_method_type_select.find('option[value="FIDO2_PASSKEY"]').prop('disabled', true);
+        add_authentication_method_type_select.selectpicker('refresh');
+      }
+      add_authentication_method_type_select.trigger('changed.bs.select');
     });
   </script>
 {% endblock %}

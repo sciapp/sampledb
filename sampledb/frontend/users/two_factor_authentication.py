@@ -205,7 +205,7 @@ def setup_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
     server = authentication.get_webauthn_server()
     options, state = server.register_begin(
         PublicKeyCredentialUserEntity(
-            id=str(flask_login.current_user.id).encode('utf-8'),
+            id=f"2fa-{flask_login.current_user.id}".encode('utf-8'),
             name=f"{flask_login.current_user.name} ({flask_login.current_user.email})",
             display_name=flask_login.current_user.name,
         ),
