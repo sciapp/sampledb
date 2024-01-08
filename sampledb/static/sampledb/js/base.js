@@ -19,7 +19,7 @@ $(function () {
   }
 
   // localize datetimes for anonymous users if the timezone has not been set in the config
-  if (window.getTemplateValue('current_user.has_timezone')) {
+  if (!window.getTemplateValue('current_user.has_timezone')) {
     $('span[data-utc-datetime]').each(function (_, element) {
       const utcDatetimeStr = $(element).data('utcDatetime');
       const utcDatetime = moment.utc(utcDatetimeStr);
