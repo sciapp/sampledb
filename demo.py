@@ -22,8 +22,6 @@ sampledb.config.SQLALCHEMY_DATABASE_URI = os.environ.get('SAMPLEDB_SQLALCHEMY_DA
 
 temp_dir = tempfile.mkdtemp()
 try:
-    os.mkdir(os.path.join(temp_dir, 'uploaded_files'))
-    sampledb.config.FILE_STORAGE_PATH = os.path.join(temp_dir, 'uploaded_files')
     sampledb.config.SERVER_NAME = 'localhost:5000'
 
     # fully empty the database first

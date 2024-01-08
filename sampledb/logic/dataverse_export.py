@@ -642,7 +642,7 @@ def _upload_files_to_dataset(
             continue
         if file.is_hidden:
             continue
-        if file.storage in {'local', 'database'}:
+        if file.storage == 'database':
             file_name = file.original_file_name
             file_content = file.open(read_only=True).read()
             if file.title and file.description:

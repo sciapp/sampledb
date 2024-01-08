@@ -134,7 +134,7 @@ def dataverse_export(object_id: int) -> FlaskResponseT:
     dataverse_export_form.files.choices = [
         (str(file.id), file.original_file_name)
         for file in logic.files.get_files_for_object(object_id)
-        if file.storage in {'local', 'database'}
+        if file.storage == 'database'
     ]
 
     if object.data:

@@ -179,8 +179,6 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     login_manager.login_view = 'frontend.sign_in'
     login_manager.anonymous_user = sampledb.logic.users.AnonymousUser
 
-    sampledb.logic.files.FILE_STORAGE_PATH = app.config['FILE_STORAGE_PATH']
-
     def custom_send_static_file(filename: str) -> sampledb.utils.FlaskResponseT:
         response = flask.make_response(
             flask.send_from_directory(app.static_folder, filename)  # type: ignore

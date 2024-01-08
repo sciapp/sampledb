@@ -14,7 +14,7 @@ from . import errors
 from .. import db
 from .background_tasks.send_mail import post_send_mail_task
 from .security_tokens import generate_token
-from ..models import Authentication, AuthenticationType, User, File, Tag, BackgroundTaskStatus, BackgroundTask, UserType
+from ..models import Authentication, AuthenticationType, User, Tag, BackgroundTaskStatus, BackgroundTask, UserType
 from ..utils import ansi_color
 
 
@@ -285,17 +285,6 @@ def parse_url(
 
 
 def print_deprecation_warnings() -> None:
-    if show_admin_local_storage_warning():
-        print(
-            ansi_color(
-                "Some objects have files in 'local' storage, please move them "
-                "to 'database' storage. To learn more, see: "
-                "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage",
-                color=33
-            ),
-            file=sys.stderr,
-            end='\n\n'
-        )
     if show_numeric_tags_warning():
         print(
             ansi_color(
@@ -309,10 +298,6 @@ def print_deprecation_warnings() -> None:
             file=sys.stderr,
             end='\n\n'
         )
-
-
-def show_admin_local_storage_warning() -> bool:
-    return File.query.filter(db.text("data->>'storage' = 'local'")).first() is not None
 
 
 def show_numeric_tags_warning() -> bool:

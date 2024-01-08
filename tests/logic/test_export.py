@@ -75,7 +75,7 @@ def set_up_state(user: User):
     data = {'name': {'_type': 'text', 'text': 'Object'}}
     object = objects.create_object(user_id=user.id, action_id=action.id, data=data)
     def save_content(file): file.write("This is a test file.".encode('utf-8'))
-    files.create_local_file(object.id, user.id, "test.txt", save_content)
+    files.create_database_file(object.id, user.id, "test.txt", save_content)
     files.create_url_file(object.id, user.id, "https://example.com")
 
     instrument = sampledb.logic.instruments.create_instrument(
@@ -244,9 +244,7 @@ def validate_data(data):
     assert data == expected_data
 
 
-def test_zip_export(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def test_zip_export(user, app):
     set_up_state(user)
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
@@ -278,9 +276,7 @@ def test_zip_export(user, app, tmpdir):
             assert text_file.read() == b'Example Content'
 
 
-def test_tar_gz_export(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def test_tar_gz_export(user, app):
     set_up_state(user)
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
@@ -311,9 +307,7 @@ def test_tar_gz_export(user, app, tmpdir):
             assert text_file.read() == b'Example Content'
 
 
-def test_eln_export(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def test_eln_export(user, app):
     set_up_state(user)
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id

@@ -26,7 +26,7 @@ def file_info_to_json(file_info: File, include_content: bool = True) -> typing.D
         'file_id': file_info.id,
         'storage': file_info.storage
     }
-    if file_info.storage in {'local', 'database'}:
+    if file_info.storage == 'database':
         file_json.update({
             'original_file_name': file_info.original_file_name
         })

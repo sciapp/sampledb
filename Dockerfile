@@ -44,9 +44,6 @@ COPY --chown=sampledb:sampledb sampledb sampledb
 # By default, expect a normal postgres container to be linked
 ENV SAMPLEDB_SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres:@postgres:5432/postgres"
 
-# Set default file storage path
-ENV SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files
-
 # Set the path for pybabel
 ENV SAMPLEDB_PYBABEL_PATH=/home/sampledb/venv/bin/pybabel
 
@@ -60,7 +57,6 @@ COPY ./docker-helper.sh /usr/local/bin/sampledb
 # The entrypoint script will set the file permissions for a mounted files directory and then start SampleDB
 COPY docker-entrypoint.sh docker-entrypoint.sh
 
-USER root
 ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["run"]
 

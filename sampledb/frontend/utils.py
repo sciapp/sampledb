@@ -43,7 +43,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
@@ -141,7 +141,7 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
 
 @JinjaFilter()
 def has_preview(file: File) -> bool:
-    if file.storage not in {'local', 'database', 'federation'}:
+    if file.storage not in {'database', 'federation'}:
         return False
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
@@ -157,7 +157,7 @@ def file_name_is_image(file_name: str) -> bool:
 @JinjaFilter()
 def is_image(file: File) -> bool:
     # federation files are not recognized as images to prevent loading their thumbnails from other database
-    if file.storage not in {'local', 'database'}:
+    if file.storage != 'database':
         return False
     return file_name_is_image(file.original_file_name)
 
@@ -814,7 +814,6 @@ def get_search_paths(
 @JinjaFunction()
 def get_num_deprecation_warnings() -> int:
     return sum([
-        show_admin_local_storage_warning(),
         show_numeric_tags_warning(),
     ])
 

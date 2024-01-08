@@ -62,9 +62,7 @@ def object(user):
     return object
 
 
-def test_create_invalid_file(flask_server, object, auth, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_create_invalid_file(flask_server, object, auth):
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
@@ -107,9 +105,7 @@ def test_create_invalid_file(flask_server, object, auth, tmpdir):
     assert len(files) == 0
 
 
-def test_create_url_file(flask_server, object, auth, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_create_url_file(flask_server, object, auth):
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
     data = {
@@ -124,9 +120,7 @@ def test_create_url_file(flask_server, object, auth, tmpdir):
     assert files[0].data['url'] == 'https://iffsamples.fz-juelich.de'
 
 
-def test_create_invalid_url_file(flask_server, object, auth, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_create_invalid_url_file(flask_server, object, auth):
     files = sampledb.logic.files.get_files_for_object(object.id)
     assert len(files) == 0
 
@@ -163,9 +157,7 @@ def test_create_invalid_url_file(flask_server, object, auth, tmpdir):
     assert len(files) == 0
 
 
-def test_get_url_file(flask_server, object, auth, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_get_url_file(flask_server, object, auth, user):
     sampledb.logic.files.create_url_file(
         object_id=object.id,
         user_id=user.id,
@@ -178,27 +170,6 @@ def test_get_url_file(flask_server, object, auth, user, tmpdir):
         'file_id': 0,
         'storage': 'url',
         'url': 'https://iffsamples.fz-juelich.de'
-    }
-
-
-def test_get_local_file(flask_server, object, auth, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
-    sampledb.logic.files.create_local_file(
-        object_id=object.id,
-        user_id=user.id,
-        file_name='test.txt',
-        save_content=lambda stream: stream.write('test'.encode('utf8'))
-    )
-    r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
-    assert r.status_code == 200
-    assert r.json() == {
-        'object_id': object.id,
-        'file_id': 0,
-        'storage': 'local',
-        'original_file_name': 'test.txt',
-        'base64_content': base64.b64encode('test'.encode('utf8')).decode('utf8'),
-        'hash': None
     }
 
 
@@ -353,15 +324,13 @@ def test_get_database_file(flask_server, object, auth, user, tmpdir):
     }
 
 
-def test_get_files(flask_server, object, auth, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_get_files(flask_server, object, auth, user):
     sampledb.logic.files.create_url_file(
         object_id=object.id,
         user_id=user.id,
         url='https://iffsamples.fz-juelich.de'
     )
-    sampledb.logic.files.create_local_file(
+    sampledb.logic.files.create_database_file(
         object_id=object.id,
         user_id=user.id,
         file_name='test.txt',
@@ -379,17 +348,18 @@ def test_get_files(flask_server, object, auth, user, tmpdir):
         {
             'object_id': object.id,
             'file_id': 1,
-            'storage': 'local',
+            'storage': 'database',
             'original_file_name': 'test.txt',
-            'hash': None
+            'hash': {
+                'algorithm': 'sha256',
+                'hexdigest': '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+            }
         }
     ]
 
 
-def test_get_hidden_file(flask_server, object, auth, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
-    sampledb.logic.files.create_local_file(
+def test_get_hidden_file(flask_server, object, auth, user):
+    sampledb.logic.files.create_database_file(
         object_id=object.id,
         user_id=user.id,
         file_name='test.txt',
@@ -408,9 +378,7 @@ def test_get_hidden_file(flask_server, object, auth, user, tmpdir):
     }
 
 
-def test_get_nonexistent_file(flask_server, object, auth, user, tmpdir):
-    sampledb.logic.files.FILE_STORAGE_PATH = tmpdir
-
+def test_get_nonexistent_file(flask_server, object, auth, user):
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 404
     assert r.json() == {

@@ -21,17 +21,12 @@ services:
         - SAMPLEDB_MAIL_SENDER=sampledb@example.com
         - SAMPLEDB_ADMIN_PASSWORD=password
         - SAMPLEDB_SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:password@sampledb-postgres:5432/postgres
-        - SAMPLEDB_FILE_STORAGE_PATH=/home/sampledb/files/
         # uncomment the line below for development purposes
         #- FLASK_DEBUG=1
     ports:
         # if you want sampledb to run on a different port, change the first number
         # host:container
         - '8000:8000'
-    volumes:
-        # this is where you will keep the uploaded files persistently
-        # host:container
-        - ./files:/home/sampledb/files
     networks:
       - sampledb-net
 
