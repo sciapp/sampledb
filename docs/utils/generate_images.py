@@ -971,6 +971,7 @@ def action_list(base_url, driver):
         admin_only=False,
         show_in_navbar=False,
         show_on_frontpage=False,
+        show_in_object_filters=False,
         enable_labels=True,
         enable_files=True,
         enable_locations=True,

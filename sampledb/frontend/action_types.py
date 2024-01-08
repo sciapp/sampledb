@@ -106,6 +106,7 @@ class ActionTypeForm(FlaskForm):
     admin_only = BooleanField()
     show_on_frontpage = BooleanField()
     show_in_navbar = BooleanField()
+    show_in_object_filters = BooleanField()
     enable_labels = BooleanField()
     enable_files = BooleanField()
     enable_locations = BooleanField()
@@ -174,6 +175,7 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
             action_type_form.admin_only.data = action_type.admin_only
             action_type_form.show_on_frontpage.data = action_type.show_on_frontpage
             action_type_form.show_in_navbar.data = action_type.show_in_navbar
+            action_type_form.show_in_object_filters.data = action_type.show_in_object_filters
             action_type_form.enable_labels.data = action_type.enable_labels
             action_type_form.enable_files.data = action_type.enable_files
             action_type_form.enable_locations.data = action_type.enable_locations
@@ -234,6 +236,7 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
                     admin_only=action_type_form.admin_only.data,
                     show_on_frontpage=action_type_form.show_on_frontpage.data,
                     show_in_navbar=action_type_form.show_in_navbar.data,
+                    show_in_object_filters=action_type_form.show_in_object_filters.data,
                     enable_labels=action_type_form.enable_labels.data,
                     enable_files=action_type_form.enable_files.data,
                     enable_locations=action_type_form.enable_locations.data,
@@ -285,6 +288,7 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
                 admin_only=action_type_form.admin_only.data,
                 show_on_frontpage=action_type_form.show_on_frontpage.data,
                 show_in_navbar=action_type_form.show_in_navbar.data,
+                show_in_object_filters=action_type_form.show_in_object_filters.data,
                 enable_labels=action_type_form.enable_labels.data,
                 enable_files=action_type_form.enable_files.data,
                 enable_locations=action_type_form.enable_locations.data,

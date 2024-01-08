@@ -42,7 +42,9 @@
         <select name="t" class="selectpicker" data-width="100%">
           <option value="" selected="selected">&mdash;</option>
           {% for action_type in action_types %}
-            <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }}</option>
+            {% if action_type.show_in_object_filters %}
+              <option {% if action_type.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action_type.id }}">{{ action_type.object_name_plural | get_translated_text(default=_('Objects')) }}</option>
+            {% endif %}
           {% endfor %}
         </select>
       </div>

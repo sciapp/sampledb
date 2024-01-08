@@ -9,6 +9,7 @@ import flask_sqlalchemy
 
 from ..actions import ActionType
 from ..languages import Language
+from .utils import table_has_column
 
 MIGRATION_INDEX = 70
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
@@ -48,6 +49,14 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
       VALUES (:id, :admin_only, :show_on_frontpage, :show_in_navbar, :enable_labels, :enable_files, :enable_locations, :enable_publications, :enable_comments, :enable_activity_log, :enable_related_objects, :disable_create_objects, :is_template)
   """), params=action_type_template)
     performed_migration_type = True
+
+    if table_has_column('action_types', 'show_in_object_filters'):
+        # Hide schema template action type per default
+        db.session.execute(db.text("""
+            UPDATE action_types
+            SET show_in_object_filters = FALSE
+            WHERE id = :id
+        """), params={'id': ActionType.TEMPLATE})
 
     # Add translations for TEMPLATE action type
     action_type_template_translations = [

@@ -297,6 +297,12 @@
           </label>
         </div>
         <div class="checkbox">
+          <label for="input-show_in_object_filters" style="font-weight:400">
+            <input type="checkbox" id="input-show_in_object_filters" name="{{ action_type_form.show_in_object_filters.name }}"
+                   {% if action_type_form.show_in_object_filters.data %}checked="checked"{% endif %}> {{ _('Show action type in object filters') }}
+          </label>
+        </div>
+        <div class="checkbox">
           <label for="input-enable_labels" style="font-weight:400">
             <input type="checkbox" id="input-enable_labels" name="{{ action_type_form.enable_labels.name }}"
                    {% if action_type_form.enable_labels.data %}checked="checked"{% endif %}> {{ _('Enable labels for objects created with actions of this type') }}
