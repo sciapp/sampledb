@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-01-04 14:41+0100\n"
+"POT-Creation-Date: 2024-01-08 15:56+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2839,6 +2839,15 @@ msgstr "Ja, Aktionen dieses Typs in der Navigationsleiste anzeigen"
 msgid "No, actions of this type should not be shown in the navbar"
 msgstr "Nein, Aktionen dieses Typs nicht in der Navigationsleiste anzeigen"
 
+msgid "Show in Object Filters"
+msgstr "In Objektfiltern anzeigen"
+
+msgid "Yes, this action type should be shown in object filters"
+msgstr "Ja, diesen Aktionstyp in Objektfiltern anzeigen"
+
+msgid "No, this actions type should not be shown in object filters"
+msgstr "Nein, diesen Aktionstyp nicht in Objektfiltern anzeigen"
+
 msgid "Enable Labels"
 msgstr "Etiketten generieren"
 
@@ -3072,6 +3081,9 @@ msgstr "Aktionstyp auf Startseite anzeigen"
 
 msgid "Show actions of this type in the navbar"
 msgstr "Aktionen dieses Typs in der Navigationsleiste anzeigen"
+
+msgid "Show action type in object filters"
+msgstr "Aktionstyp in Objektfiltern anzeigen"
 
 msgid "Enable labels for objects created with actions of this type"
 msgstr ""

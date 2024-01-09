@@ -21,7 +21,11 @@ def search() -> FlaskResponseT:
         user_id=flask_login.current_user.id
     )
 
-    action_types = get_action_types(filter_fed_defaults=True)
+    action_types = [
+        action_type
+        for action_type in get_action_types(filter_fed_defaults=True)
+        if action_type.show_in_object_filters
+    ]
 
     search_paths, search_paths_by_action, search_paths_by_action_type = get_search_paths(actions, action_types, include_file_name=True)
 

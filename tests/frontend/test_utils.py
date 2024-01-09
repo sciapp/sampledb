@@ -700,6 +700,7 @@ def test_get_search_paths():
         admin_only=action_type.admin_only,
         show_on_frontpage=action_type.show_on_frontpage,
         show_in_navbar=action_type.show_in_navbar,
+        show_in_object_filters=action_type.show_in_object_filters,
         enable_labels=action_type.enable_labels,
         enable_files=False,
         enable_locations=action_type.enable_locations,
