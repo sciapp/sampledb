@@ -298,125 +298,46 @@
 </div>
 {% endif %}
 
- {% block scripts %}
+
+{% block template_values %}
+  {% do set_template_value("translations.search", _('Search…')) %}
+  {% do set_template_value("translations.advanced_search", _('Advanced Search…')) %}
+
+  {% do set_template_value("current_user.is_authenticated", current_user.is_authenticated) %}
+  {% if current_user.is_authenticated %}
+    {% with user_settings = get_user_settings() %}
+      {% do set_template_value("current_user.settings.auto_tz", user_settings['AUTO_TZ']) %}
+      {% do set_template_value("current_user.settings.timezone", user_settings['TIMEZONE']) %}
+    {% endwith %}
+    {% do set_template_value("current_user.timezone_url", url_for('frontend.set_timezone')) %}
+    {% do set_template_value("current_user.timezone_csrf_token", TimezoneForm().csrf_token.current_token) %}
+  {% endif %}
+  {% do set_template_value("current_user.has_timezone", current_user.timezone is not none) %}
+  {% do set_template_value("current_user.language.lang_code", get_user_language(current_user).lang_code) %}
+  {% do set_template_value("current_user.language.datetime_format_moment_output", get_user_language(current_user).datetime_format_moment_output) %}
+
+  {% do set_template_value("notifications.num_urgent_notifications", num_urgent_notifications) %}
+  {% do set_template_value("notifications.hide_notifications", "hide_notifications" in request.args) %}
+
+  {% set template_values = get_template_values() %}
+  <script type="application/json" id="sampledb-template-values">
+    {{ template_values | tojson }}
+  </script>
+  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
+    window._template_values = JSON.parse(document.getElementById("sampledb-template-values").innerText);
+    window.getTemplateValue = function(name) {
+      return window._template_values[name];
+    }
+  </script>
+{% endblock %}
+
+{% block scripts %}
   <script src="{{ fingerprinted_static('jquery/js/jquery.min.js') }}"></script>
   <script src="{{ fingerprinted_static('js-cookie/js/js.cookie.js') }}"></script>
   <script src="{{ fingerprinted_static('bootstrap/js/bootstrap.min.js') }}"></script>
   <script src="{{ fingerprinted_static('moment/js/moment-with-locales.min.js') }}"></script>
   <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
-
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    $('[data-toggle="tooltip"]').tooltip();
-    {% if current_user.is_authenticated %}
-      {% with user_settings = get_user_settings() %}
-        {% if user_settings['AUTO_TZ'] %}
-          const tz = moment.tz.guess(true);
-          if (tz !== "{{ user_settings['TIMEZONE'] }}") {
-            $.post('{{ url_for('frontend.set_timezone') }}', {
-              "timezone": tz,
-              "csrf_token": "{{ TimezoneForm().csrf_token.current_token }}"
-            });
-          }
-        {% endif %}
-      {% endwith %}
-    {% endif %}
-
-    $(function() {
-      // localize datetimes for anonymous users if the timezone has not been set in the config
-      {% if current_user.timezone is none %}
-      $('span[data-utc-datetime]').each(function(_, element) {
-          let utc_datetime_str = $(element).data('utcDatetime');
-          let utc_datetime = moment.utc(utc_datetime_str);
-          let local_datetime = utc_datetime.local();
-          let lang_code = "{{ get_user_language(current_user).lang_code }}";
-          let format = "{{ get_user_language(current_user).datetime_format_moment_output }}";
-          element.innerText = local_datetime.locale(lang_code).format(format);
-      });
-      {% endif %}
-
-      $(window).on('scroll', function () {
-        let active_a = null;
-        let scroll_offset = 50;
-        $('#sidebar > nav a').removeClass('active').each(function(_, a) {
-          a = $(a);
-          let href = a.attr('href');
-          if (href === "#top") {
-            return;
-          }
-          let linked_element = $(href);
-          if (linked_element.length === 1) {
-            a.closest('li').show();
-            if (active_a === null || window.scrollY + scroll_offset >= linked_element.offset().top) {
-              active_a = a;
-            }
-          } else {
-            a.closest('li').hide();
-          }
-        });
-        if (active_a !== null) {
-          active_a.addClass('active');
-          // show back to top link if sidebar is used
-          $('#sidebar > nav a[href="#top"]').show();
-        }
-      }).trigger('scroll');
-
-      $(".navbar-nav > .dropdown").hover(function(){
-        var dropdown_menu = $(this).children(".dropdown-menu");
-        if(dropdown_menu.is(":visible")){
-          dropdown_menu.parent().toggleClass("open");
-        }
-      });
-      $('#input-search-advanced').on('change', function () {
-        if (this.checked) {
-          $('#input-search').attr('placeholder', '{{ _('Advanced Search…') }}');
-        } else {
-          $('#input-search').attr('placeholder', '{{ _('Search…') }}');
-        }
-      }).change();
-      $('.fullscreen-image-preview').on('click', function (e) {
-        $(this).hide();
-      });
-      $('.fullscreen-image-preview img').on('click', function (e) {
-        e.stopPropagation();
-      });
-      $('.download-fullscreen-image-preview').on('click', function (e) {
-        e.stopPropagation();
-      });
-      $('.show-fullscreen-image-preview').on('click', function (e) {
-        $(this).next('.fullscreen-image-preview').css('display', 'flex');
-      });
-
-    {% if num_urgent_notifications %}
-      let urgent_notification_modal = $('#urgentNotificationModal');
-      urgent_notification_modal.on('shown.bs.modal', function () {
-        urgent_notification_modal.focus();
-      });
-      $('.urgent-notifications-counter').on('click', function() {
-        urgent_notification_modal.modal();
-      });
-      urgent_notification_modal.find('#button-hide-urgent-notifications').on('click', function() {
-          Cookies.set('sampledb-hide-urgent-notifications-until', moment().add(1, 'hour').format(), {expires: 1, SameSite: 'Lax'});
-          setTimeout(function() {
-            urgent_notification_modal.modal();
-          }, 60 * 60 * 1000);
-      });
-      let hide_notifications = {% if 'hide_notifications' in request.args %}true{% else %}false{% endif %};
-      let hiding_time = Cookies.get('sampledb-hide-urgent-notifications-until');
-      if (hiding_time) {
-          hiding_time = moment(hiding_time);
-          if (hiding_time && moment().isBefore(hiding_time)) {
-              hide_notifications = true;
-              setTimeout(function() {
-                urgent_notification_modal.modal();
-              }, hiding_time.diff(moment(), 'ms'));
-          }
-      }
-      if (!hide_notifications) {
-        urgent_notification_modal.modal();
-      }
-      {% endif %}
-    });
-  </script>
-  {% endblock %}
+  <script type="module" src="{{ fingerprinted_static('sampledb/js/base.js') }}"></script>
+{% endblock %}
 </body>
 </html>

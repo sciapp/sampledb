@@ -478,3 +478,7 @@ class WebhookConnectionException(Exception):
 
 class ObjectLogEntryDoesNotExistError(Exception):
     pass
+
+
+class TemplateValueError(Exception):
+    pass

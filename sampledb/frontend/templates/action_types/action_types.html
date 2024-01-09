@@ -5,22 +5,7 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ fingerprinted_static('sortable/js/Sortable.min.js') }}"></script>
-    {% if current_user.is_admin and not current_user.is_readonly %}
-        <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-            $(document).ready(function() {
-                let elem = document.getElementById('actionTypesModalList');
-                let options = {
-                    handle: '.handle',
-                    animation: 150,
-                    dataIdAttr: 'data-id'
-                }
-                let sortable = new Sortable(elem, options);
-                $('#form-sort-order').on('submit', function() {
-                    document.getElementById('encoded_order').value = sortable.toArray().join();
-                });
-            });
-        </script>
-    {% endif %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/action_types.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}

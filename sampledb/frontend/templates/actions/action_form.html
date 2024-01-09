@@ -11,6 +11,65 @@
 <link rel="stylesheet" href="{{ fingerprinted_static('sampledb/css/schema_editor.css') }}">
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("error_message", error_message) %}
+  {% for name, translated_text in {
+    'object_must_have_name_text': _("Objects must have a property 'name' as a <i>Text (Simple)</i> property."),
+    'object_name_must_be_text': _("Object name must be a <i>Text (Simple)</i> property."),
+    'object_name_must_be_required': _("Object name must be required."),
+    'enter_title': _("Please enter a title."),
+    'objects_need_one_property': _("Objects must have at least one property."),
+    'enter_number': _("Please enter a number."),
+    'enter_nonnegative_number': _("Please enter a number greater than or equal to zero."),
+    'enter_at_most_max_length': _("Please enter a number less than or equal to the maximum length."),
+    'enter_at_least_min_length': _("Please enter a number greater than or equal to the minimum length."),
+    'name_must_be_unique': _("Name must be unique."),
+    'name_must_not_be_hazards_or_tags': _("Name must not be 'hazards' or 'tags'."),
+    'name_must_begin_with_character': _("Name must begin with a character."),
+    'name_must_end_with_character_or_number': _("Name must end with a character or a number."),
+    'name_must_contain_valid_chars': _("Name must only contain characters, numbers and individual underscores."),
+    'title_must_not_be_empty': _("Title must not be empty."),
+    'title_must_not_be_whitespace': _("Title must not be whitespace only."),
+    'tooltip_must_not_be_empty': _("Tooltip must not be empty."),
+    'tooltip_must_not_be_whitespace': _("Tooltip must not be whitespace only."),
+    'note_must_not_be_empty': _("Note must not be empty."),
+    'note_must_not_be_whitespace': _("Note must not be whitespace only."),
+    'choices_must_not_be_empty': _("Choices must not be empty."),
+    'enter_units': _("Please enter units or 1."),
+    'enter_default_magnitude': _("Please enter the default magnitude (in base units) as a number."),
+    'enter_valid_units': _("Please enter valid units"),
+    'schema_template_must_be_set': _("Schema Template input must not be empty"),
+    'enter_display_digits': _("Please enter a number between 0 and 15."),
+    'enter_extensions': _("Please enter allowed file extensions."),
+  }.items() %}
+    {% do set_template_value("translations." + name, translated_text) %}
+  {% endfor %}
+
+  {% do set_template_value("tags_translations", tags_translations) %}
+  {% do set_template_value("hazards_translations", hazards_translations) %}
+  {% do set_template_value("error_lines", error_lines or []) %}
+
+  {% set language_info_languages = [] %}
+  {% set allowed_language_ids = [] %}
+  {% for lang in languages %}
+    {{ allowed_language_ids.append(lang.id) or '' }}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+
+  {% set translations = [] %}
+  {% for translation in action_translations %}
+    {% if translation.language_id in allowed_language_ids %}
+      {% do translations.append({"language_id": translation.language_id | string, "name": translation.name, "description": translation.description, "short_description": translation.short_description}) %}
+    {% endif %}
+  {% endfor %}
+  {% do set_template_value("translations", translations) %}
+
+  {% do set_template_value("load_translations", load_translations) %}
+
+  {{ super() }}
+{% endblock %}
 
 {% block scripts %}
   {{ super() }}
@@ -20,140 +79,7 @@
   <script src="{{ fingerprinted_static('codemirror/js/codemirror.min.js') }}"></script>
   <script src="{{ fingerprinted_static('codemirror/js/javascript.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/schema_editor.js') }}" type="module"></script>
-  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
-    import {
-      updateTranslationJSON,
-      setTranslationHandler,
-      updateTranslationLanguages,
-      initMarkdownField,
-      updateMarkdownField
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
-    window.updateTranslationJSON = updateTranslationJSON;
-    window.setTranslationHandler = setTranslationHandler;
-    window.updateTranslationLanguages = updateTranslationLanguages;
-    window.initMarkdownField = initMarkdownField;
-    window.updateMarkdownField = updateMarkdownField;
-  </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  // translations of error / help messages used in the static schema_editor.js
-  window.schema_editor_translations = {
-    'object_must_have_name_text': "{{ _("Objects must have a property 'name' as a <i>Text (Simple)</i> property.") }}",
-    'object_name_must_be_text': "{{ _("Object name must be a <i>Text (Simple)</i> property.") }}",
-    'object_name_must_be_required': "{{ _("Object name must be required.") }}",
-    'enter_title': "{{ _("Please enter a title.") }}",
-    'objects_need_one_property': "{{ _("Objects must have at least one property.") }}",
-    'enter_number': "{{ _("Please enter a number.") }}",
-    'enter_nonnegative_number': "{{ _("Please enter a number greater than or equal to zero.") }}",
-    'enter_at_most_max_length': "{{ _("Please enter a number less than or equal to the maximum length.") }}",
-    'enter_at_least_min_length': "{{ _("Please enter a number greater than or equal to the minimum length.") }}",
-    'name_must_be_unique': "{{ _("Name must be unique.") }}",
-    'name_must_not_be_hazards_or_tags': "{{ _("Name must not be 'hazards' or 'tags'.") }}",
-    'name_must_begin_with_character': "{{ _("Name must begin with a character.") }}",
-    'name_must_end_with_character_or_number': "{{ _("Name must end with a character or a number.") }}",
-    'name_must_contain_valid_chars': "{{ _("Name must only contain characters, numbers and individual underscores.") }}",
-    'title_must_not_be_empty': "{{ _("Title must not be empty.") }}",
-    'title_must_not_be_whitespace': "{{ _("Title must not be whitespace only.") }}",
-    'tooltip_must_not_be_empty': "{{ _("Tooltip must not be empty.") }}",
-    'tooltip_must_not_be_whitespace': "{{ _("Tooltip must not be whitespace only.") }}",
-    'note_must_not_be_empty': "{{ _("Note must not be empty.") }}",
-    'note_must_not_be_whitespace': "{{ _("Note must not be whitespace only.") }}",
-    'choices_must_not_be_empty': "{{ _("Choices must not be empty.") }}",
-    'enter_units': "{{ _("Please enter units or 1.") }}",
-    'enter_default_magnitude': "{{ _("Please enter the default magnitude (in base units) as a number.") }}",
-    'enter_valid_units': "{{ _("Please enter valid units") }}",
-    'schema_template_must_be_set': "{{ _("Schema Template input must not be empty") }}",
-    'enter_display_digits': "{{ _("Please enter a number between 0 and 15.") }}",
-    'enter_extensions': "{{ _("Please enter allowed file extensions.") }}",
-  };
-  window.schema_editor_tags_translations = {{ tags_translations | tojson }};
-  window.schema_editor_hazards_translations = {{ hazards_translations | tojson }};
-  window.schema_editor_error_lines = {{ error_lines or [] }};
-  window.schema_editor_initial_content = null;
-
-  {% set allowed_language_ids = [] %}
-  window.languages = [
-  {% for language in languages %}
-    {
-        'id': {{ language.id }},
-        'name': '{{ language.names | get_translated_text }}',
-        'lang_code': '{{ language.lang_code }}'
-    },
-    {{ allowed_language_ids.append(language.id) or '' }}
-  {% endfor %}
-  ]
-
-  window.translations = [
-  {% for translation in action_translations.values() %}
-    {% if translation.language_id in allowed_language_ids %}
-    {
-      'language_id':  "{{ translation.language_id }}",
-      'name': {{ translation.name | tojson }},
-      'description': {{ translation.description | tojson }},
-      'short_description': {{ translation.short_description | tojson }},
-    },
-    {% endif %}
-  {% endfor %}
-  ];
-
-  window.mdeFields = {
-    'descriptions': [],
-    'short_descriptions': []
-  };
-
-  $(function(){
-    updateTranslationJSON();
-
-    {% if load_translations == False %}
-      $('.select-language').selectpicker('val', ['{{ ENGLISH.id }}']);
-    {% endif %}
-
-    $('#select-language-name').on('change', function () {
-      updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description', 'short_description']);
-    }).change();
-
-    $('#select-language-description').on('change', function () {
-      updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description', 'short_description']);
-      updateDescriptionMarkdown();
-    }).change();
-
-    $('#select-language-short-description').on('change', function () {
-      updateTranslationLanguages(this, 'short-description-template', 'input-short-description-', ['name', 'description', 'short_description']);
-      updateShortDescriptionMarkdown();
-    }).change();
-
-    $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id], .form-group[data-name="input-short-descriptions"] [data-language-id]').each(function (_, element) {
-      setTranslationHandler(element);
-    });
-
-    $('form').on('submit', function() {
-      $('input').change();
-      $('textarea').change();
-       window.translations = $.map(window.translations, function(translation, index){
-         if (translation.name  === '' && translation.description === '' &&
-             translation.short_description === '' && translation.language_id !== '{{ ENGLISH.id }}'){
-             return null;
-         }
-         return translation
-      });
-      updateTranslationJSON();
-      return $(this).find('.has-error').length === 0;
-    });
-
-    function updateDescriptionMarkdown() {
-      updateMarkdownField('input-markdown', 'descriptions', 'input-descriptions', '300px');
-    }
-    $('#input-markdown').change(updateDescriptionMarkdown);
-    updateDescriptionMarkdown();
-
-    function updateShortDescriptionMarkdown() {
-      updateMarkdownField('input-short-description-is-markdown', 'short_descriptions', 'input-short-descriptions', '100px');
-    }
-    $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
-    updateShortDescriptionMarkdown();
-  });
-
-  </script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/action_form.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}
@@ -377,13 +303,6 @@
           <span class="sr-only">{{ _('Use Graphical Editor') }}</span>
           <input id="toggle-schema-editor" type="checkbox" data-toggle="toggle" data-size="mini" data-on="{{ _('Graphical Editor') }}" data-off="{{ _('JSON Editor') }}" data-width="150px" name="{{ action_form.use_json_editor.name }}" {% if action_form.use_json_editor.data %}checked="checked"{% endif %} />
         </label>
-        <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-        {% if error_message is not none %}
-          window.schema_editor_error_message = {{ error_message | tojson }};
-        {% else %}
-          window.schema_editor_error_message = null;
-        {% endif %}
-        </script>
         <div class="schema-editor" id="schema-editor"></div>
         <textarea class="form-control" rows="{% if schema_json %}{{ schema_json.splitlines() | length }}{% else %}5{% endif %}" id="input-schema" name="{{ action_form.schema.name }}" placeholder="{{ _('Schema') }}">{{ action_form.schema.data or ''}}</textarea>
       </div>
