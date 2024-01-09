@@ -144,7 +144,7 @@ def generate_ro_crate_metadata(
                 "@type": "File",
                 "description": f"Schema for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "schema.json",
-                "contentType": "application/json",
+                "encodingFormat": "application/json",
                 "contentSize": len(schema_json),
                 "sha256": hashlib.sha256(schema_json).hexdigest()
             })
@@ -156,7 +156,7 @@ def generate_ro_crate_metadata(
                 "@type": "File",
                 "description": f"Data for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "data.json",
-                "contentType": "application/json",
+                "encodingFormat": "application/json",
                 "contentSize": len(data_json),
                 "sha256": hashlib.sha256(data_json).hexdigest()
             })
@@ -183,7 +183,7 @@ def generate_ro_crate_metadata(
             "@type": "File",
             "description": f"Data about files for Object #{object_info['id']}",
             "name": "files.json",
-            "contentType": "application/json",
+            "encodingFormat": "application/json",
             "contentSize": len(files_json),
             "sha256": hashlib.sha256(files_json).hexdigest()
         })
@@ -220,7 +220,7 @@ def generate_ro_crate_metadata(
                         "@id": f"./users/{file_info['uploader_id']}"
                     } if file_info['uploader_id'] is not None else None,
                     "dateCreated": file_info['utc_datetime'],
-                    "contentType": file_type,
+                    "encodingFormat": file_type,
                     "contentSize": len(file_content),
                     "contentUrl": flask.url_for('frontend.object_file', object_id=object_info['id'], file_id=file_info['id'], _external=True),
                     "sha256": file_hash
