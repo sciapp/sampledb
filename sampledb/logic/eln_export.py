@@ -34,6 +34,7 @@ def generate_ro_crate_metadata(
                 "sdPublisher": {
                     "@id": "SampleDB"
                 },
+                "version": "1.0",
                 "dateCreated": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
             },
             {
@@ -41,7 +42,6 @@ def generate_ro_crate_metadata(
                 "@type": [
                     "Dataset"
                 ],
-                "version": "1.0",
                 "hasPart": []
             },
             {
