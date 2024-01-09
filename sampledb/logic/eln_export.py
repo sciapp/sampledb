@@ -112,7 +112,7 @@ def generate_ro_crate_metadata(
             )
             for referenced_object_id, _previously_reference_object_id, _object_reference_type in referenced_object_ids:
                 if referenced_object_id in exported_object_ids:
-                    ro_crate_metadata["@graph"][-1]["mentions"].append(f"./objects/{referenced_object_id}")
+                    ro_crate_metadata["@graph"][-1]["mentions"].append({"@id": f"./objects/{referenced_object_id}"})
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/files"] = ro_crate_metadata["@graph"][-1]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/comments"] = ro_crate_metadata["@graph"][-1]
         directory_datasets["sampledb_export"]["hasPart"].append({
