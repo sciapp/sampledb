@@ -405,9 +405,13 @@ This example shows how Markdown can be used for instrument Notes.
                         'type': 'text',
                         'markdown': True,
                         'languages': "all"
+                    },
+                    "tags": {
+                        "title": {"en": "Tags", "de": "Tags"},
+                        "type": "tags"
                     }
                 },
-                'required': ['name'],
+                'required': ['name', 'tags'],
                 'workflow_show_more': ['sample', 'comment']
             }
         )
@@ -451,12 +455,16 @@ This example shows how Markdown can be used for instrument Notes.
             },
             'sample': {
                 '_type': 'sample',
-                'object_id': object.id
+                'object_id': instrument_object.id
             },
             'comment': {
                 '_type': 'text',
                 'text': {'en': 'This is a test.\nThis **is** a *second* line.\n\nThis line follows an empty line.'},
                 'is_markdown': True
+            },
+            'tags': {
+                '_type': 'tags',
+                'tags': ['example_tag', 'other_tag', 'tag3']
             }
         }
         measurement = sampledb.logic.objects.create_object(measurement_action.id, data, basic_user.id)
@@ -473,6 +481,10 @@ This example shows how Markdown can be used for instrument Notes.
             'comment': {
                 '_type': 'text',
                 'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'}
+            },
+            'tags': {
+                '_type': 'tags',
+                'tags': []
             }
         }
         measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
