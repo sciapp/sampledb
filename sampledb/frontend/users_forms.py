@@ -14,6 +14,7 @@ class SigninForm(FlaskForm):
     username = StringField(validators=[InputRequired()])
     password = PasswordField(validators=[InputRequired()])
     remember_me = BooleanField()
+    shared_device = BooleanField(default=False)
 
 
 class SignoutForm(FlaskForm):

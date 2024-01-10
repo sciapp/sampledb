@@ -35,7 +35,8 @@ def test_sign_in(flask_server):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -43,7 +44,8 @@ def test_sign_in(flask_server):
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     })
     assert r.status_code == 200
@@ -63,7 +65,8 @@ def test_sign_in_redirect(flask_server):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -71,7 +74,8 @@ def test_sign_in_redirect(flask_server):
     r = session.post(flask_server.base_url + 'users/me/sign_in?next=/actions/', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     }, allow_redirects=False)
     assert r.status_code == 302
@@ -92,7 +96,8 @@ def test_sign_in_invalid_redirect(flask_server):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -100,7 +105,8 @@ def test_sign_in_invalid_redirect(flask_server):
     r = session.post(flask_server.base_url + 'users/me/sign_in?next=http://google.de/', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     }, allow_redirects=False)
     assert r.status_code == 302
@@ -136,7 +142,8 @@ def test_sign_in_missing_password(flask_server):
     # submit the form
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     })
     assert r.status_code == 200

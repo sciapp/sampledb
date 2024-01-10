@@ -39,14 +39,7 @@
       </div>
       {% if not is_for_refresh %}
       <div class="form-group">
-        <div class="col-sm-offset-4 col-sm-4">
-          <div class="checkbox">
-            <label>
-              <input type="checkbox" id="input-rememberme" name="remember_me"> {{ _('Remember me')}}
-            </label>
-          </div>
-        </div>
-        <div class="col-sm-4">
+        <div class="col-sm-offset-8 col-sm-4">
           <div id="link-request-password-reset">
             <a href="{{ url_for('frontend.user_me_preferences')}}" {% if not has_errors %}style="color:#cccccc;"{% endif %}>{{ _('Forgot your password?')}} </a>
           </div>
@@ -58,6 +51,8 @@
           <button type="submit" class="btn btn-primary">{{ _('Sign in') }}</button>
         </div>
       </div>
+      <input type="hidden" name="remember_me" value="" />
+      <input type="hidden" name="shared_device" value="" />
     </form>
     {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
       <div style="border-left: 1px solid #ccc; width: 0; margin: 40px; display: flex; justify-content: center; flex-direction: column">
@@ -72,15 +67,36 @@
         {{ passkey_form.hidden_tag() }}
         <div class="help-block"></div>
         <button type="submit" class="btn btn-primary">{{ _('Use Passkey') }}</button>
+        <input type="hidden" name="remember_me" value="" />
+        <input type="hidden" name="shared_device" value="" />
       </form>
   {% endif %}
   </div>
+  {% if not is_for_refresh %}
+    <div class="form-group">
+      <div class="col-sm-offset-5 col-sm-4">
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" id="input-rememberme"> {{ _('Remember me')}}
+          </label>
+        </div>
+      </div>
+      <div class="col-sm-offset-5 col-sm-4">
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" id="input-shared_device" {% if request.cookies.get('SAMPLEDB_SHARED_DEVICE_DEFAULT') %}checked="checked"{% endif %}> {{ _('Shared Device')}}
+            <i class="fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="{{ _("You will be signed out after %(idle_sign_out_minutes)s minutes of inactivity.", idle_sign_out_minutes=config["SHARED_DEVICE_SIGN_OUT_MINUTES"]) }}"></i>
+          </label>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
-    <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
+    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
       import {
         get,
         supported,
@@ -93,6 +109,7 @@
         const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
         const form = $('#fido2-authenticate-form');
         form.removeClass('has-error');
+        updateFormHiddenFields(form);
         const help_bock = form.find('.help-block');
         help_bock.text('');
         try {
@@ -115,6 +132,37 @@
           $('#fido2-authenticate-form button').prop('disabled', true);
         }
       });
-    </script>
-  {% endif %}
+    {% endif %}
+
+    function updateFormHiddenFields(form) {
+      if ($('#input-shared_device').prop('checked')) {
+        form.find('[name="shared_device"]').val("shared_device");
+        form.find('[name="remember_me"]').val("");
+      } else {
+        if ($('#input-rememberme').prop('checked')) {
+          form.find('[name="remember_me"]').val("remember_me");
+        } else {
+          form.find('[name="remember_me"]').val("");
+        }
+        form.find('[name="shared_device"]').val("");
+      }
+    }
+
+    $(function() {
+      $('#form-signin').on('submit', function() {
+        const form = $('#form-signin');
+        updateFormHiddenFields(form);
+        return true;
+      });
+
+      $('#input-shared_device').on('change', function () {
+        Cookies.set('SAMPLEDB_SHARED_DEVICE_DEFAULT', $(this).prop('checked') || "", {sameSite: 'Lax'});
+        if ($(this).prop('checked')) {
+          $('#input-rememberme').prop('disabled', true).prop('checked', false);
+        } else {
+          $('#input-rememberme').prop('disabled', false);
+        }
+      }).trigger('change');
+    });
+  </script>
 {% endblock %}

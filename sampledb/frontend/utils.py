@@ -1606,3 +1606,8 @@ def get_template_values() -> typing.Any:
     template_values = flask.g.template_values
     flask.g.template_values = None
     return template_values
+
+
+@JinjaFunction()
+def current_utc_datetime() -> datetime:
+    return datetime.now(tz=timezone.utc).replace(tzinfo=None)

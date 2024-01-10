@@ -171,6 +171,9 @@
       {% endif %}
       {% block navbar_userarea %}
       <ul class="nav navbar-nav navbar-right">
+        {% if session.get('using_shared_device') %}
+          <li><a><span id="session-timeout-marker"></span>&nbsp;<i class="fa fa-question-circle" data-toggle="tooltip" data-placement="bottom" title="{{ _('You will be signed out after %(idle_sign_out_minutes)s minutes of inactivity.', idle_sign_out_minutes=config["SHARED_DEVICE_SIGN_OUT_MINUTES"]) }}"></i></a></li>
+        {% endif %}
           {% if current_user.is_authenticated %}
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ current_user.name }} <span class="caret"></span></a>
@@ -302,6 +305,10 @@
 {% block template_values %}
   {% do set_template_value("translations.search", _('Search…')) %}
   {% do set_template_value("translations.advanced_search", _('Advanced Search…')) %}
+  {% do set_template_value("translations.automatic_sign_out_after_x_minutes_of_inactivity", _('Sign out in PLACEHOLDER')) %}
+  {% do set_template_value("idle_sign_out_minutes", config["SHARED_DEVICE_SIGN_OUT_MINUTES"]) %}
+  {% do set_template_value("shared_device_state_url", url_for('frontend.shared_device_state')) %}
+  {% do set_template_value("current_utc_datetime", current_utc_datetime().isoformat(timespec='microseconds')) %}
 
   {% do set_template_value("current_user.is_authenticated", current_user.is_authenticated) %}
   {% if current_user.is_authenticated %}

@@ -30,6 +30,70 @@ $(function () {
     });
   }
 
+  if (window.getTemplateValue('current_user.is_authenticated') && $('#session-timeout-marker').length > 0) {
+    // there will be a small offset between client and server which can be ignored, however this can help catch larger offsets due to a wrongly set computer clock
+    const millisecondOffset = moment.utc().diff(moment.utc(window.getTemplateValue('current_utc_datetime')));
+    Cookies.set('SAMPLEDB_LAST_ACTIVITY_MILLISECOND_OFFSET', '' + millisecondOffset, { sameSite: 'Lax' });
+    let lastActivityTime = null;
+    let lastActivityTimeString = '';
+
+    const resetLastActivityTime = function () {
+      lastActivityTime = moment.utc();
+      lastActivityTimeString = lastActivityTime.format('YYYY-MM-DDTHH:mm:ss');
+      Cookies.set('SAMPLEDB_LAST_ACTIVITY_DATETIME', lastActivityTimeString, { sameSite: 'Lax' });
+    };
+
+    $(window).on('blur focus resize mousemove mousedown mouseup scroll keydown keyup', resetLastActivityTime);
+    resetLastActivityTime();
+
+    const reloadIfNecessary = function () {
+      $.get(window.getTemplateValue('shared_device_state_url'), function (data) {
+        // if data is true, the shared device session has not timed out yet, otherwise a reload is necessary
+        if (data !== true) {
+          window.location.reload();
+        }
+      });
+    };
+
+    const updateSessionTimeout = function () {
+      const idleSignOutMinutes = window.getTemplateValue('idle_sign_out_minutes');
+      if (lastActivityTimeString !== Cookies.get('SAMPLEDB_LAST_ACTIVITY_DATETIME')) {
+        if (Cookies.get('SAMPLEDB_LAST_ACTIVITY_DATETIME') === 'reload') {
+          reloadIfNecessary();
+        } else {
+          lastActivityTimeString = Cookies.get('SAMPLEDB_LAST_ACTIVITY_DATETIME');
+        }
+        if (lastActivityTimeString === '') {
+          resetLastActivityTime();
+        } else {
+          lastActivityTime = moment.utc(lastActivityTimeString);
+        }
+      }
+      if (lastActivityTime === null) {
+        resetLastActivityTime();
+      } else {
+        // allow 5 seconds of delay before inactivity is detected
+        const idleDuration = moment.utc().diff(lastActivityTime) / 1000.0 - 5;
+        if (idleDuration <= 0) {
+          $('#session-timeout-marker').text(window.getTemplateValue('translations.automatic_sign_out_after_x_minutes_of_inactivity').replaceAll('PLACEHOLDER', idleSignOutMinutes.toString() + ':00'));
+        } else if (idleDuration > idleSignOutMinutes * 60) {
+          reloadIfNecessary();
+        } else {
+          const idleSignOutDuration = idleSignOutMinutes * 60 - idleDuration;
+          const idleSignOutDurationSeconds = Math.floor(idleSignOutDuration % 60);
+          const idleSignOutDurationMinutes = Math.floor(idleSignOutDuration / 60);
+          const idleSignOutDurationString = idleSignOutDurationMinutes.toString() + ':' + (100 + idleSignOutDurationSeconds).toString().substring(1);
+          $('#session-timeout-marker').text(window.getTemplateValue('translations.automatic_sign_out_after_x_minutes_of_inactivity').replaceAll('PLACEHOLDER', idleSignOutDurationString));
+        }
+      }
+    };
+    updateSessionTimeout();
+    setInterval(updateSessionTimeout, 500);
+  } else {
+    // this triggers a reload check in all tabs with a shared device session still opened
+    Cookies.set('SAMPLEDB_LAST_ACTIVITY_DATETIME', 'reload', { sameSite: 'Lax' });
+  }
+
   // handle scrolling for the sidebar navigation
   $(window).on('scroll', function () {
     let activeA = null;
