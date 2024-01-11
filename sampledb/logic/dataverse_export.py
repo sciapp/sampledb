@@ -152,7 +152,7 @@ def _convert_metadata_to_process(
         elif value['_type'] == 'bool':
             text_value = str(datatypes.Boolean.from_json(value).value)
         elif value['_type'] == 'datetime':
-            text_value = datatypes.DateTime.from_json(value).utc_datetime.isoformat()
+            text_value = datatypes.DateTime.from_json(value).utc_datetime.isoformat(timespec='microseconds')
         elif value['_type'] == 'hazards':
             hazard_names = {
                 1: 'Explosive',

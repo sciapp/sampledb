@@ -35,7 +35,7 @@ def generate_ro_crate_metadata(
                     "@id": "SampleDB"
                 },
                 "version": "1.0",
-                "dateCreated": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
+                "dateCreated": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec='microseconds')
             },
             {
                 "@id": "./",

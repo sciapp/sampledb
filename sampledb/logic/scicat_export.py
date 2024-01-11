@@ -99,7 +99,7 @@ def _convert_metadata(
         metadata = []
         for row in rows:
             utc_datetime_str, magnitude = row[:2]
-            utc_datetime_str = datetime.datetime.strptime(utc_datetime_str, Timeseries.DATETIME_FORMAT_STRING).isoformat()
+            utc_datetime_str = datetime.datetime.strptime(utc_datetime_str, Timeseries.DATETIME_FORMAT_STRING).isoformat(timespec='microseconds')
             if units in {'1', ''}:
                 value = magnitude
             else:
@@ -117,7 +117,7 @@ def _convert_metadata(
         data: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any]
     ) -> str:
-        return datetime.datetime.strptime(data['utc_datetime'], DateTime.FORMAT_STRING).isoformat()
+        return datetime.datetime.strptime(data['utc_datetime'], DateTime.FORMAT_STRING).isoformat(timespec='microseconds')
 
     def _convert_bool(
         data: typing.Dict[str, typing.Any],
