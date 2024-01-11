@@ -941,28 +941,40 @@ Reading a list of all log entries for an instrument
         [
             {
                 "log_entry_id": 1,
-                "utc_datetime": "2020-08-19T12:13:14.123456",
                 "author": 1,
-                "content": "Example Log Entry 1",
-                "event_utc_datetime": "2020-08-03T12:13:14.123456",
-                "content_is_markdown": false
-                "categories": []
+                "versions": [
+                    {
+                        "log_entry_id": 1,
+                        "version_id": 1,
+                        "utc_datetime": "2020-08-19T12:13:14.123456",
+                        "content": "Example Log Entry 1",
+                        "categories": [],
+                        "event_utc_datetime": "2020-08-03T12:13:14.000000",
+                        "content_is_markdown": false
+                    }
+                ]
             },
             {
                 "log_entry_id": 2,
-                "utc_datetime": "2020-08-19T13:14:15.123456",
                 "author": 1,
-                "content": "Example Log Entry 2",
-                "event_utc_datetime": null,
-                "content_is_markdown": false,
-                "categories": [
+                "versions": [
                     {
-                        "category_id": 1
-                        "title": "Error Report"
-                    },
-                    {
-                        "category_id": 7
-                        "title": "Maintenance Log"
+                        "log_entry_id": 2,
+                        "version_id": 1,
+                        "utc_datetime": "2020-08-19T13:14:15.123456",
+                        "content": "Example Log Entry 2",
+                        "categories": [
+                            {
+                                "category_id": 1,
+                                "title": "Error Report"
+                            },
+                            {
+                                "category_id": 7,
+                                "title": "Maintenance Log"
+                            }
+                        ],
+                        "event_utc_datetime": null,
+                        "content_is_markdown": false
                     }
                 ]
             }
@@ -998,30 +1010,37 @@ Reading an instrument log entry
 
         {
             "log_entry_id": 2,
-            "utc_datetime": "2020-08-19T13:14:15.123456",
             "author": 1,
-            "content": "Example Log Entry 2",
-            "event_utc_datetime": "2020-08-03T12:13:14.123456",
-            "content_is_markdown": false,
-            "categories": [
-                {
-                    "category_id": 1
-                    "title": "Error Report"
-                },
-                {
-                    "category_id": 7
-                    "title": "Maintenance Log"
-                }
+            "versions": [
+                "log_entry_id": 2,
+                "version_id": 1,
+                "utc_datetime": "2020-08-19T13:14:15.123456",
+                "content": "Example Log Entry 2",
+                "categories": [
+                    {
+                        "category_id": 1,
+                        "title": "Error Report"
+                    },
+                    {
+                        "category_id": 7,
+                        "title": "Maintenance Log"
+                    }
+                ],
+                "event_utc_datetime": "2020-08-03T12:13:14.123456",
+                "content_is_markdown": false
             ]
         }
 
     :>json number log_entry_id: the log entry's ID
-    :>json string utc_datetime: the date and time of the log entry in UTC in ISO format
-    :>json string content: the log entry's content
-    :>json string event_utc_datetime: the date and time of the event in UTC in ISO format if set, else ``null``
-    :>json string content_is_markdown: whether the log entry's content is markdown
     :>json number author: the user ID of the log entry's author
-    :>json list categories: the log entry's categories
+    :>json list versions: an array of versions of the log entry
+    :>json number versions[?].log_entry_id: the log entry's ID
+    :>json number versions[?].version_id: the log entry version's ID
+    :>json string versions[?].utc_datetime: the date and time of the log entry version in UTC in ISO format
+    :>json string versions[?].content: the log entry version's content
+    :>json list versions[?].categories: the log entry version's categories
+    :>json string versions[?].event_utc_datetime: the date and time of the event in UTC in ISO format if set, else ``null``
+    :>json string versions[?].content_is_markdown: whether the log entry version's content is markdown
     :statuscode 200: no error
     :statuscode 403: the instrument log can only be accessed by instrument scientists
     :statuscode 404: the instrument or the log entry do not exist
@@ -1052,11 +1071,11 @@ Reading a list of all log categories for an instrument
 
         [
             {
-                "category_id": 1
+                "category_id": 1,
                 "title": "Error Report"
             },
             {
-                "category_id": 7
+                "category_id": 7,
                 "title": "Maintenance Log"
             }
         ]
@@ -1090,7 +1109,7 @@ Reading an instrument log category
         Content-Type: application/json
 
         {
-            "category_id": 7
+            "category_id": 7,
             "title": "Maintenance Log"
         }
 
