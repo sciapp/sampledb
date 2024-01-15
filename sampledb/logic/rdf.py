@@ -30,8 +30,8 @@ xmlns:foaf="http://xmlns.com/foaf/0.1/"
         {% endif %}
       {% endfor %}
     {% endif %}
-    <dcterms:created>{{ created.isoformat() }}</dcterms:created>
-    <dcterms:modified>{{ modified.isoformat() }}</dcterms:modified>
+    <dcterms:created>{{ created.isoformat(timespec='microseconds') }}</dcterms:created>
+    <dcterms:modified>{{ modified.isoformat(timespec='microseconds') }}</dcterms:modified>
 
 {% for user in creators %}
     <dcterms:creator>
