@@ -311,5 +311,7 @@ Miscellaneous
      - If set, using webhook targets that do not support https is allowed (default: False).
    * - SAMPLEDB_ENABLE_FIDO2_PASSKEY_AUTHENTICATION
      - If set, FIDO2 passkeys can be used as an authentication method instead of just as a second factor.
+   * - SAMPLEDB_SHARED_DEVICE_SIGN_OUT_MINUTES
+     - The time of inactivity after which users on shared devices will be signed out in minutes (default: 30 minutes).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

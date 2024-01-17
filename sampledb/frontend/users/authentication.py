@@ -11,6 +11,7 @@ import flask
 import flask_login
 from flask_babel import _, lazy_gettext, refresh
 from fido2.webauthn import UserVerificationRequirement
+import werkzeug.wrappers.response
 
 from .. import frontend
 from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server
@@ -23,6 +24,26 @@ from ...utils import FlaskResponseT
 
 @login_manager.user_loader
 def load_user(user_id: typing.Any) -> typing.Optional[User]:
+    flask.g.shared_device_state = False
+    if flask.session.get('using_shared_device') and flask.request.cookies.get('SAMPLEDB_LAST_ACTIVITY_DATETIME'):
+        try:
+            millisecond_offset = float(flask.request.cookies.get('SAMPLEDB_LAST_ACTIVITY_MILLISECOND_OFFSET', '0'))
+        except Exception:
+            millisecond_offset = 0
+        offset = datetime.timedelta(milliseconds=millisecond_offset)
+        try:
+            last_activity_datetime = datetime.datetime.strptime(flask.request.cookies['SAMPLEDB_LAST_ACTIVITY_DATETIME'], '%Y-%m-%dT%H:%M:%S')
+        except Exception:
+            flask.g.shared_device_state = True
+        else:
+            idle_sign_out_minutes = flask.current_app.config['SHARED_DEVICE_SIGN_OUT_MINUTES']
+            idle_minutes = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) + offset - last_activity_datetime).total_seconds() / 60 - 5 / 60
+            flask.g.shared_device_state = idle_minutes < idle_sign_out_minutes
+            if idle_minutes >= idle_sign_out_minutes:
+                flask.session.clear()
+                if user_id:
+                    flask.flash(_('You have been signed out after %(idle_sign_out_minutes)s minutes of inactivity.', idle_sign_out_minutes=idle_sign_out_minutes), 'info')
+                return None
     try:
         user_id = int(user_id)
     except ValueError:
@@ -61,7 +82,7 @@ def _is_url_safe_for_redirect(url: str) -> bool:
 
 def _redirect_to_next_url(
         next_url: typing.Optional[str] = None
-) -> FlaskResponseT:
+) -> werkzeug.wrappers.response.Response:
     if next_url is None:
         next_url = flask.request.args.get('next', flask.url_for('.index'))
     index_url = flask.url_for('.index')
@@ -105,12 +126,13 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
                     )
             two_factor_authentication_methods = get_active_two_factor_authentication_methods(user.id)
             if not two_factor_authentication_methods:
-                return complete_sign_in(user, is_for_refresh, form.remember_me.data)
+                return complete_sign_in(user, is_for_refresh, form.remember_me.data, form.shared_device.data)
             flask.session['confirm_data'] = {
                 'reason': 'login',
                 'user_id': user.id,
                 'is_for_refresh': is_for_refresh,
                 'remember_me': form.remember_me.data,
+                'shared_device': form.shared_device.data,
                 'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S'),
                 'next_url': flask.request.args.get('next', '/')
             }
@@ -141,7 +163,7 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
             user_id = None
         if user_id is not None:
             user = get_user(user_id)
-            return complete_sign_in(user, is_for_refresh, False)
+            return complete_sign_in(user, is_for_refresh, passkey_form.remember_me.data, passkey_form.shared_device.data)
         flask.flash(_('No user was found for this passkey.'), 'error')
         return flask.redirect(flask.url_for('frontend.sign_in'))
 
@@ -164,6 +186,7 @@ def complete_sign_in(
         user: typing.Optional[User],
         is_for_refresh: bool,
         remember_me: bool,
+        shared_device: bool,
         *,
         next_url: typing.Optional[str] = None
 ) -> FlaskResponseT:
@@ -176,7 +199,10 @@ def complete_sign_in(
     else:
         flask_login.login_user(user, remember=remember_me)
         refresh()
-    return _redirect_to_next_url(next_url)
+    flask.session['using_shared_device'] = shared_device
+    response = _redirect_to_next_url(next_url)
+    response.set_cookie('SAMPLEDB_LAST_ACTIVITY_DATETIME', '', samesite='Lax')
+    return response
 
 
 @frontend.route('/users/me/sign_in', methods=['GET', 'POST'])
@@ -204,3 +230,12 @@ def sign_out() -> FlaskResponseT:
         flask_login.logout_user()
         return flask.redirect(flask.url_for('.index'))
     return flask.render_template('sign_out.html')
+
+
+@frontend.route('/users/me/shared_device_state')
+def shared_device_state() -> FlaskResponseT:
+    shared_device_state = False
+    # accessing flask_login.current_user triggers the check for a user
+    if flask_login.current_user.is_authenticated:
+        shared_device_state = bool(flask.g.get('shared_device_state'))
+    return flask.jsonify(shared_device_state)

@@ -69,7 +69,7 @@ def setup_totp_two_factor_authentication() -> FlaskResponseT:
     }
 
 
-def _parse_confirm_data() -> typing.Optional[typing.Tuple[User, str, bool, bool, typing.Optional[str]]]:
+def _parse_confirm_data() -> typing.Optional[typing.Tuple[User, str, bool, bool, bool, typing.Optional[str]]]:
     confirm_data = flask.session.get('confirm_data')
     if confirm_data is None:
         return None
@@ -86,7 +86,7 @@ def _parse_confirm_data() -> typing.Optional[typing.Tuple[User, str, bool, bool,
     except errors.UserDoesNotExistError:
         flask.session.pop('confirm_data')
         return None
-    return user, confirm_data.get('reason'), confirm_data.get('is_for_refresh'), confirm_data.get('remember_me'), confirm_data.get('next_url')
+    return user, confirm_data.get('reason'), confirm_data.get('is_for_refresh'), confirm_data.get('remember_me'), confirm_data.get('shared_device'), confirm_data.get('next_url')
 
 
 @frontend.route('/users/me/two_factor_authentication/totp/confirm', methods=['GET', 'POST'])
@@ -95,7 +95,7 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
     if confirm_data is None:
         flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         return flask.redirect(flask.url_for('.index'))
-    user, reason, is_for_refresh, remember_me, next_url = confirm_data
+    user, reason, is_for_refresh, remember_me, shared_device, next_url = confirm_data
     if reason not in (
         'login',
         'activate_two_factor_authentication_method',
@@ -172,7 +172,7 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
         if pyotp.TOTP(secret).verify(confirm_form.code.data):
             flask.session.pop('confirm_data')
             if reason == 'login':
-                return complete_sign_in(user, is_for_refresh, remember_me, next_url=next_url)
+                return complete_sign_in(user, is_for_refresh, remember_me, shared_device, next_url=next_url)
             elif reason == 'activate_two_factor_authentication_method':
                 authentication.activate_two_factor_authentication_method(method.id)
                 flask.flash(_('The two-factor authentication method has been enabled.'), 'success')
@@ -250,7 +250,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
     if confirm_data is None:
         flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         return flask.redirect(flask.url_for('.index'))
-    user, reason, is_for_refresh, remember_me, next_url = confirm_data
+    user, reason, is_for_refresh, remember_me, shared_device, next_url = confirm_data
     if reason not in (
         'login',
         'activate_two_factor_authentication_method',
@@ -335,7 +335,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
         if credential.credential_id == credential_data.credential_id:
             flask.session.pop('confirm_data')
             if reason == 'login':
-                return complete_sign_in(user, is_for_refresh, remember_me, next_url=next_url)
+                return complete_sign_in(user, is_for_refresh, remember_me, shared_device, next_url=next_url)
             elif reason == 'activate_two_factor_authentication_method':
                 authentication.activate_two_factor_authentication_method(method.id)
                 flask.flash(_('The two-factor authentication method has been enabled.'), 'success')

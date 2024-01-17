@@ -440,6 +440,7 @@ def test_status_codes(flask_server, user, driver):
         'users/me/export': 302,
         'users/me/notifications': 302,
         'users/me/preferences': 302,
+        'users/me/shared_device_state': 200,
         'users/me/refresh_sign_in': 302,
         'users/me/sign_in': 302,
         'users/me/sign_out': 200,

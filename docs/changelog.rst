@@ -10,6 +10,7 @@ Currently in development.
 - Added support for FIDO2 passkeys for authentication and two-factor authentication
 - Fully remove support for files with local storage (see: https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage)
 - Allow configuring which action types are shown for object filters
+- Added automatic sign out due to inactivity for users on shared devices
 
 Version 0.25.3
 --------------

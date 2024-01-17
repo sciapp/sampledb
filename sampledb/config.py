@@ -66,6 +66,7 @@ def parse_configuration_values() -> None:
         'TYPEAHEAD_OBJECT_LIMIT',
         'LDAP_CONNECT_TIMEOUT',
         'TEMPORARY_FILE_TIME_LIMIT',
+        'SHARED_DEVICE_SIGN_OUT_MINUTES',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -714,6 +715,8 @@ ENABLE_CONTENT_SECURITY_POLICY = True
 ENABLE_ELN_FILE_IMPORT = False
 
 ENABLE_FIDO2_PASSKEY_AUTHENTICATION = False
+
+SHARED_DEVICE_SIGN_OUT_MINUTES = 30
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
