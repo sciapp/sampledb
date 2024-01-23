@@ -976,13 +976,14 @@
       const maxRows = arrayContainer.data('max-rows');
       const minColumns = arrayContainer.data('min-cols');
       const maxColumns = arrayContainer.data('max-cols');
+      const isRequired = arrayContainer.data('is-required');
 
       const addColumnButton = arrayContainer.find('[data-object-form-button="table_col_add"]');
       const deleteColumnButton = arrayContainer.find('[data-object-form-button="table_col_delete"]');
       const addRowButton = arrayContainer.find('[data-object-form-button="table_row_add"]');
       const deleteRowButtons = arrayContainer.find('[data-object-form-button="table_row_delete"]');
 
-      deleteRowButtons.prop('disabled', numRows <= minRows);
+      deleteRowButtons.prop('disabled', (numRows <= minRows) && !(numRows === 1 && minRows === 1 && !isRequired));
       addRowButton.prop('disabled', maxRows !== -1 && numRows >= maxRows);
 
       if (numRows === 0) {
@@ -1001,9 +1002,10 @@
       const numItems = deleteButtons.length - 1;
       const minItems = arrayContainer.data('min-items');
       const maxItems = arrayContainer.data('max-items');
+      const isRequired = arrayContainer.data('is-required');
       addButton.prop('disabled', maxItems !== -1 && numItems >= maxItems);
       copyButtons.prop('disabled', maxItems !== -1 && numItems >= maxItems);
-      deleteButtons.prop('disabled', numItems <= minItems);
+      deleteButtons.prop('disabled', (numItems <= minItems) && !(numItems === 1 && minItems === 1 && !isRequired));
     }
   }
 

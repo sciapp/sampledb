@@ -1,9 +1,8 @@
 {% set container_style = schema.get('style') %}
 <div class="form-group row">
   <div class="col-md-3 control-label">
-    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
+    {% if schema.title %}<strong><span {% if is_required and schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>
-  {% set is_required = True %}
   {% set minItems = schema.get('minItems', 0) %}
   {% set maxItems = schema.get('maxItems', -1) %}
   {% set defaultItems = schema.get('defaultItems', minItems) %}
@@ -24,7 +23,8 @@
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if schema['items']['type'] == 'object' %}
     {% set item_property_names = get_property_names_in_order(schema["items"], previous_schema["items"]) %}
-    <table class="table" id="table_{{ table_prefix }}" data-id-prefix="{{ id_prefix }}" data-template-order-index="{{ template_order_index }}" data-array-container="object-table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}">
+    <table class="table" id="table_{{ table_prefix }}" data-id-prefix="{{ id_prefix }}" data-template-order-index="{{ template_order_index }}" data-array-container="object-table" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}" data-is-required="{{ (not not is_required) | tojson }}">
+      {% set is_required = True %}
       <thead>
         <tr>
           {% for property_name in item_property_names %}
@@ -119,7 +119,8 @@
       {% endif %}
     {% endfor %}
     {% set max_used_fields = max_used_fields [-1] %}
-    <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="array-table" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}">
+    <table class="table" data-template-order-index="{{ template_order_index }}" data-col-order-index="{{ col_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="array-table" data-min-cols="{{ schema['items'].get('minItems', 0) }}" data-max-cols="{{ schema['items'].get('maxItems', -1) }}" data-min-rows="{{ schema.get('minItems', 0) }}" data-max-rows="{{ schema.get('maxItems', -1) }}" data-is-required="{{ (not not is_required) | tojson }}">
+     {% set is_required = True %}
       <thead>
         <tr>
           {% for i in range(max_used_fields) %}
