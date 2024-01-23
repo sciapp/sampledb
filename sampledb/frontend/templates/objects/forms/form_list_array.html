@@ -37,7 +37,7 @@
      <div class="col-md-9 {% if loop.index0 or loop.last %}col-md-offset-3{% endif %} {% if loop.last %}array-template{% endif %}" {% if loop.last %}disabled="disabled"{% endif %} data-id-prefix="{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em" data-array-item="list">
       {% include "objects/forms/form_any.html" %}
       <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-        <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px;" data-object-form-button="list_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-minus"></i></button>
+        <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px; padding: 6px 7px" data-object-form-button="list_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-minus fa-fw"></i></button>
       </div>
       </div>
   {% endfor %}
@@ -48,6 +48,6 @@
       {% endif %}
     </div>
     <div style="flex-grow: 0; flex-basis: 4em;"></div>
-    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="list_array_add" style="height:34px;"><i class="fa fa-plus"></i></button>
+    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="list_array_add" style="height:34px;"><i class="fa fa-plus fa-fw"></i></button>
   </div>
 </div>

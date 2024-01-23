@@ -85,8 +85,8 @@
             {% endif %}
             <td>
               <div style="display: flex; justify-content: flex-end;">
-                <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" data-object-form-button="table_array_copy"><i class="fa fa-clone"></i></button>
-                <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger form-delete-button" data-object-form-button="table_array_delete" data-element-id="{{ property_path[-1] }}">&times;</button>
+                <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" data-object-form-button="table_array_copy"><i class="fa fa-clone fa-fw"></i></button>
+                <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger form-delete-button" data-object-form-button="table_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-times fa-fw"></i></button>
               </div>
             </td>
           </tr>
@@ -99,7 +99,7 @@
           {% endfor %}
           <th scope="col">
             <div style="display: flex; justify-content: flex-end;">
-              <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="table_array_add">+</button>
+              <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="table_array_add"><i class="fa fa-plus fa-fw"></i></button>
             </div>
           </th>
         </tr>
@@ -126,10 +126,10 @@
           {% for i in range(max_used_fields) %}
             <th>{{ _('Field %(index)s', index=i + 1) }}</th>
           {% endfor %}
-          <th class="control-buttons">
-            <div class="btn-group pull-right" role="group" aria-label="Column Controls">
-              <button type="button" id="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger" data-object-form-button="table_col_delete"><i class="fa fa-arrow-left"></i></button>
-              <button type="button" id="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success" data-object-form-button="table_col_add"><i class="fa fa-arrow-right"></i></button>
+          <th class="control-buttons text-right">
+            <div class="btn-group" role="group" aria-label="Column Controls">
+              <button type="button" id="action_{{ id_prefix }}_?__deletecolumn" class="btn btn-danger" data-object-form-button="table_col_delete"><i class="fa fa-arrow-left fa-fw"></i></button>
+              <button type="button" id="action_{{ id_prefix }}_?__addcolumn" class="btn btn-success" data-object-form-button="table_col_add"><i class="fa fa-arrow-right fa-fw"></i></button>
             </div>
           </th>
         </tr>
@@ -163,8 +163,8 @@
                 {% include "objects/forms/form_any.html" %}
               </td>
             {% endfor %}
-            <td class="control-buttons">
-              <button type="button" class="btn btn-danger pull-right delete-row-button" id="action_{{ id_prefix }}_?__deleterow" data-object-form-button="table_row_delete">&times;</button>
+            <td class="control-buttons text-right">
+              <button type="button" class="btn btn-danger delete-row-button" id="action_{{ id_prefix }}_?__deleterow" data-object-form-button="table_row_delete"><i class="fa fa-times fa-fw"></i></button>
             </td>
           </tr>
         {% endfor %}
@@ -186,8 +186,8 @@
           {% for i in range(max_used_fields) %}
             <th>{{ _('Field %(index)s', index=i + 1) }}</th>
           {% endfor %}
-          <th class="control-buttons">
-            <button type="button" id="action_{{ parent_prefix }}_?__addrow" class="btn btn-success pull-right" data-object-form-button="table_row_add">+</button>
+          <th class="control-buttons text-right">
+            <button type="button" id="action_{{ parent_prefix }}_?__addrow" class="btn btn-success" data-object-form-button="table_row_add"><i class="fa fa-plus fa-fw"></i></button>
           </th>
         </tr>
       </tfoot>
