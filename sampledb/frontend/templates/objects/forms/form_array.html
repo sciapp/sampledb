@@ -52,8 +52,9 @@
   {% endfor %}
 
   <div class="form-group row clearfix" style="padding-right:0.75em">
-    <div class="col-md-9 col-md-offset-3">
-      <button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-object-form-button="array_add" style="width:20em">{{ _('Add %(item_name)s', item_name=item_name) }}</button>
+    <div class="col-md-9 col-md-offset-3 text-right">
+      <button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="array_add" style="width:20em">{{ _('Add %(item_name)s', item_name=item_name) }}</button>
+      <button type="button" id="action_{{ parent_prefix }}_?__clear" class="btn btn-danger form-clear-button" data-object-form-button="array_clear" style="width:20em">{{ _('Delete all', item_name=item_name) }}</button>
     </div>
   </div>
 </div>

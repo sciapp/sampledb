@@ -100,6 +100,8 @@
           <th scope="col">
             <div style="display: flex; justify-content: flex-end;">
               <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="table_array_add"><i class="fa fa-plus fa-fw"></i></button>
+              &nbsp;
+              <button type="button" id="action_{{ id_prefix }}_?__clear" class="btn btn-danger form-clear-button" data-object-form-button="table_array_clear"><i class="fa fa-trash-o fa-fw"></i></button>
             </div>
           </th>
         </tr>
@@ -188,6 +190,7 @@
           {% endfor %}
           <th class="control-buttons text-right">
             <button type="button" id="action_{{ parent_prefix }}_?__addrow" class="btn btn-success" data-object-form-button="table_row_add"><i class="fa fa-plus fa-fw"></i></button>
+            <button type="button" id="action_{{ parent_prefix }}_?__clear" class="btn btn-danger" data-object-form-button="table_rows_clear"><i class="fa fa-trash-o fa-fw"></i></button>
           </th>
         </tr>
       </tfoot>
