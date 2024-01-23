@@ -816,7 +816,7 @@
     newRow.attr('data-row-id', rowIndex);
     newRow.removeClass('array-template');
     newRow.removeAttr('data-template-table-type');
-    replaceTemplateIndex(newRow, `!index${arrayContainer.data('template-order-index')}!`, rowIndex);
+    replaceIDPrefix(newRow.find('*').add(newRow), `${arrayPrefix}_!index${arrayContainer.data('template-order-index')}!_`, `${arrayPrefix}_${rowIndex}_`);
     updateArrayButtonsHandlerWithinElement(newRow);
     arrayContainer.find('> tbody').append(newRow);
 
