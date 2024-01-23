@@ -1047,7 +1047,7 @@
       const deleteRowButtons = arrayContainer.find('[data-object-form-button="table_row_delete"]');
       const clearButton = arrayContainer.find('[data-object-form-button="table_rows_clear"]');
 
-      deleteRowButtons.prop('disabled', (numRows <= minRows) && !(numRows === 1 && minRows === 1 && !isRequired));
+      deleteRowButtons.prop('disabled', (numRows <= minRows) && (numRows !== 1 || isRequired));
       addRowButton.prop('disabled', maxRows !== -1 && numRows >= maxRows);
       clearButton.prop('disabled', (numRows === 0) || (isRequired && minRows > 0));
 
@@ -1070,7 +1070,7 @@
       const isRequired = arrayContainer.data('is-required');
       addButton.prop('disabled', maxItems !== -1 && numItems >= maxItems);
       copyButtons.prop('disabled', maxItems !== -1 && numItems >= maxItems);
-      deleteButtons.prop('disabled', (numItems <= minItems) && !(numItems === 1 && minItems === 1 && !isRequired));
+      deleteButtons.prop('disabled', (numItems <= minItems) && (numItems !== 1 || isRequired));
       clearButton.prop('disabled', (numItems === 0) || (isRequired && minItems > 0));
     }
   }
