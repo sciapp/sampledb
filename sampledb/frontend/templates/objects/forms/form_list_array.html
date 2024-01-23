@@ -3,9 +3,9 @@
 {% set minItems = schema.get('minItems', 0) %}
 {% set maxItems = schema.get('maxItems', -1) %}
 {% set defaultItems = schema.get('defaultItems', minItems) %}
-<div class="form-group row" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="list" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}">
+<div class="form-group row" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="list" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}" data-is-required="{{ (not not is_required) | tojson }}">
   <div class="col-md-3 control-label">
-    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }}{% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
+    {% if schema.title %}<strong><span {% if is_required and schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }}{% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
   {% set is_required = True %}
@@ -37,7 +37,7 @@
      <div class="col-md-9 {% if loop.index0 or loop.last %}col-md-offset-3{% endif %} {% if loop.last %}array-template{% endif %}" {% if loop.last %}disabled="disabled"{% endif %} data-id-prefix="{{ id_prefix }}" style="display:flex; padding-left:2em; padding-right:1.75em" data-array-item="list">
       {% include "objects/forms/form_any.html" %}
       <div style="flex-grow: 0; flex-basis: 4em; text-align: right;">
-        <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px;" data-object-form-button="list_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-minus"></i></button>
+        <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger" style="height:34px; padding: 6px 7px" data-object-form-button="list_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-minus fa-fw"></i></button>
       </div>
       </div>
   {% endfor %}
@@ -48,6 +48,8 @@
       {% endif %}
     </div>
     <div style="flex-grow: 0; flex-basis: 4em;"></div>
-    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="list_array_add" style="height:34px;"><i class="fa fa-plus"></i></button>
+    <button type="button" id="action_{{ id_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="list_array_add" style="height:34px;"><i class="fa fa-plus fa-fw"></i></button>
+    &nbsp;
+    <button type="button" id="action_{{ id_prefix }}_?__clear" class="btn btn-danger form-clear-button" data-object-form-button="list_array_clear" style="height:34px;"><i class="fa fa-trash-o fa-fw"></i></button>
   </div>
 </div>

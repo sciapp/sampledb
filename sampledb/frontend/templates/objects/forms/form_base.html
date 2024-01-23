@@ -118,6 +118,11 @@
       case 'table_array_delete':
         $(button).off('click').on('click', arrayFormDeleteHandler);
         break;
+      case 'array_clear':
+      case 'list_array_clear':
+      case 'table_array_clear':
+        $(button).off('click').on('click', arrayFormClearHandler);
+        break;
       case 'table_array_copy':
         $(button).off('click').on('click', arrayFormTableCopyHandler);
         break;
@@ -132,6 +137,9 @@
         break;
       case 'table_row_delete':
         $(button).off('click').on('click', tableFormRowDeleteHandler);
+        break;
+      case 'table_rows_clear':
+        $(button).off('click').on('click', tableFormRowClearHandler);
         break;
     }
   }
@@ -507,7 +515,10 @@
     const deleteButtons = arrayContainer.find('[data-object-form-button$="_delete"]').filter(function (_, button) {
       return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
     });
-    return [addButton, copyButtons, deleteButtons];
+    const clearButton = arrayContainer.find('[data-object-form-button$="_clear"]').filter(function (_, button) {
+      return $(button).closest('[data-array-container]')[0] === arrayContainer[0];
+    });
+    return [addButton, copyButtons, deleteButtons, clearButton];
   }
 
 
@@ -727,7 +738,36 @@
     window.arrayButtons.push(button.attr('id'));
     button.closest('[data-array-item]').remove();
     if (arrayContainer.data('array-container') === 'list') {
-      const [addButton, _copyButtons, deleteButtons] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
+      const [addButton, _copyButtons, deleteButtons, _clearButton] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
+      // array has one more delete button than items because of the array template
+      const numItems = deleteButtons.length - 1;
+      if (numItems === 0) {
+        addButton.parent().removeClass('col-md-offset-3');
+      } else {
+        deleteButtons.first().parent().parent().removeClass('col-md-offset-3');
+      }
+    }
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    clearUnusedConditions();
+    setUpCalculations();
+  }
+
+  /**
+   * Handle array clear button events.
+   * @param event a PointerEvent
+   */
+  function arrayFormClearHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+    arrayContainer.find('[data-array-item]:not(.array-template)').remove();
+    if (arrayContainer.data('array-container') === 'list') {
+      const [addButton, _copyButtons, deleteButtons, _clearButton] = getArrayButtons(arrayContainer); // eslint-disable-line no-unused-vars
       // array has one more delete button than items because of the array template
       const numItems = deleteButtons.length - 1;
       if (numItems === 0) {
@@ -816,7 +856,7 @@
     newRow.attr('data-row-id', rowIndex);
     newRow.removeClass('array-template');
     newRow.removeAttr('data-template-table-type');
-    replaceTemplateIndex(newRow, `!index${arrayContainer.data('template-order-index')}!`, rowIndex);
+    replaceIDPrefix(newRow.find('*').add(newRow), `${arrayPrefix}_!index${arrayContainer.data('template-order-index')}!_`, `${arrayPrefix}_${rowIndex}_`);
     updateArrayButtonsHandlerWithinElement(newRow);
     arrayContainer.find('> tbody').append(newRow);
 
@@ -862,6 +902,29 @@
     if (arrayContainer.find('tbody > tr').not('.array-template').length === 0) {
       updateTableFormHead(arrayContainer, -arrayContainer.find('> thead > tr > th').not('.control-buttons').length);
     }
+
+    updateArrayButtonsEnabled(arrayContainer);
+    updateArrayIDPrefixes(arrayContainer);
+    clearUnusedConditions();
+    setUpCalculations();
+  }
+
+  /**
+   * Handles array table clear button events.
+   * @param event a PointerEvent
+   */
+  function tableFormRowClearHandler (event) {
+    const button = $(event.currentTarget);
+    const arrayContainer = button.closest('[data-array-container]');
+    const arrayPrefix = arrayContainer.data('id-prefix');
+    if (arrayPrefix.includes('!')) {
+      return;
+    }
+    window.arrayButtons.push(button.attr('id'));
+
+    // remove row containing the button
+    arrayContainer.find('tbody > tr').not('.array-template').remove();
+    updateTableFormHead(arrayContainer, -arrayContainer.find('> thead > tr > th').not('.control-buttons').length);
 
     updateArrayButtonsEnabled(arrayContainer);
     updateArrayIDPrefixes(arrayContainer);
@@ -976,14 +1039,17 @@
       const maxRows = arrayContainer.data('max-rows');
       const minColumns = arrayContainer.data('min-cols');
       const maxColumns = arrayContainer.data('max-cols');
+      const isRequired = arrayContainer.data('is-required');
 
       const addColumnButton = arrayContainer.find('[data-object-form-button="table_col_add"]');
       const deleteColumnButton = arrayContainer.find('[data-object-form-button="table_col_delete"]');
       const addRowButton = arrayContainer.find('[data-object-form-button="table_row_add"]');
       const deleteRowButtons = arrayContainer.find('[data-object-form-button="table_row_delete"]');
+      const clearButton = arrayContainer.find('[data-object-form-button="table_rows_clear"]');
 
-      deleteRowButtons.prop('disabled', numRows <= minRows);
+      deleteRowButtons.prop('disabled', (numRows <= minRows) && (numRows !== 1 || isRequired));
       addRowButton.prop('disabled', maxRows !== -1 && numRows >= maxRows);
+      clearButton.prop('disabled', (numRows === 0) || (isRequired && minRows > 0));
 
       if (numRows === 0) {
         // tables without rows also do not have columns
@@ -995,15 +1061,17 @@
         deleteColumnButton.prop('disabled', numColumns <= minColumns);
       }
     } else {
-      const [addButton, copyButtons, deleteButtons] = getArrayButtons(arrayContainer);
+      const [addButton, copyButtons, deleteButtons, clearButton] = getArrayButtons(arrayContainer);
 
       // array has one more delete button than items because of the array template
       const numItems = deleteButtons.length - 1;
       const minItems = arrayContainer.data('min-items');
       const maxItems = arrayContainer.data('max-items');
+      const isRequired = arrayContainer.data('is-required');
       addButton.prop('disabled', maxItems !== -1 && numItems >= maxItems);
       copyButtons.prop('disabled', maxItems !== -1 && numItems >= maxItems);
-      deleteButtons.prop('disabled', numItems <= minItems);
+      deleteButtons.prop('disabled', (numItems <= minItems) && (numItems !== 1 || isRequired));
+      clearButton.prop('disabled', (numItems === 0) || (isRequired && minItems > 0));
     }
   }
 

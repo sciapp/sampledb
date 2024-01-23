@@ -1530,8 +1530,8 @@ table.diff tr.striped {
     margin-left: 4px;
 }
 
-.form-copy-button {
-    padding: 6px 9.2px;
+.form-copy-button, .form-add-button, .form-delete-button, .form-clear-button, .control-buttons .btn {
+    padding: 6px 7px;
 }
 
 textarea.text-multiline-field,
