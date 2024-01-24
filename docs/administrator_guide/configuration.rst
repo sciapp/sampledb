@@ -313,5 +313,7 @@ Miscellaneous
      - If set, FIDO2 passkeys can be used as an authentication method instead of just as a second factor.
    * - SAMPLEDB_SHARED_DEVICE_SIGN_OUT_MINUTES
      - The time of inactivity after which users on shared devices will be signed out in minutes (default: 30 minutes).
+   * - SAMPLEDB_DISABLE_OUTDATED_USE_AS_TEMPLATE
+     - If set, users cannot use objects with outdated schemas as a template (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.
