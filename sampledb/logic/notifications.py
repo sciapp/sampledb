@@ -700,3 +700,27 @@ def create_notification_for_a_remote_object_import_with_notes(
             'import_notes': import_notes
         }
     )
+
+
+def create_notification_for_being_automatically_linked(
+    user_id: int,
+    component_id: int
+) -> None:
+    """
+    Create a notification of type AUTOMATIC_USER_FEDERATION
+
+    :param user_id: the ID of an existing user
+    :param component_id: the ID of an existing component
+    :raise errors.ComponentDoesNotExistError: when no component with the
+        given component ID exists
+    """
+    # ensure the component exists
+    logic.components.check_component_exists(component_id)
+    _create_notification(
+        type=NotificationType.AUTOMATIC_USER_FEDERATION,
+        user_id=user_id,
+        data={
+            "user_id": user_id,
+            "component_id": component_id
+        }
+    )

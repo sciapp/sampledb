@@ -1548,3 +1548,6 @@ textarea.text-markdown-field {
     min-height: 171px;
 }
 
+.column-space {
+    padding-right: 10px;
+}

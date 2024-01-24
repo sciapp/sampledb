@@ -9,7 +9,7 @@ import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import StringField, IntegerField, SubmitField, SelectField, BooleanField
-from wtforms.validators import Length, DataRequired, ValidationError, InputRequired
+from wtforms.validators import Length, DataRequired, ValidationError, InputRequired, AnyOf
 
 
 class CreateAPITokenForm(FlaskForm):
@@ -83,3 +83,8 @@ class AddAliasForm(FlaskForm):
 
 class DeleteAliasForm(FlaskForm):
     component = IntegerField('Component', validators=[InputRequired()])
+
+
+class ModifyELNIdentityForm(FlaskForm):
+    type = StringField(validators=[AnyOf(["remove", "revoke", "enable"])])
+    eln_user_id = IntegerField(validators=[InputRequired()])

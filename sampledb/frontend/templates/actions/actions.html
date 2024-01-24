@@ -19,8 +19,13 @@
       <h2>
         {% if action.user is not none %}
           {% set action_owner = get_user(action.user_id) %}
-          <a href="{{ url_for('.user_profile', user_id=action.user_id) }}" title="{{ action_owner.get_name() }}">{{ action_owner.get_name() }}</a>
-          {{ import_information_symbol(action_owner) }} /
+          {% set federated_user, imported_user = get_federated_identity(action_owner) %}
+          <a href="{{ url_for('.user_profile', user_id=federated_user.id) }}" title="{{ federated_user.get_name() }}">{{ federated_user.get_name() }}</a>
+          {% if imported_user is not none %}
+            {{ import_information_symbol(imported_user) }} /
+          {% else %}
+            {{ import_information_symbol(action_owner) }} /
+          {% endif %}
         {% endif %}
         {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
           <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>

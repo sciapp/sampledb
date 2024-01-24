@@ -42,7 +42,7 @@ from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
-from ..logic.users import get_user, User
+from ..logic.users import get_user, User, get_user_by_federated_user
 from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
@@ -1160,9 +1160,9 @@ def get_locations_form_data(
 
 
 @JinjaFunction()
-def get_user_or_none(user_id: int) -> typing.Optional[User]:
+def get_user_or_none(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
     try:
-        return get_user(user_id)
+        return get_user(user_id, component_id=component_id)
     except errors.UserDoesNotExistError:
         return None
 
@@ -1611,3 +1611,15 @@ def get_template_values() -> typing.Any:
 @JinjaFunction()
 def current_utc_datetime() -> datetime:
     return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
+
+@JinjaFunction()
+def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User]]:
+    if isinstance(user, int):
+        user = get_user(user)
+    if user is None:
+        return user, None
+    federated_user = get_user_by_federated_user(federated_user_id=user.id)
+    if federated_user is not None:
+        return federated_user, user
+    return user, None

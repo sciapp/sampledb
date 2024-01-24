@@ -29,6 +29,19 @@ $(document).ready(function () {
       }
     });
   }
+  if (window.getTemplateValue('has_active_identities')) {
+    const checkboxesActiveModal = $('#activeIdentitiesModal').find('[name="local_fed_id"]');
+    checkboxesActiveModal.click(function () {
+      $('#activeIdentitiesModal').find('button[type="submit"]').prop('disabled', !checkboxesActiveModal.is(':checked'));
+    });
+  }
+
+  if (window.getTemplateValue('has_inactive_identities')) {
+    const checkboxesRevokedModal = $('#revokedIdentitiesModal').find('[name="local_fed_id"]');
+    checkboxesRevokedModal.click(function () {
+      $('#revokedIdentitiesModal').find('button[type="submit"]').prop('disabled', !checkboxesRevokedModal.is(':checked'));
+    });
+  }
 });
 if (window.getTemplateValue('create_api_token_form_has_errors')) {
   $('#createApiTokenModal').modal('show');

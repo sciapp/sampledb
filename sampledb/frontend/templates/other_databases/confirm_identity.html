@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Database') }} #{{ source_database.id }}: {{ _('Link identity') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+  <h3>{{ _('Database') }} #{{ source_database.id }}: {{ source_database.get_name() }} </h3>
+  <div style="text-align: center;">
+    <p>{{ _("You have to confirm that you want to create a federated identity using the currently signed-in user (%(username)s #%(user_id)s).", username=current_user.name, user_id=current_user.id) }}</p>
+    <form method="post" class="form" action="{{ confirmation_url }}">
+      <input type="hidden" name="token" value="{{ identity_token }}">
+      <input type="hidden" name="federation_partner_uuid" value="{{ config['FEDERATION_UUID'] }}">
+      <a class="btn btn-danger" href="{{ url_for('.index') }}">{{ _('Cancel') }}</a>
+      <button class="btn btn-success" type="submit">{{ _('Confirm Identity') }}</button>
+    </form>
+  </div>
+{% endblock %}

@@ -22,7 +22,8 @@ from ...logic.federation.update import import_updates, PROTOCOL_VERSION_MAJOR, P
 from ...logic.federation.users import shared_user_preprocessor
 from ...api.federation.authentication import http_token_auth
 from ...logic.files import get_file
-from ...logic.users import get_user_aliases_for_component, get_users
+from ...logic.users import get_user_aliases_for_component, get_users, get_user_email_hashes, User
+from ...models import UserType
 
 preprocessors = {
     'actions': shared_action_preprocessor,
@@ -179,12 +180,23 @@ class Users(Resource):
         component = flask.g.component
 
         result_users = []
+        federation_candidates = []
+
         all_users = get_users()
-        user_by_id = {
+        user_by_id: dict[int, User] = {
             user.id: user
             for user in all_users
         }
+
         shared_user_aliases = get_user_aliases_for_component(component.id, modified_since=last_sync)
+
+        for candidate in all_users:
+            if candidate.type == UserType.PERSON:
+                federation_candidates.append({
+                    'user_id': candidate.id,
+                    'email_hashes': get_user_email_hashes(candidate)
+                })
+
         for alias in shared_user_aliases:
             user = user_by_id.get(alias.user_id)
             if user is None:
@@ -205,9 +217,11 @@ class Users(Resource):
                     'extra_fields': alias.extra_fields
                 }
             )
+
         return {
             'header': _get_header(component),
-            'users': result_users
+            'users': result_users,
+            'federation_candidates': federation_candidates
         }
 
 
