@@ -12,6 +12,7 @@ Currently in development.
 - Allow configuring which action types are shown for object filters
 - Added automatic sign out due to inactivity for users on shared devices
 - Allow using the simple search via the HTTP API
+- Fixed setting ``SAMPLEDB_HELP_URL``
 
 Version 0.25.3
 --------------

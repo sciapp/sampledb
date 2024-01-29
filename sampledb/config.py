@@ -597,7 +597,7 @@ SERVICE_IMPRINT = None
 SERVICE_LEGAL_NOTICE = None
 SERVICE_PRIVACY_POLICY = None
 SERVICE_ACCESSIBILITY = None
-SAMPLEDB_HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
+HELP_URL = 'https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/#documentation'
 
 # a map of file extensions and the MIME types they should be handled as
 # this is used to determine which user uploaded files should be served as

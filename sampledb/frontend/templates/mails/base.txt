@@ -2,7 +2,7 @@
 
 {% block content %}{% endblock %}
 
-If you need help with {{ service_name }}, please see the user guide at {{ config['SAMPLEDB_HELP_URL'] }} or contact us at {{ contact_email }}.
+If you need help with {{ service_name }}, please see the user guide at {{ config['HELP_URL'] }} or contact us at {{ contact_email }}.
 
 {{ service_name }} is a service by the PGI / JCNS Scientific IT-Systems team: (https://pgi-jcns.fz-juelich.de)
 
