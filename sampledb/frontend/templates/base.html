@@ -82,7 +82,7 @@
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       {% if not current_user.is_authenticated %}
       <ul class="nav navbar-nav">
-        <li><a href="{{ config["SAMPLEDB_HELP_URL"] }}">{{ _('Help') }}</a></li>
+        <li><a href="{{ config["HELP_URL"] }}">{{ _('Help') }}</a></li>
       </ul>
       {% else %}
       <form action="{{ url_for('frontend.objects') }}" method="get" class="navbar-form navbar-left" id="nav-search">
@@ -166,7 +166,7 @@
             {% endif %}
           </ul>
         </li>
-        <li><a href="{{ config["SAMPLEDB_HELP_URL"] }}">{{ _('Help') }}</a></li>
+        <li><a href="{{ config["HELP_URL"] }}">{{ _('Help') }}</a></li>
       </ul>
       {% endif %}
       {% block navbar_userarea %}
