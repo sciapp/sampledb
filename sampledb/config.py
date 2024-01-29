@@ -21,7 +21,7 @@ import requests
 import sqlalchemy
 from PIL import Image
 
-from .utils import generate_secret_key, load_environment_configuration, ansi_color
+from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
 
 
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
@@ -118,7 +118,7 @@ def parse_configuration_values() -> None:
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
-            globals()[config_name] = value.lower() not in {'', 'false', 'no', 'off', '0'}
+            globals()[config_name] = text_to_bool(value)
 
 
 def is_download_service_whitelist_valid() -> bool:

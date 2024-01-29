@@ -160,3 +160,7 @@ def generate_inline_script_nonce() -> str:
         nonce = secrets.token_hex(32)
         flask.g.inline_script_nonce = nonce
     return nonce
+
+
+def text_to_bool(text: str) -> bool:
+    return text.lower() not in {'', 'false', 'no', 'off', '0'}
