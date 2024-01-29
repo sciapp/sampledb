@@ -41,6 +41,7 @@ sampledb.config.TEMPLATES_AUTO_RELOAD = True
 sampledb.config.SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_pre_ping": True,
     "pool_recycle": 60,
+    "connect_args": {"options": "-c timezone=utc"},
 }
 sampledb.config.SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{0}:@localhost:5432/{0}'.format(getpass.getuser())
 sampledb.config.MAIL_SENDER = 'sampledb@example.com'
@@ -170,6 +171,7 @@ def driver():
     with contextlib.closing(Chrome(options=options)) as driver:
         # wait for driver to start up
         time.sleep(5)
+        driver.execute_cdp_cmd('Emulation.setTimezoneOverride', {'timezoneId': 'UTC'})
         yield driver
 
 
