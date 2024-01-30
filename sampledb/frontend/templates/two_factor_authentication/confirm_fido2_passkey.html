@@ -40,6 +40,13 @@
 </div>
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("fido2_options", dict(options)) %}
+  {% do set_template_value("translations.passkey_failed", _('The passkey failed to authenticate with the following error: ')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
@@ -51,7 +58,7 @@
 
     async function authenticate(e) {
       e && e.preventDefault();
-      const options = {{ dict(options) | tojson }};
+      const options = window.getTemplateValue('fido2_options');
       const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
       const form = $('#fido2-authenticate-form');
       form.removeClass('has-error');
@@ -64,7 +71,7 @@
         return true;
       } catch (error) {
         form.addClass('has-error');
-        help_bock.text("{{ _('The passkey failed to authenticate with the following error:') }}: " + error)
+        help_bock.text(window.getTemplateValue('translations.passkey_failed') + error)
         return false;
       }
     }
