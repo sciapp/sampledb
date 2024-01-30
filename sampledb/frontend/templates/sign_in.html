@@ -93,19 +93,27 @@
   {% endif %}
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("config.enable_fido2_passkey_authentication", config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION']) %}
+  {% do set_template_value("fido2_options", dict(options)) %}
+  {% do set_template_value("translations.passkey_failed", _('The passkey failed to authenticate with the following error: ')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] %}
-      import {
-        get,
-        supported,
-        parseRequestOptionsFromJSON,
-      } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
+    import {
+      get,
+      supported,
+      parseRequestOptionsFromJSON,
+    } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
 
+    if (window.getTemplateValue('config.enable_fido2_passkey_authentication')) {
       async function authenticate(e) {
         e && e.preventDefault();
-        const options = {{ dict(options) | tojson }};
+        const options = window.getTemplateValue('fido2_options');
         const publicKeyCredentialRequestOptions = parseRequestOptionsFromJSON(options);
         const form = $('#fido2-authenticate-form');
         form.removeClass('has-error');
@@ -119,12 +127,12 @@
           return true;
         } catch (error) {
           form.addClass('has-error');
-          help_bock.text("{{ _('The passkey failed to authenticate with the following error:') }}: " + error)
+          help_bock.text(window.getTemplateValue('translations.passkey_failed') + error)
           return false;
         }
       }
 
-      $(function() {
+      $(function () {
         if (supported()) {
           $("#fido2-authenticate-form").on('submit', authenticate);
         } else {
@@ -132,7 +140,7 @@
           $('#fido2-authenticate-form button').prop('disabled', true);
         }
       });
-    {% endif %}
+    }
 
     function updateFormHiddenFields(form) {
       if ($('#input-shared_device').prop('checked')) {
