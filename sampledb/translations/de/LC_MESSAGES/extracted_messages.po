@@ -1392,98 +1392,6 @@ msgstr "Endpunkt"
 msgid "This %(api_token_type)s has not been used so far."
 msgstr "Dieses %(api_token_type)s ist noch nicht benutzt worden."
 
-msgid "Expand All"
-msgstr "Alle ausklappen"
-
-msgid "Collapse All"
-msgstr "Alle einklappen"
-
-msgid "Bold"
-msgstr "Fettdruck"
-
-msgid "Italic"
-msgstr "Kursiv"
-
-msgid "Heading"
-msgstr "Überschrift"
-
-msgid "Code"
-msgstr "Code"
-
-msgid "Generic List"
-msgstr "Liste"
-
-msgid "Numbered List"
-msgstr "Nummerierte Liste"
-
-msgid "Create Link"
-msgstr "Link erstellen"
-
-msgid "Upload Image"
-msgstr "Bild hochladen"
-
-msgid "Insert Table"
-msgstr "Tabelle einfügen"
-
-msgid "Toggle Preview"
-msgstr "Vorschau ein-/ausschalten"
-
-msgid "Please select an object."
-msgstr "Bitte wählen Sie ein Objekt aus."
-
-msgid "Clear"
-msgstr "Leeren"
-
-msgid ""
-"No results for \"<span class=\"query-container\">QUERY</span>\" — <span "
-"class=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
-msgstr ""
-"Keine Ergebnisse für „<span class=\"query-container\">QUERY</span>“ — "
-"<span class=\"objectpicker-button objectpicker-button-"
-"clear\">Leeren</span>"
-
-msgid ""
-"PLACEHOLDER2 results for \"<span class=\"query-container\">QUERY</span>\""
-" — <span class=\"objectpicker-button objectpicker-button-"
-"clear\">Clear</span>"
-msgstr ""
-"PLACEHOLDER2 Ergebnisse für „<span class=\"query-"
-"container\">QUERY</span>“ — <span class=\"objectpicker-button "
-"objectpicker-button-clear\">Leeren</span>"
-
-msgid ""
-"PLACEHOLDER1 of PLACEHOLDER2 results for \"<span class=\"query-"
-"container\">QUERY</span>\" — <span class=\"objectpicker-button "
-"objectpicker-button-show-all\">Show all</span> — <span class"
-"=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
-msgstr ""
-"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen für „<span class=\"query-"
-"container\">QUERY</span>“ — <span class=\"objectpicker-button "
-"objectpicker-button-show-all\">Alle anzeigen</span> — <span class"
-"=\"objectpicker-button objectpicker-button-clear\">Leeren</span>"
-
-msgid "No results"
-msgstr "Keine Ergebnisse"
-
-msgid "PLACEHOLDER2 results"
-msgstr "PLACEHOLDER2 Ergebnisse"
-
-msgid ""
-"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-button "
-"objectpicker-button-show-all\">Show all</span>"
-msgstr ""
-"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
-"button objectpicker-button-show-all\">Alle anzeigen</span>"
-
-msgid "Show more"
-msgstr "Mehr anzeigen"
-
-msgid "Show less"
-msgstr "Weniger anzeigen"
-
-msgid "Please select at least one timeseries."
-msgstr "Bitte wählen Sie mindestens eine Zeitreihe aus."
-
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
 
@@ -1674,6 +1582,95 @@ msgstr "Erweiterte Suche…"
 
 msgid "Sign out in PLACEHOLDER"
 msgstr "Abmeldung in PLACEHOLDER"
+
+msgid "Expand All"
+msgstr "Alle ausklappen"
+
+msgid "Collapse All"
+msgstr "Alle einklappen"
+
+msgid "Please select an object."
+msgstr "Bitte wählen Sie ein Objekt aus."
+
+msgid ""
+"No results for \"<span class=\"query-container\">QUERY</span>\" — <span "
+"class=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
+msgstr ""
+"Keine Ergebnisse für „<span class=\"query-container\">QUERY</span>“ — "
+"<span class=\"objectpicker-button objectpicker-button-"
+"clear\">Leeren</span>"
+
+msgid ""
+"PLACEHOLDER2 results for \"<span class=\"query-container\">QUERY</span>\""
+" — <span class=\"objectpicker-button objectpicker-button-"
+"clear\">Clear</span>"
+msgstr ""
+"PLACEHOLDER2 Ergebnisse für „<span class=\"query-"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button "
+"objectpicker-button-clear\">Leeren</span>"
+
+msgid ""
+"PLACEHOLDER1 of PLACEHOLDER2 results for \"<span class=\"query-"
+"container\">QUERY</span>\" — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Show all</span> — <span class"
+"=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
+msgstr ""
+"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen für „<span class=\"query-"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Alle anzeigen</span> — <span class"
+"=\"objectpicker-button objectpicker-button-clear\">Leeren</span>"
+
+msgid "No results"
+msgstr "Keine Ergebnisse"
+
+msgid "PLACEHOLDER2 results"
+msgstr "PLACEHOLDER2 Ergebnisse"
+
+msgid ""
+"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Show all</span>"
+msgstr ""
+"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
+"button objectpicker-button-show-all\">Alle anzeigen</span>"
+
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
+msgid "Show less"
+msgstr "Weniger anzeigen"
+
+msgid "Please select at least one timeseries."
+msgstr "Bitte wählen Sie mindestens eine Zeitreihe aus."
+
+msgid "Bold"
+msgstr "Fettdruck"
+
+msgid "Italic"
+msgstr "Kursiv"
+
+msgid "Heading"
+msgstr "Überschrift"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Generic List"
+msgstr "Liste"
+
+msgid "Numbered List"
+msgstr "Nummerierte Liste"
+
+msgid "Create Link"
+msgstr "Link erstellen"
+
+msgid "Upload Image"
+msgstr "Bild hochladen"
+
+msgid "Insert Table"
+msgstr "Tabelle einfügen"
+
+msgid "Toggle Preview"
+msgstr "Vorschau ein-/ausschalten"
 
 msgid "Create Bot User"
 msgstr "Botnutzer erstellen"
@@ -4961,6 +4958,9 @@ msgstr "Ort anzeigen"
 
 msgid "Show Responsible User"
 msgstr "Verantwortlichen Nutzer anzeigen"
+
+msgid "Clear"
+msgstr "Leeren"
 
 msgid "Filters"
 msgstr "Filter"

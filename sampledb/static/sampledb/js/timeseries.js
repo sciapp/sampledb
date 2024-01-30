@@ -157,7 +157,7 @@ $(function () {
           Plotly.newPlot(chartModalBody.children()[0], chartData, chartLayout);
         } else {
           chartModalBody.html('<p class="text-center text-muted"></p>');
-          chartModalBody.children().text(window.select_timeseries_text);
+          chartModalBody.children().text(window.getTemplateValue('translations.select_timeseries'));
         }
       }).trigger('changed.bs.select');
       chartModal.modal();
