@@ -2427,16 +2427,16 @@ msgstr ""
 " darüber, wie diese Geheimnisse zur Validierung von Nachrichten verwendet"
 " werden können."
 
+msgid "The passkey failed to register with the following error: "
+msgstr ""
+"Das Registrieren des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
+
 msgid "Copied!"
 msgstr "Kopiert!"
 
 msgid "Could not copy to clipboard, please use Ctrl+C."
 msgstr "Konnte nicht in die Zwischenablage kopieren, bitte nutzen Sie Strg+C."
-
-msgid "The passkey failed to register with the following error:"
-msgstr ""
-"Das Registrieren des Passkeys ist mit dem folgendem Fehler "
-"fehlgeschlagen: "
 
 msgid "User Profile"
 msgstr "Nutzerprofil"
@@ -2776,7 +2776,7 @@ msgstr "Angemeldet bleiben"
 msgid "Shared Device"
 msgstr "Geteiltes Gerät"
 
-msgid "The passkey failed to authenticate with the following error:"
+msgid "The passkey failed to authenticate with the following error: "
 msgstr ""
 "Die Authentisierung des Passkeys ist mit dem folgendem Fehler "
 "fehlgeschlagen: "
