@@ -23,6 +23,14 @@
 </div>
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("fido2_options", dict(options)) %}
+  {% do set_template_value("translations.passkey_failed", _('The passkey failed to register with the following error: ')) %}
+  {% do set_template_value("translations.enter_at_least_1_character", _('Please enter at least 1 character.')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
@@ -33,7 +41,7 @@
     } from "{{ fingerprinted_static('webauthn-json/js/webauthn-json.browser-ponyfill.js') }}";
 
     export async function register() {
-      const options = {{ dict(options) | tojson }};
+      const options = window.getTemplateValue('fido2_options');
       const form = $('#setup-form');
       form.removeClass('has-error');
       const help_block = form.find('.help-block');
@@ -46,7 +54,7 @@
         return true;
       } catch (error) {
         $('#descriptionFormGroup').addClass('has-error');
-        help_block.text("{{ _('The passkey failed to register with the following error:') }} " + error);
+        help_block.text(window.getTemplateValue('translations.passkey_failed') + error);
         return false;
       }
     }
@@ -56,7 +64,7 @@
         $('#setup-form').on('submit', function (event) {
           event && event.preventDefault();
           if ($("#input-passkey-description").val() === "") {
-            $('#descriptionFormGroup').addClass('has-error').find('.help-block').text("{{ _('Please enter at least 1 character.') }}");
+            $('#descriptionFormGroup').addClass('has-error').find('.help-block').text(window.getTemplateValue('translations.enter_at_least_1_character'));
             return false;
           } else {
             $('#descriptionFormGroup').removeClass('has-error').find('.help-block').text('');
