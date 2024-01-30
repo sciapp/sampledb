@@ -2,6 +2,7 @@
 """
 
 """
+import copy
 
 import pytest
 import sampledb
@@ -19,8 +20,14 @@ def user():
     sampledb.db.session.commit()
     return user
 
+@pytest.fixture
+def default_settings():
+    default_settings = copy.deepcopy(sampledb.logic.settings.DEFAULT_SETTINGS)
+    yield sampledb.logic.settings.DEFAULT_SETTINGS
+    sampledb.logic.settings.DEFAULT_SETTINGS = default_settings
 
-def test_get_default_settings(user):
+
+def test_get_default_settings(user, default_settings):
     sampledb.logic.settings.DEFAULT_SETTINGS = {
         "test": True
     }
@@ -29,7 +36,7 @@ def test_get_default_settings(user):
     }
 
 
-def test_set_settings(user):
+def test_set_settings(user, default_settings):
     sampledb.logic.settings.DEFAULT_SETTINGS = {
         "test": True,
         "other": ""
@@ -50,7 +57,7 @@ def test_set_settings(user):
     }
 
 
-def test_set_invalid_settings(user):
+def test_set_invalid_settings(user, default_settings):
     sampledb.logic.settings.DEFAULT_SETTINGS = {
         "test": True,
         "other": ""
@@ -67,7 +74,7 @@ def test_set_invalid_settings(user):
     }
 
 
-def test_set_custom_settings(user):
+def test_set_custom_settings(user, default_settings):
     sampledb.logic.settings.DEFAULT_SETTINGS = {
         "test": True,
         "other": None
@@ -82,7 +89,7 @@ def test_set_custom_settings(user):
     }
 
 
-def test_get_user_settings(user):
+def test_get_user_settings(user, default_settings):
     sampledb.logic.settings.DEFAULT_SETTINGS = {
         "test": True
     }
