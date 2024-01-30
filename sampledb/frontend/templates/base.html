@@ -330,12 +330,7 @@
   <script type="application/json" id="sampledb-template-values">
     {{ template_values | tojson }}
   </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    window._template_values = JSON.parse(document.getElementById("sampledb-template-values").innerText);
-    window.getTemplateValue = function(name) {
-      return window._template_values[name];
-    }
-  </script>
+  <script type="module" src="{{ fingerprinted_static('sampledb/js/parse_template_values.js') }}"></script>
 {% endblock %}
 
 {% block scripts %}
