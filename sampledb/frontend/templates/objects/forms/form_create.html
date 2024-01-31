@@ -32,7 +32,7 @@
     </div>
   </div>
   {% endif %}
-  <form class="form-horizontal" method="post" action="{% if previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
+  <form class="form-horizontal" method="post" action="{% if previous_object_id and previous_schema %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id, mode='upgrade') }}{% elif previous_object_id %}{{ url_for('.new_object', action_id=action_id, previous_object_id=previous_object_id) }}{% else %}{{ url_for('.new_object', action_id=action_id) }}{% endif %}">
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
     <input type="hidden" name="array_buttons" id="input-array_buttons" value="[]" />

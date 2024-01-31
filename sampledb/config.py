@@ -115,6 +115,7 @@ def parse_configuration_values() -> None:
         'ENABLE_WEBHOOKS_FOR_USERS',
         'WEBHOOKS_ALLOW_HTTP',
         'ENABLE_FIDO2_PASSKEY_AUTHENTICATION',
+        'DISABLE_OUTDATED_USE_AS_TEMPLATE',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -717,6 +718,8 @@ ENABLE_ELN_FILE_IMPORT = False
 ENABLE_FIDO2_PASSKEY_AUTHENTICATION = False
 
 SHARED_DEVICE_SIGN_OUT_MINUTES = 30
+
+DISABLE_OUTDATED_USE_AS_TEMPLATE = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
