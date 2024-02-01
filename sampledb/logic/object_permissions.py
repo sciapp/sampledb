@@ -524,6 +524,10 @@ def get_object_table_with_permissions(
         WHERE o.object_id IN :object_ids
         """
         parameters['object_ids'] = tuple(object_ids)
+    elif object_ids is not None:
+        stmt += """
+        WHERE FALSE
+        """
 
     table = db.text(stmt).columns(
         Objects._current_table.c.object_id,
@@ -564,6 +568,8 @@ def get_objects_with_permissions(
         name_only: bool = False,
         **kwargs: typing.Dict[str, typing.Any]
 ) -> typing.List[Object]:
+    if object_ids is not None and not object_ids:
+        return []
     table, parameters = get_object_table_with_permissions(
         user_id=user_id,
         permissions=permissions,
