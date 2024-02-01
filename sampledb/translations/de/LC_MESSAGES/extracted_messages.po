@@ -1229,8 +1229,11 @@ msgstr "Aktionstyp-IDs konnten nicht geparst werden."
 msgid "Invalid action type ID."
 msgstr "Ungültige Aktionstyp-ID"
 
-msgid "Unable to parse related user ID."
-msgstr "Die ID des zugehörigen Nutzers konnte nicht geparst werden."
+msgid "Only one of related_user_ids and related_user may be set."
+msgstr "related_user_ids und related_user dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse related user IDs."
+msgstr "Die IDs zugehöriger Nutzer konnten nicht geparst werden."
 
 msgid "Invalid related user ID."
 msgstr "Ungültige Zugehöriger-Nutzer-ID."
@@ -5065,6 +5068,9 @@ msgstr "Verantwortlichen Nutzer anzeigen"
 
 msgid "Filters"
 msgstr "Filter"
+
+msgid "Filter by User Activity"
+msgstr "Nach Nutzeraktivität filtern"
 
 msgid "Filter by Permissions"
 msgstr "Nach Berechtigungen filtern"

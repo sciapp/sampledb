@@ -16,6 +16,7 @@ Currently in development.
 - Fixed setting ``SAMPLEDB_HELP_URL``
 - Fixed two-factor authentication for refresh logins
 - Added federated identities
+- Added user activity to object list filters
 
 Version 0.25.3
 --------------
