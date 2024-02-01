@@ -105,7 +105,7 @@ def confirm_totp_two_factor_authentication() -> FlaskResponseT:
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
-    if reason in ('login', ) and flask_login.current_user.is_authenticated:
+    if reason in ('login', ) and flask_login.current_user.is_authenticated != is_for_refresh:
         flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
@@ -260,7 +260,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))
 
-    if reason in ('login', ) and flask_login.current_user.is_authenticated:
+    if reason in ('login', ) and flask_login.current_user.is_authenticated != is_for_refresh:
         flask.flash(_('This two-factor authentication attempt has failed. Please try again.'), 'error')
         flask.session.pop('confirm_data')
         return flask.redirect(flask.url_for('.index'))

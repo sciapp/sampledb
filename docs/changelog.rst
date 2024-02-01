@@ -14,6 +14,7 @@ Currently in development.
 - Allow schema upgrade when using an object as a template
 - Allow using the simple search via the HTTP API
 - Fixed setting ``SAMPLEDB_HELP_URL``
+- Fixed two-factor authentication for refresh logins
 
 Version 0.25.3
 --------------
