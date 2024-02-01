@@ -205,7 +205,7 @@
               <label for="inviteUserId" class="col-sm-2 control-label">{{ _('User') }}</label>
               <div class="col-sm-10">
                 <select class="selectpicker" name="{{ invite_user_form.user_id.name }}" id="inviteUserId" data-width="100%" data-live-search="true">
-                {% for user in get_users(exclude_hidden=True, exclude_fed=True) | sort(attribute='name') %}
+                {% for user in get_users(exclude_hidden=True, exclude_fed=True, exclude_eln_import=True) | sort(attribute='name') %}
                   {% if user.id not in group_member_ids %}
                     <option value="{{ user.id }}" {% if invite_user_form.user_id.data == user_id %}selected="selected"{% endif %}>{{ user.get_name() }}</option>
                   {% endif %}
