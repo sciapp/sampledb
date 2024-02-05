@@ -98,8 +98,8 @@ $(function () {
         }
       });
       if (selectpicker.find('.treepicker-actions').length === 0) {
-        const collapseAllText = window.treepicker_collapse_all_text;
-        const expandAllText = window.treepicker_expand_all_text;
+        const collapseAllText = window.getTemplateValue('translations.treepicker_collapse_all_text');
+        const expandAllText = window.getTemplateValue('translations.treepicker_expand_all_text');
         const treepickerActions = $('<div class="treepicker-actions"><button type="button" class="btn btn-default btn-xs treepicker-collapse-all">' + collapseAllText + '</button> <button type="button" class="btn btn-default btn-xs treepicker-expand-all">' + expandAllText + '</button></div>');
         treepickerActions.insertAfter(selectpicker.find('.bs-searchbox'));
         treepickerActions.find('.treepicker-collapse-all').on('click', function (event) {

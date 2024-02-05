@@ -15,7 +15,7 @@ function setupImageDragAndDrop (element) {
         const reader = new FileReader();
         reader.addEventListener('load', function () {
           $.post(
-            window.application_root_path + 'markdown_images/',
+            window.getTemplateValue('application_root_path') + 'markdown_images/',
             reader.result,
             function (imageUrl) {
               element.value(element.value() + '![](' + imageUrl + ')');

@@ -16,35 +16,6 @@
   {% endblock %}
   {% block head_scripts %}
   {% endblock %}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    window.application_root_path = '{{ url_for('frontend.index') }}';
-    window.treepicker_expand_all_text = '{{ _('Expand All') }}';
-    window.treepicker_collapse_all_text = '{{ _('Collapse All') }}';
-    window.markdown_button_translations = {
-        "Bold": "{{ _("Bold") }}",
-        "Italic": "{{ _("Italic") }}",
-        "Heading": "{{ _("Heading") }}",
-        "Code": "{{ _("Code") }}",
-        "Generic List": "{{ _("Generic List") }}",
-        "Numbered List": "{{ _("Numbered List") }}",
-        "Create Link": "{{ _("Create Link") }}",
-        "Upload Image": "{{ _("Upload Image") }}",
-        "Insert Table": "{{ _("Insert Table") }}",
-        "Toggle Preview": "{{ _("Toggle Preview") }}",
-    };
-    window.object_picker_select_text = "{{ _('Please select an object.') }}";
-    window.object_picker_clear_text = "{{ _('Clear') }}";
-    window.object_picker_no_results_text_template = '{{ _('No results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-clear">Clear</span>') }}';
-    window.object_picker_all_results_text_template = '{{ _('PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-clear">Clear</span>') }}';
-    window.object_picker_some_results_text_template = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-show-all">Show all</span> — <span class="objectpicker-button objectpicker-button-clear">Clear</span>') }}';
-    window.object_picker_no_results_text_template_no_query = '{{ _('No results') }}';
-    window.object_picker_all_results_text_template_no_query = '{{ _('PLACEHOLDER2 results') }}';
-    window.object_picker_some_results_text_template_no_query = '{{ _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button objectpicker-button-show-all">Show all</span>') }}';
-    window.object_picker_limit = {{ config.get('TYPEAHEAD_OBJECT_LIMIT') | tojson }};
-    window.show_more_text = "{{ _('Show more') }}";
-    window.show_less_text = "{{ _('Show less') }}";
-    window.select_timeseries_text = "{{ _('Please select at least one timeseries.') }}";
-  </script>
 {% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
@@ -306,9 +277,36 @@
   {% do set_template_value("translations.search", _('Search…')) %}
   {% do set_template_value("translations.advanced_search", _('Advanced Search…')) %}
   {% do set_template_value("translations.automatic_sign_out_after_x_minutes_of_inactivity", _('Sign out in PLACEHOLDER')) %}
+  {% do set_template_value("translations.treepicker_expand_all_text", _('Expand All')) %}
+  {% do set_template_value("translations.treepicker_collapse_all_text", _('Collapse All')) %}
+  {% do set_template_value("translations.object_picker_select_text", _('Please select an object.')) %}
+  {% do set_template_value("translations.object_picker_no_results_text_template", _('No results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-clear">Clear</span>')) %}
+  {% do set_template_value("translations.object_picker_all_results_text_template", _('PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-clear">Clear</span>')) %}
+  {% do set_template_value("translations.object_picker_some_results_text_template", _('PLACEHOLDER1 of PLACEHOLDER2 results for "<span class="query-container">QUERY</span>" — <span class="objectpicker-button objectpicker-button-show-all">Show all</span> — <span class="objectpicker-button objectpicker-button-clear">Clear</span>')) %}
+  {% do set_template_value("translations.object_picker_no_results_text_template_no_query", _('No results')) %}
+  {% do set_template_value("translations.object_picker_all_results_text_template_no_query", _('PLACEHOLDER2 results')) %}
+  {% do set_template_value("translations.object_picker_some_results_text_template_no_query", _('PLACEHOLDER1 of PLACEHOLDER2 results — <span class="objectpicker-button objectpicker-button-show-all">Show all</span>')) %}
+  {% do set_template_value("translations.show_more", _('Show more')) %}
+  {% do set_template_value("translations.show_less", _('Show less')) %}
+  {% do set_template_value("translations.select_timeseries", _('Please select at least one timeseries.')) %}
+  {% do set_template_value("translations.markdown_buttons", {
+        "Bold": _("Bold"),
+        "Italic": _("Italic"),
+        "Heading": _("Heading"),
+        "Code": _("Code"),
+        "Generic List": _("Generic List"),
+        "Numbered List": _("Numbered List"),
+        "Create Link": _("Create Link"),
+        "Upload Image": _("Upload Image"),
+        "Insert Table": _("Insert Table"),
+        "Toggle Preview": _("Toggle Preview"),
+    }) %}
+
   {% do set_template_value("idle_sign_out_minutes", config["SHARED_DEVICE_SIGN_OUT_MINUTES"]) %}
   {% do set_template_value("shared_device_state_url", url_for('frontend.shared_device_state')) %}
   {% do set_template_value("current_utc_datetime", current_utc_datetime().isoformat(timespec='microseconds')) %}
+  {% do set_template_value("typeahead_object_limit", config.get('TYPEAHEAD_OBJECT_LIMIT')) %}
+  {% do set_template_value("application_root_path", url_for('frontend.index')) %}
 
   {% do set_template_value("current_user.is_authenticated", current_user.is_authenticated) %}
   {% if current_user.is_authenticated %}
@@ -330,12 +328,7 @@
   <script type="application/json" id="sampledb-template-values">
     {{ template_values | tojson }}
   </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    window._template_values = JSON.parse(document.getElementById("sampledb-template-values").innerText);
-    window.getTemplateValue = function(name) {
-      return window._template_values[name];
-    }
-  </script>
+  <script type="module" src="{{ fingerprinted_static('sampledb/js/parse_template_values.js') }}"></script>
 {% endblock %}
 
 {% block scripts %}

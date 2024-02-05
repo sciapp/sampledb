@@ -74,7 +74,7 @@ $(function () {
     };
 
     $.get({
-      url: window.application_root_path + 'objects/referencable',
+      url: window.getTemplateValue('application_root_path') + 'objects/referencable',
       data,
       json: true
     }, function (data) {
@@ -183,10 +183,11 @@ function updateObjectPickers () {
           bloodhound.search(q, syncWrap);
         }
       };
+      const objectPickerLimit = window.getTemplateValue('typeahead_object_limit');
       const dataset = {
         name: 'object_picker',
         source,
-        limit: ((window.object_picker_limit === null || window.object_picker_limit < 1) ? 'Infinity' : window.object_picker_limit + (!$x.prop('required') ? 1 : 0)),
+        limit: ((objectPickerLimit === null || objectPickerLimit < 1) ? 'Infinity' : objectPickerLimit + (!$x.prop('required') ? 1 : 0)),
         display: function (item) {
           return item.unescaped_text;
         },
@@ -214,21 +215,21 @@ function updateObjectPickers () {
             let headerTextTemplate = '';
             if (numResultsShown === 0) {
               if (query === '') {
-                headerTextTemplate = window.object_picker_no_results_text_template_no_query;
+                headerTextTemplate = window.getTemplateValue('translations.object_picker_no_results_text_template_no_query');
               } else {
-                headerTextTemplate = window.object_picker_no_results_text_template;
+                headerTextTemplate = window.getTemplateValue('translations.object_picker_no_results_text_template');
               }
             } else if (numResultsShown === numResultsTotal) {
               if (query === '') {
-                headerTextTemplate = window.object_picker_all_results_text_template_no_query;
+                headerTextTemplate = window.getTemplateValue('translations.object_picker_all_results_text_template_no_query');
               } else {
-                headerTextTemplate = window.object_picker_all_results_text_template;
+                headerTextTemplate = window.getTemplateValue('translations.object_picker_all_results_text_template');
               }
             } else {
               if (query === '') {
-                headerTextTemplate = window.object_picker_some_results_text_template_no_query;
+                headerTextTemplate = window.getTemplateValue('translations.object_picker_some_results_text_template_no_query');
               } else {
-                headerTextTemplate = window.object_picker_some_results_text_template;
+                headerTextTemplate = window.getTemplateValue('translations.object_picker_some_results_text_template');
               }
             }
             const headerText = headerTextTemplate.replace('PLACEHOLDER1', numResultsShown).replace('PLACEHOLDER2', numResultsTotal);
@@ -242,9 +243,9 @@ function updateObjectPickers () {
             const query = $x.typeahead('val');
             let emptyTextTemplate = '';
             if (query === '') {
-              emptyTextTemplate = window.object_picker_no_results_text_template_no_query;
+              emptyTextTemplate = window.getTemplateValue('translations.object_picker_no_results_text_template_no_query');
             } else {
-              emptyTextTemplate = window.object_picker_no_results_text_template;
+              emptyTextTemplate = window.getTemplateValue('translations.object_picker_no_results_text_template');
             }
             const emptyText = emptyTextTemplate;
             const empty = $('<div class="tt-header">' + emptyText + '</div>');
@@ -293,9 +294,9 @@ function updateObjectPickers () {
           formGroup.find('.error-note').first().text('');
           objectHiddenInput.val(objectID);
         } else {
-          field[0].setCustomValidity(window.object_picker_select_text);
+          field[0].setCustomValidity(window.getTemplateValue('translations.object_picker_select_text'));
           formGroup.addClass('has-error');
-          formGroup.find('.error-note').first().text('').first().text(window.object_picker_select_text);
+          formGroup.find('.error-note').first().text('').first().text(window.getTemplateValue('translations.object_picker_select_text'));
           objectHiddenInput.val('');
         }
         objectHiddenInput.trigger('object_change.sampledb'); // event to trigger object conditions evaluation if registered
