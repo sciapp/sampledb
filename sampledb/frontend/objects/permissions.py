@@ -146,7 +146,7 @@ def object_permissions(object_id: int) -> FlaskResponseT:
         possible_new_components = [component for component in components if component.id not in component_policies.keys()]
         component_users = {
             component.id: {
-                user.fed_id: user.get_name(include_ref=True)
+                user.fed_id: user.get_name(include_ref=True, use_local_identity=True)
                 for user in get_users_for_component(component.id, exclude_hidden=False)
             }
             for component in components

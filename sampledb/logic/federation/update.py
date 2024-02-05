@@ -21,6 +21,7 @@ from .actions import import_action, parse_action
 from .objects import import_object, parse_object
 from ..components import Component, set_component_discoverable
 from ..component_authentication import get_own_authentication
+from ..users import link_users_by_email_hashes
 from .. import errors
 from ...models import ComponentAuthenticationType
 
@@ -228,10 +229,13 @@ def update_users(
 
     users = []
     user_data_list = _get_list(updates.get('users'), default=[])
+    user_email_hashes = _get_list(updates.get('federation_candidates'), default=[])
     for user_data in user_data_list:
         users.append(parse_user(user_data, component))
     for user_data in users:
         import_user(user_data, component)
+
+    link_users_by_email_hashes(component.id, user_email_hashes)
 
 
 def update_shares(

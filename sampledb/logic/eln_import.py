@@ -209,14 +209,14 @@ def _create_eln_import_action(
 def import_eln_file(
         eln_import_id: int,
         action_type_ids: typing.Optional[typing.List[typing.Optional[int]]] = None
-) -> typing.Tuple[typing.List[int], typing.List[str]]:
+) -> typing.Tuple[typing.List[int], typing.Dict[typing.Optional[str], User], typing.List[str]]:
     errors = []
 
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
     if eln_import is None:
-        return [], ['Unknown ELN import']
+        return [], {}, ['Unknown ELN import']
     if eln_import.import_utc_datetime is not None:
-        return [], ['This ELN file has already been imported']
+        return [], {}, ['This ELN file has already been imported']
     user_id = eln_import.user_id
 
     parsed_data = parse_eln_file(eln_import_id=eln_import_id)
@@ -225,7 +225,7 @@ def import_eln_file(
         for object_info in parsed_data.objects:
             action_type_ids.append(object_info.type_id)
     elif len(action_type_ids) != len(parsed_data.objects):
-        return [], ['Invalid Action Type ID information for this ELN file']
+        return [], {}, ['Invalid Action Type ID information for this ELN file']
 
     eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     db.session.add(eln_import)
@@ -261,7 +261,6 @@ def import_eln_file(
             eln_object_id=''
         )
         set_user_hidden(user.id, True)
-        users_by_id[None] = user
 
     action_ids_by_action_type_id: typing.Dict[typing.Optional[int], typing.Optional[int]] = {
         None: None
@@ -359,7 +358,7 @@ def import_eln_file(
                 utc_datetime=comment_info.date_created,
                 create_log_entry=False
             )
-    return imported_object_ids, errors
+    return imported_object_ids, users_by_id, errors
 
 
 def _eln_assert(assertion: bool, message: str = 'Invalid .eln file') -> None:

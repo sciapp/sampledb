@@ -15,6 +15,7 @@ Currently in development.
 - Allow using the simple search via the HTTP API
 - Fixed setting ``SAMPLEDB_HELP_URL``
 - Fixed two-factor authentication for refresh logins
+- Added federated identities
 
 Version 0.25.3
 --------------

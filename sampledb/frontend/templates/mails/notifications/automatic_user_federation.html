@@ -1,0 +1,6 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+{% set component = get_component(data['component_id']) %}
+<p>{{ _('Your account has been automatically linked with the <a href="%(user_url)s" style="color: #337ab7;"> user #%(user_id)s</a> from %(component_name)s.', user_url=get_federation_url(get_user_or_none(data['user_id'], component_id=data['component_id'])), user_id=data['user_id'], component_name=component.name) }}</p>
+{% endblock %}

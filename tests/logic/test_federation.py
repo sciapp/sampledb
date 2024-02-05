@@ -24,7 +24,7 @@ from sampledb.logic.federation.action_types import parse_action_type, shared_act
 from sampledb.logic.federation.actions import parse_action, shared_action_preprocessor, parse_import_action, schema_entry_preprocessor
 from sampledb.logic.federation.comments import parse_import_comment
 from sampledb.logic.federation.files import parse_import_file
-from sampledb.logic.federation.instruments import parse_instrument, shared_instrument_preprocessor,  parse_import_instrument
+from sampledb.logic.federation.instruments import parse_instrument, shared_instrument_preprocessor, parse_import_instrument
 from sampledb.logic.federation.location_types import parse_import_location_type
 from sampledb.logic.federation.locations import parse_location, shared_location_preprocessor, locations_check_for_cyclic_dependencies, parse_import_location
 from sampledb.logic.federation.markdown_images import parse_import_markdown_image
@@ -43,8 +43,9 @@ from sampledb.logic.object_permissions import get_object_permissions_for_users, 
 from sampledb.logic.objects import create_object, get_fed_object, get_objects, get_object, get_object_versions, insert_fed_object_version
 from sampledb.logic.projects import create_project
 from sampledb.logic.tags import get_tags
-from sampledb.logic.users import get_user
-from sampledb.models import User, UserType, Action, ActionType, Comment, ObjectLocationAssignment, File, UserFederationAlias, Instrument, Location, InstrumentTranslation, ActionTranslation, ActionTypeTranslation, Permissions, MarkdownImage
+from sampledb.logic.users import get_user, create_sampledb_federated_identity, get_user_by_federated_user, get_federated_identities, get_federated_user_links_by_component_id, get_user_email_hashes, get_email_hashes_for_federation_candidates, _hash_credential, link_users_by_email_hashes
+from sampledb.logic.authentication import add_email_authentication
+from sampledb.models import User, UserType, Action, ActionType, Comment, ObjectLocationAssignment, File, UserFederationAlias, Instrument, Location, InstrumentTranslation, ActionTranslation, ActionTypeTranslation, Permissions, MarkdownImage, FederatedIdentity, Authentication, AuthenticationType
 from sampledb.models.fed_logs import FedActionLogEntryType, FedInstrumentLogEntryType, FedInstrumentLogEntry, FedActionLogEntry, FedUserLogEntryType, FedUserLogEntry, FedLocationLogEntry, FedLocationLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedActionTypeLogEntryType, FedActionTypeLogEntry, FedObjectLogEntry, FedObjectLogEntryType
 from tests.logic.schemas.test_validate_schema import wrap_into_basic_schema
 
@@ -4509,3 +4510,91 @@ def test_import_component_info_invalid_values(component):
             'discoverable': True,
             'distance': 2
         }, component)
+
+
+def test_create_sampledb_federated_identity(user, fed_user, foreign_component):
+    assert len(FederatedIdentity.query.filter_by(user_id=user.id).all()) == 0
+    assert create_sampledb_federated_identity(user_id=user.id, component=foreign_component, fed_id=fed_user.fed_id) is not None
+    assert len(FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=fed_user.id).all()) == 1
+
+    dummy_user = User(name="DummyUser", email="dummy@example.com", type=UserType.PERSON)
+    db.session.add(dummy_user)
+    db.session.commit()
+
+    with pytest.raises(errors.FederatedUserInFederatedIdentityError):
+        create_sampledb_federated_identity(user_id=dummy_user.id, component=foreign_component, fed_id=fed_user.fed_id)
+
+    assert len(FederatedIdentity.query.all()) == 1
+
+
+def test_get_user_by_federated_user(user, fed_user, foreign_component):
+    assert get_user_by_federated_user(federated_user_id=fed_user.id) is None
+    create_sampledb_federated_identity(user_id=user.id, component=foreign_component, fed_id=fed_user.fed_id)
+    returned_user = get_user_by_federated_user(federated_user_id=fed_user.id)
+    assert returned_user is not None
+    assert returned_user.id == user.id
+
+
+def test_get_federated_identities_sampledb(user, fed_user, foreign_component):
+    assert len(get_federated_identities(user_id=user.id, component=foreign_component, active_status=True)) == 0
+    create_sampledb_federated_identity(user_id=user.id, component=foreign_component, fed_id=fed_user.fed_id)
+    identity = get_federated_identities(user_id=user.id, component=foreign_component, active_status=True)
+    assert len(identity) == 1
+    assert identity[0].local_fed_id == fed_user.id
+    assert identity[0].user_id == user.id
+
+
+def test_get_federated_user_links_by_component_id(user, fed_user, foreign_component):
+    assert len(get_federated_user_links_by_component_id(component_id=foreign_component.id)) == 0
+    create_sampledb_federated_identity(user_id=user.id, component=foreign_component, fed_id=fed_user.fed_id)
+    user_links = get_federated_user_links_by_component_id(component_id=foreign_component.id)
+    assert len(user_links) == 1
+    assert user_links[0].local_fed_id == fed_user.id
+    assert user_links[0].user_id == user.id
+
+
+def test_get_user_email_hashes(user):
+    hashes = get_user_email_hashes(user)
+    assert len(hashes) == 1
+    assert _hash_credential(user.email) in hashes
+
+    add_email_authentication(user.id, "example2@example.com", "abcdef")
+    hashes = get_user_email_hashes(user)
+    assert len(hashes) == 2
+    assert _hash_credential(user.email) in hashes and _hash_credential("example2@example.com") in hashes
+
+
+def test_get_email_hashes_for_federation_candidates(component):
+    users = [User(name=f"User {i}", email=f"example{i}@example.com", type=UserType.PERSON) for i in range(1, 4)]
+    for user in users:
+        db.session.add(user)
+        db.session.commit()
+        assert user.id is not None
+    create_sampledb_federated_identity(users[0].id, component, 1)
+    hashes = get_email_hashes_for_federation_candidates(component.id)
+    expected_result = {_hash_credential(user.email): user.id for user in users[1:]}
+    assert hashes == expected_result
+
+
+def test_link_users_by_email_hashes(component):
+    user_informations = [
+        {
+            'user_id': 2,
+            'component_uuid': component.uuid,
+            'email_hashes': [_hash_credential('example1@example.com')]
+        }
+    ]
+
+    users = [User(name=f"User {i}", email=f"example{i}@example.com", type=UserType.PERSON) for i in range(1, 4)]
+    for user in users:
+        db.session.add(user)
+        db.session.commit()
+        assert user.id is not None
+
+    link_users_by_email_hashes(component.id, user_informations)
+
+    assert len(FederatedIdentity.query.all()) == 1
+    identity = FederatedIdentity.query.first()
+    assert identity.user_id == users[0].id
+    assert identity.local_fed_user.component_id == component.id
+    assert identity.local_fed_user.fed_id == 2

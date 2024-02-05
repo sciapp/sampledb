@@ -69,7 +69,7 @@ from .settings import Settings
 from .shares import ObjectShare
 from .tags import Tag
 from .temporary_files import TemporaryFile
-from .users import User, UserType, UserFederationAlias
+from .users import User, UserType, UserFederationAlias, FederatedIdentity
 from .user_log import UserLogEntry, UserLogEntryType
 
 
@@ -175,6 +175,7 @@ __all__ = [
     'TwoFactorAuthenticationMethod',
     'User',
     'UserFederationAlias',
+    'FederatedIdentity',
     'UserType',
     'UserLogEntry',
     'UserLogEntryType',

@@ -2,18 +2,23 @@
 """
 
 """
+from base64 import b64decode
+import typing
 
 import flask
 import flask_login
 from flask_babel import _
 from flask_wtf import FlaskForm
-from wtforms import FileField, FieldList, FormField, SelectField, StringField
+from wtforms import FileField, FieldList, FormField, SelectField, StringField, BooleanField
 from wtforms.validators import InputRequired, ValidationError
 
 from . import frontend
+from .federation_forms import ModifyELNIdentityForm
 from .utils import check_current_user_is_not_readonly
 from .. import logic
 from ..utils import FlaskResponseT
+from ..logic.errors import UserDoesNotExistError, ELNUserInFederatedIdentityError
+from ..models.users import FederatedIdentity
 
 
 class UploadELNFileForm(FlaskForm):
@@ -26,6 +31,7 @@ class ImportELNFileObjectForm(FlaskForm):
 
 class ImportELNFileForm(FlaskForm):
     object_forms = FieldList(FormField(ImportELNFileObjectForm))
+    federated_identities = StringField()
 
 
 class DeleteELNImportForm(FlaskForm):
@@ -84,11 +90,23 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
     if not eln_import.imported and eln_import.user_id != flask_login.current_user.id and not flask_login.current_user.has_admin_permissions:
         return flask.abort(403)
     if eln_import.imported:
+        imported_users = logic.eln_import.get_eln_import_users(eln_import_id)
+        fed_identities: dict[int, list[tuple[typing.Optional[ModifyELNIdentityForm], FederatedIdentity]]] = {}
+
+        for eln_user in imported_users:
+            identity = logic.users.get_federated_identity_by_eln_user(eln_user.id)
+            if identity:
+                identities = fed_identities.get(identity.user.id, [])
+                form = ModifyELNIdentityForm(eln_user_id=identity.local_fed_id) if identity.user_id == flask_login.current_user.id else None
+                identities.append((form, identity))
+                fed_identities[identity.user.id] = identities
+
         return flask.render_template(
             'eln_files/view_eln_file.html',
             eln_import=eln_import,
             imported_objects=logic.eln_import.get_eln_import_objects(eln_import_id),
             imported_users=logic.eln_import.get_eln_import_users(eln_import_id),
+            fed_identities=fed_identities
         )
     else:
         if not flask.current_app.config['ENABLE_ELN_FILE_IMPORT']:
@@ -117,7 +135,8 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
             if action_type.component_id is None and not action_type.disable_create_objects
         ]
         import_eln_file_form = ImportELNFileForm(
-            object_forms=[ImportELNFileObjectForm()] * len(parsed_eln_file_data.objects)
+            object_forms=[ImportELNFileObjectForm()] * len(parsed_eln_file_data.objects),
+            attach_federated_identity=[BooleanField(name="x")] * len(parsed_eln_file_data.users)
         )
         for object_data, object_form in zip(parsed_eln_file_data.objects, import_eln_file_form.object_forms.entries):
             object_form.action_type_id.choices = valid_action_types
@@ -125,13 +144,14 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
                 object_form.action_type_id.data = object_data.type_id
 
         if import_eln_file_form.validate_on_submit():
-            imported_object_ids, errors = logic.eln_import.import_eln_file(
+            imported_object_ids, users_by_id, errors = logic.eln_import.import_eln_file(
                 eln_import_id=eln_import_id,
                 action_type_ids=[
                     object_form.action_type_id.data
                     for object_form in import_eln_file_form.object_forms.entries
                 ]
             )
+
             if errors:
                 if imported_object_ids:
                     flask.flash(
@@ -155,6 +175,20 @@ def eln_import(eln_import_id: int) -> FlaskResponseT:
                         _('Successfully imported %(num_imported_objects)s objects.', num_imported_objects=len(imported_object_ids)),
                         'success'
                     )
+
+            failed_identities: list[str] = []
+            for encoded_user_id in import_eln_file_form.federated_identities.data.split(","):
+                eln_user_id = b64decode(encoded_user_id).decode("utf-8")
+                database_user = users_by_id.get(eln_user_id, None)
+                if database_user:
+                    try:
+                        logic.users.create_eln_federated_identity(user_id=flask_login.current_user.id, eln_user_id=database_user.id)
+                    except (UserDoesNotExistError, ELNUserInFederatedIdentityError):
+                        failed_identities.append(eln_user_id)
+
+            if failed_identities:
+                flask.flash(_("An error occured: Failed to create federated identity."), "error")
+
             if len(imported_object_ids) == 1:
                 return flask.redirect(flask.url_for('.object', object_id=imported_object_ids[0]))
             else:

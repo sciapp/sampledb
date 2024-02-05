@@ -2,9 +2,12 @@
 """
 
 """
+import hashlib
+import os
 import secrets
 import typing
 
+import itsdangerous
 import flask
 import flask_login
 import requests.exceptions
@@ -13,17 +16,21 @@ from flask_babel import _
 
 from . import frontend
 from .federation_forms import AddComponentForm, EditComponentForm, SyncComponentForm, CreateAPITokenForm, \
-    AddOwnAPITokenForm, AuthenticationMethodForm, AddAliasForm, EditAliasForm, DeleteAliasForm
+    AddOwnAPITokenForm, AuthenticationMethodForm, AddAliasForm, EditAliasForm, DeleteAliasForm, ModifyELNIdentityForm
 from ..logic import errors
 from .utils import check_current_user_is_not_readonly
 from ..logic.component_authentication import remove_component_authentication_method, add_token_authentication, remove_own_component_authentication_method, add_own_token_authentication
-from ..logic.components import get_component, update_component, add_component, get_components, check_component_exists, get_component_infos, ComponentInfo
+from ..logic.components import get_component, update_component, add_component, get_components, check_component_exists, get_component_infos, ComponentInfo, get_component_by_uuid
 from ..logic.federation.update import import_updates
-from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, \
-    get_user_alias
+from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, get_user_alias, delete_user_link, \
+    get_federated_identity, get_federated_identities, revoke_user_links_by_fed_ids, create_sampledb_federated_identity, delete_user_links_by_fed_ids, \
+    revoke_user_link, enable_user_link
 from ..logic.background_tasks import post_poke_components_task
 from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication
 from ..utils import FlaskResponseT
+
+
+FEDERATED_IDENTITY_TOKENS_MAX_AGE = 60 * 5  # seconds
 
 
 @frontend.route('/other-databases/<int:component_id>', methods=['GET', 'POST'])
@@ -182,6 +189,14 @@ def component(component_id: int) -> FlaskResponseT:
             flask.flash(_('This token has already been linked to this database.'), 'error')
         except Exception:
             flask.flash(_('Failed to add API token.'), 'error')
+
+    active_identities = get_federated_identities(flask_login.current_user.id, component, active_status=True)
+    inactive_identities = get_federated_identities(flask_login.current_user.id, component, active_status=False)
+
+    component_address = component.address
+    if component_address and not component_address.endswith('/'):
+        component_address += '/'
+
     return flask.render_template(
         'other_databases/component.html',
         component=component,
@@ -195,7 +210,10 @@ def component(component_id: int) -> FlaskResponseT:
         own_authentication_method_form=own_authentication_method_form,
         api_tokens=api_tokens,
         own_api_tokens=own_api_tokens,
-        created_api_token=created_api_token
+        created_api_token=created_api_token,
+        active_identities=active_identities,
+        inactive_identities=inactive_identities,
+        federation_user_base_url=f"{component_address}users"
     )
 
 
@@ -488,3 +506,174 @@ def user_alias() -> FlaskResponseT:
         component_names=component_names,
         show_edit_form=show_edit_form
     )
+
+
+@frontend.route("/other-databases/redirect-identity-confirmation/<component_uuid>", methods=["POST"])
+@flask_login.login_required
+def redirect_login_confirmation(component_uuid: str) -> FlaskResponseT:
+    try:
+        component = get_component_by_uuid(component_uuid)
+    except errors.InvalidComponentUUIDError:
+        return flask.redirect("frontend.federation")
+    serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
+    session_state = hashlib.sha256(os.urandom(1024)).hexdigest()
+    flask.session['fim_state'] = session_state
+    link_identity_token = serializer.dumps({'user_id': flask_login.current_user.id, 'state': session_state})
+    component_address = component.address
+    if component_address and not component_address.endswith('/'):
+        component_address += '/'
+    return flask.redirect(f"{component_address}other-databases/link-identity?source_db={flask.current_app.config['FEDERATION_UUID']}&token={str(link_identity_token)}&state={session_state}")
+
+
+@frontend.route("/other-databases/link-identity/", methods=["POST"])
+@flask_login.login_required
+def link_identity() -> FlaskResponseT:
+    identity_token = flask.request.form.get('token')
+    federation_partner_uuid = flask.request.form.get('federation_partner_uuid')
+
+    serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
+
+    if not federation_partner_uuid:
+        flask.flash(_("An error occurred: Invalid database UUID."), 'error')
+        return flask.redirect(flask.url_for(".federation"))
+
+    try:
+        federation_partner = get_component_by_uuid(federation_partner_uuid)
+    except errors.InvalidComponentUUIDError:
+        flask.flash(_("Unknown database (%(uuid)s)", uuid=federation_partner_uuid), 'error')
+        return flask.redirect(flask.url_for('.federation'))
+
+    federation_partner_address = federation_partner.address
+    if federation_partner_address and not federation_partner_address.endswith('/'):
+        federation_partner_address += '/'
+    result = requests.get(f"{federation_partner_address}other-databases/validate-identity-token/?token={identity_token}", timeout=60)
+    if result.status_code != 200:
+        return flask.redirect(flask.url_for(".federation"))
+
+    result_json = result.json()
+    token = result_json.get('token')
+    fed_user_id = result_json.get('fed_user')
+
+    try:
+        token_data = serializer.loads(token, max_age=FEDERATED_IDENTITY_TOKENS_MAX_AGE)
+    except itsdangerous.BadSignature:
+        flask.flash(_("An error occurred: Users could not be linked."), 'error')
+        return flask.redirect(flask.url_for(".federation"))
+
+    if 'fim_state' not in flask.session or flask.session['fim_state'] != token_data['state']:
+        flask.flash(_("An error occurred: Users could not be linked."), 'error')
+        return flask.redirect(flask.url_for(".federation"))
+
+    try:
+        create_sampledb_federated_identity(flask_login.current_user.id, federation_partner, fed_user_id, update_if_inactive=True)
+    except errors.FederatedUserInFederatedIdentityError:
+        flask.flash(_("The federated user already has a federated identity in this database."), 'error')
+    else:
+        flask.flash(_("You were successfully linked with a federated user from %(component_name)s.", component_name=federation_partner.name), 'success')
+
+    return flask.redirect(flask.url_for('.component', component_id=federation_partner.id))
+
+
+@frontend.route("/other-databases/link-identity/", methods=["GET"])
+@flask_login.login_required
+def confirm_identity() -> FlaskResponseT:
+    source_database_uuid = flask.request.args.get('source_db', '')
+    token = flask.request.args.get('token')
+    serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='identity-token-validation')
+
+    source_database = None
+
+    try:
+        source_database = get_component_by_uuid(source_database_uuid)
+    except (errors.InvalidComponentUUIDError, errors.ComponentDoesNotExistError):
+        flask.flash(_('Could not confirm identity: The databases are not in a federation.'), 'error')
+        return flask.redirect(flask.url_for('.index'))
+
+    identity_token = serializer.dumps({'fed_user': flask_login.current_user.id, 'token': token})
+    component_address = source_database.address
+    if component_address and not component_address.endswith('/'):
+        component_address += '/'
+
+    confirmation_url = f"{component_address}other-databases/link-identity/"
+
+    return flask.render_template(
+        "other_databases/confirm_identity.html",
+        source_database=source_database,
+        confirmation_url=confirmation_url,
+        identity_token=identity_token
+    )
+
+
+@frontend.route("/other-databases/validate-identity-token/", methods=["GET"])
+def validate_identity_token() -> FlaskResponseT:
+    identity_token = flask.request.args.get('token')
+
+    if not identity_token:
+        return flask.Response({}, mimetype='application/json', status=400)
+
+    serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='identity-token-validation')
+
+    try:
+        data = serializer.loads(identity_token, max_age=FEDERATED_IDENTITY_TOKENS_MAX_AGE)
+    except itsdangerous.BadSignature:
+        return flask.Response({}, mimetype='application/json', status=400)
+
+    return flask.jsonify(data)
+
+
+@frontend.route("/other-databases/delete-inactive-identities/<int:component_id>", methods=["POST"])
+@flask_login.login_required
+def delete_inactive_identities(component_id: int) -> FlaskResponseT:
+    try:
+        component = get_component(component_id)
+        fed_ids: list[int] = [int(val) for val in flask.request.form.getlist('local_fed_id')]
+    except (errors.ComponentDoesNotExistError, ValueError):
+        flask.flash(_('Failed to remove user links.'), 'error')
+        return flask.redirect(flask.url_for(".component", component_id=component_id))
+
+    if fed_ids:
+        delete_user_links_by_fed_ids(flask_login.current_user.id, component, fed_ids)
+
+    return flask.redirect(flask.url_for(".component", component_id=component_id))
+
+
+@frontend.route("/other-databases/revoke-active-identities/<int:component_id>", methods=["POST"])
+@flask_login.login_required
+def revoke_active_identities(component_id: int) -> FlaskResponseT:
+    try:
+        component = get_component(component_id)
+        fed_ids: list[int] = [int(val) for val in flask.request.form.getlist('local_fed_id')]
+    except (errors.ComponentDoesNotExistError, ValueError):
+        flask.flash(_('Failed to revoke user links.'), 'error')
+        return flask.redirect(flask.url_for(".component", component_id=component_id))
+
+    if fed_ids:
+        revoke_user_links_by_fed_ids(flask_login.current_user.id, component.id, fed_ids)
+
+    return flask.redirect(flask.url_for(".component", component_id=component_id))
+
+
+@frontend.route("/other-databases/edit-eln-identity/<int:eln_import_id>", methods=['POST'])
+@flask_login.login_required
+def modify_eln_identity(eln_import_id: int) -> FlaskResponseT:
+    modify_eln_identity_form = ModifyELNIdentityForm()
+
+    if modify_eln_identity_form.validate_on_submit():
+        try:
+            fed_identity = get_federated_identity(flask_login.current_user.id, eln_or_fed_user_id=modify_eln_identity_form.eln_user_id.data)
+        except errors.FederatedIdentityNotFoundError:
+            flask.flash(_('An error occurred: Failed to edit federated identity.'), 'error')
+            return flask.redirect(flask.url_for('.eln_import', eln_import_id=eln_import_id))
+
+        if modify_eln_identity_form.type.data == 'remove':
+            delete_user_link(flask_login.current_user.id, fed_identity.local_fed_id)
+            flask.flash(_('Successfully deleted user link.'), 'success')
+        elif modify_eln_identity_form.type.data == 'revoke':
+            revoke_user_link(flask_login.current_user.id, fed_identity.local_fed_id)
+            flask.flash(_('Successfully revoked user link.'), 'success')
+        elif modify_eln_identity_form.type.data == 'enable':
+            enable_user_link(flask_login.current_user.id, fed_identity.local_fed_id)
+            flask.flash(_('Successfully enabled user link.'), 'success')
+    else:
+        flask.flash(_('An error occurred: Failed to edit federated identity.'), 'error')
+    return flask.redirect(flask.url_for('.eln_import', eln_import_id=eln_import_id))

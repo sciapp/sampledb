@@ -1070,7 +1070,8 @@
               {% if comment.author is none %}
                 <span class="text-muted fst-italic">{{ _('Unknown User') }}</span>
               {% else %}
-                <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ comment.author.get_name() }}</a>
+                {% set federated_user, imported_user = get_federated_identity(comment.author) %}
+                <a href="{{ url_for('frontend.user_profile', user_id=comment.author.id) }}">{{ federated_user.get_name() }}</a>
                 {{ import_information_symbol(comment.author) }}
               {% endif %}, <span data-utc-datetime="{{ comment.utc_datetime | generic_format_datetime }}">{{ comment.utc_datetime | babel_format_datetime }}</span>
             </div>

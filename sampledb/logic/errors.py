@@ -482,3 +482,15 @@ class ObjectLogEntryDoesNotExistError(Exception):
 
 class TemplateValueError(Exception):
     pass
+
+
+class FederatedUserInFederatedIdentityError(Exception):
+    pass
+
+
+class ELNUserInFederatedIdentityError(Exception):
+    pass
+
+
+class FederatedIdentityNotFoundError(Exception):
+    pass

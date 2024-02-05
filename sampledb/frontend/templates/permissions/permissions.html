@@ -181,7 +181,7 @@
         {% for user_id, permissions in user_permissions.items() | sort %}
           <tr>
             <td style="vertical-align: middle">
-              {{ user_reference(user_id) }}
+              {{ user_reference(user_id, imported_user) }}
             </td>
             {{ permissions_table_fields('user', user_permissions[user_id], [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT], true, none) }}
           </tr>

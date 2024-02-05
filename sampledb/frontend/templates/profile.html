@@ -117,6 +117,42 @@
   {% endif %}
   </dd>
   {% endif %}
+    {% if show_federated_identities %}
+    <dt>{{ _('Federated Identities') }}</dt>
+    <dd>
+      {% if fed_identity_descriptions_sampledb %}
+      <ul style="margin: 0; padding-left: 0;">
+        {% for component_uuid, identity_description in fed_identity_descriptions_sampledb.items() %}
+          <li><a href="{{ identity_description.component_url }}">{{ identity_description.component_name }}</a>:
+            {% for user_link in identity_description.user_links %}
+              <a href="{{ user_link.user_url }}">{{ _('User') }} #{{ user_link.fed_id }}</a>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if fed_identity_descriptions_eln %}
+      <ul style="margin: 0; padding-left: 0;">
+        {% for identity_description in fed_identity_descriptions_eln %}
+          <li><a href="{{ identity_description.eln_import_url }}">{{ _('ELN Import') }} #{{ identity_description.eln_import_id }}</a>: <a href="{{ url_for('.user_profile', user_id=identity_description.user_id) }}">{% if identity_description.eln_object_id %} {{ identity_description.eln_object_id }} {% else %} {{ _('User') }} #{{ identity_description.user_id }}{% endif %}</a>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if not fed_identity_descriptions_sampledb and not fed_identity_descriptions_eln %}
+        &mdash;
+      {% endif %}
+    </dd>
+    {% endif %}
+    {% if show_local_federated_identity %}
+    <dt>{{ _('Federated Identity with') }}
+    <dd>
+      {% if local_federated_identity_user %}
+        <a href="{{ url_for('.user_profile', user_id=local_federated_identity_user.id) }}">{{ local_federated_identity_user.name }} #{{ local_federated_identity_user.id }}</a>
+      {% else %}
+        &mdash;
+      {% endif %}
+    </dd>
+    {% endif %}
 </dl>
   <div class="btn-group">
     <a href="{{ url_for('.objects', user=user.id) }}" class="btn btn-default">{{ _('View Objects') }}</a>

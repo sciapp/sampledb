@@ -146,12 +146,15 @@ def test_parse_sampledb_eln_file(sampledb_eln_import_id):
 
 def test_import_sampledb_eln_file(sampledb_eln_import_id):
     exported_object = sampledb.logic.objects.get_objects()[0]
-    object_ids, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(sampledb_eln_import_id)
     assert not errors
     assert len(object_ids) == 1
     imported_object = sampledb.logic.objects.get_object(object_ids[0])
     assert exported_object.data == imported_object.data
     assert exported_object.schema == imported_object.schema
+    assert len(users_by_id) == 1
+    assert './users/1' in users_by_id
+    assert users_by_id['./users/1'].eln_object_id == './users/1'
 
 
 def test_import_elabftw_eln_file(user):
@@ -164,7 +167,7 @@ def test_import_elabftw_eln_file(user):
     ).id
     parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     assert all(len(import_notes) == 1 for import_notes in parsed_eln_import.import_notes.values())
-    object_ids, errors = logic.eln_import.import_eln_file(eln_import_id)
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) == 1
     imported_object = sampledb.logic.objects.get_object(object_ids[0])
@@ -193,6 +196,9 @@ def test_import_elabftw_eln_file(user):
             'tags': []
         }
     }
+    assert len(users_by_id) == 1
+    assert 'https://orcid.org/0000-0012-3456-7890' in users_by_id
+    assert users_by_id['https://orcid.org/0000-0012-3456-7890'].eln_object_id == 'https://orcid.org/0000-0012-3456-7890'
 
 
 def test_import_kadi4mat_eln_file(user):
@@ -205,7 +211,7 @@ def test_import_kadi4mat_eln_file(user):
     ).id
     parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
     assert all(len(import_notes) == 1 for import_notes in parsed_eln_import.import_notes.values())
-    object_ids, errors = logic.eln_import.import_eln_file(eln_import_id)
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) == 1
     imported_object = sampledb.logic.objects.get_object(object_ids[0])
@@ -234,3 +240,29 @@ def test_import_kadi4mat_eln_file(user):
             'tags': ['characterization', 'experiment']
         }
     }
+    assert len(users_by_id) == 1
+    assert 'http://localhost:5000/users/34' in users_by_id
+    assert users_by_id['http://localhost:5000/users/34'].eln_object_id == 'http://localhost:5000/users/34'
+
+
+def test_eln_federated_identity(user, sampledb_eln_import_id):
+    eln_dummy = logic.users.create_user('ELN Dummy', 'eln-dummy@example.com', logic.users.UserType.ELN_IMPORT_USER)
+    assert logic.users.FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=eln_dummy.id).first() is None
+    federated_identity = logic.users.create_eln_federated_identity(user.id, eln_dummy.id)
+    assert federated_identity is not None
+    assert logic.users.FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=eln_dummy.id).first() is not None
+
+
+def test_edit_eln_federated_identity(user, sampledb_eln_import_id):
+    eln_dummy = logic.users.create_user('ELN Dummy', 'eln-dummy@example.com', logic.users.UserType.ELN_IMPORT_USER)
+    assert logic.users.FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=eln_dummy.id).first() is None
+    federated_identity = logic.users.create_eln_federated_identity(user.id, eln_dummy.id)
+    assert federated_identity is not None
+    assert logic.users.FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=eln_dummy.id).first() is not None
+    assert federated_identity.active
+    logic.users.revoke_user_link(user.id, federated_identity.local_fed_id)
+    assert not federated_identity.active
+    logic.users.enable_user_link(user.id, federated_identity.local_fed_id)
+    assert federated_identity.active
+    logic.users.delete_user_link(user.id, federated_identity.local_fed_id)
+    assert logic.users.FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=eln_dummy.id).first() is None
