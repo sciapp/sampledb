@@ -420,13 +420,13 @@ def add_action_type_to_order(action_type: ActionType) -> None:
             for other_action_type in action_types
             if (other_action_type.fed_id is not None)
         ]
-        local_before_imported = max(
+        local_before_imported = (max(
             typing.cast(int, other_action_type.order_index)
             for other_action_type in local_action_types
         ) < min(
             typing.cast(int, other_action_type.order_index)
             for other_action_type in imported_action_types
-        )
+        )) if imported_action_types else True
         if local_before_imported:
             if action_type.fed_id is None:
                 action_types = local_action_types
