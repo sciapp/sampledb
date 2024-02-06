@@ -138,6 +138,8 @@ def project(project_id: int) -> FlaskResponseT:
         group_categories = None
     show_edit_form = False
     english = get_language(Language.ENGLISH)
+    if english.id not in description_language_ids:
+        description_language_ids.append(english.id)
 
     project_member_user_ids_and_permissions = logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id, include_groups=False)
     project_member_group_ids_and_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id)
