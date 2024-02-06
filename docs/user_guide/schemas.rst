@@ -436,7 +436,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -553,7 +553,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -615,7 +615,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -798,7 +798,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -855,7 +855,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 default
 ^^^^^^^
@@ -901,7 +901,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 note
 ^^^^
@@ -975,7 +975,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -1027,7 +1027,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -1084,7 +1084,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
@@ -1172,7 +1172,7 @@ This attribute is a boolean that sets whether or not the data for the given prop
 dataverse_export
 ^^^^^^^^^^^^^^^^
 
-This attribute is a boolean that controls whether this property should be exported as part of a :ref`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
+This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
 conditions
 ^^^^^^^^^^
