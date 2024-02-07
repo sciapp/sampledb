@@ -5,7 +5,7 @@ import io
 import base64
 import os
 import typing
-from math import log10, ceil
+from math import log10, floor
 
 from PIL import Image
 from reportlab.pdfgen.canvas import Canvas
@@ -260,7 +260,7 @@ def _draw_qr_code_label(
         label_text = ""
 
     if current_label_number is not None:
-        num_digits = ceil(log10(max_label_number))
+        num_digits = floor(log10(max_label_number)) + 1
         label_text += f"{current_label_number:0{num_digits}}"
         if add_maximum_label_number:
             label_text += f"_{max_label_number}"
