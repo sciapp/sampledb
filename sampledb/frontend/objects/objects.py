@@ -61,7 +61,9 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'location',
     'doi',
     'group',
+    'group_permissions',
     'project',
+    'project_permissions',
     'component_id',
 )
 
@@ -177,7 +179,7 @@ def objects() -> FlaskResponseT:
         filter_group_permissions = None
         filter_project_id = None
         filter_project_permissions = None
-        filter_origin_ids = None
+        filter_origin_ids: typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]] = None
         all_publications = []
         all_components = []
     else:
@@ -209,24 +211,114 @@ def objects() -> FlaskResponseT:
             for user in all_users
         ]
 
+        filter_location_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_location_ids')
+        if filter_location_ids is not None:
+            # remove location IDs which may have become invalid
+            filter_location_ids = [
+                location_id
+                for location_id in filter_location_ids
+                if location_id in valid_location_ids
+            ]
+
+        filter_action_type_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_type_ids')
+        if filter_action_type_ids is not None:
+            # remove action type IDs which may have become invalid
+            filter_action_type_ids = [
+                action_type_id
+                for action_type_id in filter_action_type_ids
+                if action_type_id in valid_action_type_ids
+            ]
+
+        filter_action_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_ids')
+        if filter_action_ids is not None:
+            # remove action IDs which may have become invalid
+            filter_action_ids = [
+                action_id
+                for action_id in filter_action_ids
+                if action_id in valid_action_ids
+            ]
+
+        filter_instrument_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_instrument_ids')
+        if filter_instrument_ids is not None:
+            # remove action IDs which may have become invalid
+            filter_instrument_ids = [
+                instrument_id
+                for instrument_id in filter_instrument_ids
+                if instrument_id in valid_instrument_ids
+            ]
+
+        filter_doi = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_doi')
+
+        filter_anonymous_permissions = {
+            'read': Permissions.READ
+        }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_anonymous_permissions'), None)
+
+        filter_all_users_permissions = {
+            'read': Permissions.READ
+        }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_all_users_permissions'), None)
+
+        filter_user_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_id')
+
+        filter_user_permissions = {
+            'read': Permissions.READ,
+            'write': Permissions.WRITE,
+            'grant': Permissions.GRANT
+        }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
+
+        stored_filter_origin_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_origin_ids', None)
+        if stored_filter_origin_ids:
+            try:
+                filter_origin_ids = []
+                # ensure origins are valid
+                for origin in stored_filter_origin_ids:
+                    origin_type, origin_id = origin
+                    if origin_type == 'local' and origin_id is None:
+                        filter_origin_ids.append((origin_type, origin_id))
+                        continue
+                    if origin_type == 'component' and type(origin_id) is int:
+                        filter_origin_ids.append((origin_type, origin_id))
+                        continue
+                    filter_origin_ids = None
+                    break
+            except Exception:
+                filter_origin_ids = None
+        else:
+            filter_origin_ids = None
+
+        stored_related_user_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_related_user_ids', None)
+        if stored_related_user_ids:
+            filter_related_user_ids = []
+            try:
+                for stored_related_user_id in stored_related_user_ids:
+                    logic.users.check_user_exists(stored_related_user_id)
+                    filter_related_user_ids.append(stored_related_user_id)
+            except logic.errors.UserDoesNotExistError:
+                filter_related_user_ids = None
+        else:
+            filter_related_user_ids = None
+        filter_group_id = None
+        filter_group_permissions = None
+        filter_project_id = None
+        filter_project_permissions = None
+
         if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_FILTER_PARAMETERS):
             (
                 success,
-                filter_location_ids,
-                filter_action_type_ids,
-                filter_action_ids,
-                filter_instrument_ids,
-                filter_related_user_ids,
-                filter_doi,
-                filter_anonymous_permissions,
-                filter_all_users_permissions,
-                filter_user_id,
-                filter_user_permissions,
-                filter_group_id,
-                filter_group_permissions,
-                filter_project_id,
-                filter_project_permissions,
-                filter_origin_ids,
+                args_filter_location_ids,
+                args_filter_action_type_ids,
+                args_filter_action_ids,
+                args_filter_instrument_ids,
+                args_filter_related_user_ids,
+                args_filter_doi,
+                args_filter_anonymous_permissions,
+                args_filter_all_users_permissions,
+                args_filter_user_id,
+                args_filter_user_permissions,
+                args_filter_group_id,
+                args_filter_group_permissions,
+                args_filter_project_id,
+                args_filter_project_permissions,
+                args_filter_origin_ids,
             ) = _parse_object_list_filters(
                 params=flask.request.args,
                 valid_location_ids=valid_location_ids,
@@ -237,96 +329,41 @@ def objects() -> FlaskResponseT:
             )
             if not success:
                 return flask.abort(400)
-        else:
-            filter_location_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_location_ids')
-            if filter_location_ids is not None:
-                # remove location IDs which may have become invalid
-                filter_location_ids = [
-                    location_id
-                    for location_id in filter_location_ids
-                    if location_id in valid_location_ids
-                ]
-
-            filter_action_type_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_type_ids')
-            if filter_action_type_ids is not None:
-                # remove action type IDs which may have become invalid
-                filter_action_type_ids = [
-                    action_type_id
-                    for action_type_id in filter_action_type_ids
-                    if action_type_id in valid_action_type_ids
-                ]
-
-            filter_action_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_action_ids')
-            if filter_action_ids is not None:
-                # remove action IDs which may have become invalid
-                filter_action_ids = [
-                    action_id
-                    for action_id in filter_action_ids
-                    if action_id in valid_action_ids
-                ]
-
-            filter_instrument_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_instrument_ids')
-            if filter_instrument_ids is not None:
-                # remove action IDs which may have become invalid
-                filter_instrument_ids = [
-                    instrument_id
-                    for instrument_id in filter_instrument_ids
-                    if instrument_id in valid_instrument_ids
-                ]
-
-            filter_doi = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_doi')
-
-            filter_anonymous_permissions = {
-                'read': Permissions.READ
-            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_anonymous_permissions'), None)
-
-            filter_all_users_permissions = {
-                'read': Permissions.READ
-            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_all_users_permissions'), None)
-
-            filter_user_id = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_id')
-
-            filter_user_permissions = {
-                'read': Permissions.READ,
-                'write': Permissions.WRITE,
-                'grant': Permissions.GRANT
-            }.get(user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_user_permissions'), None)
-
-            stored_filter_origin_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_origin_ids', None)
-            if stored_filter_origin_ids:
-                try:
-                    filter_origin_ids = []
-                    # ensure origins are valid
-                    for origin in stored_filter_origin_ids:
-                        origin_type, origin_id = origin
-                        if origin_type == 'local' and origin_id is None:
-                            filter_origin_ids.append((origin_type, origin_id))
-                            continue
-                        if origin_type == 'component' and type(origin_id) is int:
-                            filter_origin_ids.append((origin_type, origin_id))
-                            continue
-                        filter_origin_ids = None
-                        break
-                except Exception:
-                    filter_origin_ids = None
-            else:
-                filter_origin_ids = None
-
-            stored_related_user_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_related_user_ids', None)
-            if stored_related_user_ids:
-                filter_related_user_ids = []
-                try:
-                    for stored_related_user_id in stored_related_user_ids:
-                        logic.users.check_user_exists(stored_related_user_id)
-                        filter_related_user_ids.append(stored_related_user_id)
-                except logic.errors.UserDoesNotExistError:
-                    filter_related_user_ids = None
-            else:
-                filter_related_user_ids = None
-            filter_group_id = None
-            filter_group_permissions = None
-            filter_project_id = None
-            filter_project_permissions = None
+            passed_filter_params = {
+                param
+                for param in OBJECT_LIST_FILTER_PARAMETERS
+                if param in flask.request.args.keys()
+            }
+            if {'object_list_filters', 'location_ids', 'location'} & passed_filter_params:
+                filter_location_ids = args_filter_location_ids
+            if {'object_list_filters', 'action_type_ids', 't'} & passed_filter_params:
+                filter_action_type_ids = args_filter_action_type_ids
+            if {'object_list_filters', 'action_ids', 'action'} & passed_filter_params:
+                filter_action_ids = args_filter_action_ids
+            if {'object_list_filters', 'instrument_ids'} & passed_filter_params:
+                filter_instrument_ids = args_filter_instrument_ids
+            if {'object_list_filters', 'related_user', 'related_user_ids'} & passed_filter_params:
+                filter_related_user_ids = args_filter_related_user_ids
+            if {'object_list_filters', 'doi'} & passed_filter_params:
+                filter_doi = args_filter_doi
+            if {'object_list_filters', 'anonymous_permissions'} & passed_filter_params:
+                filter_anonymous_permissions = args_filter_anonymous_permissions
+            if {'object_list_filters', 'all_users_permissions'} & passed_filter_params:
+                filter_all_users_permissions = args_filter_all_users_permissions
+            if {'object_list_filters', 'user'} & passed_filter_params:
+                filter_user_id = args_filter_user_id
+            if {'object_list_filters', 'user_permissions'} & passed_filter_params:
+                filter_user_permissions = args_filter_user_permissions
+            if {'object_list_filters', 'group'} & passed_filter_params:
+                filter_group_id = args_filter_group_id
+            if {'object_list_filters', 'group_permissions'} & passed_filter_params:
+                filter_group_permissions = args_filter_group_permissions
+            if {'object_list_filters', 'project'} & passed_filter_params:
+                filter_project_id = args_filter_project_id
+            if {'object_list_filters', 'project_permissions'} & passed_filter_params:
+                filter_project_permissions = args_filter_project_permissions
+            if {'object_list_filters', 'component_id'} & passed_filter_params:
+                filter_origin_ids = args_filter_origin_ids
 
         if filter_action_ids is not None and len(filter_action_ids) == 1:
             action_id = filter_action_ids[0]
