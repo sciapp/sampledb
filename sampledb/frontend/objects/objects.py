@@ -52,6 +52,7 @@ OBJECT_LIST_FILTER_PARAMETERS = (
     'action',
     'instrument_ids',
     'related_user',
+    'related_user_ids',
     'user',
     'user_permissions',
     'all_users_permissions',
@@ -166,6 +167,7 @@ def objects() -> FlaskResponseT:
         all_locations = []
         filter_location_ids: typing.Optional[typing.List[int]] = []
         filter_related_user_ids = None
+        all_users = []
         filter_doi = None
         filter_user_id = None
         filter_user_permissions = None
@@ -201,6 +203,11 @@ def objects() -> FlaskResponseT:
             instrument.id
             for instrument in all_instruments
         ]
+        all_users = get_users(exclude_hidden=True, exclude_fed=True, exclude_eln_import=True)
+        valid_user_ids = [
+            user.id
+            for user in all_users
+        ]
 
         if any(any(flask.request.args.getlist(param)) for param in OBJECT_LIST_FILTER_PARAMETERS):
             (
@@ -225,7 +232,8 @@ def objects() -> FlaskResponseT:
                 valid_location_ids=valid_location_ids,
                 valid_action_type_ids=valid_action_type_ids,
                 valid_action_ids=valid_action_ids,
-                valid_instrument_ids=valid_instrument_ids
+                valid_instrument_ids=valid_instrument_ids,
+                valid_user_ids=valid_user_ids
             )
             if not success:
                 return flask.abort(400)
@@ -304,7 +312,17 @@ def objects() -> FlaskResponseT:
             else:
                 filter_origin_ids = None
 
-            filter_related_user_ids = None
+            stored_related_user_ids = user_settings['DEFAULT_OBJECT_LIST_FILTERS'].get('filter_related_user_ids', None)
+            if stored_related_user_ids:
+                filter_related_user_ids = []
+                try:
+                    for stored_related_user_id in stored_related_user_ids:
+                        logic.users.check_user_exists(stored_related_user_id)
+                        filter_related_user_ids.append(stored_related_user_id)
+                except logic.errors.UserDoesNotExistError:
+                    filter_related_user_ids = None
+            else:
+                filter_related_user_ids = None
             filter_group_id = None
             filter_group_permissions = None
             filter_project_id = None
@@ -988,6 +1006,8 @@ def objects() -> FlaskResponseT:
         filter_action_type_ids=filter_action_type_ids,
         all_locations=all_locations,
         filter_location_ids=filter_location_ids,
+        all_users=all_users,
+        filter_related_user_ids=filter_related_user_ids,
         filter_origins_info=filter_origins_info,
         filter_origin_ids=filter_origin_ids,
         all_publications=all_publications,
@@ -1140,7 +1160,8 @@ def _parse_object_list_filters(
         valid_location_ids: typing.List[int],
         valid_action_type_ids: typing.List[int],
         valid_action_ids: typing.List[int],
-        valid_instrument_ids: typing.List[int]
+        valid_instrument_ids: typing.List[int],
+        valid_user_ids: typing.List[int]
 ) -> typing.Tuple[
     bool,
     typing.Optional[typing.List[int]],
@@ -1212,19 +1233,17 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    if 'related_user' in params:
-        try:
-            filter_related_user_id = int(params['related_user'])
-            check_user_exists(filter_related_user_id)
-            filter_related_user_ids = [filter_related_user_id]
-        except ValueError:
-            flask.flash(_('Unable to parse related user ID.'), 'error')
-            return FALLBACK_RESULT
-        except UserDoesNotExistError:
-            flask.flash(_('Invalid related user ID.'), 'error')
-            return FALLBACK_RESULT
-    else:
-        filter_related_user_ids = None
+    success, filter_related_user_ids = _parse_filter_id_params(
+        params=params,
+        param_aliases=['related_user_ids', 'related_user'],
+        valid_ids=valid_user_ids,
+        id_map={},
+        multi_params_error=_('Only one of related_user_ids and related_user may be set.'),
+        parse_error=_('Unable to parse related user IDs.'),
+        invalid_id_error=_('Invalid related user ID.')
+    )
+    if not success:
+        return FALLBACK_RESULT
 
     try:
         filter_doi = logic.publications.simplify_doi(params.get('doi', ''))
@@ -1451,13 +1470,14 @@ def save_object_list_defaults() -> FlaskResponseT:
             include_hidden_actions=True
         )
         all_instruments = get_instruments()
+        all_users = get_users(exclude_hidden=True, exclude_fed=True, exclude_eln_import=True)
         (
             success,
             filter_location_ids,
             filter_action_type_ids,
             filter_action_ids,
             filter_instrument_ids,
-            _filter_related_user_ids,
+            filter_related_user_ids,
             filter_doi,
             filter_anonymous_permissions,
             filter_all_users_permissions,
@@ -1485,6 +1505,10 @@ def save_object_list_defaults() -> FlaskResponseT:
             valid_instrument_ids=[
                 instrument.id
                 for instrument in all_instruments
+            ],
+            valid_user_ids=[
+                user.id
+                for user in all_users
             ]
         )
         if not success:
@@ -1502,7 +1526,8 @@ def save_object_list_defaults() -> FlaskResponseT:
                     'filter_all_users_permissions': None if filter_all_users_permissions is None else filter_all_users_permissions.name.lower(),
                     'filter_user_id': filter_user_id,
                     'filter_user_permissions': None if filter_user_permissions is None else filter_user_permissions.name.lower(),
-                    'filter_origin_ids': filter_origin_ids
+                    'filter_origin_ids': filter_origin_ids,
+                    'filter_related_user_ids': filter_related_user_ids
                 }
             }
         )

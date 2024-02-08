@@ -107,6 +107,7 @@ def test_object_list_filters_settings(flask_server, driver, user):
         'filter_all_users_permissions': None,
         'filter_user_id': user.id,
         'filter_user_permissions': 'write',
+        'filter_related_user_ids': None
     }
 
     query_params = parse_qs(urlparse(driver.current_url).query)

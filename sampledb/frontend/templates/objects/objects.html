@@ -679,14 +679,13 @@
         <li>{{ _('for publication:') }} <a href="http://doi.org/{{ filter_doi_info.doi | urlencode }}">{% if filter_doi_info.title %}{{ filter_doi_info.title }}{% else %}{{ _('Untitled publication') }}{% endif %} (DOI: {{ filter_doi_info.doi }})</a></li>
       {% endif %}
       {% if filter_related_user_infos %}
-        {% for filter_related_user_info in filter_related_user_infos %}
         <li>
         {{ _('with activity by user:') }}
-        <a href="{{ filter_related_user_info.url }}">{{ filter_related_user_info.name }}</a>{% if filter_related_user_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ filter_related_user_info.fed_id }} @ {{ filter_related_user_info.component_name }}"></i>{% elif filter_related_user_info.eln_import_id %}&nbsp;<a href="{{ url_for('.eln_import', eln_import_id=filter_related_user_info.eln_import_id) }}" class="import-information-symbol"><i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ filter_related_user_info.eln_object_id }} @ {{ _('.eln file') }} #{{ filter_related_user_info.eln_import_id }}"></i></a>{% endif %}
-        {%- if not loop.last %}, {{ _('or') }}
-        {% endif %}
-        </li>
+        {% for filter_related_user_info in filter_related_user_infos %}
+          {%- if loop.last and not loop.first %} {{ _('or') }} {% elif not loop.first %}, {% endif %}
+          <a href="{{ filter_related_user_info.url }}">{{ filter_related_user_info.name }}</a>{% if filter_related_user_info.component_name %}&nbsp;<i class="fa fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="#{{ filter_related_user_info.fed_id }} @ {{ filter_related_user_info.component_name }}"></i>{% elif filter_related_user_info.eln_import_id %}&nbsp;<a href="{{ url_for('.eln_import', eln_import_id=filter_related_user_info.eln_import_id) }}" class="import-information-symbol"><i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ filter_related_user_info.eln_object_id }} @ {{ _('.eln file') }} #{{ filter_related_user_info.eln_import_id }}"></i></a>{% endif -%}
         {% endfor %}
+        </li>
       {% endif %}
       {% if filter_anonymous_permissions %}
         <li>
@@ -872,7 +871,7 @@
     <div class="modal-dialog" role="document">
       <form method="get" class="form">
         {% for key in request.args %}
-          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'instrument_ids', 'user', 'user_permissions', 'all_users_permissions', 'anonymous_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi', 'origins'] %}
+          {% if key not in ['object_list_filters', 'action_type_ids', 'action_ids', 'instrument_ids', 'user', 'user_permissions', 'all_users_permissions', 'anonymous_permissions', 'location_ids', 't', 'action', 'location', 'offset', 'doi', 'origins', 'related_user_ids', 'related_user'] %}
             {% for value in request.args.getlist(key) %}
               <input type="hidden" name="{{ key }}" value="{{ value }}" />
             {% endfor %}
@@ -886,6 +885,16 @@
             <h4 class="modal-title" id="filtersModalLabel">{{ _('Filters') }}</h4>
           </div>
           <div class="modal-body">
+            <div class="form-group">
+              <label class="control-label" for="filter_related_user_ids">
+                {{ _('Filter by User Activity') }}
+              </label>
+              <select class="selectpicker form-control" name="related_user_ids" id="filter_related_user_ids" multiple="multiple" data-width="100%" data-none-selected-text="{{ _('All users') }}" data-live-search="on">
+                {% for user in all_users %}
+                  <option value="{{ user.id }}" {% if filter_related_user_ids and user.id in filter_related_user_ids %}selected="selected"{% endif %}>{{ user.get_name() }}</option>
+                {% endfor %}
+              </select>
+            </div>
             <div class="form-group">
               <label class="control-label" for="filter_permissions">
                 {{ _('Filter by Permissions') }}
