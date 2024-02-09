@@ -220,11 +220,11 @@ $(function () {
     }, {
       name: 'search_paths',
       limit: 10000,
-      display: 'property_name',
+      display: 'propertyName',
       source: substringMatcher(),
       templates: {
         suggestion: function (suggestion) {
-          return '<span>' + suggestion.property_name + ' – ' + suggestion.titles + '</span>';
+          return '<span>' + suggestion.propertyName + ' – ' + suggestion.titles + '</span>';
         }
       }
     });
