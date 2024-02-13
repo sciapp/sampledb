@@ -4,7 +4,7 @@ Changelog
 Version 0.26
 ------------
 
-Currently in development.
+Released on February 13th, 2024.
 
 - Show changes during schema upgrade
 - Added support for FIDO2 passkeys for authentication and two-factor authentication
