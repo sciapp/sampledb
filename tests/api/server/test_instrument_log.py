@@ -4,6 +4,8 @@
 """
 
 import base64
+import datetime
+
 import requests
 import pytest
 
@@ -79,6 +81,8 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
                     'log_entry_id': log_entry.id,
                     'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
                     'content': "Example Log Entry",
+                    'event_utc_datetime': None,
+                    'content_is_markdown': False,
                     'categories': []
                 }
             ]
@@ -95,8 +99,17 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
         instrument_id=instrument.id,
         user_id=user.id,
         content="Example Log Entry 2",
+        event_utc_datetime=datetime.datetime.strptime('2023-05-03T12:11:10.12345', '%Y-%m-%dT%H:%M:%S.%f'),
         category_ids=[category.id]
     )
+    log_entry = sampledb.logic.instrument_log_entries.update_instrument_log_entry(
+        log_entry_id=log_entry.id,
+        content="**Example Log Entry 2**",
+        content_is_markdown=True,
+        event_utc_datetime=None,
+        category_ids = [category.id]
+    )
+
 
     r = requests.get(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries', auth=auth)
     assert r.status_code == 200
@@ -109,7 +122,23 @@ def test_get_instrument_log_entries(flask_server, auth, user, app):
                 'version_id': 1,
                 'log_entry_id': log_entry.id,
                 'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'event_utc_datetime': log_entry.versions[0].event_utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'content_is_markdown': False,
                 'content': "Example Log Entry 2",
+                'categories': [
+                    {
+                        'category_id': category.id,
+                        'title': "Category"
+                    }
+                ]
+            },
+            {
+                'version_id': 2,
+                'log_entry_id': log_entry.id,
+                'utc_datetime': log_entry.versions[1].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
+                'event_utc_datetime': None,
+                'content_is_markdown': True,
+                'content': "**Example Log Entry 2**",
                 'categories': [
                     {
                         'category_id': category.id,
@@ -164,6 +193,8 @@ def test_get_instrument_log_entry(flask_server, auth, user):
                 'log_entry_id': log_entry.id,
                 'utc_datetime': log_entry.versions[0].utc_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f'),
                 'content': "Example Log Entry",
+                'event_utc_datetime': None,
+                'content_is_markdown': False,
                 'categories': []
             }
         ]

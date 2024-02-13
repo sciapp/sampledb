@@ -518,9 +518,11 @@ def get_objects(
 
 @typing.overload
 def find_object_references(
-        object: Object,
-        find_previous_referenced_object_ids: bool = True,
         *,
+        object_id: int,
+        version_id: int,
+        object_data: typing.Optional[typing.Dict[str, typing.Any]],
+        find_previous_referenced_object_ids: bool = True,
         include_fed_references: typing.Literal[True]
 ) -> typing.Sequence[typing.Tuple[typing.Tuple[int, typing.Optional[str]], typing.Optional[int], str]]:
     ...
@@ -528,32 +530,38 @@ def find_object_references(
 
 @typing.overload
 def find_object_references(
-        object: Object,
-        find_previous_referenced_object_ids: bool = True,
         *,
+        object_id: int,
+        version_id: int,
+        object_data: typing.Optional[typing.Dict[str, typing.Any]],
+        find_previous_referenced_object_ids: bool = True,
         include_fed_references: typing.Literal[False] = False
 ) -> typing.Sequence[typing.Tuple[int, typing.Optional[int], str]]:
     ...
 
 
 def find_object_references(
-        object: Object,
-        find_previous_referenced_object_ids: bool = True,
         *,
+        object_id: int,
+        version_id: int,
+        object_data: typing.Optional[typing.Dict[str, typing.Any]],
+        find_previous_referenced_object_ids: bool = True,
         include_fed_references: bool = False,
 ) -> typing.Sequence[typing.Tuple[typing.Union[int, typing.Tuple[int, typing.Optional[str]]], typing.Optional[int], str]]:
     """
     Searches for references to other objects.
 
-    :param object: the updated (or newly created) object
+    :param object_id: the object ID
+    :param version_id: the object version ID
+    :param object_data: the object data
     :param find_previous_referenced_object_ids: whether to find previous referenced object ids
     :param include_fed_references: whether references on other components should be included
     """
-    if object.data is None:
+    if object_data is None:
         return []
     referenced_object_ids = []
     referenced_object_id: typing.Union[int, typing.Tuple[int, typing.Optional[str]]]
-    for path, data in data_iter(data=object.data, filter_property_types={'sample', 'measurement', 'object_reference'}):
+    for path, data in data_iter(data=object_data, filter_property_types={'sample', 'measurement', 'object_reference'}):
         if isinstance(data, dict) and data.get('object_id') is not None:
             if 'component_uuid' in data and data['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
                 try:
@@ -581,8 +589,8 @@ def find_object_references(
                 else:
                     referenced_object_id = data['object_id']
                 previous_referenced_object_id = None
-                if find_previous_referenced_object_ids and object.version_id > 0:
-                    previous_object_version = get_object(object.object_id, object.version_id - 1)
+                if find_previous_referenced_object_ids and version_id > 0:
+                    previous_object_version = get_object(object_id, version_id - 1)
                     previous_data = previous_object_version.data
                     try:
                         for path_element in path:
@@ -611,7 +619,7 @@ def _update_object_references(object: Object, user_id: int) -> None:
         action_type_id = None
     else:
         action_type_id = actions.get_action(object.action_id).type_id
-    for referenced_object_id, previous_referenced_object_id, schema_type in find_object_references(object):
+    for referenced_object_id, previous_referenced_object_id, schema_type in find_object_references(object_id=object.object_id, version_id=object.version_id, object_data=object.data):
         if referenced_object_id != previous_referenced_object_id:
             if action_type_id == ActionType.MEASUREMENT and schema_type == 'sample':
                 object_log.use_object_in_measurement(object_id=referenced_object_id, user_id=user_id, measurement_id=object.object_id)

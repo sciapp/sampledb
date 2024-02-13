@@ -13,6 +13,7 @@
 {% endmacro %}
 
 {% macro user_reference(user_id_or_user, text=false, nolink=false, external=false) %}
+  {% set user_id_or_user, imported_user = get_federated_identity(user_id_or_user) %}
   {% if user_id_or_user is number %}
     {% set user_or_none = get_user_or_none(user_id_or_user) %}
   {% else %}
@@ -35,6 +36,9 @@
   {%- endif -%}
   {%- if user_or_none is not none and not text -%}
     {{ import_information_symbol(user_or_none, nolink=nolink) }}
+  {%- endif -%}
+  {%- if imported_user is not none and not text -%}
+    {{ import_information_symbol(imported_user, nolink=nolink) }}
   {%- endif -%}
 {% endmacro %}
 

@@ -478,3 +478,19 @@ class WebhookConnectionException(Exception):
 
 class ObjectLogEntryDoesNotExistError(Exception):
     pass
+
+
+class TemplateValueError(Exception):
+    pass
+
+
+class FederatedUserInFederatedIdentityError(Exception):
+    pass
+
+
+class ELNUserInFederatedIdentityError(Exception):
+    pass
+
+
+class FederatedIdentityNotFoundError(Exception):
+    pass

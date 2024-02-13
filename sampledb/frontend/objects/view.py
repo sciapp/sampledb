@@ -1182,11 +1182,19 @@ def new_object() -> FlaskResponseT:
                         'object_id': passed_object_ids[0]
                     }
 
+    if previous_object is not None:
+        should_upgrade_schema = flask.request.args.get('mode', '') == 'upgrade'
+        if action.schema != previous_object.schema and not should_upgrade_schema and flask.current_app.config['DISABLE_OUTDATED_USE_AS_TEMPLATE']:
+            return flask.abort(400)
+    else:
+        should_upgrade_schema = False
+
     # TODO: check instrument permissions
     return show_object_form(
-        None,
-        action,
-        previous_object,
+        object=None,
+        action=action,
+        previous_object=previous_object,
+        should_upgrade_schema=should_upgrade_schema,
         placeholder_data=placeholder_data,
         possible_object_id_properties=possible_properties,
         passed_object_ids=passed_object_ids,

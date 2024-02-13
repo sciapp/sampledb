@@ -3,12 +3,9 @@
 {% block title %}{{ _('Warnings') }} — {{ service_name }}{% endblock %}
 
 {% block content %}
-<h1>{{ _('Warnings') }}</h1>
+  <h1>{{ _('Warnings') }}</h1>
   {% if has_warnings %}
     <ul>
-    {% if show_admin_local_storage_warning %}
-        <li>{{ _('Some objects have files in <code>local</code> storage, please move them to <code>database</code> storage.') }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/deprecated_features.html#local-file-storage">{{ _('Read more.') }}</a></li>
-    {% endif %}
     {% if show_numeric_tags_warning %}
         <li>
         {% if do_numeric_tags_exist %}

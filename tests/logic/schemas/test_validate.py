@@ -603,7 +603,7 @@ def test_validate_datetime_invalid_datetime_type():
     }
     instance = {
         '_type': 'datetime',
-        'utc_datetime': datetime.datetime.now()
+        'utc_datetime': datetime.datetime.now(datetime.timezone.utc)
     }
     with pytest.raises(ValidationError):
         validate(instance, schema)
@@ -1178,6 +1178,7 @@ def test_validate_sample_with_federated_action_type():
         admin_only=False,
         show_on_frontpage=False,
         show_in_navbar=False,
+        show_in_object_filters=False,
         enable_labels=False,
         enable_files=False,
         enable_locations=False,
@@ -1443,6 +1444,7 @@ def test_validate_measurement_with_federated_action_type():
         admin_only=False,
         show_on_frontpage=False,
         show_in_navbar=False,
+        show_in_object_filters=False,
         enable_labels=False,
         enable_files=False,
         enable_locations=False,
@@ -1794,6 +1796,7 @@ def test_validate_object_reference_with_federated_action_type():
         admin_only=False,
         show_on_frontpage=False,
         show_in_navbar=False,
+        show_in_object_filters=False,
         enable_labels=False,
         enable_files=False,
         enable_locations=False,

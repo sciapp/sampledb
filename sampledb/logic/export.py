@@ -40,8 +40,9 @@ def get_export_infos(
     relevant_location_ids = set()
     relevant_markdown_images = set()
     objects = logic.object_permissions.get_objects_with_permissions(
-        user_id,
-        Permissions.READ
+        user_id=user_id,
+        permissions=Permissions.READ,
+        object_ids=object_ids
     )
     infos = {}
     object_infos: typing.List[typing.Dict[str, typing.Any]] = []
@@ -69,11 +70,13 @@ def get_export_infos(
                 {
                     'id': object_version.version_id,
                     'user_id': object_version.user_id,
-                    'utc_datetime': object_version.utc_datetime.isoformat() if object_version.utc_datetime is not None else None,
+                    'utc_datetime': object_version.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if object_version.utc_datetime is not None else None,
                     'schema': object_version.schema,
                     'data': object_version.data
                 }
             )
+            if object_version.schema:
+                relevant_action_ids.update(logic.schemas.templates.find_used_template_ids(object_version.schema))
 
             for referenced_user_id, _ in logic.objects.find_user_references(object_version, False):
                 relevant_user_ids.add(referenced_user_id)
@@ -88,7 +91,7 @@ def get_export_infos(
                 'id': comment.id,
                 'author_id': comment.user_id,
                 'content': comment.content,
-                'utc_datetime': comment.utc_datetime.isoformat() if comment.utc_datetime is not None else None
+                'utc_datetime': comment.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if comment.utc_datetime is not None else None
             })
 
         for location_assignment in logic.locations.get_object_location_assignments(object.id):
@@ -111,7 +114,7 @@ def get_export_infos(
                 'assigning_user_id': location_assignment.user_id,
                 'responsible_user_id': location_assignment.responsible_user_id,
                 'location_id': location_assignment.location_id,
-                'utc_datetime': location_assignment.utc_datetime.isoformat() if location_assignment.utc_datetime is not None else None,
+                'utc_datetime': location_assignment.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if location_assignment.utc_datetime is not None else None,
                 'status': status
             })
 
@@ -130,7 +133,7 @@ def get_export_infos(
             if (publication_info.doi, publication_info.title) in publication_log_entries:
                 publication_log_entry = publication_log_entries[(publication_info.doi, publication_info.title)]
                 object_infos[-1]['publications'][-1]['user_id'] = publication_log_entry.user_id
-                object_infos[-1]['publications'][-1]['utc_datetime'] = publication_log_entry.utc_datetime.isoformat()
+                object_infos[-1]['publications'][-1]['utc_datetime'] = publication_log_entry.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds')
 
         for file_info in logic.files.get_files_for_object(object.id):
             if not file_info.is_hidden:
@@ -141,9 +144,9 @@ def get_export_infos(
                     'title': file_info.title,
                     'description': file_info.description,
                     'uploader_id': file_info.user_id,
-                    'utc_datetime': file_info.utc_datetime.isoformat() if file_info.utc_datetime else None
+                    'utc_datetime': file_info.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if file_info.utc_datetime else None
                 })
-                if file_info.storage in {'local', 'database'}:
+                if file_info.storage == 'database':
                     object_infos[-1]['files'][-1]['original_file_name'] = file_info.original_file_name
                     try:
                         file_bytes = file_info.open(read_only=True).read()
@@ -165,29 +168,27 @@ def get_export_infos(
 
     if include_actions:
         action_infos = []
-        for action_info in logic.actions.get_actions():
+        for action_info in logic.action_permissions.get_actions_with_permissions(user_id=user_id, permissions=Permissions.READ):
             if action_info.id in relevant_action_ids:
-                action_permissions = logic.action_permissions.get_user_action_permissions(action_info.id, user_id)
-                if Permissions.READ in action_permissions:
-                    if action_info.user_id is not None:
-                        relevant_user_ids.add(action_info.user_id)
-                    if action_info.instrument_id is not None:
-                        relevant_instrument_ids.add(action_info.instrument_id)
-                    action_infos.append({
-                        'id': action_info.id,
-                        'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
-                        'name': action_info.name.get('en'),
-                        'user_id': action_info.user_id,
-                        'instrument_id': action_info.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
-                        'description': action_info.description.get('en'),
-                        'description_is_markdown': action_info.description_is_markdown,
-                        'short_description': action_info.short_description.get('en'),
-                        'short_description_is_markdown': action_info.short_description_is_markdown
-                    })
-                    if action_info.description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en', ''))))
-                    if action_info.short_description_is_markdown:
-                        relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en', ''))))
+                if action_info.user_id is not None:
+                    relevant_user_ids.add(action_info.user_id)
+                if action_info.instrument_id is not None:
+                    relevant_instrument_ids.add(action_info.instrument_id)
+                action_infos.append({
+                    'id': action_info.id,
+                    'type': action_info.type.object_name.get('en', 'object').lower() if action_info.type else 'object',
+                    'name': action_info.name.get('en'),
+                    'user_id': action_info.user_id,
+                    'instrument_id': action_info.instrument_id if not flask.current_app.config['DISABLE_INSTRUMENTS'] else None,
+                    'description': action_info.description.get('en'),
+                    'description_is_markdown': action_info.description_is_markdown,
+                    'short_description': action_info.short_description.get('en'),
+                    'short_description_is_markdown': action_info.short_description_is_markdown
+                })
+                if action_info.description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.description.get('en', ''))))
+                if action_info.short_description_is_markdown:
+                    relevant_markdown_images.update(logic.markdown_images.find_referenced_markdown_images(logic.markdown_to_html.markdown_to_safe_html(action_info.short_description.get('en', ''))))
         infos['actions'] = action_infos
 
     if include_instruments and not flask.current_app.config['DISABLE_INSTRUMENTS']:
@@ -224,7 +225,7 @@ def get_export_infos(
                                 'log_entry_id': log_entry.id,
                                 'version_id': version.version_id,
                                 'content': version.content,
-                                'utc_datetime': version.utc_datetime.isoformat(),
+                                'utc_datetime': version.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds'),
                                 'categories': []
                             })
                             for category in version.categories:
@@ -334,11 +335,11 @@ The objects directory contains files uploaded for the objects in data.json.
 """
     if user_id is not None:
         readme_text += f"""
-This archive was created for user #{user_id} at {datetime.datetime.now().isoformat()}.
+This archive was created for user #{user_id} at {datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='microseconds')}.
 """
     else:
         readme_text += f"""
-This archive was created for an anonymous user at {datetime.datetime.now().isoformat()}.
+This archive was created for an anonymous user at {datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='microseconds')}.
 """
 
     archive_files["sampledb_export/README.txt"] = readme_text

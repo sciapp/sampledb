@@ -418,6 +418,9 @@ def test_status_codes(flask_server, user, driver):
         'other-databases/': 200,
         f'other-databases/{component_id}': 200,
         'other-databases/alias/': 200,
+        'other-databases/link-identity/': 302,
+        'other-databases/validate-identity-token/': 400,
+        f'other-databases/edit-eln-identity/{eln_import_id}': 405,
         'projects/': 200,
         f'projects/{project_id}': 200,
         f'projects/{project_id}/permissions': 200,
@@ -440,11 +443,14 @@ def test_status_codes(flask_server, user, driver):
         'users/me/export': 302,
         'users/me/notifications': 302,
         'users/me/preferences': 302,
+        'users/me/shared_device_state': 200,
         'users/me/refresh_sign_in': 302,
         'users/me/sign_in': 302,
         'users/me/sign_out': 200,
+        'users/me/two_factor_authentication/fido2_passkey/confirm': 302,
+        'users/me/two_factor_authentication/fido2_passkey/setup': 200,
         'users/me/two_factor_authentication/totp/confirm': 302,
-        'users/me/two_factor_authentication/totp/setup': 200,
+        'users/me/two_factor_authentication/totp/setup': 200
     }
     for relative_url, expected_status_code in expected_status_codes.items():
         if relative_url.startswith('api/v1/'):

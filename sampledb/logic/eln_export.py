@@ -10,6 +10,7 @@ import flask
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
+from .objects import find_object_references
 
 
 def generate_ro_crate_metadata(
@@ -33,14 +34,14 @@ def generate_ro_crate_metadata(
                 "sdPublisher": {
                     "@id": "SampleDB"
                 },
-                "dateCreated": datetime.datetime.now().isoformat()
+                "version": "1.0",
+                "dateCreated": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec='microseconds')
             },
             {
                 "@id": "./",
                 "@type": [
                     "Dataset"
                 ],
-                "version": "1.0",
                 "hasPart": []
             },
             {
@@ -56,7 +57,10 @@ def generate_ro_crate_metadata(
     directory_datasets = {
         "sampledb_export": ro_crate_metadata["@graph"][1]
     }
-
+    exported_object_ids = {
+        object_info['id']
+        for object_info in infos['objects']
+    }
     for object_info in infos['objects']:
         if object_info['action_id'] is not None:
             action = get_action(object_info['action_id'])
@@ -73,6 +77,7 @@ def generate_ro_crate_metadata(
         ro_crate_metadata["@graph"].append({
             "@id": f"./objects/{object_info['id']}",
             "@type": "Dataset",
+            "identifier": f"{object_info['id']}",
             "name": f"{get_translated_text(object_info['versions'][-1]['data'].get('name', {}).get('text', {}), 'en')}" if object_info['versions'][-1]['data'] is not None else '',
             "description": f"Object #{object_info['id']}",
             "dateCreated": object_info['versions'][0]['utc_datetime'],
@@ -80,6 +85,7 @@ def generate_ro_crate_metadata(
             "author": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
             "genre": object_type,
+            "mentions": [],
             "comment": [],
             "hasPart": [
                 {
@@ -92,6 +98,22 @@ def generate_ro_crate_metadata(
                 }
             ]
         })
+        current_version_info = object_info['versions'][-1]
+        if current_version_info.get('data') and isinstance(current_version_info['data'].get('tags'), dict) and current_version_info['data']['tags'].get('_type') == 'tags' and current_version_info['data']['tags'].get('tags'):
+            ro_crate_metadata["@graph"][-1]["keywords"] = ', '.join(current_version_info['data']['tags']['tags'])
+        if current_version_info.get('data'):
+            referenced_object_ids = find_object_references(
+                object_id=typing.cast(int, object_info['id']),
+                version_id=typing.cast(int, current_version_info['id']),
+                object_data=typing.cast(typing.Optional[typing.Dict[str, typing.Any]], current_version_info['data']),
+                find_previous_referenced_object_ids=False,
+                include_fed_references=False
+            )
+            for referenced_object_id, _previously_reference_object_id, _object_reference_type in referenced_object_ids:
+                if referenced_object_id in exported_object_ids:
+                    ro_crate_metadata["@graph"][-1]["mentions"].append({"@id": f"./objects/{referenced_object_id}"})
+        if not ro_crate_metadata["@graph"][-1]["mentions"]:
+            del ro_crate_metadata["@graph"][-1]["mentions"]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/files"] = ro_crate_metadata["@graph"][-1]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/comments"] = ro_crate_metadata["@graph"][-1]
         directory_datasets["sampledb_export"]["hasPart"].append({
@@ -123,7 +145,7 @@ def generate_ro_crate_metadata(
                 "@type": "File",
                 "description": f"Schema for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "schema.json",
-                "contentType": "application/json",
+                "encodingFormat": "application/json",
                 "contentSize": len(schema_json),
                 "sha256": hashlib.sha256(schema_json).hexdigest()
             })
@@ -135,7 +157,7 @@ def generate_ro_crate_metadata(
                 "@type": "File",
                 "description": f"Data for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "data.json",
-                "contentType": "application/json",
+                "encodingFormat": "application/json",
                 "contentSize": len(data_json),
                 "sha256": hashlib.sha256(data_json).hexdigest()
             })
@@ -162,7 +184,7 @@ def generate_ro_crate_metadata(
             "@type": "File",
             "description": f"Data about files for Object #{object_info['id']}",
             "name": "files.json",
-            "contentType": "application/json",
+            "encodingFormat": "application/json",
             "contentSize": len(files_json),
             "sha256": hashlib.sha256(files_json).hexdigest()
         })
@@ -199,8 +221,9 @@ def generate_ro_crate_metadata(
                         "@id": f"./users/{file_info['uploader_id']}"
                     } if file_info['uploader_id'] is not None else None,
                     "dateCreated": file_info['utc_datetime'],
-                    "contentType": file_type,
+                    "encodingFormat": file_type,
                     "contentSize": len(file_content),
+                    "contentUrl": flask.url_for('frontend.object_file', object_id=object_info['id'], file_id=file_info['id'], _external=True),
                     "sha256": file_hash
                 })
                 result_files[file_name] = file_content

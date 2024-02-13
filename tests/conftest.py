@@ -41,6 +41,7 @@ sampledb.config.TEMPLATES_AUTO_RELOAD = True
 sampledb.config.SQLALCHEMY_ENGINE_OPTIONS = {
     "pool_pre_ping": True,
     "pool_recycle": 60,
+    "connect_args": {"options": "-c timezone=utc"},
 }
 sampledb.config.SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg2://{0}:@localhost:5432/{0}'.format(getpass.getuser())
 sampledb.config.MAIL_SENDER = 'sampledb@example.com'
@@ -101,7 +102,6 @@ def create_flask_server(app):
 def flask_server(worker_id):
     if worker_id != 'master':
         sampledb.config.SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:@postgres:5432/testdb_" + worker_id[2:]
-        sampledb.config.FILE_STORAGE_PATH = sampledb.config.FILE_STORAGE_PATH + worker_id[2:] + '/'
 
     app = create_app()
     # empty the database first, to ensure all tests rebuild it before use
@@ -171,6 +171,7 @@ def driver():
     with contextlib.closing(Chrome(options=options)) as driver:
         # wait for driver to start up
         time.sleep(5)
+        driver.execute_cdp_cmd('Emulation.setTimezoneOverride', {'timezoneId': 'UTC'})
         yield driver
 
 

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Select a Two-Factor Authentication Method') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h1>{{ _('Select a Two-Factor Authentication Method') }}</h1>
+  <p class="text-muted">
+    {% if session['confirm_data']['reason'] == 'deactivate_two_factor_authentication_method' %}
+      {% if method_to_deactivate.data.get('description') %}
+        {% set method_description = method_to_deactivate.data['description'] %}
+      {% elif method_to_deactivate.data.get('type') == 'totp' %}
+        {% set method_description = _('TOTP-based Two-Factor Authentication') %}
+      {% else %}
+        {% set method_description = _('Unknown Two-Factor Authentication Method') %}
+      {% endif %}
+      {{ _('Please select a two-factor authentication method to confirm that you want to deactivate <em>%(method_description)s</em>.', method_description=method_description) }}
+    {% else %}
+      {{ _('Please select a two-factor authentication method to complete the sign in process.') }}
+    {% endif %}
+  </p>
+  {% for method in methods %}
+    {% if method.data.get('type') == 'totp' %}
+      <div class="form-group">
+        <a href="{{ url_for('.confirm_totp_two_factor_authentication', method_id=method.id) }}" class="btn btn-primary" style="min-width: 204px">
+          {% if method.data.get('description') %}
+            <em>{{ method.data.description }}</em>
+          {% else %}
+            {{ _('TOTP-based Two-Factor Authentication') }}
+          {% endif %}
+        </a>
+      </div>
+    {% elif method.data.get('type') == 'fido2_passkey' %}
+      <div class="form-group">
+        <a href="{{ url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=method.id) }}" class="btn btn-primary" style="min-width: 204px">
+          {% if method.data.get('description') %}
+            <em>&quot;{{ method.data.description }}&quot;</em>
+          {% else %}
+            {{ _('FIDO2 Passkey') }}
+          {% endif %}
+        </a>
+      </div>
+    {% endif %}
+  {% endfor %}
+  <div>
+    <a href="{{ url_for('.index') }}" class="btn btn-default" style="min-width: 204px">{{ _('Cancel') }}</a>
+  </div>
+</div>
+{% endblock %}

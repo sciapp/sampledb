@@ -483,7 +483,7 @@ def shared_object_preprocessor(
                         res_file['hidden']['user'] = None
                 else:
                     res_file['data'] = file.data
-                    if file.storage in {'database', 'local'}:
+                    if file.storage == 'database':
                         res_file['data']['storage'] = 'federation'
 
                 result['files'].append(SharedFileData(

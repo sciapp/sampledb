@@ -1,32 +1,33 @@
 {% set container_style = none %}
 <div class="form-group row">
   <div class="col-md-3 control-label">
-    {% if schema.title %}<strong><span {% if schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
+    {% if schema.title %}<strong><span {% if is_required and schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }} {% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
   </div>
-  {% set is_required = True %}
   {% set minItems = schema.get('minItems', 0) %}
   {% set maxItems = schema.get('maxItems', -1) %}
   {% set defaultItems = schema.get('defaultItems', minItems)%}
 </div>
 {% set parent_prefix = id_prefix %}
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
-<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="array" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}">
+<div style="padding-left:2.5em;" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="array" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}" data-is-required="{{ (not not is_required) | tojson }}">
+  {% set is_required = True %}
   <input type="hidden" name="{{ parent_prefix }}_hidden" value="array">
   {% set item_name = (schema['items'].title | get_translated_text) %}
   {% if is_template and data is none %}
     {% set data = get_default_data(root_schema, property_path) %}
   {% endif %}
-  {% if data is not none %}
-    {% set numItems = (data | length) %}
-  {% else %}
-    {% set numItems = 0 %}
-  {% endif %}
   {% if data is none %}
     {% set data = [] %}
   {% endif %}
-  {% for item in data + [None] %}
+  {% if diff is none %}
+    {% set diff = [] %}
+  {% endif %}
+  {% if previous_schema %}
+    {% set previous_schema = previous_schema.get('items') %}
+  {% endif %}
+  {% set numItems = (data | length) %}
+  {% for item, item_diff in (zip_longest(data, diff) | list) + [(None, None)] %}
     {% set schema = schema['items'] %}
-    {% set data = item %}
     {% if loop.last %}
       {% set is_template = True %}
       {% set property_path = property_path + ('!index' ~ template_order_index ~ '!',) %}
@@ -35,6 +36,7 @@
       {% set property_path = property_path + (loop.index0,) %}
       {% set data = item %}
     {% endif %}
+    {% set diff = item_diff %}
     {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
     <div data-id-prefix="{{ id_prefix }}" data-array-item="array" {% if loop.last %}class="array-template"{% endif %}>
       <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;">
@@ -50,8 +52,9 @@
   {% endfor %}
 
   <div class="form-group row clearfix" style="padding-right:0.75em">
-    <div class="col-md-9 col-md-offset-3">
-      <button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success pull-right form-add-button" data-object-form-button="array_add" style="width:20em">{{ _('Add %(item_name)s', item_name=item_name) }}</button>
+    <div class="col-md-9 col-md-offset-3 text-right">
+      <button type="button" id="action_{{ parent_prefix }}_?__add" class="btn btn-success form-add-button" data-object-form-button="array_add" style="width:20em">{{ _('Add %(item_name)s', item_name=item_name) }}</button>
+      <button type="button" id="action_{{ parent_prefix }}_?__clear" class="btn btn-danger form-clear-button" data-object-form-button="array_clear" style="width:20em">{{ _('Delete all', item_name=item_name) }}</button>
     </div>
   </div>
 </div>

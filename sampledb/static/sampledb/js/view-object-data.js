@@ -11,10 +11,10 @@ function toggleShowMore (prefix) {
   const btn = $('#show-more-' + prefix + '-btn');
   if (properties.hasClass('hidden')) {
     properties.addClass('show').removeClass('hidden');
-    btn.text(window.show_less_text);
+    btn.text(window.getTemplateValue('translations.show_less'));
   } else {
     properties.addClass('hidden').removeClass('show');
-    btn.text(window.show_more_text);
+    btn.text(window.getTemplateValue('translations.show_more'));
   }
 }
 

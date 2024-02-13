@@ -344,11 +344,127 @@
     <p>{{ _('As you have not configured an user alias yet, no personal information about you is shared with %(component_name)s.', component_name=component.get_name()) }}</p>
     <a class="btn btn-primary" href="{{ url_for('.user_alias', add_alias_component=component.id) }}">{{ _('Create User Alias for %(component_name)s', component_name=component.get_name()) }}</a>
   {% endif %}
+  <h4>{{ _('Federated Identity') }}</h4>
+  <p>{{ _("Federated identities are used to link your user with users from different SampleDB instances. If you are linked with a federated user, the federated user will be represented by your username.") }}</p>
+  {% if active_identities|length > 0 %}
+    <p>{{ _('You are currently linked with following users from %(component_name)s:', component_name=component.name) }}</p>
+    <ul>
+      {% for identity in active_identities %}
+        <li><a {% if federation_user_base_url %} href="{{ federation_user_base_url }}/{{ identity.local_fed_user.fed_id }}" {% endif %}>{{ _('User #%(user_id)s', user_id=identity.local_fed_user.fed_id) }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>{{ _('You are currently not linked with any user from %(component_name)s.', component_name=component.name) }}</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('frontend.redirect_login_confirmation', component_uuid=component.uuid) }}">
+    <button class="btn btn-primary" type="submit" {% if component.address is none %} data-toggle="tooltip" data-placement="top" title="{{ _('Address must be set') }}" disabled="disabled" {% endif %}>{{ _('Sign in to %(component_name)s', component_name=component.get_name()) }}</button>
+    {% if active_identities|length > 0 %}
+      <button class="btn btn-danger" type="button" data-toggle="modal" data-target="#activeIdentitiesModal">{{ _('Revoke active user links') }}</button>
+    {% endif %}
+    {% if inactive_identities|length > 0 %}
+      <button class="btn btn-default" type="button" data-toggle="modal" data-target="#revokedIdentitiesModal">{{ _('Show revoked user links') }}</button>
+    {% endif %}
+  </form>
+
+  <div class="modal fade" id="activeIdentitiesModal" tabindex="-1" role="dialog" aria-labelledby="activeIdentitiesModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="activeIdentitiesModal">{{ _('Active user links') }}</h4>
+        </div>
+          <form action="{{ url_for('.revoke_active_identities', component_id=component.id) }}" method="post">
+          <div class="modal-body" style="display: flex; justify-content: center;">
+            <table class="table">
+              <colgroup>
+                <col style="width: 1em;">
+                <col>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>{{ _('Federated user') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for identity in active_identities %}
+                  <tr>
+                    <td><input type="checkbox" name="local_fed_id" value="{{ identity.local_fed_user.fed_id }}"></td>
+                    <td><a {% if federation_user_base_url %} href="{{ federation_user_base_url }}/{{ identity.local_fed_user.fed_id }}" {% endif %}>{{ _('User #%(user_id)s', user_id=identity.local_fed_user.fed_id) }}</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="min-width: 7em;">{{ _('Close') }}</button>
+            <button type="submit" class="btn btn-primary" style="min-width: 7em;" disabled="disabled">{{ _('Revoke selection') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="revokedIdentitiesModal" tabindex="-1" role="dialog" aria-labelledby="revokedIdentitiesModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="revokedIdentitiesModalLabel">{{ _('Revoked user links') }}</h4>
+        </div>
+        <form action="{{ url_for('.delete_inactive_identities', component_id=component.id) }}" method="post">
+          <div class="modal-body" style="display: flex; justify-content: center;">
+            <table class="table">
+              <colgroup>
+                <col style="width: 1em; max-width: 1em;">
+                <col>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>{{ _('Federated user') }} </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for identity in inactive_identities %}
+                  <tr>
+                    <td><input type="checkbox" name="local_fed_id" value="{{ identity.local_fed_user.fed_id }}"/></td>
+                    <td><a {% if federation_user_base_url %} href="{{ federation_user_base_url }}/{{ identity.local_fed_user.fed_id }}" {% endif %}>{{ _('User #%(user_id)s', user_id=identity.local_fed_user.fed_id) }}</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+          <p class="text-muted">
+            {{ _('Revoked user links are not used for representing federated users. As long as they are not removed, these links won\'t be created when importing updates.') }}
+          </p>
+          <button type="button" class="btn btn-default" data-dismiss="modal" style="min-width: 7em;">{{ _('Close') }}</button>
+          <button type="submit" class="btn btn-primary" style="min-width: 7em;" disabled="disabled">{{ _('Remove selection') }}</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("show_edit_form", show_edit_form) %}
+  {% do set_template_value("created_api_token", created_api_token) %}
+  {% do set_template_value("translations.copied", _('Copied!')) %}
+  {% do set_template_value("translations.could_not_copy_to_clipboard", _('Could not copy to clipboard, please use Ctrl+C.')) %}
+  {% do set_template_value("create_api_token_form_has_errors", create_api_token_form.description.errors | length > 0) %}
+  {% do set_template_value("add_own_api_token_form_has_errors", add_own_api_token_form.description.errors | length > 0) %}
+  {% do set_template_value("has_active_identities", active_identities|length > 0) %}
+  {% do set_template_value("has_inactive_identities", inactive_identities|length > 0) %}
+
+  {{ super() }}
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/component.js') }}" type="module"></script>
   {% if show_edit_form %}
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     $(document).ready(function() {

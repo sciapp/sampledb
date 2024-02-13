@@ -11,7 +11,7 @@
         <ul>
           <li><a href="#api_tokens">{{ _('API Tokens') }}</a></li>
           <li><a href="#api_access_tokens">{{ _('API Access Tokens') }}</a></li>
-          <li><a href="#2fa">{{ _('Two Factor Authentication') }}</a></li>
+          <li><a href="#2fa">{{ _('Two-Factor Authentication') }}</a></li>
         </ul>
       </li>
       {% if may_use_webhooks %}
@@ -108,8 +108,8 @@
          <tbody>
            {% for authentication in authentications %}
            <tr>
-               <td style="vertical-align: middle;">{{authentication.login['login']}}</td>
-               <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other')}[authentication.type.name.lower()] }}</td>
+               <td style="vertical-align: middle;">{{authentication.login.get('login', authentication.login.get('description', ''))}}</td>
+               <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other'), 'fido2_passkey': _('FIDO2 Passkey')}[authentication.type.name.lower()] }}</td>
                <td class="text-right">
                    <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
@@ -117,13 +117,13 @@
                        {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                        {% if authentications|length > 1 %}
                           {% if confirmed_authentication_methods > 1 %}
-                             {% if authentication.type.name.lower() != 'ldap' %}
+                             {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                              {% endif %}
                              <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
                           {% else %}
                                {% if authentication.confirmed  %}
-                                 {% if authentication.type.name.lower() != 'ldap' %}
+                                 {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
                                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                  {% endif %}
                                  <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -132,7 +132,7 @@
                                {% endif %}
                           {% endif %}
                        {% else %}
-                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' %}
+                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                          {% endif %}
                          <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -146,7 +146,7 @@
            <tr>
              <td></td>
              <td></td>
-             <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+             <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#addAuthenticationMethodModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
            </tr>
          </tfoot>
        </table>
@@ -227,7 +227,7 @@
   </div>
   {% endif %}
 
-  <h3 id="2fa">{{ _('Two Factor Authentication') }}</h3>
+  <h3 id="2fa">{{ _('Two-Factor Authentication') }}</h3>
   {% if two_factor_authentication_methods %}
   <table class="table">
     <thead>
@@ -240,22 +240,26 @@
     {% for method in two_factor_authentication_methods %}
       <tr>
         <td>
-      {% if method.data.type == 'totp' %}
-          {{ _('TOTP-based Two Factor Authentication') }}
-      {% else %}
-          {{ _('Unknown Two Factor Authentication Method') }}
-      {% endif %}
+          {% if method.data.description %}
+            <em>{{ method.data.description }}</em>
+          {% elif method.data.type == 'totp' %}
+            {{ _('TOTP-based Two-Factor Authentication') }}
+          {% elif method.data.type == 'fido2_passkey' %}
+            {{ _('FIDO2 Passkey') }}
+          {% else %}
+            {{ _('Unknown Two-Factor Authentication Method') }}
+          {% endif %}
         </td>
         <td style="width: 1%; white-space: nowrap;">
           <form method="post">
             {{ manage_two_factor_authentication_method_form.hidden_tag() }}
             <input type="hidden" name="{{ manage_two_factor_authentication_method_form.method_id.name }}" value="{{ method.id }}">
       {% if method.active %}
-            <button type="submit" class="btn btn-default" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="disable">{{ _('Disable') }}</button>
+            <button type="submit" class="btn btn-default" style="min-width:8em" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="disable">{{ _('Disable') }}</button>
       {% else %}
-            <button type="submit" class="btn btn-default" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="enable" {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before enabling this one.') }}"{% endif %}>{{ _('Enable') }}</button>
+            <button type="submit" class="btn btn-default" style="min-width:8em" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="enable">{{ _('Enable') }}</button>
       {% endif %}
-            <button type="submit" class="btn btn-danger" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="delete" {% if method.active %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable this method before deleting it.') }}"{% endif %}>{{ _('Delete') }}</button>
+            <button type="submit" class="btn btn-danger" style="min-width:8em" name="{{ manage_two_factor_authentication_method_form.action.name }}" value="delete" {% if method.active %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable this method before deleting it.') }}"{% endif %}>{{ _('Delete') }}</button>
           </form>
         </td>
       </tr>
@@ -264,7 +268,8 @@
   </table>
   {% endif %}
   <div class="text-right">
-    <a {% if has_active_method %}disabled="disabled" data-toggle="tooltip" data-placement="top" title="{{ _('Disable the current method before adding a new one.') }}" {% else %}href="{{ url_for('.setup_totp_two_factor_authentication') }}"{% endif %} class="btn btn-success">{{ _('Set up TOTP-based Two Factor Authentication') }}</a>
+    <a href="{{ url_for('.setup_totp_two_factor_authentication') }}" class="btn btn-success">{{ _('Set up TOTP-based Two-Factor Authentication') }}</a>
+    <a href="{{ url_for('.setup_fido2_passkey_two_factor_authentication') }}" class="btn btn-success">{{ _('Set up FIDO2 Passkey for Two-Factor Authentication') }}</a>
   </div>
 
   {% if may_use_webhooks %}
@@ -343,6 +348,7 @@
               NotificationType.REFERENCED_BY_OBJECT_METADATA: (_("Being referenced in object metadata"), True),
               NotificationType.REMOTE_OBJECT_IMPORT_FAILED: (_("Failure of importing an object into another database"), False),
               NotificationType.REMOTE_OBJECT_IMPORT_NOTES: (_("Receiving notes after importing an object into another database"), True),
+              NotificationType.AUTOMATIC_USER_FEDERATION: (_("Being automatically linked with a user from another database"), True),
               NotificationType.OTHER: (_("Other"), False)
             }
         %}
@@ -590,47 +596,59 @@
   </form>
 
 <!-- Modal -->
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="addAuthenticationMethodModal" tabindex="-1" role="dialog" aria-labelledby="addAuthenticationMethodModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <form class="form-horizontal" id="form-add-authentication-methods" method="post" name="form-add-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">{{ _('Add Authentication Method') }}</h4>
+        <h4 class="modal-title" id="addAuthenticationMethodModalLabel">{{ _('Add Authentication Method') }}</h4>
       </div>
       <div class="modal-body">
-            {{ authentication_form.csrf_token() }}
-            <div class="form-group{% if authentication_form.login.errors  or error_add %} has-error{% endif %}">
+            {{ authentication_form.hidden_tag() }}
+            <div class="form-group">
+                <label class="col-sm-4 control-label">{{ _('Type') }}</label>
+                <div class="col-sm-8">
+                  <select class="form-control selectpicker" name="{{ authentication_form.authentication_method.name }}" id="addAuthenticationMethodTypeSelect">
+                  {% for option in authentication_form.authentication_method.choices %}
+                    <option value="{{ option[0] }}"{% if authentication_form.authentication_method.data == option[0] %}selected="selected"{% endif %}>{{ {'ldap': 'LDAP', 'email': _('Email'), 'fido2 passkey': _('FIDO2 Passkey'), 'other': _('Other')}[option[1].lower()] }}</option>
+                  {% endfor %}
+                  </select>
+                  <span class='help-block'></span>
+                </div>
+            </div>
+            <div class="form-group{% if authentication_form.login.errors  or error_add %} has-error{% endif %}" id="addAuthenticationMethodLoginGroup">
                 <label for="input-login" class="col-sm-4 control-label">{{ _('Username / Email') }}</label>
                 <div class="col-sm-8">
-                    <input class="form-control" type="text" id="input-login" name="login"  placeholder="{{ _('Username / Email') }}" {% if authentication_form.login.data %}value="{{ authentication_form.login.data }}"{% endif %}>
+                    <input class="form-control" type="text" id="input-login" name="login" minlength="1" placeholder="{{ _('Username / Email') }}" {% if authentication_form.login.data %}value="{{ authentication_form.login.data }}"{% endif %}>
                     {% if error_add %} <span class='help-block'>{{error_add}} </span> {%endif%}
                     {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                 </div>
             </div>
-            <div class="form-group{% if authentication_form.password.errors%} has-error {% endif %}">
+            <div class="form-group{% if authentication_form.password.errors%} has-error {% endif %}" id="addAuthenticationMethodPasswordGroup">
                 <label for="input-password" class="col-sm-4 control-label">{{ _('Password') }}</label>
                 <div class="col-sm-8">
-                     <input class="form-control" type="password" id="input-password" name="password"  placeholder="{{ _('Password') }}">
+                     <input class="form-control" type="password" id="input-password" name="password" minlength="3" placeholder="{{ _('Password') }}">
                     {% if authentication_form.password.errors %}
                      <span class='help-block'>{{ _('The password must be at least 3 characters long.') }}</span>
                     {% endif %}
                 </div>
             </div>
-            <div class="form-group">
-                <label class="col-sm-4 control-label">{{ _('Type') }}</label>
+            <div class="form-group{% if authentication_form.description.errors  or error_add %} has-error{% endif %}" id="addAuthenticationMethodDescriptionGroup">
+                <label for="input-passkey-description" class="col-sm-4 control-label">{{ _('Description') }}</label>
                 <div class="col-sm-8">
-                  <select class="form-control selectpicker" name="{{ authentication_form.authentication_method.name }}">
-                  {% for option in authentication_form.authentication_method.choices %}
-                    <option value="{{ option[0] }}"{% if authentication_form.authentication_method.data == option[0] %}selected="selected"{% endif %}>{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other')}[option[1].lower()] }}</option>
-                  {% endfor %}
-                  </select>
+                    <input class="form-control" type="text" id="input-passkey-description" name="description" minlength="1" placeholder="{{ _('Description') }}" {% if authentication_form.description.data %}value="{{ authentication_form.description.data }}"{% endif %}>
+                    {% if error_add %} <span class='help-block'>{{error_add}} </span> {%endif%}
+                    {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
+                  <span class='help-block'></span>
+                  <div class="text-muted">{{ _('Note:') }} {{ _('When signing in with a FIDO2 Passkey, %(service_name)s will <strong>not</strong> use any additional two-factor authentication methods configured in your preferences.', service_name=service_name) }}</div>
                 </div>
             </div>
       </div>
       <div class="modal-footer">
+        <input type="hidden" name="add" value="Add" />
         <button type="button" class="btn btn-default" data-dismiss="modal" style="width:7em;">{{ _('Cancel') }}</button>
-        <button type="submit" class="btn btn-primary" name="add" value="Add" style="width:7em;">{{ _('Add') }}</button>
+        <button type="submit" class="btn btn-primary" style="width:7em;">{{ _('Add') }}</button>
       </div>
       </form>
     </div>
@@ -800,81 +818,26 @@
 
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("fido2_options", dict(options)) %}
+  {% do set_template_value("translations.passkey_failed", _('The passkey failed to register with the following error: ')) %}
+  {% do set_template_value("translations.enter_at_least_1_character", _('Please enter at least 1 character.')) %}
+  {% do set_template_value("translations.copied", _('Copied!')) %}
+  {% do set_template_value("translations.could_not_copy", _('Could not copy to clipboard, please use Ctrl+C.')) %}
+  {% do set_template_value("config.timezone_not_set", not config['TIMEZONE']) %}
+  {% do set_template_value("has_created_api_token", created_api_token is not none) %}
+  {% do set_template_value("show_api_token_modal", create_api_token_form.description.errors | length > 0) %}
+  {% do set_template_value("show_add_webhook_form", show_add_form) %}
+  {% do set_template_value("has_created_webhook_secret", webhook_secret is not none) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
     {{ super() }}
     <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
     <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
-
-  {% if not config['TIMEZONE'] %}
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    const tz_pref = moment.tz.guess(true);
-    var auto_tz = document.getElementById("auto_tz");
-    auto_tz.textContent += tz_pref;
-    </script>
-  {% endif %}
-  {% if created_api_token %}
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  $('#viewApiTokenModal').modal('show');
-  $('#api-token button').bind('click', function() {
-  var input = document.querySelector('#api-token input');
-  input.setSelectionRange(0, input.value.length + 1);
-  $(input).focus();
-  try {
-    var success = document.execCommand('copy');
-    if (success) {
-      $('#api-token-copy-notes').text("{{ _('Copied!') }}");
-      $('#api-token').removeClass('has-error').addClass('has-success');
-    } else {
-      $('#api-token-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
-      $('#api-token').removeClass('has-success').addClass('has-error');
-    }
-  } catch (err) {
-      $('#api-token-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
-      $('#api-token').removeClass('has-success').addClass('has-error');
-  }
-});
-
-  </script>
-  {% endif %}
-  {% if create_api_token_form.description.errors %}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  $('#createApiTokenModal').modal('show');
-  </script>
-  {% endif %}
-  {% if show_add_form %}
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      $(document).ready(function() {
-        var add_modal = $('#addWebhookModal');
-        add_modal.removeClass('fade');
-        add_modal.modal('show');
-        add_modal.addClass('fade');
-      });
-    </script>
-  {% endif %}
-  {% if webhook_secret %}
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      $('#viewWebhookSecretModal').modal('show');
-      $('#webhook-secret button').bind('click', function() {
-      var input = document.querySelector('#webhook-secret input');
-      input.setSelectionRange(0, input.value.length + 1);
-      $(input).focus();
-      try {
-        var success = document.execCommand('copy');
-        if (success) {
-          $('#webhook-secret-copy-notes').text("{{ _('Copied!') }}");
-          $('#webhook-secret').removeClass('has-error').addClass('has-success');
-        } else {
-          $('#webhook-secret-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
-          $('#webhook-secret').removeClass('has-success').addClass('has-error');
-        }
-      } catch (err) {
-          $('#webhook-secret-copy-notes').text("{{ _('Could not copy to clipboard, please use Ctrl+C.') }}");
-          $('#webhook-secret').removeClass('has-success').addClass('has-error');
-      }
-    });
-
-  </script>
-  {% endif %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/preferences.js') }}" type="module"></script>
 {% endblock %}
 
 {% block stylesheets %}

@@ -169,4 +169,4 @@ class EditPermissionsForm(FlaskForm):
         self.target_type.choices = target_type_choices
         self.groups.choices = [(group.id, get_translated_text(group.name)) for group in get_groups()]
         self.project_groups.choices = [(project.id, get_translated_text(project.name)) for project in get_projects()]
-        self.users.choices = [(user.id, f"{user.name} (#{user.id})") for user in get_users(order_by=User.id, exclude_fed=True, exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'])]
+        self.users.choices = [(user.id, f"{user.name} (#{user.id})") for user in get_users(order_by=User.id, exclude_fed=True, exclude_eln_import=True, exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'])]

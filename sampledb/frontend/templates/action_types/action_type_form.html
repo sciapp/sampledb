@@ -7,126 +7,29 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
 {% endblock %}
 
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% for lang in languages %}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+
+  {% set translations = [] %}
+  {% for translation in action_type_translations %}
+    {% do translations.append({"language_id": translation.language_id | string, "name": translation.name, "description": translation.description, "object_name": translation.object_name, "object_name_plural": translation.object_name_plural, "view_text": translation.view_text, "perform_text": translation.perform_text}) %}
+  {% endfor %}
+  {% do set_template_value("translations", translations) %}
+
+  {% do set_template_value("is_create_form", submit_text == _('Create')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
-    import {
-      updateTranslationJSON,
-      setTranslationHandler,
-      updateTranslationLanguages,
-      initMarkdownField,
-      updateMarkdownField
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
-    window.updateTranslationJSON = updateTranslationJSON;
-    window.setTranslationHandler = setTranslationHandler;
-    window.updateTranslationLanguages = updateTranslationLanguages;
-    window.initMarkdownField = initMarkdownField;
-    window.updateMarkdownField = updateMarkdownField;
-  </script>
-
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    window.translations = [
-      {% for translation in action_type_translations %}
-        {
-          'language_id': "{{ translation.language_id }}",
-          'name': "{{ translation.name }}",
-          'description': "{{ translation.description }}",
-          'object_name': "{{ translation.object_name }}",
-          'object_name_plural': "{{ translation.object_name_plural }}",
-          'view_text': "{{ translation.view_text }}",
-          'perform_text': "{{ translation.perform_text }}",
-        },
-      {% endfor %}
-    ];
-
-    window.languages = [
-      {% for lang in languages %}
-        {
-          'id': '{{ lang.id }}',
-          'name': '{{ lang.names | get_translated_text }}',
-          'lang_code': '{{ lang.lang_code }}'
-        },
-      {% endfor %}
-    ]
-    $(function () {
-
-      updateTranslationJSON();
-
-      $('#select-languages').on('change', function () {
-        let existing_languages = []
-        $.each(window.translations, function (key, value) {
-          existing_languages.push(value.language_id)
-        })
-        let selected = ["{{ ENGLISH.id }}",]
-        selected = selected.concat($(this).val())
-        let remove_languages = existing_languages.filter(n => !selected.includes(n))
-        let add_languages = selected.filter(n => !existing_languages.includes(n))
-
-        for (const del_language of remove_languages){
-          window.translations = window.translations.filter(function (translation) {
-            return translation.language_id.toString() !==  del_language;
-          });
-          $('[data-language-id="' + del_language + '"]').each(function () {
-            $(this).next('.help-block').remove();
-            $(this).remove();
-          });
-        }
-
-        const attributes = [
-          ['name', 'names'],
-          ['description', 'descriptions'],
-          ['object-name-singular', 'object-names-singular'],
-          ['object-name-plural', 'object-names-plural'],
-          ['view-text', 'view-texts'],
-          ['perform-text', 'perform-texts'],
-        ];
-        for (const new_language of add_languages) {
-          let lang_name = window.languages.find(lang => lang.id.toString() === new_language).name;
-
-          for (let i = 0; i < attributes.length; i++) {
-            let attribute = attributes[i][0];
-            let attribute_group = attributes[i][1];
-            let form_group = $('.form-group[data-name="input-' + attribute_group + '"]');
-            $($('#' + attribute + '-template').html()).insertAfter(form_group.children().last());
-            let input_group = form_group.children('.input-group').last()
-            $(input_group).children('input').attr('id', 'input-' + attribute + '-' + new_language.toString())
-            $(input_group).children('.input-group-addon[data-name="language"]').text(lang_name)
-            $(input_group).attr('data-language-id', new_language);
-            setTranslationHandler(input_group);
-          }
-
-          // add new object to translations if no object exists with the language_id
-          window.translations.push({
-            'language_id': new_language.toString(),
-            'name': '',
-            'description': '',
-            'object_name': '',
-            'object_name_plural': '',
-            'view_text': '',
-            'perform_text': '',
-          });
-          }
-      });
-
-      {% if submit_text !=  _('Save') %}
-        $('#select-languages').selectpicker('val', ['{{ ENGLISH.id }}']);
-      {% endif %}
-      $('#select-languages').change();
-      $('.form-group[data-name="input-names"] .input-group[data-language-id], .form-group[data-name="input-descriptions"] .input-group[data-language-id], .form-group[data-name="input-object-names-singular"] .input-group[data-language-id], .form-group[data-name="input-object-names-plural"] .input-group[data-language-id], .form-group[data-name="input-view-texts"] .input-group[data-language-id], .form-group[data-name="input-perform-texts"] .input-group[data-language-id]').each(function(_, element) {
-        setTranslationHandler(element);
-      });
-
-      {% if submit_text == _('Create') %} $('#button-new-translation').click(); {% endif %}
-
-      $('form').on('submit', function () {
-        $('input').change();
-        return $(this).find('.has-error').length === 0;
-      })
-    });
-
-  </script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/action_type_form.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}
@@ -294,6 +197,12 @@
           <label for="input-show_in_navbar" style="font-weight:400">
             <input type="checkbox" id="input-show_in_navbar" name="{{ action_type_form.show_in_navbar.name }}"
                    {% if action_type_form.show_in_navbar.data %}checked="checked"{% endif %}> {{ _('Show actions of this type in the navbar') }}
+          </label>
+        </div>
+        <div class="checkbox">
+          <label for="input-show_in_object_filters" style="font-weight:400">
+            <input type="checkbox" id="input-show_in_object_filters" name="{{ action_type_form.show_in_object_filters.name }}"
+                   {% if action_type_form.show_in_object_filters.data %}checked="checked"{% endif %}> {{ _('Show action type in object filters') }}
           </label>
         </div>
         <div class="checkbox">

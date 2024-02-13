@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Set Up FIDO2 Passkey for Two-Factor Authentication') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h1>{{ _('Set Up FIDO2 Passkey for Two-Factor Authentication') }}</h1>
+  <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
+    <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
+  </div>
+  <form action="{{ url_for('frontend.setup_fido2_passkey_two_factor_authentication') }}" method="post" id="setup-form">
+    <p class="text-muted">{{ _('Please enter a description for the passkey you wish to use and then click "Set Up".') }}</p>
+    {{ setup_form.hidden_tag() }}
+    <div class="form-group" id="descriptionFormGroup">
+      <input type="text" placeholder="{{ _('Description') }}" name="{{ setup_form.description.name }}" class="form-control" style="width: 204px; display:inline-block;" id="input-passkey-description"/>
+      <span class="help-block"></span>
+    </div>
+    <div>
+      <input type="submit" value="{{ _('Set Up') }}" class="btn btn-primary" style="width:100px;" />
+      <a href="{{ url_for('.user_me_preferences') }}" class="btn btn-default" style="width:100px;">{{ _('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("fido2_options", dict(options)) %}
+  {% do set_template_value("translations.passkey_failed", _('The passkey failed to register with the following error: ')) %}
+  {% do set_template_value("translations.enter_at_least_1_character", _('Please enter at least 1 character.')) %}
+
+  {{ super() }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('sampledb/js/page/set_up_fido2_passkey.js') }}" type="module"></script>
+{% endblock %}

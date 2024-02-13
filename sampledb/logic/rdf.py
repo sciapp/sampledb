@@ -30,8 +30,8 @@ xmlns:foaf="http://xmlns.com/foaf/0.1/"
         {% endif %}
       {% endfor %}
     {% endif %}
-    <dcterms:created>{{ created.isoformat() }}</dcterms:created>
-    <dcterms:modified>{{ modified.isoformat() }}</dcterms:modified>
+    <dcterms:created>{{ created.isoformat(timespec='microseconds') }}</dcterms:created>
+    <dcterms:modified>{{ modified.isoformat(timespec='microseconds') }}</dcterms:modified>
 
 {% for user in creators %}
     <dcterms:creator>
@@ -163,8 +163,8 @@ def generate_rdf(user_id: typing.Optional[int], object_id: int, version_id: typi
         object_url=object_url,
         object_name=object_name,
         object_name_is_str=isinstance(object_name, str),
-        created=creation_datetime,
-        modified=modification_datetime,
+        created=creation_datetime.replace(tzinfo=None) if creation_datetime is not None else None,
+        modified=modification_datetime.replace(tzinfo=None) if modification_datetime is not None else None,
         creators=[
             {
                 'name': user.name,

@@ -146,3 +146,20 @@ def find_invalid_template_paths(
                     for path_element in property_path
                 ])
     return invalid_template_paths
+
+
+def find_used_template_ids(
+        schema: typing.Dict[str, typing.Any]
+) -> typing.Set[int]:
+    """
+    Find all template action IDs used by the schema.
+
+    :param schema: the schema to search for template objects
+    :return: a set of template action IDs
+    """
+    template_action_ids = set()
+    for _property_path, property_schema in schema_iter(schema, filter_property_types={'object'}):
+        template_action_id = property_schema.get('template')
+        if type(template_action_id) is int:
+            template_action_ids.add(template_action_id)
+    return template_action_ids

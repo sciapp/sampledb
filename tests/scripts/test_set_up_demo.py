@@ -9,15 +9,13 @@ from sampledb.logic import users, actions
 import sampledb.__main__ as scripts
 
 
-def test_set_up_demo(capsys, tmpdir):
-    config.FILE_STORAGE_PATH = tmpdir
+def test_set_up_demo(capsys):
     scripts.main([scripts.__file__, 'set_up_demo'])
     assert 'Success' in capsys.readouterr()[0]
     assert actions.get_actions()
 
 
-def test_set_up_demo_one_user_exists(capsys, tmpdir):
-    config.FILE_STORAGE_PATH = tmpdir
+def test_set_up_demo_one_user_exists(capsys):
     users.create_user("username", "example@example.com", users.UserType.PERSON)
 
     scripts.main([scripts.__file__, 'set_up_demo'])
@@ -25,8 +23,7 @@ def test_set_up_demo_one_user_exists(capsys, tmpdir):
     assert actions.get_actions()
 
 
-def test_set_up_demo_two_users_exist(capsys, tmpdir):
-    config.FILE_STORAGE_PATH = tmpdir
+def test_set_up_demo_two_users_exist(capsys):
     users.create_user("username", "example@example.com", users.UserType.PERSON)
     users.create_user("username", "example2@example.com", users.UserType.PERSON)
 
@@ -37,8 +34,7 @@ def test_set_up_demo_two_users_exist(capsys, tmpdir):
     assert not actions.get_actions()
 
 
-def test_set_up_demo_twice(capsys, tmpdir):
-    config.FILE_STORAGE_PATH = tmpdir
+def test_set_up_demo_twice(capsys):
     scripts.main([scripts.__file__, 'set_up_demo'])
     assert 'Success' in capsys.readouterr()[0]
     assert actions.get_actions()
@@ -52,8 +48,7 @@ def test_set_up_demo_twice(capsys, tmpdir):
     assert len(actions.get_actions()) == num_actions
 
 
-def test_set_up_demo_arguments(capsys, tmpdir):
-    config.FILE_STORAGE_PATH = tmpdir
+def test_set_up_demo_arguments(capsys):
     with pytest.raises(SystemExit) as exc_info:
         scripts.main([scripts.__file__, 'set_up_demo', __file__])
     assert exc_info.value != 0

@@ -55,14 +55,20 @@
       </ul>
       {% if parsed_eln_file_data.users %}
       <p>{{ _('The following users will also be created from this .eln file:') }}</p>
+      <div class="row">
+        <div class="col-sm-offset-9 col-sm-4">{{ _('Federated Identity') }} <span data-toggle="tooltip" data-placement="top" title="{{ _('By selecting users, federated identites will be created for each selected user with you.') }}"><i class="fa fa-question-circle" aria-hidden="true"></i></span></div>
+      </div>
       <ul>
       {% for user_info in parsed_eln_file_data.users | sort(attribute='id') %}
-        <li>
-          {{ user_info.id }}: {{ user_info.name or '—' }} {% if user_info.url %}({{ user_info.url }}){% endif %}
-        </li>
+        <div class="row">
+          <li>
+            <span class="col-sm-10">{{ user_info.id }}: {{ user_info.name or '—' }} {% if user_info.url %}({{ user_info.url }}){% endif %}</span><span class="col-sm-2" style="float: left;"><input type="checkbox" class="checkboxes-fed-identities" name="{{ user_info.id }}" data-eln-user-id="{{ user_info.id }}"></span>
+          </li>
+        </div>
       {% endfor %}
       </ul>
       {% endif %}
+      <input type="hidden" id="federated-identities-list" name="{{ import_eln_file_form.federated_identities.name }}" value="">
       <div class="text-center" style="margin-top: 2em">
         <button type="submit" class="btn btn-primary">{{ _('Import Data')}}</button>
       </div>
@@ -78,4 +84,5 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/import_eln_file.js') }}" type="module"></script>
 {% endblock %}

@@ -195,3 +195,22 @@ class UserFederationAlias(Model):
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(user_id={self.user_id}, component_id={self.component_id}; name={self.name})>'
+
+
+class FederatedIdentity(Model):
+    __tablename__ = 'fed_identities'
+
+    user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, primary_key=True)
+    user: Mapped[User] = relationship('User', foreign_keys=[user_id])
+    local_fed_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, primary_key=True)
+    local_fed_user: Mapped[User] = relationship('User', foreign_keys=[local_fed_id])
+    active: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["FederatedIdentity"]]
+
+    def __init__(self, user_id: int, local_fed_id: int, active: bool = True):
+        super().__init__(user_id=user_id, local_fed_id=local_fed_id, active=active)
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}(user_id={self.user_id}, local_fed_id={self.local_fed_id}, active={self.active})>"

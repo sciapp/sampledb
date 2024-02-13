@@ -55,7 +55,7 @@ def get_related_object_ids(
     referencing_object_ids: typing.Set[typing.Tuple[int, typing.Optional[str]]] = set()
     if include_referenced_objects:
         object = get_object(object_id)
-        for referenced_object_id, _previously_referenced_object_id, _schema_type in find_object_references(object, include_fed_references=True):
+        for referenced_object_id, _previously_referenced_object_id, _schema_type in find_object_references(object_id=object.object_id, version_id=object.version_id, object_data=object.data, include_fed_references=True):
             if referenced_object_id is not None:
                 referenced_object_ids.add(referenced_object_id)
     if include_referencing_objects:
@@ -331,7 +331,6 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
     """
     Creates a list describing all direct object relations for a workflow view as configured in an object's schema.
 
-
     :param object: The object for which the workflow view is to be created
     :param user_id: User ID of the user viewing the workflow view taking into account the access permissions
     :param actions_by_id: A dict containing cached actions by ID
@@ -361,21 +360,24 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
     referenced_workflow_action_type_ids = None if 'referenced_action_type_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referenced_action_type_id']] if isinstance(object.schema['workflow_view']['referenced_action_type_id'], int) else object.schema['workflow_view']['referenced_action_type_id']
 
     object_ids = list(referencing_objects.union(referenced_objects))
-    objects = get_objects_with_permissions(user_id, Permissions.READ, object_ids=object_ids)
+    if object_ids:
+        objects = get_objects_with_permissions(user_id, Permissions.READ, object_ids=object_ids)
+    else:
+        objects = []
     objects_by_id = {
         object.object_id: object
         for object in objects
     }
-    initital_object_version_by_id = {}
+    initial_object_version_by_id = {}
     for object_id in object_ids:
         current_object_version = objects_by_id.get(object_id)
         if current_object_version is not None and current_object_version.version_id == 0:
-            initital_object_version_by_id[object_id] = current_object_version
+            initial_object_version_by_id[object_id] = current_object_version
         else:
-            initital_object_version_by_id[object_id] = get_object(object_id, version_id=0)
+            initial_object_version_by_id[object_id] = get_object(object_id, version_id=0)
 
     def creation_time_key(object_id: int) -> datetime.datetime:
-        initital_object_version = initital_object_version_by_id.get(object_id)
+        initital_object_version = initial_object_version_by_id.get(object_id)
         if initital_object_version is None or initital_object_version.utc_datetime is None:
             return datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
         return initital_object_version.utc_datetime
@@ -384,7 +386,7 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
 
     workflow = []
     for object_id in object_ids:
-        action_id = initital_object_version_by_id[object_id].action_id
+        action_id = initial_object_version_by_id[object_id].action_id
         if action_id:
             if action_id in actions_by_id:
                 action = actions_by_id[action_id]

@@ -84,8 +84,9 @@ function updateTranslationLanguages (languageSelect, templateID, inputIDPrefix, 
 }
 
 function getMarkdownButtonTranslation (buttonText) {
-  if (window.markdown_button_translations && Object.prototype.hasOwnProperty.call(window.markdown_button_translations, buttonText)) {
-    return window.markdown_button_translations[buttonText];
+  const markdownButtonTranslations = window.getTemplateValue('translations.markdown_buttons');
+  if (markdownButtonTranslations && Object.prototype.hasOwnProperty.call(markdownButtonTranslations, buttonText)) {
+    return markdownButtonTranslations[buttonText];
   }
   return buttonText;
 }

@@ -196,7 +196,7 @@ def location_permissions(location_id: int) -> FlaskResponseT:
             ]
         ]
 
-        users = logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True)
+        users = logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
 

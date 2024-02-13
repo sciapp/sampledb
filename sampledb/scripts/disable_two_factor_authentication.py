@@ -9,7 +9,7 @@ import sys
 import typing
 
 from .. import create_app
-from ..logic.authentication import get_active_two_factor_authentication_method, deactivate_two_factor_authentication_method
+from ..logic.authentication import get_active_two_factor_authentication_methods, deactivate_two_factor_authentication_method
 
 
 def main(arguments: typing.List[str]) -> None:
@@ -23,9 +23,10 @@ def main(arguments: typing.List[str]) -> None:
         sys.exit(1)
     app = create_app()
     with app.app_context():
-        active_method = get_active_two_factor_authentication_method(user_id)
-        if active_method is None:
-            print("Error: the user does not have two factor authentication enabled", file=sys.stderr)
+        active_methods = get_active_two_factor_authentication_methods(user_id)
+        if not active_methods:
+            print("Error: the user does not have two-factor authentication enabled", file=sys.stderr)
             sys.exit(1)
-        deactivate_two_factor_authentication_method(active_method.id)
-        print("Success: two factor authentication has been disabled for the user")
+        for active_method in active_methods:
+            deactivate_two_factor_authentication_method(active_method.id)
+        print("Success: two-factor authentication has been disabled for the user")

@@ -42,6 +42,50 @@
         &mdash;
       {% endif %}
     </dd>
+    <dt>{{ _('Federated Identities') }}</dt>
+    <dd>
+        {% if fed_identities %}
+          <ul style="padding-left: 1em;">
+              {% for user_id, identities in fed_identities.items() %}
+                <li>
+                  {% set user = identities[0][1].user %}
+                  <a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.name }} (#{{ user.id }})</a>
+                  <ul style="padding-left: 1em;">
+                    <table>
+                      {% for form, identity in identities %}
+                        <tr>
+                          <td class="column-space">
+                            <li>
+                              <span {% if not identity.active %} class="text-muted" {% endif %}>
+                                <a href="{{ url_for('.user_profile', user_id=identity.local_fed_user.id) }}">{{ identity.local_fed_user.name }}</a>
+                                {{ import_information_symbol(identity.local_fed_user) }}
+                              </span>
+                            </li>
+                          </td>
+                          {% if form is not none %}
+                          <form action="{{ url_for('.modify_eln_identity', eln_import_id=eln_import.id) }}" method="post" style="display: inline; margin: 0; padding: 0;">
+                            {{ form.csrf_token }}
+                            {% set enable_revoke_title = _('Revokes the federated identity with %(username)s.', username=identity.local_fed_user.name) if identity.active else _('Enables the federated identity with %(username)s.', username=identity.local_fed_user.name) %}
+                            <input type="hidden" name="{{ form.eln_user_id.name }}" value="{{ form.eln_user_id.data }}">
+                            <td class="column-space">
+                              <button type="submit" name="{{ form.type.name }}" value="{% if identity.active %}revoke{% else %}enable{% endif %}" class="btn btn-xs btn-default" data-toggle="tooltip" title="{{ enable_revoke_title }}">{{ _('Revoke') if identity.active else _('Enable') }}</button>
+                            </td>
+                            <td>
+                              <button type="submit" name="{{ form.type.name }}" value="remove" class="btn btn-xs btn-danger" data-toggle="tooltip" title="{{ _('Removes the federated identity with %(username)s permanently.', username=identity.local_fed_user.name) }}">{{ _('Remove') }}</button>
+                            </td>
+                          </form>
+                          {% endif %}
+                        </tr>
+                      {% endfor %}
+                    </table>
+                  </ul>
+                </li>
+              {% endfor %}
+          </ul>
+        {% else %}
+          &mdash;
+        {% endif %}
+    </dd>
     {% endif %}
   </dl>
 {% endblock %}

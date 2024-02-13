@@ -42,9 +42,10 @@ from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
-from ..logic.users import get_user, User
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_admin_local_storage_warning, show_numeric_tags_warning, relative_url_for
+from ..logic.users import get_user, User, get_user_by_federated_user
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for
 from ..logic.schemas.conditions import are_conditions_fulfilled
+from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.schemas import get_default_data
 from ..logic.actions import Action
@@ -111,6 +112,8 @@ JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
 JinjaFunction()(zip_longest)
 JinjaFunction()(get_default_data)
+JinjaFunction()(apply_diff)
+JinjaFunction()(invert_diff)
 
 
 qrcode_cache: typing.Dict[str, str] = {}
@@ -138,7 +141,7 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
 
 @JinjaFilter()
 def has_preview(file: File) -> bool:
-    if file.storage not in {'local', 'database', 'federation'}:
+    if file.storage not in {'database', 'federation'}:
         return False
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
@@ -154,7 +157,7 @@ def file_name_is_image(file_name: str) -> bool:
 @JinjaFilter()
 def is_image(file: File) -> bool:
     # federation files are not recognized as images to prevent loading their thumbnails from other database
-    if file.storage not in {'local', 'database'}:
+    if file.storage != 'database':
         return False
     return file_name_is_image(file.original_file_name)
 
@@ -747,6 +750,7 @@ def get_search_paths(
             'object_reference',
             'sample',
             'measurement',
+            'tags',
         ),
         include_file_name: bool = False
 ) -> typing.Tuple[typing.Dict[str, SearchPathInfo], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]], typing.Dict[typing.Optional[int], typing.Dict[str, SearchPathInfo]]]:
@@ -810,7 +814,6 @@ def get_search_paths(
 @JinjaFunction()
 def get_num_deprecation_warnings() -> int:
     return sum([
-        show_admin_local_storage_warning(),
         show_numeric_tags_warning(),
     ])
 
@@ -1157,9 +1160,9 @@ def get_locations_form_data(
 
 
 @JinjaFunction()
-def get_user_or_none(user_id: int) -> typing.Optional[User]:
+def get_user_or_none(user_id: int, component_id: typing.Optional[int] = None) -> typing.Optional[User]:
     try:
-        return get_user(user_id)
+        return get_user(user_id, component_id=component_id)
     except errors.UserDoesNotExistError:
         return None
 
@@ -1536,7 +1539,8 @@ def safe_get_component_by_uuid(component_uuid: str) -> typing.Optional[Component
 
 @JinjaFunction()
 def get_property_names_in_order(
-        schema: typing.Dict[str, typing.Any]
+        schema: typing.Dict[str, typing.Any],
+        previous_schema: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> typing.Sequence[str]:
     property_names = [
         property_name
@@ -1547,6 +1551,10 @@ def get_property_names_in_order(
         for property_name in schema.get('properties', [])
         if property_name not in schema.get('propertyOrder', [])
     ]
+    if previous_schema:
+        for property_name in get_property_names_in_order(previous_schema):
+            if property_name not in property_names:
+                property_names.append(property_name)
     return property_names
 
 
@@ -1559,3 +1567,59 @@ def id_prefix_for_property_path(
         str(path_element)
         for path_element in [id_prefix_root] + list(property_path)
     ]) + '_'
+
+
+@JinjaFunction()
+def is_deep_diff_possible(
+        diff: DataDiff,
+        schema: typing.Dict[str, typing.Any],
+        previous_schema: typing.Dict[str, typing.Any]
+) -> bool:
+    if '_before' in diff or '_after' in diff:
+        return False
+    if schema.get('type') == previous_schema.get('type') == 'array':
+        if schema.get('style') != previous_schema.get('style'):
+            return False
+        if schema.get('style') == 'table' and schema.get('items', {}).get('type') != previous_schema.get('items', {}).get('type'):
+            return False
+    return True
+
+
+@JinjaFunction()
+def set_template_value(
+        name: str,
+        value: typing.Any
+) -> None:
+    if not hasattr(flask.g, 'template_values'):
+        flask.g.template_values = {}
+    if flask.g.template_values is None:
+        raise errors.TemplateValueError()
+    if name in flask.g.template_values:
+        raise errors.TemplateValueError()
+    flask.g.template_values[name] = value
+
+
+@JinjaFunction()
+def get_template_values() -> typing.Any:
+    if not hasattr(flask.g, 'template_values'):
+        flask.g.template_values = {}
+    template_values = flask.g.template_values
+    flask.g.template_values = None
+    return template_values
+
+
+@JinjaFunction()
+def current_utc_datetime() -> datetime:
+    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
+
+@JinjaFunction()
+def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User]]:
+    if isinstance(user, int):
+        user = get_user(user)
+    if user is None:
+        return user, None
+    federated_user = get_user_by_federated_user(federated_user_id=user.id)
+    if federated_user is not None:
+        return federated_user, user
+    return user, None

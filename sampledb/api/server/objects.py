@@ -9,6 +9,7 @@ import typing
 import flask
 
 from ..utils import Resource, ResponseData
+from ...utils import text_to_bool
 from ...api.server.authentication import multi_auth, object_permissions_required
 from ...logic.action_types import check_action_type_exists
 from ...logic.actions import get_action, check_action_exists
@@ -70,7 +71,7 @@ class ObjectVersion(Resource):
                     object_version_json['user'] = user_to_json(user)
                 except errors.UserDoesNotExistError:
                     pass
-        include_diff = bool(flask.request.args.get('include_diff'))
+        include_diff = text_to_bool(flask.request.args.get('include_diff', ''))
         if include_diff and object.version_id > 0:
             previous_object_version = get_object(object_id=object.object_id, version_id=object.version_id - 1)
             data_diff = calculate_diff(previous_object_version.data, object.data)
@@ -268,11 +269,11 @@ class Objects(Resource):
         if offset is not None and not 0 <= offset < 1e15:
             offset = None
 
-        name_only = bool(flask.request.args.get('name_only'))
+        name_only = text_to_bool(flask.request.args.get('name_only', ''))
         query_string = flask.request.args.get('q', '')
         if query_string:
             try:
-                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, True)
+                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, text_to_bool(flask.request.args.get('use_advanced_search', 'true')))
             except Exception:
                 # TODO: ensure that advanced search does not cause exceptions
                 def unwrapped_filter_func(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Any:

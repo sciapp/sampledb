@@ -131,7 +131,7 @@ def object_permissions(object_id: int) -> FlaskResponseT:
             existing_project_permissions=project_permissions
         )
 
-        users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True)
+        users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True)
         users = [user for user in users if user.id not in user_permissions]
         users.sort(key=lambda user: user.id)
 
@@ -146,7 +146,7 @@ def object_permissions(object_id: int) -> FlaskResponseT:
         possible_new_components = [component for component in components if component.id not in component_policies.keys()]
         component_users = {
             component.id: {
-                user.fed_id: user.get_name(include_ref=True)
+                user.fed_id: user.get_name(include_ref=True, use_local_identity=True)
                 for user in get_users_for_component(component.id, exclude_hidden=False)
             }
             for component in components

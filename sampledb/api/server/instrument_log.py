@@ -37,12 +37,14 @@ def instrument_log_entry_version_to_json(version: instrument_log_entries.Instrum
     return {
         'log_entry_id': version.log_entry_id,
         'version_id': version.version_id,
-        'utc_datetime': version.utc_datetime.replace(tzinfo=None).isoformat(),
+        'utc_datetime': version.utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds'),
         'content': version.content,
         'categories': [
             category_to_json(category)
             for category in version.categories
         ],
+        'event_utc_datetime': version.event_utc_datetime.replace(tzinfo=None).isoformat(timespec='microseconds') if version.event_utc_datetime is not None else None,
+        'content_is_markdown': version.content_is_markdown,
     }
 
 

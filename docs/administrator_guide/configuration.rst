@@ -241,8 +241,6 @@ Miscellaneous
 
    * - Variable Name
      - Description
-   * - SAMPLEDB_FILE_STORAGE_PATH
-     - A path to the directory that uploaded files should be stored in
    * - SAMPLEDB_SERVER_NAME
      - The server name for Flask. See: https://flask.palletsprojects.com/en/1.1.x/config/#SERVER_NAME
    * - SAMPLEDB_SQLALCHEMY_DATABASE_URI
@@ -311,5 +309,11 @@ Miscellaneous
      - If set, "normal" users can register webhooks (default: False). If this option is not set or set to ``false`` only administrators are allowed to register webhooks. See :ref:`Webhooks <webhooks>`.
    * - SAMPLEDB_WEBHOOKS_ALLOW_HTTP
      - If set, using webhook targets that do not support https is allowed (default: False).
+   * - SAMPLEDB_ENABLE_FIDO2_PASSKEY_AUTHENTICATION
+     - If set, FIDO2 passkeys can be used as an authentication method instead of just as a second factor.
+   * - SAMPLEDB_SHARED_DEVICE_SIGN_OUT_MINUTES
+     - The time of inactivity after which users on shared devices will be signed out in minutes (default: 30 minutes).
+   * - SAMPLEDB_DISABLE_OUTDATED_USE_AS_TEMPLATE
+     - If set, users cannot use objects with outdated schemas as a template (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

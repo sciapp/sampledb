@@ -37,7 +37,6 @@ test:
     # build translations once instead of with each test
     - python3 -m sampledb build_translations
     # set up configuration values for testing
-    - export SAMPLEDB_FILE_STORAGE_PATH=${CI_PROJECT_DIR}/test_files/
     - export SAMPLEDB_BUILD_TRANSLATIONS=
     # run tests and gather coverage data
     - python3 -m pytest -x -s -n=4 --cov=sampledb/ --cov-report=term --cov-report=xml --junitxml=pytest.xml tests
@@ -75,8 +74,8 @@ analyze-js:
     # install static analysis packages
     - npm install -g jshint semistandard
     # run JSHint and semistandard for some JavaScript files
-    - jshint sampledb/static/sampledb/js/*.js
-    - semistandard sampledb/static/sampledb/js/*.js
+    - jshint sampledb/static/sampledb/js/*.js sampledb/static/sampledb/js/*/*.js
+    - semistandard sampledb/static/sampledb/js/*.js sampledb/static/sampledb/js/*/*.js
 
 .template-check-migrations:
   stage: test

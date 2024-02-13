@@ -5,7 +5,7 @@
 
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectMultipleField
+from wtforms import StringField, IntegerField, SelectMultipleField, HiddenField, BooleanField
 from wtforms.validators import InputRequired, Length, DataRequired
 
 
@@ -67,3 +67,9 @@ class AddWebhookForm(FlaskForm):
 
 class RemoveWebhookForm(FlaskForm):
     id = IntegerField('Authentication_method_id', validators=[DataRequired()])
+
+
+class WebAuthnLoginForm(FlaskForm):
+    assertion = HiddenField(validators=[DataRequired()])
+    remember_me = BooleanField()
+    shared_device = BooleanField()

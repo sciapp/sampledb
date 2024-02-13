@@ -5,12 +5,14 @@
 
 import datetime
 import http
+import json
 import secrets
 import typing
 
 import flask
 from flask_babel import refresh, _, lazy_gettext
 import flask_login
+from fido2.webauthn import PublicKeyCredentialUserEntity, ResidentKeyRequirement, UserVerificationRequirement
 import sqlalchemy.sql.expression
 import pytz
 
@@ -26,7 +28,7 @@ from ..utils import get_groups_form_data
 
 from ... import logic
 from ...logic import user_log, errors
-from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server
 from ...logic.users import get_user, get_users, User
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
@@ -86,48 +88,82 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         if method is not None:
             if manage_two_factor_authentication_method_form.action.data == 'delete':
                 if method.active:
-                    flask.flash(_('You cannot delete an active two factor authentication method.'), 'error')
+                    flask.flash(_('You cannot delete an active two-factor authentication method.'), 'error')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
                 delete_two_factor_authentication_method(method_id)
-                flask.flash(_('The two factor authentication method has been deleted.'), 'success')
+                flask.flash(_('The two-factor authentication method has been deleted.'), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'enable':
+                flask.session['confirm_data'] = {
+                    'reason': 'activate_two_factor_authentication_method',
+                    'user_id': method.user_id,
+                    'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                }
                 if method.data.get('type') == 'totp':
-                    flask.session['confirm_data'] = {
-                        'reason': 'activate_two_factor_authentication_method',
-                        'user_id': method.user_id,
-                        'method_id': method.id,
-                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
+                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication', method_id=method.id))
+                elif method.data.get('type') == 'fido2_passkey':
+                    return flask.redirect(flask.url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=method.id))
                 else:
+                    del flask.session['confirm_data']
                     activate_two_factor_authentication_method(method_id)
-                    flask.flash(_('The two factor authentication method has been enabled.'), 'success')
+                    flask.flash(_('The two-factor authentication method has been enabled.'), 'success')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
             if manage_two_factor_authentication_method_form.action.data == 'disable':
-                if method.data.get('type') == 'totp':
-                    flask.session['confirm_data'] = {
-                        'reason': 'deactivate_two_factor_authentication_method',
-                        'user_id': method.user_id,
-                        'method_id': method.id,
-                        'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication'))
-                else:
+                flask.session['confirm_data'] = {
+                    'reason': 'deactivate_two_factor_authentication_method',
+                    'user_id': method.user_id,
+                    'method_to_deactivate_id': method.id,
+                    'expiration_datetime': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
+                }
+                usable_active_two_factor_authentication_methods = [
+                    other_method
+                    for other_method in two_factor_authentication_methods
+                    if other_method.active and other_method.data.get('type') in ('totp', 'fido2_passkey',)
+                ]
+                if len(usable_active_two_factor_authentication_methods) < 2:
+                    if usable_active_two_factor_authentication_methods:
+                        two_factor_authentication_method = usable_active_two_factor_authentication_methods[0]
+                        if two_factor_authentication_method.data.get('type') == 'totp':
+                            return flask.redirect(flask.url_for('.confirm_totp_two_factor_authentication', method_id=two_factor_authentication_method.id))
+                        if two_factor_authentication_method.data.get('type') == 'fido2_passkey':
+                            return flask.redirect(flask.url_for('.confirm_fido2_passkey_two_factor_authentication', method_id=two_factor_authentication_method.id))
+                    del flask.session['confirm_data']
                     deactivate_two_factor_authentication_method(method_id)
-                    flask.flash(_('The two factor authentication method has been disabled.'), 'success')
+                    flask.flash(_('The two-factor authentication method has been disabled.'), 'success')
                     return flask.redirect(flask.url_for('.user_me_preferences'))
+                return flask.render_template(
+                    'two_factor_authentication/pick.html',
+                    methods=usable_active_two_factor_authentication_methods,
+                    method_to_deactivate=method
+                )
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
     api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
     api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
+    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN, Authentication.type != AuthenticationType.FIDO2_PASSKEY).count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
+    if flask.current_app.config["ENABLE_FIDO2_PASSKEY_AUTHENTICATION"]:
+        authentication_form.authentication_method.choices.append(('FIDO2_PASSKEY', 'FIDO2 Passkey'))
     authentication_method_form = AuthenticationMethodForm()
     authentication_password_form = AuthenticationPasswordForm()
+
+    server = get_webauthn_server()
+    all_credentials = get_all_fido2_passkey_credentials()
+    options, state = server.register_begin(
+        PublicKeyCredentialUserEntity(
+            id=f"signin-{flask_login.current_user.id}".encode('utf-8'),
+            name=f"{flask_login.current_user.name} ({flask_login.current_user.email})",
+            display_name=flask_login.current_user.name,
+        ),
+        credentials=all_credentials,
+        resident_key_requirement=ResidentKeyRequirement.PREFERRED,
+        user_verification=UserVerificationRequirement.REQUIRED
+    )
+    if not authentication_form.validate_on_submit():
+        flask.session["webauthn_enroll_state"] = state
 
     created_api_token = None
     create_api_token_form = CreateAPITokenForm()
@@ -161,7 +197,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         existing_project_permissions=project_permissions
     )
 
-    users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True)
+    users = get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True)
     users = [user for user in users if user.id not in user_permissions]
     users.sort(key=lambda user: user.id)
 
@@ -235,6 +271,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     group_permissions=group_permissions,
                     all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
+                    options=options,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
                     confirmed_authentication_methods=confirmed_authentication_methods,
@@ -357,6 +394,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     group_permissions=group_permissions,
                     all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
+                    options=options,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
                     confirmed_authentication_methods=confirmed_authentication_methods,
@@ -384,14 +422,30 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 'L': AuthenticationType.LDAP,
                 'O': AuthenticationType.OTHER
             }
+            if flask.current_app.config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION']:
+                all_authentication_methods['FIDO2_PASSKEY'] = AuthenticationType.FIDO2_PASSKEY
             if authentication_form.authentication_method.data not in all_authentication_methods:
                 return flask.abort(400)
 
             authentication_method = all_authentication_methods[authentication_form.authentication_method.data]
             # check, if additional authentication is correct
             try:
-                add_authentication_method(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
+                if authentication_method == AuthenticationType.FIDO2_PASSKEY:
+                    auth_data = server.register_complete(
+                        flask.session["webauthn_enroll_state"],
+                        json.loads(authentication_form.fido2_passkey_credentials.data)
+                    )
+                    assert auth_data.credential_data is not None
+                    add_fido2_passkey(
+                        user_id=flask_login.current_user.id,
+                        credential_data=auth_data.credential_data,
+                        description=authentication_form.description.data
+                    )
+                    del flask.session["webauthn_enroll_state"]
+                else:
+                    add_authentication_method(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
                 flask.flash(_("Successfully added the authentication method."), 'success')
+                return flask.redirect(flask.url_for('.user_me_preferences'))
             except Exception as e:
                 flask.flash(_("Failed to add an authentication method."), 'error')
                 return flask.render_template(
@@ -425,6 +479,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     group_permissions=group_permissions,
                     all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
+                    options=options,
                     authentication_form=authentication_form,
                     create_api_token_form=create_api_token_form,
                     confirmed_authentication_methods=confirmed_authentication_methods,
@@ -484,6 +539,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 group_permissions=group_permissions,
                 all_user_permissions=all_user_permissions,
                 authentication_method_form=authentication_method_form,
+                options=options,
                 authentication_form=authentication_form,
                 create_api_token_form=create_api_token_form,
                 confirmed_authentication_methods=confirmed_authentication_methods,
@@ -720,6 +776,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         project_permissions=project_permissions,
         all_user_permissions=all_user_permissions,
         authentication_method_form=authentication_method_form,
+        options=options,
         authentication_form=authentication_form,
         create_api_token_form=create_api_token_form,
         created_api_token=created_api_token,

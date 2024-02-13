@@ -74,6 +74,7 @@ class ActionType(Model):
     translations: Mapped[typing.List['ActionTypeTranslation']] = relationship('ActionTypeTranslation', lazy='selectin')
     order_index: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     enable_instrument_link: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    show_in_object_filters: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ActionType"]]

@@ -2,6 +2,7 @@
 """
 
 """
+import typing
 
 from http import HTTPStatus
 import flask
@@ -14,8 +15,10 @@ from wtforms import validators, ValidationError
 from .. import frontend
 from ...logic import users, errors, groups, projects, instruments
 from ...logic.components import get_component
+from ...logic.users import get_federated_identities, get_user_by_federated_user
 from ..utils import validate_orcid
 from ...utils import FlaskResponseT
+from ...models import UserType
 
 
 class UserReadOnlyForm(FlaskForm):
@@ -75,6 +78,42 @@ def user_profile(user_id: int) -> FlaskResponseT:
             last_modifying_user = users.get_user(user.last_modified_by_id)
         except errors.UserDoesNotExistError:
             pass
+
+    show_federated_identities = user.type not in (UserType.ELN_IMPORT_USER, UserType.FEDERATION_USER)
+    fed_identity_descriptions_sampledb: dict[str, typing.Any] = {}
+    fed_identity_descriptions_eln = []
+
+    if show_federated_identities:
+        for identity in sorted(get_federated_identities(user_id=user.id, component=None, active_status=True), key=lambda identity: identity.local_fed_id):
+            if identity.local_fed_user.type == UserType.FEDERATION_USER:
+                if identity.local_fed_user.component is None:
+                    continue
+                if identity.local_fed_user.component.uuid not in fed_identity_descriptions_sampledb:
+                    fed_identity_descriptions_sampledb[identity.local_fed_user.component.uuid] = {
+                        "component_name": identity.local_fed_user.component.name if identity.local_fed_user.component.name else _('Unknown database'),
+                        "component_url": flask.url_for('.component', component_id=identity.local_fed_user.component_id),
+                        "user_links": []
+                    }
+                component_address = identity.local_fed_user.component.address
+                if component_address and not component_address.endswith("/"):
+                    component_address += "/"
+                fed_identity_descriptions_sampledb[identity.local_fed_user.component.uuid]["user_links"].append({
+                    "user_url": f"{component_address}users/{identity.local_fed_user.fed_id}" if identity.local_fed_user.component.address else flask.url_for('.user_profile', user_id=identity.local_fed_id),
+                    "fed_id": identity.local_fed_user.fed_id
+                })
+            elif identity.local_fed_user.type == UserType.ELN_IMPORT_USER:
+                fed_identity_descriptions_eln.append({
+                    "eln_object_id": identity.local_fed_user.eln_object_id if identity.local_fed_user.eln_object_id else None,
+                    "eln_import_id": identity.local_fed_user.eln_import_id,
+                    "eln_import_url": flask.url_for('.eln_import', eln_import_id=identity.local_fed_user.eln_import_id),
+                    "user_id": identity.local_fed_id
+                })
+
+    for identity_description in fed_identity_descriptions_sampledb.values():
+        identity_description["user_links"] = sorted(identity_description["user_links"], key=lambda x: x["fed_id"])
+
+    show_local_federated_identity = user.type in [UserType.FEDERATION_USER, UserType.ELN_IMPORT_USER]
+    local_federated_identity_user = get_user_by_federated_user(federated_user_id=user.id)
 
     if flask_login.current_user.is_admin and not flask_login.current_user.is_readonly:
         user_read_only_form = UserReadOnlyForm()
@@ -167,5 +206,10 @@ def user_profile(user_id: int) -> FlaskResponseT:
             instruments.get_instrument(instrument_id)
             for instrument_id in instruments.get_user_instruments(user.id, exclude_hidden=True)
         ],
-        get_component=get_component
+        get_component=get_component,
+        show_federated_identities=show_federated_identities,
+        fed_identity_descriptions_sampledb=fed_identity_descriptions_sampledb,
+        fed_identity_descriptions_eln=fed_identity_descriptions_eln,
+        local_federated_identity_user=local_federated_identity_user,
+        show_local_federated_identity=show_local_federated_identity
     )

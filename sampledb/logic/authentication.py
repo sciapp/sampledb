@@ -1,14 +1,23 @@
+import base64
 import datetime
+import functools
 import secrets
 import typing
+import urllib.parse
 
 import bcrypt
 import flask
+import fido2.features
+from fido2.server import Fido2Server
+from fido2.webauthn import AttestationConveyancePreference, PublicKeyCredentialRpEntity, AttestedCredentialData
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
 from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod
 from . import errors, api_log
+
+# enable JSON mapping for webauthn options
+fido2.features.webauthn_json_mapping.enabled = True
 
 
 # number of rounds for generating new salts for hashing passwords with crypt
@@ -136,6 +145,81 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     )
     db.session.add(authentication)
     db.session.commit()
+
+
+def add_fido2_passkey(user_id: int, credential_data: AttestedCredentialData, description: str) -> None:
+    """
+    Add a FIDO2 passkey as an authentication method for a given user.
+
+    :param user_id: the ID of an existing user
+    :param credential_data: the passkey credential data
+    :param description: a description for the passkey
+    """
+    authentication = Authentication(
+        login={
+            'credential_id': base64.b64encode(credential_data.credential_id).decode('utf-8'),
+            'credential_data': base64.b64encode(credential_data).decode('utf-8'),
+            'description': description
+        },
+        authentication_type=AuthenticationType.FIDO2_PASSKEY,
+        confirmed=True,
+        user_id=user_id
+    )
+    db.session.add(authentication)
+    db.session.commit()
+
+
+def get_all_fido2_passkey_credentials() -> typing.Sequence[AttestedCredentialData]:
+    """
+    Get all known FIDO2 passkey credentials.
+
+    :return: a list of credentials
+    """
+    return [
+        AttestedCredentialData(base64.b64decode(authentication.login['credential_data'].encode('utf-8')))  # type: ignore
+        for authentication in Authentication.query.filter_by(type=AuthenticationType.FIDO2_PASSKEY).all()
+    ]
+
+
+def get_user_id_for_fido2_passkey_credential_id(credential_id: bytes) -> typing.Optional[int]:
+    """
+    Get the user ID for a given FIDO2 passkey credential ID.
+
+    :return: the user ID, or None if the credential ID is unknown
+    """
+    authentication = Authentication.query.filter(
+        db.and_(
+            Authentication.type == AuthenticationType.FIDO2_PASSKEY,
+            Authentication.login['credential_id'].astext == base64.b64encode(credential_id).decode('utf-8')
+        )
+    ).first()
+    if authentication is None:
+        return None
+    return authentication.user_id
+
+
+@functools.cache
+def _verify_origin(origin: str) -> bool:
+    origin_parsed = urllib.parse.urlparse(origin)
+    index_parsed = urllib.parse.urlparse(flask.url_for('.index', _external=True))
+    return origin_parsed.scheme == index_parsed.scheme and origin_parsed.netloc == index_parsed.netloc
+
+
+def get_webauthn_server() -> Fido2Server:
+    """
+    Get the FIDO2 webauthn server.
+
+    :return: a Fido2Server instance
+    """
+    rp = PublicKeyCredentialRpEntity(
+        name=flask.current_app.config['SERVICE_NAME'],
+        id=(flask.current_app.config['SERVER_NAME'] or '').split(':')[0]
+    )
+    return Fido2Server(
+        rp,
+        attestation=AttestationConveyancePreference.NONE,
+        verify_origin=_verify_origin
+    )
 
 
 def login(login: str, password: str) -> typing.Optional[logic.users.User]:
@@ -454,18 +538,21 @@ def is_login_available(login: str) -> bool:
 
 def _create_two_factor_authentication_method(
         user_id: int,
-        data: typing.Dict[str, typing.Any]
+        data: typing.Dict[str, typing.Any],
+        active: bool = False
 ) -> TwoFactorAuthenticationMethod:
     """
-    Create a new two factor authentication method.
+    Create a new two-factor authentication method.
 
     :param user_id: the ID of an existing user
     :param data: the method data
+    :param active: whether the new method should be active
     :return: the newly created method
     """
     two_factor_authentication_method = TwoFactorAuthenticationMethod(
         user_id=user_id,
-        data=data
+        data=data,
+        active=active
     )
     db.session.add(two_factor_authentication_method)
     db.session.commit()
@@ -473,71 +560,75 @@ def _create_two_factor_authentication_method(
 
 
 def get_two_factor_authentication_methods(
-        user_id: int
+        user_id: int,
+        active: typing.Optional[bool] = None
 ) -> typing.List[TwoFactorAuthenticationMethod]:
     """
-    Get all two factor authentication methods for a user.
+    Get all two-factor authentication methods for a user.
 
     :param user_id: the ID of an existing user
+    :param active: whether the queries need to be active, or None
     :return: a list containing all methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id).all()
+    query = TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id)
+    if active is not None:
+        query = query.filter_by(active=active)
+    return query.order_by(TwoFactorAuthenticationMethod.id).all()
 
 
-def get_active_two_factor_authentication_method(
+def get_active_two_factor_authentication_methods(
         user_id: int
-) -> typing.Optional[TwoFactorAuthenticationMethod]:
+) -> typing.Sequence[TwoFactorAuthenticationMethod]:
     """
-    Get the currently active two factor authentication method, or None.
+    Get the currently active two-factor authentication methods.
 
     :param user_id: the ID of an existing user
-    :return: the active method
+    :return: a list of active methods
     """
-    return TwoFactorAuthenticationMethod.query.filter_by(user_id=user_id, active=True).first()
+    return get_two_factor_authentication_methods(user_id=user_id, active=True)
+
+
+def _set_two_factor_authentication_method_active(
+        id: int,
+        active: bool
+) -> None:
+    method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
+    if method is None:
+        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
+    method.active = active
+    db.session.add(method)
+    db.session.commit()
 
 
 def activate_two_factor_authentication_method(
         id: int
 ) -> None:
     """
-    Activate a two factor authentication method and deactivate all others.
+    Activate a two-factor authentication method.
 
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
     """
-    activated_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
-    if activated_method is None:
-        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
-    activated_method.active = True
-    for method in TwoFactorAuthenticationMethod.query.filter_by(user_id=activated_method.user_id).all():
-        if method.id != id:
-            method.active = False
-        db.session.add(method)
-    db.session.commit()
+    _set_two_factor_authentication_method_active(id, active=True)
 
 
 def deactivate_two_factor_authentication_method(
         id: int
 ) -> None:
     """
-    Deactivate a two factor authentication method.
+    Deactivate a two-factor authentication method.
 
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
     """
-    deactivated_method = TwoFactorAuthenticationMethod.query.filter_by(id=id).first()
-    if deactivated_method is None:
-        raise errors.TwoFactorAuthenticationMethodDoesNotExistError()
-    deactivated_method.active = False
-    db.session.add(deactivated_method)
-    db.session.commit()
+    _set_two_factor_authentication_method_active(id, active=False)
 
 
 def delete_two_factor_authentication_method(
         id: int
 ) -> None:
     """
-    Delete a two factor authentication method.
+    Delete a two-factor authentication method.
 
     :param id: the ID of the method
     :raise errors.TwoFactorAuthenticationMethodDoesNotExistError: if no such method exists
@@ -551,19 +642,61 @@ def delete_two_factor_authentication_method(
 
 def create_totp_two_factor_authentication_method(
         user_id: int,
-        secret: str
+        secret: str,
+        description: str = ''
 ) -> TwoFactorAuthenticationMethod:
     """
-    Create a new TOTP-based two factor authentication method.
+    Create a new TOTP-based two-factor authentication method.
 
     :param user_id: the ID of an existing user
     :param secret: the TOTP secret
+    :param description: a description
     :return: the newly created method
     """
     return _create_two_factor_authentication_method(
         user_id=user_id,
         data={
             'type': 'totp',
-            'secret': secret
+            'secret': secret,
+            'description': description.strip()
+        }
+    )
+
+
+def get_all_two_factor_fido2_passkey_credentials_for_user(
+        user_id: int
+) -> typing.Sequence[AttestedCredentialData]:
+    """
+    Get all FIDO2 passkey credentials for two-factor authentication methods for a given user.
+
+    :param user_id: the ID of an existing user
+    :return: a list of credentials
+    """
+    return [
+        AttestedCredentialData(base64.b64decode(authentication_method.data['credential_data'].encode('utf-8')))  # type: ignore[no-untyped-call]
+        for authentication_method in get_two_factor_authentication_methods(user_id)
+        if authentication_method.data.get('type') == 'fido2_passkey'
+    ]
+
+
+def create_fido2_passkey_two_factor_authentication_method(
+        user_id: int,
+        credential_data: AttestedCredentialData,
+        description: str = ''
+) -> TwoFactorAuthenticationMethod:
+    """
+    Create a new FIDO2 Passkey two-factor authentication method.
+
+    :param user_id: the ID of an existing user
+    :param credential_data: the credential data
+    :param description: a description
+    :return: the newly created method
+    """
+    return _create_two_factor_authentication_method(
+        user_id=user_id,
+        data={
+            'type': 'fido2_passkey',
+            'credential_data': base64.b64encode(credential_data).decode('utf-8'),
+            'description': description.strip()
         }
     )

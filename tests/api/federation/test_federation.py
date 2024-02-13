@@ -213,7 +213,7 @@ def test_file_resource_database(flask_server, simple_object, user, component_tok
 
 def test_file_resource_local(flask_server, simple_object, user, component_token):
     component, token = component_token
-    local_file = files.create_local_file(simple_object.object_id, user.id, 'testfile.txt', lambda stream: stream.write(b'testcontent'))
+    local_file = files.create_database_file(simple_object.object_id, user.id, 'testfile.txt', lambda stream: stream.write(b'testcontent'))
     shares.add_object_share(local_file.object_id, component.id, {'access': {'files': True}})
 
     headers = {'Authorization': 'Bearer  {}'.format(token)}

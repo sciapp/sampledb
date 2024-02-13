@@ -1125,6 +1125,27 @@ def test_search_objects(flask_server, auth, user, other_user, action):
         'message': 'Error: Unfinished text'
     }
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'example'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'example', 'use_advanced_search': 'False'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
         'q': '"test.txt" in files'
     })
     assert r.status_code == 200

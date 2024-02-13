@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Use FIDO2 Passkey') }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+  <h1>{{ _('Use FIDO2 Passkey') }}</h1>
+  <div class="alert alert-danger" role="alert" id="alert-fido2-not-supported" style="display: none">
+    <strong>{{ _('Error:') }}</strong> {{ _('Your browser does not support WebAuthn, which is required for using FIDO2 Passkeys in %(service_name)s.', service_name=service_name) }}
+  </div>
+  <form action="{{ url_for('frontend.confirm_fido2_passkey_two_factor_authentication', method_id=method_id) }}" method="post" id="fido2-authenticate-form">
+    {{ confirm_form.hidden_tag() }}
+    <p class="text-muted">
+      {% if reason == 'login' %}
+        {{ _('Please click "Sign In" and then use your FIDO2 passkey to complete the sign in process.') }}
+      {% elif reason == 'activate_two_factor_authentication_method' %}
+        {{ _('Please click "Confirm" and then use your FIDO2 passkey to activate this two-factor authentication method.') }}
+      {% elif reason == 'deactivate_two_factor_authentication_method' %}
+        {% if method_to_deactivate.data.get('description') %}
+          {% set method_description = method_to_deactivate.data['description'] %}
+        {% elif method_to_deactivate.data.get('type') == 'totp' %}
+          {% set method_description = _('TOTP-based Two-Factor Authentication') %}
+        {% else %}
+          {% set method_description = _('Unknown Two-Factor Authentication Method') %}
+        {% endif %}
+        {{ _('Please click "Confirm" and then use your FIDO2 passkey to confirm that you want to deactivate <em>%(method_description)s</em>.', method_description=method_description) }}
+      {% endif %}
+    </p>
+    {% if description %}
+      <p>
+        <em>&quot;{{ description }}&quot;</em>
+      </p>
+    {% endif %}
+    <div class="help-block"></div>
+    <div>
+      <input type="submit" value="{% if reason == 'login' %}{{ _('Sign In') }}{% else %}{{ _('Confirm') }}{% endif %}" class="btn btn-primary" style="width:100px;" />
+      <a href="{{ url_for('.index') }}" class="btn btn-default" style="width:100px;">{{ _('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("fido2_options", dict(options)) %}
+  {% do set_template_value("translations.passkey_failed", _('The passkey failed to authenticate with the following error: ')) %}
+
+  {{ super() }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('sampledb/js/page/confirm_fido2_passkey.js') }}" type="module"></script>
+{% endblock %}

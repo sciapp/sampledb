@@ -37,7 +37,8 @@ def test_user_preferences(flask_server):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -45,7 +46,8 @@ def test_user_preferences(flask_server):
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': 'shared_device',
         'csrf_token': csrf_token
     })
 
@@ -53,8 +55,10 @@ def test_user_preferences(flask_server):
 
     r = session.get(flask_server.base_url + 'users/me/preferences')
     assert r.status_code == 200
-    assert document.find('input', {'name': 'name', 'type': 'text'}) is None
-    assert document.find('input', {'name': 'email', 'type': 'text'}) is None
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert document.find('input', {'name': 'name', 'type': 'text'}) is not None
+    assert document.find('input', {'name': 'email', 'type': 'text'}) is not None
+    assert document.find('span', {'id': 'session-timeout-marker'}) is not None
 
 
 def test_user_preferences_userid_wrong(flask_server, user):
@@ -322,7 +326,8 @@ def test_user_add_general_authentication_method(flask_server):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -330,7 +335,8 @@ def test_user_add_general_authentication_method(flask_server):
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     })
     assert r.status_code == 200
@@ -503,7 +509,8 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -511,7 +518,8 @@ def test_user_add_email_authentication_method_already_exists(flask_server, user)
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     })
 
@@ -553,7 +561,8 @@ def test_user_remove_authentication_method(flask_server):
     document = BeautifulSoup(r.content, 'html.parser')
     assert document.find('input', {'name': 'username', 'type': 'text'}) is not None
     assert document.find('input', {'name': 'password', 'type': 'password'}) is not None
-    assert document.find('input', {'name': 'remember_me', 'type': 'checkbox'}) is not None
+    assert document.find('input', {'name': 'remember_me', 'type': 'hidden'}) is not None
+    assert document.find('input', {'name': 'shared_device', 'type': 'hidden'}) is not None
     # it also contains a hidden CSRF token
     assert document.find('input', {'name': 'csrf_token', 'type': 'hidden'}) is not None
     csrf_token = document.find('input', {'name': 'csrf_token'})['value']
@@ -561,7 +570,8 @@ def test_user_remove_authentication_method(flask_server):
     r = session.post(flask_server.base_url + 'users/me/sign_in', {
         'username': flask_server.app.config['TESTING_LDAP_LOGIN'],
         'password': flask_server.app.config['TESTING_LDAP_PW'],
-        'remember_me': False,
+        'remember_me': '',
+        'shared_device': '',
         'csrf_token': csrf_token
     })
     assert r.status_code == 200

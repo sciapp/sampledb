@@ -2,11 +2,11 @@
 """
 
 """
-
 import copy
 import dataclasses
 import datetime
 import typing
+from hashlib import sha256
 
 import flask
 import flask_login
@@ -16,7 +16,8 @@ from .components import get_component, get_components, Component, check_componen
 from .. import db, logic
 from . import errors, settings
 from .utils import cache
-from .. models import users, UserType
+from .notifications import create_notification_for_being_automatically_linked
+from .. models import users, UserType, FederatedIdentity, Authentication, AuthenticationType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -131,23 +132,32 @@ class User:
             return NotImplemented
         return not equal
 
-    def get_name(self, include_ref: bool = False, include_id: bool = True) -> str:
+    def get_name(self, include_ref: bool = False, include_id: bool = True, use_local_identity: bool = False) -> str:
         if include_ref and self.component_id is not None:
             db_ref = f', #{self.fed_id} @ {typing.cast(Component, self.component).get_name()}'
         elif include_ref and self.eln_import_id is not None and self.eln_object_id is not None:
             db_ref = f', {self.eln_object_id} @ {gettext("ELN Import")} #{self.eln_import_id}'
         else:
             db_ref = ''
+        if use_local_identity:
+            local_user = get_user_by_federated_user(federated_user_id=self.id)
+        else:
+            local_user = None
         if not include_id:
             if db_ref:
                 db_ref = " (" + db_ref[2:] + ")"
-            if self.name is None:
-                return gettext('Imported User') + db_ref
+            if local_user is None or local_user.name is None:
+                if self.name is None:
+                    return gettext('Imported User') + db_ref
+                else:
+                    return self.name + db_ref
             else:
-                return self.name + db_ref
-        if self.name is None:
+                return local_user.name + db_ref
+        if self.name is None and self.component_id and local_user is None:
             return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
         else:
+            if local_user:
+                return f'{local_user.name} (#{local_user.id}{db_ref})'
             return f'{self.name} (#{self.id}{db_ref})'
 
     @property
@@ -898,3 +908,305 @@ def delete_user_alias(user_id: int, component_id: int) -> None:
         raise errors.UserAliasDoesNotExistError()
     db.session.delete(alias)
     db.session.commit()
+
+
+def create_eln_federated_identity(user_id: int, eln_user_id: int) -> typing.Optional[FederatedIdentity]:
+    """
+    Create a new federated identity between a user and an eln imported user.
+
+    :param user_id: id of local user
+    :param eln_user_id: user id of eln imported user
+    :return: not none if federated identity was successfully created
+    """
+    eln_user = users.User.query.filter_by(id=eln_user_id).first()
+    if eln_user is None:
+        raise errors.UserDoesNotExistError()
+    return _create_federated_identity(
+        user_id=user_id,
+        eln_or_fed_user=User.from_database(eln_user),
+        update_if_inactive=False
+    )
+
+
+def create_sampledb_federated_identity(user_id: int, component: Component, fed_id: int, update_if_inactive: bool = False) -> typing.Optional[FederatedIdentity]:
+    """
+    Create a new federated identity between a user and a federated user.
+
+    :param user_id: id of local user
+    :param component: component of the federation
+    :param fed_id: federated id of the external user
+    :param update_if_inactive: if true, inactive federated identity will be set to active
+    :return: not none if federated identity was successfully created
+    """
+    db_fed_user = users.User.query.filter_by(type=UserType.FEDERATION_USER, component_id=component.id, fed_id=fed_id).first()
+
+    if db_fed_user is None:
+        fed_user = create_user(name=None, email=None, type=UserType.FEDERATION_USER, fed_id=fed_id, component_id=component.id)
+        set_user_hidden(fed_user.id, hidden=True)
+    else:
+        fed_user = User.from_database(db_fed_user)
+
+    return _create_federated_identity(
+        user_id=user_id,
+        eln_or_fed_user=fed_user,
+        update_if_inactive=update_if_inactive
+    )
+
+
+def _create_federated_identity(user_id: int, eln_or_fed_user: User, update_if_inactive: bool = False) -> typing.Optional[FederatedIdentity]:
+    """
+    Create a new federated user link between a local and federated or eln imported user.
+
+    :param user_id: id of the local user
+    :param eln_or_fed_user: external user (federated or eln imported)
+    :param update_if_inactive: if true, inactive federated identity will be set to active
+    :raises errors.FederatedUserInFederatedIdentity: if the federated user is already in a federated identity
+    :raises errors.ELNUserInFederatedIdentity: if the eln user is already in a federated identity
+    :return: not none if federated identity was successfully created
+    """
+    if eln_or_fed_user.type == UserType.FEDERATION_USER:
+        identity_query = FederatedIdentity.query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(
+            users.User.type == UserType.FEDERATION_USER,
+            FederatedIdentity.local_fed_id == eln_or_fed_user.id,
+        )
+
+        result = identity_query.filter(FederatedIdentity.active.is_(True)).first()
+
+        if result is not None:
+            if result.user_id != user_id:
+                raise errors.FederatedUserInFederatedIdentityError()
+            else:
+                return result
+    elif eln_or_fed_user.type == UserType.ELN_IMPORT_USER:
+        identity_query = FederatedIdentity.query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(
+            users.User.type == UserType.ELN_IMPORT_USER,
+            FederatedIdentity.user_id == user_id,
+            FederatedIdentity.local_fed_id == eln_or_fed_user.id
+        )
+        result = identity_query.filter(FederatedIdentity.active.is_(True)).first()
+
+        if result is not None:
+            raise errors.ELNUserInFederatedIdentityError()
+
+    inactive_identities = identity_query.filter(FederatedIdentity.active.is_(False)).all()
+    if inactive_identities:
+        for identity in inactive_identities:
+            if identity.user_id == user_id and identity.local_fed_id == eln_or_fed_user.id and not identity.active:
+                if not update_if_inactive:
+                    return None
+                identity.active = True
+                db.session.add(identity)
+                db.session.commit()
+                return identity
+
+    fed_identity = FederatedIdentity(user_id=user_id, local_fed_id=eln_or_fed_user.id)
+    db.session.add(fed_identity)
+    db.session.commit()
+    return fed_identity
+
+
+def get_user_by_federated_user(federated_user_id: int) -> typing.Optional[User]:
+    """
+    Get the local user of a federated identity by a federated user if exists.
+
+    :param federated_user_id: local id of the federated user
+    :return: local user or none
+    """
+    federated_identity = FederatedIdentity.query.filter_by(local_fed_id=federated_user_id, active=True).first()
+    return get_user(federated_identity.user_id) if federated_identity is not None else None
+
+
+def get_federated_identity_by_eln_user(federated_user_id: int) -> typing.Optional[FederatedIdentity]:
+    """
+    Get the local user of a federated identity by a federated user if exists.
+
+    :param federated_user_id: local id of the federated user
+    :return: local user or none
+    """
+    return FederatedIdentity.query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(FederatedIdentity.local_fed_id == federated_user_id, users.User.type == UserType.ELN_IMPORT_USER).first()
+
+
+def get_federated_identities(user_id: int, component: typing.Optional[Component] = None, eln_import_id: typing.Optional[int] = None, active_status: bool = True) -> list[FederatedIdentity]:
+    """
+    Get the federated identity of a user within a component or an eln import as a list of user links.
+
+    :param user_id: id of the user
+    :param component: add filter for a component if not none
+    :param eln_import_id: add filter for an eln import id if not none
+    :param active_status: active state of the federated identity which should be set
+    :return: list of filtered federated identities of the specified user
+    """
+    query = FederatedIdentity.query.filter(FederatedIdentity.user_id == user_id, FederatedIdentity.active.is_(active_status))
+    if component is not None:
+        query = query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(users.User.component_id == component.id)
+    elif eln_import_id is not None:
+        query = query.join(users.User, users.User.id == FederatedIdentity.local_fed_id).filter(users.User.eln_import_id == eln_import_id)
+    return [row for row in query.all()]
+
+
+def get_federated_identity(user_id: int, eln_or_fed_user_id: int) -> FederatedIdentity:
+    """
+    Get the federated identity specified by user_id and the local user id of the federated user.
+
+    :param user_id: id of the user
+    :param eln_or_fed_user_id: local id of the federated user
+    """
+    identity = FederatedIdentity.query.filter_by(user_id=user_id, local_fed_id=eln_or_fed_user_id).first()
+    if not identity:
+        raise errors.FederatedIdentityNotFoundError()
+    return identity
+
+
+def get_federated_user_links_by_component_id(component_id: int, only_active: bool = True) -> list[FederatedIdentity]:
+    """
+    Get all federated user links of a federation component.
+
+    :param component_id: id of the component
+    :param only_active: if true, only active federated identities will be returned
+    :return: list of federated identities in the component
+    """
+    query = FederatedIdentity.query.join(users.User, FederatedIdentity.local_fed_id == users.User.id).filter(users.User.component_id == component_id, users.User.type == UserType.FEDERATION_USER)
+    if only_active:
+        query = query.filter(FederatedIdentity.active.is_(True))
+    return [row for row in query.all()]
+
+
+def get_user_email_hashes(user: User) -> list[str]:
+    """
+    Get a list of hashed email addresses from the user. Only confirmed email addresses are used.
+
+    :param user: user whose verified email addresses should be used
+    :return: all hashed email addresses for the specified user
+    """
+    confirmed_emails = {user.email}
+    authentication_logins = Authentication.query.filter_by(user_id=user.id, type=AuthenticationType.EMAIL, confirmed=True).with_entities(Authentication.login).all()
+    confirmed_emails.update({login[0]['login'] for login in authentication_logins})
+    return [_hash_credential(str(mail)) for mail in confirmed_emails]
+
+
+def get_email_hashes_for_federation_candidates(component_id: int) -> dict[str, int]:
+    """
+    Get a list of candidates within a federation. Each candidate is specified by an email address (hashed) and the
+    id of the corresponding user.
+    Candidates are users which do not have a federated identity with a user from the specified federation component.
+
+    :param component_id: component in which candidates should be searched
+    :return: mapping of hashed email address to corresponding user id
+    """
+    users = get_users(exclude_fed=True, exclude_eln_import=True)
+    federated_user_ids = {federated_user.user_id for federated_user in get_federated_user_links_by_component_id(component_id, only_active=False)}
+
+    result = {_hash_credential(str(user.email)): user.id for user in users if user.id not in federated_user_ids and user.type == UserType.PERSON}
+    result.update({
+        _hash_credential(auth.login['login']): auth.user_id
+        for auth in Authentication.query.filter(Authentication.user_id.not_in(federated_user_ids), Authentication.type == AuthenticationType.EMAIL, Authentication.confirmed.is_(True)).all()
+    })
+
+    return result
+
+
+def link_users_by_email_hashes(component_id: int, user_informations: list[dict[str, typing.Any]]) -> None:
+    """
+    Compare the hashed email addresses from the `user_informations` with the candidates from `get_email_hashes_for_federation_candidates`.
+    If two hashes match, a federated identity will be created.
+
+    :param component_id: id of the component
+    :param user_informations: list of dictionaries containing keys: "user_id", "email_hashes", "component_uuid" for each entry
+    """
+    component = get_component(component_id)
+
+    user_id_by_credential_hashes = get_email_hashes_for_federation_candidates(component_id=component_id)
+
+    component_fed_ids = {user.fed_id for user in users.User.query.join(FederatedIdentity, users.User.id == FederatedIdentity.local_fed_id).filter(users.User.component_id == component_id).all()}
+
+    for user_data in user_informations:
+        for email_hash in user_data['email_hashes']:
+            user_id = user_id_by_credential_hashes.get(email_hash, None)
+            fed_id = user_data['user_id']
+            if user_id is not None and fed_id not in component_fed_ids:
+                create_sampledb_federated_identity(user_id, component, fed_id)
+                create_notification_for_being_automatically_linked(
+                    user_id=user_data['user_id'],
+                    component_id=component_id
+                )
+                break
+
+
+def delete_user_link(user_id: int, local_fed_user_id: int) -> None:
+    """
+    Delete the federated identity of a user by the user id and the local id of a federated/imported user.
+
+    :param user_id: id of the local user
+    :param local_fed_user_id: local id of the federated user
+    """
+    identity = FederatedIdentity.query.filter_by(user_id=user_id, local_fed_id=local_fed_user_id).first()
+    if identity:
+        db.session.delete(identity)
+        db.session.commit()
+
+
+def delete_user_links_by_fed_ids(user_id: int, component: Component, fed_ids: typing.Sequence[int]) -> None:
+    """
+    Delete the user links of a user within a federation component by the federated ids.
+
+    :param user_id: id of the local user
+    :param component: federation component
+    :param fed_ids: federation ids of user within the component
+    """
+    rows = FederatedIdentity.query.join(users.User, FederatedIdentity.local_fed_id == users.User.id).filter(FederatedIdentity.user_id == user_id, users.User.component_id == component.id, users.User.fed_id.in_(fed_ids)).all()
+    for row in rows:
+        db.session.delete(row)
+    db.session.commit()
+
+
+def revoke_user_link(user_id: int, eln_or_fed_user_id: int) -> None:
+    """
+    Revoke a federated identity by the user id and the local id of the federated/imported user
+
+    :param user_id: id of the local user
+    :param eln_or_fed_user_id: local id of the federated user
+    """
+    identity = FederatedIdentity.query.filter_by(user_id=user_id, local_fed_id=eln_or_fed_user_id, active=True).first()
+    if identity:
+        identity.active = False
+        db.session.add(identity)
+        db.session.commit()
+
+
+def revoke_user_links_by_fed_ids(user_id: int, component_id: int, fed_ids: typing.Sequence[int]) -> None:
+    """
+    Revoke the user links of a user within a federation component by the federated ids.
+
+    :user_id: local user which has the federated identity
+    :component_id: federation component
+    :fed_ids: federated ids of the external users
+    """
+    rows = FederatedIdentity.query.join(users.User, FederatedIdentity.local_fed_id == users.User.id).filter(FederatedIdentity.user_id == user_id, users.User.component_id == component_id, users.User.fed_id.in_(fed_ids)).all()
+    for row in rows:
+        row.active = False
+        db.session.add(row)
+    db.session.commit()
+
+
+def enable_user_link(user_id: int, eln_or_fed_user_id: int) -> None:
+    """
+    Enable a federated identity by the user id and the local id of the federated/imported user
+
+    :param user_id: id of the local user
+    :param eln_or_fed_user_id: local id of the federated user
+    """
+    fed_identity = FederatedIdentity.query.filter_by(user_id=user_id, local_fed_id=eln_or_fed_user_id, active=False).first()
+    if fed_identity:
+        fed_identity.active = True
+        db.session.add(fed_identity)
+        db.session.commit()
+
+
+def _hash_credential(credential: str) -> str:
+    """
+    Hash a credential with sha256-algorithm.
+
+    :param credential: credential that should be hashed, e.g. email address
+    :return: hash value of the credential
+    """
+    return sha256(credential.encode()).hexdigest()

@@ -36,11 +36,11 @@ def test_get_two_factor_authentication_methods(user_id):
 
 
 def test_get_active_two_factor_authentication_method(user_id):
-    assert authentication.get_active_two_factor_authentication_method(user_id) is None
+    assert not authentication.get_active_two_factor_authentication_methods(user_id)
     method = authentication._create_two_factor_authentication_method(user_id, {'type': 'test'})
-    assert authentication.get_active_two_factor_authentication_method(user_id) is None
+    assert not authentication.get_active_two_factor_authentication_methods(user_id)
     authentication.activate_two_factor_authentication_method(method.id)
-    assert authentication.get_active_two_factor_authentication_method(user_id).id == method.id
+    assert authentication.get_active_two_factor_authentication_methods(user_id)[0].id == method.id
 
 
 def test_activate_two_factor_authentication_method(user_id):
@@ -56,7 +56,7 @@ def test_activate_two_factor_authentication_method(user_id):
     other_method = authentication._create_two_factor_authentication_method(user_id, {'type': 'test'})
     authentication.activate_two_factor_authentication_method(other_method.id)
     methods = authentication.get_two_factor_authentication_methods(user_id)
-    assert [m.id for m in methods if m.active] == [other_method.id]
+    assert [m.id for m in methods if m.active] == [method.id, other_method.id]
 
 
 def test_deactivate_two_factor_authentication_method(user_id):

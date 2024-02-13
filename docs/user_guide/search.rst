@@ -8,6 +8,8 @@ Users can find objects using the |service_name| search. There are two modes for 
 - A *simple* text-based search, and
 - an *advanced* search using property comparisons
 
+.. _simple_search:
+
 Simple Search
 -------------
 

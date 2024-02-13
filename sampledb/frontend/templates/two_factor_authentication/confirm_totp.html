@@ -5,17 +5,29 @@
 {% block content %}
 <div class="text-center">
   <h1>{{ _('Enter TOTP Verification Code') }}</h1>
-  <form action="{{ url_for('frontend.confirm_totp_two_factor_authentication') }}" method="post">
+  <form action="{{ url_for('frontend.confirm_totp_two_factor_authentication', method_id=method_id) }}" method="post">
     {{ confirm_form.hidden_tag() }}
     <p class="text-muted">
       {% if reason == 'login' %}
         {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to complete the sign in process.') }}
       {% elif reason == 'activate_two_factor_authentication_method' %}
-        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to activate this two factor authentication method.') }}
+        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to activate this two-factor authentication method.') }}
       {% elif reason == 'deactivate_two_factor_authentication_method' %}
-        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to deactivate this two factor authentication method.') }}
+        {% if method_to_deactivate.data.get('description') %}
+          {% set method_description = method_to_deactivate.data['description'] %}
+        {% elif method_to_deactivate.data.get('type') == 'totp' %}
+          {% set method_description = _('TOTP-based Two-Factor Authentication') %}
+        {% else %}
+          {% set method_description = _('Unknown Two-Factor Authentication Method') %}
+        {% endif %}
+        {{ _('Please enter the TOTP verification code generated using an app such as Google Authenticator to confirm that you want to deactivate <em>%(method_description)s</em>.', method_description=method_description) }}
       {% endif %}
     </p>
+    {% if description %}
+      <p>
+        <em>{{ description }}</em>
+      </p>
+    {% endif %}
     <div class="form-group {% if confirm_form.is_submitted() %}has-error{% endif %}">
       <input type="text" autocomplete="off" placeholder="{{ _('Verification Code') }}" name="{{ confirm_form.code.name }}" class="form-control" style="width: 204px; display:inline-block;"/>
     </div>

@@ -4,9 +4,11 @@ import hashlib
 import io
 import json
 import os.path
+import string
 import typing
 import zipfile
 
+import flask
 from flask_babel import gettext
 
 from .. import db
@@ -207,14 +209,14 @@ def _create_eln_import_action(
 def import_eln_file(
         eln_import_id: int,
         action_type_ids: typing.Optional[typing.List[typing.Optional[int]]] = None
-) -> typing.Tuple[typing.List[int], typing.List[str]]:
+) -> typing.Tuple[typing.List[int], typing.Dict[typing.Optional[str], User], typing.List[str]]:
     errors = []
 
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
     if eln_import is None:
-        return [], ['Unknown ELN import']
+        return [], {}, ['Unknown ELN import']
     if eln_import.import_utc_datetime is not None:
-        return [], ['This ELN file has already been imported']
+        return [], {}, ['This ELN file has already been imported']
     user_id = eln_import.user_id
 
     parsed_data = parse_eln_file(eln_import_id=eln_import_id)
@@ -223,7 +225,7 @@ def import_eln_file(
         for object_info in parsed_data.objects:
             action_type_ids.append(object_info.type_id)
     elif len(action_type_ids) != len(parsed_data.objects):
-        return [], ['Invalid Action Type ID information for this ELN file']
+        return [], {}, ['Invalid Action Type ID information for this ELN file']
 
     eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
     db.session.add(eln_import)
@@ -259,7 +261,6 @@ def import_eln_file(
             eln_object_id=''
         )
         set_user_hidden(user.id, True)
-        users_by_id[None] = user
 
     action_ids_by_action_type_id: typing.Dict[typing.Optional[int], typing.Optional[int]] = {
         None: None
@@ -357,7 +358,7 @@ def import_eln_file(
                 utc_datetime=comment_info.date_created,
                 create_log_entry=False
             )
-    return imported_object_ids, errors
+    return imported_object_ids, users_by_id, errors
 
 
 def _eln_assert(assertion: bool, message: str = 'Invalid .eln file') -> None:
@@ -616,6 +617,45 @@ def parse_eln_file(
                     'required': ['name'],
                     'propertyOrder': ['name', 'description', 'import_note']
                 }
+                if 'keywords' in object_node:
+                    typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])['tags'] = {
+                        'type': 'tags',
+                        'title': {
+                            'en': 'Tags',
+                            'de': 'Tags'
+                        }
+                    }
+                    typing.cast(typing.List[str], fallback_schema['propertyOrder']).append('tags')
+                    if isinstance(object_node['keywords'], list):
+                        keywords = [
+                            keyword
+                            for keyword in object_node['keywords']
+                            if isinstance(keyword, str)
+                        ]
+                    elif isinstance(object_node['keywords'], str):
+                        keywords = [
+                            keyword
+                            for keyword in object_node['keywords'].split(',')
+                        ]
+                    else:
+                        keywords = []
+                    tags = []
+                    for keyword in keywords:
+                        keyword = keyword.strip().lower()
+                        # skip duplicate tags
+                        if keyword in tags:
+                            continue
+                        # skip tags with invalid characters
+                        if any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789_-äöüß' for c in keyword):
+                            continue
+                        # skip numeric tags unless enabled
+                        if all(c in string.digits for c in keyword) and not flask.current_app.config['ENABLE_NUMERIC_TAGS']:
+                            continue
+                        tags.append(keyword)
+                    fallback_data['tags'] = {
+                        '_type': 'tags',
+                        'tags': tags
+                    }
 
                 _eln_assert(isinstance(object_node.get('hasPart', []), list), "Invalid parts list for Dataset")
                 for object_part_ref in object_node.get('hasPart', []):

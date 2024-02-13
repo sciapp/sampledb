@@ -75,7 +75,7 @@ def set_up_state(user: User):
     data = {'name': {'_type': 'text', 'text': 'Object'}}
     object = objects.create_object(user_id=user.id, action_id=action.id, data=data)
     def save_content(file): file.write("This is a test file.".encode('utf-8'))
-    files.create_local_file(object.id, user.id, "test.txt", save_content)
+    files.create_database_file(object.id, user.id, "test.txt", save_content)
     files.create_url_file(object.id, user.id, "https://example.com")
 
     instrument = sampledb.logic.instruments.create_instrument(
@@ -244,9 +244,7 @@ def validate_data(data):
     assert data == expected_data
 
 
-def test_zip_export(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def test_zip_export(user, app):
     set_up_state(user)
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
@@ -278,9 +276,7 @@ def test_zip_export(user, app, tmpdir):
             assert text_file.read() == b'Example Content'
 
 
-def test_tar_gz_export(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def test_tar_gz_export(user, app):
     set_up_state(user)
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
@@ -311,9 +307,7 @@ def test_tar_gz_export(user, app, tmpdir):
             assert text_file.read() == b'Example Content'
 
 
-def test_eln_export(user, app, tmpdir):
-    files.FILE_STORAGE_PATH = tmpdir
-
+def test_eln_export(user, app):
     set_up_state(user)
     object_id = sampledb.logic.objects.get_objects()[0].id
     instrument_id = sampledb.logic.instruments.get_instruments()[0].id
@@ -329,3 +323,104 @@ def test_eln_export(user, app, tmpdir):
         assert zip_file.testzip() is None
         with zip_file.open('sampledb_export/ro-crate-metadata.json') as data_file:
             json.load(data_file)
+
+
+def test_export_template_schema(user, app):
+    template_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,
+        schema={
+            "type": "object",
+            "title": "Template Action",
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": "Name"
+                },
+                "other": {
+                    "type": "text",
+                    "title": "Other"
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=template_action.id,
+        permissions=sampledb.models.Permissions.READ
+    )
+
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.action_types.ActionType.SAMPLE_CREATION,
+        schema={
+            "type": "object",
+            "title": "Action",
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": "Name"
+                },
+                "template": {
+                    "type": "object",
+                    "title": "Template",
+                    "template": template_action.id
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(
+        action_id=action.id,
+        permissions=sampledb.models.Permissions.READ
+    )
+    sampledb.logic.objects.create_object(
+        action_id=action.id,
+        data={
+            "name": {
+                "_type": "text",
+                "text": "Object"
+            },
+            "template": {
+                "other": {
+                    "_type": "text",
+                    "text": "Other"
+                }
+            }
+        },
+        user_id=user.id
+    )
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        export_archive_files, export_infos = export.get_export_infos(user.id)
+    app.config['SERVER_NAME'] = server_name
+
+    assert export_infos['objects'][0]['versions'][0]['schema'] == {
+        "type": "object",
+        "title": "Action",
+        "properties": {
+            "name": {
+                "type": "text",
+                "title": "Name"
+            },
+            "template": {
+                "type": "object",
+                "title": "Template",
+                "template": template_action.id,
+                "properties": {
+                    "other": {
+                        "type": "text",
+                        "title": "Other"
+                    }
+                },
+                "required": []
+            }
+        },
+        "required": ["name"]
+    }
+
+    action_infos_by_id = {
+        action_info['id']: action_info
+        for action_info in export_infos['actions']
+    }
+    assert set(action_infos_by_id.keys()) == {action.id, template_action.id}

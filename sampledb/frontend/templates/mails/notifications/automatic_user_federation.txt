@@ -1,0 +1,6 @@
+{% extends "mails/notifications/base.html" %}
+
+{% block message %}
+{% set component = get_component(data['component_id']) %}
+Your account has been automatically linked with the user #{{ data['user_id'] }} from {{ component.name }}.
+{% endblock %}

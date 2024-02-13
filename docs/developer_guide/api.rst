@@ -10,7 +10,7 @@ There are libraries for sending HTTP requests for most programming languages, an
 Authentication
 --------------
 
-The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`. If you have a two factor authentication method enabled, you cannot use your user credentials to use the API and will have to use an API token instead.
+The |service_name| HTTP API either uses `Basic Authentication <https://tools.ietf.org/html/rfc7617>`_ using normal user credentials (e.g. using the header :code:`Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=`) or `Bearer Authentication <https://tools.ietf.org/html/rfc6750>`_ using the API token (e.g. using the header :code:`Authorization: Bearer bf4e16afa966f19b92f5e63062bd599e5f931faeeb604bdc3e6189539258b155`). API tokens are meant as an alternative method for authentication for individual scripts and allow you to monitor the requests made with the token. You can create an API token when editing your :ref:`preferences`. If you have a two-factor authentication method enabled, you cannot use your user credentials to use the API and will have to use an API token instead.
 
 You can use these authentication methods to create a short-lived :ref:`access token <access_tokens>`, along with a refresh token to generate new access tokens.
 
@@ -26,7 +26,7 @@ Reading a list of all objects
 
     Get a list of all objects visible to the current user.
 
-    The list only contains the current version of each object. By passing the parameter :code:`q` to the query, the :ref:`advanced_search` can be used. By passing the parameters :code:`action_id` or :code:`action_type` objects can be filtered by the action they were created with or by their type (e.g. :code:`sample` or :code:`measurement`).
+    The list only contains the current version of each object. By passing the parameter :code:`q` to the query, the :ref:`advanced_search` can be used. By passing the value :code:`false` to the parameter :code:`use_advanced_search`, the :ref:`simple_search` can be used instead. By passing the parameters :code:`action_id` or :code:`action_type` objects can be filtered by the action they were created with or by their type (e.g. :code:`sample` or :code:`measurement`).
 
     Instead of returning all objects, the parameters :code:`limit` and :code:`offset` can be used to reduce to maximum number of objects returned and to provide an offset in the returned set, so allow simple pagination.
 
@@ -941,24 +941,40 @@ Reading a list of all log entries for an instrument
         [
             {
                 "log_entry_id": 1,
-                "utc_datetime": "2020-08-19T12:13:14.123456",
                 "author": 1,
-                "content": "Example Log Entry 1",
-                "categories": []
+                "versions": [
+                    {
+                        "log_entry_id": 1,
+                        "version_id": 1,
+                        "utc_datetime": "2020-08-19T12:13:14.123456",
+                        "content": "Example Log Entry 1",
+                        "categories": [],
+                        "event_utc_datetime": "2020-08-03T12:13:14.000000",
+                        "content_is_markdown": false
+                    }
+                ]
             },
             {
                 "log_entry_id": 2,
-                "utc_datetime": "2020-08-19T13:14:15.123456",
                 "author": 1,
-                "content": "Example Log Entry 2",
-                "categories": [
+                "versions": [
                     {
-                        "category_id": 1
-                        "title": "Error Report"
-                    },
-                    {
-                        "category_id": 7
-                        "title": "Maintenance Log"
+                        "log_entry_id": 2,
+                        "version_id": 1,
+                        "utc_datetime": "2020-08-19T13:14:15.123456",
+                        "content": "Example Log Entry 2",
+                        "categories": [
+                            {
+                                "category_id": 1,
+                                "title": "Error Report"
+                            },
+                            {
+                                "category_id": 7,
+                                "title": "Maintenance Log"
+                            }
+                        ],
+                        "event_utc_datetime": null,
+                        "content_is_markdown": false
                     }
                 ]
             }
@@ -994,26 +1010,37 @@ Reading an instrument log entry
 
         {
             "log_entry_id": 2,
-            "utc_datetime": "2020-08-19T13:14:15.123456",
             "author": 1,
-            "content": "Example Log Entry 2",
-            "categories": [
-                {
-                    "category_id": 1
-                    "title": "Error Report"
-                },
-                {
-                    "category_id": 7
-                    "title": "Maintenance Log"
-                }
+            "versions": [
+                "log_entry_id": 2,
+                "version_id": 1,
+                "utc_datetime": "2020-08-19T13:14:15.123456",
+                "content": "Example Log Entry 2",
+                "categories": [
+                    {
+                        "category_id": 1,
+                        "title": "Error Report"
+                    },
+                    {
+                        "category_id": 7,
+                        "title": "Maintenance Log"
+                    }
+                ],
+                "event_utc_datetime": "2020-08-03T12:13:14.123456",
+                "content_is_markdown": false
             ]
         }
 
     :>json number log_entry_id: the log entry's ID
-    :>json string utc_datetime: the date and time of the log entry in UTC in ISO format
-    :>json string content: the log entry's content
     :>json number author: the user ID of the log entry's author
-    :>json list categories: the log entry's categories
+    :>json list versions: an array of versions of the log entry
+    :>json number versions[?].log_entry_id: the log entry's ID
+    :>json number versions[?].version_id: the log entry version's ID
+    :>json string versions[?].utc_datetime: the date and time of the log entry version in UTC in ISO format
+    :>json string versions[?].content: the log entry version's content
+    :>json list versions[?].categories: the log entry version's categories
+    :>json string versions[?].event_utc_datetime: the date and time of the event in UTC in ISO format if set, else ``null``
+    :>json string versions[?].content_is_markdown: whether the log entry version's content is markdown
     :statuscode 200: no error
     :statuscode 403: the instrument log can only be accessed by instrument scientists
     :statuscode 404: the instrument or the log entry do not exist
@@ -1044,11 +1071,11 @@ Reading a list of all log categories for an instrument
 
         [
             {
-                "category_id": 1
+                "category_id": 1,
                 "title": "Error Report"
             },
             {
-                "category_id": 7
+                "category_id": 7,
                 "title": "Maintenance Log"
             }
         ]
@@ -1082,7 +1109,7 @@ Reading an instrument log category
         Content-Type: application/json
 
         {
-            "category_id": 7
+            "category_id": 7,
             "title": "Maintenance Log"
         }
 

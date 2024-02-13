@@ -765,6 +765,7 @@ def test_edit_object_array_buttons(flask_server, driver, user):
 def test_edit_object_action_delete(flask_server, driver, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'ombe_measurement.sampledb.json'), encoding="utf-8"))
     object_data = json.load(open(os.path.join(OBJECTS_DIR, 'ombe-1.sampledb.json'), encoding="utf-8"))
+    schema['properties']['multilayer']['items']['properties']['films']['items']['required'] = ['elements']
     action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
         schema=schema

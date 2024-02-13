@@ -548,6 +548,8 @@ def parse_array_form_data(
             previous_item_data = previous_data[i] if isinstance(previous_data, list) and i < len(previous_data) else None
             items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id, previous_data=previous_item_data))
 
+    if not items and not required and schema.get('minItems', 0) > 0:
+        return None
     schemas.validate(items, schema, strict=True, file_names_by_id=file_names_by_id)
     return items
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2023-11-14 10:31+0100\n"
+"POT-Creation-Date: 2024-02-01 10:30+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.13.1\n"
+"Generated-By: Babel 2.14.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -119,6 +119,12 @@ msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieser "
 "Aktion zu bearbeiten."
 
+msgid "Please enter at least 1 character."
+msgstr "Bitte geben Sie mindestens 1 Zeichen ein."
+
+msgid "Please enter at least 3 characters."
+msgstr "Bitte geben Sie mindestens 3 Zeichen ein."
+
 msgid "The object is currently being exported."
 msgstr "Dieses Objekt wird gerade exportiert."
 
@@ -156,6 +162,11 @@ msgstr "Ein Objekt wurde erfolgreich importiert."
 #, python-format
 msgid "Successfully imported %(num_imported_objects)s objects."
 msgstr "%(num_imported_objects)s Objekte wurden erfolgreich importiert."
+
+msgid "An error occured: Failed to create federated identity."
+msgstr ""
+"Ein Fehler ist aufgetreten: Föderierte Identität konnte nicht erstellt "
+"werden."
 
 msgid "PDF file"
 msgstr "PDF-Dokument"
@@ -265,6 +276,54 @@ msgstr "Der Nutzeralias wurde erfolgreich aktualisiert."
 
 msgid "The alias for this database has already been deleted."
 msgstr "Der Nutzer-Alias für diese Datenbank wurde bereits gelöscht."
+
+msgid "An error occurred: Invalid database UUID."
+msgstr "Ein Fehler ist aufgetreten: Ungültige Datenbank UUID."
+
+#, python-format
+msgid "Unknown database (%(uuid)s)"
+msgstr "Unbekannte Datenbank (%(uuid)s)"
+
+msgid "An error occurred: Users could not be linked."
+msgstr "Ein Fehler ist aufgetreten: Nutzer konnten nicht verknüpft werden."
+
+msgid "The federated user already has a federated identity in this database."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität."
+
+#, python-format
+msgid ""
+"You were successfully linked with a federated user from "
+"%(component_name)s."
+msgstr ""
+"Sie wurden erfolgreich mit einem föderierten Nutzer von "
+"%(component_name)s verknüpft."
+
+msgid "Could not confirm identity: The databases are not in a federation."
+msgstr ""
+"Identität konnte nicht bestätigt werden: Die Datenbanken sind nicht in "
+"einer Föderation."
+
+msgid "Failed to remove user links."
+msgstr "Entfernen der Nutzerverknüpfungen fehlgeschlagen."
+
+msgid "Failed to revoke user links."
+msgstr "Widerrufen der Nutzerverknüpfungen fehlgeschlagen"
+
+msgid "An error occurred: Failed to edit federated identity."
+msgstr ""
+"Ein Fehler ist aufgetreten: Föderierte Identität konnte nicht bearbeitet "
+"werden."
+
+msgid "Successfully deleted user link."
+msgstr "Nutzerverknüpfungen erfolgreich entfernt."
+
+msgid "Successfully revoked user link."
+msgstr "Nutzerverknüpfungen erfolgreich widerrufen."
+
+msgid "Successfully enabled user link."
+msgstr "Nutzerverknüpfungen erfolgreich aktiviert."
 
 msgid "Please enter your name as: surname, given names."
 msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
@@ -922,10 +981,6 @@ msgstr "Ort"
 msgid "Unnamed Location"
 msgstr "Unbenannter Ort"
 
-#, python-format
-msgid "Unknown database (%(uuid)s)"
-msgstr "Unbekannte Datenbank (%(uuid)s)"
-
 msgid "Basic Group"
 msgstr "Einfache Gruppe"
 
@@ -1174,8 +1229,11 @@ msgstr "Aktionstyp-IDs konnten nicht geparst werden."
 msgid "Invalid action type ID."
 msgstr "Ungültige Aktionstyp-ID"
 
-msgid "Unable to parse related user ID."
-msgstr "Die ID des zugehörigen Nutzers konnte nicht geparst werden."
+msgid "Only one of related_user_ids and related_user may be set."
+msgstr "related_user_ids und related_user dürfen nicht beide gesetzt sein."
+
+msgid "Unable to parse related user IDs."
+msgstr "Die IDs zugehöriger Nutzer konnten nicht geparst werden."
 
 msgid "Invalid related user ID."
 msgstr "Ungültige Zugehöriger-Nutzer-ID."
@@ -1386,98 +1444,6 @@ msgstr "Endpunkt"
 msgid "This %(api_token_type)s has not been used so far."
 msgstr "Dieses %(api_token_type)s ist noch nicht benutzt worden."
 
-msgid "Expand All"
-msgstr "Alle ausklappen"
-
-msgid "Collapse All"
-msgstr "Alle einklappen"
-
-msgid "Bold"
-msgstr "Fettdruck"
-
-msgid "Italic"
-msgstr "Kursiv"
-
-msgid "Heading"
-msgstr "Überschrift"
-
-msgid "Code"
-msgstr "Code"
-
-msgid "Generic List"
-msgstr "Liste"
-
-msgid "Numbered List"
-msgstr "Nummerierte Liste"
-
-msgid "Create Link"
-msgstr "Link erstellen"
-
-msgid "Upload Image"
-msgstr "Bild hochladen"
-
-msgid "Insert Table"
-msgstr "Tabelle einfügen"
-
-msgid "Toggle Preview"
-msgstr "Vorschau ein-/ausschalten"
-
-msgid "Please select an object."
-msgstr "Bitte wählen Sie ein Objekt aus."
-
-msgid "Clear"
-msgstr "Leeren"
-
-msgid ""
-"No results for \"<span class=\"query-container\">QUERY</span>\" — <span "
-"class=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
-msgstr ""
-"Keine Ergebnisse für „<span class=\"query-container\">QUERY</span>“ — "
-"<span class=\"objectpicker-button objectpicker-button-"
-"clear\">Leeren</span>"
-
-msgid ""
-"PLACEHOLDER2 results for \"<span class=\"query-container\">QUERY</span>\""
-" — <span class=\"objectpicker-button objectpicker-button-"
-"clear\">Clear</span>"
-msgstr ""
-"PLACEHOLDER2 Ergebnisse für „<span class=\"query-"
-"container\">QUERY</span>“ — <span class=\"objectpicker-button "
-"objectpicker-button-clear\">Leeren</span>"
-
-msgid ""
-"PLACEHOLDER1 of PLACEHOLDER2 results for \"<span class=\"query-"
-"container\">QUERY</span>\" — <span class=\"objectpicker-button "
-"objectpicker-button-show-all\">Show all</span> — <span class"
-"=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
-msgstr ""
-"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen für „<span class=\"query-"
-"container\">QUERY</span>“ — <span class=\"objectpicker-button "
-"objectpicker-button-show-all\">Alle anzeigen</span> — <span class"
-"=\"objectpicker-button objectpicker-button-clear\">Leeren</span>"
-
-msgid "No results"
-msgstr "Keine Ergebnisse"
-
-msgid "PLACEHOLDER2 results"
-msgstr "PLACEHOLDER2 Ergebnisse"
-
-msgid ""
-"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-button "
-"objectpicker-button-show-all\">Show all</span>"
-msgstr ""
-"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
-"button objectpicker-button-show-all\">Alle anzeigen</span>"
-
-msgid "Show more"
-msgstr "Mehr anzeigen"
-
-msgid "Show less"
-msgstr "Weniger anzeigen"
-
-msgid "Please select at least one timeseries."
-msgstr "Bitte wählen Sie mindestens eine Zeitreihe aus."
-
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
 
@@ -1546,6 +1512,14 @@ msgstr "Sprachen"
 
 msgid "Monitoring Dashboard"
 msgstr "Monitoring Dashboard"
+
+#, python-format
+msgid ""
+"You will be signed out after %(idle_sign_out_minutes)s minutes of "
+"inactivity."
+msgstr ""
+"Sie werden nach %(idle_sign_out_minutes)s Minuten ohne Aktivität "
+"abgemeldet werden."
 
 msgid "Preferences"
 msgstr "Einstellungen"
@@ -1657,6 +1631,98 @@ msgstr "In 1 Stunde erinnern"
 
 msgid "Advanced Search…"
 msgstr "Erweiterte Suche…"
+
+msgid "Sign out in PLACEHOLDER"
+msgstr "Abmeldung in PLACEHOLDER"
+
+msgid "Expand All"
+msgstr "Alle ausklappen"
+
+msgid "Collapse All"
+msgstr "Alle einklappen"
+
+msgid "Please select an object."
+msgstr "Bitte wählen Sie ein Objekt aus."
+
+msgid ""
+"No results for \"<span class=\"query-container\">QUERY</span>\" — <span "
+"class=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
+msgstr ""
+"Keine Ergebnisse für „<span class=\"query-container\">QUERY</span>“ — "
+"<span class=\"objectpicker-button objectpicker-button-"
+"clear\">Leeren</span>"
+
+msgid ""
+"PLACEHOLDER2 results for \"<span class=\"query-container\">QUERY</span>\""
+" — <span class=\"objectpicker-button objectpicker-button-"
+"clear\">Clear</span>"
+msgstr ""
+"PLACEHOLDER2 Ergebnisse für „<span class=\"query-"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button "
+"objectpicker-button-clear\">Leeren</span>"
+
+msgid ""
+"PLACEHOLDER1 of PLACEHOLDER2 results for \"<span class=\"query-"
+"container\">QUERY</span>\" — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Show all</span> — <span class"
+"=\"objectpicker-button objectpicker-button-clear\">Clear</span>"
+msgstr ""
+"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen für „<span class=\"query-"
+"container\">QUERY</span>“ — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Alle anzeigen</span> — <span class"
+"=\"objectpicker-button objectpicker-button-clear\">Leeren</span>"
+
+msgid "No results"
+msgstr "Keine Ergebnisse"
+
+msgid "PLACEHOLDER2 results"
+msgstr "PLACEHOLDER2 Ergebnisse"
+
+msgid ""
+"PLACEHOLDER1 of PLACEHOLDER2 results — <span class=\"objectpicker-button "
+"objectpicker-button-show-all\">Show all</span>"
+msgstr ""
+"PLACEHOLDER1 von PLACEHOLDER2 Ergebnissen — <span class=\"objectpicker-"
+"button objectpicker-button-show-all\">Alle anzeigen</span>"
+
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
+msgid "Show less"
+msgstr "Weniger anzeigen"
+
+msgid "Please select at least one timeseries."
+msgstr "Bitte wählen Sie mindestens eine Zeitreihe aus."
+
+msgid "Bold"
+msgstr "Fettdruck"
+
+msgid "Italic"
+msgstr "Kursiv"
+
+msgid "Heading"
+msgstr "Überschrift"
+
+msgid "Code"
+msgstr "Code"
+
+msgid "Generic List"
+msgstr "Liste"
+
+msgid "Numbered List"
+msgstr "Nummerierte Liste"
+
+msgid "Create Link"
+msgstr "Link erstellen"
+
+msgid "Upload Image"
+msgstr "Bild hochladen"
+
+msgid "Insert Table"
+msgstr "Tabelle einfügen"
+
+msgid "Toggle Preview"
+msgstr "Vorschau ein-/ausschalten"
 
 msgid "Create Bot User"
 msgstr "Botnutzer erstellen"
@@ -1995,6 +2061,14 @@ msgstr ""
 "<a href=\"%(object_url)s\">Objekt #%(object_id)s</a> wurde mit den "
 "folgenden Hinweisen in eine andere Datenbank importiert:"
 
+#, python-format
+msgid ""
+"Your account has been automatically linked with the <a "
+"href=\"%(user_url)s\"> user #%(user_id)s</a> from %(component_name)s."
+msgstr ""
+"Ihr Nutzerkonto wurde automatisch mit dem <a href=\"%(user_url)s\"> "
+"Nutzer #%(user_id)s</a> von %(component_name)s verknüpft."
+
 msgid "Unknown notification type."
 msgstr "Unbekannter Benachrichtigungstyp."
 
@@ -2035,7 +2109,7 @@ msgstr "API Token"
 msgid "API Access Tokens"
 msgstr "API Zugriffstoken"
 
-msgid "Two Factor Authentication"
+msgid "Two-Factor Authentication"
 msgstr "Zwei-Faktor-Authentisierung"
 
 msgid "Webhooks"
@@ -2089,6 +2163,9 @@ msgstr "Authentifizierungsmethode"
 msgid "Other"
 msgstr "Andere"
 
+msgid "FIDO2 Passkey"
+msgstr "FIDO2 Passkey"
+
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
@@ -2118,17 +2195,14 @@ msgstr ""
 msgid "Expiration Datetime"
 msgstr "Ablaufzeitpunkt"
 
-msgid "TOTP-based Two Factor Authentication"
+msgid "TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung"
 
-msgid "Unknown Two Factor Authentication Method"
+msgid "Unknown Two-Factor Authentication Method"
 msgstr "Unbekannte Zwei-Faktor-Authentisierungsmethode"
 
 msgid "Disable"
 msgstr "Deaktivieren"
-
-msgid "Disable the current method before enabling this one."
-msgstr "Deaktivieren Sie die aktuelle Methode um diese aktivieren zu können."
 
 msgid "Enable"
 msgstr "Aktivieren"
@@ -2136,11 +2210,11 @@ msgstr "Aktivieren"
 msgid "Disable this method before deleting it."
 msgstr "Deaktivieren Sie diese Methode um sie löschen zu können."
 
-msgid "Disable the current method before adding a new one."
-msgstr "Deaktivieren Sie die aktuelle Methode um eine neue hinzufügen zu können."
-
-msgid "Set up TOTP-based Two Factor Authentication"
+msgid "Set up TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
+
+msgid "Set up FIDO2 Passkey for Two-Factor Authentication"
+msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
 
 msgid ""
 "Webhooks allow you to subscribe to the object log, as described in <a "
@@ -2221,6 +2295,9 @@ msgstr "Fehlschlag des Imports eines Objekts in eine andere Datenbank"
 
 msgid "Receiving notes after importing an object into another database"
 msgstr "Hinweise beim Import eines Objekts in eine andere Datenbank erhalten"
+
+msgid "Being automatically linked with a user from another database"
+msgstr "Automatisch mit einem Nutzer einer anderen Datenbank verknüpft werden"
 
 msgid ""
 "These permissions will be used for objects that you create in the future."
@@ -2351,11 +2428,21 @@ msgstr "Schließen"
 msgid "Add Authentication Method"
 msgstr "Authentifizierungsmethode hinzufügen"
 
+msgid "Type"
+msgstr "Typ"
+
 msgid "The password must be at least 3 characters long."
 msgstr "Bitte geben Sie ein Passwort mit mindestens 3 Zeichen ein."
 
-msgid "Type"
-msgstr "Typ"
+#, python-format
+msgid ""
+"When signing in with a FIDO2 Passkey, %(service_name)s will "
+"<strong>not</strong> use any additional two-factor authentication methods"
+" configured in your preferences."
+msgstr ""
+"Wenn Sie sich mit einem FIDO2 Passkey anmelden, wird "
+"%(service_name)szusätzlich in Ihren Einstellungen eingerichtete Zwei-"
+"Faktor-Authentisierungsmethoden <strong>nicht</strong> verwenden."
 
 msgid "Add"
 msgstr "Hinzufügen"
@@ -2399,6 +2486,11 @@ msgstr ""
 "juelich.de/SampleDB/developer_guide/webhooks.html#validation\">Dokumentation</a>"
 " darüber, wie diese Geheimnisse zur Validierung von Nachrichten verwendet"
 " werden können."
+
+msgid "The passkey failed to register with the following error: "
+msgstr ""
+"Das Registrieren des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
 
 msgid "Copied!"
 msgstr "Kopiert!"
@@ -2480,6 +2572,15 @@ msgstr "Letzte Aktualisierung"
 #, python-format
 msgid "by <a href=\"%(user_url)s\">%(user_name)s</a>"
 msgstr "durch <a href=\"%(user_url)s\">%(user_name)s</a>"
+
+msgid "Federated Identities"
+msgstr "Föderierte Identitäten"
+
+msgid "ELN Import"
+msgstr "ELN-Import"
+
+msgid "Federated Identity with"
+msgstr "Föderierte Identität mit"
 
 msgid "… with activity by this user"
 msgstr "… mit Aktivität dieses Nutzers"
@@ -2666,6 +2767,9 @@ msgstr "ist eine Referenz zu dem Nutzer"
 msgid "is user reference not equal to"
 msgstr "ist eine Referenz zu einem anderen Nutzer als"
 
+msgid "has tag"
+msgstr "hat Tag"
+
 msgid "is not set"
 msgstr "ist nicht gesetzt"
 
@@ -2677,6 +2781,9 @@ msgstr "Physikalische Größe"
 
 msgid "Object Reference"
 msgstr "Objektreferenz"
+
+msgid "Tag"
+msgstr "Tag"
 
 msgid "Object must meet all conditions (and)"
 msgstr "Objekt muss alle Bedingungen erfüllen (and)"
@@ -2715,8 +2822,33 @@ msgstr ""
 "Fragen Sie bitte einen anderen Nutzer nach einer Einladung, falls Sie "
 "noch kein %(service_name)s Nutzerkonto haben."
 
+msgid "or"
+msgstr "oder"
+
+msgid "Error:"
+msgstr "Fehler:"
+
+#, python-format
+msgid ""
+"Your browser does not support WebAuthn, which is required for using FIDO2"
+" Passkeys in %(service_name)s."
+msgstr ""
+"Für die Verwendung von FIDO2 Passkeys in %(service_name)s wird WebAuthn "
+"vorausgesetzt, WebAuthn wird jedoch nicht von Ihrem Browser unterstützt."
+
+msgid "Use Passkey"
+msgstr "Passkey nutzen"
+
 msgid "Remember me"
 msgstr "Angemeldet bleiben"
+
+msgid "Shared Device"
+msgstr "Geteiltes Gerät"
+
+msgid "The passkey failed to authenticate with the following error: "
+msgstr ""
+"Die Authentisierung des Passkeys ist mit dem folgendem Fehler "
+"fehlgeschlagen: "
 
 msgid "Sign Out"
 msgstr "Abmelden"
@@ -2789,6 +2921,15 @@ msgstr "Ja, Aktionen dieses Typs in der Navigationsleiste anzeigen"
 
 msgid "No, actions of this type should not be shown in the navbar"
 msgstr "Nein, Aktionen dieses Typs nicht in der Navigationsleiste anzeigen"
+
+msgid "Show in Object Filters"
+msgstr "In Objektfiltern anzeigen"
+
+msgid "Yes, this action type should be shown in object filters"
+msgstr "Ja, diesen Aktionstyp in Objektfiltern anzeigen"
+
+msgid "No, this actions type should not be shown in object filters"
+msgstr "Nein, diesen Aktionstyp nicht in Objektfiltern anzeigen"
 
 msgid "Enable Labels"
 msgstr "Etiketten generieren"
@@ -3023,6 +3164,9 @@ msgstr "Aktionstyp auf Startseite anzeigen"
 
 msgid "Show actions of this type in the navbar"
 msgstr "Aktionen dieses Typs in der Navigationsleiste anzeigen"
+
+msgid "Show action type in object filters"
+msgstr "Aktionstyp in Objektfiltern anzeigen"
 
 msgid "Enable labels for objects created with actions of this type"
 msgstr ""
@@ -3526,13 +3670,6 @@ msgid "Warnings"
 msgstr "Warnungen"
 
 msgid ""
-"Some objects have files in <code>local</code> storage, please move them "
-"to <code>database</code> storage."
-msgstr ""
-"Manche Objekte haben Dateien mit <code>local</code> Speicherung, bitte "
-"übertragen Sie diese zu <code>database</code> Speicherung."
-
-msgid ""
 "There are numeric tags, please evaluate if these are necessary for your "
 "use case and set the configuration value <code>ENABLE_NUMERIC_TAGS</code>"
 " to <code>False</code> to disable them."
@@ -3584,6 +3721,16 @@ msgstr ""
 "Die folgenden Nutzer werden ebenfalls aus dieser .eln-Datei importiert "
 "werden:"
 
+msgid "Federated Identity"
+msgstr "Föderierte Identität"
+
+msgid ""
+"By selecting users, federated identites will be created for each selected"
+" user with you."
+msgstr ""
+"Durch Auswählen von Nutzer werden für jeden ausgewählten Nutzer "
+"föderierte Identitäten mit Ihnen erstellt."
+
 msgid "Browse..."
 msgstr "Durchsuchen..."
 
@@ -3607,14 +3754,26 @@ msgstr "Hochgeladen am"
 msgid "Review"
 msgstr "Prüfen"
 
-msgid "ELN Import"
-msgstr "ELN-Import"
-
 msgid "Uploaded by"
 msgstr "Hochgeladen von"
 
 msgid "Imported at"
 msgstr "Importiert am"
+
+#, python-format
+msgid "Revokes the federated identity with %(username)s."
+msgstr "Widerruft die föderierte Identität mit %(username)s."
+
+#, python-format
+msgid "Enables the federated identity with %(username)s."
+msgstr "Aktiviert die föderierte Identität mit %(username)s."
+
+msgid "Revoke"
+msgstr "Widerrufen"
+
+#, python-format
+msgid "Removes the federated identity with %(username)s permanently."
+msgstr "Entfernt die föderierte Identität mit %(username)s endgültig."
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -4488,6 +4647,16 @@ msgid "Responsible Users:"
 msgstr "Verantwortliche Nutzer:"
 
 #, python-format
+msgid ""
+"Your account has been automatically linked with the <a "
+"href=\"%(user_url)s\" style=\"color: #337ab7;\"> user #%(user_id)s</a> "
+"from %(component_name)s."
+msgstr ""
+"Ihr Nutzerkonto wurde automatisch mit dem <a href=\"%(user_url)s\" "
+"style=\"color: #337ab7;\"> Nutzer #%(user_id)s</a> von %(component_name)s"
+" verknüpft."
+
+#, python-format
 msgid "Export to %(dataverse_name)s"
 msgstr "Nach %(dataverse_name)s exportieren"
 
@@ -4671,9 +4840,6 @@ msgstr ""
 "Falls ein Nutzer in dieser Liste fehlt, geben Sie bitte dessen ID unten "
 "ein."
 
-msgid "or"
-msgstr "oder"
-
 msgid "Enter User ID"
 msgstr "Nutzer-ID eingeben"
 
@@ -4782,9 +4948,6 @@ msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
 
 msgid "The minimum width must be a number greater or equal to 0."
 msgstr "Die Mindestbreite muss eine Zahl größer oder gleich 0 sein."
-
-msgid "Error:"
-msgstr "Fehler:"
 
 msgid "Query:"
 msgstr "Abfrage:"
@@ -4900,8 +5063,14 @@ msgstr "Ort anzeigen"
 msgid "Show Responsible User"
 msgstr "Verantwortlichen Nutzer anzeigen"
 
+msgid "Clear"
+msgstr "Leeren"
+
 msgid "Filters"
 msgstr "Filter"
+
+msgid "Filter by User Activity"
+msgstr "Nach Nutzeraktivität filtern"
 
 msgid "Filter by Permissions"
 msgstr "Nach Berechtigungen filtern"
@@ -6077,6 +6246,20 @@ msgstr ""
 "Die ursprüngliche URL ist <a "
 "href=\"%(eln_import_url)s\">%(eln_import_url)s</a>."
 
+msgid ""
+"The schema for this object is out-of-date and the action it was created "
+"with has a new schema available. Do you want to use the new schema?"
+msgstr ""
+"Das Schema für dieses Objekt ist veraltet und die Aktion, mit der das "
+"Objekt erstellt wurde, hat ein neues Schema. Wollen Sie das neue Schema "
+"verwenden?"
+
+msgid "Use new schema"
+msgstr "Neues Schema verwenden"
+
+msgid "Keep outdated schema"
+msgstr "Veraltetes Schema beibehalten"
+
 msgid "PDF Export Sections"
 msgstr "PDF Export Abschnitte"
 
@@ -6234,6 +6417,78 @@ msgstr ""
 #, python-format
 msgid "Create User Alias for %(component_name)s"
 msgstr "Alias für %(component_name)s erstellen"
+
+msgid ""
+"Federated identities are used to link your user with users from different"
+" SampleDB instances. If you are linked with a federated user, the "
+"federated user will be represented by your username."
+msgstr ""
+"Föderierte Identitäten dienen dazu ihren Nutzer mit Nutzern einer anderen"
+" SampleDB-Instanz zu verknüpfen. Wenn Sie mit einem föderierten Nutzer "
+"verknüpft sind, wird der föderierte Nutzer durch ihren Nutzernamen "
+"repräsentiert."
+
+#, python-format
+msgid "You are currently linked with following users from %(component_name)s:"
+msgstr ""
+"Sie sind aktuell mit den folgenden Nutzern von %(component_name)s "
+"verknüpft:"
+
+#, python-format
+msgid "You are currently not linked with any user from %(component_name)s."
+msgstr "Sie sind aktuell mit keinem Nutzer von %(component_name)s verknüpft."
+
+msgid "Address must be set"
+msgstr "Die Adresse muss festgelegt werden"
+
+#, python-format
+msgid "Sign in to %(component_name)s"
+msgstr "Bei %(component_name)s anmelden"
+
+msgid "Revoke active user links"
+msgstr "Aktive Nutzerverknüpfungen widerrufen"
+
+msgid "Show revoked user links"
+msgstr "Widerrufene Nutzerverknüpfungen anzeigen"
+
+msgid "Active user links"
+msgstr "Aktive Nutzerverknüpfungen"
+
+msgid "Federated user"
+msgstr "Föderierte Nutzer"
+
+msgid "Revoke selection"
+msgstr "Auswahl widerrufen"
+
+msgid "Revoked user links"
+msgstr "Widerrufene Nutzerverknüpfungen"
+
+msgid ""
+"Revoked user links are not used for representing federated users. As long"
+" as they are not removed, these links won't be created when importing "
+"updates."
+msgstr ""
+"Widerrufene Nutzerverknüpfungen werden nicht zum repräsentieren von "
+"föderierten Nutzern verwendet. So lange sie nicht entfernt werden, wird "
+"diese Nutzerverknüpfung nicht durch das Importieren von Updates erneut "
+"erzeugt."
+
+msgid "Remove selection"
+msgstr "Auswahl entfernen"
+
+msgid "Link identity"
+msgstr "Identität verknüpfen"
+
+#, python-format
+msgid ""
+"You have to confirm that you want to create a federated identity using "
+"the currently signed-in user (%(username)s #%(user_id)s)."
+msgstr ""
+"Sie müssen bestätigen, dass Sie mit dem angemeldeten Nutzer eine "
+"föderierte Identität erstellen möchten (%(username)s #%(user_id)s)."
+
+msgid "Confirm Identity"
+msgstr "Identität bestätigen"
 
 #, python-format
 msgid ""
@@ -6440,6 +6695,32 @@ msgstr ""
 msgid "Create Project Group"
 msgstr "Projektgruppe erstellen"
 
+msgid "Use FIDO2 Passkey"
+msgstr "FIDO2 Passkey verwenden"
+
+msgid ""
+"Please click \"Sign In\" and then use your FIDO2 passkey to complete the "
+"sign in process."
+msgstr ""
+"Bitte klicken Sie auf \"Anmelden\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um den Anmeldeprozess abzuschließen."
+
+msgid ""
+"Please click \"Confirm\" and then use your FIDO2 passkey to activate this"
+" two-factor authentication method."
+msgstr ""
+"Bitte klicken Sie auf \"Bestätigen\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um die Zwei-Faktor-Authentisierungsmethode zu aktivieren."
+
+#, python-format
+msgid ""
+"Please click \"Confirm\" and then use your FIDO2 passkey to confirm that "
+"you want to deactivate <em>%(method_description)s</em>."
+msgstr ""
+"Bitte klicken Sie auf \"Bestätigen\" und verwenden Sie dann ihren FIDO2 "
+"Passkey, um die Deaktivierung von <em>%(method_description)s</em> zu "
+"bestätigen"
+
 msgid "Enter TOTP Verification Code"
 msgstr "TOTP Bestätigungscode eingeben"
 
@@ -6452,47 +6733,80 @@ msgstr ""
 
 msgid ""
 "Please enter the TOTP verification code generated using an app such as "
-"Google Authenticator to activate this two factor authentication method."
+"Google Authenticator to activate this two-factor authentication method."
 msgstr ""
 "Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
 " Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
 "aktivieren."
 
+#, python-format
 msgid ""
 "Please enter the TOTP verification code generated using an app such as "
-"Google Authenticator to deactivate this two factor authentication method."
+"Google Authenticator to confirm that you want to deactivate "
+"<em>%(method_description)s</em>."
 msgstr ""
 "Bitte geben Sie den mit einer App wie Google Authenticator erzeugten TOTP"
-" Bestätigungscode ein, um die Zwei-Faktor-Authentisierungsmethode zu "
-"deaktivieren."
+" Bestätigungscode ein, um die Deaktivierung von "
+"<em>%(method_description)s</em> zu bestätigen."
 
 msgid "Verification Code"
 msgstr "Bestätigungscode"
 
-msgid "Set Up TOTP-based Two Factor Authentication"
+msgid "Select a Two-Factor Authentication Method"
+msgstr "Zwei-Faktor-Authentisierungsmethode auswählen"
+
+#, python-format
+msgid ""
+"Please select a two-factor authentication method to confirm that you want"
+" to deactivate <em>%(method_description)s</em>."
+msgstr ""
+"Bitte wählen Sie eine Zwei-Faktor-Authentisierungsmethode, um die "
+"Deaktivierung von <em>%(method_description)s</em> zu bestätigen."
+
+msgid ""
+"Please select a two-factor authentication method to complete the sign in "
+"process."
+msgstr ""
+"Bitte wählen Sie eine Zwei-Faktor-Authentisierungsmethode, um den "
+"Anmeldeprozess abzuschließen."
+
+msgid "Set Up FIDO2 Passkey for Two-Factor Authentication"
+msgstr "FIDO2 Passkey für Zwei-Faktor-Authentisierung einrichten"
+
+msgid ""
+"Please enter a description for the passkey you wish to use and then click"
+" \"Set Up\"."
+msgstr ""
+"Bitte geben Sie eine Beschreibung für den Passkey, den Sie verwenden "
+"möchten, ein und klicken Sie dann auf \"Einrichten\"."
+
+msgid "Set Up"
+msgstr "Einrichten"
+
+msgid "Set Up TOTP-based Two-Factor Authentication"
 msgstr "TOTP-basierte Zwei-Faktor-Authentisierung einrichten"
 
 msgid ""
 "Please scan the following QR Code using an app such as Google "
 "Authenticator and then enter the generated verification code in the field"
-" below to complete the setup."
+" below to complete the setup:"
 msgstr ""
 "Bitte scannen Sie den folgenden QR Code mit einer App wie Google "
 "Authenticator und geben Sie dann den damit erstellten Bestätigungscode "
-"ein, um die Einrichtung abzuschließen."
+"ein, um die Einrichtung abzuschließen:"
 
 msgid "TOTP Setup QR Code"
 msgstr "TOTP Setup QR Code"
 
-msgid "Set Up"
-msgstr "Einrichten"
+msgid "or enter the following setup key:"
+msgstr "oder geben Sie den folgenden Einrichtungsschlüssel ein:"
 
-msgid "Unsupported Two Factor Authentication Method"
+msgid "Unsupported Two-Factor Authentication Method"
 msgstr "Nicht unterstützte Zwei-Faktor-Authentisierungsmethode"
 
 #, python-format
 msgid ""
-"The two factor authentication method set up for your account is currently"
+"The two-factor authentication method set up for your account is currently"
 " unsupported. Please <a "
 "href=\"mailto:%(contact_email)s?subject=%(service_name)s\"> contact an "
 "administrator</a>."
@@ -6508,6 +6822,14 @@ msgstr "API Token"
 msgid "API access token"
 msgstr "API Zugriffstoken"
 
+#, python-format
+msgid ""
+"You have been signed out after %(idle_sign_out_minutes)s minutes of "
+"inactivity."
+msgstr ""
+"Sie wurden nach %(idle_sign_out_minutes)s Minuten ohne Aktivität "
+"abgemeldet."
+
 msgid "Your user account has been deactivated. Please contact an administrator."
 msgstr ""
 "Ihr Nutzerkonto wurde deaktiviert. Bitte kontaktieren Sie einen "
@@ -6521,6 +6843,9 @@ msgstr ""
 "Sie nutzen das Standard-Administrator-Passwort aus der SampleDB-"
 "Dokumentation. Bitte ändern Sie Ihr Passwort, bevor Sie diese SampleDB-"
 "Installation für andere verfügbar machen."
+
+msgid "No user was found for this passkey."
+msgstr "Für diesen Passkey wurde kein Nutzer gefunden."
 
 msgid "Please sign in again."
 msgstr "Bitte melden Sie sich erneut an."
@@ -6636,16 +6961,16 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
-msgid "You cannot delete an active two factor authentication method."
+msgid "You cannot delete an active two-factor authentication method."
 msgstr "Sie können eine aktive Zwei-Faktor-Authentisierungsmethode nicht löschen."
 
-msgid "The two factor authentication method has been deleted."
+msgid "The two-factor authentication method has been deleted."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde gelöscht."
 
-msgid "The two factor authentication method has been enabled."
+msgid "The two-factor authentication method has been enabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde aktiviert."
 
-msgid "The two factor authentication method has been disabled."
+msgid "The two-factor authentication method has been disabled."
 msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde deaktiviert."
 
 msgid "Something went wrong, please try again."
@@ -6725,6 +7050,9 @@ msgstr ""
 "Das Zurücksetzen Ihres Passworts ist fehlgeschlagen. Bitte versuchen Sie "
 "es erneut oder kontaktieren Sie einen Administrator."
 
+msgid "Unknown database"
+msgstr "Unbekannte Datenbank"
+
 msgid "The user has been marked as read only."
 msgstr "Der Nutzer wurde als nur lesend markiert."
 
@@ -6746,28 +7074,30 @@ msgstr "Der Nutzer wurde deaktiviert."
 msgid "Successfully updated the user information."
 msgstr "Die Nutzerinformationen wurden erfolgreich geändert."
 
-msgid ""
-"You cannot set up a new two factor authentication method while another is"
-" active."
-msgstr ""
-"Sie können keine Zwei-Faktor-Authentisierungsmethode hinzufügen, während "
-"eine andere aktiv ist."
-
-msgid "Successfully set up two factor authentication."
+msgid "Successfully set up two-factor authentication."
 msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
 
 msgid "The code was invalid, please try again."
 msgstr "Der Code war ungültig. Bitte versuchen Sie es erneut."
 
-msgid "This two factor authentication attempt has failed. Please try again."
+msgid "This two-factor authentication attempt has failed. Please try again."
 msgstr ""
 "Der Zwei-Faktor-Authentisierungsversuch ist fehlgeschlagen. Bitte "
 "versuchen Sie es erneut."
 
-msgid "This two factor authentication attempt has expired. Please try again."
+msgid "The two-factor authentication method has already been disabled."
+msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde bereits deaktiviert."
+
+msgid "Failed to set up two-factor authentication."
+msgstr "Die Zwei-Faktor-Authentisierung wurde erfolgreich eingerichtet."
+
+msgid ""
+"The passkey does not match the one stored for this two-factor "
+"authentication method, please try again."
 msgstr ""
-"Der Zwei-Faktor-Authentisierungsversuch ist abgelaufen. Bitte versuchen "
-"Sie es erneut."
+"Der Passkey passt nicht zu dem, der für diese Zwei-Faktor-"
+"Authentisierungsmethode abgespeichert wurde. Bitte versuchen Sie es "
+"erneut."
 
 #, python-format
 msgid "Unnamed Action (#%(action_id)s)"

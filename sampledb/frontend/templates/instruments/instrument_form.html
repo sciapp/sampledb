@@ -8,197 +8,46 @@
 <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 {% endblock %}
 
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% set allowed_language_ids = [] %}
+  {% for lang in languages %}
+    {{ allowed_language_ids.append(lang.id) or '' }}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id) %}
+
+  {% set translations = [] %}
+  {% for translation in instrument_translations %}
+    {% if translation.language_id in allowed_language_ids %}
+      {% do translations.append({"language_id": translation.language_id | string, "name": translation.name, "description": translation.description, "notes": translation.notes, "short_description": translation.short_description}) %}
+    {% endif %}
+  {% endfor %}
+  {% do set_template_value("translations", translations) %}
+
+  {% set categories = [] %}
+  {% for category in instrument_log_categories %}
+    {% do categories.append({"id": category.id | string, "title": category.title, "theme": category.theme.name.lower()}) %}
+  {% endfor %}
+  {% do set_template_value("categories", categories) %}
+
+  {% do set_template_value("default_theme_name", instrument_log_category_themes[0].name.lower()) %}
+
+  {% do set_template_value("translations.enter_category_title", _('Please enter a category title.')) %}
+  {% do set_template_value("translations.enter_shorter_category_title", _('Please enter a shorter category title (at most 100 characters).')) %}
+
+  {% do set_template_value("is_create_form", submit_text !=  _('Save')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
-  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
-    import {
-      setupImageDragAndDrop
-    } from "{{ fingerprinted_static('sampledb/js/markdown_image_upload.js') }}";
-    window.setupImageDragAndDrop = setupImageDragAndDrop;
-
-    import {
-      updateTranslationJSON,
-      setTranslationHandler,
-      updateTranslationLanguages,
-      initMarkdownField,
-      updateMarkdownField
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
-    window.updateTranslationJSON = updateTranslationJSON;
-    window.setTranslationHandler = setTranslationHandler;
-    window.updateTranslationLanguages = updateTranslationLanguages;
-    window.initMarkdownField = initMarkdownField;
-    window.updateMarkdownField = updateMarkdownField;
-  </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  {% set allowed_language_ids = [] %}
-  window.languages = [
-    {% for language in languages %}
-      {
-        'id': '{{ language.id }}',
-        'name': '{{ language.names | get_translated_text }}',
-        'lang_code': '{{ language.lang_code }}'
-      },
-      {{ allowed_language_ids.append(language.id) or '' }}
-    {% endfor %}
-  ];
-
-  window.translations = [
-  {% for translation in instrument_translations.values() %}
-    {% if translation.language_id in allowed_language_ids %}
-    {
-      'language_id': "{{ translation.language_id }}",
-      'name': {{ translation.name | tojson }},
-      'description': {{ translation.description | tojson }},
-      'notes': {{ translation.notes | tojson }},
-      'short_description': {{ translation.short_description | tojson }},
-    },
-    {% endif %}
-  {% endfor %}
-  ];
-
-  window.mdeFields = {
-    'descriptions': [],
-    'short_descriptions': [],
-    'notes': []
-  };
-
-  window.categories = [
-    {% for category in instrument_log_categories %}
-      {
-        'id': '{{ category.id }}',
-        'title': '{{ category.title }}',
-        'theme': '{{ category.theme.name.lower() }}'
-      },
-    {% endfor %}
-  ];
-  window.new_category_counter = -1;
-  $(function() {
-    function updateCategoryJSON() {
-      var category_json = JSON.stringify(window.categories);
-      $('#input-categories').val(category_json);
-    }
-
-    updateCategoryJSON();
-    updateTranslationJSON();
-    function updateEventHandler() {
-      $('[data-category-id][data-category-id!=""]').each(function() {
-        $(this).find('input').on('change', function() {
-          var category_element = $(this).closest('[data-category-id]');
-          var category_id = category_element.attr('data-category-id');
-          var category_title = category_element.find('input[type="text"]').val().trim();
-          if (category_title === "") {
-            category_element.parent().addClass('has-error').find('.help-block').html("{{ _('Please enter a category title.') }}");
-          } else if (category_title.length > 100) {
-            category_element.parent().addClass('has-error').find('.help-block').html("{{ _('Please enter a shorter category title (at most 100 characters).') }}");
-          } else {
-            category_element.parent().removeClass('has-error').find('.help-block').html("");
-          }
-          window.categories.forEach(function(category) {
-            if (category.id === category_id) {
-              category.title = category_title;
-            }
-          });
-          updateCategoryJSON();
-        }).change();
-        $(this).find('select').on('change', function() {
-          var category_element = $(this).closest('[data-category-id]');
-          var category_id = category_element.attr('data-category-id');
-          var category_theme = category_element.find('option:selected').val();
-          window.categories.forEach(function(category) {
-            if (category.id === category_id) {
-              category.theme = category_theme;
-            }
-          });
-          updateCategoryJSON();
-        });
-        $(this).find('.button-delete-category').on('click', function() {
-          var category_element = $(this).closest('[data-category-id]');
-          var category_id = category_element.attr('data-category-id');
-          category_element.parent().remove();
-          window.categories = window.categories.filter(function(category) {
-            return category.id !== category_id;
-          });
-          updateCategoryJSON();
-        });
-      });
-    }
-    $('#button-instrument-log-new-category').on('click', function () {
-      $($('#instrument-log-category-template').html()).insertBefore($(this).parent());
-      $(this).parent().prev('.form-group').find('.input-group').attr('data-category-id', window.new_category_counter);
-      window.categories.push({
-        'id': window.new_category_counter.toString(),
-        'title': '',
-        'theme': '{{ instrument_log_category_themes[0].name.lower() }}'
-      });
-      window.new_category_counter -= 1;
-      $('[data-category-id][data-category-id!=""] select').addClass('selectpicker');
-      $('.selectpicker').selectpicker();
-      updateEventHandler();
-      updateCategoryJSON();
-    });
-
-    {% if submit_text !=  _('Save') %}
-      $('.form-group[data-name="input-names"] .selectpicker, .form-group[data-name="input-descriptions"] .selectpicker, .form-group[data-name="input-short-descriptions"] .selectpicker, .form-group[data-name="input-notes"] .selectpicker').each(function () {
-        $(this).selectpicker('val', ['{{ ENGLISH.id }}']);
-      });
-    {% endif %}
-
-    $('#select-language-name').on('change', function () {
-      updateTranslationLanguages(this, 'name-template', 'input-name-', ['name', 'description', 'short_description', 'notes']);
-    }).change();
-
-    $('#select-language-description').on('change', function () {
-      updateTranslationLanguages(this, 'description-template', 'input-description-', ['name', 'description', 'short_description', 'notes']);
-      updateDescriptionMarkdown();
-    }).change();
-
-    $('#select-language-short-description').on('change', function () {
-      updateTranslationLanguages(this, 'short-description-template', 'input-short-description-', ['name', 'description', 'short_description', 'notes']);
-      updateShortDescriptionMarkdown();
-    }).change();
-
-    $('#select-language-notes').on('change', function () {
-      updateTranslationLanguages(this, 'notes-template', 'input-notes-', ['name', 'description', 'short_description', 'notes']);
-      updateNotesMarkdown();
-    }).change();
-
-    $('.form-group[data-name="input-names"] [data-language-id], .form-group[data-name="input-descriptions"] [data-language-id], .form-group[data-name="input-short-descriptions"] [data-language-id], .form-group[data-name="input-notes"] [data-language-id]').each(function () {
-      setTranslationHandler(this);
-    });
-    updateEventHandler();
-
-    $('form').on('submit', function() {
-      $('input').change();
-      $('textarea').change();
-      updateTranslationJSON();
-      return $(this).find('.has-error').length === $(this).find('.has-error-static').length;
-    })
-
-    function updateDescriptionMarkdown() {
-      updateMarkdownField('input-markdown', 'descriptions', 'input-descriptions', '300px');
-    }
-
-    $('#input-markdown').change(updateDescriptionMarkdown);
-    updateDescriptionMarkdown();
-
-    function updateShortDescriptionMarkdown() {
-      updateMarkdownField('input-short-description-is-markdown', 'short_descriptions', 'input-short-descriptions', '100px');
-    }
-    $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
-    updateShortDescriptionMarkdown();
-
-    function updateNotesMarkdown() {
-      updateMarkdownField('input-notes-is-markdown', 'notes', 'input-notes', '300px');
-    }
-    $('#input-notes-is-markdown').change(updateNotesMarkdown);
-    updateNotesMarkdown();
-  });
-
-  </script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/instrument_form.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}

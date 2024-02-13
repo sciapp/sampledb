@@ -138,6 +138,8 @@ def project(project_id: int) -> FlaskResponseT:
         group_categories = None
     show_edit_form = False
     english = get_language(Language.ENGLISH)
+    if english.id not in description_language_ids:
+        description_language_ids.append(english.id)
 
     project_member_user_ids_and_permissions = logic.projects.get_project_member_user_ids_and_permissions(project_id=project_id, include_groups=False)
     project_member_group_ids_and_permissions = logic.projects.get_project_member_group_ids_and_permissions(project_id=project_id)
@@ -150,7 +152,7 @@ def project(project_id: int) -> FlaskResponseT:
 
     if Permissions.GRANT in user_permissions:
         invitable_user_list = []
-        for user in logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True):
+        for user in logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True):
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
@@ -364,9 +366,9 @@ def project(project_id: int) -> FlaskResponseT:
                 flask.flash(_('This project group does not exist.'), 'error')
                 return flask.redirect(flask.url_for('.projects'))
             except logic.errors.ProjectAlreadyExistsError:
-                edit_project_form.name.errors.append(_('A project group with this name already exists.'))
+                edit_project_form.translations.errors.append(_('A project group with this name already exists.'))
             except logic.errors.InvalidProjectNameError:
-                edit_project_form.name.errors.append(_('This project group name is invalid.'))
+                edit_project_form.translations.errors.append(_('This project group name is invalid.'))
             else:
                 flask.flash(_('Project group information updated successfully.'), 'success')
                 return flask.redirect(flask.url_for('.project', project_id=project_id))

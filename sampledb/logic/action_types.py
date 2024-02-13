@@ -22,6 +22,7 @@ class ActionType:
     admin_only: bool
     show_on_frontpage: bool
     show_in_navbar: bool
+    show_in_object_filters: bool
     enable_labels: bool
     enable_files: bool
     enable_locations: bool
@@ -65,6 +66,7 @@ class ActionType:
             admin_only=action_type.admin_only,
             show_on_frontpage=action_type.show_on_frontpage,
             show_in_navbar=action_type.show_in_navbar,
+            show_in_object_filters=action_type.show_in_object_filters,
             enable_labels=action_type.enable_labels,
             enable_files=action_type.enable_files,
             enable_locations=action_type.enable_locations,
@@ -162,6 +164,7 @@ def create_action_type(
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
+        show_in_object_filters: bool,
         enable_labels: bool,
         enable_files: bool,
         enable_locations: bool,
@@ -187,6 +190,7 @@ def create_action_type(
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
+        show_in_object_filters: bool,
         enable_labels: bool,
         enable_files: bool,
         enable_locations: bool,
@@ -211,6 +215,7 @@ def create_action_type(
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
+        show_in_object_filters: bool,
         enable_labels: bool,
         enable_files: bool,
         enable_locations: bool,
@@ -233,6 +238,7 @@ def create_action_type(
     :param admin_only: whether actions of this type can only be created by administrators
     :param show_on_frontpage: whether this action type should be shown on the frontpage
     :param show_in_navbar: whether actions of this type should be shown in the navbar
+    :param show_in_object_filters: whether this action type should be shown in object filters
     :param enable_labels: whether labels should be enabled for actions of this type
     :param enable_files: whether file uploads should be enabled for actions of this type
     :param enable_locations: whether locations and responsible users should be enabled for actions of this type
@@ -261,6 +267,7 @@ def create_action_type(
         admin_only=admin_only,
         show_on_frontpage=show_on_frontpage,
         show_in_navbar=show_in_navbar,
+        show_in_object_filters=show_in_object_filters,
         enable_labels=enable_labels,
         enable_files=enable_files,
         enable_locations=enable_locations,
@@ -292,6 +299,7 @@ def update_action_type(
         admin_only: bool,
         show_on_frontpage: bool,
         show_in_navbar: bool,
+        show_in_object_filters: bool,
         enable_labels: bool,
         enable_files: bool,
         enable_locations: bool,
@@ -313,6 +321,7 @@ def update_action_type(
     :param admin_only: whether actions of this type can only be created by administrators
     :param show_on_frontpage: whether this action type should be shown on the frontpage
     :param show_in_navbar: whether actions of this type should be shown in the navbar
+    :param show_in_object_filters: whether this action type should be shown in object filters
     :param enable_labels: whether labels should be enabled for actions of this type
     :param enable_files: whether file uploads should be enabled for actions of this type
     :param enable_locations: whether locations and responsible users should be enabled for actions of this type
@@ -337,6 +346,7 @@ def update_action_type(
     action_type.admin_only = admin_only
     action_type.show_on_frontpage = show_on_frontpage
     action_type.show_in_navbar = show_in_navbar
+    action_type.show_in_object_filters = show_in_object_filters
     action_type.enable_labels = enable_labels
     action_type.enable_files = enable_files
     action_type.enable_locations = enable_locations
@@ -410,13 +420,13 @@ def add_action_type_to_order(action_type: ActionType) -> None:
             for other_action_type in action_types
             if (other_action_type.fed_id is not None)
         ]
-        local_before_imported = max(
+        local_before_imported = (max(
             typing.cast(int, other_action_type.order_index)
             for other_action_type in local_action_types
         ) < min(
             typing.cast(int, other_action_type.order_index)
             for other_action_type in imported_action_types
-        )
+        )) if imported_action_types else True
         if local_before_imported:
             if action_type.fed_id is None:
                 action_types = local_action_types

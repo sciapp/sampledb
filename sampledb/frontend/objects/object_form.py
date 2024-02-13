@@ -67,7 +67,11 @@ def show_object_form(
         'form': form,
     })
 
-    if should_upgrade_schema:
+    template_arguments.update({
+        'previous_schema': None,
+        'diff': None
+    })
+    if should_upgrade_schema and previous_object is None:
         # edit object with schema upgrade
         mode = 'upgrade'
         if action.schema is None or object is None or object.schema is None or object.data is None:
@@ -76,6 +80,10 @@ def show_object_form(
         data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, object.schema, action.schema)
         for upgrade_warning in upgrade_warnings:
             flask.flash(upgrade_warning, 'warning')
+        template_arguments.update({
+            'previous_schema': object.schema,
+            'diff': logic.schemas.calculate_diff(object.data, data)
+        })
     elif object is not None:
         # edit object
         mode = 'edit'
@@ -88,8 +96,20 @@ def show_object_form(
         mode = 'create'
         if previous_object.data is None or previous_object.schema is None:
             return flask.abort(400)
-        schema = previous_object.schema
-        data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
+        if should_upgrade_schema:
+            if action.schema is None:
+                return flask.abort(400)
+            schema = action.schema
+            data, upgrade_warnings = logic.schemas.convert_to_schema(previous_object.data, previous_object.schema, action.schema)
+            for upgrade_warning in upgrade_warnings:
+                flask.flash(upgrade_warning, 'warning')
+            template_arguments.update({
+                'previous_schema': previous_object.schema,
+                'diff': logic.schemas.calculate_diff(previous_object.data, data)
+            })
+        else:
+            schema = previous_object.schema
+            data = logic.schemas.copy_data(previous_object.data, previous_object.schema)
         template_arguments.update({
             'previous_object_id': previous_object.id,
             'has_grant_for_previous_object': Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object.id),
@@ -203,7 +223,7 @@ def show_object_form(
                         data=object_data,
                         user_id=flask_login.current_user.id,
                         previous_object_id=previous_object.id if previous_object is not None else None,
-                        schema=previous_object.schema if previous_object is not None else None,
+                        schema=previous_object.schema if previous_object is not None and not should_upgrade_schema else None,
                         copy_permissions_object_id=copy_permissions_object_id,
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,

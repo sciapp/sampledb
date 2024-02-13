@@ -1,37 +1,13 @@
 <ul class="object-property-list">
 {% if schema is none or data is none %}
   <li>{{ _('This object has been imported without data.') }}</li>
-{% elif 'propertyOrder' not in schema %}
-  {% for property_name in schema['properties'] %}
-    {% if property_name not in schema['propertyOrder'] %}
-      {% with schema = schema['properties'][property_name] %}
-      {% with data = data[property_name] %}
-        <li>{{ schema.title | get_translated_text(metadata_language) }}: {% include "pdfexport/any.html" %}</li>
-      {% endwith %}
-      {% endwith %}
-    {% endif %}
-  {% endfor %}
 {% else %}
-  {% for property_name in schema['propertyOrder'] %}
-      {% with schema = schema['properties'][property_name] %}
-      {% if data is not none and property_name in data %}
-        {% set data = data[property_name] %}
-      {% else %}
-        {% set data = none %}
-      {% endif %}
-        <li>{{ schema.title | get_translated_text(metadata_language) }}: {% include "pdfexport/any.html" %}</li>
-      {% endwith %}
-  {% endfor %}
-  {% for property_name in schema['properties'] %}
-    {% if property_name not in schema['propertyOrder'] %}
-      {% with schema = schema['properties'][property_name] %}
-      {% if data is not none and property_name in data %}
-        {% set data = data[property_name] %}
-      {% else %}
-        {% set data = none %}
-      {% endif %}
-        <li>{{ schema.title | get_translated_text(metadata_language) }}: {% include "pdfexport/any.html" %}</li>
-      {% endwith %}
+  {% set property_names = get_property_names_in_order(schema) %}
+  {% for property_name in property_names %}
+    {% if data | are_conditions_fulfilled(schema.properties[property_name]) %}
+      {% set schema = schema['properties'][property_name] %}
+      {% set data = data.get(property_name) %}
+      <li>{{ schema.title | get_translated_text(metadata_language) }}: {% include "pdfexport/any.html" %}</li>
     {% endif %}
   {% endfor %}
 {% endif %}
