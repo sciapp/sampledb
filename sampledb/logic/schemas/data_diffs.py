@@ -72,15 +72,18 @@ def _guess_type_of_data(data: typing.Any) -> typing.Optional[str]:
 def _apply_array_diff(
         data_before: typing.List[typing.Any],
         data_diff: ArrayDiff,
-        schema_before: typing.Dict[str, typing.Any]
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]]
 ) -> typing.List[typing.Any]:
     data_after = copy.deepcopy(data_before)
     for index, item_diff in enumerate(data_diff):
         value_before = data_before[index] if index < len(data_before) else VALUE_NOT_SET
-        try:
-            item_schema_before = schema_before['items']
-        except Exception:
-            raise errors.DiffMismatchError()
+        if schema_before is None:
+            item_schema_before = None
+        else:
+            try:
+                item_schema_before = schema_before['items']
+            except Exception:
+                raise errors.DiffMismatchError()
         value_after = apply_diff(value_before, item_diff, item_schema_before, validate_data_before=False)
         if value_after != VALUE_NOT_SET:
             if value_before == VALUE_NOT_SET:
@@ -92,11 +95,28 @@ def _apply_array_diff(
     return data_after
 
 
+def _apply_timeseries_array_diff(
+        data_before: typing.Dict[str, typing.Any],
+        data_diff: ArrayDiff
+) -> typing.Dict[str, typing.Any]:
+    if not isinstance(data_before.get('data'), list):
+        raise errors.DiffMismatchError()
+    data_after = copy.deepcopy(data_before)
+    data_after['data'] = _apply_array_diff(data_before=data_before['data'], data_diff=data_diff, schema_before=None)
+    return data_after
+
+
 def _apply_object_diff(
         data_before: typing.Dict[str, typing.Any],
         data_diff: ObjectDiff,
-        schema_before: typing.Dict[str, typing.Any]
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]]
 ) -> typing.Dict[str, typing.Any]:
+    if schema_before is None:
+        schema_before = {
+            'title': '',
+            'type': 'object',
+            'properties': {}
+        }
     data_after = copy.deepcopy(data_before)
     for property_name, property_diff in data_diff.items():
         value_before = data_before.get(property_name, VALUE_NOT_SET)
@@ -156,10 +176,10 @@ def _compare_generic_data(
 def _apply_generic_diff(
         data_before: typing.Any,
         data_diff: GenericDiff,
-        schema_before: typing.Dict[str, typing.Any]
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]]
 ) -> typing.Any:
     if '_before' in data_diff:
-        if data_diff['_before'] is not None:
+        if data_diff['_before'] is not None and schema_before is not None:
             try:
                 validate(data_diff['_before'], schema_before)
             except Exception:
@@ -191,11 +211,11 @@ def _guess_type_of_diff(data_diff: typing.Optional[DataDiff]) -> typing.Optional
 def apply_diff(
         data_before: typing.Any,
         data_diff: typing.Optional[DataDiff],
-        schema_before: typing.Dict[str, typing.Any],
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]],
         *,
         validate_data_before: bool = True
 ) -> typing.Any:
-    if validate_data_before:
+    if validate_data_before and schema_before is not None:
         validate(data_before, schema_before)
     diff_type = _guess_type_of_diff(data_diff)
     if diff_type is None:
@@ -203,9 +223,11 @@ def apply_diff(
             raise errors.DiffMismatchError()
         return copy.deepcopy(data_before)
     if diff_type is ArrayDiff:
-        if not isinstance(data_before, list):
-            raise errors.DiffMismatchError()
-        return _apply_array_diff(data_before, typing.cast(ArrayDiff, data_diff), schema_before)
+        if isinstance(data_before, dict) and data_before.get('_type') == 'timeseries':
+            return _apply_timeseries_array_diff(data_before, typing.cast(ArrayDiff, data_diff))
+        if isinstance(data_before, list):
+            return _apply_array_diff(data_before, typing.cast(ArrayDiff, data_diff), schema_before)
+        raise errors.DiffMismatchError()
     if diff_type is ObjectDiff:
         if not isinstance(data_before, dict):
             raise errors.DiffMismatchError()

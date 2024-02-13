@@ -459,3 +459,72 @@ def test_apply_diff_with_missing_property():
         schema_before=schema_before,
         validate_data_before=False
     ) == data_after
+
+
+def test_timeseries_diffs():
+    schema_before = {
+        "type": "object",
+        "title": "Object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "timeseries": {
+                "title": "Timeseries",
+                "type": "timeseries",
+                "units": "m"
+            }
+        },
+        "required": ["name"]
+    }
+    data_before = {
+        "name": {
+            "_type": "text",
+            "text": "Timeseries Diff Test"
+        },
+        "timeseries": {
+            '_type': 'timeseries',
+            'units': 'm',
+            'data': [
+                ["2023-01-02 03:04:05.678900", 1, 1],
+                ["2023-01-02 03:04:06.678900", 2, 2]
+            ]
+        }
+    }
+    data_after = {
+        "name": {
+            "_type": "text",
+            "text": "Timeseries Diff Test"
+        },
+        "timeseries": {
+            '_type': 'timeseries',
+            'units': 'm',
+            'data': [
+                ["2023-01-02 03:04:05.678900", 1, 1],
+                ["2023-01-02 03:04:06.678900", 2, 2],
+                ["2023-01-02 03:04:07.678900", 3, 3]
+            ]
+        }
+    }
+    data_diff =  {
+        "timeseries": [
+            None,
+            None,
+            {
+                '_after': ["2023-01-02 03:04:07.678900", 3, 3]
+            }
+        ]
+    }
+    assert apply_diff(
+        data_before=data_before,
+        data_diff=data_diff,
+        schema_before=schema_before,
+        validate_data_before=False
+    ) == data_after
+    assert apply_diff(
+        data_before=data_after,
+        data_diff=invert_diff(data_diff=data_diff),
+        schema_before=schema_before,
+        validate_data_before=False
+    ) == data_before

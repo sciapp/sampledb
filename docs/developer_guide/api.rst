@@ -2317,6 +2317,20 @@ The following diff would add a value of 11g to ``mass_list`` and set ``measureme
       ]
     }
 
+While diffs for timeseries will use the generic ``_before`` and ``_after`` syntax when produced by SampleDB, using the array syntax for timeseries is also supported when providing diffs via the HTTP API. As such, the following diff would append an entry to the timeseries ``temperature``, if it had 2 elements before:
+
+.. code-block:: json
+
+    {
+      "temperature": [
+        null,
+        null,
+        {
+          "_after": ["2023-01-02 03:04:05.678900", 20, 293,15]
+        }
+      ]
+    }
+
 .. _access_tokens:
 
 Access Tokens
