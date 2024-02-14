@@ -169,6 +169,19 @@
       });
 
       $('#input-array_buttons').val(window.arrayButtons.join());
+      $('[data-sampledb-choice-array]').each(function () {
+        const choicePicker = $(this);
+        const wrapper = choicePicker.closest('.error-parent');
+        const idPrefix = choicePicker.data('sampledb-choice-array');
+        wrapper.find(`input[type="hidden"][name!="${idPrefix}_hidden"]`).remove();
+        $.each(choicePicker.selectpicker('val'), function (index, value) {
+          const name = `${idPrefix}_${index}__text`;
+          const element = $('<input type="hidden" />');
+          element.attr("name", name);
+          element.attr("value", value);
+          wrapper.append(element);
+        });
+      });
 
       $('.typeahead').each(function() {
         $(this).val($(this).typeahead('val'));

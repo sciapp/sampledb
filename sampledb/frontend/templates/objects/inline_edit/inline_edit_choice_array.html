@@ -1,0 +1,12 @@
+{% if schema['items'].type == 'text' and 'choices' in schema['items'] %}
+  {% if data is none %}
+    {% set data = [] %}
+  {% endif %}
+  {% include "objects/view/any.html" %}
+  <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
+  {% for item in data %}
+    <input type="hidden" name="{{ id_prefix }}_{{ loop.index0 }}__text" value="{{ item['text'] }}" />
+  {% endfor %}
+{% else %}
+  {% include "objects/inline_edit/inline_edit_list_array.html" %}
+{% endif %}
