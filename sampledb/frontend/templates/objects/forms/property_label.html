@@ -3,7 +3,7 @@
 {% endif %}
 <label class="control-label {{ property_label_class }} {% if schema.title | get_translated_text and is_required %}required-label{% endif %}">
 {% if 'tooltip' in schema %}
-  <span data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}">
+  <span {% if is_template %} data-template-toggle="tooltip" {% else %} data-toggle="tooltip" {% endif %} data-placement="top" title="{{ schema.tooltip | get_translated_text }}">
 {% endif %}
 {{ schema.title | get_translated_text }}
 {% if 'tooltip' in schema %}
