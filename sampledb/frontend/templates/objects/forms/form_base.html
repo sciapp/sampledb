@@ -1184,6 +1184,15 @@
       }
     });
 
+    $('[data-template-toggle="tooltip"]').each(function () {
+      if ($(this).parents('.array-template').length === 0) {
+        $(this).attr('data-toggle', $(this).attr('data-template-toggle'));
+        $(this).removeAttr('data-template-toggle');
+        $(this).removeData('template-toggle');
+        $(this).tooltip();
+      }
+    });
+
     $('.selectpicker').selectpicker('refresh');
     $('[data-toggle="tooltip"]').tooltip('hide');
   }
