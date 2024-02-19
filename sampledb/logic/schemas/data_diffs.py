@@ -75,6 +75,7 @@ def _apply_array_diff(
         schema_before: typing.Optional[typing.Dict[str, typing.Any]]
 ) -> typing.List[typing.Any]:
     data_after = copy.deepcopy(data_before)
+    indices_to_remove = []
     for index, item_diff in enumerate(data_diff):
         value_before = data_before[index] if index < len(data_before) else VALUE_NOT_SET
         if schema_before is None:
@@ -91,7 +92,9 @@ def _apply_array_diff(
             else:
                 data_after[index] = value_after
         elif value_before != VALUE_NOT_SET:
-            del data_after[index]
+            indices_to_remove.append(index)
+    for index in reversed(indices_to_remove):
+        del data_after[index]
     return data_after
 
 
