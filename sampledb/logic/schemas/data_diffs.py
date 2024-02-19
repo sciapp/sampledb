@@ -1,4 +1,5 @@
 import copy
+import re
 import typing
 
 from .. import errors
@@ -7,8 +8,9 @@ from .validate import validate
 
 GenericDiff = typing.TypedDict('GenericDiff', {'_before': typing.Any, '_after': typing.Any}, total=False)
 ArrayDiff = typing.List[typing.Optional['DataDiff']]
+ArrayIndexDiff = typing.Dict[str, GenericDiff]
 ObjectDiff = typing.Dict[str, typing.Optional['DataDiff']]
-DataDiff = typing.Union[ArrayDiff, ObjectDiff, GenericDiff]
+DataDiff = typing.Union[ArrayDiff, ArrayIndexDiff, ObjectDiff, GenericDiff]
 
 
 class _ValueNotSet:
@@ -109,6 +111,50 @@ def _apply_timeseries_array_diff(
     return data_after
 
 
+def _apply_array_index_diff(
+        data_before: typing.List[typing.Any],
+        data_diff: ArrayIndexDiff,
+        schema_before: typing.Optional[typing.Dict[str, typing.Any]]
+) -> typing.List[typing.Any]:
+    length_before = len(data_before)
+    diffs_by_index = {}
+    for index_info, item_diff in data_diff.items():
+        try:
+            index = int(index_info)
+        except ValueError:
+            raise errors.DiffMismatchError()
+        if index_info.startswith('+') or index < 0:
+            index += length_before
+        if index < 0:
+            raise errors.DiffMismatchError()
+        if index in diffs_by_index:
+            raise errors.DiffMismatchError()
+        diffs_by_index[index] = item_diff
+    new_indices = {index for index in diffs_by_index if index >= length_before}
+    if new_indices:
+        length_after = max(new_indices) + 1
+        if new_indices != set(range(length_before, length_after)):
+            raise errors.DiffMismatchError()
+    else:
+        length_after = length_before
+    new_data_diff: ArrayDiff = [
+        diffs_by_index.get(index)
+        for index in range(length_after)
+    ]
+    return _apply_array_diff(data_before, new_data_diff, schema_before)
+
+
+def _apply_timeseries_array_index_diff(
+        data_before: typing.Dict[str, typing.Any],
+        data_diff: ArrayIndexDiff
+) -> typing.Dict[str, typing.Any]:
+    if not isinstance(data_before.get('data'), list):
+        raise errors.DiffMismatchError()
+    data_after = copy.deepcopy(data_before)
+    data_after['data'] = _apply_array_index_diff(data_before=data_before['data'], data_diff=data_diff, schema_before=None)
+    return data_after
+
+
 def _apply_object_diff(
         data_before: typing.Dict[str, typing.Any],
         data_diff: ObjectDiff,
@@ -200,12 +246,14 @@ def _apply_generic_diff(
         return VALUE_NOT_SET
 
 
-def _guess_type_of_diff(data_diff: typing.Optional[DataDiff]) -> typing.Optional[typing.Union[typing.Type[ArrayDiff], typing.Type[ObjectDiff], typing.Type[GenericDiff]]]:
+def _guess_type_of_diff(data_diff: typing.Optional[DataDiff]) -> typing.Optional[typing.Union[typing.Type[ArrayDiff], typing.Type[ArrayIndexDiff], typing.Type[ObjectDiff], typing.Type[GenericDiff]]]:
     if data_diff is None:
         return None
     if isinstance(data_diff, list):
         return ArrayDiff
     assert isinstance(data_diff, dict)
+    if all(type(key) is str and re.match(r'^([+-]?[1-9][0-9]*)|(\+?0)$', key) for key in data_diff):
+        return ArrayIndexDiff
     if '_before' not in data_diff and '_after' not in data_diff:
         return ObjectDiff
     return GenericDiff
@@ -231,6 +279,12 @@ def apply_diff(
         if isinstance(data_before, list):
             return _apply_array_diff(data_before, typing.cast(ArrayDiff, data_diff), schema_before)
         raise errors.DiffMismatchError()
+    if diff_type is ArrayIndexDiff:
+        if isinstance(data_before, dict) and data_before.get('_type') == 'timeseries':
+            return _apply_timeseries_array_index_diff(data_before, typing.cast(ArrayIndexDiff, data_diff))
+        if isinstance(data_before, list):
+            return _apply_array_index_diff(data_before, typing.cast(ArrayIndexDiff, data_diff), schema_before)
+        raise errors.DiffMismatchError()
     if diff_type is ObjectDiff:
         if not isinstance(data_before, dict):
             raise errors.DiffMismatchError()
@@ -250,6 +304,28 @@ def invert_diff(
             invert_diff(data_diff=item_diff)
             for item_diff in array_diff
         ]
+    if diff_type is ArrayIndexDiff:
+        array_index_diff = typing.cast(ArrayIndexDiff, data_diff)
+        inverted_data_diff: ArrayIndexDiff = {}
+        length_change = 0
+        for item_diff in array_index_diff.values():
+            if not isinstance(item_diff, dict):
+                continue
+            if '_after' in item_diff and '_before' not in item_diff:
+                length_change += 1
+            if '_before' in item_diff and '_after' not in item_diff:
+                length_change -= 1
+        for index_info, item_diff in array_index_diff.items():
+            inverted_item_diff = typing.cast(GenericDiff, invert_diff(data_diff=item_diff))
+            if index_info.startswith('+') or index_info.startswith('-'):
+                try:
+                    index_offset = int(index_info)
+                except ValueError:
+                    raise errors.DiffMismatchError()
+                inverted_data_diff[f"{index_offset - length_change:+d}"] = inverted_item_diff
+            else:
+                inverted_data_diff[index_info] = inverted_item_diff
+        return inverted_data_diff
     if diff_type is ObjectDiff:
         object_diff = typing.cast(ObjectDiff, data_diff)
         return {

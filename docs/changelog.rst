@@ -8,6 +8,7 @@ Currently under development.
 
 - Added ``choice`` array style for multi selection dropdowns
 - Introduce action topics and allow filtering action lists by topics
+- Added new array index diff syntax for updating data via the HTTP API
 
 Version 0.26
 ------------
