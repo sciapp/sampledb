@@ -17,6 +17,15 @@ Action Types
 The type of an Action describes the general kind of process it represents, such as **Sample Creation**. There are four built-in action types for creating samples, performing a measurement, running a simulation, and for use as schema templates. Administrators can create additional custom action types.
 Schema templates have a special role, as they are usually not used like other actions. Instead, actions marked for use as a schema template can be included in the schemas of other actions.
 
+.. _action_topics:
+
+Topics
+------
+
+Topics allow you to filter the action list by predefined topics.
+When creating or editing an action, you can optionally assign one or more topics to the action.
+See the :ref:`topics section <topics>` for more details.
+
 Custom Actions
 --------------
 

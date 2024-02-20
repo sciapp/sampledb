@@ -259,6 +259,7 @@ def test_status_codes(flask_server, user, driver):
             file_name='demo.zip',
             zip_bytes=b''
         ).id
+        topic_id = sampledb.logic.topics.create_topic(show_in_navbar=False, show_on_frontpage=False, name='Test', description='Testing Topic').id
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -428,6 +429,9 @@ def test_status_codes(flask_server, user, driver):
         f'static/{static_file_name}': 200,
         'status/': 200,
         'tags/': 200,
+        'topics/': 200,
+        f'topics/{topic_id}': 200,
+        'topics/new': 200,
         'users/': 200,
         f'users/{user_id}': 200,
         f'users/{user_id}/activity': 302,
@@ -504,4 +508,5 @@ def test_status_codes(flask_server, user, driver):
         'timeseries_id': timeseries_id,
         'error_code': 400,
         'eln_import_id': eln_import_id,
+        'topic_id': topic_id,
     })

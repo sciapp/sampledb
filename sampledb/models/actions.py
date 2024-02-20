@@ -16,12 +16,20 @@ if typing.TYPE_CHECKING:
     from .action_translations import ActionTranslation, ActionTypeTranslation
     from .instruments import Instrument
     from .users import User
+    from .topics import Topic
 
 usable_in_action_types_table = db.Table(
     'usable_in_action_types', db.metadata,
     db.Column('owner_usable_in_action_types_id', db.Integer, primary_key=True),
     db.Column('owner_action_type', db.Integer, db.ForeignKey('action_types.id')),
     db.Column('usable_in_action_types', db.Integer, db.ForeignKey('action_types.id'))
+)
+
+topic_action_association_table = db.Table(
+    'action_topics',
+    db.metadata,
+    db.Column('action_id', db.Integer, db.ForeignKey('actions.id')),
+    db.Column('topic_id', db.Integer, db.ForeignKey('topics.id'))
 )
 
 
@@ -159,6 +167,7 @@ class Action(Model):
     admin_only: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     disable_create_objects: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     objects_readable_by_all_users_by_default: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    topics: Mapped[typing.List['Topic']] = relationship('Topic', secondary=topic_action_association_table, back_populates='actions')
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Action"]]

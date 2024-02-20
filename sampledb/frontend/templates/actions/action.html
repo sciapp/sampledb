@@ -42,6 +42,13 @@
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
   {% endif %}
+  {% if not config['DISABLE_TOPICS'] and action.topics %}
+    <p>{{ _('Topics') }}:
+    {% for topic in action.topics %}
+      <a class="badge badge-secondary" href="{{ url_for('.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+    {% endfor %}
+    </p>
+  {% endif %}
   {% if action.type_id is none or not action.type.disable_create_objects %}
   <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>
   {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}

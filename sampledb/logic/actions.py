@@ -25,7 +25,7 @@ import typing
 
 from .. import db
 from .. import models
-from . import errors, instruments, users, schemas, components
+from . import errors, instruments, users, schemas, components, topics
 from .utils import cache
 from .action_types import check_action_type_exists, ActionType
 
@@ -55,6 +55,7 @@ class Action:
     admin_only: bool
     disable_create_objects: bool
     objects_readable_by_all_users_by_default: bool
+    topics: typing.List[topics.Topic]
 
     @classmethod
     def from_database(cls, action: models.Action) -> 'Action':
@@ -79,6 +80,7 @@ class Action:
             admin_only=action.admin_only,
             disable_create_objects=action.disable_create_objects,
             objects_readable_by_all_users_by_default=action.objects_readable_by_all_users_by_default,
+            topics=[topics.Topic.from_database(topic) for topic in action.topics]
         )
 
     def __repr__(self) -> str:

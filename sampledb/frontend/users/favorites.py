@@ -33,7 +33,8 @@ def toggle_favorite_action() -> FlaskResponseT:
     return flask.redirect(flask.url_for(
         '.actions',
         object_id=flask.request.args.getlist('object_id'),
-        t=flask.request.args.get('t', None)
+        t=flask.request.args.get('t', None),
+        topic_ids=flask.request.args.get('topic_ids', None)
     ))
 
 

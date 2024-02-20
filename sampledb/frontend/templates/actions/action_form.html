@@ -266,6 +266,17 @@
         <input name="{{ action_form.instrument.name }}" type="hidden" value="-1" {% if not may_change_instrument %}disabled="disabled"{% endif %} />
       {% endif %}
 
+      {% if not config['DISABLE_TOPICS'] %}
+      <div class="form-group {% if action_form.topics.name in action_form.errors %}has-error{% endif %}" {% if not action_form.topics.choices %}style="display: none"{% endif %}>
+        <label for="input-topics" class="control-label">{{ _('Topics') }}</label>
+        <select class="selectpicker form-control" id="input-topics" name="{{ action_form.topics.name }}" data-none-selected-text="{{ _('No topic selected') }}" multiple="multiple">
+          {% for topic_id, topic_name in action_form.topics.choices %}
+            <option value="{{ topic_id }}"{% if topic_id in action_form.topics.data %}selected="selected"{% endif %}>{{ topic_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
       <div class="checkbox">
         <label for="input-is_hidden" style="font-weight:400">
           <input type="checkbox" id="input-is_hidden" name="{{ action_form.is_hidden.name }}" {% if action_form.is_hidden.data %}checked="checked"{% endif %}> {{ _('Hide this action from action lists') }}

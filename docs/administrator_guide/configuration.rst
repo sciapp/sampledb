@@ -315,5 +315,7 @@ Miscellaneous
      - The time of inactivity after which users on shared devices will be signed out in minutes (default: 30 minutes).
    * - SAMPLEDB_DISABLE_OUTDATED_USE_AS_TEMPLATE
      - If set, users cannot use objects with outdated schemas as a template (default: False).
+   * - SAMPLEDB_DISABLE_TOPICS
+     - You can set this option to disable the :ref:`Topics <topics>` feature. (default: False, Topics enabled)
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

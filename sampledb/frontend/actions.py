@@ -8,8 +8,9 @@ import typing
 
 import flask
 import flask_login
+import werkzeug
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, StringField, SelectField, IntegerField
+from wtforms import BooleanField, StringField, SelectField, IntegerField, SelectMultipleField
 from wtforms.validators import InputRequired, ValidationError, DataRequired
 from flask_babel import _, force_locale
 
@@ -28,12 +29,13 @@ from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..logic import errors, users
 from ..logic.schemas.validate_schema import validate_schema
 from ..logic.schemas.templates import reverse_substitute_templates, find_invalid_template_paths
-from ..logic.settings import get_user_setting
+from ..logic.settings import get_user_setting, set_user_settings, get_user_settings
+from ..logic.topics import get_topics, get_topic, set_action_topics
 from ..logic.users import get_users, get_user
 from ..logic.groups import get_group
 from ..logic.projects import get_project
 from .users.forms import ToggleFavoriteActionForm
-from .utils import check_current_user_is_not_readonly, get_groups_form_data
+from .utils import check_current_user_is_not_readonly, get_groups_form_data, _parse_filter_id_params, build_modified_url
 from ..utils import FlaskResponseT
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
@@ -42,10 +44,16 @@ from ..models import Permissions
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
+ACTION_LIST_FILTER_PARAMETERS = (
+    'action_list_filters',
+    'topic_ids'
+)
+
 
 class ActionForm(FlaskForm):
     type = IntegerField()
     instrument = SelectField()
+    topics = SelectMultipleField()
     schema = StringField(validators=[InputRequired()])
     is_public = BooleanField()
     is_user_specific = BooleanField(default=True)
@@ -68,6 +76,32 @@ class ActionForm(FlaskForm):
             raise ValidationError(_("Unknown action type"))
         if action_type.admin_only and not flask_login.current_user.is_admin:
             raise ValidationError(_("Actions with this type can only be created or edited by administrators."))
+
+
+def _parse_action_list_filters(
+        params: werkzeug.datastructures.MultiDict[str, str],
+        valid_topic_ids: typing.List[int]
+) -> typing.Tuple[
+    bool,
+    typing.Optional[typing.List[int]],
+]:
+    FALLBACK_RESULT = False, None
+    success, filter_topic_ids = _parse_filter_id_params(
+        params=params,
+        param_aliases=['topic_ids'],
+        valid_ids=valid_topic_ids,
+        id_map={},
+        multi_params_error='',
+        parse_error=_('Unable to parse topic IDs.'),
+        invalid_id_error=_('Invalid topic ID.')
+    )
+    if not success:
+        return FALLBACK_RESULT
+
+    return (
+        True,
+        filter_topic_ids,
+    )
 
 
 @frontend.route('/actions/')
@@ -134,6 +168,39 @@ def actions() -> FlaskResponseT:
             for action in actions
             if action.schema is not None and action.type is not None and not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not flask_login.current_user.is_admin)
         ]
+
+    topics = get_topics()
+    valid_topic_ids = [topic.id for topic in topics]
+
+    if any(any(flask.request.args.getlist(param)) for param in ACTION_LIST_FILTER_PARAMETERS):
+        (
+            success,
+            filter_topic_ids,
+        ) = _parse_action_list_filters(
+            params=flask.request.args,
+            valid_topic_ids=valid_topic_ids
+        )
+        if not success:
+            return flask.abort(400)
+    else:
+        filter_topic_ids = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_ACTION_LIST_FILTERS'].get('filter_topic_ids', [])
+
+    if filter_topic_ids:
+        actions = [
+            action
+            for action in actions
+            if any(topic in [topic.id for topic in action.topics] for topic in filter_topic_ids)
+        ]
+
+    filter_topic_infos = []
+    if filter_topic_ids:
+        for topic_id in filter_topic_ids:
+            topic = get_topic(topic_id)
+            filter_topic_infos.append({
+                'name': get_translated_text(topic.name, default=_('Unnamed Topic')),
+                'url': flask.url_for('.topic', topic_id=topic_id)
+            })
+
     user_favorite_action_ids = get_user_favorite_action_ids(flask_login.current_user.id)
     toggle_favorite_action_form = ToggleFavoriteActionForm()
     return flask.render_template(
@@ -146,8 +213,48 @@ def actions() -> FlaskResponseT:
         user_favorite_action_ids=user_favorite_action_ids,
         toggle_favorite_action_form=toggle_favorite_action_form,
         get_user=get_user,
-        get_component=get_component
+        get_component=get_component,
+        topics=topics,
+        filter_topic_infos=filter_topic_infos,
+        filter_topic_ids=filter_topic_ids
     )
+
+
+@frontend.route('/actions/', methods=['POST'])
+@flask_login.login_required
+def save_action_list_defaults() -> FlaskResponseT:
+    if 'save_default_action_filters' in flask.request.form:
+        topics = get_topics()
+        valid_topic_ids = [topic.id for topic in topics]
+
+        if any(any(flask.request.args.getlist(param)) for param in ACTION_LIST_FILTER_PARAMETERS):
+            (
+                success,
+                filter_topic_ids,
+            ) = _parse_action_list_filters(
+                params=flask.request.args,
+                valid_topic_ids=valid_topic_ids
+            )
+            if not success:
+                return flask.abort(400)
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_ACTION_LIST_FILTERS': {
+                    'filter_topic_ids': filter_topic_ids,
+                }
+            }
+        )
+        return flask.redirect(build_modified_url('.actions', blocked_parameters=ACTION_LIST_FILTER_PARAMETERS))
+    if 'clear_default_action_filters' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_ACTION_LIST_FILTERS': {}
+            }
+        )
+        return flask.redirect(build_modified_url('.actions', blocked_parameters=ACTION_LIST_FILTER_PARAMETERS))
+    return flask.abort(400)
 
 
 @frontend.route('/actions/<int:action_id>', methods=['GET', 'POST'])
@@ -207,6 +314,14 @@ def new_action() -> FlaskResponseT:
             action_type_id = None
     else:
         action_type_id = None
+    topic_ids_str = flask.request.args.get('topic_ids')
+    if topic_ids_str is not None:
+        try:
+            topic_ids = [int(topic_id_str) for topic_id_str in topic_ids_str.split(',')]
+        except ValueError:
+            topic_ids = None
+    else:
+        topic_ids = None
     previous_action = None
     previous_action_id_str = flask.request.args.get('previous_action_id', None)
     if previous_action_id_str is not None:
@@ -233,7 +348,7 @@ def new_action() -> FlaskResponseT:
                 elif previous_action.type.admin_only and not flask_login.current_user.is_admin:
                     flask.flash(_('Only administrators can create actions of this type.'), 'error')
                     return flask.redirect(flask.url_for('.action', action_id=previous_action_id))
-    return show_action_form(None, previous_action, action_type_id)
+    return show_action_form(None, previous_action, action_type_id, topic_ids=topic_ids)
 
 
 def _get_lines_for_path(schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> typing.Optional[typing.Set[int]]:
@@ -295,6 +410,7 @@ def show_action_form(
         previous_action: typing.Optional[Action] = None,
         action_type_id: typing.Optional[int] = None,
         action_schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        topic_ids: typing.Optional[typing.List[int]] = None,
 ) -> FlaskResponseT:
     action_translations = []
     load_translations = False
@@ -312,6 +428,8 @@ def show_action_form(
             with force_locale(language.lang_code):
                 tags_translations[language.lang_code] = _('Tags')
                 hazards_translations[language.lang_code] = _('GHS Hazards')
+
+    topics = get_topics()
 
     if action is not None:
         action_translations = get_action_translations_for_action(action.id, use_fallback=True)
@@ -363,9 +481,13 @@ def show_action_form(
         for action_translation in action_translations
     }
     user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
-
+    action_form.topics.choices = [
+        (str(topic.id), get_translated_text(topic.name))
+        for topic in topics
+    ]
     if not action_form.is_submitted():
         action_form.use_json_editor.data = get_user_setting(flask_login.current_user.id, "USE_SCHEMA_EDITOR")
+        action_form.topics.data = []
     if action is not None:
         if action.instrument is not None:
             action_form.instrument.choices = [
@@ -401,10 +523,13 @@ def show_action_form(
                     action_form.instrument.data = str(previous_action.instrument_id)
                 else:
                     action_form.instrument.data = '-1'
-
     form_is_valid = False
     if not action_form.is_submitted():
         action_form.type.data = action_type_id
+        if topic_ids and not flask.current_app.config['DISABLE_TOPICS']:
+            action_form.topics.data = [str(topic_id) for topic_id in topic_ids]
+        else:
+            action_form.topics.data = []
     elif action_form.validate_on_submit():
         form_is_valid = True
         action_type_id = action_form.type.data
@@ -427,6 +552,7 @@ def show_action_form(
             else:
                 action_form.usable_by.data = 'with_permissions'
             action_form.objects_readable_by_all_users_by_default.data = action.objects_readable_by_all_users_by_default
+            action_form.topics.data = [str(topic.id) for topic in action.topics]
         elif previous_action is not None:
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
@@ -435,6 +561,11 @@ def show_action_form(
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
             action_form.usable_by.data = 'with_permissions'
             action_form.objects_readable_by_all_users_by_default.data = previous_action.objects_readable_by_all_users_by_default
+            if not action_form.topics.data and previous_action.topics:
+                action_form.topics.data = [str(topic.id) for topic in previous_action.topics]
+        if flask.current_app.config['DISABLE_TOPICS']:
+            action_form.topics.choices = []
+            action_form.topics.data = []
 
     if action_form.schema.data:
         schema_json = action_form.schema.data
@@ -562,8 +693,8 @@ def show_action_form(
                             instrument_is_fav=instrument_is_fav,
                             error_lines=list(error_lines or []),
                         )
-
         instrument_id_str = action_form.instrument.data
+        topic_id_strs = action_form.topics.data
         is_public = action_form.is_public.data
         is_hidden = action_form.is_hidden.data
         is_markdown = action_form.is_markdown.data
@@ -581,6 +712,12 @@ def show_action_form(
                 instrument_id = None
         else:
             instrument_id = None
+
+        try:
+            topic_ids = [int(topic_id_str) for topic_id_str in topic_id_strs]
+        except ValueError:
+            topic_ids = []
+
         assert action_type_id is not None  # mypy does not infer this, but it is guaranteed by the code above
         if action is None:
             if action_form.is_user_specific.data or not may_set_user_specific:
@@ -610,6 +747,7 @@ def show_action_form(
                 disable_create_objects=disable_create_objects,
                 objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
             )
+        set_action_topics(action.id, topic_ids)
         set_action_permissions_for_all_users(action.id, Permissions.READ if is_public else Permissions.NONE)
 
         # After validation

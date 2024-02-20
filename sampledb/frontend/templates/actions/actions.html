@@ -4,16 +4,79 @@
 
 {% block content %}
   <h1>{% if action_type %}{{ _('%(action_type)s Actions', action_type=action_type.name | get_translated_text(default=_('Unnamed Action Type'))) }} {% else %}{{ _('Actions') }}{% endif %}</h1>
+  {% if filter_topic_infos %}
+    <ul>
+    {% if filter_topic_infos %}
+      <li>
+        {% if filter_topic_infos | length == 1 %}
+          {{ _('for topic:') }}
+        {% else %}
+          {{ _('for topics:') }}
+        {% endif %}
+        {% for topic_info in filter_topic_infos %}
+          <a href="{{ topic_info.url }}">{{ topic_info.name }}</a>{% if loop.index + 1 < filter_topic_infos | length %},{% elif loop.index + 1 == filter_topic_infos | length %} {{ _('or') }} {% endif %}
+        {% endfor %}
+      </li>
+    {% endif %}
+    </ul>
+  {% endif %}
   <p class="text-muted">{% if action_type and action_type.description %}{{ action_type.description | get_translated_text(default='—') }}{% else %}{{ _('Actions represent processes like creating a sample or performing a measurement.') }}{% endif %} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/actions.html">{{ _("Read more.") }}</a></p>
   {% if (current_user.is_admin or user_is_instrument_scientist) and not current_user.is_readonly and (not action_type or not action_type.admin_only or current_user.is_admin) %}
-    {% if action_type %}
+    {% if action_type and filter_topic_infos %}
+    <a href="{{ url_for('.new_action', action_type_id=action_type.id, topic_ids=filter_topic_ids | join(',')) }}" class="btn btn-default">{{ _("Create Action") }} </a>
+    {% elif action_type %}
     <a href="{{ url_for('.new_action', action_type_id=action_type.id) }}" class="btn btn-default">{{ _("Create Action") }} </a>
+    {% elif filter_topic_ids %}
+    <a href="{{ url_for('.new_action', topic_ids=filter_topic_ids | join(',')) }}" class="btn btn-default">{{ _("Create Action") }} </a>
     {% else %}
     <a href="{{ url_for('.new_action') }}" class="btn btn-default">{{ _("Create Action") }}</a>
     {% endif %}
+    {% if not config['DISABLE_TOPICS'] and topics %}
+      <a class="btn btn-default" data-toggle="modal" data-target="#filtersModal">
+        {{ _('Filters') }}
+      </a>
+
+      <div class="modal fade" id="filtersModal" tabindex="-1" role="dialog" aria-labelledby="filtersModalLabel">
+        <div class="modal-dialog" role="document">
+          <form method="get" class="form">
+            {% for key in request.args %}
+              {% if key not in ['topic_ids'] %}
+                {% for value in request.args.getlist(key) %}
+                  <input type="hidden" name="{{ key }}" value="{{ value }}" />
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+            <input type="hidden" name="action_list_filters" value="" />
+            <input type="hidden" name="user" value="{{ current_user.id }}" />
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="filtersModalLabel">{{ _('Filters') }}</h4>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="input-topics" class="control-label">{{ _('Filter by Topics') }}</label>
+                  <select class="selectpicker form-control" id="input-topics" name="topic_ids" data-none-selected-text="{{ _('No topic selected') }}" multiple>
+                    {% for topic in topics %}
+                    <option value="{{ topic.id }}"{% if topic.id in filter_topic_ids %}selected="selected"{% endif %}>{{ topic.name | get_translated_text }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-default" name="save_default_action_filters" formmethod="post">{{ _('Save') }}</button>
+                <button type="submit" class="btn btn-default" name="clear_default_action_filters" formmethod="post">{{ _('Clear') }}</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Close') }}</button>
+                <button type="submit" class="btn btn-primary">{{ _('Apply') }}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
   {% endif %}
   {% for action in actions %}
-    <form action="{{ url_for('.toggle_favorite_action', object_id=request.args.getlist('object_id'), t=request.args.get('t', None)) }}" method="post">
+    <form action="{{ url_for('.toggle_favorite_action', object_id=request.args.getlist('object_id'), t=request.args.get('t', None), topic_ids=request.args.get('topic_ids', None)) }}" method="post">
       <input type="hidden" name="action_id" value="{{ action.id }}">
       {{ toggle_favorite_action_form.csrf_token() }}
       <h2>
@@ -40,6 +103,14 @@
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _("This action has been hidden from action lists.") }} </p>
     {% endif %}
 
+    {% if not config['DISABLE_TOPICS'] and action.topics %}
+    <p>{{ _('Topics') }}:
+    {% for topic in action.topics %}
+      <a class="badge badge-secondary" href="{{ url_for('.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+    {% endfor %}
+    </p>
+    {% endif %}
+
     {% if action.short_description | get_translated_text %}
       <div class="action-user-content">
         {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description | get_translated_text }}</p>{% endif %}
@@ -61,7 +132,12 @@
   {% endfor %}
 {% endblock %}
 
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
+{% endblock %}
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}
