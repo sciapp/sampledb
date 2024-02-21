@@ -42,7 +42,7 @@
 
       <div class="hidden" id="description-template">
         <div class="input-group" data-language-id="">
-          <input type="text" class="form-control" id="input-description" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description">
+          <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description"></textarea>
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
         <span class="help-block" data-name="description"></span>
@@ -80,7 +80,7 @@
         <div class="input-group" hidden="hidden"></div>
         {% for translation in topic_translations %}
           <div class="input-group" data-language-id="{{ translation.language_id }}">
-            <input type="text" class="form-control" id="input-description-{{ translation.language_id }}" placeholder="{{ _('Description') }}" data-name="input-description" value="{{ translation.description }}" data-translation-attribute="description">
+            <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description-{{ translation.language_id }}" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description">{{ translation.description }}</textarea>
             <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
           </div>
           <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
