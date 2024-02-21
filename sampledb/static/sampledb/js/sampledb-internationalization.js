@@ -83,6 +83,48 @@ function updateTranslationLanguages (languageSelect, templateID, inputIDPrefix, 
   }
 }
 
+function updateTranslationLanguagesForAllAttributes (languageSelect, translationAttributes) {
+  const existingLanguages = [];
+  $.each(window.translations, function (key, value) {
+    existingLanguages.push(value.language_id);
+  });
+  let selected = [ENGLISH_ID.toString()];
+  selected = selected.concat($(languageSelect).val());
+  const languagesToRemove = existingLanguages.filter(n => !selected.includes(n));
+  const languagesToAdd = selected.filter(n => !existingLanguages.includes(n));
+
+  for (const languageToRemove of languagesToRemove) {
+    window.translations = window.translations.filter(function (translation) {
+      return translation.language_id.toString() !== languageToRemove;
+    });
+    $('[data-language-id="' + languageToRemove + '"]').each(function () {
+      $(this).next('.help-block').remove();
+      $(this).remove();
+    });
+  }
+  for (const languageToAdd of languagesToAdd) {
+    const languageName = window.languages.find(lang => lang.id.toString() === languageToAdd).name;
+
+    const newTranslation = {
+      language_id: languageToAdd.toString()
+    };
+    for (const translationAttribute of translationAttributes) {
+      const attributeKey = translationAttribute[0];
+      const attribute = translationAttribute[1];
+      const attributeGroup = translationAttribute[2];
+      const formGroup = $('.form-group[data-name="input-' + attributeGroup + '"]');
+      $($('#' + attribute + '-template').html()).insertAfter(formGroup.children().last());
+      const inputGroup = formGroup.children('.input-group').last();
+      $(inputGroup).children('input').attr('id', 'input-' + attribute + '-' + languageToAdd.toString());
+      $(inputGroup).children('.input-group-addon[data-name="language"]').text(languageName);
+      $(inputGroup).attr('data-language-id', languageToAdd);
+      setTranslationHandler(inputGroup);
+      newTranslation[attributeKey] = '';
+    }
+    window.translations.push(newTranslation);
+  }
+}
+
 function getMarkdownButtonTranslation (buttonText) {
   const markdownButtonTranslations = window.getTemplateValue('translations.markdown_buttons');
   if (markdownButtonTranslations && Object.prototype.hasOwnProperty.call(markdownButtonTranslations, buttonText)) {
@@ -202,6 +244,7 @@ export {
   updateTranslationJSON,
   setTranslationHandler,
   updateTranslationLanguages,
+  updateTranslationLanguagesForAllAttributes,
   initMarkdownField,
   updateMarkdownField
 };
