@@ -17,6 +17,8 @@ from .. import logic
 from .utils import check_current_user_is_not_readonly
 from ..logic.languages import get_language, get_language_by_lang_code
 from ..logic.utils import get_translated_text
+from ..logic.markdown_to_html import markdown_to_safe_html
+from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..utils import FlaskResponseT
 
 
@@ -84,6 +86,8 @@ class TopicForm(FlaskForm):
 
     show_on_frontpage = BooleanField()
     show_in_navbar = BooleanField()
+    description_is_markdown = BooleanField()
+    short_description_is_markdown = BooleanField()
 
 
 def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
@@ -174,6 +178,8 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
             topic_language_ids = [int(translation['language_id']) for translation in translations]
             topic_form.show_on_frontpage.data = topic.show_on_frontpage
             topic_form.show_in_navbar.data = topic.show_in_navbar
+            topic_form.description_is_markdown.data = topic.description_is_markdown
+            topic_form.short_description_is_markdown.data = topic.short_description_is_markdown
 
     if topic_form.validate_on_submit():
         try:
@@ -241,13 +247,22 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                 descriptions[language_code] = translation['description'].strip()
                 short_descriptions[language_code] = translation['short_description'].strip()
 
+                if topic_form.description_is_markdown.data:
+                    description_as_html = markdown_to_safe_html(descriptions[language_code], anchor_prefix="topic-description")
+                    mark_referenced_markdown_images_as_permanent(description_as_html)
+                if topic_form.short_description_is_markdown.data:
+                    short_description_as_html = markdown_to_safe_html(short_descriptions[language_code], anchor_prefix="topic-short-description")
+                    mark_referenced_markdown_images_as_permanent(short_description_as_html)
+
             if topic_id is None:
                 topic = logic.topics.create_topic(
                     name=names,
                     description=descriptions,
                     short_description=short_descriptions,
                     show_on_frontpage=topic_form.show_on_frontpage.data,
-                    show_in_navbar=topic_form.show_in_navbar.data
+                    show_in_navbar=topic_form.show_in_navbar.data,
+                    description_is_markdown=topic_form.description_is_markdown.data,
+                    short_description_is_markdown=topic_form.short_description_is_markdown.data
                 )
                 logic.topics.add_topic_to_order(topic)
             else:
@@ -257,7 +272,9 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                     description=descriptions,
                     short_description=short_descriptions,
                     show_on_frontpage=topic_form.show_on_frontpage.data,
-                    show_in_navbar=topic_form.show_in_navbar.data
+                    show_in_navbar=topic_form.show_in_navbar.data,
+                    description_is_markdown=topic_form.description_is_markdown.data,
+                    short_description_is_markdown=topic_form.short_description_is_markdown.data
                 )
 
         return flask.redirect(flask.url_for('.topic', topic_id=topic.id))

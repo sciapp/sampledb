@@ -50,7 +50,7 @@
       </h2>
       {% if topic.short_description | get_translated_text %}
         <div class="topic-user-content">
-          <p class="multiline-text-wrapper">{{ topic.short_description | get_translated_text }}</p>
+          {% if topic.short_description_is_markdown %}{{ topic.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='topic-short-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ topic.short_description | get_translated_text }}</p>{% endif %}
         </div>
       {% endif %}
       <p>

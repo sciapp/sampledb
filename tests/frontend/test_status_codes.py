@@ -264,7 +264,9 @@ def test_status_codes(flask_server, user, driver):
             show_on_frontpage=False,
             name={'en': 'Test'},
             description={'en': 'Testing Topic'},
-            short_description={'en': ''}
+            short_description={'en': ''},
+            description_is_markdown=True,
+            short_description_is_markdown=True
         ).id
 
     session = requests.session()

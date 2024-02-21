@@ -5,6 +5,7 @@
 {% block stylesheets %}
   {{ super() }}
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
+  <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
 {% endblock %}
 
 {% block template_values %}
@@ -23,6 +24,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/page/topic_form.js') }}" type="module"></script>
 {% endblock %}
 
@@ -50,7 +52,7 @@
 
       <div class="hidden" id="short-description-template">
         <div class="input-group" data-language-id="">
-          <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-short-description" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description"></textarea>
+          <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description"></textarea>
           <span class="input-group-addon language-addon" data-name="language"></span>
         </div>
         <span class="help-block" data-name="short_description"></span>
@@ -83,7 +85,11 @@
 
       <div class="form-group" data-name="input-descriptions">
         <div class="form-group" style="margin-bottom: 0">
-          <label for="input-description" class="control-label">{{ _("Description") }}</label>
+          <label for="input-description" class="control-label col-md-10" style="padding-left: 0">{{ _("Description") }}</label>
+          <label for="input-description-markdown" style="font-weight:400; padding-left: 10px" class="text-right col-md-2">
+            <input type="checkbox" id="input-description-is-markdown" name="{{ topic_form.description_is_markdown.name }}" {% if topic_form.description_is_markdown.data %}checked="checked"{% endif %} />
+            {{ _("Use Markdown") }}
+          </label>
         </div>
         <div class="input-group" hidden="hidden"></div>
         {% for translation in topic_translations %}
@@ -97,15 +103,19 @@
 
       <div class="form-group" data-name="input-short-descriptions">
         <div class="form-group" style="margin-bottom: 0">
-          <label for="input-short-description" class="control-label">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the topic list') }}</span></label>
+          <label for="input-short-description" class="control-label col-md-10" style="padding-left: 0">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the topic list') }}</span></label>
+          <label for="input-short-description-markdown" style="font-weight:400; padding-left: 10px" class="text-right col-md-2">
+            <input type="checkbox" id="input-short-description-is-markdown" name="{{ topic_form.short_description_is_markdown.name }}" {% if topic_form.short_description_is_markdown.data %}checked="checked"{% endif %} />
+            {{ _("Use Markdown") }}
+          </label>
         </div>
         <div class="input-group" hidden="hidden"></div>
         {% for translation in topic_translations %}
           <div class="input-group" data-language-id="{{ translation.language_id }}">
-            <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-short-description-{{ translation.language_id }}" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description">{{ translation.short_description }}</textarea>
+            <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description-{{ translation.language_id }}" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description">{{ translation.short_description }}</textarea>
             <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
           </div>
-          <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
+          <span class="help-block" data-name="name" id="help-block-short-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
         {% endfor %}
       </div>
 

@@ -4,8 +4,13 @@
 import {
   updateTranslationJSON,
   setTranslationHandler,
-  updateTranslationLanguagesForAllAttributes
+  updateTranslationLanguagesForAllAttributes, updateMarkdownField
 } from '../sampledb-internationalization.js';
+
+window.mdeFields = {
+  descriptions: [],
+  short_descriptions: []
+};
 
 $(function () {
   window.translations = window.getTemplateValue('translations');
@@ -23,6 +28,8 @@ $(function () {
       ]
     );
     updateTranslationJSON();
+    updateDescriptionMarkdown();
+    updateShortDescriptionMarkdown();
   });
 
   if (window.getTemplateValue('is_create_form')) {
@@ -41,4 +48,16 @@ $(function () {
     $('input').change();
     return $(this).find('.has-error').length === 0;
   });
+
+  function updateDescriptionMarkdown () {
+    updateMarkdownField('input-description-is-markdown', 'descriptions', 'input-descriptions', '300px');
+  }
+  $('#input-description-is-markdown').change(updateDescriptionMarkdown);
+  updateDescriptionMarkdown();
+
+  function updateShortDescriptionMarkdown () {
+    updateMarkdownField('input-short-description-is-markdown', 'short_descriptions', 'input-short-descriptions', '100px');
+  }
+  $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
+  updateShortDescriptionMarkdown();
 });

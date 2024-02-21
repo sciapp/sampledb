@@ -10,7 +10,7 @@
 
   {% if topic.description | get_translated_text %}
     <div class="topic-user-content">
-      <p class="multiline-text-wrapper">{{ topic.description | get_translated_text }}</p>
+      {% if topic.description_is_markdown %}{{ topic.description | get_translated_text | markdown_to_safe_html(anchor_prefix='topic-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ topic.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
   {% if current_user.is_admin %}

@@ -18,6 +18,8 @@ class Topic:
     short_description: typing.Dict[str, str]
     show_on_frontpage: bool
     show_in_navbar: bool
+    description_is_markdown: bool
+    short_description_is_markdown: bool
     order_index: typing.Optional[int]
 
     @classmethod
@@ -32,6 +34,8 @@ class Topic:
             short_description=topic.short_description,
             show_on_frontpage=topic.show_on_frontpage,
             show_in_navbar=topic.show_in_navbar,
+            description_is_markdown=topic.description_is_markdown,
+            short_description_is_markdown=topic.short_description_is_markdown,
             order_index=topic.order_index
         )
         return wrapped_topic
@@ -91,7 +95,9 @@ def create_topic(
         description: typing.Dict[str, str],
         short_description: typing.Dict[str, str],
         show_on_frontpage: bool,
-        show_in_navbar: bool
+        show_in_navbar: bool,
+        description_is_markdown: bool,
+        short_description_is_markdown: bool
 ) -> Topic:
     """
     Create a new topic.
@@ -103,6 +109,8 @@ def create_topic(
         Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
     :param show_in_navbar: whether this topic should be shown in the navbar
+    :param description_is_markdown: whether the description is markdown
+    :param short_description_is_markdown: whether the short description is markdown
     :return: the created topic
     """
     topic = models.Topic(
@@ -111,6 +119,8 @@ def create_topic(
         short_description=short_description,
         show_on_frontpage=show_on_frontpage,
         show_in_navbar=show_in_navbar,
+        description_is_markdown=description_is_markdown,
+        short_description_is_markdown=short_description_is_markdown,
         order_index=None
     )
     db.session.add(topic)
@@ -125,7 +135,9 @@ def update_topic(
         description: typing.Dict[str, str],
         short_description: typing.Dict[str, str],
         show_on_frontpage: bool,
-        show_in_navbar: bool
+        show_in_navbar: bool,
+        description_is_markdown: bool,
+        short_description_is_markdown: bool
 ) -> Topic:
     """
     Update an existing topic.
@@ -138,6 +150,8 @@ def update_topic(
         Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
     :param show_in_navbar: whether this topic should be shown in the navbar
+    :param description_is_markdown: whether the description is markdown
+    :param short_description_is_markdown: whether the short description is markdown
     :return: the created topic
     :raise errors.TopicDoesNotExistError: when no topic with the given topic ID exists
     """
@@ -149,6 +163,8 @@ def update_topic(
     topic.short_description = short_description
     topic.show_on_frontpage = show_on_frontpage
     topic.show_in_navbar = show_in_navbar
+    topic.description_is_markdown = description_is_markdown
+    topic.short_description_is_markdown = short_description_is_markdown
     db.session.add(topic)
     db.session.commit()
     return Topic.from_database(topic)
