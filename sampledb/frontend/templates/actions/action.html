@@ -34,7 +34,7 @@
 
   {% if action.description | get_translated_text %}
     <div class="action-user-content">
-      {% if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description | get_translated_text }}</p>{% endif %}
+      {%- if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p style="multiline-text-wrapper">{{ action.description | get_translated_text }}</p>{% endif -%}
     </div>
   {% endif %}
   {% if not config['DISABLE_INSTRUMENTS'] %}

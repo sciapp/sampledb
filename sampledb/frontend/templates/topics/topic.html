@@ -10,7 +10,7 @@
 
   {% if topic.description | get_translated_text %}
     <div class="topic-user-content">
-      <p>{{ topic.description | get_translated_text }}</p>
+      <p class="multiline-text-wrapper">{{ topic.description | get_translated_text }}</p>
     </div>
   {% endif %}
   {% if current_user.is_admin %}

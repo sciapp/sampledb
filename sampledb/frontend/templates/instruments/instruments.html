@@ -28,7 +28,7 @@
       <div class="instrument-user-content">
       {% if instrument.short_description_is_markdown %}
         {{ instrument.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}
-      {% else %}<p>{{ instrument.short_description | get_translated_text }}</p>{% endif %}
+      {% else %}<p class="multiline-text-wrapper">{{ instrument.short_description | get_translated_text }}</p>{% endif %}
       </div>
     {% endif %}
     {% if instrument.location is not none %}

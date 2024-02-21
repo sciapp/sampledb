@@ -815,6 +815,13 @@ th:hover .search-helper {
     padding-left: 20px;
 }
 
+.object-user-content .multiline-text-wrapper,
+.instrument-user-content .multiline-text-wrapper,
+.topic-user-content .multiline-text-wrapper,
+.action-user-content .multiline-text-wrapper {
+    white-space: pre-wrap;
+}
+
 .object-user-content table td, .object-user-content table th,
 .instrument-user-content table td, .instrument-user-content table th,
 .topic-user-content table td, .topic-user-content table th,
