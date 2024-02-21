@@ -48,6 +48,14 @@
         <span class="help-block" data-name="description"></span>
       </div>
 
+      <div class="hidden" id="short-description-template">
+        <div class="input-group" data-language-id="">
+          <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-short-description" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description"></textarea>
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" data-name="short_description"></span>
+      </div>
+
       <div class="form-group row" style="padding-right: 10px">
         <label for="select-languages" class="control-label col-md-10">{{ _("Languages") }}</label>
         <select class="selectpicker btn-xs select-language col-md-2" data-style="btn-default btn-xs" multiple="multiple" id="select-languages">
@@ -86,6 +94,21 @@
           <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
         {% endfor %}
       </div>
+
+      <div class="form-group" data-name="input-short-descriptions">
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-short-description" class="control-label">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the topic list') }}</span></label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in topic_translations %}
+          <div class="input-group" data-language-id="{{ translation.language_id }}">
+            <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-short-description-{{ translation.language_id }}" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description">{{ translation.short_description }}</textarea>
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
+          </div>
+          <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
+        {% endfor %}
+      </div>
+
       <div class="checkbox">
         <label for="input-show_on_frontpage" style="font-weight:400">
           <input type="checkbox" id="input-show_on_frontpage"

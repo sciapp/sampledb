@@ -15,6 +15,7 @@ class Topic:
     id: int
     name: typing.Dict[str, str]
     description: typing.Dict[str, str]
+    short_description: typing.Dict[str, str]
     show_on_frontpage: bool
     show_in_navbar: bool
     order_index: typing.Optional[int]
@@ -28,6 +29,7 @@ class Topic:
             id=topic.id,
             name=topic.name,
             description=topic.description,
+            short_description=topic.short_description,
             show_on_frontpage=topic.show_on_frontpage,
             show_in_navbar=topic.show_in_navbar,
             order_index=topic.order_index
@@ -84,10 +86,12 @@ def get_topics(filter_frontpage: bool = False, filter_navbar: bool = False) -> t
 
 
 def create_topic(
-    name: typing.Dict[str, str],
-    description: typing.Dict[str, str],
-    show_on_frontpage: bool,
-    show_in_navbar: bool
+        *,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str],
+        short_description: typing.Dict[str, str],
+        show_on_frontpage: bool,
+        show_in_navbar: bool
 ) -> Topic:
     """
     Create a new topic.
@@ -95,6 +99,8 @@ def create_topic(
     :param name: the unique names of the topic in a dict. Keys are lang codes and values names.
     :param description: (possibly empty) descriptions for the topic in a dict.
         Keys are lang codes and values are descriptions
+    :param short_description: (possibly empty) short descriptions for the topic in a dict.
+        Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
     :param show_in_navbar: whether this topic should be shown in the navbar
     :return: the created topic
@@ -102,6 +108,7 @@ def create_topic(
     topic = models.Topic(
         name=name,
         description=description,
+        short_description=short_description,
         show_on_frontpage=show_on_frontpage,
         show_in_navbar=show_in_navbar,
         order_index=None
@@ -112,11 +119,13 @@ def create_topic(
 
 
 def update_topic(
-    topic_id: int,
-    name: typing.Dict[str, str],
-    description: typing.Dict[str, str],
-    show_on_frontpage: bool,
-    show_in_navbar: bool
+        *,
+        topic_id: int,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str],
+        short_description: typing.Dict[str, str],
+        show_on_frontpage: bool,
+        show_in_navbar: bool
 ) -> Topic:
     """
     Update an existing topic.
@@ -125,6 +134,8 @@ def update_topic(
     :param name: the unique names of the topic in a dict. Keys are lang codes and values names.
     :param description: (possibly empty) descriptions for the topic in a dict.
         Keys are lang codes and values are descriptions
+    :param short_description: (possibly empty) short descriptions for the topic in a dict.
+        Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
     :param show_in_navbar: whether this topic should be shown in the navbar
     :return: the created topic
@@ -135,6 +146,7 @@ def update_topic(
         raise errors.TopicDoesNotExistError()
     topic.name = name
     topic.description = description
+    topic.short_description = short_description
     topic.show_on_frontpage = show_on_frontpage
     topic.show_in_navbar = show_in_navbar
     db.session.add(topic)

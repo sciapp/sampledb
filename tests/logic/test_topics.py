@@ -8,7 +8,8 @@ def test_check_topic_exists():
         show_on_frontpage=True,
         show_in_navbar=True,
         name={'en': 'Testing'},
-        description={'en': 'Testing Topic'}
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''}
     )
     topics.check_topic_exists(topic.id)
     with pytest.raises(errors.TopicDoesNotExistError):
@@ -20,25 +21,29 @@ def test_get_topics():
         show_on_frontpage=True,
         show_in_navbar=True,
         name={'en': 'Topic A'},
-        description={'en': 'Testing Topic'}
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''}
     )
     t2 = topics.create_topic(
         show_on_frontpage=True,
         show_in_navbar=False,
         name={'en': 'Topic B'},
-        description={'en': 'Testing Topic'}
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''}
     )
     t3 = topics.create_topic(
         show_on_frontpage=False,
         show_in_navbar=True,
         name={'en': 'Topic C'},
-        description={'en': 'Testing Topic'}
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''}
     )
     t4 = topics.create_topic(
         show_on_frontpage=False,
         show_in_navbar=False,
         name={'en': 'Topic D'},
-        description={'en': 'Testing Topic'}
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''}
     )
     topics.set_topics_order([topic.id for topic in [t1, t2, t3, t4]])
     t1 = topics.get_topic(t1.id)
@@ -57,7 +62,8 @@ def test_add_topic_to_order():
             show_on_frontpage=True,
             show_in_navbar=True,
             name={'en': 'Local Topic ' + chr(ord('A') + i)},
-            description={'en': ''}
+            description={'en': ''},
+            short_description={'en': ''}
         )
         for i in range(10)
     ]

@@ -115,10 +115,9 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
         lang_name: str
         name: str
         description: str
+        short_description: str
 
     translations: typing.List[TopicTranslation] = []
-    name_language_ids = []
-    description_language_ids = []
 
     if topic_id is not None:
         try:
@@ -127,12 +126,12 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
             return flask.abort(404)
         for lang_code, name in topic.name.items():
             lang_id = get_language_by_lang_code(lang_code).id
-            name_language_ids.append(str(lang_id))
             translation: TopicTranslation = {
                 'language_id': str(lang_id),
                 'lang_name': get_translated_text(get_language(lang_id).names),
                 'name': name,
-                'description': ''
+                'description': '',
+                'short_description': ''
             }
             translations.append(translation)
 
@@ -140,7 +139,6 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
             if lang_code == '':
                 continue
             lang_id = get_language_by_lang_code(lang_code).id
-            description_language_ids.append(lang_id)
             for translation in translations:
                 if str(lang_id) == translation['language_id']:
                     translation['description'] = description
@@ -150,7 +148,26 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                     'language_id': str(lang_id),
                     'lang_name': get_translated_text(get_language(lang_id).names),
                     'name': '',
-                    'description': description
+                    'description': description,
+                    'short_description': ''
+                }
+                translations.append(translation)
+
+        for lang_code, short_description in topic.short_description.items():
+            if lang_code == '':
+                continue
+            lang_id = get_language_by_lang_code(lang_code).id
+            for translation in translations:
+                if str(lang_id) == translation['language_id']:
+                    translation['short_description'] = short_description
+                    break
+            else:
+                translation = {
+                    'language_id': str(lang_id),
+                    'lang_name': get_translated_text(get_language(lang_id).names),
+                    'name': '',
+                    'description': '',
+                    'short_description': short_description
                 }
                 translations.append(translation)
         if 'action_submit' not in flask.request.form:
@@ -167,14 +184,12 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                 'topics/topic_form.html',
                 topic_form=topic_form,
                 topic_translations=translations,
-                name_language_ids=name_language_ids,
-                description_language_ids=description_language_ids,
                 languages=logic.languages.get_languages(),
                 ENGLISH=english,
                 submit_text=_('Create') if topic_id is None else _('Save')
             )
         else:
-            valid_translation_keys = {'language_id', 'name', 'description'}
+            valid_translation_keys = {'language_id', 'name', 'description', 'short_description'}
             if not isinstance(translation_data, list):
                 translation_data = ()
             for translation in translation_data:
@@ -184,8 +199,6 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                         'topics/topic_form.html',
                         topic_form=topic_form,
                         topic_translations=translations,
-                        name_language_ids=name_language_ids,
-                        description_language_ids=description_language_ids,
                         languages=logic.languages.get_languages(),
                         ENGLISH=english,
                         submit_text=_('Create') if topic_id is None else _('Save')
@@ -199,8 +212,6 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                         'topics/topic_form.html',
                         topic_form=topic_form,
                         topic_translations=translations,
-                        name_language_ids=name_language_ids,
-                        description_language_ids=description_language_ids,
                         languages=logic.languages.get_languages(),
                         ENGLISH=english,
                         submit_text=_('Create') if topic_id is None else _('Save')
@@ -214,8 +225,6 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                         'topics/topic_form.html',
                         topic_form=topic_form,
                         topic_translations=translations,
-                        name_language_ids=name_language_ids,
-                        description_language_ids=description_language_ids,
                         languages=logic.languages.get_languages(),
                         ENGLISH=english,
                         submit_text=_('Create') if topic_id is None else _('Save')
@@ -223,17 +232,20 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
 
             names: typing.Dict[str, str] = {}
             descriptions: typing.Dict[str, str] = {}
+            short_descriptions: typing.Dict[str, str] = {}
 
             for translation in translation_data:
                 language_id = int(translation['language_id'])
                 language_code = get_language(language_id).lang_code
                 names[language_code] = translation['name'].strip()
                 descriptions[language_code] = translation['description'].strip()
+                short_descriptions[language_code] = translation['short_description'].strip()
 
             if topic_id is None:
                 topic = logic.topics.create_topic(
                     name=names,
                     description=descriptions,
+                    short_description=short_descriptions,
                     show_on_frontpage=topic_form.show_on_frontpage.data,
                     show_in_navbar=topic_form.show_in_navbar.data
                 )
@@ -243,6 +255,7 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                     topic_id=topic_id,
                     name=names,
                     description=descriptions,
+                    short_description=short_descriptions,
                     show_on_frontpage=topic_form.show_on_frontpage.data,
                     show_in_navbar=topic_form.show_in_navbar.data
                 )
@@ -253,8 +266,6 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
         'topics/topic_form.html',
         topic_form=topic_form,
         topic_translations=translations,
-        name_language_ids=name_language_ids,
-        description_language_ids=description_language_ids,
         topic_language_ids=topic_language_ids,
         languages=logic.languages.get_languages(),
         ENGLISH=english,

@@ -18,7 +18,8 @@ $(function () {
       this,
       [
         ['name', 'name', 'names'],
-        ['description', 'description', 'descriptions']
+        ['description', 'description', 'descriptions'],
+        ['short_description', 'short-description', 'short-descriptions']
       ]
     );
     updateTranslationJSON();
@@ -28,7 +29,7 @@ $(function () {
     $('#select-languages').selectpicker('val', ['' + window.getTemplateValue('language_info.english_id')]);
   }
   $('#select-languages').change();
-  $('.form-group[data-name="input-names"] .input-group[data-language-id], .form-group[data-name="input-descriptions"] .input-group[data-language-id]').each(function (_, element) {
+  $('.form-group[data-name="input-names"] .input-group[data-language-id], .form-group[data-name="input-descriptions"] .input-group[data-language-id], .form-group[data-name="input-short-descriptions"] .input-group[data-language-id]').each(function (_, element) {
     setTranslationHandler(element);
   });
 
