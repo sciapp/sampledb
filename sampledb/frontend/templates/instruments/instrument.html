@@ -19,7 +19,7 @@
     <p>
       {{ _('Topics') }}:
       {% for topic in instrument.topics %}
-        <a class="badge badge-secondary" href="{{ url_for('.instruments', topic_ids=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+        <a class="badge badge-secondary" href="{{ url_for('.topic', topic_id=topic.id) }}">{{ topic.name | get_translated_text }}</a>
       {% endfor %}
     </p>
   {% endif %}
