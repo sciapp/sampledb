@@ -1644,7 +1644,7 @@ def build_modified_url(
     )
 
 
-def _parse_filter_id_params(
+def parse_filter_id_params(
         params: werkzeug.datastructures.MultiDict[str, str],
         param_aliases: typing.List[str],
         valid_ids: typing.List[int],

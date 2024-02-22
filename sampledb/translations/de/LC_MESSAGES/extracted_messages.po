@@ -6740,6 +6740,9 @@ msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
 msgid "No, this topic should not be shown in the navbar"
 msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
 
+msgid "View Instruments"
+msgstr "Instrumente anzeigen"
+
 msgid "Modify the settings for this topic."
 msgstr "Einstellungen für dieses Thema modifizieren."
 

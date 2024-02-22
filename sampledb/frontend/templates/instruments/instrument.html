@@ -15,6 +15,14 @@
       {% if instrument.description_is_markdown %}{{ instrument.description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ instrument.description | get_translated_text }}</p>{% endif %}
     </div>
   {% endif %}
+  {% if not config['DISABLE_TOPICS'] and instrument.topics %}
+    <p>
+      {{ _('Topics') }}:
+      {% for topic in instrument.topics %}
+        <a class="badge badge-secondary" href="{{ url_for('.instruments', topic_ids=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+      {% endfor %}
+    </p>
+  {% endif %}
   {% if instrument.location is not none %}
     <div>
       <b>{{ _('Location') }}:</b> <a href="{{ url_for('.location', location_id=instrument.location_id) }}">{{ instrument.location | get_full_location_name(include_id=true) }}</a>

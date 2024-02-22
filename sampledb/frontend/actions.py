@@ -35,7 +35,7 @@ from ..logic.users import get_users, get_user
 from ..logic.groups import get_group
 from ..logic.projects import get_project
 from .users.forms import ToggleFavoriteActionForm
-from .utils import check_current_user_is_not_readonly, get_groups_form_data, _parse_filter_id_params, build_modified_url
+from .utils import check_current_user_is_not_readonly, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ..utils import FlaskResponseT
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.utils import get_translated_text
@@ -86,7 +86,7 @@ def _parse_action_list_filters(
     typing.Optional[typing.List[int]],
 ]:
     FALLBACK_RESULT = False, None
-    success, filter_topic_ids = _parse_filter_id_params(
+    success, filter_topic_ids = parse_filter_id_params(
         params=params,
         param_aliases=['topic_ids'],
         valid_ids=valid_topic_ids,
@@ -172,7 +172,7 @@ def actions() -> FlaskResponseT:
     topics = get_topics()
     valid_topic_ids = [topic.id for topic in topics]
 
-    if any(any(flask.request.args.getlist(param)) for param in ACTION_LIST_FILTER_PARAMETERS):
+    if 'action_list_filters' in flask.request.args or any(any(flask.request.args.getlist(param)) for param in ACTION_LIST_FILTER_PARAMETERS):
         (
             success,
             filter_topic_ids,
@@ -226,17 +226,12 @@ def save_action_list_defaults() -> FlaskResponseT:
     if 'save_default_action_filters' in flask.request.form:
         topics = get_topics()
         valid_topic_ids = [topic.id for topic in topics]
-
-        if any(any(flask.request.args.getlist(param)) for param in ACTION_LIST_FILTER_PARAMETERS):
-            (
-                success,
-                filter_topic_ids,
-            ) = _parse_action_list_filters(
-                params=flask.request.args,
-                valid_topic_ids=valid_topic_ids
-            )
-            if not success:
-                return flask.abort(400)
+        success, filter_topic_ids = _parse_action_list_filters(
+            params=flask.request.form,
+            valid_topic_ids=valid_topic_ids
+        )
+        if not success:
+            return flask.abort(400)
         set_user_settings(
             user_id=flask_login.current_user.id,
             data={
