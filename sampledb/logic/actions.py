@@ -420,3 +420,22 @@ def get_action_type_ids_for_action_ids(
         action_id: action_type_id
         for action_id, action_type_id in action_ids_and_action_type_ids
     }
+
+
+def get_actions_for_topic(
+        topic_id: int
+) -> typing.List[Action]:
+    """
+    Get the list of actions assigned to a given topic.
+
+    :param topic_id: the ID of an existing topic
+    :return: the list of actions
+    :raise errors.TopicDoesNotExistError: if the topic does not exist
+    """
+    actions = models.actions.Action.query.filter(models.Action.topics.any(models.topics.Topic.id == topic_id)).all()
+    if not actions:
+        topics.check_topic_exists(topic_id)
+    return [
+        Action.from_database(action)
+        for action in actions
+    ]

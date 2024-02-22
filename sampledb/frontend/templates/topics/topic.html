@@ -4,28 +4,72 @@
 
 {% block content %}
   {% if not config['DISABLE_TOPICS'] %}
-  <h1>
-    <a href="{{ url_for('.topic', topic_id=topic.id) }}" title="{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}</a>
-  </h1>
+    <h1>
+      <a href="{{ url_for('.topic', topic_id=topic.id) }}" title="{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}</a>
+    </h1>
 
-  {% if topic.description | get_translated_text %}
-    <div class="topic-user-content">
-      {% if topic.description_is_markdown %}{{ topic.description | get_translated_text | markdown_to_safe_html(anchor_prefix='topic-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ topic.description | get_translated_text }}</p>{% endif %}
-    </div>
-  {% endif %}
-  {% if current_user.is_admin %}
-  <dl>
-    <dt>{{ _('Show on Frontpage') }}</dt><dd>{% if topic.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown on the frontpage') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown on the frontpage') }}{% endif %}</dd>
-    <dt>{{ _('Show on Navbar') }}</dt><dd>{% if topic.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the navbar') }}{% endif %}</dd>
-  </dl>
-  {% endif %}
-  {% if not config['DISABLE_INSTRUMENTS'] %}
-    <a href="{{ url_for('.instruments', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Instruments') }}</a>
-  {% endif %}
-  <a href="{{ url_for('.actions', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>
-  {% if current_user.is_admin and not current_user.is_readonly %}
-    <a href="{{ url_for('.topic', topic_id=topic.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this topic.') }}">{{ _('Edit Topic') }}</a>
-  {% endif %}
+    {% if topic.description | get_translated_text %}
+      <div class="topic-user-content">
+        {% if topic.description_is_markdown %}{{ topic.description | get_translated_text | markdown_to_safe_html(anchor_prefix='topic-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ topic.description | get_translated_text }}</p>{% endif %}
+      </div>
+    {% endif %}
+    {% if current_user.is_admin %}
+      <dl>
+        <dt>{{ _('Show on Frontpage') }}</dt><dd>{% if topic.show_on_frontpage %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown on the frontpage') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown on the frontpage') }}{% endif %}</dd>
+        <dt>{{ _('Show on Navbar') }}</dt><dd>{% if topic.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the navbar') }}{% endif %}</dd>
+      </dl>
+    {% endif %}
+    {% if current_user.is_admin and not current_user.is_readonly %}
+      <a href="{{ url_for('.topic', topic_id=topic.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this topic.') }}">{{ _('Edit Topic') }}</a>
+    {% endif %}
+
+    {% if topic_instruments %}
+      <h2>{{ _('Instruments') }}</h2>
+      {% for instrument in topic_instruments %}
+          <h3>
+            <a href="{{ url_for('.instrument', instrument_id=instrument.id) }}" title="{{ instrument.name | get_translated_text }}"> {{ instrument.name | get_translated_text }}</a>
+            {{ import_information_symbol(instrument) }}
+          </h3>
+          {% if instrument.short_description | get_translated_text %}
+            <div class="action-user-content">
+              {% if instrument.short_description_is_markdown %}{{ instrument.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='instrument-short-description') | safe }}{% else %}<p>{{ instrument.short_description | get_translated_text }}</p>{% endif %}
+            </div>
+          {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% if topic_actions %}
+      <h2>{{ _('Actions') }}</h2>
+      {% for action in topic_actions %}
+          <h3>
+            {% if action.user is not none %}
+              {% set action_owner = get_user(action.user_id) %}
+              {% set federated_user, imported_user = get_federated_identity(action_owner) %}
+              <a href="{{ url_for('.user_profile', user_id=federated_user.id) }}" title="{{ federated_user.get_name() }}">{{ federated_user.get_name() }}</a>
+              {% if imported_user is not none %}
+                {{ import_information_symbol(imported_user) }} /
+              {% else %}
+                {{ import_information_symbol(action_owner) }} /
+              {% endif %}
+            {% endif %}
+            {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
+              <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
+              {{ import_information_symbol(action.instrument) }} &mdash;
+            {% endif %}
+            <a href="{{ url_for('.action', action_id=action.id, object_id=request.args.getlist('object_id')) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+            {{ import_information_symbol(action) }}
+          </h3>
+          {% if action.short_description | get_translated_text %}
+            <div class="action-user-content">
+              {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description | get_translated_text }}</p>{% endif %}
+            </div>
+          {% endif %}
+          <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) }}</a>
+          {% if not current_user.is_readonly and action.type_id is not none and action.schema is not none and (not action.disable_create_objects) and (not action.type.disable_create_objects) and (not action.admin_only or current_user.is_admin) %}
+            <a href="{{ url_for('.new_object', action_id=action.id) }}" class="btn btn-primary">{{ action.type.perform_text | get_translated_text(default=_('Create Object')) }}</a>
+          {% endif %}
+      {% endfor %}
+    {% endif %}
   {% else %}
     <p class="text-danger">{{ _('Topics are not enabled in %(service_name)s.', service_name=service_name) }}</p>
   {% endif %}
