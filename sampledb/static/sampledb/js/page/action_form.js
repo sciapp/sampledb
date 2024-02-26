@@ -66,4 +66,22 @@ $(function () {
   }
   $('#input-short-description-is-markdown').change(updateShortDescriptionMarkdown);
   updateShortDescriptionMarkdown();
+
+  function updateTopicsUseInstrumentTopicsFields () {
+    const instrumentSelectpicker = $('#input-instrument');
+    const hasInstrument = (instrumentSelectpicker.length === 1) && instrumentSelectpicker.selectpicker('val') !== '-1';
+    const useInstrumentTopicsCheckbox = $('#input-use-instrument-topics');
+    useInstrumentTopicsCheckbox.prop('disabled', !hasInstrument);
+    useInstrumentTopicsCheckbox.closest('.control-label').toggleClass('text-muted', !hasInstrument);
+    if (!hasInstrument) {
+      useInstrumentTopicsCheckbox.prop('checked', false);
+    }
+    const useInstrumentTopics = (useInstrumentTopicsCheckbox.length === 1) && useInstrumentTopicsCheckbox.prop('checked');
+    const topicsSelectpicker = $('#input-topics');
+    topicsSelectpicker.prop('disabled', useInstrumentTopics);
+    topicsSelectpicker.selectpicker('refresh');
+  }
+  updateTopicsUseInstrumentTopicsFields();
+  $('#input-instrument').on('change', updateTopicsUseInstrumentTopicsFields);
+  $('#input-use-instrument-topics').on('change', updateTopicsUseInstrumentTopicsFields);
 });

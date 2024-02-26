@@ -3428,6 +3428,9 @@ msgstr "Instrument"
 msgid "No instrument selected"
 msgstr "Kein Instrument ausgewählt"
 
+msgid "Use the Topics of the Instrument"
+msgstr "Die Themen des Instruments verwenden"
+
 msgid "No topic selected"
 msgstr "Kein Thema ausgewählt"
 

@@ -168,6 +168,7 @@ class Action(Model):
     disable_create_objects: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     objects_readable_by_all_users_by_default: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     topics: Mapped[typing.List['Topic']] = relationship('Topic', secondary=topic_action_association_table, back_populates='actions')
+    use_instrument_topics: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Action"]]
@@ -185,7 +186,8 @@ class Action(Model):
             component_id: typing.Optional[int] = None,
             admin_only: bool = False,
             disable_create_objects: bool = False,
-            objects_readable_by_all_users_by_default: bool = False
+            objects_readable_by_all_users_by_default: bool = False,
+            use_instrument_topics: bool = False
     ) -> None:
         super().__init__(
             type_id=action_type_id,
@@ -199,7 +201,8 @@ class Action(Model):
             component_id=component_id,
             admin_only=admin_only,
             disable_create_objects=disable_create_objects,
-            objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
+            objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default,
+            use_instrument_topics=use_instrument_topics
         )
 
     def __eq__(self, other: typing.Any) -> bool:
