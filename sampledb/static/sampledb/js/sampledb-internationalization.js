@@ -221,6 +221,8 @@ function initMarkdownField (element, height) {
   mdeField.codemirror.on('change', function () {
     $(element).change();
   });
+  // override .CodeMirror default height, so InscrybMDE min-height can work
+  $(element).siblings('.CodeMirror').css('height', 'auto');
   return mdeField;
 }
 
