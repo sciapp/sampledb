@@ -1001,6 +1001,21 @@ def objects() -> FlaskResponseT:
                             available_action_types.append(action_type)
                     tried_object_action_types.add(object_action.type_id)
 
+    sorted_action_topics = []
+    sorted_instrument_topics = []
+    if not flask.current_app.config['DISABLE_TOPICS']:
+        sorted_topics = logic.topics.get_topics()
+        for topic in sorted_topics:
+            for action in all_actions:
+                if topic in action.topics:
+                    sorted_action_topics.append(topic)
+                    break
+            if not flask.current_app.config['DISABLE_INSTRUMENTS']:
+                for instrument in all_instruments:
+                    if topic in instrument.topics:
+                        sorted_instrument_topics.append(topic)
+                        break
+
     def _build_modified_url(
         blocked_parameters: typing.Sequence[str] = (),
         **query_parameters: typing.Any
@@ -1093,7 +1108,9 @@ def objects() -> FlaskResponseT:
         special_groups=special_groups,
         disabled_special_group_permissions=disabled_special_group_permissions,
         groups_treepicker_info=groups_treepicker_info,
-        projects_treepicker_info=projects_treepicker_info
+        projects_treepicker_info=projects_treepicker_info,
+        sorted_action_topics=sorted_action_topics,
+        sorted_instrument_topics=sorted_instrument_topics,
     )
 
 
