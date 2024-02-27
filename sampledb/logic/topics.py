@@ -15,8 +15,11 @@ class Topic:
     id: int
     name: typing.Dict[str, str]
     description: typing.Dict[str, str]
+    short_description: typing.Dict[str, str]
     show_on_frontpage: bool
     show_in_navbar: bool
+    description_is_markdown: bool
+    short_description_is_markdown: bool
     order_index: typing.Optional[int]
 
     @classmethod
@@ -28,8 +31,11 @@ class Topic:
             id=topic.id,
             name=topic.name,
             description=topic.description,
+            short_description=topic.short_description,
             show_on_frontpage=topic.show_on_frontpage,
             show_in_navbar=topic.show_in_navbar,
+            description_is_markdown=topic.description_is_markdown,
+            short_description_is_markdown=topic.short_description_is_markdown,
             order_index=topic.order_index
         )
         return wrapped_topic
@@ -84,10 +90,14 @@ def get_topics(filter_frontpage: bool = False, filter_navbar: bool = False) -> t
 
 
 def create_topic(
-    name: typing.Dict[str, str],
-    description: typing.Dict[str, str],
-    show_on_frontpage: bool,
-    show_in_navbar: bool
+        *,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str],
+        short_description: typing.Dict[str, str],
+        show_on_frontpage: bool,
+        show_in_navbar: bool,
+        description_is_markdown: bool,
+        short_description_is_markdown: bool
 ) -> Topic:
     """
     Create a new topic.
@@ -95,15 +105,22 @@ def create_topic(
     :param name: the unique names of the topic in a dict. Keys are lang codes and values names.
     :param description: (possibly empty) descriptions for the topic in a dict.
         Keys are lang codes and values are descriptions
+    :param short_description: (possibly empty) short descriptions for the topic in a dict.
+        Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
     :param show_in_navbar: whether this topic should be shown in the navbar
+    :param description_is_markdown: whether the description is markdown
+    :param short_description_is_markdown: whether the short description is markdown
     :return: the created topic
     """
     topic = models.Topic(
         name=name,
         description=description,
+        short_description=short_description,
         show_on_frontpage=show_on_frontpage,
         show_in_navbar=show_in_navbar,
+        description_is_markdown=description_is_markdown,
+        short_description_is_markdown=short_description_is_markdown,
         order_index=None
     )
     db.session.add(topic)
@@ -112,11 +129,15 @@ def create_topic(
 
 
 def update_topic(
-    topic_id: int,
-    name: typing.Dict[str, str],
-    description: typing.Dict[str, str],
-    show_on_frontpage: bool,
-    show_in_navbar: bool
+        *,
+        topic_id: int,
+        name: typing.Dict[str, str],
+        description: typing.Dict[str, str],
+        short_description: typing.Dict[str, str],
+        show_on_frontpage: bool,
+        show_in_navbar: bool,
+        description_is_markdown: bool,
+        short_description_is_markdown: bool
 ) -> Topic:
     """
     Update an existing topic.
@@ -125,8 +146,12 @@ def update_topic(
     :param name: the unique names of the topic in a dict. Keys are lang codes and values names.
     :param description: (possibly empty) descriptions for the topic in a dict.
         Keys are lang codes and values are descriptions
+    :param short_description: (possibly empty) short descriptions for the topic in a dict.
+        Keys are lang codes and values are short descriptions
     :param show_on_frontpage: whether this topic should be shown on the frontpage
     :param show_in_navbar: whether this topic should be shown in the navbar
+    :param description_is_markdown: whether the description is markdown
+    :param short_description_is_markdown: whether the short description is markdown
     :return: the created topic
     :raise errors.TopicDoesNotExistError: when no topic with the given topic ID exists
     """
@@ -135,8 +160,11 @@ def update_topic(
         raise errors.TopicDoesNotExistError()
     topic.name = name
     topic.description = description
+    topic.short_description = short_description
     topic.show_on_frontpage = show_on_frontpage
     topic.show_in_navbar = show_in_navbar
+    topic.description_is_markdown = description_is_markdown
+    topic.short_description_is_markdown = short_description_is_markdown
     db.session.add(topic)
     db.session.commit()
     return Topic.from_database(topic)

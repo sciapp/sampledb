@@ -6750,6 +6750,9 @@ msgstr "Thema bearbeiten"
 msgid "Topics are not enabled in %(service_name)s."
 msgstr "Themen sind in %(service_name)s nicht aktiviert."
 
+msgid "shown in the topic list"
+msgstr "wird in der Themenliste angezeigt"
+
 msgid "Show this topic on the frontpage"
 msgstr "Thema auf Startseite anzeigen"
 

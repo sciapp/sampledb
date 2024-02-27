@@ -113,7 +113,7 @@
 
     {% if action.short_description | get_translated_text %}
       <div class="action-user-content">
-        {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p>{{ action.short_description | get_translated_text }}</p>{% endif %}
+        {% if action.short_description_is_markdown %}{{ action.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-short-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ action.short_description | get_translated_text }}</p>{% endif %}
       </div>
     {% endif %}
     {% if not config['DISABLE_INSTRUMENTS'] %}
