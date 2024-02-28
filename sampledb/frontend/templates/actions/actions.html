@@ -105,7 +105,7 @@
     {% if not config['DISABLE_TOPICS'] and action.topics %}
     <p>{{ _('Topics') }}:
     {% for topic in action.topics %}
-      <a class="badge badge-secondary" href="{{ url_for('.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+      <a class="badge badge-secondary" href="{{ url_for('.topic', topic_id=topic.id) }}">{{ topic.name | get_translated_text }}</a>
     {% endfor %}
     </p>
     {% endif %}

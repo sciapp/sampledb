@@ -20,6 +20,7 @@ from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.markdown_images import mark_referenced_markdown_images_as_permanent
 from ..utils import FlaskResponseT
+from ..models import Permissions
 
 
 class TopicsSortingForm(FlaskForm):
@@ -67,9 +68,20 @@ def topic(topic_id: int) -> FlaskResponseT:
     if flask.request.args.get('mode') == 'edit':
         return show_topic_form(topic_id)
 
+    if flask.current_app.config['DISABLE_INSTRUMENTS']:
+        topic_instruments = []
+    else:
+        topic_instruments = logic.instruments.get_instruments_for_topic(topic_id=topic_id)
+    topic_actions = [
+        action
+        for action in logic.actions.get_actions_for_topic(topic_id=topic_id)
+        if Permissions.READ in logic.action_permissions.get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
+    ]
     return flask.render_template(
         'topics/topic.html',
-        topic=topic
+        topic=topic,
+        topic_instruments=topic_instruments,
+        topic_actions=topic_actions
     )
 
 

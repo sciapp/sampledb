@@ -459,3 +459,22 @@ def get_instrument_object_links() -> typing.Sequence[typing.Tuple[int, int]]:
         (instrument.id, typing.cast(int, instrument.object_id))
         for instrument in instruments
     ]
+
+
+def get_instruments_for_topic(
+        topic_id: int
+) -> typing.List[Instrument]:
+    """
+    Get the list of instruments assigned to a given topic.
+
+    :param topic_id: the ID of an existing topic
+    :return: the list of instruments
+    :raise errors.TopicDoesNotExistError: if the topic does not exist
+    """
+    instruments = models.instruments.Instrument.query.filter(models.Instrument.topics.any(models.topics.Topic.id == topic_id)).all()
+    if not instruments:
+        topics.check_topic_exists(topic_id)
+    return [
+        Instrument.from_database(instrument)
+        for instrument in instruments
+    ]
