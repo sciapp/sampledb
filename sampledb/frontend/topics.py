@@ -185,7 +185,7 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
         try:
             translation_data = json.loads(topic_form.translations.data)
         except Exception:
-            flask.flash(_('There was a problem saving the topic data.'))
+            flask.flash(_('There was a problem saving the topic data.'), 'error')
             return flask.render_template(
                 'topics/topic_form.html',
                 topic_form=topic_form,
@@ -226,7 +226,7 @@ def show_topic_form(topic_id: typing.Optional[int]) -> FlaskResponseT:
                 name = translation['name'].strip()
 
                 if not validate_strings([name]):
-                    flask.flash(_('The name is required.'))
+                    flask.flash(_('The name is required.'), 'error')
                     return flask.render_template(
                         'topics/topic_form.html',
                         topic_form=topic_form,

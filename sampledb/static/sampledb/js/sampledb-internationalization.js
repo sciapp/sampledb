@@ -14,7 +14,7 @@ function updateTranslationJSON () {
 
 function setTranslationHandler (element) {
   const languageID = $(element).data('languageId');
-  $(element).find('input, textarea.form-control').on('change', function () {
+  $(element).find('input, textarea.form-control').on('change blur', function () {
     const input = $(this);
     const translatedText = input.val();
     const translationAttribute = input.data('translationAttribute');
@@ -23,7 +23,7 @@ function setTranslationHandler (element) {
     const maxLengthText = input.data('maxLengthText');
     const requiredInAllLanguages = input.data('requiredInAllLanguages') !== undefined;
 
-    if ((requiredInAllLanguages || languageID === ENGLISH_ID) && translatedText === '' && emptyText) {
+    if ((requiredInAllLanguages || languageID === ENGLISH_ID) && translatedText.trim() === '' && emptyText) {
       $(this).parent().addClass('has-error').next('.help-block').text(emptyText).css('color', 'red');
     } else if (translatedText.length > maxLength) {
       $(this).parent().addClass('has-error').next('.help-block').text(maxLengthText).css('color', 'red');
