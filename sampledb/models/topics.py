@@ -25,6 +25,7 @@ class Topic(Model):
     show_in_navbar: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
     order_index: Mapped[typing.Optional[int]] = db.Column(db.Integer, nullable=True)
     actions: Mapped[typing.List['Action']] = relationship('Action', secondary='action_topics', back_populates='topics')
+    instruments: Mapped[typing.List['Action']] = relationship('Instrument', secondary='instrument_topics', back_populates='topics')
     short_description: Mapped[typing.Dict[str, str]] = db.Column(postgresql.JSON, nullable=False)
     description_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
     short_description_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)

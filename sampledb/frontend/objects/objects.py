@@ -34,7 +34,7 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
-from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, _parse_filter_id_params, build_modified_url
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ...logic.utils import get_translated_text, relative_url_for
 from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -1186,7 +1186,7 @@ def _parse_object_list_filters(
     typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]]
 ]:
     FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
-    success, filter_location_ids = _parse_filter_id_params(
+    success, filter_location_ids = parse_filter_id_params(
         params=params,
         param_aliases=['location_ids', 'location'],
         valid_ids=valid_location_ids,
@@ -1198,7 +1198,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_action_ids = _parse_filter_id_params(
+    success, filter_action_ids = parse_filter_id_params(
         params=params,
         param_aliases=['action_ids', 'action'],
         valid_ids=valid_action_ids,
@@ -1210,7 +1210,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_instrument_ids = _parse_filter_id_params(
+    success, filter_instrument_ids = parse_filter_id_params(
         params=params,
         param_aliases=['instrument_ids'],
         valid_ids=valid_instrument_ids,
@@ -1222,7 +1222,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_action_type_ids = _parse_filter_id_params(
+    success, filter_action_type_ids = parse_filter_id_params(
         params=params,
         param_aliases=['action_type_ids', 't'],
         valid_ids=valid_action_type_ids,
@@ -1238,7 +1238,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_related_user_ids = _parse_filter_id_params(
+    success, filter_related_user_ids = parse_filter_id_params(
         params=params,
         param_aliases=['related_user_ids', 'related_user'],
         valid_ids=valid_user_ids,

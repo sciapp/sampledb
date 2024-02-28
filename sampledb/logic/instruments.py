@@ -17,7 +17,7 @@ from .components import check_component_exists
 from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
-from . import users, errors, components, locations, objects
+from . import users, errors, components, locations, objects, topics
 from .utils import cache
 
 
@@ -46,6 +46,7 @@ class Instrument:
     location: typing.Optional[locations.Location]
     object_id: typing.Optional[int]
     show_linked_object_data: bool
+    topics: typing.List[topics.Topic]
 
     @classmethod
     def from_database(cls, instrument: models.Instrument) -> 'Instrument':
@@ -73,6 +74,7 @@ class Instrument:
             location=locations.Location.from_database(instrument.location) if instrument.location is not None else None,
             object_id=instrument.object_id,
             show_linked_object_data=instrument.show_linked_object_data,
+            topics=[topics.Topic.from_database(topic) for topic in instrument.topics],
         )
 
     def __repr__(self) -> str:

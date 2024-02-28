@@ -4,7 +4,7 @@ import typing
 from . import errors
 from .utils import cache
 from .. import db, models
-from ..models import actions, topics
+from ..models import actions, topics, instruments
 
 
 @dataclasses.dataclass(frozen=True)
@@ -214,6 +214,20 @@ def add_topic_to_order(topic: Topic) -> None:
     set_topics_order(index_list)
 
 
+def _set_topics(
+        mutable_object: typing.Union[actions.Action, instruments.Instrument],
+        topic_ids: typing.Sequence[int]
+) -> None:
+    set_topics = topics.Topic.query.filter(topics.Topic.id.in_(topic_ids)).all()
+    if len(set_topics) != len(set(topic_ids)):
+        raise errors.TopicDoesNotExistError()
+    mutable_object.topics.clear()
+    for topic in set_topics:
+        mutable_object.topics.append(topic)
+    db.session.add(mutable_object)
+    db.session.commit()
+
+
 def set_action_topics(
         action_id: int,
         topic_ids: typing.Sequence[int]
@@ -221,11 +235,14 @@ def set_action_topics(
     action = actions.Action.query.filter_by(id=action_id).first()
     if action is None:
         raise errors.ActionDoesNotExistError()
-    set_topics = topics.Topic.query.filter(topics.Topic.id.in_(topic_ids)).all()
-    if len(set_topics) != len(set(topic_ids)):
-        raise errors.TopicDoesNotExistError()
-    action.topics.clear()
-    for topic in set_topics:
-        action.topics.append(topic)
-    db.session.add(action)
-    db.session.commit()
+    _set_topics(action, topic_ids)
+
+
+def set_instrument_topics(
+        instrument_id: int,
+        topic_ids: typing.Sequence[int]
+) -> None:
+    instrument = instruments.Instrument.query.filter_by(id=instrument_id).first()
+    if instrument is None:
+        raise errors.InstrumentDoesNotExistError()
+    _set_topics(instrument, topic_ids)
