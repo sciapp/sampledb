@@ -14,7 +14,7 @@ function updateTranslationJSON () {
 
 function setTranslationHandler (element) {
   const languageID = $(element).data('languageId');
-  $(element).find('input, textarea.form-control').on('change', function () {
+  $(element).find('input, textarea.form-control').on('change blur', function () {
     const input = $(this);
     const translatedText = input.val();
     const translationAttribute = input.data('translationAttribute');
