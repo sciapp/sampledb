@@ -6052,12 +6052,12 @@ msgstr "%(user_ref)s hat eine Datei eingetragen."
 #, python-format
 msgid ""
 "%(user_ref)s assigned this object to location <a "
-"href=\"%(location_url)s\">%(location_name)s</a> and user <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a>."
+"href=\"%(location_url)s\">%(location_name)s</a> and user "
+"%(other_user_ref)s."
 msgstr ""
 "%(user_ref)s hat das Objekt dem Ort <a "
-"href=\"%(location_url)s\">%(location_name)s</a> und Nutzer <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
+"href=\"%(location_url)s\">%(location_name)s</a> und dem Nutzer "
+"%(other_user_ref)s zugewiesen."
 
 #, python-format
 msgid ""
@@ -6068,12 +6068,8 @@ msgstr ""
 "href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
 #, python-format
-msgid ""
-"%(user_ref)s assigned this object to user <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a>."
-msgstr ""
-"%(user_ref)s hat das Objekt dem Nutzer <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
+msgid "%(user_ref)s assigned this object to user %(other_user_ref)s."
+msgstr "%(user_ref)s hat das Objekt dem Nutzer %(other_user_ref)s zugewiesen."
 
 #, python-format
 msgid ""
@@ -6139,6 +6135,13 @@ msgstr ""
 #, python-format
 msgid "%(user_ref)s imported this object from an .eln file."
 msgstr "%(user_ref)s hat dieses Objekt aus einer .eln-Datei importiert."
+
+#, python-format
+msgid "Log entry from %(component_name)s"
+msgstr "Log-Eintrag von %(component_name)s"
+
+msgid "Imported log entry"
+msgstr "Importierter Log-Eintrag"
 
 #, python-format
 msgid ""

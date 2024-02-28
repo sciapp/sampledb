@@ -9,6 +9,7 @@ Currently under development.
 - Added ``choice`` array style for multi selection dropdowns
 - Introduce action topics and allow filtering action lists by topics
 - Added new array index diff syntax for updating data via the HTTP API
+- Added creation of activity log entries during import of objects from other databases
 
 Version 0.26
 ------------
