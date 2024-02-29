@@ -5126,10 +5126,16 @@ msgstr "Nach Aktion filtern"
 msgid "All actions"
 msgstr "Alle Aktionen"
 
+msgid "All Actions"
+msgstr "Alle Aktionen"
+
 msgid "Filter by Instrument"
 msgstr "Nach Instrument filtern"
 
 msgid "All instruments"
+msgstr "Alle Instrumente"
+
+msgid "All Instruments"
 msgstr "Alle Instrumente"
 
 msgid "Filter by Location"
@@ -5388,9 +5394,6 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 
 msgid "No object selected"
 msgstr "Kein Objekt ausgewählt"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
 
 msgid "The following languages have been disabled for input:"
 msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
