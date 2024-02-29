@@ -64,6 +64,7 @@ class ActionForm(FlaskForm):
     usable_by = SelectField(choices=['with_permissions', 'admins', 'nobody'])
     objects_readable_by_all_users_by_default = BooleanField(default=None)
     use_json_editor = BooleanField(default=None)
+    use_instrument_topics = BooleanField(default=None)
 
     def validate_type(form, field: IntegerField) -> None:
         try:
@@ -548,6 +549,7 @@ def show_action_form(
                 action_form.usable_by.data = 'with_permissions'
             action_form.objects_readable_by_all_users_by_default.data = action.objects_readable_by_all_users_by_default
             action_form.topics.data = [str(topic.id) for topic in action.topics]
+            action_form.use_instrument_topics.data = action.use_instrument_topics
         elif previous_action is not None:
             action_form.is_hidden.data = False
             action_form.is_markdown.data = previous_action.description_is_markdown
@@ -556,6 +558,8 @@ def show_action_form(
             action_form.is_public.data = Permissions.READ in get_action_permissions_for_all_users(previous_action.id)
             action_form.usable_by.data = 'with_permissions'
             action_form.objects_readable_by_all_users_by_default.data = previous_action.objects_readable_by_all_users_by_default
+            action_form.topics.data = [str(topic.id) for topic in previous_action.topics]
+            action_form.use_instrument_topics.data = False
             if not action_form.topics.data and previous_action.topics:
                 action_form.topics.data = [str(topic.id) for topic in previous_action.topics]
         if flask.current_app.config['DISABLE_TOPICS']:
@@ -697,6 +701,7 @@ def show_action_form(
         admin_only = action_form.usable_by.data == 'admins'
         disable_create_objects = action_form.usable_by.data == 'nobody'
         objects_readable_by_all_users_by_default = action_form.objects_readable_by_all_users_by_default.data
+        use_instrument_topics = action_form.use_instrument_topics.data
 
         if instrument_id_str is not None:
             try:
@@ -729,7 +734,8 @@ def show_action_form(
                 short_description_is_markdown=short_description_is_markdown,
                 admin_only=admin_only,
                 disable_create_objects=disable_create_objects,
-                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
+                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default,
+                use_instrument_topics=use_instrument_topics if instrument_id is not None else False
             )
         else:
             update_action(
@@ -740,9 +746,11 @@ def show_action_form(
                 short_description_is_markdown=short_description_is_markdown,
                 admin_only=admin_only,
                 disable_create_objects=disable_create_objects,
-                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default
+                objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default,
+                use_instrument_topics=use_instrument_topics if action.instrument_id is not None else False
             )
-        set_action_topics(action.id, topic_ids)
+        if action.instrument_id is None or not use_instrument_topics:
+            set_action_topics(action.id, topic_ids)
         set_action_permissions_for_all_users(action.id, Permissions.READ if is_public else Permissions.NONE)
 
         # After validation

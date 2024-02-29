@@ -1,6 +1,6 @@
 import pytest
 
-from sampledb.logic import errors, topics
+from sampledb.logic import errors, topics, instruments, actions
 
 
 def test_check_topic_exists():
@@ -116,3 +116,65 @@ def test_add_topic_to_order():
         topic.id
         for topic in all_topics[1:]
     ]
+
+def test_actions_use_instrument_topics():
+    min_schema = {
+        'type': 'object',
+        'title': 'Action A',
+        'properties': {
+            'name': {
+                'type': 'text',
+                'title': 'name'
+            }
+        },
+        'required': ['name']
+    }
+    topic_a = topics.create_topic(
+        show_on_frontpage=True,
+        show_in_navbar=True,
+        name={'en': 'Topic A'},
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''},
+        description_is_markdown=True,
+        short_description_is_markdown=True
+    )
+    topic_b = topics.create_topic(
+        show_on_frontpage=True,
+        show_in_navbar=False,
+        name={'en': 'Topic B'},
+        description={'en': 'Testing Topic'},
+        short_description={'en': ''},
+        description_is_markdown=True,
+        short_description_is_markdown=True
+    )
+    instrument_a = instruments.create_instrument()
+    topics.set_instrument_topics(instrument_a.id, [topic_a.id])
+    action_a = actions.create_action(
+        action_type_id=actions.ActionType.SAMPLE_CREATION,
+        schema=min_schema
+    )
+    topics.set_action_topics(action_a.id, [topic_a.id])
+    action_b = actions.create_action(
+        action_type_id=actions.ActionType.SAMPLE_CREATION,
+        schema=min_schema,
+        instrument_id=instrument_a.id
+    )
+    topics.set_action_topics(action_b.id, [topic_b.id])
+    assert {action.id for action in actions.get_actions_for_topic(topic_a.id)} == {action_a.id}
+    assert {action.id for action in actions.get_actions_for_topic(topic_b.id)} == {action_b.id}
+    assert {topic.id for topic in actions.get_action(action_a.id).topics} == {topic_a.id}
+    assert {topic.id for topic in actions.get_action(action_b.id).topics} == {topic_b.id}
+    actions.update_action(
+        action_id=action_b.id,
+        schema=min_schema,
+        use_instrument_topics=True
+    )
+    assert {action.id for action in actions.get_actions_for_topic(topic_a.id)} == {action_a.id, action_b.id}
+    assert not {action.id for action in actions.get_actions_for_topic(topic_b.id)}
+    assert {topic.id for topic in actions.get_action(action_a.id).topics} == {topic_a.id}
+    assert {topic.id for topic in actions.get_action(action_b.id).topics} == {topic_a.id}
+    topics.set_instrument_topics(instrument_a.id, [topic_a.id, topic_b.id])
+    assert {action.id for action in actions.get_actions_for_topic(topic_a.id)} == {action_a.id, action_b.id}
+    assert {action.id for action in actions.get_actions_for_topic(topic_b.id)} == {action_b.id}
+    assert {topic.id for topic in actions.get_action(action_a.id).topics} == {topic_a.id}
+    assert {topic.id for topic in actions.get_action(action_b.id).topics} == {topic_a.id, topic_b.id}
