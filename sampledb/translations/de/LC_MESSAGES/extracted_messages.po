@@ -5984,11 +5984,13 @@ msgstr ""
 msgid "%(user_ref)s edited the object."
 msgstr "%(user_ref)s hat das Objekt bearbeitet."
 
-msgid "View&nbsp;Version"
-msgstr "Version&nbsp;anzeigen"
-
-msgid "View&nbsp;Changes"
-msgstr "Änderungen&nbsp;anzeigen"
+#, python-format
+msgid ""
+"<a href=\"%(view_version_url)s\">View&nbsp;Version</a>&nbsp;/&nbsp;<a "
+"href=\"%(view_version_url_with_diff)s\">View&nbsp;Changes</a>"
+msgstr ""
+"<a href=\"%(view_version_url)s\">Version&nbsp;anzeigen</a>&nbsp;/&nbsp;<a"
+" href=\"%(view_version_url_with_diff)s\">Änderungen&nbsp;anzeigen</a>"
 
 #, python-format
 msgid ""
