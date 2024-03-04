@@ -76,9 +76,9 @@ def parse_configuration_values() -> None:
                 pass
 
     # parse values as json
-    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST']:
+    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST', 'LABEL_PAPER_FORMATS']:
         value = globals().get(config_name)
-        if isinstance(value, str) and value.startswith('{'):
+        if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
             try:
                 globals()[config_name] = json.loads(value)
             except Exception:
@@ -152,6 +152,52 @@ def is_download_service_whitelist_valid() -> bool:
                 )
                 return False
     return True
+
+
+def is_label_paper_formats_valid() -> bool:
+    """check if paper formats from LABEL_PAPER_FORMATS are valid"""
+
+    if not isinstance(LABEL_PAPER_FORMATS, list):
+        print(ansi_color('LABEL_PAPER_FORMATS: Must be a list of dictionaries.\n', color=31))
+        return False
+    is_valid = True
+    for i, format_definition in enumerate(LABEL_PAPER_FORMATS, start=1):
+        if not isinstance(format_definition, dict):
+            print(ansi_color('LABEL_PAPER_FORMATS: Must be a list of dictionaries.\n', color=31))
+            return False
+        str_fields = ['format_name']
+        int_fields = ['labels_in_row', 'labels_in_col', 'qr_code_width', 'paper_format']
+        float_fields = ['label_width', 'label_height', 'margin_horizontal', 'margin_vertical']
+        for key, value in format_definition.items():
+            if key in int_fields:
+                int_fields.remove(key)
+                if not isinstance(value, int):
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a whole number in format definition {i}.\n', color=31))
+                if value < 0:
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be greater than 0 in format definition {i}.\n', color=31))
+            elif key in float_fields:
+                float_fields.remove(key)
+                if not isinstance(value, (int, float)):
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a number in format definition {i}.\n', color=31))
+                if value < 0:
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be greater than 0 in format definition {i}.\n', color=31))
+            elif key in str_fields:
+                str_fields.remove(key)
+                if not isinstance(value, str) and not isinstance(value, dict):
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a string in format definition {i}.\n', color=31))
+            else:
+                print(ansi_color(f'LABEL_PAPER_FORMATS: {key} is an Unknown key in format definition {i}.\n', color=33))
+
+        if len(str_fields) > 0 or len(int_fields) > 0 or len(float_fields) > 0:
+            for key in str_fields + int_fields + float_fields:
+                print(ansi_color(f'LABEL_PAPER_FORMATS: {key} is missing in format definition {i}.\n', color=31))
+            return False
+    return is_valid
 
 
 def check_config(
@@ -538,6 +584,10 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not is_label_paper_formats_valid():
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -638,6 +688,9 @@ DOWNLOAD_SERVICE_TIME_LIMIT = 24 * 60 * 60
 # PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
+
+# label settings
+LABEL_PAPER_FORMATS: list[dict[str, typing.Any]] = []
 
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment

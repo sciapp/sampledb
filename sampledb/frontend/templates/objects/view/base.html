@@ -794,7 +794,23 @@
               <label class="control-label"><input type="radio" name="mode" value="qr-code-width">{{ _('QR Code labels') }}</label>
             </div>
             <span class="help-block">{{ _('This will generate labels with a qr code and an optional id and label number.') }}</span>
+            {% if config["LABEL_PAPER_FORMATS"] %}
             <div class="form-group">
+              <label for="input-qr-code-paper-dimension-template" class="control-label col-sm-4">{{ _('Label Paper Format:') }}</label>
+              <div class="col-sm-8">
+                <select class="selectpicker form-control" id="input-qr-code-paper-dimension-template" name="qr-code-paper-dimension-template">
+                    <option value="default" selected="selected">{{ _('Default / No Label Paper') }}</option>
+                    {% for format_definition in config["LABEL_PAPER_FORMATS"] %}
+                      <option value="{{ loop.index0 }}">
+                        {{ format_definition["format_name"] | get_translated_text | trim or _('Format #%(format_index)s', format_index=loop.index) }}
+                      </option>
+                    {% endfor %}
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            {% endif %}
+            <div class="form-group defined-by-label-paper">
               <label for="input-qr-code-paper-format" class="control-label col-sm-4">{{ _('Paper Size:') }}</label>
               <div class="col-sm-8">
                 <select class="selectpicker form-control" id="input-qr-code-paper-format" name="qr-code-paper-format">
@@ -805,7 +821,7 @@
                 </select>
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group defined-by-label-paper">
               <label for="input-qr-code-width" class="control-label col-sm-4">{{ _('QR Code Width:') }}</label>
               <div class="col-sm-8">
                 <div class="input-group">
@@ -1735,6 +1751,9 @@
       $('#form-generate-labels').on('submit', validateLabelsForm);
       $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
       $('#objectLabelModal input[name="add-label-number"]').on('change', updateQRCodeLabelsCheckbox);
+      {% if config["LABEL_PAPER_FORMATS"] %}
+      $('#objectLabelModal select[name="qr-code-paper-dimension-template"]').on('change', updateQRCodeLabelPaperDimensionSettings);
+      {% endif %}
       {% endif %}
 
       function updateObjectLocationTranslationJSON() {
@@ -2196,6 +2215,7 @@
           ]{% if loop.index < (PAGE_SIZES | length) %},{% endif %}
         {% endfor %}
       };
+      const LABEL_PAPER_FORMATS = {{ config["LABEL_PAPER_FORMATS"] | tojson | safe }};
       var labels_form = $('#form-generate-labels');
       var is_valid = true;
       labels_form.find('.has-error').removeClass('has-error');
@@ -2285,14 +2305,15 @@
         var input_qr_code_width_group = labels_form.find('input[name="qr-code-width"]').closest('.form-group');
         var input_qr_code_number = labels_form.find('input[name="qr-code-number"]');
         var input_qr_code_number_group = labels_form.find('input[name="qr-code-number"]').closest('.form-group');
+        var input_qr_code_label_dimension_template_group = labels_form.find('select[name="qr-code-paper-dimension-template"]').closest('.form-group');
         var input_qr_code_content = labels_form.find('input[name="qr-code-content"]:checked');
         var input_qr_code_content_group = labels_form.find('input[name="qr-code-content"]:checked').closest('.form-group');
 
         var paper_format = labels_form.find('select[name="qr-code-paper-format"] > option:checked').val();
+        var selected_label_dimension = labels_form.find('select[name="qr-code-paper-dimension-template"] > option:checked').val();
         var qr_code_width = input_qr_code_width.val();
         var qr_code_number = input_qr_code_number.val();
         var qr_code_content = input_qr_code_content.val();
-
 
         if(!PAGE_SIZES.hasOwnProperty(paper_format)) {
           var paper_format_group = labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group');
@@ -2301,6 +2322,14 @@
           is_valid = false;
         } else {
           labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group').addClass('has-success');
+        }
+
+        if (Number(selected_label_dimension) < LABEL_PAPER_FORMATS.length || selected_label_dimension === "default") {
+          input_qr_code_label_dimension_template_group.addClass('has-success');
+        } else {
+          input_qr_code_label_dimension_template_group.addClass('has-error');
+          input_qr_code_label_dimension_template_group.find('.help-block').text("{{ _('Please select an existing label paper format.') }}");
+          is_valid = false;
         }
 
         if(!isNaN(qr_code_width) && qr_code_width >= 4) {
@@ -2356,6 +2385,7 @@
       labels_form.find('select[name="qr-code-paper-format"]').prop('disabled', !is_qr_code).selectpicker('refresh');
       labels_form.find('input[name="qr-code-width"]').prop('disabled', !is_qr_code);
       labels_form.find('input[name="qr-code-number"]').prop('disabled', !is_qr_code);
+      labels_form.find('select[name="qr-code-paper-dimension-template"]').prop('disabled', !is_qr_code).selectpicker('refresh');
       labels_form.find('input[name="qr-code-content"]').prop('disabled', !is_qr_code);
       labels_form.find('input[name="show-id-on-label"]').prop('disabled', !is_qr_code);
       labels_form.find('input[name="add-label-number"]').prop('disabled', !is_qr_code);
@@ -2369,6 +2399,14 @@
       var show_label_number = labels_form.find('input[name="add-label-number"]').is(":checked");
       labels_form.find('input[name="add-maximum-label-number"]').prop('disabled', !is_qr_code || !show_label_number);
     }
+
+    {% if config["LABEL_PAPER_FORMATS"] %}
+    function updateQRCodeLabelPaperDimensionSettings() {
+      const form = $("#form-generate-labels");
+      $('.defined-by-label-paper').toggle(form.find('select[name="qr-code-paper-dimension-template"]').val() === 'default');
+    }
+    updateQRCodeLabelPaperDimensionSettings();
+    {% endif %}
 
     {% endif %}
   {% endif %}

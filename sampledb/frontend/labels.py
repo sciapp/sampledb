@@ -24,6 +24,8 @@ PAGE_SIZES = {
     'Letter (Landscape)': (LETTER[1], LETTER[0])
 }
 
+PAGE_SIZE_KEYS = ['DIN A4 (Portrait)', 'DIN A4 (Landscape)', 'Letter (Portrait)', 'Letter (Landscape)']
+
 HORIZONTAL_LABEL_MARGIN = 10
 VERTICAL_LABEL_MARGIN = 10
 
@@ -249,11 +251,13 @@ def _draw_qr_code_label(
         minimum_width: float = 0,
         qrcode_size: float = 15 * mm,
         show_id_on_label: bool = True,
-        add_maximum_label_number: bool = False
+        add_maximum_label_number: bool = False,
+        label_dimension: typing.Optional[dict[str, typing.Any]] = None
 ) -> float:
     font_name = "Helvetica"
     font_size = 8
     canvas.setFont(font_name, font_size)
+
     if show_id_on_label:
         label_text = f"#{sample_id} "
     else:
@@ -265,14 +269,32 @@ def _draw_qr_code_label(
         if add_maximum_label_number:
             label_text += f"_{max_label_number}"
 
-    min_height = qrcode_size + 2 * mm
-    height = min_height
+    linebreak = False
+    if label_dimension:
+        max_string_length = label_dimension['label_width'] * mm - 3 * mm - qrcode_size
+        linebreak = canvas.stringWidth(label_text) > max_string_length
+        rows = []
+        if linebreak:
+            rows = label_text.split(' ')
+            if any(canvas.stringWidth(row) > max_string_length for row in rows):
+                rows = label_text.split('_')
+                if len(rows) == 2:
+                    rows[1] = '_' + rows[1]
+                else:
+                    linebreak = False
+
+    height = qrcode_size + 2 * mm if label_dimension is None else label_dimension['label_height'] * mm
     left_cursor = left_offset + 1 * mm
     canvas.drawImage(qrcode_uri, left_cursor, bottom_offset + height / 2 - qrcode_size / 2, qrcode_size, qrcode_size)
 
     left_cursor += qrcode_size + 1 * mm
     canvas.setFont(font_name + '-Bold', font_size)
-    canvas.drawString(left_cursor, bottom_offset + (height + 3 - font_size) / 2, label_text)
+    if linebreak:
+        canvas.drawString(left_cursor, bottom_offset + 2 * (height + 3 - font_size) / 3, rows[0])
+        canvas.drawString(left_cursor, bottom_offset + (height + 3 - font_size) / 3, rows[1])
+    else:
+        canvas.drawString(left_cursor, bottom_offset + (height + 3 - font_size) / 2, label_text)
+
     if show_id_on_label or current_label_number is not None:
         text_width = canvas.stringWidth(label_text, font_name, font_size)
         left_cursor += text_width + 1 * mm
@@ -281,14 +303,16 @@ def _draw_qr_code_label(
     if width < minimum_width:
         width = minimum_width
 
-    canvas.setLineWidth(0.1 * mm)
-    canvas.setDash([0.5 * mm, 0.5 * mm], 0)
-    canvas.line(left_offset, bottom_offset, left_offset, bottom_offset + height)
-    canvas.line(left_offset, bottom_offset, left_offset + width, bottom_offset)
-    if row_last:
-        canvas.line(left_offset + width, bottom_offset, left_offset + width, bottom_offset + height)
-    if column_first:
-        canvas.line(left_offset, bottom_offset + height, left_offset + width, bottom_offset + height)
+    if label_dimension is None:
+        canvas.setLineWidth(0.1 * mm)
+        canvas.setDash([0.5 * mm, 0.5 * mm], 0)
+        canvas.line(left_offset, bottom_offset, left_offset, bottom_offset + height)
+        canvas.line(left_offset, bottom_offset, left_offset + width, bottom_offset)
+        if row_last:
+            canvas.line(left_offset + width, bottom_offset, left_offset + width, bottom_offset + height)
+        if column_first:
+            canvas.line(left_offset, bottom_offset + height, left_offset + width, bottom_offset + height)
+
     return bottom_offset
 
 
@@ -314,7 +338,8 @@ def create_labels(
         only_id_qr_code: bool = False,
         add_label_number: bool = False,
         add_maximum_label_number: bool = False,
-        show_id_on_label: bool = True
+        show_id_on_label: bool = True,
+        label_dimension: typing.Optional[dict[str, typing.Any]] = None
 ) -> bytes:
     object_specification = {
         object_id: {
@@ -343,7 +368,8 @@ def create_labels(
         only_id_qr_code=only_id_qr_code,
         add_label_number=add_label_number,
         add_maximum_label_number=add_maximum_label_number,
-        show_id_on_label=show_id_on_label
+        show_id_on_label=show_id_on_label,
+        label_dimension=label_dimension
     )
 
 
@@ -366,6 +392,7 @@ def create_multiple_labels(
         add_label_number: bool = False,
         add_maximum_label_number: bool = False,
         show_id_on_label: bool = True,
+        label_dimension: typing.Optional[dict[str, typing.Any]] = None
 ) -> bytes:
     page_size = PAGE_SIZES.get(paper_format, PAGE_SIZES[DEFAULT_PAPER_FORMAT])
     page_width, page_height = page_size
@@ -404,6 +431,7 @@ def create_multiple_labels(
     max_label_height = None
 
     num_labels_per_row = int((page_width - 2 * horizontal_margin + horizontal_padding) / (label_width + horizontal_padding))
+
     if create_only_qr_codes:
         horizontal_margin = (page_width - num_labels_per_row * label_width) / 2
     if num_labels_per_row <= 0:
@@ -422,6 +450,17 @@ def create_multiple_labels(
         num_labels_per_row = 1
 
     first_row = True
+
+    num_labels_per_col = 1
+    if create_only_qr_codes and label_dimension:
+        horizontal_margin = label_dimension['margin_horizontal'] * mm
+        vertical_margin = label_dimension['margin_vertical'] * mm
+        num_labels_per_row = label_dimension['labels_in_row']
+        num_labels_per_col = label_dimension['labels_in_col']
+        top_offset = (page_height - num_labels_per_col * label_dimension['label_height'] * mm - (num_labels_per_col - 1) * label_dimension['margin_vertical'] * mm) / 2
+        top_cursor = page_height - top_offset - label_dimension['label_height'] * mm
+
+    top_cursor_start = top_cursor
 
     while label_counter < quantity * len(object_ids) or fill_single_page:
         if ((label_counter % quantity) == 0 and (not fill_single_page or label_counter == 0)) or add_label_number:
@@ -454,7 +493,11 @@ def create_multiple_labels(
             for ghs_class in object_specification['ghs_classes']
         ]
 
-        left_cursor = horizontal_margin + horizontal_centering_offset + (label_counter % num_labels_per_row) * (label_width + horizontal_padding)
+        if create_only_qr_codes and label_dimension is not None:
+            left_margin = (page_width - num_labels_per_row * label_dimension['label_width'] * mm - (num_labels_per_row - 1) * label_dimension['margin_horizontal'] * mm) / 2
+            left_cursor = left_margin + horizontal_centering_offset + (label_counter % num_labels_per_row) * (label_dimension['label_width'] * mm + label_dimension['margin_horizontal'] * mm)
+        else:
+            left_cursor = horizontal_margin + horizontal_centering_offset + (label_counter % num_labels_per_row) * (label_width + horizontal_padding)
 
         if create_long_labels:
             bottom_cursor = _draw_long_label(canvas, object_specification["object_name"], object_specification["creation_user"], object_specification["creation_date"], object_id, ghs_classes, qr_code_uri, horizontal_margin, top_cursor - vertical_margin - (3.5 * mm if include_qrcode_in_long_labels else 0 * mm), minimum_width=label_minimum_width, include_qrcode=include_qrcode_in_long_labels)
@@ -481,7 +524,8 @@ def create_multiple_labels(
                 minimum_width=label_minimum_width,
                 qrcode_size=qr_code_width,
                 show_id_on_label=show_id_on_label,
-                add_maximum_label_number=add_maximum_label_number
+                add_maximum_label_number=add_maximum_label_number,
+                label_dimension=label_dimension
             )
         else:
             bottom_cursor = _draw_label(canvas, object_specification['object_name'], object_specification['creation_user'], object_specification['creation_date'], object_id, ghs_classes, qr_code_uri, left_cursor, top_cursor, label_width, min_label_height, qr_code_width, ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered)
@@ -492,11 +536,14 @@ def create_multiple_labels(
             max_label_height = top_cursor - bottom_cursor
 
         if (label_counter % num_labels_per_row) == 0:
-            top_cursor = bottom_cursor - vertical_padding
+            if create_only_qr_codes and label_dimension:
+                top_cursor = bottom_cursor - label_dimension['label_height'] * mm - label_dimension['margin_vertical'] * mm
+            else:
+                top_cursor = bottom_cursor - vertical_padding
             first_row = False
 
-        if top_cursor - max_label_height <= vertical_margin:
-            top_cursor = page_height - vertical_margin - vertical_padding
+        if top_cursor - max_label_height <= vertical_margin or (create_only_qr_codes and label_dimension is not None and (label_counter % (num_labels_per_row * num_labels_per_col)) == 0):
+            top_cursor = top_cursor_start
             canvas.showPage()
             first_row = True
             if fill_single_page:
