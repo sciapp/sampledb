@@ -10,6 +10,7 @@ Currently under development.
 - Introduce action topics and allow filtering action lists by topics
 - Added new array index diff syntax for updating data via the HTTP API
 - Added creation of activity log entries during import of objects from other databases
+- Added initial support for custom templates
 
 Version 0.26
 ------------

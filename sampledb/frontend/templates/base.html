@@ -16,6 +16,7 @@
   {% endblock %}
   {% block head_scripts %}
   {% endblock %}
+  {% include "custom/head.html" %}
 {% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
@@ -223,6 +224,7 @@
             <strong>{{ _('Warning:') }}</strong> {{ _('This service requires JavaScript. Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> and reload the page.') }}
         </div>
     </noscript>
+    {% include "custom/alerts.html" %}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             {% if category == "error" %}
@@ -364,5 +366,6 @@
   <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
   <script type="module" src="{{ fingerprinted_static('sampledb/js/base.js') }}"></script>
 {% endblock %}
+{% include "custom/scripts.html" %}
 </body>
 </html>
