@@ -6367,6 +6367,12 @@ msgstr "Plot einblenden"
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
 
+msgid "Show all"
+msgstr "Alle anzeigen"
+
+msgid "Show on interaction"
+msgstr "Bei Interaktion anzeigen"
+
 msgid "Time"
 msgstr "Zeit"
 
