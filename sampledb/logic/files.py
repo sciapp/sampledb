@@ -338,7 +338,8 @@ def create_url_file(
         user_id: int,
         url: str,
         *,
-        create_log_entry: bool = True
+        create_log_entry: bool = True,
+        utc_datetime: typing.Optional[datetime.datetime] = None
 ) -> File:
     """
     Create a file as a link to a URL and add it to the object and user logs.
@@ -347,6 +348,7 @@ def create_url_file(
     :param user_id: the ID of an existing user
     :param url: the file URL
     :param create_log_entry: whether to create a log entry
+    :param utc_datetime: the datetime for the file, or None
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -361,7 +363,8 @@ def create_url_file(
         data={
             'storage': 'url',
             'url': url
-        }
+        },
+        utc_datetime=utc_datetime
     )
     file = File.from_database(db_file)
     if create_log_entry:
@@ -376,7 +379,8 @@ def create_database_file(
         save_content: typing.Callable[[typing.BinaryIO], None],
         hash: typing.Optional[File.HashInfo] = None,
         *,
-        create_log_entry: bool = True
+        create_log_entry: bool = True,
+        utc_datetime: typing.Optional[datetime.datetime] = None
 ) -> File:
     """
     Create a new database file and add it to the object and user logs.
@@ -390,6 +394,7 @@ def create_database_file(
         given stream. The function will be called at most once.
     :param hash: the hash info for this file
     :param create_log_entry: whether to create a log entry
+    :param utc_datetime: the datetime for the file, or None
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -421,7 +426,8 @@ def create_database_file(
                 'algorithm': hash.algorithm,
                 'hexdigest': hash.hexdigest
             } if hash is not None else None
-        }
+        },
+        utc_datetime=utc_datetime
     )
     db_file.binary_data = binary_data
     db.session.commit()
@@ -546,7 +552,7 @@ def _create_db_file(
     :raise errors.ComponentDoesNotExistError: when there is no component with the
         given ID
     """
-    if (component_id is not None and (fed_id is None or utc_datetime is None)) or (component_id is None and (user_id is None or data is None or fed_id is not None or utc_datetime is not None)):
+    if (component_id is not None and (fed_id is None or utc_datetime is None)) or (component_id is None and (user_id is None or data is None or fed_id is not None)):
         raise TypeError('Invalid parameter combination.')
 
     # ensure that the object exists

@@ -310,16 +310,6 @@ def test_create_fed_url_file_invalid_params(object, user, component):
             fed_id=None,
             component_id=component.id
         )
-    with pytest.raises(TypeError):
-        files.create_fed_file(
-            object_id=object.object_id,
-            user_id=user.id,
-            data={"storage": "url", "url": "https://example.com/file"},
-            save_content=None,
-            utc_datetime=dt,
-            fed_id=None,
-            component_id=None
-        )
     with pytest.raises(errors.ComponentDoesNotExistError):
         files.create_fed_file(
             object_id=object.object_id,

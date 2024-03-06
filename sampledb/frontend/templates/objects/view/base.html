@@ -1305,6 +1305,8 @@
                 {% if object_log_entry.is_imported %}
                   {% if object.component %}
                     <i class="fa fa-fw fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from %(component_name)s', component_name=object.component.get_name()) }}"></i>
+                  {% elif object.eln_import %}
+                    <i class="fa fa-fw fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from .eln file #%(eln_import_id)s', eln_import_id=object.eln_import_id) }}"></i>
                   {% else %}
                     <i class="fa fa-fw fa-question-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Imported log entry') }}"></i>
                   {% endif %}
