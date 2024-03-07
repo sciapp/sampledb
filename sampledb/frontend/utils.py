@@ -1521,6 +1521,13 @@ def stringify(json_object: list[dict[str, typing.Any]]) -> str:
     return json.dumps(json_object, separators=(',', ':'))
 
 
+@JinjaFilter()
+def unify_url(url: str) -> str:
+    if not url.endswith('/'):
+        url += '/'
+    return url
+
+
 @JinjaFunction()
 def to_diff_table(
         lines_before: str,
