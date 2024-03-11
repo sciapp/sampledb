@@ -88,3 +88,7 @@ class DeleteAliasForm(FlaskForm):
 class ModifyELNIdentityForm(FlaskForm):
     type = StringField(validators=[AnyOf(["remove", "revoke", "enable"])])
     eln_user_id = IntegerField(validators=[InputRequired()])
+
+
+class FederatedUserCreationForm(FlaskForm):
+    username = StringField(validators=[InputRequired()])
