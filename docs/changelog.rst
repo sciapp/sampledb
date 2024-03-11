@@ -91,6 +91,7 @@ Released on March 18th, 2024.
 - Added new array index diff syntax for updating data via the HTTP API
 - Added creation of activity log entries during import of objects from other databases
 - Added initial support for custom templates
+- Added federated login
 
 Version 0.26
 ------------

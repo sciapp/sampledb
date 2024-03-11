@@ -227,6 +227,9 @@
         {% for category, message in messages %}
             {% if category == "error" %}
                 {% set alert_class="alert-danger" %}
+            {% elif category == "error-url" %}
+                {% set message = message | safe %}
+                {% set alert_class="alert-danger" %}
             {% elif category == "warning" %}
                 {% set alert_class="alert-warning" %}
             {% elif category == "success" %}

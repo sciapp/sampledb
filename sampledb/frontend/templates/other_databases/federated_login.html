@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %} {{ _('Database') }} #{{ component.id }}: {{ _('Federated Login') }} {% endblock %}
+
+{% block template_values %}
+  {% do set_template_value("config.enforce_split_names", config["ENFORCE_SPLIT_NAMES"]) %}
+
+  {{ super() }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('sampledb/js/page/other_databases/federated_login.js') }}" type="module"></script>
+{% endblock %}
+
+{% block content %}
+  <h3>{{ _('Database') }} #{{ component.id }}: {{ component.get_name() }} </h3>
+  <p>
+  {% if not_verified %}
+    {{ _('A federated identity was found for the federated user, but has not been verified. Please login to the corresponding user so that the federated identity can be enabled for login. This needs to be done once.') }}
+  {% else %}
+    {{ _('The federated user does not have a federated identity at the local SampleDB service, which is needed to get access. Therefore, you need to sign in to an existing account.') }}
+    {% if config["ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER"] %}
+      {{ _('As an alternative you can also create a new user.') }}
+    {% endif %}
+  {% endif %}
+  </p>
+  <div style="display: flex; align-items: stretch;">
+    <form class="form-horizontal" method="get" action="{{ url_for('.sign_in') }}" style="flex: 1; text-align: center; justify-content: center; align-items: center; display: flex; flex-direction: column;">
+      <input type="hidden" name="federated_login_token" value="{{ federated_login_token }}">
+      <button type="submit" class="btn btn-primary">{{ _('Sign in to existing account') }}</button>
+    </form>
+    {% if allow_create_user %}
+      <div style="border-left: 1px solid #ccc; width: 0; margin: 40px; display: flex; justify-content: center; flex-direction: column">
+        <div class="text-muted" style="width: 40px; margin-left:-20px; background: linear-gradient(transparent, white, white, transparent); text-align: center; padding: 40px 0; flex:0">
+          {{ _('or') }}
+        </div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <h3>{{ _('Sign up') }}</h3>
+        <form class="form-horizontal" method="post" action="{{ url_for('.finalize_federated_login') }}">
+          {{ create_user_form.csrf_token() }}
+          <div class="form-group">
+            <label for="input-username" class="col-sm-4 control-label">{{ _('Username') }}</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="input-username" name="username" placeholder="{{ _('Username') }}">
+              {% if create_user_form.username.errors %}
+                <span class="help-block">{{ create_user_form.username.errors[0] }}</span>
+              {% elif config['ENFORCE_SPLIT_NAMES'] and (create_user_form.username.data is none or ', ' not in create_user_form.username.data[1:-1]) %}
+                <span class="help-block">{{ _('Please enter your name as: surname, given names.') }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="form-group mt-1">
+            <label for="input-email" class="col-sm-4 control-label">{{ _('E-Mail') }}</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="input-email" name="email" placeholder="{{ _('E-Mail') }}" value="{{ federated_user_information['email'] }}" disabled="disabled">
+            </div>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary">{{ _('Create User') }}</button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
