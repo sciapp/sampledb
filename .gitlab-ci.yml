@@ -25,7 +25,7 @@ test:
   script:
     - apt-get update
     # set up Python 3
-    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y git python3-pip postgresql-client chromium libpangocairo-1.0-0 gettext xmlsec1
     - mkdir ${CI_PROJECT_DIR}/test_files/
     - for i in 0 1 2 3; do
         psql -h "postgres" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE testdb_$i;";
