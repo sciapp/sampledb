@@ -9,7 +9,7 @@ import flask
 import pytest
 
 from sampledb import models, logic
-from sampledb.logic.components import add_component, update_component, validate_address
+from sampledb.logic.components import add_component, update_component, validate_address, get_federated_login_components, set_component_fed_login_available
 from sampledb.logic.errors import InvalidComponentAddressError, ComponentAlreadyExistsError, InvalidComponentUUIDError, ComponentDoesNotExistError, InvalidComponentNameError, InsecureComponentAddressError
 
 
@@ -433,3 +433,15 @@ def test_get_local_object_ids():
         user_id=user.id
     )
     assert logic.components.get_local_object_ids() == {object.id}
+
+
+def test_get_federated_login_components():
+    assert len(get_federated_login_components()) == 0
+    component = add_component(address='https://example.com', uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='')
+    add_component(address='https://example.com/sampledb', uuid='cf7118a7-6976-5b1a-9a39-7adc72f591a4', name='Example Component 2', description='')
+    assert len(get_federated_login_components()) == 0
+
+    set_component_fed_login_available(component.id, True)
+
+    assert len(get_federated_login_components()) == 1
+    assert get_federated_login_components()[0].id == component.id
