@@ -5,9 +5,8 @@ Logic module handling communication with other components in a SampleDB federati
 import typing
 import datetime
 import io
-
-import requests
 import flask
+import requests
 
 from .utils import _get_dict, _get_list, _get_bool
 from .users import import_user, parse_user
@@ -22,6 +21,7 @@ from .objects import import_object, parse_object
 from ..components import Component, set_component_discoverable
 from ..component_authentication import get_own_authentication
 from ..users import link_users_by_email_hashes
+from ..federation.login import update_metadata
 from .. import errors
 from ...models import ComponentAuthenticationType
 
@@ -197,6 +197,10 @@ def import_updates(
         raise errors.InvalidDataExportError('Received an invalid JSON string.')
     if updates:
         update_shares(component, updates)
+
+    metadata = get('/federation/v1/shares/metadata/', component)
+    if metadata is not None:
+        update_metadata(component, metadata)
     component.update_last_sync_timestamp(timestamp)
 
 
