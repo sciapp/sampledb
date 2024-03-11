@@ -17,6 +17,7 @@ from ...logic.federation.actions import shared_action_preprocessor
 from ...logic.federation.instruments import shared_instrument_preprocessor
 from ...logic.federation.location_types import shared_location_type_preprocessor
 from ...logic.federation.locations import shared_location_preprocessor
+from ...logic.federation.login import get_idp_metadata, get_sp_metadata, check_component_locally_ready
 from ...logic.federation.objects import shared_object_preprocessor
 from ...logic.federation.update import import_updates, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
 from ...logic.federation.users import shared_user_preprocessor
@@ -305,3 +306,16 @@ class Components(Resource):
                 for component_info in get_component_infos()
             ]
         }
+
+
+class FederatedLoginMetadata(Resource):
+    @http_token_auth.login_required
+    def get(self) -> ResponseData:
+        if flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
+            return {
+                'idp': get_idp_metadata().decode('utf-8'),
+                'sp': get_sp_metadata(flask.g.component).decode('utf-8'),
+                'enabled': check_component_locally_ready(flask.g.component)
+            }
+        else:
+            return {}

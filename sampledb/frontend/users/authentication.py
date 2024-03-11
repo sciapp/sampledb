@@ -7,6 +7,7 @@ import datetime
 import json
 import typing
 
+import itsdangerous
 import flask
 import flask_login
 from flask_babel import _, lazy_gettext, refresh
@@ -15,7 +16,9 @@ import werkzeug.wrappers.response
 
 from .. import frontend
 from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server
-from ...logic.users import get_user, User
+from ...logic.users import get_user, User, create_sampledb_federated_identity, get_federated_identity, enable_federated_identity_for_login
+from ...logic.components import get_component, get_federated_login_components
+from ...logic.errors import FederatedUserInFederatedIdentityError, UserDoesNotExistError, FederatedIdentityNotFoundError
 from ..users_forms import SigninForm, SignoutForm
 from .forms import WebAuthnLoginForm
 from ... import login_manager
@@ -98,6 +101,7 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
     server = get_webauthn_server()
 
     has_errors = False
+    federated_login_token = flask.request.args.get('federated_login_token', None)
     if form.validate_on_submit():
         username = form.username.data
         # enforce lowercase for username to ensure case insensitivity
@@ -126,7 +130,7 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
                     )
             two_factor_authentication_methods = get_active_two_factor_authentication_methods(user.id)
             if not two_factor_authentication_methods:
-                return complete_sign_in(user, is_for_refresh, form.remember_me.data, form.shared_device.data)
+                return complete_sign_in(user, is_for_refresh, form.remember_me.data, form.shared_device.data, federated_login_token=federated_login_token)
             flask.session['confirm_data'] = {
                 'reason': 'login',
                 'user_id': user.id,
@@ -163,7 +167,7 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
             user_id = None
         if user_id is not None:
             user = get_user(user_id)
-            return complete_sign_in(user, is_for_refresh, passkey_form.remember_me.data, passkey_form.shared_device.data)
+            return complete_sign_in(user, is_for_refresh, passkey_form.remember_me.data, passkey_form.shared_device.data, federated_login_token=federated_login_token)
         flask.flash(_('No user was found for this passkey.'), 'error')
         return flask.redirect(flask.url_for('frontend.sign_in'))
 
@@ -172,13 +176,19 @@ def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
         user_verification=UserVerificationRequirement.REQUIRED,
     )
     flask.session["webauthn_state"] = state
+
+    federated_logins = get_federated_login_components() if 'federated_login_token' not in flask.request.args else []
+
     return flask.render_template(
         'sign_in.html',
         form=form,
         is_for_refresh=is_for_refresh,
         has_errors=has_errors,
         passkey_form=passkey_form,
-        options=options
+        components=federated_logins,
+        options=options,
+        saml_user_creation=False,
+        federated_login_authentication=bool(flask.session.get('SAMLRequest', None)),
     )
 
 
@@ -188,12 +198,33 @@ def complete_sign_in(
         remember_me: bool,
         shared_device: bool,
         *,
-        next_url: typing.Optional[str] = None
+        next_url: typing.Optional[str] = None,
+        federated_login_token: typing.Optional[str] = None
 ) -> FlaskResponseT:
     if not user:
         flask.flash(_('Please sign in again.'), 'error')
         flask_login.logout_user()
         return flask.redirect(flask.url_for('.index'))
+    if federated_login_token:
+        serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
+        try:
+            federated_user_id, component_id = serializer.loads(federated_login_token, max_age=150)
+        except itsdangerous.BadSignature:
+            flask.flash(_('The federated login token expired. No federated identity link was created.'), 'error')
+
+        component = get_component(component_id)
+        try:
+            identity = get_federated_identity(user_id=user.id, eln_or_fed_user_id=get_user(federated_user_id, component_id).id)
+        except (UserDoesNotExistError, FederatedIdentityNotFoundError):
+            identity = None
+
+        try:
+            if identity is not None and identity.active:
+                enable_federated_identity_for_login(identity)
+            else:
+                create_sampledb_federated_identity(user.id, component=component, fed_id=federated_user_id, update_if_inactive=True, use_for_login=True)
+        except FederatedUserInFederatedIdentityError:
+            flask.flash(_('The federated user already has a federated identity with a different user.'), 'error')
     if is_for_refresh:
         flask_login.confirm_login()
     else:

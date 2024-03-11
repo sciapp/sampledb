@@ -1,10 +1,20 @@
 import datetime
 import typing
 from uuid import UUID
+from functools import wraps
 
 import flask
+import flask_login
+from flask_babel import _
+import werkzeug
 
 from .. import errors
+
+
+ResponseContent = typing.Optional[typing.Union[typing.Dict[str, typing.Any], typing.Dict[int, typing.Any], typing.List[typing.Any], str, bool, int]]
+ResponseData = typing.Union[werkzeug.Response, ResponseContent, typing.Tuple[ResponseContent], typing.Tuple[ResponseContent, int], typing.Tuple[ResponseContent, int, typing.Dict[str, str]]]
+
+FlaskRouteT = typing.TypeVar('FlaskRouteT', bound=typing.Callable[..., typing.Any])
 
 
 @typing.overload
@@ -462,3 +472,24 @@ def _get_utc_datetime(
         raise errors.InvalidDataExportError(f'Invalid timestamp "{utc_datetime_str}"')
     except TypeError:
         raise errors.InvalidDataExportError(f'Invalid timestamp "{utc_datetime_str}"')
+
+
+def login_required_saml(f: FlaskRouteT) -> FlaskRouteT:
+    @wraps(f)
+    def decorated(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        if flask_login.current_user.is_authenticated:
+            return f(*args, **kwargs)
+        flask.session['SAMLRequest'] = flask.request.form.get("SAMLRequest", None)
+        return flask.current_app.login_manager.unauthorized()  # type: ignore[attr-defined]
+
+    return typing.cast(FlaskRouteT, decorated)
+
+
+def federated_login_route(f: FlaskRouteT) -> FlaskRouteT:
+    @wraps(f)
+    def decorated(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
+        if flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
+            return f(*args, **kwargs)
+        flask.flash(_("Federated login is disabled for %(service_name)s.", service_name=flask.current_app.config['SERVICE_NAME']), 'error')
+        return flask.redirect(flask.url_for('frontend.index'))
+    return typing.cast(FlaskRouteT, decorated)

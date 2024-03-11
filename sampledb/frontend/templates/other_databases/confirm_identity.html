@@ -5,12 +5,25 @@
 {% block content %}
   <h3>{{ _('Database') }} #{{ source_database.id }}: {{ source_database.get_name() }} </h3>
   <div style="text-align: center;">
-    <p>{{ _("You have to confirm that you want to create a federated identity using the currently signed-in user (%(username)s #%(user_id)s).", username=current_user.name, user_id=current_user.id) }}</p>
-    <form method="post" class="form" action="{{ confirmation_url }}">
-      <input type="hidden" name="token" value="{{ identity_token }}">
-      <input type="hidden" name="federation_partner_uuid" value="{{ config['FEDERATION_UUID'] }}">
-      <a class="btn btn-danger" href="{{ url_for('.index') }}">{{ _('Cancel') }}</a>
-      <button class="btn btn-success" type="submit">{{ _('Confirm Identity') }}</button>
-    </form>
+    {% if not verified_linked and not linked %}
+        {% if unverified_linked %}
+            <p>{{ _("You have to confirm that you want to verify the federated identity using the currently signed-in user (%(username)s #%(user_id)s). After verifying the identity, it can be used for the federated login.", username=current_user.name, user_id=current_user.id) }}</p>
+        {% else %}
+            <p>{{ _("You have to confirm that you want to create a federated identity using the currently signed-in user (%(username)s #%(user_id)s).", username=current_user.name, user_id=current_user.id) }}</p>
+        {% endif %}
+        <form method="post" class="form" action="{{ confirmation_url }}">
+          <input type="hidden" name="token" value="{{ identity_token }}">
+          <input type="hidden" name="federation_partner_uuid" value="{{ config['FEDERATION_UUID'] }}">
+          <a class="btn btn-danger" href="{{ cancel_url }}">{{ _('Cancel') }}</a>
+          <button class="btn btn-success" type="submit">{{ _('Confirm Identity') }}</button>
+        </form>
+    {% else %}
+      {% if linked %}
+        <p>{{ _("The currently signed in user (%(username)s #%(user_id)s) is already linked with a different user.", username=current_user.name, user_id=current_user.id) }}</p>
+      {% else %}
+        <p>{{ _("The currently signed in user (%(username)s #%(user_id)s) is already linked with you.", username=current_user.name, user_id=current_user.id) }}</p>
+      {% endif %}
+      <a class="btn btn-primary" href="{{ cancel_url }}">{{ _('Back to federation overview') }}</a>
+    {% endif %}
   </div>
 {% endblock %}
