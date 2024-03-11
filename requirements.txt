@@ -61,6 +61,7 @@ pydyf==0.9.0
 pyotp==2.9.0
 pyphen==0.14.0
 pypng==0.20220715.0
+pysaml2==7.4.2
 pytz==2024.1
 qrcode==7.4.2
 reportlab==4.1.0
