@@ -65,13 +65,13 @@ def generate_ro_crate_metadata(
         if object_info['action_id'] is not None:
             action = get_action(object_info['action_id'])
             if action.type_id is None:
-                object_type = 'other'
+                object_type = None
             else:
                 object_type = {
                     ActionType.SAMPLE_CREATION: "sample",
                     ActionType.MEASUREMENT: "measurement",
                     ActionType.SIMULATION: "simulation",
-                }.get(action.type_id, 'other')
+                }.get(action.type_id, None)
         else:
             object_type = 'other'
         ro_crate_metadata["@graph"].append({
@@ -92,7 +92,6 @@ def generate_ro_crate_metadata(
             ],
             "creator": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
-            "genre": object_type,
             "mentions": [],
             "comment": [],
             "hasPart": [
@@ -106,6 +105,8 @@ def generate_ro_crate_metadata(
                 }
             ]
         })
+        if object_type:
+            ro_crate_metadata["@graph"][-1]["genre"] = object_type
         current_version_info = object_info['versions'][-1]
         if current_version_info.get('data') and isinstance(current_version_info['data'].get('tags'), dict) and current_version_info['data']['tags'].get('_type') == 'tags' and current_version_info['data']['tags'].get('tags'):
             ro_crate_metadata["@graph"][-1]["keywords"] = ', '.join(current_version_info['data']['tags']['tags'])

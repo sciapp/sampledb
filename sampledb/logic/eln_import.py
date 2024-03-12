@@ -615,19 +615,15 @@ def parse_eln_file(
                 else:
                     eln_source_url = None
 
-                if eln_dialect == 'SampleDB' and 'genre' in object_node:
-                    genre = object_node.get('genre')
-                    _eln_assert(isinstance(genre, str), "Invalid genre for Dataset for SampleDB .eln file")
-                    _eln_assert(genre in {'sample', 'measurement', 'simulation', 'other'}, "Invalid genre for Dataset for SampleDB .eln file")
-                    if genre == 'other':
-                        object_type = None
-                    else:
-                        object_type = typing.cast(str, genre)
+                if object_node.get('genre') in {'sample', 'measurement', 'simulation', 'experiment', 'procedure'}:
+                    object_type = {
+                        'experiment': 'measurement',
+                        'procedure': 'measurement'
+                    }.get(object_node['genre'], object_node['genre'])
                     object_type_id = {
-                        None: None,
                         'sample': ActionType.SAMPLE_CREATION,
                         'measurement': ActionType.MEASUREMENT,
-                        'simulation': ActionType.SIMULATION
+                        'simulation': ActionType.SIMULATION,
                     }.get(object_type)
                 else:
                     object_type = None
