@@ -8,7 +8,7 @@ from .utils import _get_id, _get_uuid, _get_utc_datetime, _get_str, _get_dict
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from ..comments import get_comment, create_comment, update_comment, Comment
 from ..components import Component
-from .. import errors, fed_logs
+from .. import errors, fed_logs, object_log
 from ...models import Object
 
 
@@ -69,6 +69,8 @@ def import_comment(
             component_id=component_id
         ))
         fed_logs.import_comment(comment.id, component.id)
+        if user_id is not None:
+            object_log.post_comment(user_id=user_id, object_id=comment.object_id, comment_id=comment.id, utc_datetime=comment_data['utc_datetime'], is_imported=True)
     return comment
 
 

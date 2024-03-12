@@ -1112,10 +1112,20 @@
 
   {% if not is_archived and action is not none and action.type.enable_activity_log %}
     {% if object_log_entries %}
+      {% set imported_object_log_entries = [] %}
+      {% for object_log_entry in object_log_entries %}
+        {% if object_log_entry.is_imported %}
+          {% do imported_object_log_entries.append(object_log_entry) %}
+        {% endif %}
+      {% endfor %}
+      {% set any_object_log_entry_is_imported = imported_object_log_entries | length > 0 %}
       <h2 id="activity_log">{{ _('Activity Log')}}</h2>
       <table class="table" id="activity_log_table">
         <thead>
           <tr>
+            {% if any_object_log_entry_is_imported %}
+              <th scope="col" style="white-space: nowrap;width: 1%;"></th>
+            {% endif %}
             <th scope="col" style="white-space: nowrap;width: 1%;">{{ _('Datetime') }}</th>
             <th scope="col"></th>
             <th scope="col" class="text-right" style="white-space: nowrap;width: 1%;">
@@ -1211,7 +1221,7 @@
           {% elif object_log_entry.type == ObjectLogEntryType.UPLOAD_FILE %}
             {% for file in files %}
               {% if file.id == object_log_entry.data['file_id'] %}
-                {% if file.storage == 'database' %}
+                {% if file.storage == 'database' or file.storage == 'federation' %}
                   {% if action is not none and action.type.enable_files %}
                     {% set ns.object_log_entry_message = _('%(user_ref)s uploaded <a href="%(file_url)s">%(file_name)s</a>.', user_ref=user_reference(object_log_entry.user), file_url='#file-' + object_log_entry.data['file_id'] | string, file_name=file.original_file_name) %}
                   {% else %}
@@ -1236,11 +1246,11 @@
           {% elif object_log_entry.type == ObjectLogEntryType.ASSIGN_LOCATION %}
             {% set object_location_assignment = get_object_location_assignment(object_log_entry.data['object_location_assignment_id']) %}
             {% if object_location_assignment.location_id is not none and object_location_assignment.responsible_user_id is not none %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a> and user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id))) %}
             {% elif object_location_assignment.location_id is not none %}
               {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to location <a href="%(location_url)s">%(location_name)s</a>.', user_ref=user_reference(object_log_entry.user), location_url=url_for('.location', location_id=object_location_assignment.location_id), location_name=object_location_assignment.location_id | get_location_name(True)) %}
             {% elif object_location_assignment.responsible_user_id is not none %}
-              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to user <a href="%(other_user_url)s">%(other_user_name)s</a>.', user_ref=user_reference(object_log_entry.user), other_user_url=url_for('.user_profile', user_id=object_location_assignment.responsible_user_id), other_user_name=get_user(object_location_assignment.responsible_user_id).name) %}
+              {% set ns.object_log_entry_message = _('%(user_ref)s assigned this object to user %(other_user_ref)s.', user_ref=user_reference(object_log_entry.user), other_user_ref=user_reference(get_user(object_location_assignment.responsible_user_id))) %}
             {% endif %}
           {% elif object_log_entry.type == ObjectLogEntryType.LINK_PUBLICATION %}
             {% set ns.object_log_entry_message = _('%(user_ref)s linked publication <a href="https://doi.org/%(url_doi)s">%(doi)s</a> to the object.', user_ref=user_reference(object_log_entry.user), url_doi=object_log_entry.data['doi'] | urlencode, doi=object_log_entry.data['doi']) %}
@@ -1290,6 +1300,17 @@
             {% set ns.object_log_entry_message = _('Unknown event') %}
           {% endif %}
           <tr data-activity-log-type="{{ object_log_entry.type.name.lower() }}">
+            {% if any_object_log_entry_is_imported %}
+              <td style="white-space: nowrap;width: 1%;">
+                {% if object_log_entry.is_imported %}
+                  {% if object.component %}
+                    <i class="fa fa-fw fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from %(component_name)s', component_name=object.component.get_name()) }}"></i>
+                  {% else %}
+                    <i class="fa fa-fw fa-question-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Imported log entry') }}"></i>
+                  {% endif %}
+                {% endif %}
+              </td>
+            {% endif %}
             <td style="white-space: nowrap;width: 1%;"><span data-utc-datetime="{{ object_log_entry.utc_datetime | generic_format_datetime }}">{{ object_log_entry.utc_datetime | babel_format_datetime }}</span></td>
             <td>
               {{ ns.object_log_entry_message }}

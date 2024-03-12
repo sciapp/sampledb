@@ -2441,7 +2441,8 @@ Reading the full accessible object log
                 "object_id": 163,
                 "user_id": 12,
                 "data": {},
-                "utc_datetime": "2023-12-03 01:02:03"
+                "utc_datetime": "2023-12-03 01:02:03",
+                "is_imported": false
             }
         ]
 
@@ -2452,4 +2453,5 @@ Reading the full accessible object log
     :>json string user_id: the ID of the user by whose activity the log entry was created
     :>json string data: the data of the log entry, might be empty (``{}``)
     :>json string utc_datetime: the timestamp of the log entry in UTC in format %Y-%m-%d %H:%M:%S
+    :>json bool is_imported: whether the log entry was imported
     :statuscode 200: no error
