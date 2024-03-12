@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-03-04 13:04+0100\n"
+"POT-Creation-Date: 2024-03-13 07:02+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -6337,9 +6337,6 @@ msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
 msgid "Please select an existing label paper format."
 msgstr "Bitte wählen Sie ein existierendes Etikettenpapierformat aus."
-
-msgid "Please enter a number greater or equal to {value}."
-msgstr "Bitte geben Sie eine Zahl größer oder gleich {value} ein."
 
 msgid "Please select which data should be stored in the qr codes."
 msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."

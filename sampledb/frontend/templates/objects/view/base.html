@@ -825,7 +825,7 @@
               <label for="input-qr-code-width" class="control-label col-sm-4">{{ _('QR Code Width:') }}</label>
               <div class="col-sm-8">
                 <div class="input-group">
-                  <input type="number" class="form-control" aria-label="QR Code Width" value="7" min="4" name="qr-code-width" id="input-qr-code-width">
+                  <input type="number" class="form-control" aria-label="QR Code Width" value="7" name="qr-code-width" id="input-qr-code-width">
                   <span class="input-group-addon">mm</span>
                 </div>
                 <span class="help-block"></span>
@@ -2261,29 +2261,33 @@
         var qr_code_number = input_qr_code_number.val();
         var qr_code_content = input_qr_code_content.val();
 
-        if(!PAGE_SIZES.hasOwnProperty(paper_format)) {
-          var paper_format_group = labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group');
-          paper_format_group.addClass('has-error');
-          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
-          is_valid = false;
-        } else {
-          labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group').addClass('has-success');
-        }
+        {% if config["LABEL_PAPER_FORMATS"] %}
+            if (Number(selected_label_dimension) < LABEL_PAPER_FORMATS.length || selected_label_dimension === "default") {
+              input_qr_code_label_dimension_template_group.addClass('has-success');
+            } else {
+              input_qr_code_label_dimension_template_group.addClass('has-error');
+              input_qr_code_label_dimension_template_group.find('.help-block').text("{{ _('Please select an existing label paper format.') }}");
+              is_valid = false;
+            }
+        {% endif %}
 
-        if (Number(selected_label_dimension) < LABEL_PAPER_FORMATS.length || selected_label_dimension === "default") {
-          input_qr_code_label_dimension_template_group.addClass('has-success');
-        } else {
-          input_qr_code_label_dimension_template_group.addClass('has-error');
-          input_qr_code_label_dimension_template_group.find('.help-block').text("{{ _('Please select an existing label paper format.') }}");
-          is_valid = false;
-        }
+        if (LABEL_PAPER_FORMATS.length === 0 || selected_label_dimension === "default") {
+            if(!PAGE_SIZES.hasOwnProperty(paper_format)) {
+              var paper_format_group = labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group');
+              paper_format_group.addClass('has-error');
+              paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+              is_valid = false;
+            } else {
+              labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group').addClass('has-success');
+            }
 
-        if(!isNaN(qr_code_width) && qr_code_width >= 4) {
-          input_qr_code_width_group.addClass('has-success');
-        } else {
-          input_qr_code_width_group.addClass('has-error');
-          input_qr_code_width_group.find('.help-block').text("{{ _('Please enter a number greater or equal to {value}.') }}".replace("{value}", "4"));
-          is_valid = false;
+            if(!isNaN(qr_code_width) && qr_code_width >= 4 && qr_code_width <= 150) {
+              input_qr_code_width_group.addClass('has-success');
+            } else {
+              input_qr_code_width_group.addClass('has-error');
+              input_qr_code_width_group.find('.help-block').text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "4").replace("{maximum}", "150"));
+              is_valid = false;
+            }
         }
 
         if(!isNaN(qr_code_number) && qr_code_number >= 1 && qr_code_number <= 1000) {

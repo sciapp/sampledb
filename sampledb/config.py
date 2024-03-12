@@ -174,7 +174,14 @@ def is_label_paper_formats_valid() -> bool:
                 if not isinstance(value, int):
                     is_valid = False
                     print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a whole number in format definition {i}.\n', color=31))
-                if value < 0:
+                if key == 'qr_code_width':
+                    if value < 4:
+                        format_definition['qr_code_width'] = 4
+                        print(ansi_color(f'LABEL_PAPER_FORMATS: {key} in format definition {i} is less than 4. Value set to 4.\n', color=33))
+                    elif value > 150:
+                        format_definition['qr_code_width'] = 150
+                        print(ansi_color(f'LABEL_PAPER_FORMATS: {key} in format definition {i} is greater than 150. Value set to 150.\n', color=33))
+                elif value < 0:
                     is_valid = False
                     print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be greater than 0 in format definition {i}.\n', color=31))
             elif key in float_fields:

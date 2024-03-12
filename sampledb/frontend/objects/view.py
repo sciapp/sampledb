@@ -586,6 +586,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
             qrcode_width = 7
         if qrcode_width < 4:
             qrcode_width = 4
+        elif qrcode_width > 150:
+            qrcode_width = 150
 
         try:
             label_quantity = int(flask.request.args.get('qr-code-number', '1'))
