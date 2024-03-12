@@ -143,7 +143,8 @@ def import_object(
                 user_id=user_id,
                 action_id=action_id,
                 utc_datetime=version['utc_datetime'],
-                allow_disabled_languages=True
+                allow_disabled_languages=True,
+                get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
             )
             if object:
                 fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
@@ -157,7 +158,8 @@ def import_object(
                 user_id=user_id,
                 action_id=action_id,
                 utc_datetime=version['utc_datetime'],
-                allow_disabled_languages=True
+                allow_disabled_languages=True,
+                get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
             )
             fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
             did_perform_import = True
