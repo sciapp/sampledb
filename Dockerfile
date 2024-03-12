@@ -4,7 +4,8 @@ FROM python:3.11-slim-bookworm as builder
 # Install required system packages
 # GCC is required to build python dependencies on ARM architectures
 # git is required to build python dependencies from git repositories
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gcc git
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y gcc git
 
 # It's important to keep the same path in builder image and final image
 RUN useradd -ms /bin/bash sampledb
@@ -37,9 +38,10 @@ LABEL org.opencontainers.image.licenses=MIT
 # Install required system packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y libpangocairo-1.0-0 gettext
+    DEBIAN_FRONTEND=noninteractive apt-get install -y libpangocairo-1.0-0 gettext && \
+    rm -rf /var/lib/apt/lists/*
 
-
+# Switch to non-root user
 RUN useradd -ms /bin/bash sampledb
 USER sampledb
 WORKDIR /home/sampledb
