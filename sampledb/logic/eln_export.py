@@ -82,7 +82,15 @@ def generate_ro_crate_metadata(
             "description": f"Object #{object_info['id']}",
             "dateCreated": object_info['versions'][0]['utc_datetime'],
             "dateModified": object_info['versions'][-1]['utc_datetime'],
-            "author": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
+            "author": [
+                {"@id": f"./users/{version_user_id}"}
+                for version_user_id in sorted({
+                    version_info['user_id']
+                    for version_info in object_info['versions']
+                    if version_info['user_id'] is not None
+                })
+            ],
+            "creator": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
             "genre": object_type,
             "mentions": [],
@@ -126,7 +134,15 @@ def generate_ro_crate_metadata(
                 "name": f"{get_translated_text(version_info['data'].get('name', {}).get('text', {}), 'en')}" if version_info['data'] is not None else '',
                 "description": f"Object #{object_info['id']} version #{version_info['id']}",
                 "dateCreated": version_info['utc_datetime'],
-                "author": {"@id": f"./users/{version_info['user_id']}"} if version_info['user_id'] is not None else None,
+                "creator": {"@id": f"./users/{version_info['user_id']}"} if version_info['user_id'] is not None else None,
+                "author": [
+                    {"@id": f"./users/{other_version_user_id}"}
+                    for other_version_user_id in sorted({
+                        other_version_info['user_id']
+                        for other_version_info in object_info['versions']
+                        if other_version_info['user_id'] is not None and other_version_info['id'] <= version_info['id']
+                    })
+                ],
                 "url": flask.url_for('frontend.object_version', object_id=object_info['id'], version_id=version_info['id'], _external=True),
                 "hasPart": [
                     {
