@@ -63,6 +63,7 @@ Administrator Guide
     administrator_guide/federation.rst
     administrator_guide/monitoring_dashboard.rst
     administrator_guide/download_service.rst
+    administrator_guide/customization.rst
     administrator_guide/deprecated_features.rst
     administrator_guide/labels.rst
 

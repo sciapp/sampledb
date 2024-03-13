@@ -67,6 +67,7 @@ LDAP
 
 If you use LDAP for user management, you can use these variables to configure how SampleDB should connect to your LDAP server.
 
+.. _customization_configuration:
 
 Customization
 -------------
