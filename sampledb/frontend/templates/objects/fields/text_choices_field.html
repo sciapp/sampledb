@@ -1,4 +1,21 @@
-<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker" {% endif %} {% if data.text %} data-sampledb-default="{{ data.text }}" {% else %} data-sampledb-default="{{ schema['default'] }}" {% endif %} name="{{ id_prefix }}_text">
+{% if data.text %}
+  {% set default_option = data.text %}
+{% elif 'default' in schema %}
+  {% set default_option = schema.default %}
+{% else %}
+  {% set default_option = '' %}
+{% endif %}
+{% if default_option %}
+  {% set ns = namespace(default_option='') %}
+  {% for option in schema.choices %}
+    {% if option == default_option %}
+      {% set ns.default_option = option %}
+    {% endif %}
+  {% endfor %}
+  {% set default_option = ns.default_option %}
+{% endif %}
+
+<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker" {% endif %} data-sampledb-default="{{ default_option }}" name="{{ id_prefix }}_text">
   {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
     {% if not is_required %}
       <option value="">&mdash;</option>
