@@ -488,7 +488,11 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Uploaded by') }}:</label></div>
+                    {% if file.uploader is not none %}
                     <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
+                    {% else %}
+                    <div class="col-sm-9">&mdash;</div>
+                    {% endif %}
                   </div>
                   {% elif file.storage == 'url' %}
                   <div class="row">
@@ -500,12 +504,20 @@
                   </div>
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Linked by') }}:</label></div>
+                    {% if file.uploader is not none %}
                     <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
+                    {% else %}
+                    <div class="col-sm-9">&mdash;</div>
+                    {% endif %}
                   </div>
                   {% else %}
                   <div class="row">
                     <div class="col-sm-3 text-right"><label>{{ _('Posted by') }}:</label></div>
+                    {% if file.uploader is not none %}
                     <div class="col-sm-9"><a href="{{ url_for('.user_profile', user_id=file.uploader.id) }}">{{ file.uploader.get_name() }}{{ import_information_symbol(file.uploader) }}</a></div>
+                    {% else %}
+                    <div class="col-sm-9">&mdash;</div>
+                    {% endif %}
                   </div>
                   {% endif %}
                   <div class="row">
@@ -541,23 +553,39 @@
                       <tbody>
                         <tr>
                           <td><span data-utc-datetime="{{ file.utc_datetime | generic_format_datetime }}">{{ file.utc_datetime | babel_format_datetime }}</span></td>
+                          {% if file.uploader is not none %}
                           <td>{{ _('<a href="%(uploader_url)s">%(uploader_name)s</a> has uploaded the file.', uploader_url=url_for('.user_profile', user_id=file.uploader.id), uploader_name=file.uploader.get_name()) }}</td>
+                          {% else %}
+                          <td>{{ _('An unknown user has uploaded the file.') }}</td>
+                          {% endif %}
                         </tr>
                         {% for log_entry in file.log_entries %}
                           {% if log_entry.type == FileLogEntryType.EDIT_TITLE %}
                             <tr>
                               <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+                              {% if log_entry.user.id is not none %}
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the title to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }}<br />{{ log_entry.data['title'] }}</td>
+                              {% else %}
+                              <td>{{ _('An unknown user updated the title to:') }}</td>
+                              {% endif %}
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_URL %}
                             <tr>
                               <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+                              {% if log_entry.user.id is not none %}
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the URL to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['url'] }}</pre></td>
+                              {% else %}
+                              <td>{{ _('An unknown user updated the URL to:') }}</td>
+                              {% endif %}
                             </tr>
                           {% elif log_entry.type == FileLogEntryType.EDIT_DESCRIPTION %}
                             <tr>
                               <td><span data-utc-datetime="{{ log_entry.utc_datetime | generic_format_datetime }}">{{ log_entry.utc_datetime | babel_format_datetime }}</span></td>
+                              {% if log_entry.user.id is not none %}
                               <td>{{ _('<a href="%(editor_url)s">%(editor_name)s</a> updated the description to:', editor_url=url_for('.user_profile', user_id=log_entry.user.id), editor_name=log_entry.user.get_name()) }} <pre style="font-family: inherit">{{ log_entry.data['description'] }}</pre></td>
+                              {% else %}
+                              <td>{{ _('An unknown user updated the description to:') }}</td>
+                              {% endif %}
                             </tr>
                           {% else %}
                             <tr>{{ log_entry.type }}</tr>
