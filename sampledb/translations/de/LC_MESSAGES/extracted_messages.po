@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-03-13 07:02+0100\n"
+"POT-Creation-Date: 2024-03-13 11:46+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.13.1\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -5790,11 +5790,17 @@ msgstr ""
 "<a href=\"%(uploader_url)s\">%(uploader_name)s</a> hat die Datei "
 "hochgeladen."
 
+msgid "An unknown user has uploaded the file."
+msgstr "Ein unbekannter Nutzer hat die Datei hochgeladen."
+
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the title to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat den Titel aktualisiert"
 " zu:"
+
+msgid "An unknown user updated the title to:"
+msgstr "Ein unbekannter Nutzer hat den Titel aktualisiert zu:"
 
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the URL to:"
@@ -5802,11 +5808,17 @@ msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die URL aktualisiert "
 "zu:"
 
+msgid "An unknown user updated the URL to:"
+msgstr "Ein unbekannter Nutzer hat die URL aktualisiert zu:"
+
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the description to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die Beschreibung "
 "aktualisiert zu:"
+
+msgid "An unknown user updated the description to:"
+msgstr "Ein unbekannter Nutzer hat die Beschreibung aktualisiert zu:"
 
 msgid "Hide"
 msgstr "Verstecken"
