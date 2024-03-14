@@ -145,7 +145,8 @@ def insert_fed_object_version(
         data: typing.Optional[typing.Dict[str, typing.Any]],
         user_id: typing.Optional[int],
         utc_datetime: typing.Optional[datetime.datetime],
-        allow_disabled_languages: bool = False
+        allow_disabled_languages: bool = False,
+        get_missing_schema_from_action: bool = True
 ) -> typing.Optional[Object]:
     """
     Inserts an imported object version into local object versions.
@@ -161,6 +162,7 @@ def insert_fed_object_version(
     :param utc_datetime: the creation datetime of the version to insert
     :param allow_disabled_languages: whether disabled languages may be allowed
         in data
+    :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -180,7 +182,8 @@ def insert_fed_object_version(
         fed_object_id=fed_object_id,
         fed_version_id=fed_version_id,
         component_id=component_id,
-        allow_disabled_languages=allow_disabled_languages
+        allow_disabled_languages=allow_disabled_languages,
+        get_missing_schema_from_action=get_missing_schema_from_action
     )
     if object is not None:
         tags.update_object_tag_usage(object)
@@ -323,7 +326,8 @@ def update_object_version(
         user_id: typing.Optional[int],
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
         utc_datetime: typing.Optional[datetime.datetime] = None,
-        allow_disabled_languages: bool = False
+        allow_disabled_languages: bool = False,
+        get_missing_schema_from_action: bool = True
 ) -> Object:
     object = Objects.update_object_version(
         object_id=object_id,
@@ -333,7 +337,8 @@ def update_object_version(
         data=data,
         user_id=user_id,
         utc_datetime=utc_datetime,
-        allow_disabled_languages=allow_disabled_languages
+        allow_disabled_languages=allow_disabled_languages,
+        get_missing_schema_from_action=get_missing_schema_from_action
     )
     if object is None:
         check_object_version_exists(object_id, version_id)
