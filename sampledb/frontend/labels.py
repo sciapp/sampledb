@@ -240,7 +240,8 @@ def _draw_long_label(
 
 def _draw_qr_code_label(
         canvas: Canvas,
-        sample_id: int,
+        object_id: int,
+        object_name: str,
         current_label_number: typing.Optional[int],
         max_label_number: int,
         qrcode_uri: str,
@@ -252,14 +253,15 @@ def _draw_qr_code_label(
         qrcode_size: float = 15 * mm,
         show_id_on_label: bool = True,
         add_maximum_label_number: bool = False,
-        label_dimension: typing.Optional[dict[str, typing.Any]] = None
+        label_dimension: typing.Optional[dict[str, typing.Any]] = None,
+        max_label_width: typing.Optional[float] = None
 ) -> float:
     font_name = "Helvetica"
     font_size = 8
     canvas.setFont(font_name, font_size)
 
     if show_id_on_label:
-        label_text = f"#{sample_id} "
+        label_text = f"#{object_id} "
     else:
         label_text = ""
 
@@ -289,15 +291,30 @@ def _draw_qr_code_label(
 
     left_cursor += qrcode_size + 1 * mm
     canvas.setFont(font_name + '-Bold', font_size)
+    text_width = canvas.stringWidth(object_name, font_name + '-Bold', font_size)
+    object_name_shorted = False
+    if label_dimension is not None:
+        max_label_width = label_dimension['label_width'] * mm
+    if max_label_width is not None:
+        while len(object_name) > 1 and text_width + qrcode_size + 2 * mm > max_label_width:
+            object_name = object_name[:-1]
+            object_name_shorted = True
+            text_width = canvas.stringWidth(object_name + '…', font_name + '-Bold', font_size)
+    if object_name_shorted:
+        object_name = object_name + '…'
     if linebreak:
-        canvas.drawString(left_cursor, bottom_offset + 2 * (height + 3 - font_size) / 3, rows[0])
-        canvas.drawString(left_cursor, bottom_offset + (height + 3 - font_size) / 3, rows[1])
+        canvas.drawString(left_cursor, bottom_offset + 1.5 * mm + 2.5 / 3 * (height - 2 * mm) - font_size / 2, rows[0])
+        canvas.drawString(left_cursor, bottom_offset + 1.5 * mm + 1.5 / 3 * (height - 2 * mm) - font_size / 2, rows[1])
+        canvas.drawString(left_cursor, bottom_offset + 1.5 * mm + 0.5 / 3 * (height - 2 * mm) - font_size / 2, object_name)
+    elif label_text:
+        canvas.drawString(left_cursor, bottom_offset + 1.5 * mm + 1.5 / 2 * (height - 2 * mm) - font_size / 2, label_text)
+        canvas.drawString(left_cursor, bottom_offset + 1.5 * mm + 0.5 / 2 * (height - 2 * mm) - font_size / 2, object_name)
     else:
-        canvas.drawString(left_cursor, bottom_offset + (height + 3 - font_size) / 2, label_text)
+        canvas.drawString(left_cursor, bottom_offset + 1.5 * mm + 0.5 / 1 * (height - 2 * mm) - font_size / 2, object_name)
 
     if show_id_on_label or current_label_number is not None:
-        text_width = canvas.stringWidth(label_text, font_name, font_size)
-        left_cursor += text_width + 1 * mm
+        text_width = max(text_width, canvas.stringWidth(label_text, font_name + '-Bold', font_size))
+    left_cursor += text_width + 1 * mm
 
     width: float = left_cursor - left_offset
     if width < minimum_width:
@@ -409,6 +426,7 @@ def create_multiple_labels(
     horizontal_padding = 3 * mm if not create_only_qr_codes else 0
     horizontal_margin = HORIZONTAL_LABEL_MARGIN * mm
     vertical_margin = VERTICAL_LABEL_MARGIN * mm
+    max_label_width = None
     if create_only_qr_codes:
         extra_space = 2
         if show_id_on_label:
@@ -425,7 +443,12 @@ def create_multiple_labels(
                 max_length_text += f"_{quantity}"
 
         text_width = canvas.stringWidth(max_length_text, "Helvetica-Bold", 8)
+        for object_specification in object_specifications.values():
+            text_width = max(text_width, canvas.stringWidth(object_specification["object_name"], "Helvetica-Bold", 8))
         label_width = text_width + qr_code_width + extra_space * mm
+        if label_width > page_width - 2 * horizontal_margin:
+            max_label_width = page_width - 2 * horizontal_margin
+            label_width = max_label_width
 
     top_cursor = page_height - vertical_margin - vertical_padding
     max_label_height = None
@@ -445,6 +468,8 @@ def create_multiple_labels(
     object_ids = sorted(list(object_specifications.keys()))
     object_id = -1
     num_labels_per_row = int((page_width - 2 * horizontal_margin + horizontal_padding) / (label_width + horizontal_padding))
+    if num_labels_per_row <= 0:
+        num_labels_per_row = 1
 
     if create_mixed_labels or create_long_labels:
         num_labels_per_row = 1
@@ -513,7 +538,8 @@ def create_multiple_labels(
         elif create_only_qr_codes:
             bottom_cursor = _draw_qr_code_label(
                 canvas=canvas,
-                sample_id=object_id,
+                object_id=object_id,
+                object_name=object_specification["object_name"],
                 current_label_number=label_counter + 1 if add_label_number else None,
                 max_label_number=quantity,
                 qrcode_uri=qr_code_uri,
@@ -525,7 +551,8 @@ def create_multiple_labels(
                 qrcode_size=qr_code_width,
                 show_id_on_label=show_id_on_label,
                 add_maximum_label_number=add_maximum_label_number,
-                label_dimension=label_dimension
+                label_dimension=label_dimension,
+                max_label_width=label_width
             )
         else:
             bottom_cursor = _draw_label(canvas, object_specification['object_name'], object_specification['creation_user'], object_specification['creation_date'], object_id, ghs_classes, qr_code_uri, left_cursor, top_cursor, label_width, min_label_height, qr_code_width, ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered)
