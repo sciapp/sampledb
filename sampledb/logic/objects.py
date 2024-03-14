@@ -111,11 +111,14 @@ def create_eln_import_object(
         action_id: typing.Optional[int],
         data: typing.Optional[typing.Dict[str, typing.Any]],
         schema: typing.Optional[typing.Dict[str, typing.Any]],
-        user_id: int,
+        importing_user_id: int,
+        user_id: typing.Optional[int],
         utc_datetime: typing.Optional[datetime.datetime],
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
 ) -> Object:
-    users.get_user(user_id)
+    users.check_user_exists(importing_user_id)
+    if user_id:
+        users.check_user_exists(user_id)
     if data_validator_arguments is None:
         data_validator_arguments = {}
     object = Objects.create_object(
@@ -128,10 +131,11 @@ def create_eln_import_object(
         eln_object_id=eln_object_id,
         data_validator_arguments=data_validator_arguments
     )
-    _update_object_references(object, user_id=user_id)
-    object_permissions.set_initial_permissions(object)
-    object_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
-    user_log.import_from_eln_file(object_id=object.object_id, user_id=user_id)
+    if user_id:
+        _update_object_references(object, user_id=user_id)
+    object_permissions.set_initial_permissions(object, user_id=importing_user_id)
+    object_log.import_from_eln_file(object_id=object.object_id, user_id=importing_user_id)
+    user_log.import_from_eln_file(object_id=object.object_id, user_id=importing_user_id)
     tags.update_object_tag_usage(object)
     return object
 
@@ -276,7 +280,9 @@ def update_object(
         data: typing.Optional[typing.Dict[str, typing.Any]],
         user_id: int,
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        create_log_entries: bool = True,
+        utc_datetime: typing.Optional[datetime.datetime] = None
 ) -> None:
     """
     Updates the object to a new version. This function also handles logging
@@ -288,6 +294,8 @@ def update_object(
     :param schema: the schema for the new object data
     :param data_validator_arguments: additional keyword arguments to the data
         validator
+    :param create_log_entries: whether log entries should be created
+    :param utc_datetime: the datetime of the update, or None
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
@@ -307,12 +315,14 @@ def update_object(
         data=data,
         schema=schema,
         user_id=user_id,
-        data_validator_arguments=data_validator_arguments
+        data_validator_arguments=data_validator_arguments,
+        utc_datetime=utc_datetime
     )
     if object is None:
         raise errors.ObjectDoesNotExistError()
-    user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
-    object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
+    if create_log_entries:
+        user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
+        object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
     _update_object_references(object, user_id=user_id)
     _send_user_references_notifications(object, user_id)
     tags.update_object_tag_usage(object)

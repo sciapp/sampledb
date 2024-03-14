@@ -6165,6 +6165,10 @@ msgstr "%(user_ref)s hat dieses Objekt aus einer .eln-Datei importiert."
 msgid "Log entry from %(component_name)s"
 msgstr "Log-Eintrag von %(component_name)s"
 
+#, python-format
+msgid "Log entry from .eln file #%(eln_import_id)s"
+msgstr "Log-Eintrag aus .eln-Datei #%(eln_import_id)s"
+
 msgid "Imported log entry"
 msgstr "Importierter Log-Eintrag"
 
