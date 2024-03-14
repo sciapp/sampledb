@@ -449,32 +449,55 @@ def _parse_author_ref(
         author_ref: typing.Any,
         graph_nodes_by_id: typing.Dict[str, typing.Any]
 ) -> typing.Optional[str]:
-    if author_ref is None:
+    return _parse_person_ref(
+        person_ref=author_ref,
+        graph_nodes_by_id=graph_nodes_by_id,
+        node_name='author'
+    )
+
+
+def _parse_creator_ref(
+        creator_ref: typing.Any,
+        graph_nodes_by_id: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    return _parse_person_ref(
+        person_ref=creator_ref,
+        graph_nodes_by_id=graph_nodes_by_id,
+        node_name='creator'
+    )
+
+
+def _parse_person_ref(
+        person_ref: typing.Any,
+        graph_nodes_by_id: typing.Dict[str, typing.Any],
+        node_name: str
+) -> typing.Optional[str]:
+    if person_ref is None:
         return None
-    author_id: str
-    _eln_assert(isinstance(author_ref, dict), "Invalid author reference or node")
-    author_ref = typing.cast(typing.Dict[str, typing.Any], author_ref)
-    if '@id' in author_ref and author_ref['@id'] in graph_nodes_by_id:
-        author_id = author_ref['@id']
-        if graph_nodes_by_id[author_id] != author_ref:
-            _eln_assert(list(author_ref.keys()) == ['@id'], "Invalid author reference")
-        author_node = graph_nodes_by_id[author_id]
+    person_id: str
+    _eln_assert(isinstance(person_ref, dict), f"Invalid {node_name} reference or node")
+    person_ref = typing.cast(typing.Dict[str, typing.Any], person_ref)
+    if '@id' in person_ref and person_ref['@id'] in graph_nodes_by_id:
+        person_id = person_ref['@id']
+        if graph_nodes_by_id[person_id] != person_ref:
+            _eln_assert(list(person_ref.keys()) == ['@id'], f"Invalid {node_name} reference")
+        person_node = graph_nodes_by_id[person_id]
     else:
-        author_node = author_ref
-        if '@id' in author_node:
-            author_id = author_node['@id']
+        person_node = person_ref
+        if '@id' in person_node:
+            person_id = person_node['@id']
         else:
-            _eln_assert('identifier' in author_node and isinstance(author_node['identifier'], str), "Invalid author node")
-            author_id = author_node['identifier']
-            author_node['@id'] = author_id
-        if author_id in graph_nodes_by_id:
+            _eln_assert('identifier' in person_node and isinstance(person_node['identifier'], str), f"Invalid {node_name} node")
+            person_id = person_node['identifier']
+            person_node['@id'] = person_id
+        if person_id in graph_nodes_by_id:
             pass
             # TODO: the following check should be performed but is currently omitted to allow importing elabFTW exports, which may contain conflicting user information
-            # _eln_assert(graph_nodes_by_id[author_id] == author_node, "Invalid author reference")
+            # _eln_assert(graph_nodes_by_id[person_id] == person_node, f"Invalid {node_name} reference")
         else:
-            graph_nodes_by_id[author_id] = author_node
-    _eln_assert(author_node['@type'] == 'Person', "Reference to node of wrong type")
-    return author_id
+            graph_nodes_by_id[person_id] = person_node
+    _eln_assert(person_node['@type'] == 'Person', "Reference to node of wrong type")
+    return person_id
 
 
 def parse_eln_file(
@@ -592,19 +615,15 @@ def parse_eln_file(
                 else:
                     eln_source_url = None
 
-                if eln_dialect == 'SampleDB' and 'genre' in object_node:
-                    genre = object_node.get('genre')
-                    _eln_assert(isinstance(genre, str), "Invalid genre for Dataset for SampleDB .eln file")
-                    _eln_assert(genre in {'sample', 'measurement', 'simulation', 'other'}, "Invalid genre for Dataset for SampleDB .eln file")
-                    if genre == 'other':
-                        object_type = None
-                    else:
-                        object_type = typing.cast(str, genre)
+                if object_node.get('genre') in {'sample', 'measurement', 'simulation', 'experiment', 'procedure'}:
+                    object_type = {
+                        'experiment': 'measurement',
+                        'procedure': 'measurement'
+                    }.get(object_node['genre'], object_node['genre'])
                     object_type_id = {
-                        None: None,
                         'sample': ActionType.SAMPLE_CREATION,
                         'measurement': ActionType.MEASUREMENT,
-                        'simulation': ActionType.SIMULATION
+                        'simulation': ActionType.SIMULATION,
                     }.get(object_type)
                 else:
                     object_type = None
@@ -860,7 +879,10 @@ def parse_eln_file(
                                 version_schema = json.load(schema_file)
                         except Exception:
                             raise errors.InvalidELNFileError("SampleDB .eln file must contain data and schema for each version")
-                        author_id = _parse_author_ref(object_part.get('author'), graph_nodes_by_id)
+                        creator_ref = object_part.get('creator')
+                        if creator_ref is None and isinstance(object_part.get('author'), dict):
+                            creator_ref = object_part.get('author')
+                        creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
                         date_created = None
                         if 'dateCreated' in object_part:
                             _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for Dataset")
@@ -870,7 +892,7 @@ def parse_eln_file(
                                 version_id=version_id,
                                 data=None,
                                 schema=None,
-                                user_id=author_id,
+                                user_id=creator_id,
                                 date_created=date_created
                             ))
                             parsed_data.import_notes[object_node["@id"]].append(gettext('Missing data or schema for version %(version_id)s of object %(eln_object_id)s', version_id=version_id, eln_object_id=object_node['@id']))
@@ -884,7 +906,7 @@ def parse_eln_file(
                                     version_id=version_id,
                                     data=version_data,
                                     schema=version_schema,
-                                    user_id=author_id,
+                                    user_id=creator_id,
                                     date_created=date_created
                                 ))
                             except errors.ValidationError as e:
@@ -892,12 +914,15 @@ def parse_eln_file(
                                     version_id=version_id,
                                     data=fallback_data,
                                     schema=fallback_schema,
-                                    user_id=author_id,
+                                    user_id=creator_id,
                                     date_created=date_created
                                 ))
                                 parsed_data.import_notes[object_node["@id"]].append(gettext('Invalid data or schema in version %(version_id)s of object %(eln_object_id)s (%(error)s)', version_id=version_id, eln_object_id=object_node['@id'], error=e))
                 if not versions:
-                    author_id = _parse_author_ref(object_node.get('author'), graph_nodes_by_id)
+                    creator_ref = object_node.get('creator')
+                    if creator_ref is None and isinstance(object_node.get('author'), dict):
+                        creator_ref = object_node.get('author')
+                    creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
                     date_created = None
                     if 'dateCreated' in object_node:
                         _eln_assert(isinstance(object_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
@@ -906,7 +931,7 @@ def parse_eln_file(
                         version_id=0,
                         data=fallback_data,
                         schema=fallback_schema,
-                        user_id=author_id,
+                        user_id=creator_id,
                         date_created=date_created
                     ))
                     if eln_dialect:
