@@ -389,13 +389,13 @@ def parse_quantity_form_data(
         if units == 'min':
             match = re.match(re.compile(
                 r'^(?P<minutes>[0-9]+):'
-                r'(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?)$'
+                r'(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['latn']['decimal'] + '][0-9]+)?)$'
             ), magnitude_str)
         else:
             match = re.match(re.compile(
                 r'^(?P<hours>([0-9]+)):'
                 r'(?P<minutes>[0-5][0-9])'
-                r'(:(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?))?$'
+                r'(:(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['latn']['decimal'] + '][0-9]+)?))?$'
             ), magnitude_str)
         if match is None:
             raise ValueError(_('Unable to parse time.'))

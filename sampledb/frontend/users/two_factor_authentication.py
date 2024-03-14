@@ -323,7 +323,7 @@ def confirm_fido2_passkey_two_factor_authentication() -> FlaskResponseT:
 
     confirm_form = WebAuthnLoginForm()
     base64_credential_data = method.data['credential_data']
-    credential_data = AttestedCredentialData(base64.b64decode(base64_credential_data.encode('utf-8')))  # type: ignore[no-untyped-call]
+    credential_data = AttestedCredentialData(base64.b64decode(base64_credential_data.encode('utf-8')))
     all_credentials = [credential_data]
     server = authentication.get_webauthn_server()
     if confirm_form.validate_on_submit():
