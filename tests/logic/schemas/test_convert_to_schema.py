@@ -569,3 +569,57 @@ def test_convert_file_schema():
     new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
     assert new_data == data
     assert not warnings
+
+
+@pytest.mark.parametrize("previous_text, expected_new_text, previous_choices, new_choices", [
+    ("A", "A", ["A", "B"], ["A", "B", "C"]),
+    ("A", "A", ["A", "B"], ["A"]),
+    ("A", None, ["A", "B"], ["B"]),
+    ("A", {"en": "A"}, ["A", "B"], [{"en": "A"}, {"en": "B"}, {"en": "C"}]),
+    ("A", {"en": "A"}, ["A", "B"], [{"en": "A"}]),
+    ("A", None, ["A", "B"], [{"en": "B"}]),
+    ("A", "A", ["A", "B"], ["A", {"en": "A"}]),
+    ("A", None, ["A", "B"], [{"en": "B", "de": "A"}]),
+    ({"en": "A"}, {"en": "A"}, [{"en": "A"}, {"en": "B"}], [{"en": "A"}, {"en": "B"}, {"en": "C"}]),
+    ({"en": "A"}, {"en": "A"}, [{"en": "A"}, {"en": "B"}], [{"en": "A"}]),
+    ({"en": "A"}, None, [{"en": "A"}, {"en": "B"}], [{"en": "B"}]),
+    ({"en": "A"}, "A", [{"en": "A"}, {"en": "B"}], ["A", "B", "C"]),
+    ({"en": "A"}, "A", [{"en": "A"}, {"en": "B"}], ["A"]),
+    ({"en": "A"}, None, [{"en": "A"}, {"en": "B"}], ["B"]),
+    ({"en": "A"}, {"en": "A", "de": "A_de"}, [{"en": "A"}, {"en": "B"}], [{"en": "A", "de": "A_de"}, {"en": "B", "de": "B_de"}]),
+    ({"en": "A"}, {"en": "A", "de": "A_de"}, [{"en": "A"}, {"en": "B"}], [{"en": "A", "de": "A_de"}]),
+    ({"en": "A"}, None, [{"en": "A"}, {"en": "B"}], [{"en": "B", "de": "B_de"}]),
+    ({"en": "A"}, None, [{"en": "A"}, {"en": "B"}], [{"en": "B", "de": "A"}]),
+    ({"en": "A"}, None, [{"en": "A"}, {"en": "B"}], [{"en": "A", "de": "A1_de"}, {"en": "A", "de": "A2_de"}]),
+    ({"en": "A", "de": "A_de"}, {"en": "A"}, [{"en": "A", "de": "A_de"}], [{"en": "A"}]),
+    ({"en": "A", "de": "A_de"}, "A", [{"en": "A", "de": "A_de"}], ["A"]),
+    ({"en": "A", "de": "A_de"}, None, [{"en": "A", "de": "A_de"}], ["A", "A"]),
+    ({"en": "A", "de": "A1_de"}, None, [{"en": "A", "de": "A1_de"}, {"en": "A", "de": "A2_de"}], [{"en": "A", "de": "A_de1"}, {"en": "A", "de": "A_de2"}]),
+    ({"en": "A"}, None, [{"en": "A"}], [{"en": "A", "de": "A_de1"}, {"en": "A", "de": "A_de2"}]),
+])
+def test_convert_choice_text(previous_text, expected_new_text, previous_choices, new_choices):
+    data = {
+        "_type": "text",
+        "text": previous_text
+    }
+    if expected_new_text is None:
+        expected_new_data = None
+    else:
+        expected_new_data = {
+            "_type": "text",
+            "text" : expected_new_text
+        }
+    previous_schema = {
+        'type': 'text',
+        'title': 'Text',
+        'choices': previous_choices
+    }
+    new_schema = {
+        'type': 'text',
+        'title': 'Text',
+        'choices': new_choices
+    }
+    validate(data, previous_schema)
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    assert new_data == expected_new_data
+    assert bool(warnings) == (expected_new_data is None)
