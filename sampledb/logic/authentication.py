@@ -176,7 +176,7 @@ def get_all_fido2_passkey_credentials() -> typing.Sequence[AttestedCredentialDat
     :return: a list of credentials
     """
     return [
-        AttestedCredentialData(base64.b64decode(authentication.login['credential_data'].encode('utf-8')))  # type: ignore
+        AttestedCredentialData(base64.b64decode(authentication.login['credential_data'].encode('utf-8')))
         for authentication in Authentication.query.filter_by(type=AuthenticationType.FIDO2_PASSKEY).all()
     ]
 
@@ -673,7 +673,7 @@ def get_all_two_factor_fido2_passkey_credentials_for_user(
     :return: a list of credentials
     """
     return [
-        AttestedCredentialData(base64.b64decode(authentication_method.data['credential_data'].encode('utf-8')))  # type: ignore[no-untyped-call]
+        AttestedCredentialData(base64.b64decode(authentication_method.data['credential_data'].encode('utf-8')))
         for authentication_method in get_two_factor_authentication_methods(user_id)
         if authentication_method.data.get('type') == 'fido2_passkey'
     ]
