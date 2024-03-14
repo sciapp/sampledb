@@ -93,16 +93,30 @@ def _try_convert_text_to_tags(
 def _try_convert_text_to_choices(
         data: typing.Dict[str, typing.Any],
         new_schema: typing.Dict[str, typing.Any]
-) -> typing.Optional[typing.Tuple[typing.Dict[str, typing.Any], typing.Sequence[str]]]:
+) -> typing.Optional[typing.Tuple[typing.Optional[typing.Dict[str, typing.Any]], typing.Sequence[str]]]:
+    warning_text = _("Unable to convert property '%(title)s' of type '%(type)s'.", title=get_translated_text(new_schema['title']), type=new_schema['type'])
+    if set(data.keys()) != {'_type', 'text'}:
+        return None, [warning_text]
     if data['text'] in new_schema['choices']:
         return data, []
-    if type(data['text']) is str:
-        for choice in new_schema['choices']:
-            if type(choice) is dict and choice.get('en') == data['text']:
-                new_data = copy.deepcopy(data)
-                new_data['text'] = choice
-                return new_data, []
-    return None
+    dict_text = data['text'] if isinstance(data['text'], dict) else {'en': data['text']}
+    dict_choices = [
+        choice if isinstance(choice, dict) else {'en': choice}
+        for choice in new_schema['choices']
+    ]
+    matching_choices = [
+        choice_index
+        for choice_index, choice in enumerate(dict_choices)
+        if all(
+            lang_code not in choice or choice[lang_code] == dict_text[lang_code]
+            for lang_code in dict_text
+        )
+    ]
+    if len(matching_choices) == 1:
+        new_data = copy.deepcopy(data)
+        new_data['text'] = new_schema['choices'][matching_choices[0]]
+        return new_data, []
+    return None, [warning_text]
 
 
 def _try_convert_object_to_object(
