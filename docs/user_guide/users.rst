@@ -96,3 +96,26 @@ If a user does not create an alias for a database, no personal information will 
 
 .. note::
     Administrators can enable that the information from user profiles will be shared by default.
+
+
+Federated Identities
+--------------------
+
+If a user has access to two or more different SampleDB instances in a federation, they can be locally linked by a federated identity.
+A federated identity allows the federation users to be recognized (e.g., object creation, comments, etc.) by the name of the local corresponding user in the federated identity.
+
+To create federated identities, there are two different ways:
+- The first way is that users can create federated identities by themselves. For that, the users have to verify their identity by authenticating with the federation partner through the "Sign in to …" button in the federation overview.
+- As an alternative, if the local and federated users share the same email address, a federated identity will be created automatically when updates are imported.
+
+
+.. figure:: ../static/img/generated/federated_identity.png
+    :alt: Federated Identity Overview
+
+    Federated Identity Overview
+
+
+In addition to the federated identities used with federation partners, users can also create federated identities during the process of :ref:`importing an .eln file <eln_import>`.
+
+.. note::
+    When setting up a federated identity for users from ELN files, the importing users can only create a federated identity for themselves.
