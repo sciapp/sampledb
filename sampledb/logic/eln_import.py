@@ -23,7 +23,7 @@ from .files import create_url_file, create_database_file, update_file_informatio
 from .comments import create_comment
 from .schemas.validate_schema import validate_schema
 from .schemas.validate import validate
-from . import errors
+from . import errors, object_log
 from ..models import eln_imports, users, Language, Permissions, UserType, Object
 
 
@@ -70,6 +70,8 @@ class ParsedELNVersion:
     version_id: int
     data: typing.Optional[typing.Dict[str, typing.Any]]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
+    user_id: typing.Optional[str]
+    date_created: typing.Optional[datetime.datetime]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -79,6 +81,7 @@ class ParsedELNDatabaseFile:
     description: typing.Optional[str]
     content: bytes
     user_id: typing.Optional[str]
+    date_created: typing.Optional[datetime.datetime]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -87,6 +90,7 @@ class ParsedELNURLFile:
     title: typing.Optional[str]
     description: typing.Optional[str]
     user_id: str
+    date_created: typing.Optional[datetime.datetime]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -283,36 +287,55 @@ def import_eln_file(
         initial_version_info = versions_by_id[version_ids[0]]
         try:
             imported_object = create_eln_import_object(
-                user_id=user_id,
+                importing_user_id=user_id,
+                user_id=users_by_id[initial_version_info.user_id].id if initial_version_info.user_id else None,
                 action_id=action_ids_by_action_type_id[action_type_id],
                 data=initial_version_info.data,
                 schema=initial_version_info.schema,
                 eln_import_id=eln_import_id,
                 eln_object_id=object_info.id,
-                utc_datetime=None,
+                utc_datetime=initial_version_info.date_created,
                 data_validator_arguments={'file_names_by_id': None, 'strict': False, 'allow_disabled_languages': True}
             )
         except Exception:
             errors.append(f'Failed to import object #{object_index}')
             continue
+        if initial_version_info.user_id and initial_version_info.date_created:
+            object_log.create_object(
+                user_id=users_by_id[initial_version_info.user_id].id,
+                object_id=imported_object.object_id,
+                utc_datetime=initial_version_info.date_created,
+                is_imported=True
+            )
         db.session.add(eln_imports.ELNImportObject(
             object_id=imported_object.id,
             eln_import_id=eln_import_id,
             url=object_info.url
         ))
         db.session.commit()
-        for version_index, version_id in enumerate(version_ids[1:]):
+        for version_index, version_id in enumerate(version_ids[1:], start=1):
             version_info = versions_by_id[version_id]
             try:
                 update_object(
                     object_id=imported_object.id,
                     data=version_info.data,
                     schema=version_info.schema,
-                    user_id=user_id,
-                    data_validator_arguments={'file_names_by_id': None, 'strict': False, 'allow_disabled_languages': True}
+                    user_id=users_by_id[version_info.user_id].id if version_info.user_id else user_id,
+                    data_validator_arguments={'file_names_by_id': None, 'strict': False, 'allow_disabled_languages': True},
+                    create_log_entries=False,
+                    utc_datetime=version_info.date_created
                 )
             except Exception:
                 errors.append(f'Failed to import object #{object_index} version #{version_index}')
+            else:
+                if version_info.user_id and version_info.date_created:
+                    object_log.edit_object(
+                        user_id=users_by_id[version_info.user_id].id,
+                        object_id=imported_object.object_id,
+                        version_id=version_index,
+                        utc_datetime=version_info.date_created,
+                        is_imported=True
+                    )
         imported_object_ids.append(imported_object.id)
         for file_index, file_info in enumerate(object_info.files):
             file_user_id = user_id
@@ -328,7 +351,8 @@ def import_eln_file(
                     user_id=file_user_id,
                     file_name=file_info.name,
                     save_content=save_content,
-                    create_log_entry=False
+                    create_log_entry=False,
+                    utc_datetime=file_info.date_created
                 ).id
             elif isinstance(file_info, ParsedELNURLFile):
                 if file_info.user_id:
@@ -338,11 +362,20 @@ def import_eln_file(
                     object_id=imported_object.id,
                     user_id=file_user_id,
                     url=file_info.url,
-                    create_log_entry=False
+                    create_log_entry=False,
+                    utc_datetime=file_info.date_created
                 ).id
             else:
                 errors.append(f'Failed to import file #{file_index} for object #{object_index}')
                 continue
+            if file_info.user_id and file_info.date_created:
+                object_log.upload_file(
+                    user_id=file_user_id,
+                    object_id=imported_object.object_id,
+                    file_id=file_id,
+                    utc_datetime=file_info.date_created,
+                    is_imported=True
+                )
             update_file_information(
                 object_id=imported_object.id,
                 file_id=file_id,
@@ -351,12 +384,19 @@ def import_eln_file(
                 description=file_info.description or ''
             )
         for comment_info in object_info.comments:
-            create_comment(
+            comment_id = create_comment(
                 object_id=imported_object.id,
                 user_id=users_by_id[comment_info.author_id].id,
                 content=comment_info.text,
                 utc_datetime=comment_info.date_created,
                 create_log_entry=False
+            )
+            object_log.post_comment(
+                user_id=users_by_id[comment_info.author_id].id,
+                object_id=imported_object.object_id,
+                comment_id=comment_id,
+                utc_datetime=comment_info.date_created,
+                is_imported=True
             )
     return imported_object_ids, users_by_id, errors
 
@@ -381,6 +421,83 @@ def _json_contains_no_invalid_data(
             return False
         return True
     return True
+
+
+def _parse_eln_import_datetime(datetime_string: str) -> typing.Optional[datetime.datetime]:
+    for datetime_format in [
+        '%Y-%m-%dT%H:%M:%S.%f%z',
+        '%Y-%m-%dT%H:%M:%S%z',
+        '%Y-%m-%dT%H:%M:%S.%f',
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%d %H:%M:%S.%f',
+        '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%d',
+    ]:
+        try:
+            parsed_datetime = datetime.datetime.strptime(datetime_string, datetime_format)
+            if parsed_datetime.tzinfo is None:
+                utc_datetime = parsed_datetime.replace(tzinfo=datetime.timezone.utc)
+            else:
+                utc_datetime = parsed_datetime.astimezone(tz=datetime.timezone.utc)
+            return utc_datetime
+        except Exception:
+            continue
+    return None
+
+
+def _parse_author_ref(
+        author_ref: typing.Any,
+        graph_nodes_by_id: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    return _parse_person_ref(
+        person_ref=author_ref,
+        graph_nodes_by_id=graph_nodes_by_id,
+        node_name='author'
+    )
+
+
+def _parse_creator_ref(
+        creator_ref: typing.Any,
+        graph_nodes_by_id: typing.Dict[str, typing.Any]
+) -> typing.Optional[str]:
+    return _parse_person_ref(
+        person_ref=creator_ref,
+        graph_nodes_by_id=graph_nodes_by_id,
+        node_name='creator'
+    )
+
+
+def _parse_person_ref(
+        person_ref: typing.Any,
+        graph_nodes_by_id: typing.Dict[str, typing.Any],
+        node_name: str
+) -> typing.Optional[str]:
+    if person_ref is None:
+        return None
+    person_id: str
+    _eln_assert(isinstance(person_ref, dict), f"Invalid {node_name} reference or node")
+    person_ref = typing.cast(typing.Dict[str, typing.Any], person_ref)
+    if '@id' in person_ref and person_ref['@id'] in graph_nodes_by_id:
+        person_id = person_ref['@id']
+        if graph_nodes_by_id[person_id] != person_ref:
+            _eln_assert(list(person_ref.keys()) == ['@id'], f"Invalid {node_name} reference")
+        person_node = graph_nodes_by_id[person_id]
+    else:
+        person_node = person_ref
+        if '@id' in person_node:
+            person_id = person_node['@id']
+        else:
+            _eln_assert('identifier' in person_node and isinstance(person_node['identifier'], str), f"Invalid {node_name} node")
+            person_id = person_node['identifier']
+            person_node['@id'] = person_id
+        if person_id in graph_nodes_by_id:
+            pass
+            # TODO: the following check should be performed but is currently omitted to allow importing elabFTW exports, which may contain conflicting user information
+            # _eln_assert(graph_nodes_by_id[person_id] == person_node, f"Invalid {node_name} reference")
+        else:
+            graph_nodes_by_id[person_id] = person_node
+    _eln_assert(person_node['@type'] == 'Person', "Reference to node of wrong type")
+    return person_id
 
 
 def parse_eln_file(
@@ -498,19 +615,15 @@ def parse_eln_file(
                 else:
                     eln_source_url = None
 
-                if eln_dialect == 'SampleDB' and 'genre' in object_node:
-                    genre = object_node.get('genre')
-                    _eln_assert(isinstance(genre, str), "Invalid genre for Dataset for SampleDB .eln file")
-                    _eln_assert(genre in {'sample', 'measurement', 'simulation', 'other'}, "Invalid genre for Dataset for SampleDB .eln file")
-                    if genre == 'other':
-                        object_type = None
-                    else:
-                        object_type = typing.cast(str, genre)
+                if object_node.get('genre') in {'sample', 'measurement', 'simulation', 'experiment', 'procedure'}:
+                    object_type = {
+                        'experiment': 'measurement',
+                        'procedure': 'measurement'
+                    }.get(object_node['genre'], object_node['genre'])
                     object_type_id = {
-                        None: None,
                         'sample': ActionType.SAMPLE_CREATION,
                         'measurement': ActionType.MEASUREMENT,
-                        'simulation': ActionType.SIMULATION
+                        'simulation': ActionType.SIMULATION,
                     }.get(object_type)
                 else:
                     object_type = None
@@ -553,6 +666,7 @@ def parse_eln_file(
                         _eln_assert(author_node['@type'] == 'Person', "Reference to node of wrong type")
                     _eln_assert(isinstance(comment_node.get('text'), str), "Invalid text for Comment")
                     _eln_assert(isinstance(comment_node.get('dateCreated'), str), "Invalid dateCreated for Comment")
+                    date_created: typing.Optional[datetime.datetime]
                     try:
                         date_created = datetime.datetime.fromisoformat(comment_node['dateCreated'])
                     except Exception:
@@ -707,45 +821,32 @@ def parse_eln_file(
                                     parse_url(file_url, valid_schemes=('http', 'https'))
                                 except Exception:
                                     raise errors.InvalidELNFileError("Invalid URL file for SampleDB .eln file")
+                                try:
+                                    date_created = datetime.datetime.strptime(file_info.get('utc_datetime', ''), '%Y-%m-%dT%H:%M:%S.%f')
+                                    date_created = date_created.replace(tzinfo=datetime.timezone.utc)
+                                except Exception:
+                                    date_created = None
                                 files.append(ParsedELNURLFile(
                                     url=file_url,
                                     title=file_info.get('title'),
                                     description=file_info.get('description'),
                                     user_id=f'./users/{author_sampledb_id}',
+                                    date_created=date_created
                                 ))
                         else:
+                            date_created = None
+                            if 'dateCreated' in object_part:
+                                _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for File")
+                                date_created = _parse_eln_import_datetime(object_part['dateCreated'])
                             author_ref = object_part.get('author')
-                            if author_ref is None:
-                                author_id = None
-                            else:
-                                _eln_assert(isinstance(author_ref, dict), "Invalid author reference or node")
-                                author_ref = typing.cast(typing.Dict[str, typing.Any], author_ref)
-                                if '@id' in author_ref and author_ref['@id'] in graph_nodes_by_id:
-                                    author_id = author_ref['@id']
-                                    if graph_nodes_by_id[author_id] != author_ref:
-                                        _eln_assert(list(author_ref.keys()) == ['@id'], "Invalid author reference")
-                                    author_node = graph_nodes_by_id[author_id]
-                                else:
-                                    author_node = author_ref
-                                    if '@id' in author_node:
-                                        author_id = author_node['@id']
-                                    else:
-                                        _eln_assert('identifier' in author_node, "Invalid author node")
-                                        author_id = author_node['identifier']
-                                        author_node['@id'] = author_id
-                                    if author_id in graph_nodes_by_id:
-                                        pass
-                                        # TODO: the following check should be performed but is currently omitted to allow importing elabFTW exports, which may contain conflicting user information
-                                        # _eln_assert(graph_nodes_by_id[author_id] == author_node, "Invalid author reference")
-                                    else:
-                                        graph_nodes_by_id[author_id] = author_node
-                                _eln_assert(author_node['@type'] == 'Person', "Reference to node of wrong type")
+                            author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
                             files.append(ParsedELNDatabaseFile(
                                 name=file_name,
                                 title=object_part['name'],
                                 description=object_part.get('description'),
                                 content=file_data,
                                 user_id=author_id,
+                                date_created=date_created,
                             ))
                     if eln_dialect == 'SampleDB' and object_part['@type'] == 'Dataset':
                         _eln_assert(object_part['@id'].startswith(object_node['@id'] + '/version/'), "SampleDB .eln file must only contain versions as Dataset parts of objects")
@@ -778,11 +879,21 @@ def parse_eln_file(
                                 version_schema = json.load(schema_file)
                         except Exception:
                             raise errors.InvalidELNFileError("SampleDB .eln file must contain data and schema for each version")
+                        creator_ref = object_part.get('creator')
+                        if creator_ref is None and isinstance(object_part.get('author'), dict):
+                            creator_ref = object_part.get('author')
+                        creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
+                        date_created = None
+                        if 'dateCreated' in object_part:
+                            _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for Dataset")
+                            date_created = _parse_eln_import_datetime(object_part['dateCreated'])
                         if version_schema is None or version_data is None:
                             versions.append(ParsedELNVersion(
                                 version_id=version_id,
                                 data=None,
-                                schema=None
+                                schema=None,
+                                user_id=creator_id,
+                                date_created=date_created
                             ))
                             parsed_data.import_notes[object_node["@id"]].append(gettext('Missing data or schema for version %(version_id)s of object %(eln_object_id)s', version_id=version_id, eln_object_id=object_node['@id']))
                         else:
@@ -794,20 +905,34 @@ def parse_eln_file(
                                 versions.append(ParsedELNVersion(
                                     version_id=version_id,
                                     data=version_data,
-                                    schema=version_schema
+                                    schema=version_schema,
+                                    user_id=creator_id,
+                                    date_created=date_created
                                 ))
                             except errors.ValidationError as e:
                                 versions.append(ParsedELNVersion(
                                     version_id=version_id,
                                     data=fallback_data,
-                                    schema=fallback_schema
+                                    schema=fallback_schema,
+                                    user_id=creator_id,
+                                    date_created=date_created
                                 ))
                                 parsed_data.import_notes[object_node["@id"]].append(gettext('Invalid data or schema in version %(version_id)s of object %(eln_object_id)s (%(error)s)', version_id=version_id, eln_object_id=object_node['@id'], error=e))
                 if not versions:
+                    creator_ref = object_node.get('creator')
+                    if creator_ref is None and isinstance(object_node.get('author'), dict):
+                        creator_ref = object_node.get('author')
+                    creator_id = _parse_creator_ref(creator_ref, graph_nodes_by_id)
+                    date_created = None
+                    if 'dateCreated' in object_node:
+                        _eln_assert(isinstance(object_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
+                        date_created = _parse_eln_import_datetime(object_node['dateCreated'])
                     versions.append(ParsedELNVersion(
                         version_id=0,
                         data=fallback_data,
-                        schema=fallback_schema
+                        schema=fallback_schema,
+                        user_id=creator_id,
+                        date_created=date_created
                     ))
                     if eln_dialect:
                         parsed_data.import_notes[object_node["@id"]].append(gettext('Importing metadata for .eln files from %(eln_dialect)s is not yet supported.', eln_dialect=eln_dialect))

@@ -20,6 +20,7 @@ User Guide
     user_guide/objects.rst
     user_guide/search.rst
     user_guide/locations.rst
+    user_guide/topics.rst
     user_guide/export.rst
     user_guide/citations.rst
 
@@ -62,7 +63,9 @@ Administrator Guide
     administrator_guide/federation.rst
     administrator_guide/monitoring_dashboard.rst
     administrator_guide/download_service.rst
+    administrator_guide/customization.rst
     administrator_guide/deprecated_features.rst
+    administrator_guide/labels.rst
 
 Developer Guide
 ---------------

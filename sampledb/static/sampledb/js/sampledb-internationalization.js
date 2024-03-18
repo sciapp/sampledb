@@ -14,7 +14,7 @@ function updateTranslationJSON () {
 
 function setTranslationHandler (element) {
   const languageID = $(element).data('languageId');
-  $(element).find('input, textarea.form-control').on('change', function () {
+  $(element).find('input, textarea.form-control').on('change blur', function () {
     const input = $(this);
     const translatedText = input.val();
     const translationAttribute = input.data('translationAttribute');
@@ -23,7 +23,7 @@ function setTranslationHandler (element) {
     const maxLengthText = input.data('maxLengthText');
     const requiredInAllLanguages = input.data('requiredInAllLanguages') !== undefined;
 
-    if ((requiredInAllLanguages || languageID === ENGLISH_ID) && translatedText === '' && emptyText) {
+    if ((requiredInAllLanguages || languageID === ENGLISH_ID) && translatedText.trim() === '' && emptyText) {
       $(this).parent().addClass('has-error').next('.help-block').text(emptyText).css('color', 'red');
     } else if (translatedText.length > maxLength) {
       $(this).parent().addClass('has-error').next('.help-block').text(maxLengthText).css('color', 'red');
@@ -80,6 +80,48 @@ function updateTranslationLanguages (languageSelect, templateID, inputIDPrefix, 
         window.translations[window.translations.length - 1][translationAttribute] = '';
       }
     }
+  }
+}
+
+function updateTranslationLanguagesForAllAttributes (languageSelect, translationAttributes) {
+  const existingLanguages = [];
+  $.each(window.translations, function (key, value) {
+    existingLanguages.push(value.language_id);
+  });
+  let selected = [ENGLISH_ID.toString()];
+  selected = selected.concat($(languageSelect).val());
+  const languagesToRemove = existingLanguages.filter(n => !selected.includes(n));
+  const languagesToAdd = selected.filter(n => !existingLanguages.includes(n));
+
+  for (const languageToRemove of languagesToRemove) {
+    window.translations = window.translations.filter(function (translation) {
+      return translation.language_id.toString() !== languageToRemove;
+    });
+    $('[data-language-id="' + languageToRemove + '"]').each(function () {
+      $(this).next('.help-block').remove();
+      $(this).remove();
+    });
+  }
+  for (const languageToAdd of languagesToAdd) {
+    const languageName = window.languages.find(lang => lang.id.toString() === languageToAdd).name;
+
+    const newTranslation = {
+      language_id: languageToAdd.toString()
+    };
+    for (const translationAttribute of translationAttributes) {
+      const attributeKey = translationAttribute[0];
+      const attribute = translationAttribute[1];
+      const attributeGroup = translationAttribute[2];
+      const formGroup = $('.form-group[data-name="input-' + attributeGroup + '"]');
+      $($('#' + attribute + '-template').html()).insertAfter(formGroup.children().last());
+      const inputGroup = formGroup.children('.input-group').last();
+      $(inputGroup).children('input').attr('id', 'input-' + attribute + '-' + languageToAdd.toString());
+      $(inputGroup).children('.input-group-addon[data-name="language"]').text(languageName);
+      $(inputGroup).attr('data-language-id', languageToAdd);
+      setTranslationHandler(inputGroup);
+      newTranslation[attributeKey] = '';
+    }
+    window.translations.push(newTranslation);
   }
 }
 
@@ -179,6 +221,8 @@ function initMarkdownField (element, height) {
   mdeField.codemirror.on('change', function () {
     $(element).change();
   });
+  // override .CodeMirror default height, so InscrybMDE min-height can work
+  $(element).siblings('.CodeMirror').css('height', 'auto');
   return mdeField;
 }
 
@@ -189,8 +233,10 @@ function updateMarkdownField (checkboxID, mdeAttribute, dataName, height) {
   window.mdeFields[mdeAttribute] = [];
   if ($('#' + checkboxID).prop('checked')) {
     $(`.form-group[data-name="${dataName}"] [data-language-id], .inline-edit-regular-property[data-name="${dataName}"] [data-language-id]`).each(function () {
-      const textarea = $(this).find('textarea.form-control')[0];
-      window.mdeFields[mdeAttribute].push(initMarkdownField(textarea, height));
+      const textarea = $(this).find('textarea.form-control');
+      if (textarea.length === 1) {
+        window.mdeFields[mdeAttribute].push(initMarkdownField(textarea[0], height));
+      }
     });
     window.mdeFields[mdeAttribute].forEach(function (item) {
       setupImageDragAndDrop(item);
@@ -202,6 +248,7 @@ export {
   updateTranslationJSON,
   setTranslationHandler,
   updateTranslationLanguages,
+  updateTranslationLanguagesForAllAttributes,
   initMarkdownField,
   updateMarkdownField
 };

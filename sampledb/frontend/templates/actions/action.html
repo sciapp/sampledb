@@ -34,13 +34,20 @@
 
   {% if action.description | get_translated_text %}
     <div class="action-user-content">
-      {% if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p>{{ action.description | get_translated_text }}</p>{% endif %}
+      {%- if action.description_is_markdown %}{{ action.description | get_translated_text | markdown_to_safe_html(anchor_prefix='action-description') | safe }}{% else %}<p style="multiline-text-wrapper">{{ action.description | get_translated_text }}</p>{% endif -%}
     </div>
   {% endif %}
   {% if not config['DISABLE_INSTRUMENTS'] %}
   {% with instrument = action.instrument %}
     {% include "instruments/instrument_scientists.html" %}
   {% endwith %}
+  {% endif %}
+  {% if not config['DISABLE_TOPICS'] and action.topics %}
+    <p>{{ _('Topics') }}:
+    {% for topic in action.topics %}
+      <a class="badge badge-secondary" href="{{ url_for('.topic', topic_id=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+    {% endfor %}
+    </p>
   {% endif %}
   {% if action.type_id is none or not action.type.disable_create_objects %}
   <a href="{{ url_for('.objects', action_ids=action.id) }}" class="btn btn-default">{{ action.type.view_text | get_translated_text(default=_('View Objects')) if action.type_id else _('View Objects') }}</a>

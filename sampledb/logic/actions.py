@@ -25,7 +25,7 @@ import typing
 
 from .. import db
 from .. import models
-from . import errors, instruments, users, schemas, components
+from . import errors, instruments, users, schemas, components, topics
 from .utils import cache
 from .action_types import check_action_type_exists, ActionType
 
@@ -55,6 +55,8 @@ class Action:
     admin_only: bool
     disable_create_objects: bool
     objects_readable_by_all_users_by_default: bool
+    topics: typing.List[topics.Topic]
+    use_instrument_topics: bool
 
     @classmethod
     def from_database(cls, action: models.Action) -> 'Action':
@@ -79,6 +81,10 @@ class Action:
             admin_only=action.admin_only,
             disable_create_objects=action.disable_create_objects,
             objects_readable_by_all_users_by_default=action.objects_readable_by_all_users_by_default,
+            topics=[topics.Topic.from_database(topic) for topic in (
+                action.instrument.topics if action.instrument is not None and action.use_instrument_topics else action.topics
+            )],
+            use_instrument_topics=action.use_instrument_topics
         )
 
     def __repr__(self) -> str:
@@ -101,6 +107,7 @@ def create_action(
         disable_create_objects: bool = False,
         objects_readable_by_all_users_by_default: bool = False,
         strict_schema_validation: bool = True,
+        use_instrument_topics: bool = False,
 ) -> Action:
     ...
 
@@ -121,6 +128,7 @@ def create_action(
         disable_create_objects: bool = False,
         objects_readable_by_all_users_by_default: bool = False,
         strict_schema_validation: bool = True,
+        use_instrument_topics: bool = False,
 ) -> Action:
     ...
 
@@ -140,6 +148,7 @@ def create_action(
         disable_create_objects: bool = False,
         objects_readable_by_all_users_by_default: bool = False,
         strict_schema_validation: bool = True,
+        use_instrument_topics: bool = False,
 ) -> Action:
     """
     Creates a new action with the given type and schema. If
@@ -161,6 +170,7 @@ def create_action(
     :param objects_readable_by_all_users_by_default: whether objects created
         with this action should be readable by all signed-in users by default
     :param strict_schema_validation: whether schema validation should use strict mode
+    :param use_instrument_topics: whether the topics of the instrument should be used
     :return: the created action
     :raise errors.ActionTypeDoesNotExistError: when no action type with the
         given action type ID exists
@@ -203,6 +213,7 @@ def create_action(
         admin_only=admin_only,
         disable_create_objects=disable_create_objects,
         objects_readable_by_all_users_by_default=objects_readable_by_all_users_by_default,
+        use_instrument_topics=use_instrument_topics if instrument_id is not None else False,
     )
     db.session.add(action)
     db.session.commit()
@@ -327,7 +338,8 @@ def update_action(
         short_description_is_markdown: bool = False,
         admin_only: typing.Optional[bool] = None,
         disable_create_objects: typing.Optional[bool] = None,
-        objects_readable_by_all_users_by_default: typing.Optional[bool] = None
+        objects_readable_by_all_users_by_default: typing.Optional[bool] = None,
+        use_instrument_topics: typing.Optional[bool] = None
 ) -> None:
     """
     Updates the action with the given action ID, setting its schema.
@@ -343,6 +355,7 @@ def update_action(
     :param objects_readable_by_all_users_by_default: whether objects created
         with this action should be readable by all signed-in users by default,
         or None
+    :param use_instrument_topics: whether the topics of the instrument should be used, or None
     :raise errors.SchemaValidationError: when the schema is invalid
     :raise errors.InstrumentDoesNotExistError: when instrument_id is not None
         and no instrument with the given instrument ID exists
@@ -361,6 +374,9 @@ def update_action(
         action.disable_create_objects = disable_create_objects
     if objects_readable_by_all_users_by_default is not None:
         action.objects_readable_by_all_users_by_default = objects_readable_by_all_users_by_default
+    if use_instrument_topics is not None:
+        if action.instrument_id is not None or use_instrument_topics is False:
+            action.use_instrument_topics = use_instrument_topics
     db.session.add(action)
     db.session.commit()
     update_actions_using_template_action(action_id)
@@ -418,3 +434,36 @@ def get_action_type_ids_for_action_ids(
         action_id: action_type_id
         for action_id, action_type_id in action_ids_and_action_type_ids
     }
+
+
+def get_actions_for_topic(
+        topic_id: int
+) -> typing.List[Action]:
+    """
+    Get the list of actions assigned to a given topic.
+
+    :param topic_id: the ID of an existing topic
+    :return: the list of actions
+    :raise errors.TopicDoesNotExistError: if the topic does not exist
+    """
+    actions = models.actions.Action.query.outerjoin(
+        models.instruments.topic_instrument_association_table,
+        models.Action.instrument_id == models.instruments.topic_instrument_association_table.c.instrument_id
+    ).filter(
+        db.or_(
+            db.and_(
+                models.Action.use_instrument_topics == db.false(),
+                models.Action.topics.any(models.topics.Topic.id == topic_id)
+            ),
+            db.and_(
+                models.Action.use_instrument_topics == db.true(),
+                models.instruments.topic_instrument_association_table.c.topic_id == topic_id
+            )
+        )
+    ).all()
+    if not actions:
+        topics.check_topic_exists(topic_id)
+    return [
+        Action.from_database(action)
+        for action in actions
+    ]

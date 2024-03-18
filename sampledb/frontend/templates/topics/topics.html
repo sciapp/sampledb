@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Topics') }} — {{ service_name }}{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ fingerprinted_static('sortable/js/Sortable.min.js') }}"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/page/topics.js') }}" type="module"></script>
+{% endblock %}
+
+{% block content %}
+  <h1>{{ _('Topics') }}</h1>
+  {% if not config['DISABLE_TOPICS'] %}
+    <p class="text-muted">{{ _('Topics allow filtering information in %(service_name)s.', service_name=service_name) }} <a href="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/topics.html"> {{ _('Read more.') }}</a></p>
+    {% if current_user.is_admin and not current_user.is_readonly %}
+      <a href="{{ url_for('.new_topic') }}" class="btn btn-default"> {{ _('Create Topic') }}</a>
+      <button type="button" class="btn btn-default" data-toggle="modal" data-target="#sortingModal">
+        {{ _('Adjust sorting') }}
+      </button>
+      <div class="modal fade" id="sortingModal" tabindex="-1" role="dialog" aria-labelledby="sortingModalLabel">
+        <div class="modal-dialog" role="document">
+          <form method="post" class="form" id="form-sort-order">
+            {{ sorting_form.csrf_token }}
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="sortingModalLabel">{{ _('Adjust sorting') }}</h4>
+              </div>
+              <div class="modal-body">
+                <ul id="topicTypesModalList" class="list-group">
+                  {% for topic in topics %}
+                  <li data-id="{{ topic.id }}" class="list-group-item"><i class="fa fa-reorder handle"></i>  {{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}
+                    {{ import_information_symbol(topic) }}</li>
+                  {% endfor %}
+                  <input type="hidden" value="" name="{{ sorting_form.encoded_order.name }}" id="encoded_order"/>
+                </ul>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"> {{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary"> {{ _('Apply') }} </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+    {% for topic in topics %}
+      <h2>
+        <a href="{{ url_for('.topic', topic_id=topic.id) }}" title="{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}</a>
+      </h2>
+      {% if topic.short_description | get_translated_text %}
+        <div class="topic-user-content">
+          {% if topic.short_description_is_markdown %}{{ topic.short_description | get_translated_text | markdown_to_safe_html(anchor_prefix='topic-short-description') | safe }}{% else %}<p class="multiline-text-wrapper">{{ topic.short_description | get_translated_text }}</p>{% endif %}
+        </div>
+      {% endif %}
+      <p>
+        {% if not config['DISABLE_INSTRUMENTS'] %}
+          <a href="{{ url_for('.instruments', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Instruments') }}</a>
+        {% endif %}
+        <a href="{{ url_for('.actions', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>
+        {% if current_user.is_admin and not current_user.is_readonly %}
+          <a href="{{ url_for('.topic', topic_id=topic.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this topic.') }}">{{ _('Edit Topic') }}</a>
+        {% endif %}
+      </p>
+    {% endfor %}
+  {% else %}
+    <p class="text-danger">{{ _('Topics are not enabled in %(service_name)s.', service_name=service_name) }}</p>
+  {% endif %}
+{% endblock %}

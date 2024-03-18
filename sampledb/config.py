@@ -20,8 +20,10 @@ import pytz.exceptions
 import requests
 import sqlalchemy
 from PIL import Image
+from reportlab.lib.units import mm
 
 from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
+from .frontend.labels import PAGE_SIZE_KEYS, PAGE_SIZES
 
 
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
@@ -76,9 +78,9 @@ def parse_configuration_values() -> None:
                 pass
 
     # parse values as json
-    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST']:
+    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST', 'LABEL_PAPER_FORMATS']:
         value = globals().get(config_name)
-        if isinstance(value, str) and value.startswith('{'):
+        if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
             try:
                 globals()[config_name] = json.loads(value)
             except Exception:
@@ -116,6 +118,7 @@ def parse_configuration_values() -> None:
         'WEBHOOKS_ALLOW_HTTP',
         'ENABLE_FIDO2_PASSKEY_AUTHENTICATION',
         'DISABLE_OUTDATED_USE_AS_TEMPLATE',
+        'DISABLE_TOPICS',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -151,6 +154,74 @@ def is_download_service_whitelist_valid() -> bool:
                 )
                 return False
     return True
+
+
+def is_label_paper_formats_valid() -> bool:
+    """check if paper formats from LABEL_PAPER_FORMATS are valid"""
+
+    if not isinstance(LABEL_PAPER_FORMATS, list):
+        print(ansi_color('LABEL_PAPER_FORMATS: Must be a list of dictionaries.\n', color=31))
+        return False
+    is_valid = True
+    for i, format_definition in enumerate(LABEL_PAPER_FORMATS, start=1):
+        if not isinstance(format_definition, dict):
+            print(ansi_color('LABEL_PAPER_FORMATS: Must be a list of dictionaries.\n', color=31))
+            return False
+        str_fields = ['format_name']
+        int_fields = ['labels_in_row', 'labels_in_col', 'qr_code_width', 'paper_format']
+        float_fields = ['label_width', 'label_height', 'margin_horizontal', 'margin_vertical']
+        for key, value in format_definition.items():
+            if key in int_fields:
+                int_fields.remove(key)
+                if not isinstance(value, int):
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a whole number in format definition {i}.\n', color=31))
+                if key == 'qr_code_width':
+                    if value < 4:
+                        format_definition['qr_code_width'] = 4
+                        print(ansi_color(f'LABEL_PAPER_FORMATS: {key} in format definition {i} is less than 4. Value set to 4.\n', color=33))
+                    elif value > 150:
+                        format_definition['qr_code_width'] = 150
+                        print(ansi_color(f'LABEL_PAPER_FORMATS: {key} in format definition {i} is greater than 150. Value set to 150.\n', color=33))
+                elif value < 0:
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be greater than 0 in format definition {i}.\n', color=31))
+            elif key in float_fields:
+                float_fields.remove(key)
+                if not isinstance(value, (int, float)):
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a number in format definition {i}.\n', color=31))
+                if value < 0:
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be greater than 0 in format definition {i}.\n', color=31))
+            elif key in str_fields:
+                str_fields.remove(key)
+                if not isinstance(value, str) and not isinstance(value, dict):
+                    is_valid = False
+                    print(ansi_color(f'LABEL_PAPER_FORMATS: {key} must be a string in format definition {i}.\n', color=31))
+            else:
+                print(ansi_color(f'LABEL_PAPER_FORMATS: {key} is an Unknown key in format definition {i}.\n', color=33))
+        if not is_valid:
+            return False
+
+        if len(str_fields) > 0 or len(int_fields) > 0 or len(float_fields) > 0:
+            for key in str_fields + int_fields + float_fields:
+                print(ansi_color(f'LABEL_PAPER_FORMATS: {key} is missing in format definition {i}.\n', color=31))
+            return False
+
+        if format_definition['paper_format'] < 0 or format_definition['paper_format'] >= len(PAGE_SIZE_KEYS):
+            print(ansi_color(f'LABEL_PAPER_FORMATS: invalid paper_format in format definition {i}.\n', color=31))
+            return False
+        page_size = PAGE_SIZES[PAGE_SIZE_KEYS[format_definition['paper_format']]]
+        page_width = page_size[0] / mm
+        page_height = page_size[1] / mm
+        used_page_width = format_definition['labels_in_row'] * format_definition['label_width'] + (format_definition['labels_in_row'] - 1) * format_definition['margin_horizontal']
+        used_page_height = format_definition['labels_in_col'] * format_definition['label_height'] + (format_definition['labels_in_col'] - 1) * format_definition['margin_vertical']
+        if page_width < used_page_width or page_height < used_page_height:
+            print(ansi_color(f'LABEL_PAPER_FORMATS: page is too small for labels in format definition {i}.\n', color=31))
+            return False
+
+    return is_valid
 
 
 def check_config(
@@ -537,6 +608,10 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not is_label_paper_formats_valid():
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -638,6 +713,9 @@ DOWNLOAD_SERVICE_TIME_LIMIT = 24 * 60 * 60
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
 
+# label settings
+LABEL_PAPER_FORMATS: list[dict[str, typing.Any]] = []
+
 # CSRF token time limit
 # users may take a long time to fill out a form during an experiment
 WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
@@ -720,6 +798,8 @@ ENABLE_FIDO2_PASSKEY_AUTHENTICATION = False
 SHARED_DEVICE_SIGN_OUT_MINUTES = 30
 
 DISABLE_OUTDATED_USE_AS_TEMPLATE = False
+
+DISABLE_TOPICS = False
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

@@ -16,6 +16,7 @@
   {% endblock %}
   {% block head_scripts %}
   {% endblock %}
+  {% include "custom/head.html" %}
 {% endblock %}
 </head>
 <body {% if current_user.is_authenticated %}class="user-is-authenticated"{% endif %}>
@@ -73,9 +74,25 @@
           </span>
         </div>
       </form>
+      {% if config['DISABLE_TOPICS'] %}
+        {% set nav_topics = [] %}
+      {% else %}
+        {% set nav_topics = get_topics(filter_navbar=True) %}
+      {% endif %}
       <ul class="nav navbar-nav">
         {% if not config['DISABLE_INSTRUMENTS'] %}
-        <li><a href="{{ url_for('frontend.instruments') }}">{{ _('Instruments') }}</a></li>
+          {% if nav_topics %}
+            <li class="dropdown">
+              <a href="{{ url_for('frontend.instruments') }}" style="display:inline-block; padding-right: 0;">{{ _('Instruments') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                {% for topic in nav_topics %}
+                  <li><a href="{{ url_for('frontend.instruments', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% else %}
+            <li><a href="{{ url_for('frontend.instruments') }}">{{ _('Instruments') }}</a></li>
+          {% endif %}
         {% endif %}
         <li class="dropdown">
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
@@ -85,6 +102,12 @@
               <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
+            {% if nav_topics %}
+            <li role="separator" class="divider template-separator" style="display: none"></li>
+            {% for topic in nav_topics %}
+            <li><a href="{{ url_for('frontend.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
+            {% endfor %}
+            {% endif %}
           </ul>
         </li>
         <li class="dropdown">
@@ -112,6 +135,9 @@
             <li><a href="{{ url_for('frontend.locations') }}">{{ _('Locations') }}</a></li>
             <li><a href="{{ url_for('frontend.tags') }}">{{ _('Tags') }}</a></li>
             <li><a href="{{ url_for('frontend.publications') }}">{{ _('Publications') }}</a></li>
+            {% if not config['DISABLE_TOPICS'] %}
+            <li><a href="{{ url_for('frontend.topics') }}">{{ _('Topics') }}</a></li>
+            {% endif %}
             {% if config['FEDERATION_UUID'] is not none %}
             <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
             {% endif %}
@@ -198,6 +224,7 @@
             <strong>{{ _('Warning:') }}</strong> {{ _('This service requires JavaScript. Please <a href="https://www.enable-javascript.com/">enable JavaScript</a> and reload the page.') }}
         </div>
     </noscript>
+    {% include "custom/alerts.html" %}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
             {% if category == "error" %}
@@ -339,5 +366,6 @@
   <script src="{{ fingerprinted_static('moment-timezone/js/moment-timezone.min.js') }}"></script>
   <script type="module" src="{{ fingerprinted_static('sampledb/js/base.js') }}"></script>
 {% endblock %}
+{% include "custom/scripts.html" %}
 </body>
 </html>

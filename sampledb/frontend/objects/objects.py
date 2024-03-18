@@ -34,7 +34,7 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
-from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data
+from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ...logic.utils import get_translated_text, relative_url_for
 from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
 from .permissions import get_object_if_current_user_has_read_permissions
@@ -1001,6 +1001,27 @@ def objects() -> FlaskResponseT:
                             available_action_types.append(action_type)
                     tried_object_action_types.add(object_action.type_id)
 
+    sorted_action_topics = []
+    sorted_instrument_topics = []
+    if not flask.current_app.config['DISABLE_TOPICS']:
+        sorted_topics = logic.topics.get_topics()
+        for topic in sorted_topics:
+            for action in all_actions:
+                if topic in action.topics:
+                    sorted_action_topics.append(topic)
+                    break
+            if not flask.current_app.config['DISABLE_INSTRUMENTS']:
+                for instrument in all_instruments:
+                    if topic in instrument.topics:
+                        sorted_instrument_topics.append(topic)
+                        break
+
+    def _build_modified_url(
+        blocked_parameters: typing.Sequence[str] = (),
+        **query_parameters: typing.Any
+    ) -> str:
+        return build_modified_url('.objects', blocked_parameters, **query_parameters)
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
@@ -1087,7 +1108,9 @@ def objects() -> FlaskResponseT:
         special_groups=special_groups,
         disabled_special_group_permissions=disabled_special_group_permissions,
         groups_treepicker_info=groups_treepicker_info,
-        projects_treepicker_info=projects_treepicker_info
+        projects_treepicker_info=projects_treepicker_info,
+        sorted_action_topics=sorted_action_topics,
+        sorted_instrument_topics=sorted_instrument_topics,
     )
 
 
@@ -1154,44 +1177,6 @@ def referencable_objects() -> FlaskResponseT:
     })
 
 
-def _parse_filter_id_params(
-        params: werkzeug.datastructures.MultiDict[str, str],
-        param_aliases: typing.List[str],
-        valid_ids: typing.List[int],
-        id_map: typing.Dict[str, int],
-        multi_params_error: str,
-        parse_error: str,
-        invalid_id_error: str
-) -> typing.Tuple[bool, typing.Optional[typing.List[int]]]:
-    num_used_param_aliases = sum(param_alias in params for param_alias in param_aliases)
-    if num_used_param_aliases == 0:
-        return True, None
-    if num_used_param_aliases > 1:
-        flask.flash(multi_params_error, 'error')
-        return False, None
-    try:
-        filter_ids = set()
-        for param_alias in param_aliases:
-            for ids_str in params.getlist(param_alias):
-                for id_str in ids_str.split(','):
-                    id_str = id_str.strip()
-                    if not id_str:
-                        continue
-                    if id_str in id_map:
-                        filter_ids.add(id_map[id_str])
-                    else:
-                        filter_ids.add(int(id_str))
-    except ValueError:
-        flask.flash(parse_error, 'error')
-        return False, None
-    if any(id not in valid_ids for id in filter_ids):
-        flask.flash(invalid_id_error, 'error')
-        return False, None
-    if not filter_ids:
-        return True, None
-    return True, list(filter_ids)
-
-
 def _parse_object_list_filters(
         params: werkzeug.datastructures.MultiDict[str, str],
         valid_location_ids: typing.List[int],
@@ -1218,7 +1203,7 @@ def _parse_object_list_filters(
     typing.Optional[typing.List[typing.Union[typing.Tuple[typing.Literal['local'], None], typing.Tuple[typing.Literal['component'], int]]]]
 ]:
     FALLBACK_RESULT = False, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
-    success, filter_location_ids = _parse_filter_id_params(
+    success, filter_location_ids = parse_filter_id_params(
         params=params,
         param_aliases=['location_ids', 'location'],
         valid_ids=valid_location_ids,
@@ -1230,7 +1215,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_action_ids = _parse_filter_id_params(
+    success, filter_action_ids = parse_filter_id_params(
         params=params,
         param_aliases=['action_ids', 'action'],
         valid_ids=valid_action_ids,
@@ -1242,7 +1227,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_instrument_ids = _parse_filter_id_params(
+    success, filter_instrument_ids = parse_filter_id_params(
         params=params,
         param_aliases=['instrument_ids'],
         valid_ids=valid_instrument_ids,
@@ -1254,7 +1239,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_action_type_ids = _parse_filter_id_params(
+    success, filter_action_type_ids = parse_filter_id_params(
         params=params,
         param_aliases=['action_type_ids', 't'],
         valid_ids=valid_action_type_ids,
@@ -1270,7 +1255,7 @@ def _parse_object_list_filters(
     if not success:
         return FALLBACK_RESULT
 
-    success, filter_related_user_ids = _parse_filter_id_params(
+    success, filter_related_user_ids = parse_filter_id_params(
         params=params,
         param_aliases=['related_user_ids', 'related_user'],
         valid_ids=valid_user_ids,
@@ -1475,22 +1460,6 @@ def _parse_display_properties(
     return display_properties, display_property_titles
 
 
-def _build_modified_url(
-        blocked_parameters: typing.Sequence[str] = (),
-        **query_parameters: typing.Any
-) -> str:
-    for param in flask.request.args:
-        if param not in query_parameters:
-            query_parameters[param] = flask.request.args.getlist(param)
-    for param in blocked_parameters:
-        if param in query_parameters:
-            del query_parameters[param]
-    return flask.url_for(
-        '.objects',
-        **query_parameters
-    )
-
-
 @frontend.route('/objects/', methods=['POST'])
 @flask_login.login_required
 def save_object_list_defaults() -> FlaskResponseT:
@@ -1568,7 +1537,7 @@ def save_object_list_defaults() -> FlaskResponseT:
                 }
             }
         )
-        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
+        return flask.redirect(build_modified_url('.objects', blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
     if 'save_default_options' in flask.request.form:
         (
             creation_info,
@@ -1595,7 +1564,7 @@ def save_object_list_defaults() -> FlaskResponseT:
                 }
             }
         )
-        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
+        return flask.redirect(build_modified_url('.objects', blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
     if 'clear_default_filters' in flask.request.form:
         set_user_settings(
             user_id=flask_login.current_user.id,
@@ -1603,7 +1572,7 @@ def save_object_list_defaults() -> FlaskResponseT:
                 'DEFAULT_OBJECT_LIST_FILTERS': {}
             }
         )
-        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
+        return flask.redirect(build_modified_url('.objects', blocked_parameters=OBJECT_LIST_FILTER_PARAMETERS))
     if 'clear_default_options' in flask.request.form:
         set_user_settings(
             user_id=flask_login.current_user.id,
@@ -1611,7 +1580,7 @@ def save_object_list_defaults() -> FlaskResponseT:
                 'DEFAULT_OBJECT_LIST_OPTIONS': {}
             }
         )
-        return flask.redirect(_build_modified_url(blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
+        return flask.redirect(build_modified_url('.objects', blocked_parameters=OBJECT_LIST_OPTION_PARAMETERS))
     return flask.abort(400)
 
 

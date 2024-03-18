@@ -24,6 +24,7 @@ from math import log10, floor
 import flask
 import flask_babel
 import jinja2.filters
+import werkzeug
 from flask_babel import format_datetime, format_date, get_locale
 from flask_login import current_user
 from babel import numbers
@@ -563,6 +564,7 @@ def to_datatype(obj: typing.Any) -> typing.Any:
 
 def get_style_aliases(style: str) -> typing.List[str]:
     return {
+        'choice': ['list', 'choice'],
         'horizontal_table': ['table', 'horizontal_table'],
         'full_width_table': ['table']
     }.get(style, [style])
@@ -1519,6 +1521,13 @@ def stringify(json_object: list[dict[str, typing.Any]]) -> str:
     return json.dumps(json_object, separators=(',', ':'))
 
 
+@JinjaFilter()
+def unify_url(url: str) -> str:
+    if not url.endswith('/'):
+        url += '/'
+    return url
+
+
 @JinjaFunction()
 def to_diff_table(
         lines_before: str,
@@ -1623,3 +1632,58 @@ def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User
     if federated_user is not None:
         return federated_user, user
     return user, None
+
+
+def build_modified_url(
+        endpoint: str,
+        blocked_parameters: typing.Sequence[str] = (),
+        **query_parameters: typing.Any
+) -> str:
+    for param in flask.request.args:
+        if param not in query_parameters:
+            query_parameters[param] = flask.request.args.getlist(param)
+    for param in blocked_parameters:
+        if param in query_parameters:
+            del query_parameters[param]
+    return flask.url_for(
+        endpoint,
+        **query_parameters
+    )
+
+
+def parse_filter_id_params(
+        params: werkzeug.datastructures.MultiDict[str, str],
+        param_aliases: typing.List[str],
+        valid_ids: typing.List[int],
+        id_map: typing.Dict[str, int],
+        multi_params_error: str,
+        parse_error: str,
+        invalid_id_error: str
+) -> typing.Tuple[bool, typing.Optional[typing.List[int]]]:
+    num_used_param_aliases = sum(param_alias in params for param_alias in param_aliases)
+    if num_used_param_aliases == 0:
+        return True, None
+    if num_used_param_aliases > 1:
+        flask.flash(multi_params_error, 'error')
+        return False, None
+    try:
+        filter_ids = set()
+        for param_alias in param_aliases:
+            for ids_str in params.getlist(param_alias):
+                for id_str in ids_str.split(','):
+                    id_str = id_str.strip()
+                    if not id_str:
+                        continue
+                    if id_str in id_map:
+                        filter_ids.add(id_map[id_str])
+                    else:
+                        filter_ids.add(int(id_str))
+    except ValueError:
+        flask.flash(parse_error, 'error')
+        return False, None
+    if any(id not in valid_ids for id in filter_ids):
+        flask.flash(invalid_id_error, 'error')
+        return False, None
+    if not filter_ids:
+        return True, None
+    return True, list(filter_ids)

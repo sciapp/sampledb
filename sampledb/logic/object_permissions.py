@@ -190,20 +190,22 @@ def get_user_object_permissions(
     )
 
 
-def set_initial_permissions(obj: Object) -> None:
-    if obj.user_id is None:
+def set_initial_permissions(obj: Object, user_id: typing.Optional[int] = None) -> None:
+    if user_id is None:
+        user_id = obj.user_id
+    if user_id is None:
         # no global default permissions
         return
-    default_user_permissions = get_default_permissions_for_users(creator_id=obj.user_id)
-    for user_id, permissions in default_user_permissions.items():
-        set_user_object_permissions(object_id=obj.object_id, user_id=user_id, permissions=permissions)
-    default_group_permissions = get_default_permissions_for_groups(creator_id=obj.user_id)
+    default_user_permissions = get_default_permissions_for_users(creator_id=user_id)
+    for other_user_id, permissions in default_user_permissions.items():
+        set_user_object_permissions(object_id=obj.object_id, user_id=other_user_id, permissions=permissions)
+    default_group_permissions = get_default_permissions_for_groups(creator_id=user_id)
     for group_id, permissions in default_group_permissions.items():
         set_group_object_permissions(object_id=obj.object_id, group_id=group_id, permissions=permissions)
-    default_project_permissions = get_default_permissions_for_projects(creator_id=obj.user_id)
+    default_project_permissions = get_default_permissions_for_projects(creator_id=user_id)
     for project_id, permissions in default_project_permissions.items():
         set_project_object_permissions(object_id=obj.object_id, project_id=project_id, permissions=permissions)
-    permissions_for_all_users = get_default_permissions_for_all_users(creator_id=obj.user_id)
+    permissions_for_all_users = get_default_permissions_for_all_users(creator_id=user_id)
     set_object_permissions_for_all_users(object_id=obj.object_id, permissions=permissions_for_all_users)
 
 

@@ -55,6 +55,7 @@ from . import settings
 from . import shares
 from . import tags
 from . import temporary_files
+from . import topics
 from . import units
 from . import users
 from . import user_log
@@ -123,6 +124,7 @@ __all__ = [
     'shares',
     'tags',
     'temporary_files',
+    'topics',
     'units',
     'users',
     'user_log',

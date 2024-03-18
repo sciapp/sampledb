@@ -486,10 +486,11 @@ class VersionedJSONSerializableObjectTables:
             user_id: typing.Optional[int],
             utc_datetime: typing.Optional[datetime.datetime],
             connection: typing.Optional[db.engine.Connection] = None,
-            allow_disabled_languages: bool = False
+            allow_disabled_languages: bool = False,
+            get_missing_schema_from_action: bool = True
     ) -> typing.Optional[Object]:
         assert connection is not None  # ensured by decorator
-        if schema is None and self._action_schema_column is not None:
+        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None:
             action = connection.execute(
                 db
                 .select(
@@ -621,7 +622,8 @@ class VersionedJSONSerializableObjectTables:
             utc_datetime: typing.Optional[datetime.datetime],
             utc_datetime_subversion: typing.Optional[datetime.datetime] = None,
             connection: typing.Optional[db.engine.Connection] = None,
-            allow_disabled_languages: bool = False
+            allow_disabled_languages: bool = False,
+            get_missing_schema_from_action: bool = True
     ) -> typing.Optional[Object]:
         """
         Updates an existing object version using the given data, user id and datetime.
@@ -639,12 +641,13 @@ class VersionedJSONSerializableObjectTables:
         :param utc_datetime_subversion: the datetime (in UTC) when the object update has been applied (optional, defaults to now(timezone.utc))
         :param connection: the SQLAlchemy connection (optional, defaults to a new connection using self.bind)
         :param allow_disabled_languages: whether using disabled languages should be allowed in this update
+        :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
         :return: the updated object as object_type or None, if the object does not exist
         """
         assert connection is not None  # ensured by decorator
         if utc_datetime_subversion is None:
             utc_datetime_subversion = datetime.datetime.now(datetime.timezone.utc)
-        if schema is None and self._action_schema_column is not None:
+        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None:
             action = connection.execute(
                 db
                 .select(

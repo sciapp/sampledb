@@ -389,13 +389,13 @@ def parse_quantity_form_data(
         if units == 'min':
             match = re.match(re.compile(
                 r'^(?P<minutes>[0-9]+):'
-                r'(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?)$'
+                r'(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['latn']['decimal'] + '][0-9]+)?)$'
             ), magnitude_str)
         else:
             match = re.match(re.compile(
                 r'^(?P<hours>([0-9]+)):'
                 r'(?P<minutes>[0-5][0-9])'
-                r'(:(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['decimal'] + '][0-9]+)?))?$'
+                r'(:(?P<seconds>[0-5][0-9]([' + babel.Locale(user_locale).number_symbols['latn']['decimal'] + '][0-9]+)?))?$'
             ), magnitude_str)
         if match is None:
             raise ValueError(_('Unable to parse time.'))
@@ -547,7 +547,6 @@ def parse_array_form_data(
             item_id_prefix = f'{id_prefix}__{i}'
             previous_item_data = previous_data[i] if isinstance(previous_data, list) and i < len(previous_data) else None
             items.append(parse_any_form_data(form_data, item_schema, item_id_prefix, errors, required=True, file_names_by_id=file_names_by_id, previous_data=previous_item_data))
-
     if not items and not required and schema.get('minItems', 0) > 0:
         return None
     schemas.validate(items, schema, strict=True, file_names_by_id=file_names_by_id)

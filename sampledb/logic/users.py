@@ -153,12 +153,14 @@ class User:
                     return self.name + db_ref
             else:
                 return local_user.name + db_ref
-        if self.name is None and self.component_id and local_user is None:
-            return gettext('Imported User (#%(user_id)s%(db_ref)s)', user_id=self.id, db_ref=db_ref)
-        else:
-            if local_user:
-                return f'{local_user.name} (#{local_user.id}{db_ref})'
-            return f'{self.name} (#{self.id}{db_ref})'
+        user_id = local_user.id if local_user else self.id
+        name = local_user.name if local_user else self.name
+        if name is None:
+            if self.component_id or self.eln_import_id:
+                name = gettext('Imported User')
+            else:
+                name = gettext('User')
+        return f'{name} (#{user_id}{db_ref})'
 
     @property
     def has_admin_permissions(self) -> bool:
