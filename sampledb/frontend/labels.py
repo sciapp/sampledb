@@ -126,7 +126,6 @@ def create_multiple_labels(
         show_id_on_label: bool = True,
         label_dimension: typing.Optional[dict[str, typing.Any]] = None
 ) -> bytes:
-    html = flask.render_template("labels/Empty.html")
 
     vertical_label_margin = VERTICAL_LABEL_MARGIN / 4
     horizontal_label_margin = HORIZONTAL_LABEL_MARGIN / 4
@@ -180,7 +179,6 @@ def create_multiple_labels(
                     max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
                         len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2
 
-
             box_width_list.append(max(label_width, min_label_width))
 
             tmp_index += 1
@@ -221,14 +219,38 @@ def create_multiple_labels(
         first_box_width_list = []
         second_box_width_list = []
         third_box_width_list = []
+        third_box_height_list = []
+        third_box_qrcode_box_height_list = []
+        third_box_ghs_box_height_list = []
         forth_box_width_list = []
+        forth_box_height_list = []
+        fourth_box_qrcode_box_height_list = []
+        fourth_box_ghs_box_height_list = []
         fifth_box_width_list = []
+        fifth_box_height_list = []
+        fifth_box_qrcode_box_width_list = []
+        fifth_box_ghs_box_width_list = []
+        fifth_inner_box_height_list = []
         sixth_box_width_list = []
+        sixth_box_height_list = []
+        sixth_inner_box_height_list = []
+
+        top_ghs_list = []
+        left_ghs_list = []
+        right_ghs_list = []
+        top_ghs_fifth_list = []
+        left_ghs_fifth_list = []
+        right_ghs_fifth_list = []
+        top_ghs_sixth_list = []
+        left_ghs_sixth_list = []
+        right_ghs_sixth_list = []
 
         outer_box_width = 200.0
         outer_box_height = 60.0
         ghs_width = 9.0
         qrcode_width = 12.0
+        sixth_box_qrcode_box_width = 20.0
+        sixth_box_ghs_box_width = 20.0
 
         if quantity == 1 and fill_single_page:
             set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height))
@@ -252,6 +274,8 @@ def create_multiple_labels(
             image_stream.seek(0)
             qr_code_uri_list.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
+            ghs_height = 17.0 + int((len(hazard_list[tmp_index]) - 1) / 3) * 9
+
             first_box_width_list.append(ghs_width * len(hazard_list[tmp_index]) + (
                 max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
                     len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2)
@@ -263,57 +287,63 @@ def create_multiple_labels(
             third_box_width_list.append(max(15.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
                                                       len(creation_date_list[tmp_index]),
                                                       len(str(sample_code_list[tmp_index]))) * 2))
-            third_box_height = 60.0
+            third_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
 
             forth_box_width_list.append(max(18.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
                                                       len(creation_date_list[tmp_index]),
                                                       len(str(sample_code_list[tmp_index]))) * 2))
-            forth_box_height = 60.0
+            forth_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
 
             fifth_box_width_list.append(max(45.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
                                                       len(creation_date_list[tmp_index]),
                                                       len(str(sample_code_list[tmp_index]))) * 2))
-            fifth_box_height = 50.0
-            fifth_box_qrcode_box_width = fifth_box_width_list[tmp_index] / 2.0
-            fifth_box_ghs_box_width = fifth_box_width_list[tmp_index] / 2.0
+            fifth_box_height_list.append(max(50.0, 12.0 + math.ceil(ghs_height)))
+            fifth_box_qrcode_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
+            fifth_box_ghs_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
 
             sixth_box_width_list.append(
                 max(80.0 - ((third_box_width_list[tmp_index] - 20) + (forth_box_width_list[tmp_index] - 20)),
                     max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
                         len(creation_date_list[tmp_index]),
                         len(str(sample_code_list[tmp_index]))) * 2))
-            sixth_box_height = 50.0
-            sixth_box_qrcode_box_width = 20.0
-            sixth_box_ghs_box_width = 20.0
+            sixth_box_height_list.append(max(50.0, 12.0 + math.ceil(ghs_height)))
 
             ghs_amount_list.append(len(hazard_list[tmp_index]))
-            top_ghs = (third_box_width_list[tmp_index] / 2.0) - (ghs_width / 2)
-            left_ghs = (third_box_width_list[tmp_index] / 2.0) - ghs_width
-            right_ghs = third_box_width_list[tmp_index] / 2.0
-            top_ghs_fifth = (fifth_box_ghs_box_width / 2.0) - (ghs_width / 2)
-            left_ghs_fifth = (fifth_box_ghs_box_width / 2.0) - ghs_width
-            right_ghs_fifth = fifth_box_ghs_box_width / 2.0
-            top_ghs_sixth = (sixth_box_ghs_box_width / 2.0) - (ghs_width / 2)
-            left_ghs_sixth = (sixth_box_ghs_box_width / 2.0) - ghs_width
-            right_ghs_sixth = sixth_box_ghs_box_width / 2.0
+
+            top_ghs_list.append((third_box_width_list[tmp_index] / 2.0) - (ghs_width / 2))
+            left_ghs_list.append((third_box_width_list[tmp_index] / 2.0) - ghs_width)
+            right_ghs_list.append(third_box_width_list[tmp_index] / 2.0)
+
+            top_ghs_fifth_list.append((fifth_box_ghs_box_width_list[tmp_index] / 2.0) - (ghs_width / 2))
+            left_ghs_fifth_list.append((fifth_box_ghs_box_width_list[tmp_index] / 2.0) - ghs_width)
+            right_ghs_fifth_list.append(fifth_box_ghs_box_width_list[tmp_index] / 2.0)
+
+            top_ghs_sixth_list.append((sixth_box_ghs_box_width / 2.0) - (ghs_width / 2))
+            left_ghs_sixth_list.append((sixth_box_ghs_box_width / 2.0) - ghs_width)
+            right_ghs_sixth_list.append(sixth_box_ghs_box_width / 2.0)
 
             if ghs_amount_list[tmp_index] > 0:
                 has_ghs_list.append(True)
-                third_box_qrcode_box_height = 20.0
-                third_box_ghs_box_height = 22.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9
-                fourth_box_qrcode_box_height = 23.0
-                fourth_box_ghs_box_height = 19.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9
-                fifth_inner_box_height = max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
-                sixth_inner_box_height = max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                third_box_qrcode_box_height_list.append(20.0)
+                third_box_ghs_box_height_list.append(22.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+
+                fourth_box_qrcode_box_height_list.append(23.0)
+                fourth_box_ghs_box_height_list.append(19.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+
+                fifth_inner_box_height_list.append(max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
+                sixth_inner_box_height_list.append(max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
+
                 outer_box_height = 60.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9
             else:
                 has_ghs_list.append(False)
-                third_box_qrcode_box_height = 40
-                third_box_ghs_box_height = 0
-                fourth_box_qrcode_box_height = 40
-                fourth_box_ghs_box_height = 0
-                fifth_inner_box_height = 22
-                sixth_inner_box_height = 22
+                third_box_qrcode_box_height_list.append(40.0)
+                third_box_ghs_box_height_list.append(0.0)
+
+                fourth_box_qrcode_box_height_list.append(40.0)
+                fourth_box_ghs_box_height_list.append(0.0)
+
+                fifth_inner_box_height_list.append(22.0)
+                sixth_inner_box_height_list.append(22.0)
 
             tmp_index += 1
 
@@ -325,32 +355,36 @@ def create_multiple_labels(
                                      paper_width=paper_width, paper_height=paper_height, set_amount=set_amount,
                                      ghs_amount_list=ghs_amount_list,
                                      horizontal_label_margin=horizontal_label_margin,
+                                     vertical_label_margin=vertical_label_margin,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS,
-                                     third_box_height=third_box_height,
-                                     forth_box_height=forth_box_height,
-                                     fifth_box_height=fifth_box_height,
-                                     sixth_box_height=sixth_box_height,
-                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
+                                     third_box_height_list=third_box_height_list,
+                                     forth_box_height_list=forth_box_height_list,
+                                     fifth_box_height_list=fifth_box_height_list,
+                                     sixth_box_height_list=sixth_box_height_list,
                                      first_box_width_list=first_box_width_list,
                                      second_box_width_list=second_box_width_list,
                                      third_box_width_list=third_box_width_list,
                                      forth_box_width_list=forth_box_width_list,
                                      fifth_box_width_list=fifth_box_width_list,
                                      sixth_box_width_list=sixth_box_width_list,
-                                     ghs_width=ghs_width, top_ghs=top_ghs, left_ghs=left_ghs, right_ghs=right_ghs,
-                                     fifth_box_qrcode_box_width=fifth_box_qrcode_box_width,
-                                     fifth_box_ghs_box_width=fifth_box_ghs_box_width,
+                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
+                                     ghs_width=ghs_width,
+                                     top_ghs_list=top_ghs_list, left_ghs_list=left_ghs_list,
+                                     right_ghs_list=right_ghs_list,
+                                     fifth_box_qrcode_box_width_list=fifth_box_qrcode_box_width_list,
+                                     fifth_box_ghs_box_width_list=fifth_box_ghs_box_width_list,
                                      sixth_box_qrcode_box_width=sixth_box_qrcode_box_width,
                                      sixth_box_ghs_box_width=sixth_box_ghs_box_width, has_ghs_list=has_ghs_list,
-                                     third_box_qrcode_box_height=third_box_qrcode_box_height,
-                                     third_box_ghs_box_height=third_box_ghs_box_height,
-                                     fourth_box_qrcode_box_height=fourth_box_qrcode_box_height,
-                                     fourth_box_ghs_box_height=fourth_box_ghs_box_height,
-                                     fifth_inner_box_height=fifth_inner_box_height,
-                                     sixth_inner_box_height=sixth_inner_box_height, top_ghs_fifth=top_ghs_fifth,
-                                     left_ghs_fifth=left_ghs_fifth, right_ghs_fifth=right_ghs_fifth,
-                                     top_ghs_sixth=top_ghs_sixth, left_ghs_sixth=left_ghs_sixth,
-                                     right_ghs_sixth=right_ghs_sixth, object_amount=object_amount)
+                                     fifth_inner_box_height_list=fifth_inner_box_height_list,
+                                     sixth_inner_box_height_list=sixth_inner_box_height_list,
+                                     third_box_qrcode_box_height_list=third_box_qrcode_box_height_list,
+                                     third_box_ghs_box_height_list=third_box_ghs_box_height_list,
+                                     fourth_box_qrcode_box_height_list=fourth_box_qrcode_box_height_list,
+                                     fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
+                                     top_ghs_fifth_list=top_ghs_fifth_list, left_ghs_fifth_list=left_ghs_fifth_list,
+                                     right_ghs_fifth_list=right_ghs_fifth_list, top_ghs_sixth_list=top_ghs_sixth_list,
+                                     left_ghs_sixth_list=left_ghs_sixth_list, right_ghs_sixth_list=right_ghs_sixth_list,
+                                     object_amount=object_amount)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
