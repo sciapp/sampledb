@@ -58,6 +58,7 @@ function setUpCalculation (idPrefix, schema, rootSchema) { // eslint-disable-lin
   let allInputElementsAvailable = true;
   const inputElements = [];
   const propertyAliases = [];
+  const propertyPaths = [];
   if (Array.isArray(propertyNames)) {
     const fixedPropertyNames = {};
     for (const propertyName of propertyNames) {
@@ -131,6 +132,7 @@ function setUpCalculation (idPrefix, schema, rootSchema) { // eslint-disable-lin
     if (allInputElementsAvailable) {
       propertyAliases.push(propertyAlias);
       inputElements.push(elements);
+      propertyPaths.push(propertyPath);
     } else {
       break;
     }
@@ -176,6 +178,9 @@ function setUpCalculation (idPrefix, schema, rootSchema) { // eslint-disable-lin
         if (!allInputValuesAvailable || values[propertyAliases[i]].length === 0) {
           allInputValuesAvailable = false;
           break;
+        }
+        if (values[propertyAliases[i]].length === 1 && !propertyPaths[i].includes('*')) {
+          values[propertyAliases[i]] = values[propertyAliases[i]][0];
         }
       }
       if (allInputValuesAvailable) {

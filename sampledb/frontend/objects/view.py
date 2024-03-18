@@ -40,7 +40,7 @@ from ...logic.utils import get_translated_text, get_data_and_schema_by_id_path
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, GenerateLabelsForm
 from ...utils import object_permissions_required
 from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
-from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
+from ..labels import create_labels, create_multiple_labels, PAGE_SIZES, PAGE_SIZE_KEYS, DEFAULT_PAPER_FORMAT, HORIZONTAL_LABEL_MARGIN, VERTICAL_LABEL_MARGIN
 from .. import pdfexport
 from ..utils import check_current_user_is_not_readonly, get_location_name
 from .permissions import on_unauthorized, get_object_if_current_user_has_read_permissions, get_fed_object_if_current_user_has_read_permissions
@@ -507,6 +507,7 @@ def print_object_label(object_id: int) -> FlaskResponseT:
     create_only_qr_codes = False
     show_id_on_label = True
     label_quantity = 1
+    label_dimension = None
     if mode == 'fixed-width':
         create_mixed_labels = False
         create_long_labels = False
@@ -575,6 +576,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         add_label_number = 'add-label-number' in flask.request.args
         add_maximum_label_number = 'add-maximum-label-number' in flask.request.args
         paper_format = flask.request.args.get('qr-code-paper-format', '')
+        label_dimension_template = flask.request.args.get('qr-code-paper-dimension-template', 'default')
+
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
         try:
@@ -583,6 +586,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
             qrcode_width = 7
         if qrcode_width < 4:
             qrcode_width = 4
+        elif qrcode_width > 150:
+            qrcode_width = 150
 
         try:
             label_quantity = int(flask.request.args.get('qr-code-number', '1'))
@@ -592,6 +597,14 @@ def print_object_label(object_id: int) -> FlaskResponseT:
             label_quantity = 1
         elif label_quantity > 1000:
             label_quantity = 1000
+
+        try:
+            label_dimension_idx = int(label_dimension_template)
+            label_dimension = flask.current_app.config['LABEL_PAPER_FORMATS'][label_dimension_idx]
+            qrcode_width = label_dimension['qr_code_width']
+            paper_format = PAGE_SIZE_KEYS[label_dimension['paper_format']]
+        except (ValueError, KeyError):
+            label_dimension = None
 
         label_width = 0
         label_minimum_width = qrcode_width
@@ -668,7 +681,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         only_id_qr_code=only_id_qr_code,
         add_label_number=add_label_number,
         add_maximum_label_number=add_maximum_label_number,
-        show_id_on_label=show_id_on_label
+        show_id_on_label=show_id_on_label,
+        label_dimension=label_dimension
     )
     return flask.send_file(
         io.BytesIO(pdf_data),

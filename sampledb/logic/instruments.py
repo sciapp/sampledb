@@ -17,7 +17,7 @@ from .components import check_component_exists
 from .. import db
 from .. import models
 from ..models.instruments import instrument_user_association_table
-from . import users, errors, components, locations, objects
+from . import users, errors, components, locations, objects, topics
 from .utils import cache
 
 
@@ -46,6 +46,7 @@ class Instrument:
     location: typing.Optional[locations.Location]
     object_id: typing.Optional[int]
     show_linked_object_data: bool
+    topics: typing.List[topics.Topic]
 
     @classmethod
     def from_database(cls, instrument: models.Instrument) -> 'Instrument':
@@ -73,6 +74,7 @@ class Instrument:
             location=locations.Location.from_database(instrument.location) if instrument.location is not None else None,
             object_id=instrument.object_id,
             show_linked_object_data=instrument.show_linked_object_data,
+            topics=[topics.Topic.from_database(topic) for topic in instrument.topics],
         )
 
     def __repr__(self) -> str:
@@ -455,5 +457,24 @@ def get_instrument_object_links() -> typing.Sequence[typing.Tuple[int, int]]:
     instruments = models.Instrument.query.filter(models.Instrument.object_id != db.null()).all()
     return [
         (instrument.id, typing.cast(int, instrument.object_id))
+        for instrument in instruments
+    ]
+
+
+def get_instruments_for_topic(
+        topic_id: int
+) -> typing.List[Instrument]:
+    """
+    Get the list of instruments assigned to a given topic.
+
+    :param topic_id: the ID of an existing topic
+    :return: the list of instruments
+    :raise errors.TopicDoesNotExistError: if the topic does not exist
+    """
+    instruments = models.instruments.Instrument.query.filter(models.Instrument.topics.any(models.topics.Topic.id == topic_id)).all()
+    if not instruments:
+        topics.check_topic_exists(topic_id)
+    return [
+        Instrument.from_database(instrument)
         for instrument in instruments
     ]

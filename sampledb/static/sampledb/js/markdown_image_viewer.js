@@ -3,7 +3,7 @@
 
 // Sets event handlers for showing previews of markdown images when clicking on them.
 $(function () {
-  $('.action-user-content img, .instrument-user-content img, .object-user-content img').each(function (_, img) {
+  $('.action-user-content img, .instrument-user-content img, .object-user-content img, .topic-user-content img').each(function (_, img) {
     $(img).click(function () {
       const preview = $(
         '<span class="fullscreen-image-preview">' +

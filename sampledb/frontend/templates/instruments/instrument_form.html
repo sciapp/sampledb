@@ -221,6 +221,17 @@
         </select>
       </div>
 
+    {% if not config['DISABLE_TOPICS'] %}
+      <div class="form-group">
+        <label for="input-instrument-topics" class="control-label">{{ _('Topics')}}</label>
+        <select id="input-instrument-topics" name="{{ instrument_form.topics.name }}" class="selectpicker form-control" multiple="multiple" data-none-selected-text="{{ _('No topic selected') }}">
+          {% for topic_id_str, topic in instrument_form.topics.choices %}
+            <option value="{{ topic_id_str }}" {% if (instrument_form.topics.data and topic_id_str in instrument_form.topics.data) or (not instrument_form.topics.data and instrument_form.topics.default and topic_id_str in instrument_form.topics.default) %}selected="selected"{% endif %}>{{ topic.name | get_translated_text(default='—') }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% endif %}
+
     {% if instrument_form.location.choices | length > 1 or instrument_form.location.data != '-1' %}
       <div class="form-group {% if location_is_invalid %}has-error has-error-static{% endif %}">
         <label for="input-instrument-location" class="control-label">{{ _('Location')}}</label>

@@ -48,6 +48,7 @@ class ObjectLogEntry(Model):
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     data: Mapped[typing.Dict[str, typing.Any]] = db.Column(db.JSON, nullable=False)
     utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
+    is_imported: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["ObjectLogEntry"]]
@@ -58,14 +59,16 @@ class ObjectLogEntry(Model):
             object_id: int,
             user_id: int,
             data: typing.Dict[str, typing.Any],
-            utc_datetime: typing.Optional[datetime.datetime] = None
+            utc_datetime: typing.Optional[datetime.datetime] = None,
+            is_imported: bool = False
     ) -> None:
         super().__init__(
             type=type,
             object_id=object_id,
             user_id=user_id,
             data=data,
-            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc)
+            utc_datetime=utc_datetime if utc_datetime is not None else datetime.datetime.now(datetime.timezone.utc),
+            is_imported=is_imported
         )
         self.user: typing.Optional['User'] = None
 

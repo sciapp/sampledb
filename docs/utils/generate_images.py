@@ -1052,6 +1052,29 @@ def action_list(base_url, driver):
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/action_list.png', (0, container.location['y'] - y_offset, width, min(container.location['y'] + max_height, container.location['y'] + container.rect['height']) - y_offset))
 
 
+def federated_identity(base_url, driver):
+    width = 1280
+    max_height = 1000
+    resize_for_screenshot(driver, width, max_height)
+    driver.get(base_url + f'users/{user.id}/autologin')
+
+    driver.get(base_url + f'other-databases/{component.id}')
+    for heading in driver.find_elements(By.TAG_NAME, 'h4'):
+        if 'Federated Identity' in heading.text:
+            break
+    else:
+        assert False
+
+    for button in driver.find_elements(By.TAG_NAME, 'button'):
+        if button.text.startswith("Sign in to"):
+            break
+    else:
+        assert False
+    y_offset = scroll_to_element(driver, heading)
+
+    save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/federated_identity.png', (0, heading.location['y'] - y_offset, width, button.location['y'] + button.rect['height'] - y_offset))
+
+
 def save_cropped_screenshot_as_file(driver, file_name, box):
     image_data = driver.get_screenshot_as_png()
     image = Image.open(io.BytesIO(image_data))
@@ -1417,3 +1440,4 @@ with app.app_context():
             group_categories(flask_server.base_url, driver, [category1, category2, category3])
             search_query_builder(flask_server.base_url, driver)
             federation_graph(flask_server.base_url, driver)
+            federated_identity(flask_server.base_url, driver)

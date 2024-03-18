@@ -529,6 +529,50 @@
         updateObjectLocationTranslationJSON();
       });
       $('#input-group-object_location-{{ ENGLISH.lang_code }}').change();
+
+      $('#filter_instrument_ids, #filter_action_ids').on('rendered.bs.select', function() {
+        let values = $(this).val();
+        values.sort();
+        let uniqueValues = [];
+        for (const value of values) {
+          if (uniqueValues.length === 0 || uniqueValues[uniqueValues.length - 1] !== value) {
+            uniqueValues.push(value);
+          }
+        }
+        if (values.length === 0) {
+          return;
+        }
+        let selectedOptions = [];
+        for (const value of uniqueValues) {
+          selectedOptions.push($(this).find(`option[value="${value}"]`).first().text().trim())
+        }
+        const dropdownLabel = $(this).siblings('.dropdown-toggle').find('.filter-option-inner-inner');
+        dropdownLabel.text(selectedOptions.join(', '));
+      }).on('changed.bs.select', function (event, clickedIndex, isSelected, previousValue) {
+        if (clickedIndex !== null) {
+          const currentValue = $(this).val();
+          let values = currentValue.concat(previousValue);
+          values.sort();
+          let uniqueValues = [];
+          for (const value of values) {
+            if (uniqueValues.length === 0 || uniqueValues[uniqueValues.length - 1] !== value) {
+              uniqueValues.push(value);
+            }
+          }
+          for (const value of uniqueValues) {
+            const previousNumber = $.grep(previousValue, function (val) {
+                return val === value;
+            }).length;
+            const currentNumber = $.grep(currentValue, function (val) {
+                return val === value;
+            }).length;
+            if (previousNumber !== currentNumber) {
+              $(this).find(`option[value="${value}"]`).prop('selected', previousNumber < currentNumber);
+            }
+          }
+          $(this).selectpicker('refresh');
+        }
+      }).selectpicker('refresh');
     });
 
   </script>
@@ -946,12 +990,22 @@
                 {{ _('Filter by Action') }}
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="action_ids" id="filter_action_ids" data-width="100%" data-none-selected-text="{{ _('All actions') }}" data-live-search="on" data-hide-disabled="true">>
-                {% for action in all_actions %}
-                  <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %} data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
-                    {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
-                    {% if action.user %}{{ action.user.get_name() }} / {% endif %}
-                    {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
-                  </option>
+                {% for topic in sorted_action_topics + [None] %}
+                  {% if sorted_action_topics %}
+                    <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Actions') }}{% endif %}">
+                  {% endif %}
+                  {% for action in all_actions %}
+                    {% if topic is none or topic in action.topics %}
+                      <option {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ action.id }}" {% if filter_action_ids and action.id in filter_action_ids %}selected="selected"{% endif %} data-source="{% if action.component_id is none %}local{% else %}component_{{ action.component_id }}{% endif %}">
+                        {% if action.instrument %}{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }} — {% endif %}
+                        {% if action.user %}{{ action.user.get_name() }} / {% endif %}
+                        {{ action.name | get_translated_text(default=_('Unnamed Action')) }} (#{{ action.id }})
+                      </option>
+                    {% endif %}
+                  {% endfor %}
+                  {% if sorted_action_topics %}
+                    </optgroup>
+                  {% endif %}
                 {% endfor %}
               </select>
             </div>
@@ -960,10 +1014,20 @@
                 {{ _('Filter by Instrument') }}
               </label>
               <select class="selectpicker form-control" multiple="multiple" name="instrument_ids" id="filter_instrument_ids" data-width="100%" data-none-selected-text="{{ _('All instruments') }}" data-live-search="on" data-hide-disabled="true">>
-                {% for instrument in all_instruments %}
-                  <option {% if instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %} data-source="{% if instrument.component_id is none %}local{% else %}component_{{ instrument.component_id }}{% endif %}">
-                    {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}  (#{{ instrument.id }})
-                  </option>
+                {% for topic in sorted_instrument_topics + [None] %}
+                  {% if sorted_instrument_topics %}
+                    <optgroup label="{% if topic is not none %}{{ topic.name | get_translated_text }}{% else %}{{ _('All Instruments') }}{% endif %}">
+                  {% endif %}
+                  {% for instrument in all_instruments %}
+                    {% if topic is none or topic in instrument.topics %}
+                      <option {% if instrument.component_id is not none %}data-icon="fa fa-share-alt"{% endif %} value="{{ instrument.id }}" {% if filter_instrument_ids and instrument.id in filter_instrument_ids %}selected="selected"{% endif %} data-source="{% if instrument.component_id is none %}local{% else %}component_{{ instrument.component_id }}{% endif %}">
+                        {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}  (#{{ instrument.id }})
+                      </option>
+                    {% endif %}
+                  {% endfor %}
+                  {% if sorted_instrument_topics %}
+                    </optgroup>
+                  {% endif %}
                 {% endfor %}
               </select>
             </div>

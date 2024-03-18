@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Topic') }} — {{ service_name }}{% endblock %}
+
+{% block stylesheets %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}"/>
+  <link rel="stylesheet" href="{{ fingerprinted_static('inscrybmde/css/inscrybmde.min.css') }}" />
+{% endblock %}
+
+{% block template_values %}
+  {% set language_info_languages = [] %}
+  {% for lang in languages %}
+    {% do language_info_languages.append({"id": lang.id | string, "name": lang.names | get_translated_text, "lang_code": lang.lang_code}) %}
+  {% endfor %}
+  {% do set_template_value("language_info.languages", language_info_languages) %}
+  {% do set_template_value("language_info.english_id", ENGLISH.id | string) %}
+  {% do set_template_value("translations", topic_translations) %}
+  {% do set_template_value("is_create_form", submit_text == _('Create')) %}
+
+  {{ super() }}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/topic_form.js') }}" type="module"></script>
+{% endblock %}
+
+{% block content %}
+  {% if not config['DISABLE_TOPICS'] %}
+  <form method="post">
+    {{ topic_form.hidden_tag() }}
+    <div class="col-md-12">
+
+      <div class="hidden" id="name-template">
+        <div class="input-group" data-language-id="">
+          <input type="text" class="form-control" id="input-name" placeholder="{{ _("Name") }}" data-name="input-name" data-translation-attribute="name" data-empty-text="{{ _("Please enter a name.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter name (at most 100 characters).") }}" data-required-in-all-languages="1">
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" data-name="name"></span>
+      </div>
+
+      <div class="hidden" id="description-template">
+        <div class="input-group" data-language-id="">
+          <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description"></textarea>
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" data-name="description"></span>
+      </div>
+
+      <div class="hidden" id="short-description-template">
+        <div class="input-group" data-language-id="">
+          <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description"></textarea>
+          <span class="input-group-addon language-addon" data-name="language"></span>
+        </div>
+        <span class="help-block" data-name="short_description"></span>
+      </div>
+
+      <div class="form-group row" style="padding-right: 10px">
+        <label for="select-languages" class="control-label col-md-10">{{ _("Languages") }}</label>
+        <select class="selectpicker btn-xs select-language col-md-2" data-style="btn-default btn-xs" multiple="multiple" id="select-languages">
+          {% for language in languages %}
+            <option value="{{ language.id }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected" {% endif %} {% if language.id in topic_language_ids %} selected="selected"{% endif %} data-name="{{ language.names | get_translated_text }}">{{ language.names | get_translated_text }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <input type="hidden" id="input-translations" name="{{ topic_form.translations.name }}" value="">
+
+      <div class="form-group" data-name="input-names">
+        <div class="form-group" style="margin-bottom: 0">
+            <label for="input-name" class="control-label">{{ _('Name') }}</label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in topic_translations %}
+          <div class="input-group" data-language-id="{{ translation.language_id }}">
+            <input type="text" class="form-control" id="input-name-{{ translation.language_id }}" placeholder="{{ _('Name') }}" data-name="input-name" value="{{ translation.name }}" data-translation-attribute="name" data-empty-text="{{ _("Please enter a name.") }}" data-max-length="100" data-max-length-text="{{ _("Please enter a shorter name (at most 100 characters).") }}">
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
+          </div>
+          <span class="help-block" data-name="name" id="help-block-name-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-descriptions">
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-description" class="control-label col-md-10" style="padding-left: 0">{{ _("Description") }}</label>
+          <label for="input-description-markdown" style="font-weight:400; padding-left: 10px" class="text-right col-md-2">
+            <input type="checkbox" id="input-description-is-markdown" name="{{ topic_form.description_is_markdown.name }}" {% if topic_form.description_is_markdown.data %}checked="checked"{% endif %} />
+            {{ _("Use Markdown") }}
+          </label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in topic_translations %}
+          <div class="input-group" data-language-id="{{ translation.language_id }}">
+            <textarea class="form-control" style="resize: vertical; min-height: 371px" id="input-description-{{ translation.language_id }}" placeholder="{{ _("Description") }}" data-name="input-description" data-translation-attribute="description">{{ translation.description }}</textarea>
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
+          </div>
+          <span class="help-block" data-name="name" id="help-block-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group" data-name="input-short-descriptions">
+        <div class="form-group" style="margin-bottom: 0">
+          <label for="input-short-description" class="control-label col-md-10" style="padding-left: 0">{{ _("Short Description") }}<span class="text-muted" style="font-weight: normal"> {{ _('shown in the topic list') }}</span></label>
+          <label for="input-short-description-markdown" style="font-weight:400; padding-left: 10px" class="text-right col-md-2">
+            <input type="checkbox" id="input-short-description-is-markdown" name="{{ topic_form.short_description_is_markdown.name }}" {% if topic_form.short_description_is_markdown.data %}checked="checked"{% endif %} />
+            {{ _("Use Markdown") }}
+          </label>
+        </div>
+        <div class="input-group" hidden="hidden"></div>
+        {% for translation in topic_translations %}
+          <div class="input-group" data-language-id="{{ translation.language_id }}">
+            <textarea class="form-control" style="resize: vertical; min-height: 171px" id="input-short-description-{{ translation.language_id }}" placeholder="{{ _("Short Description") }}" data-name="input-short-description" data-translation-attribute="short_description">{{ translation.short_description }}</textarea>
+            <span class="input-group-addon language-addon" data-name="language">{{ translation.lang_name }}</span>
+          </div>
+          <span class="help-block" data-name="name" id="help-block-short-description-{{ translation.language_id }}" data-language-id="{{ translation.language_id }}"></span>
+        {% endfor %}
+      </div>
+
+      <div class="checkbox">
+        <label for="input-show_on_frontpage" style="font-weight:400">
+          <input type="checkbox" id="input-show_on_frontpage"
+                 name="{{ topic_form.show_on_frontpage.name }}"
+                 {% if topic_form.show_on_frontpage.data %}checked="checked"{% endif %}> {{ _('Show this topic on the frontpage') }}
+        </label>
+      </div>
+      <div class="checkbox">
+        <label for="input-show_in_navbar" style="font-weight:400">
+          <input type="checkbox" id="input-show_in_navbar" name="{{ topic_form.show_in_navbar.name }}"
+                 {% if topic_form.show_in_navbar.data %}checked="checked"{% endif %}> {{ _('Show this topic in the navbar') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group row clearfix" style="padding-right:0.75em">
+      <div class="col-md-3 col-md-offset-6">
+        <a href="{{ url_for('.topics') }}" class="btn btn-default pull-right" style="width:20em">{{ _('Cancel') }}</a>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" name="action_submit" class="btn btn-primary pull-right" style="width:20em">{{ submit_text }}</button>
+      </div>
+    </div>
+  </form>
+  {% else %}
+    <p class="text-warning">{{ _('Topics are not enabled in %(service_name)s.', service_name=service_name) }}</p>
+  {% endif %}
+{% endblock %}

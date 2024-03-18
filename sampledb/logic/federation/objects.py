@@ -22,6 +22,7 @@ from ..components import get_component_by_uuid, get_component, Component
 from ..groups import get_group
 from ..locations import get_location, get_object_location_assignments
 from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
+from ..object_log import create_object, edit_object
 from ..projects import get_project
 from ..users import get_user, check_user_exists
 from .. import errors, fed_logs, languages, markdown_to_html
@@ -143,10 +144,27 @@ def import_object(
                 user_id=user_id,
                 action_id=action_id,
                 utc_datetime=version['utc_datetime'],
-                allow_disabled_languages=True
+                allow_disabled_languages=True,
+                get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
             )
             if object:
                 fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
+                if user_id is not None:
+                    if version['fed_version_id'] == 0:
+                        create_object(
+                            user_id=user_id,
+                            object_id=object.id,
+                            utc_datetime=version['utc_datetime'],
+                            is_imported=True
+                        )
+                    else:
+                        edit_object(
+                            user_id=user_id,
+                            object_id=object.id,
+                            version_id=object.version_id,
+                            utc_datetime=version['utc_datetime'],
+                            is_imported=True
+                        )
                 did_perform_import = True
         elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
             object = update_object_version(
@@ -157,7 +175,8 @@ def import_object(
                 user_id=user_id,
                 action_id=action_id,
                 utc_datetime=version['utc_datetime'],
-                allow_disabled_languages=True
+                allow_disabled_languages=True,
+                get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
             )
             fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
             did_perform_import = True

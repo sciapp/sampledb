@@ -214,7 +214,6 @@ def show_action_type_form(type_id: typing.Optional[int]) -> FlaskResponseT:
                         flask.flash(_('Please fill out the form.'), 'error')
                         return show_action_type_form(type_id)
 
-                    int(translation['language_id'])
                     name = translation['name'].strip()
                     object_name = translation['object_name'].strip()
                     object_name_plural = translation['object_name_plural'].strip()

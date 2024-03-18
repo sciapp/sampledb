@@ -9,7 +9,7 @@ from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from .locations import _get_or_create_location_id, _parse_location_ref, LocationRef
 from ..locations import create_fed_assignment, get_fed_object_location_assignment, ObjectLocationAssignment, _get_mutable_object_location_assignment
 from ..components import Component
-from .. import errors, fed_logs
+from .. import errors, fed_logs, object_log
 from ...models import Object
 from ... import db
 
@@ -45,6 +45,8 @@ def import_object_location_assignment(
         assert component_id is not None
         assignment = create_fed_assignment(assignment_data['fed_id'], component_id, object.object_id, location_id, responsible_user_id, user_id, assignment_data['description'], assignment_data['utc_datetime'], assignment_data['confirmed'], assignment_data.get('declined', False))
         fed_logs.import_object_location_assignment(assignment.id, component.id)
+        if user_id:
+            object_log.assign_location(user_id, object_id=object.object_id, object_location_assignment_id=assignment.id, utc_datetime=assignment.utc_datetime, is_imported=True)
     elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.utc_datetime != assignment_data['utc_datetime']:
         assignment.location_id = location_id
         assignment.responsible_user_id = responsible_user_id

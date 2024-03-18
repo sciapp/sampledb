@@ -15,6 +15,7 @@ if typing.TYPE_CHECKING:
     from .locations import Location
     from .instrument_translation import InstrumentTranslation
     from .users import User
+    from .topics import Topic
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -23,6 +24,13 @@ instrument_user_association_table = db.Table(
     db.metadata,
     db.Column('instrument_id', db.Integer, db.ForeignKey('instruments.id')),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
+)
+
+topic_instrument_association_table = db.Table(
+    'instrument_topics',
+    db.metadata,
+    db.Column('instrument_id', db.Integer, db.ForeignKey('instruments.id')),
+    db.Column('topic_id', db.Integer, db.ForeignKey('topics.id'))
 )
 
 
@@ -49,6 +57,7 @@ class Instrument(Model):
     location: Mapped[typing.Optional['Location']] = relationship('Location')
     object_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('objects_current.object_id'), nullable=True)
     show_linked_object_data: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+    topics: Mapped[typing.List['Topic']] = relationship('Topic', secondary=topic_instrument_association_table, back_populates='instruments')
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Instrument"]]

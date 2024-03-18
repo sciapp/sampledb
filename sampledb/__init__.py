@@ -120,6 +120,7 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         is_ldap_configured=is_ldap_configured,
         get_action_types=sampledb.logic.action_types.get_action_types,
         get_translated_text=sampledb.logic.utils.get_translated_text,
+        get_topics=sampledb.logic.topics.get_topics,
         BeautifulSoup=BeautifulSoup,
         json=json,
         contact_email=app.config['CONTACT_EMAIL'],

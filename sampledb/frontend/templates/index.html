@@ -47,6 +47,19 @@
       </div>
       {% endif %}
     {% endfor %}
+    {% if not config['DISABLE_TOPICS'] %}
+      {% set frontpage_topics = get_topics(filter_frontpage=True) %}
+      {% if frontpage_topics %}
+        <h2>{{ _('Topics') }}</h2>
+        {% for topic in frontpage_topics %}
+        <div class="row">
+          <div class="col-md-offset-2 col-md-8">
+            <a href="{{ url_for('frontend.topic', topic_id=topic.id) }}" class="btn btn-block btn-lg btn-default" style="margin-top: 16px">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }}</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% endif %}
     </div>
   </div>
 {% endif %}

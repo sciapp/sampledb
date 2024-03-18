@@ -8,7 +8,7 @@ from .utils import _get_id, _get_uuid, _get_utc_datetime, _get_str, _get_dict
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
 from ..files import get_mutable_file, create_fed_file, hide_file, File
 from ..components import Component
-from .. import errors, fed_logs
+from .. import errors, fed_logs, object_log
 from ..utils import parse_url
 from ...models import Object
 from ... import db
@@ -108,6 +108,8 @@ def import_file(
         assert component_id is not None
         db_file = create_fed_file(object.object_id, user_id, file_data['data'], None, file_data['utc_datetime'], file_data['fed_id'], component_id)
         fed_logs.import_file(db_file.id, db_file.object_id, component.id)
+        if user_id is not None:
+            object_log.upload_file(user_id=user_id, object_id=object.object_id, file_id=db_file.id, utc_datetime=file_data['utc_datetime'], is_imported=True)
 
     file = File.from_database(db_file)
     if file_data['hide'] is not None and not file.is_hidden:

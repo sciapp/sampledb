@@ -253,8 +253,9 @@
         {% endif %}
       </div>
 
+      {% set hide_instrument_choice = action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}
       {% if not config['DISABLE_INSTRUMENTS'] %}
-      <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if action_form.instrument.choices | length == 1 and action_form.instrument.choices[0][0] == '-1' %}style="display: none"{% endif %}>
+      <div class="form-group {% if action_form.instrument.name in action_form.errors %}has-error{% endif %}" {% if hide_instrument_choice %}style="display: none"{% endif %}>
         <label for="input-instrument" class="control-label">{{ _('Instrument') }}</label>
         <select class="selectpicker form-control" id="input-instrument" name="{{ action_form.instrument.name }}" {% if not may_change_instrument %}disabled="disabled"{% endif %} data-none-selected-text="{{ _('No instrument selected') }}">
           {% for instrument_id, instrument_name in action_form.instrument.choices %}
@@ -264,6 +265,22 @@
       </div>
       {% else %}
         <input name="{{ action_form.instrument.name }}" type="hidden" value="-1" {% if not may_change_instrument %}disabled="disabled"{% endif %} />
+      {% endif %}
+
+      {% if not config['DISABLE_TOPICS'] %}
+      <div class="form-group {% if action_form.topics.name in action_form.errors %}has-error{% endif %}" {% if not action_form.topics.choices %}style="display: none"{% endif %}>
+        <label for="input-topics" class="control-label">{{ _('Topics') }}</label>
+        {% if not config['DISABLE_INSTRUMENTS'] %}
+          <label class="control-label pull-right" style="font-weight: normal; {% if hide_instrument_choice %}display: none;{% endif %}"><input type="checkbox" id="input-use-instrument-topics" name="{{ action_form.use_instrument_topics.name }}" {% if action_form.use_instrument_topics.data %}checked="checked"{% endif %} /> {{ _('Use the Topics of the Instrument') }}</label>
+        {% endif %}
+        <select class="selectpicker form-control" id="input-topics" name="{{ action_form.topics.name }}" data-none-selected-text="{{ _('No topic selected') }}" multiple="multiple">
+          {% for topic_id, topic_name in action_form.topics.choices %}
+            <option value="{{ topic_id }}"{% if topic_id in action_form.topics.data %}selected="selected"{% endif %}>{{ topic_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+        <input type="hidden" name="{{ action_form.use_instrument_topics.name }}" value="{% if action_form.use_instrument_topics.data %}yes{% endif %}">
       {% endif %}
 
       <div class="checkbox">

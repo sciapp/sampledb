@@ -12,6 +12,7 @@ import itsdangerous
 import flask
 import flask_login
 import wtforms
+import werkzeug
 from flask_babel import _
 from flask_wtf import FlaskForm
 import pytz
@@ -40,16 +41,22 @@ from ..logic.settings import get_user_settings, set_user_settings
 from ..logic.shares import get_shares_for_object
 from ..logic.locations import get_location, get_object_location_assignment
 from .users.forms import ToggleFavoriteInstrumentForm
-from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data
+from .utils import check_current_user_is_not_readonly, generate_qrcode, get_locations_form_data, parse_filter_id_params, build_modified_url
 from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 from ..logic.markdown_to_html import markdown_to_safe_html
+from ..logic.topics import set_instrument_topics, get_topics, get_topic
 from .validators import MultipleObjectIdValidator
 
 from ..models.permissions import Permissions
 from ..models.instrument_log_entries import InstrumentLogCategoryTheme
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
+
+INSTRUMENT_LIST_FILTER_PARAMETERS = (
+    'instrument_list_filters',
+    'topic_ids'
+)
 
 
 class MultipleIntegerField(SelectMultipleField):  # type: ignore[misc]
@@ -102,6 +109,32 @@ class ObjectLinkForm(FlaskForm):
     object_id = IntegerField(validators=[InputRequired()])
 
 
+def _parse_instrument_list_filters(
+        params: werkzeug.datastructures.MultiDict[str, str],
+        valid_topic_ids: typing.List[int]
+) -> typing.Tuple[
+    bool,
+    typing.Optional[typing.List[int]],
+]:
+    FALLBACK_RESULT = False, None
+    success, filter_topic_ids = parse_filter_id_params(
+        params=params,
+        param_aliases=['topic_ids'],
+        valid_ids=valid_topic_ids,
+        id_map={},
+        multi_params_error='',
+        parse_error=_('Unable to parse topic IDs.'),
+        invalid_id_error=_('Invalid topic ID.')
+    )
+    if not success:
+        return FALLBACK_RESULT
+
+    return (
+        True,
+        filter_topic_ids,
+    )
+
+
 @frontend.route('/instruments/')
 @flask_login.login_required
 def instruments() -> FlaskResponseT:
@@ -116,6 +149,41 @@ def instruments() -> FlaskResponseT:
         instruments.append(instrument)
     user_favorite_instrument_ids = get_user_favorite_instrument_ids(flask_login.current_user.id)
 
+    topics = get_topics()
+    valid_topic_ids = [topic.id for topic in topics]
+
+    if 'instrument_list_filters' in flask.request.args or any(any(flask.request.args.getlist(param)) for param in INSTRUMENT_LIST_FILTER_PARAMETERS):
+        (
+            success,
+            filter_topic_ids,
+        ) = _parse_instrument_list_filters(
+            params=flask.request.args,
+            valid_topic_ids=valid_topic_ids
+        )
+        if not success:
+            return flask.abort(400)
+    else:
+        filter_topic_ids = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_INSTRUMENT_LIST_FILTERS'].get('filter_topic_ids', [])
+
+    if filter_topic_ids is None or flask.current_app.config['DISABLE_TOPICS']:
+        filter_topic_ids = []
+
+    if filter_topic_ids:
+        instruments = [
+            instrument
+            for instrument in instruments
+            if any(topic in [topic.id for topic in instrument.topics] for topic in filter_topic_ids)
+        ]
+
+    filter_topic_infos = []
+    if filter_topic_ids:
+        for topic_id in filter_topic_ids:
+            topic = get_topic(topic_id)
+            filter_topic_infos.append({
+                'name': get_translated_text(topic.name, default=_('Unnamed Topic')),
+                'url': flask.url_for('.topic', topic_id=topic_id)
+            })
+
     # Sort by: favorite / not favorite, instrument name
     instruments.sort(key=lambda instrument: (
         0 if instrument.id in user_favorite_instrument_ids else 1,
@@ -128,8 +196,43 @@ def instruments() -> FlaskResponseT:
         user_favorite_instrument_ids=user_favorite_instrument_ids,
         toggle_favorite_instrument_form=toggle_favorite_instrument_form,
         get_user=get_user,
-        get_component=get_component
+        get_component=get_component,
+        topics=topics,
+        filter_topic_infos=filter_topic_infos,
+        filter_topic_ids=filter_topic_ids,
     )
+
+
+@frontend.route('/instruments/', methods=['POST'])
+@flask_login.login_required
+def save_instrument_list_defaults() -> FlaskResponseT:
+    if 'save_default_instrument_filters' in flask.request.form:
+        topics = get_topics()
+        valid_topic_ids = [topic.id for topic in topics]
+        success, filter_topic_ids = _parse_instrument_list_filters(
+            params=flask.request.form,
+            valid_topic_ids=valid_topic_ids
+        )
+        if not success:
+            return flask.abort(400)
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_INSTRUMENT_LIST_FILTERS': {
+                    'filter_topic_ids': filter_topic_ids,
+                }
+            }
+        )
+        return flask.redirect(build_modified_url('.instruments', blocked_parameters=INSTRUMENT_LIST_FILTER_PARAMETERS))
+    if 'clear_default_instrument_filters' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_INSTRUMENT_LIST_FILTERS': {}
+            }
+        )
+        return flask.redirect(build_modified_url('.instruments', blocked_parameters=INSTRUMENT_LIST_FILTER_PARAMETERS))
+    return flask.abort(400)
 
 
 @frontend.route('/instruments/<int:instrument_id>', methods=['GET', 'POST'])
@@ -412,6 +515,7 @@ class InstrumentForm(FlaskForm):
     is_hidden = BooleanField(default=False)
     location = SelectField()
     show_linked_object_data = BooleanField(default=True)
+    topics = SelectMultipleField()
 
 
 @frontend.route('/instruments/new', methods=['GET', 'POST'])
@@ -434,6 +538,21 @@ def new_instrument() -> FlaskResponseT:
         for user in get_users()
         if user.fed_id is None and (not user.is_hidden or (flask_login.current_user.is_admin and flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']))
     ]
+    instrument_form.topics.choices = [
+        (str(topic.id), topic)
+        for topic in get_topics()
+    ]
+    topic_ids_str = flask.request.args.get('topic_ids')
+    if topic_ids_str is not None:
+        valid_topic_id_strs = [
+            topic_id_str
+            for topic_id_str, topic in instrument_form.topics.choices
+        ]
+        instrument_form.topics.default = [
+            topic_id_str
+            for topic_id_str in topic_ids_str.split(',')
+            if topic_id_str in valid_topic_id_strs
+        ]
     all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
     instrument_form.location.choices = choices
     instrument_form.location.all_choices = all_choices
@@ -527,6 +646,12 @@ def new_instrument() -> FlaskResponseT:
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+        if not flask.current_app.config['DISABLE_TOPICS']:
+            topic_ids = [
+                int(topic_id)
+                for topic_id in instrument_form.topics.data
+            ]
+            set_instrument_topics(instrument.id, topic_ids)
 
         if instrument_form.location.data is not None and instrument_form.location.data != '-1':
             set_instrument_location(instrument.id, int(instrument_form.location.data))
@@ -611,6 +736,14 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
         str(user.id)
         for user in instrument.responsible_users
     ]
+    instrument_form.topics.choices = [
+        (str(topic.id), topic)
+        for topic in get_topics()
+    ]
+    instrument_form.topics.default = [
+        str(topic.id)
+        for topic in instrument.topics
+    ]
     all_choices, choices = get_locations_form_data(filter=lambda location: location.type is not None and location.type.enable_instruments)
     instrument_form.location.choices = choices
     instrument_form.location.all_choices = all_choices
@@ -651,6 +784,12 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
             for user_id in instrument_form.instrument_responsible_users.data
         ]
         set_instrument_responsible_users(instrument.id, instrument_responsible_user_ids)
+        if not flask.current_app.config['DISABLE_TOPICS']:
+            topic_ids = [
+                int(topic_id)
+                for topic_id in instrument_form.topics.data
+            ]
+            set_instrument_topics(instrument.id, topic_ids)
 
         if instrument_form.location.data is not None and instrument_form.location.data != '-1':
             set_instrument_location(instrument.id, int(instrument_form.location.data))

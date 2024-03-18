@@ -22,7 +22,7 @@ If you do not have Docker installed yet, please [install Docker](https://docs.do
 
 ### Using docker-compose
 
-First, get the [docker-compose.yml](https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml) configuration file. You can git clone this repo or just get the file:
+First, get the [docker-compose.yml](https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml.dist) configuration file. You can git clone this repo or just get the file:
 
 ```bash
 curl https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.yml.dist --output docker-compose.yml
@@ -63,7 +63,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.26.0
+    sciapp/sampledb:0.27.0
 ```
 
 ### Once it's started

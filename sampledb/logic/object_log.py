@@ -25,7 +25,8 @@ def object_log_entry_to_json(log_entry: ObjectLogEntry) -> typing.Dict[str, typi
         'object_id': log_entry.object_id,
         'user_id': log_entry.user_id,
         'data': {key: value for key, value in log_entry.data.items() if key not in ['object', 'sample', 'measurement']},
-        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        'utc_datetime': log_entry.utc_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+        'is_imported': log_entry.is_imported
     }
 
 
@@ -112,20 +113,34 @@ def get_object_log_entries(object_id: int, user_id: typing.Optional[int] = None)
     return process_object_log_entries(object_log_entries, user_id)
 
 
-def _store_new_log_entry(type: ObjectLogEntryType, object_id: int, user_id: int, data: typing.Dict[str, typing.Any]) -> None:
+def _store_new_log_entry(
+        type: ObjectLogEntryType,
+        object_id: int,
+        user_id: int,
+        data: typing.Dict[str, typing.Any],
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        is_imported: bool = False
+) -> None:
     object_log_entry = ObjectLogEntry(
         type=type,
         object_id=object_id,
         user_id=user_id,
         data=data,
-        utc_datetime=datetime.datetime.now(datetime.timezone.utc)
+        utc_datetime=datetime.datetime.now(datetime.timezone.utc) if utc_datetime is None else utc_datetime,
+        is_imported=is_imported
     )
     db.session.add(object_log_entry)
     db.session.commit()
     post_trigger_object_log_webhooks(object_log_entry)
 
 
-def create_object(user_id: int, object_id: int, previous_object_id: typing.Optional[int] = None) -> None:
+def create_object(
+        user_id: int,
+        object_id: int,
+        previous_object_id: typing.Optional[int] = None,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        is_imported: bool = False
+) -> None:
     data = {}
     if previous_object_id:
         data['previous_object_id'] = previous_object_id
@@ -133,18 +148,28 @@ def create_object(user_id: int, object_id: int, previous_object_id: typing.Optio
         type=ObjectLogEntryType.CREATE_OBJECT,
         object_id=object_id,
         user_id=user_id,
-        data=data
+        data=data,
+        utc_datetime=utc_datetime,
+        is_imported=is_imported
     )
 
 
-def edit_object(user_id: int, object_id: int, version_id: int) -> None:
+def edit_object(
+        user_id: int,
+        object_id: int,
+        version_id: int,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        is_imported: bool = False
+) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.EDIT_OBJECT,
         object_id=object_id,
         user_id=user_id,
         data={
             'version_id': version_id
-        }
+        },
+        utc_datetime=utc_datetime,
+        is_imported=is_imported
     )
 
 
@@ -182,25 +207,41 @@ def use_object_in_sample(user_id: int, object_id: int, sample_id: int) -> None:
     )
 
 
-def post_comment(user_id: int, object_id: int, comment_id: int) -> None:
+def post_comment(
+        user_id: int,
+        object_id: int,
+        comment_id: int,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        is_imported: bool = False
+) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.POST_COMMENT,
         object_id=object_id,
         user_id=user_id,
         data={
             'comment_id': comment_id
-        }
+        },
+        utc_datetime=utc_datetime,
+        is_imported=is_imported
     )
 
 
-def upload_file(user_id: int, object_id: int, file_id: int) -> None:
+def upload_file(
+        user_id: int,
+        object_id: int,
+        file_id: int,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        is_imported: bool = False
+) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.UPLOAD_FILE,
         object_id=object_id,
         user_id=user_id,
         data={
             'file_id': file_id
-        }
+        },
+        utc_datetime=utc_datetime,
+        is_imported=is_imported
     )
 
 
@@ -215,14 +256,22 @@ def create_batch(user_id: int, object_id: int, batch_object_ids: typing.List[int
     )
 
 
-def assign_location(user_id: int, object_id: int, object_location_assignment_id: int) -> None:
+def assign_location(
+        user_id: int,
+        object_id: int,
+        object_location_assignment_id: int,
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        is_imported: bool = False
+) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.ASSIGN_LOCATION,
         object_id=object_id,
         user_id=user_id,
         data={
             'object_location_assignment_id': object_location_assignment_id
-        }
+        },
+        utc_datetime=utc_datetime,
+        is_imported=is_imported
     )
 
 

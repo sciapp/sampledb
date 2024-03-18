@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-02-01 10:30+0100\n"
+"POT-Creation-Date: 2024-03-13 11:46+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.13.1\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -60,8 +60,17 @@ msgstr ""
 "Aktionen diesen Typs können nur von Administratoren erstellt oder "
 "bearbeitet werden."
 
+msgid "Unable to parse topic IDs."
+msgstr "Thema-ID konnte nicht geparst werden."
+
+msgid "Invalid topic ID."
+msgstr "Ungültige Thema-ID."
+
 msgid "Invalid user ID."
 msgstr "Ungültige Nutzer-ID."
+
+msgid "Unnamed Topic"
+msgstr "Unbenanntes Thema"
 
 msgid ""
 "The used template does not exist anymore. Use the JSON editor to edit the"
@@ -966,6 +975,12 @@ msgstr ""
 "%(scicat_name)s is aktuell nicht erreichbar, bitte versuchen Sie es "
 "später erneut."
 
+msgid "There was a problem saving the topic data."
+msgstr "Beim Speichern des Themas ist ein Fehler aufgetreten."
+
+msgid "The name is required."
+msgstr "Die Angabe eines Namens ist erforderlich."
+
 msgid "Please enter your contact email."
 msgstr "Bitte geben Sie Ihre Kontakt-E-Mail-Adresse ein."
 
@@ -1497,6 +1512,9 @@ msgstr "Orte"
 
 msgid "Publications"
 msgstr "Publikationen"
+
+msgid "Topics"
+msgstr "Themen"
 
 msgid "Other Databases"
 msgstr "Andere Datenbanken"
@@ -3410,6 +3428,12 @@ msgstr "Instrument"
 msgid "No instrument selected"
 msgstr "Kein Instrument ausgewählt"
 
+msgid "Use the Topics of the Instrument"
+msgstr "Die Themen des Instruments verwenden"
+
+msgid "No topic selected"
+msgstr "Kein Thema ausgewählt"
+
 msgid "Hide this action from action lists"
 msgstr "Diese Aktion aus Aktionslisten verstecken"
 
@@ -3628,6 +3652,12 @@ msgstr ""
 msgid "%(action_type)s Actions"
 msgstr "%(action_type)s-Aktionen"
 
+msgid "for topic:"
+msgstr "für das Thema:"
+
+msgid "for topics:"
+msgstr "für die Themen:"
+
 msgid ""
 "Actions represent processes like creating a sample or performing a "
 "measurement."
@@ -3637,6 +3667,15 @@ msgstr ""
 
 msgid "Create Action"
 msgstr "Aktion erstellen"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Filter by Topics"
+msgstr "Nach Themen filtern"
+
+msgid "Clear"
+msgstr "Leeren"
 
 msgid "Background Tasks"
 msgstr "Hintergrund-Aufgaben"
@@ -5063,12 +5102,6 @@ msgstr "Ort anzeigen"
 msgid "Show Responsible User"
 msgstr "Verantwortlichen Nutzer anzeigen"
 
-msgid "Clear"
-msgstr "Leeren"
-
-msgid "Filters"
-msgstr "Filter"
-
 msgid "Filter by User Activity"
 msgstr "Nach Nutzeraktivität filtern"
 
@@ -5093,10 +5126,16 @@ msgstr "Nach Aktion filtern"
 msgid "All actions"
 msgstr "Alle Aktionen"
 
+msgid "All Actions"
+msgstr "Alle Aktionen"
+
 msgid "Filter by Instrument"
 msgstr "Nach Instrument filtern"
 
 msgid "All instruments"
+msgstr "Alle Instrumente"
+
+msgid "All Instruments"
 msgstr "Alle Instrumente"
 
 msgid "Filter by Location"
@@ -5355,9 +5394,6 @@ msgstr "Dieses Objekt stellt folgende Gefahren dar:"
 
 msgid "No object selected"
 msgstr "Kein Objekt ausgewählt"
-
-msgid "All Actions"
-msgstr "Alle Aktionen"
 
 msgid "The following languages have been disabled for input:"
 msgstr "Die folgenden Sprachen wurden für Eingabe deaktiviert:"
@@ -5754,11 +5790,17 @@ msgstr ""
 "<a href=\"%(uploader_url)s\">%(uploader_name)s</a> hat die Datei "
 "hochgeladen."
 
+msgid "An unknown user has uploaded the file."
+msgstr "Ein unbekannter Nutzer hat die Datei hochgeladen."
+
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the title to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat den Titel aktualisiert"
 " zu:"
+
+msgid "An unknown user updated the title to:"
+msgstr "Ein unbekannter Nutzer hat den Titel aktualisiert zu:"
 
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the URL to:"
@@ -5766,11 +5808,17 @@ msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die URL aktualisiert "
 "zu:"
 
+msgid "An unknown user updated the URL to:"
+msgstr "Ein unbekannter Nutzer hat die URL aktualisiert zu:"
+
 #, python-format
 msgid "<a href=\"%(editor_url)s\">%(editor_name)s</a> updated the description to:"
 msgstr ""
 "<a href=\"%(editor_url)s\">%(editor_name)s</a> hat die Beschreibung "
 "aktualisiert zu:"
+
+msgid "An unknown user updated the description to:"
+msgstr "Ein unbekannter Nutzer hat die Beschreibung aktualisiert zu:"
 
 msgid "Hide"
 msgstr "Verstecken"
@@ -5841,6 +5889,16 @@ msgid ""
 msgstr ""
 "Dies wird Etiketten mit einem QR Code und einer optionalen ID und "
 "Etikettennummer erzeugen."
+
+msgid "Label Paper Format:"
+msgstr "Etikettenpapierformat:"
+
+msgid "Default / No Label Paper"
+msgstr "Standard / Kein Etikettenpapier"
+
+#, python-format
+msgid "Format #%(format_index)s"
+msgstr "Format #%(format_index)s"
 
 msgid "QR Code Width:"
 msgstr "QR-Code-Breite:"
@@ -5948,11 +6006,13 @@ msgstr ""
 msgid "%(user_ref)s edited the object."
 msgstr "%(user_ref)s hat das Objekt bearbeitet."
 
-msgid "View&nbsp;Version"
-msgstr "Version&nbsp;anzeigen"
-
-msgid "View&nbsp;Changes"
-msgstr "Änderungen&nbsp;anzeigen"
+#, python-format
+msgid ""
+"<a href=\"%(view_version_url)s\">View&nbsp;Version</a>&nbsp;/&nbsp;<a "
+"href=\"%(view_version_url_with_diff)s\">View&nbsp;Changes</a>"
+msgstr ""
+"<a href=\"%(view_version_url)s\">Version&nbsp;anzeigen</a>&nbsp;/&nbsp;<a"
+" href=\"%(view_version_url_with_diff)s\">Änderungen&nbsp;anzeigen</a>"
 
 #, python-format
 msgid ""
@@ -6017,12 +6077,12 @@ msgstr "%(user_ref)s hat eine Datei eingetragen."
 #, python-format
 msgid ""
 "%(user_ref)s assigned this object to location <a "
-"href=\"%(location_url)s\">%(location_name)s</a> and user <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a>."
+"href=\"%(location_url)s\">%(location_name)s</a> and user "
+"%(other_user_ref)s."
 msgstr ""
 "%(user_ref)s hat das Objekt dem Ort <a "
-"href=\"%(location_url)s\">%(location_name)s</a> und Nutzer <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
+"href=\"%(location_url)s\">%(location_name)s</a> und dem Nutzer "
+"%(other_user_ref)s zugewiesen."
 
 #, python-format
 msgid ""
@@ -6033,12 +6093,8 @@ msgstr ""
 "href=\"%(location_url)s\">%(location_name)s</a> zugewiesen."
 
 #, python-format
-msgid ""
-"%(user_ref)s assigned this object to user <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a>."
-msgstr ""
-"%(user_ref)s hat das Objekt dem Nutzer <a "
-"href=\"%(other_user_url)s\">%(other_user_name)s</a> zugewiesen."
+msgid "%(user_ref)s assigned this object to user %(other_user_ref)s."
+msgstr "%(user_ref)s hat das Objekt dem Nutzer %(other_user_ref)s zugewiesen."
 
 #, python-format
 msgid ""
@@ -6104,6 +6160,17 @@ msgstr ""
 #, python-format
 msgid "%(user_ref)s imported this object from an .eln file."
 msgstr "%(user_ref)s hat dieses Objekt aus einer .eln-Datei importiert."
+
+#, python-format
+msgid "Log entry from %(component_name)s"
+msgstr "Log-Eintrag von %(component_name)s"
+
+#, python-format
+msgid "Log entry from .eln file #%(eln_import_id)s"
+msgstr "Log-Eintrag aus .eln-Datei #%(eln_import_id)s"
+
+msgid "Imported log entry"
+msgstr "Importierter Log-Eintrag"
 
 #, python-format
 msgid ""
@@ -6284,8 +6351,8 @@ msgstr "Bitte wählen Sie ein Papierformat aus."
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
-msgid "Please enter a number greater or equal to {value}."
-msgstr "Bitte geben Sie eine Zahl größer oder gleich {value} ein."
+msgid "Please select an existing label paper format."
+msgstr "Bitte wählen Sie ein existierendes Etikettenpapierformat aus."
 
 msgid "Please select which data should be stored in the qr codes."
 msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
@@ -6694,6 +6761,50 @@ msgstr ""
 
 msgid "Create Project Group"
 msgstr "Projektgruppe erstellen"
+
+msgid "Topic"
+msgstr "Themen"
+
+msgid "Yes, this topic should be shown on the frontpage"
+msgstr "Ja, dieses Thema auf Startseite anzeigen"
+
+msgid "No, this topic should not be shown on the frontpage"
+msgstr "Nein, dieses Thema nicht auf Startseite anzeigen"
+
+msgid "Yes, this topic should be shown in the navbar"
+msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
+
+msgid "No, this topic should not be shown in the navbar"
+msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
+
+msgid "Modify the settings for this topic."
+msgstr "Einstellungen für dieses Thema modifizieren."
+
+msgid "Edit Topic"
+msgstr "Thema bearbeiten"
+
+#, python-format
+msgid "Topics are not enabled in %(service_name)s."
+msgstr "Themen sind in %(service_name)s nicht aktiviert."
+
+msgid "shown in the topic list"
+msgstr "wird in der Themenliste angezeigt"
+
+msgid "Show this topic on the frontpage"
+msgstr "Thema auf Startseite anzeigen"
+
+msgid "Show this topic in the navbar"
+msgstr "Aktionen dieses Themas in der Navigationsleiste anzeigen"
+
+#, python-format
+msgid "Topics allow filtering information in %(service_name)s."
+msgstr "Themen erlauben das Filtern von Informationen in %(service_name)s."
+
+msgid "Create Topic"
+msgstr "Thema erstellen"
+
+msgid "View Instruments"
+msgstr "Instrumente anzeigen"
 
 msgid "Use FIDO2 Passkey"
 msgstr "FIDO2 Passkey verwenden"
@@ -7142,10 +7253,6 @@ msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
 msgid "Imported User"
 msgstr "Importierter Nutzer"
-
-#, python-format
-msgid "Imported User (#%(user_id)s%(db_ref)s)"
-msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
 
 #, python-format
 msgid ""

@@ -1,0 +1,52 @@
+{% if schema['items'].type == 'text' and 'choices' in schema['items'] %}
+  {% if data is none %}
+    {% set data = [] %}
+  {% endif %}
+  <div class="form-group row error-parent" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="list" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}" data-name="{{ id_prefix }}_parent">
+    <div class="col-md-3 control-label">
+      {% if schema.title %}<strong><span {% if is_required and schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }}{% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
+    </div>
+    {% set is_required = True %}
+    <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
+    <div class="col-md-9">
+      <select
+        data-sampledb-choice-array="{{ id_prefix }}"
+        multiple="multiple"
+        data-none-selected-text="{{ _('Nothing selected') }}"
+        {% if schema.get('maxItems') is not none %}
+          data-max-options="{{ schema.maxItems }}"
+        {% endif %}
+        {% if is_template %}
+          class="template-select" data-template-class="form-control selectpicker choicepicker"
+        {% else %}
+          class="choicepicker form-control selectpicker"
+        {% endif %}
+      >
+        {% for option in schema['items'].choices %}
+          <option
+            value="{{ option }}"
+            data-value-base64="{{ option | base64encode }}"
+            {% if form_data %}
+              {% for i in range(schema['items'].choices | length) %}
+                {% if form_data.get(id_prefix + "_" + (i | string) + "__text") == option | string  %}
+                  selected="selected"
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              {% for item in data %}
+                {% if item['text'] == option %}
+                  selected="selected"
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          >{{ option | get_translated_text }}</option>
+        {% endfor %}
+      </select>
+      {% block property_errors %}
+      <span class="help-block error-note"></span>
+      {% endblock %}
+    </div>
+  </div>
+{% else %}
+  {% include "objects/forms/form_list_array.html" %}
+{% endif %}
