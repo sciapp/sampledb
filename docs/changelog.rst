@@ -4,7 +4,7 @@ Changelog
 Version 0.27
 ------------
 
-Currently under development.
+Released on March 18th, 2024.
 
 - Added ``choice`` array style for multi selection dropdowns
 - Introduce action topics and allow filtering action lists by topics
