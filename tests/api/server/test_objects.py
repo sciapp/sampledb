@@ -58,6 +58,10 @@ def action():
                 'file': {
                     'title': 'Example File',
                     'type': 'file'
+                },
+                'other': {
+                    'title': 'Other Property',
+                    'type': 'text'
                 }
             },
             'required': ['name']
@@ -1083,6 +1087,10 @@ def test_search_objects(flask_server, auth, user, other_user, action):
         'name': {
             '_type': 'text',
             'text': 'Example'
+        },
+        'other': {
+            '_type': 'text',
+            'text': 'Test'
         }
     }
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
@@ -1208,6 +1216,50 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "action_id": object.action_id,
             "schema": object.schema,
             "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test2"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test2"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+            "data": {"name": {"_type": "text", "text": "Example"}},
             "fed_object_id": object.fed_object_id,
             "fed_version_id": object.fed_version_id,
             "component_id": object.component_id

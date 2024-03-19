@@ -1033,9 +1033,11 @@ class VersionedJSONSerializableObjectTables:
 
             sorting_func = default_sorting_func
 
+        # use data_full column for filtering, as data might only contain the name property
+        filter_data_column = table.c.data_full if hasattr(table.c, 'data_full') else table.c.data
         # set object_id_column to allow access to table.c.object_id in filter_func (e.g. for file search)
-        table.c.data.object_id_column = table.c.object_id
-        select_statement = select_statement.where(filter_func(table.c.data))
+        filter_data_column.object_id_column = table.c.object_id
+        select_statement = select_statement.where(filter_func(filter_data_column))
         select_statement = select_statement.order_by(sorting_func(table.c, self._previous_table.c))
 
         if limit is not None:

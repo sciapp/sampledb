@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.28
+------------
+
+Currently in development.
+
+- Fixed search via API in combination with name_only parameter
+
 Version 0.27
 ------------
 
