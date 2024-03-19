@@ -7,6 +7,7 @@ import typing
 
 import flask
 import sqlalchemy
+from sqlalchemy.dialects import postgresql
 
 from .. import db
 from . import errors
@@ -412,13 +413,13 @@ def get_object_table_with_permissions(
     if name_only:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id
+        o.object_id, o.version_id, o.action_id, jsonb_set('{"name": {"_type": "text", "text": ""}}', '{name,text}', o.name_cache::jsonb) as data, '{"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}}'::jsonb as schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id, o.data as data_full
         FROM objects_current AS o
         """
     else:
         stmt = """
         SELECT
-        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id
+        o.object_id, o.version_id, o.action_id, o.data, o.schema, o.user_id, o.utc_datetime, o.fed_object_id, o.fed_version_id, o.component_id, o.eln_import_id, o.eln_object_id, o.data as data_full
         FROM objects_current AS o
         """
 
@@ -544,6 +545,7 @@ def get_object_table_with_permissions(
         Objects._current_table.c.component_id,
         Objects._current_table.c.eln_import_id,
         Objects._current_table.c.eln_object_id,
+        db.column('data_full', postgresql.JSONB)
     ).subquery()
     return table, parameters
 
