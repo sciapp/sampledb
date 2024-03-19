@@ -174,13 +174,15 @@
         const wrapper = choicePicker.closest('.error-parent');
         const idPrefix = choicePicker.data('sampledb-choice-array');
         wrapper.find(`input[type="hidden"][name!="${idPrefix}_hidden"]`).remove();
-        $.each(choicePicker.selectpicker('val'), function (index, value) {
-          const name = `${idPrefix}_${index}__text`;
-          const element = $('<input type="hidden" />');
-          element.attr("name", name);
-          element.attr("value", value);
-          wrapper.append(element);
-        });
+        if (!choicePicker.prop('disabled')) {
+          $.each(choicePicker.selectpicker('val'), function (index, value) {
+            const name = `${idPrefix}_${index}__text`;
+            const element = $('<input type="hidden" />');
+            element.attr("name", name);
+            element.attr("value", value);
+            wrapper.append(element);
+          });
+        }
       });
 
       $('.typeahead').each(function() {
@@ -579,7 +581,7 @@
     elements.filter(`[id^="action_${oldIDPrefix}_"]`).each(function (_, element) {
       element.id = 'action_' + newIDPrefix + element.id.substring('action_'.length + oldIDPrefix.length);
     });
-    for (const dataAttribute of ['id-prefix', 'condition-wrapper-for', 'condition-replacement-for']) {
+    for (const dataAttribute of ['id-prefix', 'condition-wrapper-for', 'condition-replacement-for', 'sampledb-choice-array']) {
       elements.filter(`[data-${dataAttribute}^="${oldIDPrefix}_"], [data-${dataAttribute}="${oldIDPrefix}"]`).each(function (_, element) {
         $(element).attr(`data-${dataAttribute}`, newIDPrefix + $(element).data(dataAttribute).substring(oldIDPrefix.length));
         $(element).data(dataAttribute, $(element).attr(`data-${dataAttribute}`));
