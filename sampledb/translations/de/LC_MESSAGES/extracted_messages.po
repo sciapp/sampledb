@@ -7542,10 +7542,6 @@ msgid "Imported User"
 msgstr "Importierter Nutzer"
 
 #, python-format
-msgid "Imported User (#%(user_id)s%(db_ref)s)"
-msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
-
-#, python-format
 msgid "Federated login is disabled for %(service_name)s."
 msgstr "Die föderierte Anmeldung ist für %(service_name)s deaktiviert."
 

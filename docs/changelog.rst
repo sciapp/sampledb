@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.31
+------------
+
+Currently in development.
+
+- Added federated login
+
+
 Version 0.30
 ------------
 
@@ -18,7 +26,6 @@ Released on December 9th, 2024.
 - Fixed notification for user languages change
 - Changed PostgreSQL version in the documentation and the docker-compose.yml.dist from 12 to 15, as PostgreSQL 12 is now end-of-life
 - Fixed handling of parentheses and chained operators in advanced search
-
 
 Version 0.29.1
 --------------
@@ -91,7 +98,6 @@ Released on March 18th, 2024.
 - Added new array index diff syntax for updating data via the HTTP API
 - Added creation of activity log entries during import of objects from other databases
 - Added initial support for custom templates
-- Added federated login
 
 Version 0.26
 ------------
