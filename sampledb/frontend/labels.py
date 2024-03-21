@@ -126,7 +126,6 @@ def create_multiple_labels(
         show_id_on_label: bool = True,
         label_dimension: typing.Optional[dict[str, typing.Any]] = None
 ) -> bytes:
-
     vertical_label_margin = VERTICAL_LABEL_MARGIN / 4
     horizontal_label_margin = HORIZONTAL_LABEL_MARGIN / 4
 
@@ -174,6 +173,8 @@ def create_multiple_labels(
                 label_width = qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
                     max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
                         len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2
+                if len(hazard_list[tmp_index]) == 0:
+                    label_width += 2
             else:
                 label_width = ghs_width * len(hazard_list[tmp_index]) + (
                     max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
@@ -280,9 +281,11 @@ def create_multiple_labels(
                 max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
                     len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2)
 
-            second_box_width_list.append(qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
+            second_box_width_list.append(2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
                 max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
                     len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2)
+            if len(hazard_list[tmp_index]) == 0:
+                second_box_width_list[tmp_index] += 2
 
             third_box_width_list.append(max(15.0, max(len(object_name_list[tmp_index]), len(username_list[tmp_index]),
                                                       len(creation_date_list[tmp_index]),
@@ -391,6 +394,8 @@ def create_multiple_labels(
         object_name = object_specifications[object_id]["object_name"]
         object_url = object_specifications[object_id]["object_url"]
         sample_code = object_id
+        label_dimension = label_dimension
+
         if only_id_qr_code:
             url = sample_code
         else:
@@ -400,59 +405,101 @@ def create_multiple_labels(
         image.save(image_stream, format='png')
         image_stream.seek(0)
         qr_code_uri = 'data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
-
-        qrcode_width = qr_code_width
         qr_quantity = quantity
-        outer_box_width = paper_width
         show_id = show_id_on_label
         add_label_nr = add_label_number
         add_maximum_label_nr = add_maximum_label_number
+        qrcode_width = qr_code_width
+        box_height = max(math.floor(qrcode_width + 0.5), 6)
+        has_label_dimension = False
+        horizontal_label_margin = 0
+        vertical_label_margin = 0
+        text_left = 1 + qr_code_width
+        text_top = ((qr_code_width - 3) / 4)
+        text_name_top = ((qr_code_width - 3) / 4) * 3
+        labels_on_page = 0
+
+        if not show_id and not add_label_nr and not add_maximum_label_nr:
+            text_name_top = (qr_code_width - 3) / 2
+        if qr_code_width <= 6:
+            text_top = 0.125
+            text_name_top = 3.125
+
         if show_id:
             if add_label_nr:
                 if add_maximum_label_nr:
-                    box_width = qr_code_width + len(str(object_name)) + (2 * len(str(qr_quantity))) + 6
+                    box_width = qr_code_width + max((len(str(object_id)) * 2.8) + (2 * len(str(qr_quantity))) + 6,
+                                                    len(object_name) * 2.2)
+                    if qr_quantity >= 10:
+                        box_width += 2.8
                     if qr_quantity >= 100:
                         box_width += 2.8
-                    if qr_quantity == 1000:
-                        box_width += 2.8
                 else:
-                    box_width = qr_code_width + 2.8 + len(str(object_name)) + len(str(qr_quantity))
+                    box_width = qr_code_width + max(2.8 + (len(str(object_id)) * 2.8) + len(str(qr_quantity)),
+                                                    len(object_name) * 2.2)
+                    if qr_quantity >= 10:
+                        box_width += 2.8
                     if qr_quantity >= 100:
                         box_width += 2.8
             else:
-                box_width = qr_code_width + 2.8 + len(str(object_name))
+                box_width = qr_code_width + max(2.8 + (len(str(object_id)) * 2.8), len(object_name) * 2.2)
         elif add_label_nr:
             if add_maximum_label_nr:
-                box_width = qr_code_width + (2 * len(str(qr_quantity))) + 5.6
+                box_width = qr_code_width + max((2 * len(str(qr_quantity))) + 5.6, len(object_name) * 2.2)
                 if qr_quantity >= 100:
                     box_width += 2.8
                 if qr_quantity == 1000:
                     box_width += 2.8
             else:
-                box_width = qr_code_width + len(str(qr_quantity)) + 2.8
+                box_width = qr_code_width + max(len(str(qr_quantity)) + 2.8, len(object_name) * 2.2)
                 if qr_quantity >= 100:
                     box_width += 2.8
         else:
-            box_width = qr_code_width
+            box_width = qr_code_width + len(object_name) * 2.2
 
-        box_height = math.floor(qrcode_width + 0.5)
-        text_width = 1 + qr_code_width
-        text_height = (qr_code_width - 3) / 2.0
-        row_quantity = int((paper_width - (2 * 10)) / box_width)
-        row_amount = math.ceil(qr_quantity / row_quantity)
+        if str(label_dimension) != "None":
+            if label_dimension["paper_format"] == 0:
+                paper_height = paper_formats["DIN A4 (Portrait)"][0]
+                paper_width = paper_formats["DIN A4 (Portrait)"][1]
+            elif label_dimension["paper_format"] == 1:
+                paper_height = paper_formats["DIN A4 (Landscape)"][0]
+                paper_width = paper_formats["DIN A4 (Landscape)"][1]
+            elif label_dimension["paper_format"] == 2:
+                paper_height = paper_formats["Letter (Portrait)"][0]
+                paper_width = paper_formats["Letter (Portrait)"][1]
+            elif label_dimension["paper_format"] == 3:
+                paper_height = paper_formats["Letter (Landscape)"][0]
+                paper_width = paper_formats["Letter (Landscape)"][1]
+            qrcode_width = label_dimension["qr_code_width"]
+            box_width = label_dimension["label_width"]
+            box_height = label_dimension["label_height"]
+            horizontal_label_margin = label_dimension["margin_horizontal"] / 2
+            vertical_label_margin = label_dimension["margin_vertical"] / 2 - 0.25
+            labels_in_row = label_dimension["labels_in_row"]
+            labels_in_col = label_dimension["labels_in_col"]
+            has_label_dimension = True
+            text_name_top += 2
+            labels_on_page = labels_in_row * labels_in_col
 
-        out_box_width = paper_width - 10
-        out_box_height = paper_height - 15
+        elif qr_code_width <= 8 and not has_label_dimension:
+            text_top -= 0.5
+            text_name_top += 0.5
+        qr_code_top = (box_height - qr_code_width) / 2
+        outer_box_width = paper_width
+        out_box_width = paper_width - 11.5
+        out_box_height = paper_height - 4.5
+        text_width = box_width - qr_code_width - 1.5
         html = flask.render_template("labels/QRCode.html", qr_code_uri=qr_code_uri, sample_code=sample_code,
                                      box_width=box_width, include_qrcode=include_qrcode_in_long_labels,
-                                     box_height=box_height, paper_width=paper_width,
+                                     box_height=box_height, paper_width=paper_width, object_name=object_name,
                                      paper_height=paper_height, vertical_label_margin=vertical_label_margin,
-                                     horizontal_label_margin=horizontal_label_margin, qrcode_width=qr_code_width,
+                                     horizontal_label_margin=horizontal_label_margin, qrcode_width=qrcode_width,
                                      qr_quantity=qr_quantity, show_id=show_id, add_label_nr=add_label_nr,
                                      add_maximum_label_nr=add_maximum_label_nr, outer_box_width=outer_box_width,
-                                     row_quantity=row_quantity, row_amount=row_amount, text_width=text_width,
-                                     text_height=text_height, out_box_width=out_box_width,
-                                     out_box_height=out_box_height)
+                                     text_left=text_left, text_top=text_top, text_name_top=text_name_top,
+                                     out_box_width=out_box_width, out_box_height=out_box_height,
+                                     has_label_dimension=has_label_dimension, text_width=text_width,
+                                     qr_code_top=qr_code_top, labels_on_page=labels_on_page)
 
     else:
         box_width = max(label_width, min_label_width)
