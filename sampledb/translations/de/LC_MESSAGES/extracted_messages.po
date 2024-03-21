@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-03-14 14:34+0100\n"
+"POT-Creation-Date: 2024-03-15 06:17+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -7452,10 +7452,6 @@ msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
 msgid "Imported User"
 msgstr "Importierter Nutzer"
-
-#, python-format
-msgid "Imported User (#%(user_id)s%(db_ref)s)"
-msgstr "Importierter Nutzer (#%(user_id)s%(db_ref)s)"
 
 #, python-format
 msgid "Federated login is disabled for %(service_name)s."
