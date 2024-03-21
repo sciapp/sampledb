@@ -218,6 +218,10 @@ Federation
      - If set, users will have aliases using their profile information by default (default: False). This will not apply to bot users or imported users.
    * - SAMPLEDB_ENABLE_FEDERATION_DISCOVERABILITY
      - If set, this instance will be discoverable by other databases in the same federation. (default: True).
+   * - SAMPLEDB_ENABLE_FEDERATED_LOGIN
+     - If set, users can authenticate using the login of an other database in the same federation. (default: False).
+   * - SAMPLEDB_ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER
+     - If set, users can create a new user as the local user for the federated identity when using federation login. (default: False).
 
 .. _monitoring_dashboard_configuration:
 

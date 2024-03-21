@@ -68,3 +68,19 @@ The databases that are connected to a SampleDB instance either directly or via o
     :alt: A federation graph
 
     A federation graph
+
+Federated Login
+---------------
+
+The federated login allows users to authenticate using the login of a federation partner.
+
+To enable this feature, the environment variable :ref:`SAMPLEDB_ENABLE_FEDERATED_LOGIN <federation_configuration>` can be set to ``true``. The federated login requires that both instances have set this environment variable.
+
+After both instances have set up the environment variables, it is required to import updates on both instances so that metadata can be imported.
+
+.. note::
+    To enable the login with a federation partner, it is required that, when importing updates, the other database already has the metadata. This means the database that imports updates as the first one after activating this feature must import a second time as soon as the other database has also imported updates.
+
+If set up properly, an additional button ("Sign in with …") will be added to the sign in page for each federation partner that is available for the federated login.
+
+When using the federated login, the user must have a federated identity on the target database which links an existing local user with the used federated user from the other database. As an alternative to linking a local user, it is also possible to enable that new users can be created. To allow this, the environment variable :ref:`SAMPLEDB_ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER <federation_configuration>` can be set to ``true``.

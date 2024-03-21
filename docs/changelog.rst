@@ -7,6 +7,7 @@ Version 0.29
 - Fixed simple search query escaping to support searching for special characters
 - Fixed handling of property named tags that contains an array or an object instead of tags
 - Fixed indentation level styling
+- Added federated login
 
 Version 0.28.2
 --------------
@@ -60,7 +61,6 @@ Released on March 18th, 2024.
 - Added new array index diff syntax for updating data via the HTTP API
 - Added creation of activity log entries during import of objects from other databases
 - Added initial support for custom templates
-- Added federated login
 
 Version 0.26
 ------------
