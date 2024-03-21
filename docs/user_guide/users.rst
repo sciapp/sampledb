@@ -108,6 +108,7 @@ To create federated identities, there are two different ways:
 - The first way is that users can create federated identities by themselves. For that, the users have to verify their identity by authenticating with the federation partner through the "Sign in to …" button in the federation overview.
 - As an alternative, if the local and federated users share the same email address, a federated identity will be created automatically when updates are imported.
 
+When users have federated identities that were created automatically, these federated identities are not verified, so they cannot be used directly for the federated login. To verify, the users have to use the "Sign in to…" button in the federation overview or use the federated login and authenticate locally.
 
 .. figure:: ../static/img/generated/federated_identity.png
     :alt: Federated Identity Overview
@@ -119,3 +120,19 @@ In addition to the federated identities used with federation partners, users can
 
 .. note::
     When setting up a federated identity for users from ELN files, the importing users can only create a federated identity for themselves.
+
+
+Federated Login
+---------------
+
+If an administrator enabled this feature, it is possible that users can authenticate using the login of a federation partner.
+To sign in to |service_name| using the federated login, the user can use the "Sign in with …" button on the sign in page.
+
+When using this method, the users will first be redirected to the federation partner, where they have to authenticate.
+After the authentication is successful, the user is redirected back to |service_name|.
+If the federation user, which is used for authentication, already has a federated identity that is verified, the user will be directly signed in to that user.
+Otherwise, if no federated identity exists or has not been verified, the users have to login to a local user additionally.
+After this, it is ensured that a verified federated identity exists, and the last step does not have to be done again.
+
+If an administrator enabled the creation of new users, then users who do not have an account with a verified federated identity will be able to create
+a new user who has a federated identity with the federation user.
