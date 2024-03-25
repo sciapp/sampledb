@@ -394,7 +394,6 @@ def create_multiple_labels(
         object_name = object_specifications[object_id]["object_name"]
         object_url = object_specifications[object_id]["object_url"]
         sample_code = object_id
-        label_dimension = label_dimension
 
         if only_id_qr_code:
             url = sample_code
@@ -415,13 +414,13 @@ def create_multiple_labels(
         horizontal_label_margin = 0
         vertical_label_margin = 0
         text_left = 1 + qr_code_width
-        text_top = ((qr_code_width - 3) / 4)
+        text_top = (qr_code_width - 3) / 4
         text_name_top = ((qr_code_width - 3) / 4) * 3
         labels_on_page = 0
 
         if not show_id and not add_label_nr and not add_maximum_label_nr:
             text_name_top = (qr_code_width - 3) / 2
-        if qr_code_width <= 6:
+        if qr_code_width <= 6 and not has_label_dimension:
             text_top = 0.125
             text_name_top = 3.125
 
@@ -457,7 +456,7 @@ def create_multiple_labels(
         else:
             box_width = qr_code_width + len(object_name) * 2.2
 
-        if str(label_dimension) != "None":
+        if label_dimension is not None:
             if label_dimension["paper_format"] == 0:
                 paper_height = paper_formats["DIN A4 (Portrait)"][0]
                 paper_width = paper_formats["DIN A4 (Portrait)"][1]
@@ -480,8 +479,10 @@ def create_multiple_labels(
             has_label_dimension = True
             text_name_top += 2
             labels_on_page = labels_in_row * labels_in_col
+            if qrcode_width > 7:
+                text_top = 0.125
 
-        elif qr_code_width <= 8 and not has_label_dimension:
+        if qr_code_width <= 8 and not has_label_dimension:
             text_top -= 0.5
             text_name_top += 0.5
         qr_code_top = (box_height - qr_code_width) / 2
