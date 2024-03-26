@@ -20,13 +20,8 @@
           <input type="checkbox" data-toggle="toggle" data-size="mini" data-width="200px" data-on="{{ _('Show all') }}" data-off="{{ _('Show on interaction') }}" />
         </label>
       </div>
-      <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-        window.plotly_charts.push(
-          [
-            'plotly_plot_div_{{ plot_id }}',
-            {{ data | timeline_array_to_plotly_chart | tojson | safe }}
-          ]
-        );
+      <script type="application/json" data-sampledb-plotly-chart="plotly_plot_div_{{ plot_id }}">
+        {{ data | timeline_array_to_plotly_chart | tojson | safe }}
       </script>
       {% for item in data %}
         {% set schema = schema['items'] %}
