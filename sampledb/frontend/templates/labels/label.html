@@ -1,0 +1,90 @@
+<html lang="en">
+    <head>
+        <title>SampleDB</title>
+        <style>
+            @page {
+                size: {{ paper_width }}mm {{ paper_height }}mm;
+                margin: 7.5mm 5mm;
+            }
+            .ghs {
+                width: {{ghs_width}}mm;
+                height: {{ghs_width}}mm;
+                background-size: contain;
+            }
+            .ghs00 {
+                background-image: url({{ GHS_IMAGE_URIS[0] }});
+            }
+            .ghs01 {
+                background-image: url({{ GHS_IMAGE_URIS[1] }});
+            }
+            .ghs02 {
+                background-image: url({{ GHS_IMAGE_URIS[2] }});
+            }
+            .ghs03 {
+                background-image: url({{ GHS_IMAGE_URIS[3] }});
+            }
+            .ghs04 {
+                background-image: url({{ GHS_IMAGE_URIS[4] }});
+            }
+            .ghs05 {
+                background-image: url({{ GHS_IMAGE_URIS[5] }});
+            }
+            .ghs06 {
+                background-image: url({{ GHS_IMAGE_URIS[6] }});
+            }
+            .ghs07 {
+                background-image: url({{ GHS_IMAGE_URIS[7] }});
+            }
+            .ghs08 {
+                background-image: url({{ GHS_IMAGE_URIS[8] }});
+            }
+            .ghs09 {
+                background-image: url({{ GHS_IMAGE_URIS[9] }});
+            }
+            .qrcode {
+                width: {{qrcode_width}}mm;
+                height: {{qrcode_width}}mm;
+                background-size: contain;
+            }
+            body {
+                font-size: 8pt;
+                font-family: FreeSans;
+                line-height: 125%;
+            }
+            .outbox {
+                margin: {{horizontal_label_margin}}mm {{horizontal_label_margin}}mm;
+                display: flex;
+                align-items: center;
+                border: 1.5px solid black;
+                height: {{box_height}}mm;
+            }
+            .labeltext {
+                padding: 0 1mm;
+            }
+        </style>
+    </head>
+    <body>
+        {% for I in range (0,object_amount) %}
+            {% for i in range(0,label_amount) %}
+                <div class="outbox" style="width: {{box_width_list[I]}}mm">
+                    <div class="labeltext">
+                        <b>{{ object_name_list[I] }}</b> &bullet; #{{ sample_code_list[I] }}<br>
+                            {{ username_list[I] }}
+                            {% if include_qrcode %}
+                            <br>
+                            {{ creation_date_list[I] }}
+                            {% else %}
+                            &bullet; {{ creation_date_list[I] }}
+                            {% endif %}
+                    </div>
+                    {% for hazard_code in hazard_list[I] %}
+                        <div class="ghs ghs0{{hazard_code}}"></div>
+                    {% endfor %}
+                    {% if include_qrcode %}
+                    <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </body>
+</html>
