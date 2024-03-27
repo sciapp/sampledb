@@ -160,7 +160,7 @@ function newPolicyAddUserSelect () {
 function editPolicyAddUserSelect () {
   const $select = $('#edit_share_user_picker');
   const userID = $select.val();
-  if (!(userID in newPolicySelectedUsers)) {
+  if (!(userID in editPolicySelectedUsers)) {
     editPolicySelectedUsers[userID] = users[editSelectedComponentID][userID];
     const userName = editPolicySelectedUsers[userID];
     const usersTableBody = $('#edit_policy_users_tbody');
