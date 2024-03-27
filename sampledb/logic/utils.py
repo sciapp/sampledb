@@ -367,7 +367,7 @@ def get_data_and_schema_by_id_path(
             return None
         if id_path[0] < 0 or id_path[0] >= len(data):
             return None
-        return get_data_and_schema_by_id_path(data[id_path[0]], schema['items'], id_path[1:])
+        return get_data_and_schema_by_id_path(data[id_path[0]], schema['items'], id_path[1:], convert_id_path_elements=convert_id_path_elements)
     if schema.get('type') == 'object':
         if not isinstance(data, dict):
             return None
@@ -379,7 +379,7 @@ def get_data_and_schema_by_id_path(
             return None
         if id_path[0] not in data:
             return None
-        return get_data_and_schema_by_id_path(data[id_path[0]], schema['properties'][id_path[0]], id_path[1:])
+        return get_data_and_schema_by_id_path(data[id_path[0]], schema['properties'][id_path[0]], id_path[1:], convert_id_path_elements=convert_id_path_elements)
     return None
 
 
