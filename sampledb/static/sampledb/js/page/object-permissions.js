@@ -143,53 +143,24 @@ function editPolicyAddUserSelect () {
   updateEditSelect();
 }
 
-$('#add_share_project_text').keydown(function (evt) {
-  if (evt.key === 'Enter' || evt.keyCode === 13) {
-    newPolicyAddProjectText();
-    evt.preventDefault();
-    return false;
-  }
-});
-
-$('#add_share_group_text').keydown(function (evt) {
-  if (evt.key === 'Enter' || evt.keyCode === 13) {
-    newPolicyAddGroupText();
-    evt.preventDefault();
-    return false;
-  }
-});
-
-$('#add_share_user_text').keydown(function (evt) {
-  if (evt.key === 'Enter' || evt.keyCode === 13) {
-    newPolicyAddUserText();
-    evt.preventDefault();
-    return false;
-  }
-});
-
-$('#edit_share_project_text').keydown(function (evt) {
-  if (evt.key === 'Enter' || evt.keyCode === 13) {
-    editPolicyAddProjectText();
-    evt.preventDefault();
-    return false;
-  }
-});
-
-$('#edit_share_group_text').keydown(function (evt) {
-  if (evt.key === 'Enter' || evt.keyCode === 13) {
-    editPolicyAddGroupText();
-    evt.preventDefault();
-    return false;
-  }
-});
-
-$('#edit_share_user_text').keydown(function (evt) {
-  if (evt.key === 'Enter' || evt.keyCode === 13) {
-    editPolicyAddUserText();
-    evt.preventDefault();
-    return false;
-  }
-});
+for (const idAndHandler of [
+  ['add_share_project_text', newPolicyAddProjectText],
+  ['add_share_group_text', newPolicyAddGroupText],
+  ['add_share_user_text', newPolicyAddUserText],
+  ['edit_share_project_text', editPolicyAddProjectText],
+  ['edit_share_group_text', editPolicyAddGroupText],
+  ['edit_share_user_text', editPolicyAddUserText]
+]) {
+  const id = idAndHandler[0];
+  const handler = idAndHandler[1];
+  $(`#${id}`).keydown(function (evt) {
+    if (evt.key === 'Enter' || evt.keyCode === 13) {
+      handler();
+      evt.preventDefault();
+      return false;
+    }
+  });
+}
 
 function validateId ($input, $err, existingValuesObject, alreadyAddedText) {
   let idText = $input.val();
