@@ -304,36 +304,31 @@ function editPolicyRemoveUser (userID) {
   updateEditSelect();
 }
 
-function updateAddSelect () {
-  const $select = $('#add_share_user_picker');
+function updateUserSelect ($select, $selectButton, componentID, policySelectedUsers) {
   $select.empty();
   let noUsers = true;
-  for (const userID in users[addSelectedComponentID]) {
-    if (!(userID in newPolicySelectedUsers)) {
+  for (const userID in users[componentID]) {
+    if (!(userID in policySelectedUsers)) {
       noUsers = false;
-      $select.append($('<option></option>').attr('value', userID).text(users[addSelectedComponentID][userID]));
+      $select.append($('<option></option>').attr('value', userID).text(users[componentID][userID]));
     }
   }
   $select.prop('disabled', noUsers);
-  $('#add_component_policy_user_select_btn').prop('disabled', noUsers);
+  $selectButton.prop('disabled', noUsers);
   $select.selectpicker('refresh');
   $select.change();
 }
 
+function updateAddSelect () {
+  const $select = $('#add_share_user_picker');
+  const $selectButton = $('#add_component_policy_user_select_btn');
+  updateUserSelect($select, $selectButton, addSelectedComponentID, newPolicySelectedUsers);
+}
+
 function updateEditSelect () {
   const $select = $('#edit_share_user_picker');
-  $select.empty();
-  let noUsers = true;
-  for (const userID in users[editSelectedComponentID]) {
-    if (!(userID in editPolicySelectedUsers)) {
-      noUsers = false;
-      $select.append($('<option></option>').attr('value', userID).text(users[editSelectedComponentID][userID]));
-    }
-  }
-  $select.prop('disabled', noUsers);
-  $('#edit_component_policy_user_select_btn').prop('disabled', noUsers);
-  $select.selectpicker('refresh');
-  $select.change();
+  const $selectButton = $('#edit_component_policy_user_select_btn');
+  updateUserSelect($select, $selectButton, editSelectedComponentID, editPolicySelectedUsers);
 }
 
 $(function () {
