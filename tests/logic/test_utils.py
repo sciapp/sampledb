@@ -252,3 +252,55 @@ def test_cache():
     assert f() == 1
     assert f() == 2
 
+
+def test_get_data_and_schema_by_id_path():
+    data = {
+        'name': {
+            'text': {'en': 'Test'},
+            '_type': 'text'},
+        'array': [
+            {
+                'data': [
+                    ['2024-01-01 00:02:03.123456', 1.0, 100000.0],
+                    ['2024-01-01 00:02:04.123456', 1.0, 100000.0],
+                    ['2024-01-01 00:02:05.123456', 2.0, 200000.0]
+                ],
+                '_type': 'timeseries',
+                'units': 'bar',
+                'dimensionality': '[mass] / [length] / [time] ** 2'
+            }
+        ]
+    }
+    schema = {
+        "title": {
+            "en": "Object Information"
+        },
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": {
+                    "en": "Name"
+                },
+                "type": "text"
+            },
+            "array": {
+                "type": "array",
+                "title": "Array",
+                "items": {
+                    "title": "Pressure Series",
+                    "type": "timeseries",
+                    "units": "bar",
+                    "display_digits": 2
+                }
+            }
+        },
+        "required": [
+            "name"
+        ],
+        "propertyOrder": [
+            "name",
+            "array"
+        ]
+    }
+    data_and_schema = utils.get_data_and_schema_by_id_path(data, schema, ['array', '0'], convert_id_path_elements=True)
+    assert data_and_schema == (data['array'][0], schema['properties']['array']['items'])
