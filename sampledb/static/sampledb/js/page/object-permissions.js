@@ -267,65 +267,40 @@ function editPolicyAddUserText () {
   }
 }
 
+function removePermissionsFromPolicy (id, policySelectedElements, tablePrefix) {
+  if (id in policySelectedElements) {
+    delete policySelectedElements[id];
+    $(`#${tablePrefix}${id}`).remove();
+  }
+  const permissionsTableBody = $(`${tablePrefix}_tbody`);
+  if (permissionsTableBody.find('tr').length === 1) {
+    permissionsTableBody.hide();
+  }
+}
+
 function newPolicyRemoveProject (projectID) {
-  if (projectID in newPolicySelectedProjects) {
-    delete newPolicySelectedProjects[projectID];
-    $(`#new_policy_projects_${projectID}`).remove();
-  }
-  if ($('#new_policy_projects_tbody > tr').length === 1) {
-    $('#new_policy_projects_tbody').hide();
-  }
+  removePermissionsFromPolicy(projectID, newPolicySelectedProjects, 'new_policy_projects_');
 }
 
 function newPolicyRemoveGroup (groupID) {
-  if (groupID in newPolicySelectedGroups) {
-    delete newPolicySelectedGroups[groupID];
-    $(`#new_policy_groups_#{groupID}`).remove();
-  }
-  if ($('#new_policy_groups_tbody > tr').length === 1) {
-    $('#new_policy_groups_tbody').hide();
-  }
+  removePermissionsFromPolicy(groupID, newPolicySelectedGroups, 'new_policy_groups_');
 }
 
 function newPolicyRemoveUser (userID) {
-  if (userID in newPolicySelectedUsers) {
-    delete newPolicySelectedUsers[userID];
-    $(`#new_policy_users_${userID}`).remove();
-  }
-  if ($('#new_policy_users_tbody > tr').length === 1) {
-    $('#new_policy_users_tbody').hide();
-  }
+  removePermissionsFromPolicy(userID, newPolicySelectedUsers, 'new_policy_users_');
   updateAddSelect();
 }
 
 function editPolicyRemoveProject (projectID) {
-  if (projectID in editPolicySelectedProjects) {
-    delete editPolicySelectedProjects[projectID];
-    $(`#edit_policy_projects_${projectID}`).remove();
-  }
-  if ($('#edit_policy_projects_tbody > tr').length === 1) {
-    $('#edit_policy_projects_tbody').hide();
-  }
+  removePermissionsFromPolicy(projectID, editPolicySelectedProjects, 'edit_policy_projects_');
 }
 
 function editPolicyRemoveGroup (groupID) {
-  if (groupID in editPolicySelectedGroups) {
-    delete editPolicySelectedGroups[groupID];
-    $(`#edit_policy_groups_${groupID}`).remove();
-  }
-  if ($('#edit_policy_groups_tbody > tr').length === 1) {
-    $('#edit_policy_groups_tbody').hide();
-  }
+  removePermissionsFromPolicy(groupID, editPolicySelectedGroups, 'edit_policy_groups_');
 }
 
 function editPolicyRemoveUser (userID) {
-  if (userID in editPolicySelectedUsers) {
-    delete editPolicySelectedUsers[userID];
-    $(`#edit_policy_users_${userID}`).remove();
-  }
-  if ($('#edit_policy_users_tbody > tr').length === 1) {
-    $('#edit_policy_users_tbody').hide();
-  }
+  removePermissionsFromPolicy(userID, editPolicySelectedUsers, 'edit_policy_users_');
   updateEditSelect();
 }
 
