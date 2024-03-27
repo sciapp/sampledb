@@ -31,9 +31,10 @@ function setNewPolicyData () {
         users: {}
       }
     };
-    setPolicyPermissionsTables(policies[addSelectedComponentID].permissions.projects, {}, window.getTemplateValue('translations.project'), window.getTemplateValue('translations.projects'), 'new_policy_projects_', 'permissions_add_policy_project_');
-    setPolicyPermissionsTables(policies[addSelectedComponentID].permissions.groups, {}, window.getTemplateValue('translations.basic_group'), window.getTemplateValue('translations.basic_groups'), 'new_policy_groups_', 'permissions_add_policy_group_');
-    setPolicyPermissionsTables(policies[addSelectedComponentID].permissions.users, users[addSelectedComponentID], window.getTemplateValue('translations.user'), window.getTemplateValue('translations.users'), 'new_policy_users_', 'permissions_add_policy_user_');
+    const policy = policies[addSelectedComponentID];
+    setPolicyPermissionsTables(policy.permissions.projects, {}, window.getTemplateValue('translations.project'), window.getTemplateValue('translations.projects'), 'new_policy_projects_', 'permissions_add_policy_project_');
+    setPolicyPermissionsTables(policy.permissions.groups, {}, window.getTemplateValue('translations.basic_group'), window.getTemplateValue('translations.basic_groups'), 'new_policy_groups_', 'permissions_add_policy_group_');
+    setPolicyPermissionsTables(policy.permissions.users, users[addSelectedComponentID], window.getTemplateValue('translations.user'), window.getTemplateValue('translations.users'), 'new_policy_users_', 'permissions_add_policy_user_');
     updateAddSelect();
   }
 }
@@ -42,26 +43,27 @@ function setEditPolicyData () {
   const selectedComponentID = +$('#edit-share-component-picker').val();
   if (!Number.isNaN(selectedComponentID) && selectedComponentID !== editSelectedComponentID) {
     editSelectedComponentID = selectedComponentID;
-    $('#policy-edit-data').prop('checked', policies[editSelectedComponentID].access.data).change();
-    $('#policy-edit-action').prop('checked', policies[editSelectedComponentID].access.action).change();
-    $('#policy-edit-users').prop('checked', policies[editSelectedComponentID].access.users).change();
-    $('#policy-edit-files').prop('checked', policies[editSelectedComponentID].access.files).change();
-    $('#policy-edit-comments').prop('checked', policies[editSelectedComponentID].access.comments).change();
-    $('#policy-edit-object-location-assignments').prop('checked', policies[editSelectedComponentID].access.object_location_assignments).change();
-    setPolicyPermissionsTables(policies[editSelectedComponentID].permissions.projects, {}, window.getTemplateValue('translations.project'), window.getTemplateValue('translations.projects'), 'edit_policy_projects_', 'permissions_edit_policy_project_');
-    setPolicyPermissionsTables(policies[editSelectedComponentID].permissions.groups, {}, window.getTemplateValue('translations.basic_group'), window.getTemplateValue('translations.basic_groups'), 'edit_policy_groups_', 'permissions_edit_policy_group_');
-    setPolicyPermissionsTables(policies[editSelectedComponentID].permissions.users, users[editSelectedComponentID], window.getTemplateValue('translations.user'), window.getTemplateValue('translations.users'), 'edit_policy_users_', 'permissions_edit_policy_user_');
+    const policy = policies[editSelectedComponentID];
+    $('#policy-edit-data').prop('checked', policy.access.data).change();
+    $('#policy-edit-action').prop('checked', policy.access.action).change();
+    $('#policy-edit-users').prop('checked', policy.access.users).change();
+    $('#policy-edit-files').prop('checked', policy.access.files).change();
+    $('#policy-edit-comments').prop('checked', policy.access.comments).change();
+    $('#policy-edit-object-location-assignments').prop('checked', policy.access.object_location_assignments).change();
+    setPolicyPermissionsTables(policy.permissions.projects, {}, window.getTemplateValue('translations.project'), window.getTemplateValue('translations.projects'), 'edit_policy_projects_', 'permissions_edit_policy_project_');
+    setPolicyPermissionsTables(policy.permissions.groups, {}, window.getTemplateValue('translations.basic_group'), window.getTemplateValue('translations.basic_groups'), 'edit_policy_groups_', 'permissions_edit_policy_group_');
+    setPolicyPermissionsTables(policy.permissions.users, users[editSelectedComponentID], window.getTemplateValue('translations.user'), window.getTemplateValue('translations.users'), 'edit_policy_users_', 'permissions_edit_policy_user_');
     updateEditSelect();
   }
 }
 
-function setPolicyPermissionsTables (permissionsObject, nameObject, label_singular, label_plural, tablePrefix, fieldPrefix) {
+function setPolicyPermissionsTables (permissionsObject, nameObject, labelSingular, labelPlural, tablePrefix, fieldPrefix) {
   const permissionsTableBody = $(`#${tablePrefix}tbody`);
   permissionsTableBody.empty();
   permissionsTableBody.append(`
     <tr>
       <td></td>
-      <th scope="rowgroup">${label_plural}</th>
+      <th scope="rowgroup">${labelPlural}</th>
       <td></td>
       <td></td>
       <td></td>
@@ -69,8 +71,7 @@ function setPolicyPermissionsTables (permissionsObject, nameObject, label_singul
   `);
   permissionsTableBody.hide();
   for (const id in permissionsObject) {
-    const permissions = permissionsObject[id];
-    let name = `${label_singular} #${id}`;
+    let name = `${labelSingular} #${id}`;
     if (id in nameObject) {
       name = nameObject[id];
     }
@@ -107,10 +108,11 @@ function addPermissionsToPolicy (id, name, permissionsObject, tablePrefix, field
 function newPolicyAddUserSelect () {
   const $select = $('#add_share_user_picker');
   const userID = $select.val();
-  if (!(userID in policies[addSelectedComponentID].permissions.users)) {
+  const policy = policies[addSelectedComponentID];
+  if (!(userID in policy.permissions.users)) {
     const userName = users[addSelectedComponentID][userID];
-    policies[addSelectedComponentID].permissions.users[userID] = 'read';
-    addPermissionsToPolicy(userID, userName, policies[addSelectedComponentID].permissions.users, 'new_policy_users_', 'permissions_add_policy_user_');
+    policy.permissions.users[userID] = 'read';
+    addPermissionsToPolicy(userID, userName, policy.permissions.users, 'new_policy_users_', 'permissions_add_policy_user_');
   }
   updateAddSelect();
 }
@@ -118,10 +120,11 @@ function newPolicyAddUserSelect () {
 function editPolicyAddUserSelect () {
   const $select = $('#edit_share_user_picker');
   const userID = $select.val();
-  if (!(userID in policies[editSelectedComponentID].permissions.users)) {
+  const policy = policies[addSelectedComponentID];
+  if (!(userID in policy.permissions.users)) {
     const userName = users[editSelectedComponentID][userID];
-    policies[editSelectedComponentID].permissions.users[userID] = 'read';
-    addPermissionsToPolicy(userID, userName, policies[editSelectedComponentID].permissions.users, 'edit_policy_users_', 'permissions_edit_policy_user_');
+    policy.permissions.users[userID] = 'read';
+    addPermissionsToPolicy(userID, userName, policy.permissions.users, 'edit_policy_users_', 'permissions_edit_policy_user_');
   }
   updateEditSelect();
 }
@@ -171,40 +174,43 @@ function validateId ($input, $err, existingIDs, alreadyAddedText) {
 function newPolicyAddProjectText () {
   const $input = $('#add_share_project_text');
   const $err = $('#add_share_project_text_help_block');
+  const policy = policies[addSelectedComponentID];
   const existingIDs = [];
-  for (const id in policies[addSelectedComponentID].permissions.projects) {
+  for (const id in policy.permissions.projects) {
     existingIDs.push(+id);
   }
   const projectID = validateId($input, $err, existingIDs, window.getTemplateValue('translations.project_group_already_added'));
   if (projectID > 0) {
     const projectName = `${window.getTemplateValue('translations.project_group')}  #${projectID}`;
     $input.val('');
-    policies[addSelectedComponentID].permissions.projects[projectID] = 'read';
-    addPermissionsToPolicy(projectID, projectName, policies[addSelectedComponentID].permissions.projects, 'new_policy_projects_', 'permissions_add_policy_project_');
+    policy.permissions.projects[projectID] = 'read';
+    addPermissionsToPolicy(projectID, projectName, policy.permissions.projects, 'new_policy_projects_', 'permissions_add_policy_project_');
   }
 }
 
 function newPolicyAddGroupText () {
   const $input = $('#add_share_group_text');
   const $err = $('#add_share_group_text_help_block');
+  const policy = policies[addSelectedComponentID];
   const existingIDs = [];
-  for (const id in policies[addSelectedComponentID].permissions.groups) {
+  for (const id in policy.permissions.groups) {
     existingIDs.push(+id);
   }
   const groupID = validateId($input, $err, existingIDs, window.getTemplateValue('translations.basic_group_already_added'));
   if (groupID > 0) {
     const groupName = `${window.getTemplateValue('translations.basic_group')} #${groupID}`;
     $input.val('');
-    policies[addSelectedComponentID].permissions.groups[groupID] = 'read';
-    addPermissionsToPolicy(groupID, groupName, policies[addSelectedComponentID].permissions.groups, 'new_policy_groups_', 'permissions_add_policy_group_');
+    policy.permissions.groups[groupID] = 'read';
+    addPermissionsToPolicy(groupID, groupName, policy.permissions.groups, 'new_policy_groups_', 'permissions_add_policy_group_');
   }
 }
 
 function newPolicyAddUserText () {
   const $input = $('#add_share_user_text');
   const $err = $('#add_share_user_text_help_block');
+  const policy = policies[addSelectedComponentID];
   const existingIDs = [];
-  for (const id in policies[addSelectedComponentID].permissions.users) {
+  for (const id in policy.permissions.users) {
     existingIDs.push(+id);
   }
   const userID = validateId($input, $err, existingIDs, window.getTemplateValue('translations.user_already_added'));
@@ -214,8 +220,8 @@ function newPolicyAddUserText () {
       userName = users[addSelectedComponentID][userID];
     }
     $input.val('');
-    policies[addSelectedComponentID].permissions.users[userID] = 'read';
-    addPermissionsToPolicy(userID, userName, policies[addSelectedComponentID].permissions.users, 'new_policy_users_', 'permissions_add_policy_user_');
+    policy.permissions.users[userID] = 'read';
+    addPermissionsToPolicy(userID, userName, policy.permissions.users, 'new_policy_users_', 'permissions_add_policy_user_');
     updateAddSelect();
   }
 }
@@ -223,40 +229,43 @@ function newPolicyAddUserText () {
 function editPolicyAddProjectText () {
   const $input = $('#edit_share_project_text');
   const $err = $('#edit_share_project_text_help_block');
+  const policy = policies[addSelectedComponentID];
   const existingIDs = [];
-  for (const id in policies[editSelectedComponentID].permissions.projects) {
+  for (const id in policy.permissions.projects) {
     existingIDs.push(+id);
   }
   const projectID = validateId($input, $err, existingIDs, window.getTemplateValue('translations.project_group_already_added'));
   if (projectID > 0) {
     const projectName = `${window.getTemplateValue('translations.project_group')} #${projectID}`;
     $input.val('');
-    policies[editSelectedComponentID].permissions.projects[projectID] = 'read';
-    addPermissionsToPolicy(projectID, projectName, policies[editSelectedComponentID].permissions.projects, 'edit_policy_projects_', 'permissions_edit_policy_project_');
+    policy.permissions.projects[projectID] = 'read';
+    addPermissionsToPolicy(projectID, projectName, policy.permissions.projects, 'edit_policy_projects_', 'permissions_edit_policy_project_');
   }
 }
 
 function editPolicyAddGroupText () {
   const $input = $('#edit_share_group_text');
   const $err = $('#edit_share_group_text_help_block');
+  const policy = policies[editSelectedComponentID];
   const existingIDs = [];
-  for (const id in policies[editSelectedComponentID].permissions.groups) {
+  for (const id in policy.permissions.groups) {
     existingIDs.push(+id);
   }
   const groupID = validateId($input, $err, existingIDs, window.getTemplateValue('translations.basic_group_already_added'));
   if (groupID > 0) {
     const groupName = `${window.getTemplateValue('translations.basic_group')} #${groupID}`;
     $input.val('');
-    policies[editSelectedComponentID].permissions.groups[groupID] = 'read';
-    addPermissionsToPolicy(groupID, groupName, policies[editSelectedComponentID].permissions.groups, 'edit_policy_groups_', 'permissions_edit_policy_group_');
+    policy.permissions.groups[groupID] = 'read';
+    addPermissionsToPolicy(groupID, groupName, policy.permissions.groups, 'edit_policy_groups_', 'permissions_edit_policy_group_');
   }
 }
 
 function editPolicyAddUserText () {
   const $input = $('#edit_share_user_text');
   const $err = $('#edit_share_user_text_help_block');
+  const policy = policies[editSelectedComponentID];
   const existingIDs = [];
-  for (const id in policies[editSelectedComponentID].permissions.users) {
+  for (const id in policy.permissions.users) {
     existingIDs.push(+id);
   }
   const userID = validateId($input, $err, existingIDs, window.getTemplateValue('translations.user_already_added'));
@@ -266,8 +275,8 @@ function editPolicyAddUserText () {
       userName = users[editSelectedComponentID][userID];
     }
     $input.val('');
-    policies[editSelectedComponentID].permissions.users[userID] = 'read';
-    addPermissionsToPolicy(userID, userName, policies[editSelectedComponentID].permissions.users, 'edit_policy_users_', 'permissions_edit_policy_user_');
+    policy.permissions.users[userID] = 'read';
+    addPermissionsToPolicy(userID, userName, policy.permissions.users, 'edit_policy_users_', 'permissions_edit_policy_user_');
     updateEditSelect();
   }
 }
