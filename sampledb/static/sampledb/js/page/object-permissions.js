@@ -70,23 +70,10 @@ function setEditPolicyData () {
       projectsTableBody.hide();
     }
     for (const projectID in policies[editSelectedComponentID].permissions.projects) {
-      const permission = policies[editSelectedComponentID].permissions.projects[projectID];
+      const permissions = policies[editSelectedComponentID].permissions.projects[projectID];
       editPolicySelectedProjects[projectID] = `${window.getTemplateValue('translations.project_group')} #${projectID}`;
-      const projectRow = $(`
-        <tr id="edit_policy_projects_${projectID}">
-          <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-          <td>${editPolicySelectedProjects[projectID]}</td>
-        </tr>
-      `);
-      for (const possiblePermissions of ['read', 'write', 'grant']) {
-        projectRow.append(`
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_edit_policy_project_${projectID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-            <input type="radio" name="permissions_edit_policy_project_${projectID}" id="permissions_edit_policy_project_${projectID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === permission) ? 'checked="checked"' : ''} />
-          </td>
-        `);
-      }
-      projectsTableBody.append(projectRow);
+      const projectName = editPolicySelectedProjects[projectID];
+      projectsTableBody.append(createPermissionsRow(projectID, projectName, permissions, 'edit_policy_projects_', 'permissions_edit_policy_project_'));
       $(`#edit_policy_projects_${projectID} button`).on('click', function () {
         editPolicyRemoveProject(projectID);
       });
@@ -100,23 +87,10 @@ function setEditPolicyData () {
       groupsTableBody.hide();
     }
     for (const groupID in policies[editSelectedComponentID].permissions.groups) {
-      const permission = policies[editSelectedComponentID].permissions.groups[groupID];
+      const permissions = policies[editSelectedComponentID].permissions.groups[groupID];
       editPolicySelectedGroups[groupID] = `${window.getTemplateValue('translations.basic_group')} #${groupID}`;
-      const groupRow = $(`
-        <tr id="edit_policy_groups_${groupID}">
-          <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-          <td>${editPolicySelectedGroups[groupID]}</td>
-        </tr>
-      `);
-      for (const possiblePermissions of ['read', 'write', 'grant']) {
-        groupRow.append(`
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_edit_policy_group_${groupID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-            <input type="radio" name="permissions_edit_policy_group_${groupID}" id="permissions_edit_policy_group_${groupID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === permission) ? 'checked="checked"' : ''} />
-          </td>
-        `);
-      }
-      groupsTableBody.append(groupRow);
+      const groupName = editPolicySelectedGroups[groupID];
+      groupsTableBody.append(createPermissionsRow(groupID, groupName, permissions, 'edit_policy_groups_', 'permissions_edit_policy_group_'));
       $(`#edit_policy_groups_${groupID} button`).on('click', function () {
         editPolicyRemoveGroup(groupID);
       });
@@ -130,27 +104,14 @@ function setEditPolicyData () {
       usersTableBody.hide();
     }
     for (const userID in policies[editSelectedComponentID].permissions.users) {
-      const permission = policies[editSelectedComponentID].permissions.users[userID];
+      const permissions = policies[editSelectedComponentID].permissions.users[userID];
       if (userID in users[editSelectedComponentID]) {
         editPolicySelectedUsers[userID] = users[editSelectedComponentID][userID];
       } else {
         editPolicySelectedUsers[userID] = `${window.getTemplateValue('translations.user')} #${userID}`;
       }
-      const userRow = $(`
-        <tr id="edit_policy_users_${userID}">
-          <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-          <td>${editPolicySelectedUsers[userID]}</td>
-        </tr>
-      `);
-      for (const possiblePermissions of ['read', 'write', 'grant']) {
-        userRow.append(`
-          <td class="text-center" style="vertical-align: middle">
-            <label for="permissions_edit_policy_user_${userID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-            <input type="radio" name="permissions_edit_policy_user_${userID}" id="permissions_edit_policy_user_${userID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === permission) ? 'checked="checked"' : ''} />
-          </td>
-        `);
-      }
-      usersTableBody.append(userRow);
+      const userName = editPolicySelectedUsers[userID];
+      usersTableBody.append(createPermissionsRow(userID, userName, permissions, 'edit_policy_users_', 'permissions_edit_policy_user_'));
       $(`#edit_policy_users_${userID} button`).on('click', function () {
         editPolicyRemoveUser(userID);
       });
@@ -159,27 +120,33 @@ function setEditPolicyData () {
   }
 }
 
+function createPermissionsRow (id, name, permissions, rowPrefix, fieldPrefix) {
+  const row = $(`
+      <tr id="${rowPrefix}${id}">
+        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
+        <td>${name}</td>
+      </tr>
+    `);
+    for (const possiblePermissions of ['read', 'write', 'grant']) {
+      row.append(`
+        <td class="text-center" style="vertical-align: middle">
+          <label for="${fieldPrefix}${id}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
+          <input type="radio" name="${fieldPrefix}${id}" id="${fieldPrefix}${id}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === permissions) ? 'checked="checked"' : ''} />
+        </td>
+      `);
+    }
+    return row;
+}
+
 function newPolicyAddUserSelect () {
   const $select = $('#add_share_user_picker');
   const userID = $select.val();
   if (!(userID in newPolicySelectedUsers)) {
     newPolicySelectedUsers[userID] = users[addSelectedComponentID][userID];
+    const userName = newPolicySelectedUsers[userID];
     const usersTableBody = $('#new_policy_users_tbody');
-    const userRow = $(`
-      <tr id="new_policy_users_${userID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${newPolicySelectedUsers[userID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      userRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_add_policy_user_${userID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_add_policy_user_${userID}" id="permissions_add_policy_user_${userID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    usersTableBody.append(userRow);
+    const permissions = 'read';
+    usersTableBody.append(createPermissionsRow(userID, userName, permissions, 'new_policy_users_', 'permissions_add_policy_user_'));
     $(`#new_policy_users_${userID} button`).on('click', function () {
       newPolicyRemoveUser(userID);
     });
@@ -195,22 +162,10 @@ function editPolicyAddUserSelect () {
   const userID = $select.val();
   if (!(userID in newPolicySelectedUsers)) {
     editPolicySelectedUsers[userID] = users[editSelectedComponentID][userID];
+    const userName = editPolicySelectedUsers[userID];
     const usersTableBody = $('#edit_policy_users_tbody');
-    const userRow = $(`
-      <tr id="edit_policy_users_${userID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${editPolicySelectedUsers[userID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      userRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_edit_policy_user_${userID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_edit_policy_user_${userID}" id="permissions_add_policy_user_${userID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    usersTableBody.append(userRow);
+    const permissions = 'read';
+    usersTableBody.append(createPermissionsRow(userID, userName, permissions, 'edit_policy_users_', 'permissions_edit_policy_user_'));
     $(`#edit_policy_users_${userID} button`).on('click', function () {
       editPolicyRemoveUser(userID);
     });
@@ -300,21 +255,9 @@ function newPolicyAddProjectText () {
     newPolicySelectedProjects[projectID] = `${window.getTemplateValue('translations.project_group')}  #${projectID}`;
     $input.val('');
     const projectsTableBody = $('#new_policy_projects_tbody');
-    const projectRow = $(`
-      <tr id="new_policy_projects_${projectID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${newPolicySelectedProjects[projectID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      projectRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_add_policy_project_${projectID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_add_policy_project_${projectID}" id="permissions_add_policy_project_${projectID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    projectsTableBody.append(projectRow);
+    const permissions = 'read';
+    const projectName = newPolicySelectedProjects[projectID];
+    projectsTableBody.append(createPermissionsRow(projectID, projectName, permissions, 'new_policy_projects_', 'permissions_add_policy_project_'));
     $(`#new_policy_projects_${projectID} button`).on('click', function () {
       newPolicyRemoveProject(projectID);
     });
@@ -332,21 +275,9 @@ function newPolicyAddGroupText () {
     newPolicySelectedGroups[groupID] = `${window.getTemplateValue('translations.basic_group')} #${groupID}`;
     $input.val('');
     const groupsTableBody = $('#new_policy_groups_tbody');
-    const groupRow = $(`
-      <tr id="new_policy_groups_${groupID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${newPolicySelectedGroups[groupID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      groupRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_add_policy_group_${groupID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_add_policy_group_${groupID}" id="permissions_add_policy_group_${groupID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    groupsTableBody.append(groupRow);
+    const groupName = newPolicySelectedGroups[groupID];
+    const permissions = 'read';
+    groupsTableBody.append(createPermissionsRow(groupID, groupName, permissions, 'new_policy_groups_', 'permissions_add_policy_group_'));
     $(`#new_policy_groups_${groupID} button`).on('click', function () {
       newPolicyRemoveGroup(groupID);
     });
@@ -368,21 +299,9 @@ function newPolicyAddUserText () {
     }
     $input.val('');
     const usersTableBody = $('#new_policy_users_tbody');
-    const userRow = $(`
-      <tr id="new_policy_users_${userID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${newPolicySelectedUsers[userID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      userRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_add_policy_user_${userID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_add_policy_user_${userID}" id="permissions_add_policy_user_${userID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    usersTableBody.append(userRow);
+    const userName = newPolicySelectedUsers[userID];
+    const permissions = 'read';
+    usersTableBody.append(createPermissionsRow(userID, userName, permissions, 'new_policy_users_', 'permissions_add_policy_user_'));
     $(`#new_policy_users_${userID} button`).on('click', function () {
       newPolicyRemoveUser(userID);
     });
@@ -401,21 +320,9 @@ function editPolicyAddProjectText () {
     editPolicySelectedProjects[projectID] = `${window.getTemplateValue('translations.project_group')} #${projectID}`;
     $input.val('');
     const projectsTableBody = $('#edit_policy_projects_tbody');
-    const projectRow = $(`
-      <tr id="edit_policy_projects_${projectID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${editPolicySelectedProjects[projectID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      projectRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_edit_policy_project_${projectID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_edit_policy_project_${projectID}" id="permissions_edit_policy_project_${projectID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    projectsTableBody.append(projectRow);
+    const permissions = 'read';
+    const projectName = editPolicySelectedProjects[projectID];
+    projectsTableBody.append(createPermissionsRow(projectID, projectName, permissions, 'edit_policy_projects_', 'permissions_edit_policy_project_'));
     $(`#edit_policy_projects_${projectID} button`).on('click', function () {
       editPolicyRemoveProject(projectID);
     });
@@ -433,21 +340,9 @@ function editPolicyAddGroupText () {
     editPolicySelectedGroups[groupID] = `${window.getTemplateValue('translations.basic_group')} #${groupID}`;
     $input.val('');
     const groupsTableBody = $('#edit_policy_groups_tbody');
-    const groupRow = $(`
-      <tr id="edit_policy_groups_${groupID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${editPolicySelectedGroups[groupID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      groupRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_edit_policy_group_${groupID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_edit_policy_group_${groupID}" id="permissions_edit_policy_group_${groupID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    groupsTableBody.append(groupRow);
+    const groupName = editPolicySelectedGroups[groupID];
+    const permissions = 'read';
+    groupsTableBody.append(createPermissionsRow(groupID, groupName, permissions, 'edit_policy_groups_', 'permissions_edit_policy_group_'));
     $(`#edit_policy_groups_${groupID} button`).on('click', function () {
       editPolicyRemoveGroup(groupID);
     });
@@ -469,21 +364,9 @@ function editPolicyAddUserText () {
     }
     $input.val('');
     const usersTableBody = $('#edit_policy_users_tbody');
-    const userRow = $(`
-      <tr id="edit_policy_users_${userID}">
-        <td class="text-center"><button class="btn btn-xs btn-danger" type="button"><i class="fa fa-times" aria-hidden="true"></i></button></td>
-        <td>${editPolicySelectedUsers[userID]}</td>
-      </tr>
-    `);
-    for (const possiblePermissions of ['read', 'write', 'grant']) {
-      userRow.append(`
-        <td class="text-center" style="vertical-align: middle">
-          <label for="permissions_edit_policy_user_${userID}_${possiblePermissions}" class="sr-only">${possiblePermissions}</label>
-          <input type="radio" name="permissions_edit_policy_user_${userID}" id="permissions_edit_policy_user_${userID}_${possiblePermissions}" value="${possiblePermissions}" ${(possiblePermissions === 'read') ? 'checked="checked"' : ''} />
-        </td>
-      `);
-    }
-    usersTableBody.append(userRow);
+    const userName = editPolicySelectedUsers[userID];
+    const permissions = 'read';
+    usersTableBody.append(createPermissionsRow(userID, userName, permissions, 'edit_policy_users_', 'permissions_edit_policy_user_'));
     $(`#edit_policy_users_${userID} button`).on('click', function () {
       editPolicyRemoveUser(userID);
     });
