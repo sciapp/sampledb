@@ -1,5 +1,6 @@
 'use strict';
 /* eslint-env jquery */
+/* globals InscrybMDE, moment */
 
 import {
   setupImageDragAndDrop
@@ -11,88 +12,94 @@ $(function () {
   window.filterUser = null;
   window.log_entries = {};
 });
-function setup_instrument_log_filter_states() {
+function setupInstrumentLogFilterStates () {
   for (const categoryID in window.categoriesShown) {
     $(`#instrument_log_filter_${categoryID}`).prop('checked', window.categoriesShown[categoryID]);
   }
-  $('#instrument_log_filter_none').prop('checked', window.categoriesShown['none']);
-  $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
-    $('.input-group.date').each(function() {
-      const datetimepicker = $(this).datetimepicker({
-        date: window.filterDate,
-        locale: window.getTemplateValue('language.lang_code'),
-        format: 'YYYY-MM',
-        showClear: true,
-        showClose: true,
-        maxDate: moment(new Date()),
-        timeZone: window.getTemplateValue('current_user.timezone')
-      });
-      datetimepicker.on('dp.change', function() {
-        update_instrument_log_filter_states();
-      });
-      $('#input-instrument-log-filter-date').on('click', function() {
-        datetimepicker.data("DateTimePicker").toggle();
-      });
+  $('#instrument_log_filter_none').prop('checked', window.categoriesShown.none);
+  $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString() + ' / ' + $('.instrument-log-entry').length.toString());
+  $('.input-group.date').each(function () {
+    const datetimepicker = $(this).datetimepicker({
+      date: window.filterDate,
+      locale: window.getTemplateValue('language.lang_code'),
+      format: 'YYYY-MM',
+      showClear: true,
+      showClose: true,
+      maxDate: moment(new Date()),
+      timeZone: window.getTemplateValue('current_user.timezone')
     });
-    var selectpicker = $('#input-instrument-log-filter-user');
-    selectpicker.selectpicker('val', window.filterUser);
-    selectpicker.on('changed.bs.select', function() {
-        update_instrument_log_filter_states();
+    datetimepicker.on('dp.change', function () {
+      updateInstrumentLogFilterStates();
     });
+    $('#input-instrument-log-filter-date').on('click', function () {
+      datetimepicker.data('DateTimePicker').toggle();
+    });
+  });
+  const selectpicker = $('#input-instrument-log-filter-user');
+  selectpicker.selectpicker('val', window.filterUser);
+  selectpicker.on('changed.bs.select', function () {
+    updateInstrumentLogFilterStates();
+  });
 }
-function update_instrument_log_filter_states() {
-  const filter_date = $('#input-instrument-log-filter-date').val();
-  if (filter_date === "") {
+window.setup_instrument_log_filter_states = setupInstrumentLogFilterStates;
+
+function updateInstrumentLogFilterStates () {
+  const filterDate = $('#input-instrument-log-filter-date').val();
+  if (filterDate === '') {
     window.filterDate = null;
   } else {
-    window.filterDate = filter_date;
+    window.filterDate = filterDate;
   }
-  const filter_user = $('#input-instrument-log-filter-user').val();
-  if (filter_user === "") {
+  const filterUser = $('#input-instrument-log-filter-user').val();
+  if (filterUser === '') {
     window.filterUser = null;
   } else {
-    window.filterUser = filter_user;
+    window.filterUser = filterUser;
   }
   $('.instrument-log-entry').hide();
   for (const categoryID in window.categoriesShown) {
     window.categoriesShown[categoryID] = $(`#instrument_log_filter_${categoryID}`).prop('checked');
     if (window.categoriesShown[categoryID]) {
-      let filter_selector = `div[data-instrument-log-category-${categoryID}="yes"]`;
-      if (filter_date !== "") {
-        filter_selector = filter_selector + '[data-instrument-log-date='+filter_date+']';
+      let filterSelector = `div[data-instrument-log-category-${categoryID}="yes"]`;
+      if (filterDate !== '') {
+        filterSelector = filterSelector + '[data-instrument-log-date=' + filterDate + ']';
       }
-      if (filter_user !== "") {
-        filter_selector = filter_selector + '[data-instrument-log-user-id='+filter_user+']';
+      if (filterUser !== '') {
+        filterSelector = filterSelector + '[data-instrument-log-user-id=' + filterUser + ']';
       }
-      $(filter_selector).show();
+      $(filterSelector).show();
     }
   }
-  $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
+  $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString() + ' / ' + $('.instrument-log-entry').length.toString());
 }
-function reset_instrument_log_filter_states() {
+window.update_instrument_log_filter_states = updateInstrumentLogFilterStates;
+
+function resetInstrumentLogFilterStates () {
   for (const categoryID in window.categoriesShown) {
     window.categoriesShown[categoryID] = true;
   }
   window.filterUser = null;
   window.filterDate = null;
   const numEntries = $('#instrument-log-container > div > .instrument-log-entry').length;
-  $('#instrument_log_counter').html(numEntries.toString() + " / " + numEntries.toString());
+  $('#instrument_log_counter').html(numEntries.toString() + ' / ' + numEntries.toString());
 }
+window.reset_instrument_log_filter_states = resetInstrumentLogFilterStates;
+
 $(function () {
-  setup_instrument_log_filter_states();
+  setupInstrumentLogFilterStates();
   $('[data-toggle="popover"]').popover();
 
-  function updateNewLogEntryMarkdown() {
+  function updateNewLogEntryMarkdown () {
     if ($('#input-content-is-markdown').prop('checked')) {
       window.new_log_entry = new InscrybMDE({
-        element: $("#textarea-log-entry-text")[0],
+        element: $('#textarea-log-entry-text')[0],
         indentWithTabs: false,
         spellChecker: false,
         status: false,
-        hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-        showIcons: ["code", "table"],
+        hideIcons: ['guide', 'fullscreen', 'side-by-side', 'quote'],
+        showIcons: ['code', 'table'],
         minHeight: '100px',
-        autoDownloadFontAwesome: false,
+        autoDownloadFontAwesome: false
       });
       setupImageDragAndDrop(window.new_log_entry);
     } else {
@@ -105,29 +112,29 @@ $(function () {
   $('#input-content-is-markdown').change(updateNewLogEntryMarkdown);
   updateNewLogEntryMarkdown();
 
-  for (const logEntryID of window.getTemplateValue("instrument_log_entries.editable_ids")) {
+  for (const logEntryID of window.getTemplateValue('instrument_log_entries.editable_ids')) {
     const changeHandler = function () {
-      const files =  $(`#input-file-upload-${logEntryID}`).get(0).files;
+      const files = $(`#input-file-upload-${logEntryID}`).get(0).files;
       if (files.length === 0) {
-        $(`#input-file-text-${logEntryID}`).val("");
+        $(`#input-file-text-${logEntryID}`).val('');
       } else if (files.length === 1) {
         $(`#input-file-text-${logEntryID}`).val(files[0].name);
       } else {
-        $(`#input-file-text-${logEntryID}`).val(files.length + " files selected");
+        $(`#input-file-text-${logEntryID}`).val(files.length + ' files selected');
       }
-    }
+    };
     $(`#input-file-upload-${logEntryID}`).on('change', changeHandler);
     const dropHandler = function (e) {
       e.preventDefault();
       $(`#input-file-upload-${logEntryID}`)[0].files = e.dataTransfer.files;
       changeHandler();
-    }
+    };
     const dragOverHandler = function (e) {
       e.preventDefault();
-    }
-    const upload_area = $(`#upload-area-${logEntryID}`)[0];
-    upload_area.ondrop = dropHandler;
-    upload_area.ondragover = dragOverHandler;
+    };
+    const uploadArea = $(`#upload-area-${logEntryID}`)[0];
+    uploadArea.ondrop = dropHandler;
+    uploadArea.ondragover = dragOverHandler;
 
     const updateLogEntryMarkdown = function () {
       if ($(`#input-edit-content-is-markdown-${logEntryID}`).prop('checked')) {
@@ -139,10 +146,10 @@ $(function () {
           indentWithTabs: false,
           spellChecker: false,
           status: false,
-          hideIcons: ["guide", "fullscreen", "side-by-side", "quote"],
-          showIcons: ["code", "table"],
+          hideIcons: ['guide', 'fullscreen', 'side-by-side', 'quote'],
+          showIcons: ['code', 'table'],
           minHeight: '100px',
-          autoDownloadFontAwesome: false,
+          autoDownloadFontAwesome: false
         });
         setupImageDragAndDrop(window.log_entries[logEntryID]);
       } else {
@@ -151,246 +158,246 @@ $(function () {
           delete window.log_entries[logEntryID];
         }
       }
-    }
+    };
     $(`#input-edit-content-is-markdown-${logEntryID}`).change(updateLogEntryMarkdown);
     $(`#logEntryContentModal_${logEntryID}`).on('shown.bs.modal', updateLogEntryMarkdown);
     updateLogEntryMarkdown();
   }
-  function changeHandler() {
-    var files =  $('#input-file-upload').get(0).files;
+  function changeHandler () {
+    const files = $('#input-file-upload').get(0).files;
     if (files.length === 0) {
-      $('#input-file-text').val("");
+      $('#input-file-text').val('');
     } else if (files.length === 1) {
       $('#input-file-text').val(files[0].name);
     } else {
-      $('#input-file-text').val(files.length + " files selected");
+      $('#input-file-text').val(files.length + ' files selected');
     }
   }
   if (window.getTemplateValue('can_create_instrument_log_entries')) {
     $('#input-file-upload').on('change', changeHandler);
-    function dropHandler(e) {
+    const dropHandler = function (e) {
       e.preventDefault();
       $('#input-file-upload')[0].files = e.dataTransfer.files;
       changeHandler();
-    }
-    function dragOverHandler(e) {
+    };
+    const dragOverHandler = function (e) {
       e.preventDefault();
-    }
-    const upload_area = $('#upload-area')[0];
-    upload_area.ondrop = dropHandler;
-    upload_area.ondragover = dragOverHandler;
+    };
+    const uploadArea = $('#upload-area')[0];
+    uploadArea.ondrop = dropHandler;
+    uploadArea.ondragover = dragOverHandler;
   }
 
-  function applySortOrder(log_order_button, attribute) {
-    var log_order_button_indicator = log_order_button.find('i');
-    if (log_order_button_indicator.css('visibility') === 'hidden') {
+  function applySortOrder (logOrderButton, attribute) {
+    const logOrderButtonIndicator = logOrderButton.find('i');
+    if (logOrderButtonIndicator.css('visibility') === 'hidden') {
       $('.button-switch-instrument-log-order i').css('visibility', 'hidden');
-      log_order_button_indicator.css('visibility', 'visible');
+      logOrderButtonIndicator.css('visibility', 'visible');
     } else {
-      log_order_button_indicator.toggleClass('fa-sort-asc').toggleClass('fa-sort-desc');
+      logOrderButtonIndicator.toggleClass('fa-sort-asc').toggleClass('fa-sort-desc');
     }
 
-    var ascending = (log_order_button.find('i.fa-sort-asc').length !== 0);
+    const ascending = (logOrderButton.find('i.fa-sort-asc').length !== 0);
 
-    var container = $('#instrument-log-container');
-    container.children().sort(function(a, b) {
-      a_datetime = $(a).find('.instrument-log-entry').data('instrumentLog' + attribute);
-      b_datetime = $(b).find('.instrument-log-entry').data('instrumentLog' + attribute);
+    const container = $('#instrument-log-container');
+    container.children().sort(function (a, b) {
+      const aDatetime = $(a).find('.instrument-log-entry').data('instrumentLog' + attribute);
+      const bDatetime = $(b).find('.instrument-log-entry').data('instrumentLog' + attribute);
       if (ascending) {
-        return a_datetime > b_datetime;
+        return aDatetime > bDatetime;
       } else {
-        return a_datetime < b_datetime;
+        return aDatetime < bDatetime;
       }
     }).appendTo(container);
 
-    var form = $('#form-instrument-log-order');
+    const form = $('#form-instrument-log-order');
     form.find('input[type="checkbox"]').prop('checked', ascending);
     form.find('input[type="text"]').val(attribute.toLowerCase());
     $.ajax({
-      type: "POST",
+      type: 'POST',
       url: window.getTemplateValue('set_instrument_log_order_url'),
       data: form.serialize()
     });
   }
-  var log_order_button_date = $('#button-switch-instrument-log-order-date');
-  log_order_button_date.on('click', function () {
-    applySortOrder(log_order_button_date, "Datetime");
+  const logOrderButtonDate = $('#button-switch-instrument-log-order-date');
+  logOrderButtonDate.on('click', function () {
+    applySortOrder(logOrderButtonDate, 'Datetime');
   });
-  var log_order_button_user_name = $('#button-switch-instrument-log-order-user-name');
-  log_order_button_user_name.on('click', function () {
-    applySortOrder(log_order_button_user_name, "UserName");
+  const logOrderButtonUserName = $('#button-switch-instrument-log-order-user-name');
+  logOrderButtonUserName.on('click', function () {
+    applySortOrder(logOrderButtonUserName, 'UserName');
   });
 
-  let show_list_button = $('.button-show-instrument-log-list');
-  let show_tree_button_date_author = $('.button-show-instrument-log-tree-date-author');
-  let show_tree_button_author_date = $('.button-show-instrument-log-tree-author-date');
-  show_list_button.on('click', function() {
-    reset_instrument_log_filter_states();
-    show_list_button.prop('disabled', true);
-    show_tree_button_date_author.prop('disabled', false);
-    show_tree_button_author_date.prop('disabled', false);
+  const showListButton = $('.button-show-instrument-log-list');
+  const showTreeButtonDateAuthor = $('.button-show-instrument-log-tree-date-author');
+  const showTreeButtonAuthorDate = $('.button-show-instrument-log-tree-author-date');
+  showListButton.on('click', function () {
+    resetInstrumentLogFilterStates();
+    showListButton.prop('disabled', true);
+    showTreeButtonDateAuthor.prop('disabled', false);
+    showTreeButtonAuthorDate.prop('disabled', false);
     $('.button-switch-instrument-log-order, #button-instrument-log-list-filter').prop('disabled', false);
     $('#instrument-log-tree').html('');
     $('.instrument-log-entry').show();
   });
-  function sort_tree_container_children(container) {
-    container.children('.instrument-log-tree-container').sort(function(a, b) {
-      let a_value = $(a).data('instrumentLogTreeSortValue');
-      let b_value = $(b).data('instrumentLogTreeSortValue');
-      let a_number = Number.parseInt(a_value);
-      let b_number = Number.parseInt(b_value);
-      if (Number.isNaN(a_number) || Number.isNaN(b_number)) {
-        return a_value > b_value;
+  function sortTreeContainerChildren (container) {
+    container.children('.instrument-log-tree-container').sort(function (a, b) {
+      const aValue = $(a).data('instrumentLogTreeSortValue');
+      const bValue = $(b).data('instrumentLogTreeSortValue');
+      const aNumber = Number.parseInt(aValue);
+      const bNumber = Number.parseInt(bValue);
+      if (Number.isNaN(aNumber) || Number.isNaN(bNumber)) {
+        return aValue > bValue;
       } else {
-        return a_number > b_number;
+        return aNumber > bNumber;
       }
     }).appendTo(container);
   }
-  show_tree_button_date_author.on('click', function() {
-    reset_instrument_log_filter_states();
-    show_list_button.prop('disabled', false);
-    show_tree_button_date_author.prop('disabled', true);
-    show_tree_button_author_date.prop('disabled', false);
+  showTreeButtonDateAuthor.on('click', function () {
+    resetInstrumentLogFilterStates();
+    showListButton.prop('disabled', false);
+    showTreeButtonDateAuthor.prop('disabled', true);
+    showTreeButtonAuthorDate.prop('disabled', false);
     $('.button-switch-instrument-log-order, #button-instrument-log-list-filter').prop('disabled', true);
-    let log_entries = $('#instrument-log-container > div > .instrument-log-entry');
+    const logEntries = $('#instrument-log-container > div > .instrument-log-entry');
     $('#button-instrument-log-list-filter').popover('hide');
-    log_entries.hide();
-    let tree_container = $('#instrument-log-tree');
-    if (log_entries.length) {
-      tree_container.html(`<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_years') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_years') }</button></div></div></div>`);
+    logEntries.hide();
+    const treeContainer = $('#instrument-log-tree');
+    if (logEntries.length) {
+      treeContainer.html(`<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_years')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_years')}</button></div></div></div>`);
     } else {
-      tree_container.html("");
+      treeContainer.html('');
     }
-    let containers_by_date = {};
+    const containersByDate = {};
     let i = 0;
     const MONTH_NAMES = window.getTemplateValue('translations.month_names');
-    log_entries.each(function(_, element) {
-      let log_entry = $(element);
-      let author = log_entry.data('instrumentLogUserName');
-      let utc_datetime_string = log_entry.data('instrumentLogDatetime');
-      let utc_datetime = moment.utc(utc_datetime_string);
-      let local_datetime = utc_datetime.local();
-      let year = local_datetime.year();
-      let month = local_datetime.month();
-      let day = local_datetime.date();
-      if (!(year in containers_by_date)) {
-        let parent_container = tree_container.find('#instrument-log-tree-root-block');
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${year}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${year}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_months') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_months') }</button></div></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_date[year] = [container.find('.instrument-log-tree-block'), {}];
+    logEntries.each(function (_, element) {
+      const logEntry = $(element);
+      const author = logEntry.data('instrumentLogUserName');
+      const utcDatetimeString = logEntry.data('instrumentLogDatetime');
+      const utcDatetime = moment.utc(utcDatetimeString);
+      const localDatetime = utcDatetime.local();
+      const year = localDatetime.year();
+      const month = localDatetime.month();
+      const day = localDatetime.date();
+      if (!(year in containersByDate)) {
+        const parentContainer = treeContainer.find('#instrument-log-tree-root-block');
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${year}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${year}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_months')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_months')}</button></div></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByDate[year] = [container.find('.instrument-log-tree-block'), {}];
       }
-      if (!(month in containers_by_date[year][1])) {
-        let parent_container = containers_by_date[year][0];
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${month}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${MONTH_NAMES[month]}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_days') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_days') }</button></div></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_date[year][1][month] = [container.find('.instrument-log-tree-block'), {}];
+      if (!(month in containersByDate[year][1])) {
+        const parentContainer = containersByDate[year][0];
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${month}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${MONTH_NAMES[month]}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_days')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_days')}</button></div></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByDate[year][1][month] = [container.find('.instrument-log-tree-block'), {}];
       }
-      if (!(day in containers_by_date[year][1][month][1])) {
-        let parent_container = containers_by_date[year][1][month][0];
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${day}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${day}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_authors') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_authors') }</button></div></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_date[year][1][month][1][day] = [container.find('.instrument-log-tree-block'), {}];
+      if (!(day in containersByDate[year][1][month][1])) {
+        const parentContainer = containersByDate[year][1][month][0];
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${day}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${day}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_authors')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_authors')}</button></div></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByDate[year][1][month][1][day] = [container.find('.instrument-log-tree-block'), {}];
       }
-      if (!(author in containers_by_date[year][1][month][1][day][1])) {
-        let parent_container = containers_by_date[year][1][month][1][day][0];
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${author}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${author}</label></h3><div class="instrument-log-tree-block"></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_date[year][1][month][1][day][1][author] = [container.find('.instrument-log-tree-block'), {}];
+      if (!(author in containersByDate[year][1][month][1][day][1])) {
+        const parentContainer = containersByDate[year][1][month][1][day][0];
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${author}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${author}</label></h3><div class="instrument-log-tree-block"></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByDate[year][1][month][1][day][1][author] = [container.find('.instrument-log-tree-block'), {}];
       }
-      let log_entry_clone = $(log_entry).clone();
-      log_entry_clone.show();
-      log_entry_clone.appendTo(containers_by_date[year][1][month][1][day][1][author][0]);
+      const logEntryClone = $(logEntry).clone();
+      logEntryClone.show();
+      logEntryClone.appendTo(containersByDate[year][1][month][1][day][1][author][0]);
     });
-    tree_container.find('.button-instrument-log-tree-expand-all').on('click', function() {
-      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function(_, checkbox) {
+    treeContainer.find('.button-instrument-log-tree-expand-all').on('click', function () {
+      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function (_, checkbox) {
         checkbox.checked = true;
       });
     });
-    tree_container.find('.button-instrument-log-tree-collapse-all').on('click', function() {
-      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function(_, checkbox) {
+    treeContainer.find('.button-instrument-log-tree-collapse-all').on('click', function () {
+      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function (_, checkbox) {
         checkbox.checked = false;
       });
     });
   });
-  show_tree_button_author_date.on('click', function() {
-    reset_instrument_log_filter_states();
-    show_list_button.prop('disabled', false);
-    show_tree_button_date_author.prop('disabled', false);
-    show_tree_button_author_date.prop('disabled', true);
+  showTreeButtonAuthorDate.on('click', function () {
+    resetInstrumentLogFilterStates();
+    showListButton.prop('disabled', false);
+    showTreeButtonDateAuthor.prop('disabled', false);
+    showTreeButtonAuthorDate.prop('disabled', true);
     $('.button-switch-instrument-log-order, #button-instrument-log-list-filter').prop('disabled', true);
-    let log_entries = $('#instrument-log-container > div > .instrument-log-entry');
+    const logEntries = $('#instrument-log-container > div > .instrument-log-entry');
     $('#button-instrument-log-list-filter').popover('hide');
-    log_entries.hide();
-    let tree_container = $('#instrument-log-tree');
-    if (log_entries.length) {
-      tree_container.html(`<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_authors')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_authors')}</button></div></div></div>`);
+    logEntries.hide();
+    const treeContainer = $('#instrument-log-tree');
+    if (logEntries.length) {
+      treeContainer.html(`<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_authors')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_authors')}</button></div></div></div>`);
     } else {
-      tree_container.html();
+      treeContainer.html();
     }
-    let containers_by_author = {};
+    const containersByAuthor = {};
     let i = 0;
     const MONTH_NAMES = window.getTemplateValue('translations.month_names');
-    log_entries.each(function(_, element) {
-      let log_entry = $(element);
-      let author = log_entry.data('instrumentLogUserName');
-      let utc_datetime_string = log_entry.data('instrumentLogDatetime');
-      let utc_datetime = moment.utc(utc_datetime_string);
-      let local_datetime = utc_datetime.local();
-      let year = local_datetime.year();
-      let month = local_datetime.month();
-      let day = local_datetime.date();
-      if (!(author in containers_by_author)) {
-        let parent_container = tree_container.find('#instrument-log-tree-root-block');
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${author}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${author}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_years')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_years')}</button></div></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_author[author] = [container.find('.instrument-log-tree-block'), {}];
+    logEntries.each(function (_, element) {
+      const logEntry = $(element);
+      const author = logEntry.data('instrumentLogUserName');
+      const utcDatetimeString = logEntry.data('instrumentLogDatetime');
+      const utcDatetime = moment.utc(utcDatetimeString);
+      const localDatetime = utcDatetime.local();
+      const year = localDatetime.year();
+      const month = localDatetime.month();
+      const day = localDatetime.date();
+      if (!(author in containersByAuthor)) {
+        const parentContainer = treeContainer.find('#instrument-log-tree-root-block');
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${author}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${author}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_years')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_years')}</button></div></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByAuthor[author] = [container.find('.instrument-log-tree-block'), {}];
       }
-      if (!(year in containers_by_author[author][1])) {
-        let parent_container = containers_by_author[author][0];
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${year}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${year}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_months')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_months')}</button></div></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_author[author][1][year] = [container.find('.instrument-log-tree-block'), {}];
+      if (!(year in containersByAuthor[author][1])) {
+        const parentContainer = containersByAuthor[author][0];
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${year}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${year}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_months')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_months')}</button></div></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByAuthor[author][1][year] = [container.find('.instrument-log-tree-block'), {}];
       }
-      if (!(month in containers_by_author[author][1][year][1])) {
-        let parent_container = containers_by_author[author][1][year][0];
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${month}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${MONTH_NAMES[month]}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_days')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_days')}</button></div></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_author[author][1][year][1][month] = [container.find('.instrument-log-tree-block'), {}];
+      if (!(month in containersByAuthor[author][1][year][1])) {
+        const parentContainer = containersByAuthor[author][1][year][0];
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${month}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${MONTH_NAMES[month]}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_days')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_days')}</button></div></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByAuthor[author][1][year][1][month] = [container.find('.instrument-log-tree-block'), {}];
       }
-      if (!(day in containers_by_author[author][1][year][1][month][1])) {
-        let parent_container = containers_by_author[author][1][year][1][month][0];
-        let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${day}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${day}</label></h3><div class="instrument-log-tree-block"></div></div>`);
-        container.appendTo(parent_container);
-        sort_tree_container_children(parent_container);
-        containers_by_author[author][1][year][1][month][1][day] = [container.find('.instrument-log-tree-block'), {}];
+      if (!(day in containersByAuthor[author][1][year][1][month][1])) {
+        const parentContainer = containersByAuthor[author][1][year][1][month][0];
+        const container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${day}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${day}</label></h3><div class="instrument-log-tree-block"></div></div>`);
+        container.appendTo(parentContainer);
+        sortTreeContainerChildren(parentContainer);
+        containersByAuthor[author][1][year][1][month][1][day] = [container.find('.instrument-log-tree-block'), {}];
       }
-      let log_entry_clone = $(log_entry).clone();
-      log_entry_clone.show();
-      log_entry_clone.appendTo(containers_by_author[author][1][year][1][month][1][day][0]);
+      const logEntryClone = $(logEntry).clone();
+      logEntryClone.show();
+      logEntryClone.appendTo(containersByAuthor[author][1][year][1][month][1][day][0]);
     });
-    tree_container.find('.button-instrument-log-tree-expand-all').on('click', function() {
-      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function(_, checkbox) {
+    treeContainer.find('.button-instrument-log-tree-expand-all').on('click', function () {
+      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function (_, checkbox) {
         checkbox.checked = true;
       });
     });
-    tree_container.find('.button-instrument-log-tree-collapse-all').on('click', function() {
-      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function(_, checkbox) {
+    treeContainer.find('.button-instrument-log-tree-collapse-all').on('click', function () {
+      $(this).closest('.instrument-log-tree-block').find('> .instrument-log-tree-container > input[type="checkbox"]').each(function (_, checkbox) {
         checkbox.checked = false;
       });
     });
   });
 
-  $('.log_entry_date_picker').each(function() {
-    var datetimepicker = $(this);
-    var textbox = datetimepicker.find('input[type="text"]');
-    var checkbox = datetimepicker.parent().find('input[type="checkbox"]');
+  $('.log_entry_date_picker').each(function () {
+    const datetimepicker = $(this);
+    const textbox = datetimepicker.find('input[type="text"]');
+    const checkbox = datetimepicker.parent().find('input[type="checkbox"]');
     if (textbox.val()) {
       checkbox.prop('checked', true);
       textbox.prop('disabled', false);
@@ -402,34 +409,34 @@ $(function () {
       showTodayButton: true,
       timeZone: window.getTemplateValue('current_user.timezone')
     });
-    checkbox.on('change', function() {
-      var checked = checkbox.prop('checked');
+    checkbox.on('change', function () {
+      const checked = checkbox.prop('checked');
       textbox.prop('disabled', !checked);
       if (checked) {
-        datetimepicker.data("DateTimePicker").show();
+        datetimepicker.data('DateTimePicker').show();
       } else {
-        datetimepicker.data("DateTimePicker").hide();
+        datetimepicker.data('DateTimePicker').hide();
         textbox.val('');
       }
     });
-    datetimepicker.on('dp.change', function() {
-      if (textbox.val() === "") {
+    datetimepicker.on('dp.change', function () {
+      if (textbox.val() === '') {
         checkbox.prop('checked', false);
         textbox.prop('disabled', true);
-        datetimepicker.data("DateTimePicker").hide();
+        datetimepicker.data('DateTimePicker').hide();
       }
     });
-    textbox.on('change', function() {
-      if (textbox.val() === "") {
+    textbox.on('change', function () {
+      if (textbox.val() === '') {
         checkbox.prop('checked', false);
         textbox.prop('disabled', true);
-        datetimepicker.data("DateTimePicker").hide();
+        datetimepicker.data('DateTimePicker').hide();
       }
     });
   });
 
   if (window.getTemplateValue('log_entry_text_missing')) {
-    $('#newLogEntryModal').modal({'show': true});
+    $('#newLogEntryModal').modal({ show: true });
   }
 
   $('.button-show-instrument-log-list').prop('disabled', true);
