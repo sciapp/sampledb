@@ -119,6 +119,8 @@ def parse_configuration_values() -> None:
         'ENABLE_FIDO2_PASSKEY_AUTHENTICATION',
         'DISABLE_OUTDATED_USE_AS_TEMPLATE',
         'DISABLE_TOPICS',
+        'ENABLE_FEDERATED_LOGIN',
+        'ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -322,6 +324,15 @@ def check_config(
             'value DOWNLOAD_SERVICE_SECRET is missing.\n'
             '\n',
             file=sys.stderr
+        )
+        show_config_info = True
+
+    if 'ENABLE_FEDERATED_LOGIN' not in defined_config_keys and 'ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER' in defined_config_keys:
+        print(
+            'The configuration value ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER '
+            'will have no effect, because the configuration value '
+            'ENABLE_FEDERATED_LOGIN is missing.\n'
+            '\n'
         )
         show_config_info = True
 
@@ -765,6 +776,8 @@ ENABLE_FEDERATION_DISCOVERABILITY = True
 ALLOW_HTTP = False
 VALID_TIME_DELTA = 300
 ENABLE_DEFAULT_USER_ALIASES = False
+ENABLE_FEDERATED_LOGIN = False
+ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER = False
 
 ENABLE_WEBHOOKS_FOR_USERS = False
 WEBHOOKS_ALLOW_HTTP = False

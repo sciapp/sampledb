@@ -344,3 +344,17 @@ def test_import_status(flask_server, component_token, simple_object, user):
         json=import_status_data
     )
     assert r.status_code == 404
+
+
+def test_federation_metadata(flask_server, component_token):
+    component, token = component_token
+    headers = {'Authorization': f'Bearer {token}'}
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/metadata/', headers=headers)
+    assert r.status_code == 200
+    assert not r.json()
+
+    flask_server.app.config['ENABLE_FEDERATED_LOGIN'] = True
+    r = requests.get(flask_server.base_url + 'federation/v1/shares/metadata/', headers=headers)
+    assert r.status_code == 200
+    data = r.json()
+    assert 'sp' in data and 'idp' in data and 'enabled' in data
