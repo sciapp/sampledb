@@ -82,8 +82,8 @@
         filter_action_ids_picker.selectpicker('render');
         filter_instrument_picker.selectpicker('render');
       });
-      $(plotly_charts).each(function(index, element) {
-        Plotly.newPlot(element[0], element[1]);
+      $('[data-sampledb-plotly-chart]').each(function() {
+        Plotly.newPlot($(this).data('sampledb-plotly-chart'), JSON.parse($(this).text()));
       });
       $('.selectpicker').each(function(_, element) {
         let selectpicker = $(element);
@@ -581,9 +581,6 @@
 {% block content %}
   {# counter for plotly_chart_plots #}
   {% set plot_counter = namespace(value=0) %}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.plotly_charts = [];
-  </script>
   {% if search_notes is defined %}
   {% for category, note, start, end in search_notes %}
     {% if category == "error" %}
