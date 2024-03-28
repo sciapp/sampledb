@@ -19,8 +19,22 @@ function toggleShowMore (prefix) {
 }
 
 $(document).ready(function () {
-  $(window.plotly_charts).each(function (index, element) {
-    Plotly.newPlot(element[0], element[1]);
+  $('[data-sampledb-plotly-chart]').each(function () {
+    const plotDivID = $(this).data('sampledb-plotly-chart');
+    Plotly.newPlot(plotDivID, JSON.parse($(this).text()));
+    const toggleLinkID = $(this).data('sampledb-plotly-chart-toggle');
+    if (toggleLinkID) {
+      const plotDiv = $('#' + plotDivID);
+      const toggleLink = $('#' + toggleLinkID);
+      toggleLink.on('click', function () {
+        plotDiv.toggle();
+        if (plotDiv.is(':hidden')) {
+          toggleLink.text(toggleLink.data('showText'));
+        } else {
+          toggleLink.text(toggleLink.data('hideText'));
+        }
+      });
+    }
   });
 });
 

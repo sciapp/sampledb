@@ -55,9 +55,6 @@
   </div>
   {% endif %}
 
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.plotly_charts = [];
-  </script>
   <h1>
     {% if (show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text %}{% if object_type is not none %}{{ object_type }}{% else %}{{ _('Object') }}{% endif %} #{{ object_id }}{% if name %}: {% endif %}{% endif %}{{ name | get_translated_text(default='—') }}
     {{ import_information_symbol(object) }}
@@ -1700,11 +1697,6 @@
     window.updateTranslationLanguages = updateTranslationLanguages;
     window.initMarkdownField = initMarkdownField;
     window.updateMarkdownField = updateMarkdownField;
-
-    import {
-      togglePlotlyChartDiv
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
-    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
 
     import {
       toggleShowMore

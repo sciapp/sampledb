@@ -131,9 +131,6 @@
       {% set plot_counter = namespace(value=0) %}
       {% set indent_level = 0 %}
       {% set show_indent_border = False %}
-      <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-        window.plotly_charts = [];
-      </script>
       {% include "objects/view/object.html" %}
       {% include "objects/view/timeseries_modals.html" %}
     {% else %}
@@ -600,11 +597,6 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
       toggleShowMore
     } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
     window.toggleShowMore = toggleShowMore;
-
-    import {
-      togglePlotlyChartDiv
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-toggle.js') }}";
-    window.togglePlotlyChartDiv = togglePlotlyChartDiv;
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
