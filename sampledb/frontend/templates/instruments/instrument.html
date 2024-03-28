@@ -569,6 +569,44 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
 </style>
 {% endblock %}
 
+{% block template_values %}
+  {% set categories_shown = {'none': True} %}
+  {% for category in instrument_log_categories %}
+    {% do categories_shown.update({category.id | string: True}) %}
+  {% endfor %}
+  {% do set_template_value("categories_shown", categories_shown) %}
+  {% set editable_log_entry_ids = [] %}
+  {% if instrument_log_entries %}
+    {% for log_entry in instrument_log_entries %}
+      {% if not current_user.is_readonly and (current_user.id == log_entry.user_id) %}
+        {% do editable_log_entry_ids.append(log_entry.id) %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% do set_template_value("instrument_log_entries.editable_ids", editable_log_entry_ids) %}
+  {% do set_template_value("can_create_instrument_log_entries", not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries)) %}
+  {% set ns = namespace(log_entry_text_missing=False) %}
+  {% for message in get_flashed_messages() %}
+    {% if 'Please enter a log entry text' in message %}
+      {% set ns.log_entry_text_missing = True %}
+    {% endif %}
+  {% endfor %}
+  {% do set_template_value("log_entry_text_missing", ns.log_entry_text_missing) %}
+  {% do set_template_value("event_utc_datetime.format_moment", instrument_log_entry_form.event_utc_datetime.format_moment) %}
+  {% do set_template_value("translations.month_names", get_local_month_names()) %}
+  {% do set_template_value("translations.collapse_all_days", _('Collapse all days')) %}
+  {% do set_template_value("translations.collapse_all_months", _('Collapse all months')) %}
+  {% do set_template_value("translations.collapse_all_years", _('Collapse all years')) %}
+  {% do set_template_value("translations.collapse_all_authors", _('Collapse all authors')) %}
+  {% do set_template_value("translations.expand_all_days", _('Expand all days')) %}
+  {% do set_template_value("translations.expand_all_months", _('Expand all months')) %}
+  {% do set_template_value("translations.expand_all_years", _('Expand all years')) %}
+  {% do set_template_value("translations.expand_all_authors", _('Expand all authors')) %}
+  {% do set_template_value("set_instrument_log_order_url", url_for('.set_instrument_log_order')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
@@ -600,29 +638,27 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
-    window.categoriesShown = {
-      {% for category in instrument_log_categories %}
-      '{{ category.id }}': true,
-      {% endfor %}
-      'none': true
-    };
-    window.filterDate = null;
-    window.filterUser = null;
+    $(function () {
+      window.categoriesShown = window.getTemplateValue('categories_shown');
+      window.filterDate = null;
+      window.filterUser = null;
+      window.log_entries = {};
+    });
     function setup_instrument_log_filter_states() {
-      {% for category in instrument_log_categories %}
-      $('#instrument_log_filter_{{ category.id }}').prop('checked', window.categoriesShown['{{ category.id }}']);
-      {% endfor %}
+      for (const categoryID in window.categoriesShown) {
+        $(`#instrument_log_filter_${categoryID}`).prop('checked', window.categoriesShown[categoryID]);
+      }
       $('#instrument_log_filter_none').prop('checked', window.categoriesShown['none']);
       $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
         $('.input-group.date').each(function() {
-          var datetimepicker = $(this).datetimepicker({
+          const datetimepicker = $(this).datetimepicker({
             date: window.filterDate,
-            locale: "{{ get_user_language(current_user).lang_code }}",
+            locale: window.getTemplateValue('language.lang_code'),
             format: 'YYYY-MM',
             showClear: true,
             showClose: true,
             maxDate: moment(new Date()),
-            timeZone: "{{ current_user.timezone }}"
+            timeZone: window.getTemplateValue('current_user.timezone')
           });
           datetimepicker.on('dp.change', function() {
             update_instrument_log_filter_states();
@@ -638,23 +674,23 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
         });
     }
     function update_instrument_log_filter_states() {
-      var filter_date = $('#input-instrument-log-filter-date').val();
+      const filter_date = $('#input-instrument-log-filter-date').val();
       if (filter_date === "") {
         window.filterDate = null;
       } else {
         window.filterDate = filter_date;
       }
-      var filter_user = $('#input-instrument-log-filter-user').val();
+      const filter_user = $('#input-instrument-log-filter-user').val();
       if (filter_user === "") {
         window.filterUser = null;
       } else {
         window.filterUser = filter_user;
       }
       $('.instrument-log-entry').hide();
-      {% for category in instrument_log_categories %}
-        window.categoriesShown['{{ category.id }}'] = $('#instrument_log_filter_{{ category.id }}').prop('checked');
-        if (window.categoriesShown['{{ category.id }}']) {
-          let filter_selector = 'div[data-instrument-log-category-{{ category.id }}="yes"]';
+      for (const categoryID in window.categoriesShown) {
+        window.categoriesShown[categoryID] = $(`#instrument_log_filter_${categoryID}`).prop('checked');
+        if (window.categoriesShown[categoryID]) {
+          let filter_selector = `div[data-instrument-log-category-${categoryID}="yes"]`;
           if (filter_date !== "") {
             filter_selector = filter_selector + '[data-instrument-log-date='+filter_date+']';
           }
@@ -663,29 +699,17 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           }
           $(filter_selector).show();
         }
-      {% endfor %}
-      window.categoriesShown['none'] = $('#instrument_log_filter_none').prop('checked');
-      if (window.categoriesShown['none']) {
-        let filter_selector = 'div[data-instrument-log-category-none="yes"]';
-        if (filter_date !== "") {
-          filter_selector = filter_selector + '[data-instrument-log-date='+filter_date+']';
-        }
-        if (filter_user !== "") {
-          filter_selector = filter_selector + '[data-instrument-log-user-id='+filter_user+']';
-        }
-        $(filter_selector).show();
       }
       $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString()+ " / " + $('.instrument-log-entry').length.toString());
     }
     function reset_instrument_log_filter_states() {
-      window.categoriesShown['none'] = true;
-      {% for category in instrument_log_categories %}
-      window.categoriesShown['{{ category.id }}'] = true;
-      {% endfor %}
+      for (const categoryID in window.categoriesShown) {
+        window.categoriesShown[categoryID] = true;
+      }
       window.filterUser = null;
       window.filterDate = null;
-      let num_entries = $('#instrument-log-container > div > .instrument-log-entry').length;
-      $('#instrument_log_counter').html(num_entries.toString() + " / " + num_entries.toString());
+      const numEntries = $('#instrument-log-container > div > .instrument-log-entry').length;
+      $('#instrument_log_counter').html(numEntries.toString() + " / " + numEntries.toString());
     }
     $(function () {
       setup_instrument_log_filter_states();
@@ -714,39 +738,37 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
       $('#input-content-is-markdown').change(updateNewLogEntryMarkdown);
       updateNewLogEntryMarkdown();
 
-      {% if instrument_log_entries %}
-      {% for log_entry in instrument_log_entries %}
-        {% if not current_user.is_readonly and (current_user.id == log_entry.user_id) %}
-        function changeHandler{{ log_entry.id }}() {
-          var files =  $('#input-file-upload-{{ log_entry.id }}').get(0).files;
+      for (const logEntryID of window.getTemplateValue("instrument_log_entries.editable_ids")) {
+        const changeHandler = function () {
+          const files =  $(`#input-file-upload-${logEntryID}`).get(0).files;
           if (files.length === 0) {
-            $('#input-file-text-{{ log_entry.id }}').val("");
+            $(`#input-file-text-${logEntryID}`).val("");
           } else if (files.length === 1) {
-            $('#input-file-text-{{ log_entry.id }}').val(files[0].name);
+            $(`#input-file-text-${logEntryID}`).val(files[0].name);
           } else {
-            $('#input-file-text-{{ log_entry.id }}').val(files.length + " files selected");
+            $(`#input-file-text-${logEntryID}`).val(files.length + " files selected");
           }
         }
-        $('#input-file-upload-{{ log_entry.id }}').on('change', changeHandler{{ log_entry.id }});
-        function dropHandler{{ log_entry.id }}(e) {
+        $(`#input-file-upload-${logEntryID}`).on('change', changeHandler);
+        const dropHandler = function (e) {
           e.preventDefault();
-          $('#input-file-upload-{{ log_entry.id }}')[0].files = e.dataTransfer.files;
-          changeHandler{{ log_entry.id }}();
+          $(`#input-file-upload-${logEntryID}`)[0].files = e.dataTransfer.files;
+          changeHandler();
         }
-        function dragOverHandler{{ log_entry.id }}(e) {
+        const dragOverHandler = function (e) {
           e.preventDefault();
         }
-        var upload_area = $('#upload-area-{{ log_entry.id }}')[0];
-        upload_area.ondrop = dropHandler{{ log_entry.id }};
-        upload_area.ondragover = dragOverHandler{{ log_entry.id }};
+        const upload_area = $(`#upload-area-${logEntryID}`)[0];
+        upload_area.ondrop = dropHandler;
+        upload_area.ondragover = dragOverHandler;
 
-        function updateLogEntryMarkdown_{{ log_entry.id }}() {
-          if ($('#input-edit-content-is-markdown-{{ log_entry.id }}').prop('checked')) {
-            if (window.log_entry_{{ log_entry.id }}) {
-              window.log_entry_{{ log_entry.id }}.toTextArea();
+        const updateLogEntryMarkdown = function () {
+          if ($(`#input-edit-content-is-markdown-${logEntryID}`).prop('checked')) {
+            if (window.log_entries[logEntryID]) {
+              window.log_entries[logEntryID].toTextArea();
             }
-            window.log_entry_{{ log_entry.id }} = new InscrybMDE({
-              element: $("#textarea-log-entry-text-{{ log_entry.id }}")[0],
+            window.log_entries[logEntryID] = new InscrybMDE({
+              element: $(`#textarea-log-entry-text-${logEntryID}`)[0],
               indentWithTabs: false,
               spellChecker: false,
               status: false,
@@ -755,21 +777,18 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
               minHeight: '100px',
               autoDownloadFontAwesome: false,
             });
-            setupImageDragAndDrop(window.log_entry_{{ log_entry.id }});
+            setupImageDragAndDrop(window.log_entries[logEntryID]);
           } else {
-            if (window.log_entry_{{ log_entry.id }}) {
-              window.log_entry_{{ log_entry.id }}.toTextArea();
-              window.log_entry_{{ log_entry.id }} = null;
+            if (window.log_entries[logEntryID]) {
+              window.log_entries[logEntryID].toTextArea();
+              delete window.log_entries[logEntryID];
             }
           }
         }
-        $('#input-edit-content-is-markdown-{{ log_entry.id }}').change(updateLogEntryMarkdown_{{ log_entry.id }});
-        $('#logEntryContentModal_{{ log_entry.id }}').on('shown.bs.modal', updateLogEntryMarkdown_{{ log_entry.id }});
-        updateLogEntryMarkdown_{{ log_entry.id }}();
-        $()
-        {% endif %}
-      {% endfor %}
-      {% endif %}
+        $(`#input-edit-content-is-markdown-${logEntryID}`).change(updateLogEntryMarkdown);
+        $(`#logEntryContentModal_${logEntryID}`).on('shown.bs.modal', updateLogEntryMarkdown);
+        updateLogEntryMarkdown();
+      }
       function changeHandler() {
         var files =  $('#input-file-upload').get(0).files;
         if (files.length === 0) {
@@ -780,20 +799,20 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           $('#input-file-text').val(files.length + " files selected");
         }
       }
-      {% if not current_user.is_readonly and (is_instrument_responsible_user or instrument.users_can_create_log_entries) %}
-      $('#input-file-upload').on('change', changeHandler);
-      function dropHandler(e) {
-        e.preventDefault();
-        $('#input-file-upload')[0].files = e.dataTransfer.files;
-        changeHandler();
+      if (window.getTemplateValue('can_create_instrument_log_entries')) {
+        $('#input-file-upload').on('change', changeHandler);
+        function dropHandler(e) {
+          e.preventDefault();
+          $('#input-file-upload')[0].files = e.dataTransfer.files;
+          changeHandler();
+        }
+        function dragOverHandler(e) {
+          e.preventDefault();
+        }
+        const upload_area = $('#upload-area')[0];
+        upload_area.ondrop = dropHandler;
+        upload_area.ondragover = dragOverHandler;
       }
-      function dragOverHandler(e) {
-        e.preventDefault();
-      }
-      var upload_area = $('#upload-area')[0];
-      upload_area.ondrop = dropHandler;
-      upload_area.ondragover = dragOverHandler;
-      {% endif %}
 
       function applySortOrder(log_order_button, attribute) {
         var log_order_button_indicator = log_order_button.find('i');
@@ -822,7 +841,7 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
         form.find('input[type="text"]').val(attribute.toLowerCase());
         $.ajax({
           type: "POST",
-          url: {{ url_for('.set_instrument_log_order') | tojson }},
+          url: window.getTemplateValue('set_instrument_log_order_url'),
           data: form.serialize()
         });
       }
@@ -871,13 +890,13 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
         log_entries.hide();
         let tree_container = $('#instrument-log-tree');
         if (log_entries.length) {
-          tree_container.html('<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all years') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all years') }}</button></div></div></div>');
+          tree_container.html(`<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_years') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_years') }</button></div></div></div>`);
         } else {
           tree_container.html("");
         }
         let containers_by_date = {};
         let i = 0;
-        const MONTH_NAMES = {{ get_local_month_names() | tojson }};
+        const MONTH_NAMES = window.getTemplateValue('translations.month_names');
         log_entries.each(function(_, element) {
           let log_entry = $(element);
           let author = log_entry.data('instrumentLogUserName');
@@ -889,28 +908,28 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           let day = local_datetime.date();
           if (!(year in containers_by_date)) {
             let parent_container = tree_container.find('#instrument-log-tree-root-block');
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + year + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + year + '</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all months') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all months') }}</button></div></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${year}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${year}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_months') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_months') }</button></div></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_date[year] = [container.find('.instrument-log-tree-block'), {}];
           }
           if (!(month in containers_by_date[year][1])) {
             let parent_container = containers_by_date[year][0];
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + month + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + MONTH_NAMES[month] + '</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all days') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all days') }}</button></div></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${month}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${MONTH_NAMES[month]}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_days') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_days') }</button></div></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_date[year][1][month] = [container.find('.instrument-log-tree-block'), {}];
           }
           if (!(day in containers_by_date[year][1][month][1])) {
             let parent_container = containers_by_date[year][1][month][0];
-            let container = $('<div class="instrument-log-tree-container"  data-instrument-log-tree-sort-value="' + day + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + day + '</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all authors') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all authors') }}</button></div></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${day}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${day}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_authors') }</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_authors') }</button></div></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_date[year][1][month][1][day] = [container.find('.instrument-log-tree-block'), {}];
           }
           if (!(author in containers_by_date[year][1][month][1][day][1])) {
             let parent_container = containers_by_date[year][1][month][1][day][0];
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + author + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + author + '</label></h3><div class="instrument-log-tree-block"></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${author}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${author}</label></h3><div class="instrument-log-tree-block"></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_date[year][1][month][1][day][1][author] = [container.find('.instrument-log-tree-block'), {}];
@@ -941,13 +960,13 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
         log_entries.hide();
         let tree_container = $('#instrument-log-tree');
         if (log_entries.length) {
-          tree_container.html('<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all authors') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all authors') }}</button></div></div></div>');
+          tree_container.html(`<div class="instrument-log-tree-container"><div class="instrument-log-tree-block" id="instrument-log-tree-root-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_authors')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_authors')}</button></div></div></div>`);
         } else {
           tree_container.html();
         }
         let containers_by_author = {};
         let i = 0;
-        const MONTH_NAMES = {{ get_local_month_names() | tojson }};
+        const MONTH_NAMES = window.getTemplateValue('translations.month_names');
         log_entries.each(function(_, element) {
           let log_entry = $(element);
           let author = log_entry.data('instrumentLogUserName');
@@ -959,28 +978,28 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           let day = local_datetime.date();
           if (!(author in containers_by_author)) {
             let parent_container = tree_container.find('#instrument-log-tree-root-block');
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + author + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + author + '</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all years') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all years') }}</button></div></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${author}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${author}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_years')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_years')}</button></div></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_author[author] = [container.find('.instrument-log-tree-block'), {}];
           }
           if (!(year in containers_by_author[author][1])) {
             let parent_container = containers_by_author[author][0];
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + year + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + year + '</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all months') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all months') }}</button></div></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${year}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${year}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_months')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_months')}</button></div></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_author[author][1][year] = [container.find('.instrument-log-tree-block'), {}];
           }
           if (!(month in containers_by_author[author][1][year][1])) {
             let parent_container = containers_by_author[author][1][year][0];
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + month + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + MONTH_NAMES[month] + '</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">{{ _('Expand all days') }}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">{{ _('Collapse all days') }}</button></div></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${month}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${MONTH_NAMES[month]}</label></h3><div class="instrument-log-tree-block"><div><button type="button" class="btn btn-default btn-xs button-instrument-log-tree-expand-all">${window.getTemplateValue('translations.expand_all_days')}</button> <button type="button" class="btn btn-default btn-xs button-instrument-log-tree-collapse-all">${window.getTemplateValue('translations.collapse_all_days')}</button></div></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_author[author][1][year][1][month] = [container.find('.instrument-log-tree-block'), {}];
           }
           if (!(day in containers_by_author[author][1][year][1][month][1])) {
             let parent_container = containers_by_author[author][1][year][1][month][0];
-            let container = $('<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="' + day + '"><input type="checkbox" id="instrument-log-tree-toggle-' + (++i) + '"/><h3><label for="instrument-log-tree-toggle-' + i + '"><i class="fa fa-fw fa-plus-square"></i> ' + day + '</label></h3><div class="instrument-log-tree-block"></div></div>');
+            let container = $(`<div class="instrument-log-tree-container" data-instrument-log-tree-sort-value="${day}"><input type="checkbox" id="instrument-log-tree-toggle-${++i}"/><h3><label for="instrument-log-tree-toggle-${i}"><i class="fa fa-fw fa-plus-square"></i> ${day}</label></h3><div class="instrument-log-tree-block"></div></div>`);
             container.appendTo(parent_container);
             sort_tree_container_children(parent_container);
             containers_by_author[author][1][year][1][month][1][day] = [container.find('.instrument-log-tree-block'), {}];
@@ -1001,13 +1020,6 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
         });
       });
 
-      {% set log_entry_text_missing = [] %}
-      {% for message in get_flashed_messages() %}
-        {% if 'Please enter a log entry text' in message %}
-          {{ log_entry_text_missing.append(True) or '' }}
-        {% endif %}
-      {% endfor %}
-
       $('.log_entry_date_picker').each(function() {
         var datetimepicker = $(this);
         var textbox = datetimepicker.find('input[type="text"]');
@@ -1017,11 +1029,11 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
           textbox.prop('disabled', false);
         }
         datetimepicker.datetimepicker({
-          format: '{{ instrument_log_entry_form.event_utc_datetime.format_moment }}',
+          format: window.getTemplateValue('event_utc_datetime.format_moment'),
           showClear: true,
           showClose: true,
           showTodayButton: true,
-          timeZone: "{{ current_user.timezone }}"
+          timeZone: window.getTemplateValue('current_user.timezone')
         });
         checkbox.on('change', function() {
           var checked = checkbox.prop('checked');
@@ -1049,9 +1061,9 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
         });
       });
 
-      {% if log_entry_text_missing %}
-      $('#newLogEntryModal').modal({'show': true});
-      {% endif %}
+      if (window.getTemplateValue('log_entry_text_missing')) {
+        $('#newLogEntryModal').modal({'show': true});
+      }
 
       $('.button-show-instrument-log-list').prop('disabled', true);
     });

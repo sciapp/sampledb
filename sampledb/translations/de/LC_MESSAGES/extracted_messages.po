@@ -4184,29 +4184,29 @@ msgstr "Vorherige Versionen ausblenden"
 msgid " and "
 msgstr " und "
 
-msgid "Expand all years"
-msgstr "Alle Jahre ausklappen"
-
-msgid "Collapse all years"
-msgstr "Alle Jahre einklappen"
-
-msgid "Expand all months"
-msgstr "Alle Monate ausklappen"
+msgid "Collapse all days"
+msgstr "Alle Monate einklappen"
 
 msgid "Collapse all months"
 msgstr "Alle Monate einklappen"
 
-msgid "Expand all days"
-msgstr "Alle Tage ausklappen"
-
-msgid "Collapse all days"
-msgstr "Alle Monate einklappen"
-
-msgid "Expand all authors"
-msgstr "Alle Autoren ausklappen"
+msgid "Collapse all years"
+msgstr "Alle Jahre einklappen"
 
 msgid "Collapse all authors"
 msgstr "Alle Autoren einklappen"
+
+msgid "Expand all days"
+msgstr "Alle Tage ausklappen"
+
+msgid "Expand all months"
+msgstr "Alle Monate ausklappen"
+
+msgid "Expand all years"
+msgstr "Alle Jahre ausklappen"
+
+msgid "Expand all authors"
+msgstr "Alle Autoren ausklappen"
 
 msgid "Please enter a category title."
 msgstr "Bitte geben Sie einen Kategorietitel ein."
