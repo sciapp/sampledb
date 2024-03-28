@@ -1687,3 +1687,89 @@ def parse_filter_id_params(
     if not filter_ids:
         return True, None
     return True, list(filter_ids)
+
+
+@JinjaFilter()
+def timeline_array_to_plotly_chart(
+        timeline_array: typing.List[typing.Dict[str, typing.Any]]
+) -> typing.Dict[str, typing.Any]:
+    utc_datetime_strings = []
+    for item in timeline_array:
+        utc_datetime_strings.append(item['datetime']['utc_datetime'])
+    markers = []
+    max_concurrent_count = 1
+    for index, item in enumerate(timeline_array):
+        utc_datetime_string = item['datetime']['utc_datetime']
+        concurrent_item_count = utc_datetime_strings.count(utc_datetime_string)
+        utc_datetime = datetime.strptime(utc_datetime_string, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        local_datetime = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
+        local_datetime_string = local_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(item.get('label'), dict) and item['label'].get('_type') == 'text' and not item['label'].get('multiline') and not item['label'].get('markdown') and get_translated_text(item['label'].get('text', '')).strip():
+            label = typing.cast(str, markupsafe.escape(get_translated_text(item['label'].get('text', '')).strip()))
+        else:
+            label = format_datetime(local_datetime, format='medium')
+        if concurrent_item_count > 1:
+            max_concurrent_count = max(max_concurrent_count, concurrent_item_count)
+            concurrent_item_index = utc_datetime_strings[:index].count(utc_datetime_string)
+            markers.append((local_datetime_string, concurrent_item_index, label))
+        else:
+            markers.append((local_datetime_string, 0, label))
+    plotly_chart = {
+        "data": [
+            {
+                "x": [
+                    marker[0]
+                    for marker in markers
+                ],
+                "y": [
+                    str(marker[1])
+                    for marker in markers
+                ],
+                "text": [
+                    marker[2]
+                    for marker in markers
+                ],
+                "mode": "markers+text",
+                "hoverinfo": "none",
+                "textposition": "top center",
+                "type": "scatter"
+            }
+        ],
+        "layout": {
+            "font": {
+                "family": "Arial, sans-serif",
+                "size": 12,
+                "color": "#000"
+            },
+            "showlegend": False,
+            "autosize": False,
+            "width": 800,
+            "height": 175 + 25 * max_concurrent_count,
+            "xaxis": {
+                "showgrid": False
+            },
+            "yaxis": {
+                "showgrid": False,
+                "zeroline": True,
+                "showticklabels": False,
+                "range": [
+                    -0.5,
+                    max_concurrent_count
+                ]
+            },
+            "margin": {
+                "l": 70,
+                "r": 40,
+                "b": 60,
+                "t": 60,
+                "pad": 2,
+                "autoexpand": True
+            },
+            "dragmode": "pan",
+            "paper_bgcolor": "#fff",
+            "plot_bgcolor": "#fff",
+            "hovermode": "closest",
+            "separators": ".,"
+        }
+    }
+    return plotly_chart
