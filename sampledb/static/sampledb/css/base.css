@@ -1565,3 +1565,15 @@ textarea.text-markdown-field {
 .column-space {
     padding-right: 10px;
 }
+
+.div-timeline-array ~ div {
+    display: none;
+}
+
+.div-timeline-array + div {
+    display: block;
+}
+
+.div-timeline-array > .plotly > .svg-container {
+    margin: 0 auto;
+}

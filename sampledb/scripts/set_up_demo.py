@@ -1384,4 +1384,102 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, choice_array_action.id, name="Choice Array Demo Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(choice_array_action.id, sampledb.models.Permissions.READ)
 
+        timeline_array_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": "Example Object",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Object Name",
+                        "type": "text"
+                    },
+                    "timeline_array": {
+                        "title": "Timeline Array",
+                        "type": "array",
+                        "style": "timeline",
+                        "items": {
+                            "title": "Event",
+                            "type": "object",
+                            "properties": {
+                                "datetime": {
+                                    "type": "datetime",
+                                    "title": "Datetime"
+                                },
+                                "label": {
+                                    "type": "text",
+                                    "title": "Label", "languages": "all"
+                                }
+                            },
+                            "required": ["datetime"]
+                        }
+                    }
+                },
+                "required": ["name"],
+                "propertyOrder": ["name", "timeline_array"]
+            }
+        )
+        set_action_translation(Language.ENGLISH, timeline_array_action.id, name="Timeline Array Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(timeline_array_action.id, sampledb.models.Permissions.READ)
+        sampledb.logic.objects.create_object(
+            action_id=timeline_array_action.id,
+            data={
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "Timeline Array Demo Object"}
+                },
+                "timeline_array": [
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:05"
+                        }
+                    },
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:06"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": "Very " * 5 + "Long Text"
+                        }
+                    },
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:07"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": {"en": "Translated Text EN", "de": "Translated Text DE"}
+                        }
+                    },
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:04"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": "HTML tags will be escaped<br />"
+                        }
+                    }
+                ] + [
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:05"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": f"Event {i}"
+                        }
+                    }
+                    for i in range(5)
+                ]
+            },
+            user_id=instrument_responsible_user.id
+        )
+
     print("Success: set up demo data", flush=True)

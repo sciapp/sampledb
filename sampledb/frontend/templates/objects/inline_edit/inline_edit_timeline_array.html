@@ -1,0 +1,6 @@
+{% if schema['items'].type == 'object' and 'datetime' in schema['items']['properties'] and schema['items']['properties']['datetime']['type'] == 'datetime' and 'required' in schema['items'] and 'datetime' in schema['items']['required'] %}
+  {% set any_template = "objects/inline_edit/inline_edit_any.html" %}
+  {% include "objects/view/timeline_array.html" %}
+{% else %}
+  {% include "objects/inline_edit/inline_edit_array.html" %}
+{% endif %}

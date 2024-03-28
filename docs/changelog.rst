@@ -7,6 +7,7 @@ Version 0.28
 Currently in development.
 
 - Fixed search via API in combination with name_only parameter
+- Added ``timeline`` array style for arrays of objects with a ``datetime`` property
 
 Version 0.27
 ------------
