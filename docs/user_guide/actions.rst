@@ -23,7 +23,7 @@ Topics
 ------
 
 Topics allow you to filter the action list by predefined topics.
-When creating or editing an action, you can optionally assign one or more topics to the action.
+When creating or editing an action, you can optionally assign one or more topics to the action. If the action is assigned to an instrument, you can also mark it to use the instrument topics.
 See the :ref:`topics section <topics>` for more details.
 
 Custom Actions
