@@ -31,7 +31,7 @@ curl https://raw.githubusercontent.com/sciapp/sampledb/develop/docker-compose.ym
 Then simply bring everything up with:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Using docker commands
