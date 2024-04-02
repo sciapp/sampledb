@@ -2,15 +2,6 @@
 
 {% block title %}{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }} — {{ service_name }}{% endblock %}
 
-{% block scripts %}
-  {{ super() }}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
-{% endblock %}
-
 {% block content %}
   <h1>{{ _('Export to %(scicat_name)s', scicat_name=config['SCICAT_NAME']) }}</h1>
   <p>{{ _('%(service_name)s can export the metadata of this object to %(scicat_name)s.', service_name=service_name, scicat_name=config['SCICAT_NAME']) }}</p>
