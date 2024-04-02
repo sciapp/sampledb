@@ -2,15 +2,6 @@
 
 {% block title %}{{ _('Export Data') }} — {{ service_name }}{% endblock %}
 
-{% block scripts %}
-  {{ super() }}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip()
-    })
-  </script>
-{% endblock %}
-
 {% block content %}
   <h1>{{ _('Export to Dataverse') }}</h1>
   <p>{{ _('%(service_name)s can export the metadata and files of this object to %(dataverse_name)s. It will create a draft dataset, which you can then review and publish. To be able to create this dataset for you, %(service_name)s can use the Dataverse API using an API Token associated with your %(dataverse_name)s account. To learn more about API Tokens, see the <a href="https://guides.dataverse.org/en/latest/user/account.html#api-token">Dataverse User Guide</a>.', service_name=service_name, dataverse_name=config['DATAVERSE_NAME']) }}</p>
