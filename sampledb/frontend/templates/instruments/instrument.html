@@ -240,17 +240,6 @@
               {% endfor %}
               </select>
               </div>
-              <script type='text/javascript' nonce='{{ generate_inline_script_nonce() }}'>
-                setup_instrument_log_filter_states();
-                document.getElementById('instrument_log_filter_none').addEventListener('click', function() {
-                  update_instrument_log_filter_states();
-                });
-                {% for category in instrument_log_categories %}
-                  document.getElementById('instrument_log_filter_{{ category.id }}').addEventListener('click', function() {
-                    update_instrument_log_filter_states();
-                  });
-                {% endfor %}
-              </script>
             ">
               <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="instrument_log_counter"></span>
             </button>

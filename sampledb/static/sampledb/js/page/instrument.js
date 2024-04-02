@@ -41,7 +41,6 @@ function setupInstrumentLogFilterStates () {
     updateInstrumentLogFilterStates();
   });
 }
-window.setup_instrument_log_filter_states = setupInstrumentLogFilterStates;
 
 function updateInstrumentLogFilterStates () {
   const filterDate = $('#input-instrument-log-filter-date').val();
@@ -72,7 +71,6 @@ function updateInstrumentLogFilterStates () {
   }
   $('#instrument_log_counter').html($('.instrument-log-entry:not(:hidden)').length.toString() + ' / ' + $('.instrument-log-entry').length.toString());
 }
-window.update_instrument_log_filter_states = updateInstrumentLogFilterStates;
 
 function resetInstrumentLogFilterStates () {
   for (const categoryID in window.categoriesShown) {
@@ -83,7 +81,6 @@ function resetInstrumentLogFilterStates () {
   const numEntries = $('#instrument-log-container > div > .instrument-log-entry').length;
   $('#instrument_log_counter').html(numEntries.toString() + ' / ' + numEntries.toString());
 }
-window.reset_instrument_log_filter_states = resetInstrumentLogFilterStates;
 
 $(function () {
   setupInstrumentLogFilterStates();
@@ -440,4 +437,13 @@ $(function () {
   }
 
   $('.button-show-instrument-log-list').prop('disabled', true);
+
+  $('#button-instrument-log-list-filter').on('inserted.bs.popover', function () {
+    setupInstrumentLogFilterStates();
+    for (const categoryID in window.categoriesShown) {
+      document.getElementById(`instrument_log_filter_${categoryID}`).addEventListener('click', function () {
+        updateInstrumentLogFilterStates();
+      });
+    }
+  });
 });
