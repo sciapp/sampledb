@@ -1242,12 +1242,14 @@
 
   function applySchemaCalculations(clone) {
     $(clone).find('.calculation-wrapper').each(function() {
-      const id_prefix = $(this).data('id-prefix');
-      const schema = $(this).data('schema');
-      const root_schema = $(this).data('root-schema');
-      window.calculation_scripts.push(function () {
-        setUpCalculation(id_prefix, schema, root_schema);
-      });
+      if ($(this).parents('.array-template').length === 0) {
+        const id_prefix = $(this).data('id-prefix');
+        const schema = $(this).data('schema');
+        const root_schema = $(this).data('root-schema');
+        window.calculation_scripts.push(function () {
+          setUpCalculation(id_prefix, schema, root_schema);
+        });
+      }
     });
     setUpCalculations();
   }
