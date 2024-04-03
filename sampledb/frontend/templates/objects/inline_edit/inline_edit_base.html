@@ -34,6 +34,12 @@
   {{ super() }}
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("tags", tags) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
     {{ super() }}
     <script src="{{ fingerprinted_static('bootstrap-tagsinput/js/bootstrap-tagsinput.min.js') }}"></script>
@@ -42,6 +48,7 @@
     <script src="{{ fingerprinted_static('sampledb/js/inline-edit.js') }}" type="module"></script>
     <script src="{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}" type="module"></script>
     <script src="{{ fingerprinted_static('sampledb/js/object_form/hazards.js') }}" type="module"></script>
+    <script src="{{ fingerprinted_static('sampledb/js/object_form/tags.js') }}" type="module"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
     import {
@@ -150,47 +157,6 @@
                 });
             });
 
-        var tags = new Bloodhound({
-            initialize: true,
-            local: {{ tags | tojson }},
-            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
-            queryTokenizer: Bloodhound.tokenizers.whitespace
-        });
-        $('input[name^=\'object__\'][name$=\'__tags\']').each(function () {
-            var tagsinput = $(this);
-            tagsinput.tagsinput({
-                trimValue: true,
-                confirmKeys: [13, 32],
-                typeaheadjs: {
-                    name: 'Tags',
-                    valueKey: 'name',
-                    displayKey: 'name',
-                    source: tags.ttAdapter(),
-                    templates: {
-                        'suggestion': function (item) {
-                            return '<div>' + item.name + ' (×' + item.uses + ')' + '</div>'
-                        }
-                    }
-                }
-            });
-            tagsinput.on('beforeItemAdd', function (event) {
-                var sanitized_tag = event.item.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9_\-äüöß]/g, '');
-                if (event.item !== sanitized_tag) {
-                    if (!event.options || !event.options.fromHandler) {
-                        event.cancel = true;
-                        $(this).tagsinput('add', sanitized_tag, {fromHandler: true});
-                    }
-                }
-            });
-            $(tagsinput.tagsinput('input')).on('blur', function () {
-                var item = $(this).tagsinput('input').val();
-                $(this).tagsinput('input').val('');
-                item = item.trim();
-                if (item) {
-                    $(this).tagsinput('add', item);
-                }
-            }.bind(tagsinput));
-        });
         applySchemaConditions(document);
         // wrapped in an onload function to ensure this runs after the module has defined window.fileEventHandler
         window.temporaryFileUploadURL = '{{ url_for(".temporary_file_upload") }}';
