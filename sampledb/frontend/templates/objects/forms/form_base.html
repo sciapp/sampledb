@@ -47,6 +47,7 @@
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
   <script src="{{ fingerprinted_static('sampledb/js/object_form/hazards.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/object_form/tags.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/object_form/datetime.js') }}" type="module"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
     import {
@@ -199,17 +200,6 @@
         $(this).val($(this).typeahead('val'));
       });
     });
-
-    $('.input-group.date').each(function() {
-      $(this).datetimepicker({
-        locale: "{{ get_user_language(current_user).lang_code }}",
-        format: "{{ get_user_language(current_user).datetime_format_moment }}",
-        date: $(this).attr('data-datetime'),
-        timeZone: "{{ current_user.timezone }}",
-        showTodayButton: true
-      });
-    });
-
 
     $('textarea[data-markdown-textarea="true"]').not('.template-markdown-editor').each(function(_, element) {
       setupImageDragAndDrop(initMarkdownField(element, '100px'));
