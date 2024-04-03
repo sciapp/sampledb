@@ -42,9 +42,11 @@
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
     import {
-      setUpCalculation
-    } from "{{ fingerprinted_static('sampledb/js/calculation.js') }}";
-    window.setUpCalculation = setUpCalculation;
+      setUpCalculations,
+      applySchemaCalculations
+    } from "{{ fingerprinted_static('sampledb/js/object_form/calculation.js') }}";
+    window.setUpCalculations = setUpCalculations;
+    window.applySchemaCalculations = applySchemaCalculations;
 
     import {
       fileEventHandler
@@ -1237,29 +1239,6 @@
       if (objectpicker.selectpicker('val') === null) {
         objectpicker.selectpicker('val', '-');
       }
-    });
-  }
-
-  function applySchemaCalculations(clone) {
-    $(clone).find('.calculation-wrapper').each(function() {
-      if ($(this).parents('.array-template').length === 0) {
-        const id_prefix = $(this).data('id-prefix');
-        const schema = $(this).data('schema');
-        const root_schema = $(this).data('root-schema');
-        window.calculation_scripts.push(function () {
-          setUpCalculation(id_prefix, schema, root_schema);
-        });
-      }
-    });
-    setUpCalculations();
-  }
-
-  function setUpCalculations() {
-    if (!window.calculation_scripts) {
-      window.calculation_scripts = [];
-    }
-    $.each(window.calculation_scripts, function () {
-      this();
     });
   }
 
