@@ -5419,12 +5419,12 @@ msgstr "%(item_name)s hinzufügen"
 msgid "The object could not be saved due to an error."
 msgstr "Das Objekt konnte aufgrund eines Fehlers nicht gespeichert werden."
 
+msgid "Filter by Action…"
+msgstr "Nach Aktion filtern…"
+
 #, python-format
 msgid "Field %(index)s"
 msgstr "Feld %(index)s"
-
-msgid "Filter by Action…"
-msgstr "Nach Aktion filtern…"
 
 msgid "sets:"
 msgstr "setzt:"

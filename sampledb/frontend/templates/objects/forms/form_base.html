@@ -33,6 +33,7 @@
 
 {% block template_values %}
   {% do set_template_value("tags", tags) %}
+  {% do set_template_value("translation.filter_by_action", _('Filter by Action…')) %}
 
   {{ super() }}
 {% endblock %}
@@ -91,6 +92,11 @@
       updateObjectPickers
     } from "{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}";
     window.updateObjectPickers = updateObjectPickers;
+
+    import {
+      addActionFilterButton
+    } from "{{ fingerprinted_static('sampledb/js/object_form/object-reference.js') }}";
+    window.addActionFilterButton = addActionFilterButton;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
@@ -1171,33 +1177,6 @@
         }
       });
     }
-  }
-
-  function addActionFilterButton(picker) {
-    let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
-    picker.append(filter_button);
-    let objectpicker = picker.find('.selectpicker');
-    let actionpicker = picker.next('.objectpicker-actionpicker');
-
-    filter_button.tooltip();
-    filter_button.on('click', function() {
-      actionpicker.selectpicker('toggle');
-    });
-    actionpicker.on('hidden.bs.select', function() {
-      let action_id = actionpicker.selectpicker('val');
-      if (action_id === "") {
-        objectpicker.find('option').prop('disabled', false);
-      } else {
-        objectpicker.find('option').prop('disabled', true);
-        objectpicker.find('option[data-action-id="' + action_id + '"]').prop('disabled', false);
-      }
-      objectpicker.find('option[value=""]').prop('disabled', false);
-      objectpicker.selectpicker('refresh');
-      objectpicker.selectpicker('toggle');
-      if (objectpicker.selectpicker('val') === null) {
-        objectpicker.selectpicker('val', '-');
-      }
-    });
   }
 
   function updateRecipeState(clone) {
