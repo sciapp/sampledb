@@ -142,17 +142,19 @@ def create_multiple_labels(
     tmp_object_specifications_dict = collections.OrderedDict(sorted(object_specifications.items()))
     object_specifications = tmp_object_specifications_dict
 
+    username_list = []
+    object_name_list = []
+    creation_date_list = []
+    object_url_list = []
+    hazard_list = []
+    sample_code_list = []
+    qr_code_uri_list = []
+    ghs_amount_list = []
+    ghs_width = 9.0
+    qrcode_width = 12.0
+
     if create_long_labels:
-        username_list = []
-        object_name_list = []
-        creation_date_list = []
-        object_url_list = []
-        hazard_list = []
-        sample_code_list = []
-        qr_code_uri_list = []
         box_width_list = []
-        ghs_width = 9.0
-        qrcode_width = 12.0
         tmp_index = 0
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
@@ -170,7 +172,7 @@ def create_multiple_labels(
             qr_code_uri_list.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
             if include_qrcode_in_long_labels:
-                label_width = qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
+                label_width = 2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
                     max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
                         len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2
                 if len(hazard_list[tmp_index]) == 0:
@@ -207,15 +209,7 @@ def create_multiple_labels(
                                      ghs_width=ghs_width)
 
     elif create_mixed_labels:
-        username_list = []
-        object_name_list = []
-        creation_date_list = []
-        object_url_list = []
-        hazard_list = []
-        sample_code_list = []
-        qr_code_uri_list = []
         has_ghs_list = []
-        ghs_amount_list = []
 
         first_box_width_list = []
         second_box_width_list = []
@@ -248,8 +242,6 @@ def create_multiple_labels(
 
         outer_box_width = 200.0
         outer_box_height = 60.0
-        ghs_width = 9.0
-        qrcode_width = 12.0
         sixth_box_qrcode_box_width = 20.0
         sixth_box_ghs_box_width = 20.0
 
@@ -522,15 +514,6 @@ def create_multiple_labels(
         right_ghs = ghs_box_width / 2
 
         row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
-
-        username_list = []
-        object_name_list = []
-        creation_date_list = []
-        sample_code_list = []
-        hazard_list = []
-        ghs_amount_list = []
-        object_url_list = []
-        qr_code_uri_list = []
 
         tmp_index = 0
         for object_id in object_specifications:

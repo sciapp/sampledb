@@ -1,55 +1,12 @@
+{% extends "labels/SampleDB.html" %}
 <html lang="en">
     <head>
         <title>SampleDB</title>
         <style>
+            {% block style %}
             @page {
                 size: {{ paper_width }}mm {{ paper_height }}mm;
                 margin: 7.5mm 5mm 7.5mm 1.5mm;
-            }
-            .ghs {
-                width: {{ghs_width}}mm;
-                height: {{ghs_width}}mm;
-                background-size: contain;
-            }
-            .ghs00 {
-                background-image: url({{ GHS_IMAGE_URIS[0] }});
-            }
-            .ghs01 {
-                background-image: url({{ GHS_IMAGE_URIS[1] }});
-            }
-            .ghs02 {
-                background-image: url({{ GHS_IMAGE_URIS[2] }});
-            }
-            .ghs03 {
-                background-image: url({{ GHS_IMAGE_URIS[3] }});
-            }
-            .ghs04 {
-                background-image: url({{ GHS_IMAGE_URIS[4] }});
-            }
-            .ghs05 {
-                background-image: url({{ GHS_IMAGE_URIS[5] }});
-            }
-            .ghs06 {
-                background-image: url({{ GHS_IMAGE_URIS[6] }});
-            }
-            .ghs07 {
-                background-image: url({{ GHS_IMAGE_URIS[7] }});
-            }
-            .ghs08 {
-                background-image: url({{ GHS_IMAGE_URIS[8] }});
-            }
-            .ghs09 {
-                background-image: url({{ GHS_IMAGE_URIS[9] }});
-            }
-            .qrcode {
-                width: {{qrcode_width}}mm;
-                height: {{qrcode_width}}mm;
-                background-size: contain;
-            }
-            body {
-                font-size: 8pt;
-                font-family: FreeSans;
-                line-height: 125%;
             }
             .box {
                 margin: 2mm 1.5mm;
@@ -249,12 +206,11 @@
                 top: 4mm;
                 left: {{right_ghs}}mm
             }
-            .labeltext {
-                padding: 0 1mm;
-            }
+            {% endblock %}
         </style>
     </head>
     <body>
+    {% block body %}
         <div class="outerbox">
         {% for I in range(0,object_amount) %}
         {%- for i in range(0,page_amount) -%}
@@ -275,7 +231,7 @@
                         </div>
                     {% else %}
                         <div class="boxqrcodeCSBSwoghs">
-                            <div class="qrcode"style="background-image: url({{ qr_code_uri_list[I] }})"></div>
+                            <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
                             #{{ sample_code_list[I] }}
                         </div>
                     {% endif %}
@@ -482,5 +438,6 @@
         {%- endfor -%}
         {% endfor %}
         </div>
+    {% endblock %}
     </body>
 </html>
