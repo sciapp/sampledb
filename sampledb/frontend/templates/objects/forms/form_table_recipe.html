@@ -1,11 +1,12 @@
-<div data-id-prefix="{{ id_prefix }}" class="div-apply-recipe" {% if is_template %} data-template-toggle="tooltip" {% else %} data-toggle="tooltip" {% endif %} data-placement="top" title="">
+<div data-id-prefix="{{ id_prefix }}" class="div-apply-recipe" {% if is_template %} data-template-toggle="tooltip" {% else %} data-toggle="tooltip" {% endif %} data-placement="top" title="" data-sampledb-recipes="{{ schema.recipes | stringify }}">
   <select class="selectpicker form-control" id="{{ id_prefix }}_recipe_input">
     {% for recipe in schema.recipes %}
       <option value={{ loop.index0 }}>{{ recipe.name }}</option>
     {% endfor %}
   </select>
   <button type="button" class="btn btn-primary input-group-button-for-selectpicker" id="{{ id_prefix }}_recipe_button" aria-label="{{ _('Apply Recipe') }}"
-          name="apply" value="Apply Recipe"><span aria-hidden="true">{{ _('Apply Recipe') }}</span></button>
+          name="apply" value="Apply Recipe"><i class="fa fa-list-ul"></i></button>
+{% if not is_template %}
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
     document.getElementById('{{ id_prefix }}_recipe_input').addEventListener('change', function() {
       refreshRecipeTooltip("{{ id_prefix }}", {{ schema.recipes | tojson }});
@@ -17,4 +18,5 @@
       applyRecipe("{{ id_prefix }}", {{ schema.recipes | tojson }}, true);
     });
   </script>
+{% endif %}
 </div>

@@ -1577,3 +1577,15 @@ textarea.text-markdown-field {
 .div-timeline-array > .plotly > .svg-container {
     margin: 0 auto;
 }
+
+table .div-apply-recipe {
+    margin-right: 4px;
+}
+
+table .div-apply-recipe .input-group-button-for-selectpicker {
+    padding: 6px 9.5px;
+}
+
+table .div-apply-recipe  .btn {
+    height: 100%;
+}

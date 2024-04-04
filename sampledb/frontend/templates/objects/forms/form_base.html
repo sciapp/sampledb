@@ -1274,13 +1274,14 @@
     }
     recipe_div.attr('data-toggle', 'tooltip');
     recipe_div.tooltip();
+    const isTable = recipe_div.closest('table').length > 0;
     const recipes = recipe_div.data('sampledb-recipes');
     refreshRecipeTooltip(id_prefix, recipes);
     recipe_div.children('select').first().on('change', function() {
       refreshRecipeTooltip(id_prefix, recipes);
     }).addClass('selectpicker').selectpicker();
     recipe_div.children('button.input-group-button-for-selectpicker').first().on('click', function() {
-      applyRecipe(id_prefix, recipes, false);
+      applyRecipe(id_prefix, recipes, isTable);
     });
   }
 </script>
