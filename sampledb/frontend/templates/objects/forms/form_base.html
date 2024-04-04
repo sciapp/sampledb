@@ -97,6 +97,11 @@
       addActionFilterButton
     } from "{{ fingerprinted_static('sampledb/js/object_form/object-reference.js') }}";
     window.addActionFilterButton = addActionFilterButton;
+
+    import {
+      updateSelectLanguage
+    } from "{{ fingerprinted_static('sampledb/js/object_form/text.js') }}";
+    window.updateSelectLanguage = updateSelectLanguage;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
@@ -223,14 +228,6 @@
       }
     });
 
-    var select_language_selectpicker = $('.select-language')
-    select_language_selectpicker.on('changed.bs.select', function() {
-      updateSelectLanguage(this);
-    })
-    select_language_selectpicker.each(function(_, selectpicker) {
-      updateSelectLanguage(selectpicker);
-    });
-
     applySchemaConditions(document);
 
     {% for file_picker in file_pickers %}
@@ -311,43 +308,6 @@
       });
     });
   });
-
-  function updateSelectLanguage(selectpicker) {
-    var enabled_languages = $(selectpicker).selectpicker('val');
-    if (!Array.isArray(enabled_languages)) {
-      return;
-    }
-    if (enabled_languages === '' || enabled_languages.length === 0) {
-      enabled_languages = ['en'];
-    } else {
-      enabled_languages.push('en');
-    }
-    var parent_form_group = $(selectpicker).closest('.form-group');
-    {% for language in languages %}
-      if (enabled_languages.includes("{{ language.lang_code }}")) {
-        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
-      } else {
-        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
-      }
-    {% endfor %}
-
-    let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
-    if (disabled_languages_error.length === 1) {
-        let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
-        let all_disabled_languages_removed = true;
-        for (let i = 0; i < disabled_language_codes.length; i++) {
-            if (enabled_languages.includes(disabled_language_codes[i])) {
-                all_disabled_languages_removed = false;
-                break;
-            }
-        }
-        if (all_disabled_languages_removed) {
-            disabled_languages_error.hide();
-        } else {
-            disabled_languages_error.show();
-        }
-    }
-  }
 
   function refreshRecipeTooltip(id_prefix, recipes, showTooltip=false) {
     const recipe_div = $(`.div-apply-recipe[data-id-prefix=${id_prefix}]`);
