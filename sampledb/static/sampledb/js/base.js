@@ -1,9 +1,15 @@
 'use strict';
 /* eslint-env jquery */
-/* globals Cookies, moment */
+/* globals Cookies, Plotly, moment */
 
 $(function () {
   $('[data-toggle="tooltip"]').tooltip();
+  if (typeof window.Plotly !== 'undefined') {
+    const langCode = window.getTemplateValue('current_user.language.lang_code');
+    if (langCode === 'de') {
+      Plotly.setPlotConfig({ locale: langCode });
+    }
+  }
 
   // update timezone for users who use the auto_tz setting
   if (window.getTemplateValue('current_user.is_authenticated')) {

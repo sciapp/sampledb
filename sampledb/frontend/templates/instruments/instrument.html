@@ -607,9 +607,6 @@ input.instrument-log-show-versions:checked ~ div label.instrument-log-show-versi
   <script src="{{ fingerprinted_static('plotly/js/plotly-latest.min.js') }}"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      Plotly.setPlotConfig({locale: 'de'})
-    </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeline_arrays.js') }}" type="module"></script>
