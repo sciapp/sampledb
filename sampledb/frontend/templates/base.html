@@ -103,7 +103,7 @@
               {% endif %}
             {% endfor %}
             {% if nav_topics %}
-            <li role="separator" class="divider template-separator" style="display: none"></li>
+            <li role="separator" class="divider"></li>
             {% for topic in nav_topics %}
             <li><a href="{{ url_for('frontend.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
             {% endfor %}
@@ -141,14 +141,9 @@
             {% if config['FEDERATION_UUID'] is not none %}
             <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
             {% endif %}
-            <li role="separator" class="divider template-separator" style="display: none"></li>
+            <li role="separator" class="divider" id="template-separator"></li>
             {% for action_type in get_action_types() %}
               {% if action_type.show_in_navbar and action_type.is_template and (action_type.fed_id is none or action_type.fed_id > 0) %}
-                <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-                    window.onload = function() {
-                        $('.template-separator').css('display', 'block');
-                    }
-                </script>
                 <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}{{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}

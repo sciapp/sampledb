@@ -1589,3 +1589,11 @@ table .div-apply-recipe .input-group-button-for-selectpicker {
 table .div-apply-recipe  .btn {
     height: 100%;
 }
+
+#template-separator {
+    display: none;
+}
+
+#template-separator:has(+li a) {
+    display: block;
+}
