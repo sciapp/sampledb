@@ -250,7 +250,9 @@
     }
     window.initPhase = false;
 
-    updateRecipeState($('.div-apply-recipe:visible'));
+    $('.div-apply-recipe:visible').each(function () {
+      updateRecipeState($(this));
+    });
 
     updateJSInteractiveFields();
     insertFormData();
