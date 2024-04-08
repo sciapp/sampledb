@@ -1680,6 +1680,7 @@
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeline_arrays.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}" type="module"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
     import {
@@ -1694,11 +1695,6 @@
     window.updateTranslationLanguages = updateTranslationLanguages;
     window.initMarkdownField = initMarkdownField;
     window.updateMarkdownField = updateMarkdownField;
-
-    import {
-      toggleShowMore
-    } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
-    window.toggleShowMore = toggleShowMore;
   </script>
   <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 

@@ -34,10 +34,4 @@
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
-  <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    import {
-      toggleShowMore
-    } from "{{ fingerprinted_static('sampledb/js/view-object-data.js') }}";
-    window.toggleShowMore = toggleShowMore;
-  </script>
 {% endblock %}
