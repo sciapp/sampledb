@@ -432,7 +432,9 @@
         {% endif %}
       });
 
-      checkboxSelectChilds.on('change', updatePermissionsTable);
+      {% if edit_permissions %}
+        checkboxSelectChilds.on('change', updatePermissionsTable);
+      {% endif %}
 
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
