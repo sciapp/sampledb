@@ -16,6 +16,9 @@
         {% if schema.get('maxItems') is not none %}
           data-max-options="{{ schema.maxItems }}"
         {% endif %}
+        {% if schema['items'].choices | length >= config['MIN_NUM_TEXT_CHOICES_FOR_SEARCH'] >= 0 %}
+          data-live-search="true"
+        {% endif %}
         {% if is_template %}
           class="template-select" data-template-class="form-control selectpicker choicepicker"
         {% else %}
