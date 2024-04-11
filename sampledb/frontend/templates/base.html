@@ -342,6 +342,7 @@
   {% do set_template_value("current_user.timezone", current_user.timezone) %}
   {% do set_template_value("current_user.has_timezone", current_user.timezone is not none) %}
   {% do set_template_value("current_user.language.lang_code", get_user_language(current_user).lang_code) %}
+  {% do set_template_value("current_user.language.datetime_format_moment", get_user_language(current_user).datetime_format_moment) %}
   {% do set_template_value("current_user.language.datetime_format_moment_output", get_user_language(current_user).datetime_format_moment_output) %}
 
   {% do set_template_value("notifications.num_urgent_notifications", num_urgent_notifications) %}

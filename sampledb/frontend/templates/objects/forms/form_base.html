@@ -31,6 +31,13 @@
   {% endif %}
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("tags", tags) %}
+  {% do set_template_value("translation.filter_by_action", _('Filter by Action…')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
@@ -39,12 +46,17 @@
   <script src="{{ fingerprinted_static('typeahead/js/typeahead.bundle.min.js') }}"></script>
   <script src="{{ fingerprinted_static('inscrybmde/js/inscrybmde.min.js') }}"></script>
   <script src="{{ fingerprinted_static('math-js/js/math.min.js') }}"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/object_form/hazards.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/object_form/tags.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/object_form/datetime.js') }}" type="module"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
     // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
     import {
-      setUpCalculation
-    } from "{{ fingerprinted_static('sampledb/js/calculation.js') }}";
-    window.setUpCalculation = setUpCalculation;
+      setUpCalculations,
+      applySchemaCalculations
+    } from "{{ fingerprinted_static('sampledb/js/object_form/calculation.js') }}";
+    window.setUpCalculations = setUpCalculations;
+    window.applySchemaCalculations = applySchemaCalculations;
 
     import {
       fileEventHandler
@@ -80,6 +92,16 @@
       updateObjectPickers
     } from "{{ fingerprinted_static('sampledb/js/sampledb-load-objects.js') }}";
     window.updateObjectPickers = updateObjectPickers;
+
+    import {
+      addActionFilterButton
+    } from "{{ fingerprinted_static('sampledb/js/object_form/object-reference.js') }}";
+    window.addActionFilterButton = addActionFilterButton;
+
+    import {
+      updateSelectLanguage
+    } from "{{ fingerprinted_static('sampledb/js/object_form/text.js') }}";
+    window.updateSelectLanguage = updateSelectLanguage;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
   window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
@@ -190,17 +212,6 @@
       });
     });
 
-    $('.input-group.date').each(function() {
-      $(this).datetimepicker({
-        locale: "{{ get_user_language(current_user).lang_code }}",
-        format: "{{ get_user_language(current_user).datetime_format_moment }}",
-        date: $(this).attr('data-datetime'),
-        timeZone: "{{ current_user.timezone }}",
-        showTodayButton: true
-      });
-    });
-
-
     $('textarea[data-markdown-textarea="true"]').not('.template-markdown-editor').each(function(_, element) {
       setupImageDragAndDrop(initMarkdownField(element, '100px'));
     });
@@ -215,14 +226,6 @@
       catch (e) {
         return;
       }
-    });
-
-    var select_language_selectpicker = $('.select-language')
-    select_language_selectpicker.on('changed.bs.select', function() {
-      updateSelectLanguage(this);
-    })
-    select_language_selectpicker.each(function(_, selectpicker) {
-      updateSelectLanguage(selectpicker);
     });
 
     applySchemaConditions(document);
@@ -247,7 +250,9 @@
     }
     window.initPhase = false;
 
-    updateRecipeState($('.div-apply-recipe:visible'));
+    $('.div-apply-recipe:visible').each(function () {
+      updateRecipeState($(this));
+    });
 
     updateJSInteractiveFields();
     insertFormData();
@@ -304,83 +309,6 @@
         }
       });
     });
-  });
-
-  function updateSelectLanguage(selectpicker) {
-    var enabled_languages = $(selectpicker).selectpicker('val');
-    if (!Array.isArray(enabled_languages)) {
-      return;
-    }
-    if (enabled_languages === '' || enabled_languages.length === 0) {
-      enabled_languages = ['en'];
-    } else {
-      enabled_languages.push('en');
-    }
-    var parent_form_group = $(selectpicker).closest('.form-group');
-    {% for language in languages %}
-      if (enabled_languages.includes("{{ language.lang_code }}")) {
-        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').show();
-      } else {
-        parent_form_group.find('[data-sampledb-language-input-for="{{ language.lang_code }}"]').hide();
-      }
-    {% endfor %}
-
-    let disabled_languages_error = $('[data-sampledb-disabled-languages-picker="' + selectpicker.id + '"');
-    if (disabled_languages_error.length === 1) {
-        let disabled_language_codes = disabled_languages_error.data('sampledbDisabledLanguagesCodes').split(',');
-        let all_disabled_languages_removed = true;
-        for (let i = 0; i < disabled_language_codes.length; i++) {
-            if (enabled_languages.includes(disabled_language_codes[i])) {
-                all_disabled_languages_removed = false;
-                break;
-            }
-        }
-        if (all_disabled_languages_removed) {
-            disabled_languages_error.hide();
-        } else {
-            disabled_languages_error.show();
-        }
-    }
-  }
-
-  var tags = new Bloodhound({
-    initialize: true,
-    local: {{ tags | tojson }},
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
-    queryTokenizer: Bloodhound.tokenizers.whitespace
-  });
-  $('input[name^=\'object__\'][name$=\'__tags\']').each(function() {
-    var tagsinput = $(this);
-    tagsinput.tagsinput({
-      confirmKeys: [13, 32],
-      trimValue: true,
-      typeaheadjs: {
-        name: 'Tags',
-        valueKey: 'name',
-        displayKey: 'name',
-        source: tags.ttAdapter(),
-        templates: {
-          'suggestion': function(item) {return '<div>' + item.name + ' (×' + item.uses + ')' + '</div>'}
-        }
-      }
-    });
-    tagsinput.on('beforeItemAdd', function(event) {
-      var sanitized_tag = event.item.toLowerCase().replace(/\s/g,'').replace(/[^a-z0-9_\-äüöß]/g,'');
-      if (event.item !== sanitized_tag) {
-        if (!event.options || !event.options.fromHandler) {
-          event.cancel = true;
-          $(this).tagsinput('add', sanitized_tag, {fromHandler: true});
-        }
-      }
-    });
-    $(tagsinput.tagsinput('input')).on('blur', function() {
-      var item = $(this).tagsinput('input').val();
-      $(this).tagsinput('input').val('');
-      item = item.trim();
-      if (item) {
-        $(this).tagsinput('add', item);
-      }
-    }.bind(tagsinput));
   });
 
   function refreshRecipeTooltip(id_prefix, recipes, showTooltip=false) {
@@ -1211,56 +1139,6 @@
         }
       });
     }
-  }
-
-  function addActionFilterButton(picker) {
-    let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
-    picker.append(filter_button);
-    let objectpicker = picker.find('.selectpicker');
-    let actionpicker = picker.next('.objectpicker-actionpicker');
-
-    filter_button.tooltip();
-    filter_button.on('click', function() {
-      actionpicker.selectpicker('toggle');
-    });
-    actionpicker.on('hidden.bs.select', function() {
-      let action_id = actionpicker.selectpicker('val');
-      if (action_id === "") {
-        objectpicker.find('option').prop('disabled', false);
-      } else {
-        objectpicker.find('option').prop('disabled', true);
-        objectpicker.find('option[data-action-id="' + action_id + '"]').prop('disabled', false);
-      }
-      objectpicker.find('option[value=""]').prop('disabled', false);
-      objectpicker.selectpicker('refresh');
-      objectpicker.selectpicker('toggle');
-      if (objectpicker.selectpicker('val') === null) {
-        objectpicker.selectpicker('val', '-');
-      }
-    });
-  }
-
-  function applySchemaCalculations(clone) {
-    $(clone).find('.calculation-wrapper').each(function() {
-      if ($(this).parents('.array-template').length === 0) {
-        const id_prefix = $(this).data('id-prefix');
-        const schema = $(this).data('schema');
-        const root_schema = $(this).data('root-schema');
-        window.calculation_scripts.push(function () {
-          setUpCalculation(id_prefix, schema, root_schema);
-        });
-      }
-    });
-    setUpCalculations();
-  }
-
-  function setUpCalculations() {
-    if (!window.calculation_scripts) {
-      window.calculation_scripts = [];
-    }
-    $.each(window.calculation_scripts, function () {
-      this();
-    });
   }
 
   function updateRecipeState(clone) {
