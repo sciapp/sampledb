@@ -25,8 +25,8 @@ import typing
 
 from .. import db
 from .. import models
-from . import errors, instruments, users, schemas, components, topics
-from .utils import cache
+from . import errors, instruments, users, schemas, components, topics, favorites
+from .utils import cache, get_translated_text
 from .action_types import check_action_type_exists, ActionType
 
 
@@ -467,3 +467,38 @@ def get_actions_for_topic(
         Action.from_database(action)
         for action in actions
     ]
+
+
+def sort_actions_for_user(
+        actions: typing.Sequence[Action],
+        user_id: int,
+        sort_by_favorite: bool = True
+) -> typing.List[Action]:
+    """
+    Sort an action list for a user.
+
+    The actions are sorted by:
+    - favorite / not favorite (if enabled)
+    - action origin (local actions first)
+    - user name (actions without users first)
+    - instrument name (independent actions first)
+    - action name
+
+    :param actions: a list of actions to sort
+    :param user_id: the ID of the user to sort actions for
+    :param sort_by_favorite: whether favorite actions should be first in the sorted list
+    :return: the sorted list of actions
+    :raise errors.UserDoesNotExistError: if no user with the given user ID
+        exists
+    """
+    if sort_by_favorite:
+        user_favorite_action_ids = set(favorites.get_user_favorite_action_ids(user_id))
+    else:
+        user_favorite_action_ids = set()
+    return sorted(actions, key=lambda action: (
+        0 if action.id in user_favorite_action_ids else 1,
+        0 if action.fed_id is None else 1,
+        action.user.name.lower() if action.user and action.user.name is not None else '',
+        get_translated_text(action.instrument.name).lower() if action.instrument else '',
+        get_translated_text(action.name).lower()
+    ))
