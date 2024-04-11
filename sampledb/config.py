@@ -69,6 +69,7 @@ def parse_configuration_values() -> None:
         'LDAP_CONNECT_TIMEOUT',
         'TEMPORARY_FILE_TIME_LIMIT',
         'SHARED_DEVICE_SIGN_OUT_MINUTES',
+        'MIN_NUM_TEXT_CHOICES_FOR_SEARCH',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -800,6 +801,8 @@ SHARED_DEVICE_SIGN_OUT_MINUTES = 30
 DISABLE_OUTDATED_USE_AS_TEMPLATE = False
 
 DISABLE_TOPICS = False
+
+MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')
