@@ -197,7 +197,7 @@ def create_multiple_labels(
             label_amount = quantity
 
         object_amount = len(username_list)
-        html = flask.render_template("labels/label.html", username_list=username_list,
+        html = flask.render_template("labels/LongLabel.html", username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
                                      object_url_list=object_url_list, hazard_list=hazard_list,
                                      sample_code_list=sample_code_list, qr_code_uri_list=qr_code_uri_list,
@@ -229,16 +229,6 @@ def create_multiple_labels(
         sixth_box_width_list = []
         sixth_box_height_list = []
         sixth_inner_box_height_list = []
-
-        top_ghs_list = []
-        left_ghs_list = []
-        right_ghs_list = []
-        top_ghs_fifth_list = []
-        left_ghs_fifth_list = []
-        right_ghs_fifth_list = []
-        top_ghs_sixth_list = []
-        left_ghs_sixth_list = []
-        right_ghs_sixth_list = []
 
         outer_box_width = 200.0
         outer_box_height = 60.0
@@ -305,18 +295,6 @@ def create_multiple_labels(
 
             ghs_amount_list.append(len(hazard_list[tmp_index]))
 
-            top_ghs_list.append((third_box_width_list[tmp_index] / 2.0) - (ghs_width / 2))
-            left_ghs_list.append((third_box_width_list[tmp_index] / 2.0) - ghs_width)
-            right_ghs_list.append(third_box_width_list[tmp_index] / 2.0)
-
-            top_ghs_fifth_list.append((fifth_box_ghs_box_width_list[tmp_index] / 2.0) - (ghs_width / 2))
-            left_ghs_fifth_list.append((fifth_box_ghs_box_width_list[tmp_index] / 2.0) - ghs_width)
-            right_ghs_fifth_list.append(fifth_box_ghs_box_width_list[tmp_index] / 2.0)
-
-            top_ghs_sixth_list.append((sixth_box_ghs_box_width / 2.0) - (ghs_width / 2))
-            left_ghs_sixth_list.append((sixth_box_ghs_box_width / 2.0) - ghs_width)
-            right_ghs_sixth_list.append(sixth_box_ghs_box_width / 2.0)
-
             if ghs_amount_list[tmp_index] > 0:
                 has_ghs_list.append(True)
                 third_box_qrcode_box_height_list.append(20.0)
@@ -348,7 +326,6 @@ def create_multiple_labels(
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
                                      qr_code_uri_list=qr_code_uri_list, hazard_list=hazard_list,
                                      paper_width=paper_width, paper_height=paper_height, set_amount=set_amount,
-                                     ghs_amount_list=ghs_amount_list,
                                      horizontal_label_margin=horizontal_label_margin,
                                      vertical_label_margin=vertical_label_margin,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS,
@@ -364,8 +341,6 @@ def create_multiple_labels(
                                      sixth_box_width_list=sixth_box_width_list,
                                      outer_box_width=outer_box_width, outer_box_height=outer_box_height,
                                      ghs_width=ghs_width,
-                                     top_ghs_list=top_ghs_list, left_ghs_list=left_ghs_list,
-                                     right_ghs_list=right_ghs_list,
                                      fifth_box_qrcode_box_width_list=fifth_box_qrcode_box_width_list,
                                      fifth_box_ghs_box_width_list=fifth_box_ghs_box_width_list,
                                      sixth_box_qrcode_box_width=sixth_box_qrcode_box_width,
@@ -376,9 +351,6 @@ def create_multiple_labels(
                                      third_box_ghs_box_height_list=third_box_ghs_box_height_list,
                                      fourth_box_qrcode_box_height_list=fourth_box_qrcode_box_height_list,
                                      fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
-                                     top_ghs_fifth_list=top_ghs_fifth_list, left_ghs_fifth_list=left_ghs_fifth_list,
-                                     right_ghs_fifth_list=right_ghs_fifth_list, top_ghs_sixth_list=top_ghs_sixth_list,
-                                     left_ghs_sixth_list=left_ghs_sixth_list, right_ghs_sixth_list=right_ghs_sixth_list,
                                      object_amount=object_amount)
 
     elif create_only_qr_codes:
@@ -509,10 +481,6 @@ def create_multiple_labels(
             qrcode_box_width = qrcode_width
             ghs_box_width = ghs_width * 2
 
-        top_ghs = (ghs_box_width / 2) - (ghs_width / 2)
-        left_ghs = (ghs_box_width / 2) - ghs_width
-        right_ghs = ghs_box_width / 2
-
         row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
 
         tmp_index = 0
@@ -570,8 +538,7 @@ def create_multiple_labels(
                                      hazard_list=hazard_list, GHS_IMAGE_URIS=GHS_IMAGE_URIS, ghs_width=ghs_width,
                                      sample_code_list=sample_code_list, username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
-                                     ghs_amount_list=ghs_amount_list, top_ghs=top_ghs, left_ghs=left_ghs,
-                                     right_ghs=right_ghs, ghs_height=ghs_height,
+                                     ghs_amount_list=ghs_amount_list, ghs_height=ghs_height,
                                      ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered,
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,

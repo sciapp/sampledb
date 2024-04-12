@@ -1,443 +1,265 @@
-{% extends "labels/SampleDB.html" %}
-<html lang="en">
-    <head>
-        <title>SampleDB</title>
-        <style>
-            {% block style %}
-            @page {
-                size: {{ paper_width }}mm {{ paper_height }}mm;
-                margin: 7.5mm 5mm 7.5mm 1.5mm;
-            }
-            .box {
-                margin: 2mm 1.5mm;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border: none;
-                height: {{box_height}}mm;
-                width: {{box_width}}mm;
-            }
-            .boxname {
-                border: 1.5px solid black;
-                height: 4mm;
-                width: {{box_width}}mm;
-                text-align: center;
-            }
-            .boxinfo {
-                border: 1.5px solid black;
-                height: 8mm;
-                width: {{box_width}}mm;
-                text-align: center;
-                border-top: none;
-            }
-            .boxqrcodeCSBSwghs {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border-right: 1.5px solid black;
-                height: {{box_side_by_side_height}}mm;
-                width: {{qrcode_box_width}}mm;
-            }
-            .boxqrcodeCSBSwoghs {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border-right: none;
-                height: {{box_side_by_side_height}}mm;
-                width: {{box_width}}mm;
-            }
-            .boxqrcodeCnotSBS {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border: 1.5px solid black;
-                height: 21mm;
-                width: {{qrcode_box_width}}mm;
-                border-top: none;
-            }
-            .boxqrcodenotCSBS {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border-right: 1.5px solid black;
-                height: {{box_side_by_side_height}}mm;
-                width: {{qrcode_box_width}}mm;
-            }
-            .boxqrcodenotCnotSBS {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                border: 1.5px solid black;
-                height: 21mm;
-                width: {{qrcode_box_width}}mm;
-                border-top: none;
-                border-left: none;
-            }
-            .qrouterbox{
-                border: 1.5px solid black;
-                border-top: none;
-                height: 21mm;
-                width: {{box_width}}mm;
-            }
-            .boxghsCSBS{
-                border: none;
-                height: {{box_side_by_side_height}}mm;
-                width: {{ghs_box_width}}mm;
-                position: relative;
-            }
-            .boxghsCnotSBS {
-                border: 1.5px solid black;
-                height: {{ghs_height}}mm;
-                width: {{ghs_box_width}}mm;
-                position: relative;
-                border-top: none;
-            }
-            .boxghsnotCSBS{
-                border-right: 1.5px solid black;
-                height: {{box_side_by_side_height}}mm;
-                width: {{ghs_box_width}}mm;
-                position: relative;
-            }
-            .boxghsnotCnotSBS {
-                border: 1.5px solid black;
-                height: {{ghs_height}}mm;
-                width: {{ghs_box_width}}mm;
-                position: relative;
-                border-top: none;
-                border-left: none;
-            }
-            .ghsouterbox{
-                border: 1.5px solid black;
-                border-top: none;
-                height: {{ghs_height}}mm;
-                width: {{box_width}}mm;
-            }
-            .boxsidebyside{
-                border: 1.5px solid black;
-                border-top: none;
-                height: {{box_side_by_side_height}}mm;
-                width: {{box_width}}mm;
-                display: flex;
-                flex-direction: row;
-            }
-            .outerbox {
-                border: none;
-                height: {{outer_box_height}}mm;
-                width: {{outer_box_width}}mm;
-                text-align: center;
-            }
-            .outerbox > div {
-                display: inline-block;
-            }
-            .ghs1 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 2mm;
-                left: {{top_ghs}}mm;
-            }
-            .ghs2 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 6.5mm;
-                left: {{left_ghs}}mm;
-            }
-            .ghs3 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 6.5mm;
-                left: {{right_ghs}}mm
-            }
-            .ghs4 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 11mm;
-                left: {{top_ghs}}mm;
-            }
-            .ghs5 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 15.5mm;
-                left: {{left_ghs}}mm;
-            }
-            .ghs6 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 15.5mm;
-                left: {{right_ghs}}mm
-            }
-            .ghs7 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 20mm;
-                left: {{top_ghs}}mm;
-            }
-            .ghs8 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 24.5mm;
-                left: {{left_ghs}}mm;
-            }
-            .ghs9 {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 24.5mm;
-                left: {{right_ghs}}mm
-            }
-            .ghsleft {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 4mm;
-                left: {{left_ghs}}mm
-            }
-            .ghsright {
-                height: 9mm;
-                width: 9mm;
-                position: absolute;
-                top: 4mm;
-                left: {{right_ghs}}mm
-            }
-            {% endblock %}
-        </style>
-    </head>
-    <body>
-    {% block body %}
-        <div class="outerbox">
-        {% for I in range(0,object_amount) %}
-        {%- for i in range(0,page_amount) -%}
-        <div class="box">
-            <div class="labeltext">
-                <div class="boxname"><b>{{ object_name_list[I] }}</b></div>
-                <div class="boxinfo">
-                    {{ username_list[I] }}<br>
-                    {{ creation_date_list[I] }}
-                </div>
-                {%- if centered -%}
-                {%- if ghs_classes_side_by_side -%}
-                <div class="boxsidebyside">
-                    {% if ghs_amount_list[I] > 0 %}
-                        <div class="boxqrcodeCSBSwghs">
-                            <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
-                            #{{ sample_code_list[I] }}
-                        </div>
-                    {% else %}
-                        <div class="boxqrcodeCSBSwoghs">
-                            <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
-                            #{{ sample_code_list[I] }}
-                        </div>
-                    {% endif %}
-                    {% if ghs_amount_list[I] > 0 %}
-                    <div class="boxghsCSBS">
-                        {%- if ghs_amount_list[I] == 2 -%}
-                        {%- for hazard_code in hazard_list[I] -%}
-                            {%- set index = 0 -%}
-                            {%- if loop.index0 == 0 -%}
-                                <div class="ghs2"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- else -%}
-                                <div class="ghs3"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- endif -%}
-                        {%- endfor -%}
-                        {%- else -%}
-                        {%- set index = 0 -%}
-                        {%- for hazard_code in hazard_list[I] -%}
-                            {%- if loop.index0 % 3 == 0 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs1"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs4"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs7"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- elif loop.index0 % 3 == 1 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs2"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs5"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs8"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- elif loop.index0 % 3 == 2 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs3"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs6"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs9"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- endif -%}
-                        {%- endfor -%}
-                        {%- endif -%}
-                    </div>
-                    {% endif %}
-                </div>
-                {%- else -%}
-                    <div class="boxqrcodeCnotSBS">
-                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
-                        #{{ sample_code_list[I] }}
-                    </div>
-                    {% if ghs_amount_list[I] > 0 %}
-                    <div class="boxghsCnotSBS">
-                        {%- if ghs_amount_list[I] == 2 -%}
-                        {%- for hazard_code in hazard_list[I] -%}
-                            {%- set index = 0 -%}
-                            {%- if loop.index0 == 0 -%}
-                                <div class="ghsleft"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- else -%}
-                                <div class="ghsright"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- endif -%}
-                        {%- endfor -%}
-                        {%- else -%}
-                        {%- set index = 0 -%}
-                        {%- for hazard_code in hazard_list[I] -%}
-                            {%- if loop.index0 % 3 == 0 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs1"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs4"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs7"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- elif loop.index0 % 3 == 1 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs2"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs5"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs8"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- elif loop.index0 % 3 == 2 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs3"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs6"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs9"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- endif -%}
-                        {%- endfor -%}
-                        {%- endif -%}
-                    </div>
-                    {% endif %}
-                {%- endif -%}
-                {%- else -%}
-                {%- if ghs_classes_side_by_side -%}
-                <div class="boxsidebyside">
-                    <div class="boxqrcodenotCSBS">
-                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
-                            #{{ sample_code_list[I] }}
-                    </div>
-                    {% if ghs_amount_list[I] > 0 %}
-                    <div class="boxghsnotCSBS">
-                        {%- if ghs_amount_list[I] == 2 -%}
-                        {%- for hazard_code in hazard_list[I] -%}
-                            {%- set index = 0 -%}
-                            {%- if loop.index0 == 0 -%}
-                                <div class="ghs2"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- else -%}
-                                <div class="ghs3"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- endif -%}
-                        {%- endfor -%}
-                        {%- else -%}
-                        {%- set index = 0 -%}
-                        {%- for hazard_code in hazard_list[I] -%}
-                            {%- if loop.index0 % 3 == 0 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs1"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs4"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs7"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- elif loop.index0 % 3 == 1 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs2"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs5"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs8"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- elif loop.index0 % 3 == 2 -%}
-                                {%- if loop.index0 // 3 == 0 -%}
-                                    <div class="ghs3"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 1 -%}
-                                    <div class="ghs6"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- elif loop.index0 // 3 == 2 -%}
-                                    <div class="ghs9"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                {%- endif -%}
-                            {%- endif -%}
-                        {%- endfor -%}
-                        {%- endif -%}
-                    </div>
-                    {% endif %}
-                </div>
-                {%- else -%}
-                    <div class="qrouterbox">
-                        <div class="boxqrcodenotCnotSBS">
-                            <div class="qrcode" style="background-image: url({{ qr_code_uri_list[I] }})"></div>
-                            #{{ sample_code_list[I] }}
-                        </div>
-                    </div>
-                    {% if ghs_amount_list[I] > 0 %}
-                    <div class="ghsouterbox">
-                        <div class="boxghsnotCnotSBS">
-                            {%- if ghs_amount_list[I] == 2 -%}
-                            {%- for hazard_code in hazard_list[I] -%}
-                                {%- set index = 0 -%}
-                            {%- if loop.index0 == 0 -%}
-                                <div class="ghsleft"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- else -%}
-                                <div class="ghsright"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                            {%- endif -%}
-                            {%- endfor -%}
-                            {%- else -%}
-                            {%- set index = 0 -%}
-                            {%- for hazard_code in hazard_list[I] -%}
-                                {%- if loop.index0 % 3 == 0 -%}
-                                    {%- if loop.index0 // 3 == 0 -%}
-                                        <div class="ghs1"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- elif loop.index0 // 3 == 1 -%}
-                                        <div class="ghs4"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- elif loop.index0 // 3 == 2 -%}
-                                        <div class="ghs7"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- endif -%}
-                                {%- elif loop.index0 % 3 == 1 -%}
-                                    {%- if loop.index0 // 3 == 0 -%}
-                                        <div class="ghs2"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- elif loop.index0 // 3 == 1 -%}
-                                        <div class="ghs5"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- elif loop.index0 // 3 == 2 -%}
-                                        <div class="ghs8"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- endif -%}
-                                {%- elif loop.index0 % 3 == 2 -%}
-                                    {%- if loop.index0 // 3 == 0 -%}
-                                        <div class="ghs3"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- elif loop.index0 // 3 == 1 -%}
-                                        <div class="ghs6"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- elif loop.index0 // 3 == 2 -%}
-                                        <div class="ghs9"><div class="ghs ghs0{{hazard_code}}"></div></div>
-                                    {%- endif -%}
-                                {%- endif -%}
-                            {%- endfor -%}
-                            {%- endif -%}
-                        </div>
-                    </div>
-                    {% endif %}
-                {%- endif -%}
-                {%- endif -%}
+{% extends "labels/LabelBase.html" %}
+
+{% block style %}
+    @page {
+        size: {{ paper_width }}mm {{ paper_height }}mm;
+        margin: 7.5mm 5mm 7.5mm 1.5mm;
+    }
+    .box {
+        margin: 2mm 1.5mm;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: none;
+        height: {{box_height}}mm;
+        width: {{box_width}}mm;
+    }
+    .boxname {
+        border: 1.5px solid black;
+        height: 4mm;
+        width: {{box_width}}mm;
+        text-align: center;
+    }
+    .boxinfo {
+        border: 1.5px solid black;
+        height: 8mm;
+        width: {{box_width}}mm;
+        text-align: center;
+        border-top: none;
+    }
+    .boxqrcodeCSBSwghs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-right: 1.5px solid black;
+        height: {{box_side_by_side_height}}mm;
+        width: {{qrcode_box_width}}mm;
+    }
+    .boxqrcodeCSBSwoghs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-right: none;
+        height: {{box_side_by_side_height}}mm;
+        width: {{box_width}}mm;
+    }
+    .boxqrcodeCnotSBS {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1.5px solid black;
+        height: 21mm;
+        width: {{qrcode_box_width}}mm;
+        border-top: none;
+    }
+    .boxqrcodenotCSBS {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-right: 1.5px solid black;
+        height: {{box_side_by_side_height}}mm;
+        width: {{qrcode_box_width}}mm;
+    }
+    .boxqrcodenotCnotSBS {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1.5px solid black;
+        height: 21mm;
+        width: {{qrcode_box_width}}mm;
+        border-top: none;
+        border-left: none;
+    }
+    .qrouterbox{
+        border: 1.5px solid black;
+        border-top: none;
+        height: 21mm;
+        width: {{box_width}}mm;
+    }
+    .boxghsCSBS{
+        border: none;
+        height: {{box_side_by_side_height}}mm;
+        width: {{ghs_box_width}}mm;
+        position: relative;
+    }
+    .boxghsCnotSBS {
+        border: 1.5px solid black;
+        height: {{ghs_height}}mm;
+        width: {{ghs_box_width}}mm;
+        position: relative;
+        border-top: none;
+    }
+    .boxghsnotCSBS{
+        border-right: 1.5px solid black;
+        height: {{box_side_by_side_height}}mm;
+        width: {{ghs_box_width}}mm;
+        position: relative;
+    }
+    .boxghsnotCnotSBS {
+        border: 1.5px solid black;
+        height: {{ghs_height}}mm;
+        width: {{ghs_box_width}}mm;
+        position: relative;
+        border-top: none;
+        border-left: none;
+    }
+    .ghsouterbox{
+        border: 1.5px solid black;
+        border-top: none;
+        height: {{ghs_height}}mm;
+        width: {{box_width}}mm;
+    }
+    .boxsidebyside{
+        border: 1.5px solid black;
+        border-top: none;
+        height: {{box_side_by_side_height}}mm;
+        width: {{box_width}}mm;
+        display: flex;
+        flex-direction: row;
+    }
+    .outerbox {
+        border: none;
+        height: {{outer_box_height}}mm;
+        width: {{outer_box_width}}mm;
+        text-align: center;
+    }
+    .outerbox > div {
+        display: inline-block;
+    }
+    .centeredghsbox {
+        position: relative;
+        width: {{ ghs_width * 2 }}mm;
+        margin: 0 auto;
+    }
+    .centeredghsbox .ghs {
+        position: absolute;
+    }
+    .centeredghsbox .ghs:nth-child(1) {
+        top: 2mm;
+    }
+    .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(3) {
+        top: 6.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(4) {
+        top: 11mm;
+    }
+    .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(6) {
+        top: 15.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(7)
+        top: 20mm;
+    }
+    .centeredghsbox .ghs:nth-child(8), .centeredghsbox .ghs:nth-child(9) {
+        top: 24.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(1), .centeredghsbox .ghs:nth-child(4), .centeredghsbox .ghs:nth-child(7) {
+        left: {{ ghs_width / 2 }}mm;
+    }
+    .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(8) {
+        left: {{ ghs_width }}mm;
+    }
+    /* special case with only two GHS symbols */
+    .centeredghsbox .ghs:nth-child(1):nth-last-child(2), .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
+        top: 5.5mm;
+    }
+    .centeredghsbox .ghs:nth-child(1):nth-last-child(2) {
+        left: 0;
+    }
+    .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
+        left: {{ ghs_width }}mm;
+    }
+{% endblock %}
+
+{% block body %}
+    <div class="outerbox">
+    {% for object_index in range(0,object_amount) %}
+    {%- for i in range(0,page_amount) -%}
+    <div class="box">
+        <div class="labeltext">
+            <div class="boxname"><b>{{ object_name_list[object_index] }}</b></div>
+            <div class="boxinfo">
+                {{ username_list[object_index] }}<br>
+                {{ creation_date_list[object_index] }}
             </div>
+            {%- if centered -%}
+            {%- if ghs_classes_side_by_side -%}
+            <div class="boxsidebyside">
+                {% if ghs_amount_list[object_index] > 0 %}
+                    <div class="boxqrcodeCSBSwghs">
+                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                        #{{ sample_code_list[object_index] }}
+                    </div>
+                {% else %}
+                    <div class="boxqrcodeCSBSwoghs">
+                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                        #{{ sample_code_list[object_index] }}
+                    </div>
+                {% endif %}
+                {% if ghs_amount_list[object_index] > 0 %}
+                <div class="boxghsCSBS">
+                    <div class="centeredghsbox">
+                    {%- for hazard_code in hazard_list[object_index] -%}
+                        <div class="ghs ghs0{{hazard_code}}"></div>
+                    {%- endfor -%}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {%- else -%}
+                <div class="boxqrcodeCnotSBS">
+                    <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                    #{{ sample_code_list[object_index] }}
+                </div>
+                {% if ghs_amount_list[object_index] > 0 %}
+                <div class="boxghsCnotSBS">
+                    <div class="centeredghsbox">
+                    {%- for hazard_code in hazard_list[object_index] -%}
+                        <div class="ghs ghs0{{hazard_code}}"></div>
+                    {%- endfor -%}
+                    </div>
+                </div>
+                {% endif %}
+            {%- endif -%}
+            {%- else -%}
+            {%- if ghs_classes_side_by_side -%}
+            <div class="boxsidebyside">
+                <div class="boxqrcodenotCSBS">
+                    <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                        #{{ sample_code_list[object_index] }}
+                </div>
+                {% if ghs_amount_list[object_index] > 0 %}
+                <div class="boxghsnotCSBS">
+                    <div class="centeredghsbox">
+                    {%- for hazard_code in hazard_list[object_index] -%}
+                        <div class="ghs ghs0{{hazard_code}}"></div>
+                    {%- endfor -%}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {%- else -%}
+                <div class="qrouterbox">
+                    <div class="boxqrcodenotCnotSBS">
+                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                        #{{ sample_code_list[object_index] }}
+                    </div>
+                </div>
+                {% if ghs_amount_list[object_index] > 0 %}
+                <div class="ghsouterbox">
+                    <div class="boxghsnotCnotSBS">
+                        <div class="centeredghsbox">
+                        {%- for hazard_code in hazard_list[object_index] -%}
+                            <div class="ghs ghs0{{hazard_code}}"></div>
+                        {%- endfor -%}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {%- endif -%}
+            {%- endif -%}
         </div>
-        {%- endfor -%}
-        {% endfor %}
-        </div>
-    {% endblock %}
-    </body>
-</html>
+    </div>
+    {%- endfor -%}
+    {% endfor %}
+    </div>
+{% endblock %}
