@@ -2931,7 +2931,7 @@ msgstr "Ja, diesen Aktionstyp auf Startseite anzeigen"
 msgid "No, this action type should not be shown on the frontpage"
 msgstr "Nein, diesen Aktionstyp nicht auf Startseite anzeigen"
 
-msgid "Show on Navbar"
+msgid "Show in Navbar"
 msgstr "In Navigationsleiste anzeigen"
 
 msgid "Yes, actions of this type should be shown in the navbar"
