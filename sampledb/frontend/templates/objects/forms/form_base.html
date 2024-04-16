@@ -32,7 +32,14 @@
 {% block template_values %}
   {% do set_template_value("tags", tags) %}
   {% do set_template_value("temporary_file_upload_url", url_for(".temporary_file_upload")) %}
-  {% do set_template_value("translation.filter_by_action", _('Filter by Action…')) %}
+  {% do set_template_value("form_data", form_data or {}) %}
+  {% do set_template_value("file_names_by_id", file_names_by_id or {}) %}
+  {% do set_template_value("errors", errors) %}
+  {% do set_template_value("local_decimal_delimiter", get_local_decimal_delimiter()) %}
+  {% do set_template_value("translations.filter_by_action", _('Filter by Action…')) %}
+  {% do set_template_value("translations.error", _('Error:')) %}
+  {% do set_template_value("translations.field_index_placeholder", _('Field %(index)s', index="INDEX_PLACEHOLDER")) %}
+  {% do set_template_value("translations.sets", _('sets:')) %}
 
   {{ super() }}
 {% endblock %}
@@ -104,25 +111,24 @@
     window.updateSelectLanguage = updateSelectLanguage;
   </script>
 <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.local_decimal_delimiter = "{{ get_local_decimal_delimiter() }}"
-  window.array_table_header_text = "{{ _('Field %(index)s', index="INDEX_PLACEHOLDER") }}";
   window.mdeFields = [];
   let initPhase = true;
   let file_names_by_id = {};
   let form_data = {};
   window.arrayButtons = [];
-  window.temporaryFileUploadURL = "{{ url_for('.temporary_file_upload') }}";
-  window.currentUserTimezone = "{{ current_user.timezone }}";
-  window.currentUserLanguageCode = "{{ get_user_language(current_user).lang_code }}";
-  window.currentUserDatetimeFormat = "{{ get_user_language(current_user).datetime_format_moment }}";
 
-  {% if file_names_by_id %}
-    file_names_by_id = {{ file_names_by_id | tojson }};
-  {% endif %}
+  $(function() {
+    window.local_decimal_delimiter = window.getTemplateValue('local_decimal_delimiter');
+    window.array_table_header_text = window.getTemplateValue('translations.field_index_placeholder');
 
-  {% if form_data %}
-    form_data = {{ form_data | tojson }};
-  {% endif %}
+    window.temporaryFileUploadURL = window.getTemplateValue('temporary_file_upload_url');
+    window.currentUserTimezone = window.getTemplateValue('current_user.timezone');
+    window.currentUserLanguageCode = window.getTemplateValue('current_user.language.lang_code');
+    window.currentUserDatetimeFormat = window.getTemplateValue('current_user.language.datetime_format_moment');
+
+    file_names_by_id = window.getTemplateValue('file_names_by_id');
+    form_data = window.getTemplateValue('form_data');
+  });
 
   /**
    * Updates the event handler of an array container button.
@@ -235,7 +241,7 @@
     // set initial disabled / enabled state for all array buttons
     updateArrayButtonsEnabledWithinElement($(document));
 
-    const arrayButtons = {{ (form_data or {}).get('array_buttons', '') | tojson }};
+    const arrayButtons = form_data.array_buttons || '';
     if (arrayButtons !== '') {
       $.each(arrayButtons.split(','), function(_, button_id) {
         $(`[id="${button_id}"`).click();
@@ -278,29 +284,7 @@
     setUpCalculations();
 
     $('div.objectpicker').each(function () {
-      let filter_button = $('<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="{{ _('Filter by Action…') }}"><i class="fa fa-filter"></i></button>');
-      $(this).append(filter_button);
-      let objectpicker = $(this).find('.selectpicker');
-      let actionpicker = $(this).next('.objectpicker-actionpicker').find('.selectpicker');
-      filter_button.tooltip();
-      filter_button.on('click', function() {
-        actionpicker.selectpicker('toggle');
-      });
-      actionpicker.on('hidden.bs.select', function() {
-        let action_id = actionpicker.selectpicker('val');
-        if (action_id === "") {
-          objectpicker.find('option').prop('disabled', false);
-        } else {
-          objectpicker.find('option').prop('disabled', true);
-          objectpicker.find('option[data-action-id="' + action_id+ '"]').prop('disabled', false);
-        }
-        objectpicker.find('option[value=""]').prop('disabled', false);
-        objectpicker.selectpicker('refresh');
-        objectpicker.selectpicker('toggle');
-        if (objectpicker.selectpicker('val') === null) {
-          objectpicker.selectpicker('val', '');
-        }
-      });
+      addActionFilterButton($(this));
     });
   });
 
@@ -313,8 +297,8 @@
     for (const [_, value] of Object.entries(recipe['property_values'])) {
       changedValues.push(value['title'])
     }
-    recipe_div.attr('title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
-    recipe_div.attr('data-original-title', recipeName + ' {{ _("sets:") }} ' + changedValues.join(', '));
+    recipe_div.attr('title', `${recipeName} ${window.getTemplateValue('translations.sets')} ${changedValues.join(', ')}`);
+    recipe_div.attr('data-original-title', `${recipeName} ${window.getTemplateValue('translations.sets')} ${changedValues.join(', ')}`);
     recipe_div.tooltip('hide');
   }
 
@@ -907,8 +891,9 @@
   }
 
   function insertFormData() {
-    {% if form_data is not none and form_data|length > 0 %}
-    const form_data = {{ form_data | tojson }};
+    if (Object.keys(form_data).length === 0) {
+      return;
+    }
 
     $.each(form_data, function(key, value) {
       const field = $(`[name="${key}"]`);
@@ -938,13 +923,13 @@
     });
 
     $('.selectpicker').selectpicker('refresh');
-    {% endif %}
   }
 
   function showErrors() {
-    {% if errors is not none %}
-    const errors = {{ errors | tojson }};
-    const form_data = {{ form_data | tojson }};
+    const errors = window.getTemplateValue('errors');
+    if (errors === null || Object.keys(errors).length === 0) {
+      return;
+    }
 
     $.each(form_data, function(key, value) {
       if(errors.hasOwnProperty(key)) return;
@@ -956,10 +941,8 @@
       const errorParent = $(`[name="${key}"]`).closest('.error-parent');
       if(errorParent.hasClass('has-success')) errorParent.removeClass('has-success');
       errorParent.addClass('has-error');
-      errorParent.find('.error-note').html(`<strong>{{ _('Error:') }} </strong>${value}`);
+      errorParent.find('.error-note').html(`<strong>${window.getTemplateValue('translations.error')} </strong>${value}`);
     });
-
-    {% endif %}
   }
 
   /**

@@ -11,7 +11,7 @@ $(function () {
     const filePickerInput = $(this);
     const idPrefix = filePickerInput.data('id-prefix');
     if (!idPrefix.includes('!')) {
-      filePickerInput.on('change', fileEventHandler(filePickerInput.data('context-id-token'), window.temporaryFileUploadURL));
+      filePickerInput.on('change', fileEventHandler(filePickerInput.data('context-id-token'), temporaryFileUploadURL));
     }
   });
 });

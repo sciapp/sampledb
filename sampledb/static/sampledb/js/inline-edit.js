@@ -227,7 +227,7 @@ $(document).ready(function () {
   });
 
   $.each(window.conditionalWrapperScripts, function () {
-      this();
+    this();
   });
 
   $('div.objectpicker').each(function () {

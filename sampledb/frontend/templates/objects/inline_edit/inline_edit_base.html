@@ -35,7 +35,7 @@
 {% block template_values %}
   {% do set_template_value("tags", tags) %}
   {% do set_template_value("temporary_file_upload_url", url_for(".temporary_file_upload")) %}
-  {% do set_template_value("translation.filter_by_action", _('Filter by Action…')) %}
+  {% do set_template_value("translations.filter_by_action", _('Filter by Action…')) %}
 
   {{ super() }}
 {% endblock %}
