@@ -1163,37 +1163,6 @@
                 <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_locations' /> {{ _('Locations') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox'  id='activity_log_filter_references' /> {{ _('References') }}</label><br />
                 <label style='font-weight:400'><input type='checkbox' id='activity_log_filter_other' /> {{ _('Other') }}</label>
-                <script type='text/javascript' nonce='{{ generate_inline_script_nonce() }}'>
-                  window.update_activity_log_filter_states();
-                  document.getElementById('activity_log_filter_versions').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'versions');
-                    activity_log_apply_filters();
-                  });
-                  document.getElementById('activity_log_filter_measurements').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'measurements');
-                    activity_log_apply_filters();
-                  });
-                  document.getElementById('activity_log_filter_comments').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'comments');
-                    activity_log_apply_filters();
-                  });
-                  document.getElementById('activity_log_filter_files').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'files');
-                    activity_log_apply_filters();
-                  });
-                  document.getElementById('activity_log_filter_locations').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'locations');
-                    activity_log_apply_filters();
-                  });
-                  document.getElementById('activity_log_filter_references').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'references');
-                    activity_log_apply_filters();
-                  });
-                  document.getElementById('activity_log_filter_other').addEventListener('click', function () {
-                    activity_log_toggle($(this).is(':checked'), 'other');
-                    activity_log_apply_filters();
-                  });
-                </script>
               ">
                 <i class="fa fa-filter" style="font-size: 1.5rem"></i> <span class="badge" id="activity_log_counter"></span>
               </button>
@@ -1913,29 +1882,17 @@
         window.activity_log_toggle(activity_log_filter_state['references'], "references");
         window.activity_log_toggle(activity_log_filter_state['other'], "other");
         window.activity_log_apply_filters();
-        window.update_activity_log_filter_states = function () {
-          if (window.activity_log_toggle.current_state['versions']) {
-            $('#activity_log_filter_versions').attr('checked', 'checked');
+
+        $('#activity_log_counter').closest('button').on('inserted.bs.popover', function () {
+          for (const filterType of ['versions', 'measurements', 'comments', 'files', 'locations', 'references', 'other']) {
+            const filterToggle = $(`#activity_log_filter_${filterType}`);
+            filterToggle.prop('checked', window.activity_log_toggle.current_state[filterType]);
+            filterToggle.on('click', function () {
+              activity_log_toggle($(this).prop('checked'), filterType);
+              activity_log_apply_filters();
+            });
           }
-          if (window.activity_log_toggle.current_state['measurements']) {
-            $('#activity_log_filter_measurements').attr('checked', 'checked');
-          }
-          if (window.activity_log_toggle.current_state['comments']) {
-            $('#activity_log_filter_comments').attr('checked', 'checked');
-          }
-          if (window.activity_log_toggle.current_state['files']) {
-            $('#activity_log_filter_files').attr('checked', 'checked');
-          }
-          if (window.activity_log_toggle.current_state['locations']) {
-            $('#activity_log_filter_locations').attr('checked', 'checked');
-          }
-          if (window.activity_log_toggle.current_state['references']) {
-            $('#activity_log_filter_references').attr('checked', 'checked');
-          }
-          if (window.activity_log_toggle.current_state['other']) {
-            $('#activity_log_filter_other').attr('checked', 'checked');
-          }
-        };
+        });
       {% endif %}
       {% if not is_archived %}
         {% if action is not none and action.type.enable_files %}
