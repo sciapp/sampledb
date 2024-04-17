@@ -240,7 +240,8 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
         ]
         script_sources = [
             "'self'",
-            f"'nonce-{sampledb.utils.generate_inline_script_nonce()}'",
+            "'strict-dynamic'",
+            f"'nonce-{sampledb.utils.generate_content_security_policy_nonce()}'",
         ]
         style_sources = [
             "'self'",
@@ -249,7 +250,10 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
         connect_sources = [
             "'self'",
         ]
+        base_uri = 'none'
         if flask.request.blueprint == 'dashboard':
+            # strict-dynamic would block 'unsafe-eval' and sources other than hashes and nonces
+            script_sources.remove("'strict-dynamic'")
             script_sources += [
                 "'unsafe-eval'",
                 "https://cdnjs.cloudflare.com/ajax/libs/d3/",
@@ -260,11 +264,12 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
             connect_sources += [
                 "https://pypi.org/pypi/Flask-MonitoringDashboard/json",
             ]
+            base_uri = 'self'
         if flask.request.endpoint == 'frontend.federation':
             connect_sources += [
                 '*'
             ]
-        content_security_policy = f"default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; report-uri /csp-violation-report"
+        content_security_policy = f"base-uri '{base_uri}'; default-src {' '.join(default_sources)}; img-src {' '.join(image_sources)}; script-src {' '.join(script_sources)}; style-src {' '.join(style_sources)}; connect-src {' '.join(connect_sources)}; object-src 'none'; report-uri /csp-violation-report"
         if app.config.get('TESTING', True):
             response.headers["Content-Security-Policy-Report-Only"] = content_security_policy
         elif app.config.get('ENABLE_CONTENT_SECURITY_POLICY', True):
