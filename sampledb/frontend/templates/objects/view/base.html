@@ -1635,6 +1635,84 @@
   {% include "objects/view/timeseries_modals.html" %}
 {% endblock %}
 
+{% block template_values %}
+
+  {% do set_template_value("object_id", object_id) %}
+  {% set languages = [] %}
+  {% for lang in all_languages %}
+    {% do languages.append(
+      {
+        'id': lang.id | string,
+        'name': lang.names | get_translated_text,
+        'lang_code': lang.lang_code
+      }
+    ) %}
+  {% endfor %}
+  {% do set_template_value("languages", languages) %}
+  {% set filter_type_list = {
+      "versions": [ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH, ObjectLogEntryType.EDIT_OBJECT, ObjectLogEntryType.RESTORE_OBJECT_VERSION],
+      "measurements": [ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT],
+      "comments": [ObjectLogEntryType.POST_COMMENT],
+      "files": [ObjectLogEntryType.UPLOAD_FILE],
+      "locations": [ObjectLogEntryType.ASSIGN_LOCATION],
+      "references": [ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA, ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT, ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION],
+     }
+  %}
+  {% set activity_log_filter_type_dict = {"other": []} %}
+  {% set handled_entry_types = [] %}
+  {% for filter_label, entry_types in filter_type_list.items() %}
+    {% do activity_log_filter_type_dict.update({filter_label: []}) %}
+    {% for entry_type in entry_types %}
+        {% do activity_log_filter_type_dict[filter_label].append(entry_type.name.lower()) %}
+        {% do handled_entry_types.append(entry_type) %}
+    {% endfor %}
+  {% endfor %}
+  {% for entry_type in ObjectLogEntryType %}
+    {% if entry_type not in handled_entry_types %}
+      {% do activity_log_filter_type_dict.other.append(entry_type.name.lower()) %}
+    {% endif %}
+  {% endfor %}
+  {% do set_template_value("activity_log_filter_type_dict", activity_log_filter_type_dict) %}
+  {% do set_template_value("horizontal_label_margin", HORIZONTAL_LABEL_MARGIN) %}
+  {% do set_template_value("vertical_label_margin", VERTICAL_LABEL_MARGIN) %}
+  {% do set_template_value("label_paper_formats", config["LABEL_PAPER_FORMATS"]) %}
+  {% set page_sizes = {} %}
+  {% for paper_format in PAGE_SIZES %}
+    {% do page_sizes.update({
+      paper_format: [
+        PAGE_SIZES[paper_format][0] / mm,
+        PAGE_SIZES[paper_format][1] / mm
+      ]
+    }) %}
+  {% endfor %}
+  {% do set_template_value("page_sizes", page_sizes) %}
+  {% do set_template_value("download_service_url", url_for('.download_service', object_id=object_id)) %}
+  {% do set_template_value("export_data_url", url_for('.export_data', object_id=object_id)) %}
+  {% if edit_external_link_file and edit_external_link_file is not none and edit_external_link_file | int(-1) != -1 and edit_external_link_error in external_link_errors %}
+    {% do set_template_value("edit_external_link_file", edit_external_link_file | int) %}
+    {% do set_template_value("external_link_error", external_link_errors[edit_external_link_error]) %}
+  {% else %}
+    {% do set_template_value("edit_external_link_file", -1) %}
+  {% endif %}
+  {% do set_template_value("template_mode", template_mode) %}
+  {% do set_template_value("is_archived", is_archived or False) %}
+  {% do set_template_value("labels_enabled", action is not none and action.type.enable_labels) %}
+  {% do set_template_value("files_enabled", action is not none and action.type.enable_files) %}
+  {% do set_template_value("user_may_comments", user_may_comment and action is not none and action.type.enable_comments) %}
+  {% do set_template_value("user_may_upload_files", user_may_upload_files) %}
+  {% do set_template_value("has_object_log_entries", object_log_entries and action is not none and action.type.enable_activity_log) %}
+  {% do set_template_value("has_related_objects_tree", related_objects_tree and action is not none and action.type.enable_related_objects) %}
+  {% do set_template_value("show_download_service", show_download_service and action is not none and action.type is not none and action.type.enable_files and files) %}
+  {% do set_template_value("translations.select_responsible_user_or_location", _("Please select one responsible user or one location")) %}
+  {% do set_template_value("translations.files_selected", _('files selected')) %}
+  {% do set_template_value("translations.select_a_paper_format", _('Please select a paper format.')) %}
+  {% do set_template_value("translations.enter_a_number_between_minimum_and_maximum", _('Please enter a number between {minimum} and {maximum}.')) %}
+  {% do set_template_value("translations.select_an_existing_label_paper_format", _('Please select an existing label paper format.')) %}
+  {% do set_template_value("translations.select_qr_code_data", _('Please select which data should be stored in the qr codes.')) %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js') }}"></script>
@@ -1650,44 +1728,23 @@
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/timeline_arrays.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}" type="module"></script>
   <script type="module" nonce="{{ generate_inline_script_nonce() }}">
-    // this module exports imported variable into the global namespace, to allow existing non-module code to keep working
-    import {
-      updateTranslationJSON,
-      setTranslationHandler,
-      updateTranslationLanguages,
-      initMarkdownField,
-      updateMarkdownField
-    } from "{{ fingerprinted_static('sampledb/js/sampledb-internationalization.js') }}";
-    window.updateTranslationJSON = updateTranslationJSON;
-    window.setTranslationHandler = setTranslationHandler;
-    window.updateTranslationLanguages = updateTranslationLanguages;
-    window.initMarkdownField = initMarkdownField;
-    window.updateMarkdownField = updateMarkdownField;
-  </script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
 
-   window.object_location_translations = { '{{ENGLISH.lang_code}}': '',}
-
-
-  window.languages = [
-    {% for lang in all_languages %}
-      {
-        'id': '{{ lang.id }}',
-        'name': '{{ lang.names | get_translated_text }}',
-        'lang_code': '{{ lang.lang_code }}'
-      },
-    {% endfor %}
-  ]
+    window.object_location_translations = {
+       en: ''
+    };
     $(function () {
-      {% if action is not none and action.type.enable_labels and not is_archived %}
-      $('#form-generate-labels').on('submit', validateLabelsForm);
-      $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
-      $('#objectLabelModal input[name="add-label-number"]').on('change', updateQRCodeLabelsCheckbox);
-      {% if config["LABEL_PAPER_FORMATS"] %}
-      $('#objectLabelModal select[name="qr-code-paper-dimension-template"]').on('change', updateQRCodeLabelPaperDimensionSettings);
-      {% endif %}
-      {% endif %}
+      window.languages = window.getTemplateValue('languages');
+
+      if (!window.getTemplateValue('is_archived') && window.getTemplateValue('labels_enabled')) {
+        $('#form-generate-labels').on('submit', validateLabelsForm);
+        $('#objectLabelModal input[type="radio"]').on('change', updateLabelsForm);
+        $('#objectLabelModal input[name="add-label-number"]').on('change', updateQRCodeLabelsCheckbox);
+        if (window.getTemplateValue('label_paper_formats').length > 0) {
+          $('#objectLabelModal select[name="qr-code-paper-dimension-template"]').on('change', updateQRCodeLabelPaperDimensionSettings);
+        }
+      }
 
       function updateObjectLocationTranslationJSON() {
         var translation_json = JSON.stringify(window.object_location_translations);
@@ -1698,7 +1755,7 @@
         resp = $('.selectpicker#input-responsible-user').val();
         locat = $('.selectpicker#input-location').val()
         if (resp === '-1' && locat === '-1'){
-          $('#object_location-help-block').html('{{ _("Please select one responsible user or one location") }}');
+          $('#object_location-help-block').html(window.getTemplateValue('translations.select_responsible_user_or_location'));
         } else {
           $('#object_location-help-block').html('')
         }
@@ -1710,7 +1767,7 @@
         $.each(window.object_location_translations, function (key, value) {
           existing_languages.push(key)
         })
-        let selected = ["{{ ENGLISH.lang_code }}",]
+        let selected = ["en"];
         let input_descriptions = $('[data-name="input-descriptions"]')
         selected = selected.concat($(this).val())
         let remove_languages = existing_languages.filter(n => !selected.includes(n))
@@ -1751,28 +1808,28 @@
         }
       });
 
-      $('#input-group-object_location-{{ ENGLISH.lang_code }}').change(function(){
+      $('#input-group-object_location-en').change(function(){
         var language = $(this).attr('data-language');
         var translation_text = $(this).find('textarea').val();
         window.object_location_translations[language] = translation_text;
         updateObjectLocationTranslationJSON();
       });
-      $('#input-group-object_location-{{ ENGLISH.lang_code }}').change();
+      $('#input-group-object_location-en').change();
 
-    {% if template_mode == "view" %}
+    if (window.getTemplateValue('template_mode') === 'view') {
       $('.input-group.date').each(function () {
         $(this).datetimepicker({
-          locale: "{{ get_user_language(current_user).lang_code }}",
+          locale: window.getTemplateValue('current_user.language.lang_code'),
           format: 'YYYY-MM-DD HH:mm:ss',
           date: $(this).attr('data-datetime')
         });
       });
-    {% endif %}
+    }
       $('.nav-tabs a').click(function (e) {
         e.preventDefault();
         $(this).tab('show');
       });
-      {% if (not is_archived) and user_may_comment and action is not none and action.type.enable_comments %}
+      if (!window.getTemplateValue('is_archived') && window.getTemplateValue('user_may_comments')) {
         var comment_form = $('#new-comment-form');
         var comment_textarea = comment_form.find('textarea');
         comment_textarea.on('input change propertychange', function () {
@@ -1786,37 +1843,12 @@
           }
           return true;
         });
-      {% endif %}
+      }
       $(function () {
         $('[data-toggle="popover"]').popover()
       });
-      {% if object_log_entries and action is not none and action.type.enable_activity_log %}
-        {% set filter_type_list = {
-            "versions": [ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH, ObjectLogEntryType.EDIT_OBJECT, ObjectLogEntryType.RESTORE_OBJECT_VERSION],
-            "measurements": [ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT],
-            "comments": [ObjectLogEntryType.POST_COMMENT],
-            "files": [ObjectLogEntryType.UPLOAD_FILE],
-            "locations": [ObjectLogEntryType.ASSIGN_LOCATION],
-            "references": [ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA, ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT, ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION],
-           }
-        %}
-        {% set handled_entry_types = [] %}
-        var activity_log_filter_type_list = {
-          {% for filter_label, entry_types in filter_type_list.items() %}
-              "{{ filter_label }}": [
-                  {% for entry_type in entry_types %}
-                      '{{ entry_type.name.lower() }}',{% do handled_entry_types.append(entry_type) %}
-                  {% endfor %}
-              ],
-          {% endfor %}
-          "other": [
-            {% for entry_type in ObjectLogEntryType %}
-                {% if entry_type not in handled_entry_types %}
-                    '{{ entry_type.name.lower() }}',
-                {% endif %}
-            {% endfor %}
-          ]
-        };
+      if (window.getTemplateValue('has_object_log_entries')) {
+        const activity_log_filter_type_dict = window.getTemplateValue('activity_log_filter_type_dict');
         window.activity_log_apply_filters = function() {
           window.activity_log_apply_filter("versions");
           window.activity_log_apply_filter("measurements");
@@ -1837,7 +1869,7 @@
           }
         }
         window.activity_log_apply_filter = function (category) {
-          const type_list = activity_log_filter_type_list[category];
+          const type_list = activity_log_filter_type_dict[category];
           const activity_log = $('#activity_log_table > tbody');
           type_list.forEach(function (activity_log_type) {
             const activity_log_rows = activity_log.find('tr[data-activity-log-type=' + activity_log_type + ']');
@@ -1893,9 +1925,9 @@
             });
           }
         });
-      {% endif %}
-      {% if not is_archived %}
-        {% if action is not none and action.type.enable_files %}
+      }
+      if (!window.getTemplateValue('is_archived')) {
+        if (window.getTemplateValue('files_enabled')) {
           window.file_table_toggle = function (should_show, category) {
             var file_table = $('#file_table').find('> tbody');
             var file_table_rows = file_table.find('tr[data-file-type=' + category + ']');
@@ -1932,7 +1964,7 @@
               $('#file_table_filter_other').attr('checked', 'checked');
             }
           };
-        {% endif %}
+        }
         $('#button-show-mobile-file-upload-modal').click(function () {
           $('#mobileFileLinkModal').modal('show');
         });
@@ -1942,7 +1974,7 @@
         $('#button-show-object-label-modal').click(function () {
           $('#objectLabelModal').modal('show');
         });
-        {% if action is not none and action.type.enable_files %}
+        if (window.getTemplateValue('files_enabled')) {
           function changeHandler() {
             var files = $('#input-file-upload').get(0).files;
             if (files.length === 0) {
@@ -1954,14 +1986,14 @@
               $('#button-upload-files').removeClass('disabled');
               $('#button-upload-files').prop('disabled', false);
             } else {
-              $('#input-file-text').val(files.length + " {{ _('files selected') }}");
+              $('#input-file-text').val(files.length + " " + window.getTemplateValue('translations.files_selected'));
               $('#button-upload-files').removeClass('disabled');
               $('#button-upload-files').prop('disabled', false);
             }
             $('#input-file-names-hidden').val("");
             $('#input-file-source-hidden').val("local");
           }
-          {% if user_may_upload_files %}
+          if (window.getTemplateValue('user_may_upload_files')) {
             $('#input-file-upload').on('change', changeHandler);
             function dropHandler(e) {
               e.preventDefault();
@@ -1974,11 +2006,11 @@
             var upload_area = $('#upload-area')[0];
             upload_area.ondrop = dropHandler;
             upload_area.ondragover = dragOverHandler;
-          {% endif %}
-        {% endif %}
-      {% endif %}
+          }
+        }
+      }
 
-      {% if action is not none and action.type.enable_files %}
+      if (window.getTemplateValue('files_enabled')) {
         $('.button-file-info').on('click', function () {
           var file_id = $(this).attr('data-file_id');
           $('#fileInfoModal-' + file_id).modal('show');
@@ -2014,20 +2046,20 @@
           $('.file-info-hide').hide();
           $('.file-info-main').show();
         });
-        {% if edit_external_link_file and edit_external_link_file is not none and edit_external_link_file | int(-1) != -1 and edit_external_link_error in external_link_errors %}
-          var file_id = {{ edit_external_link_file | int }};
+        var file_id = window.getTemplateValue('edit_external_link_file');
+        if (file_id >= 0) {
           $('.file-info-edit-mode').show();
           $('.file-info-view-mode').hide();
           $('#fileInfoModal-' + file_id).modal('show');
-          $('#file-url-error-' + file_id + ' > span:first-of-type').text('{{ external_link_errors[edit_external_link_error] }}');
+          $('#file-url-error-' + file_id + ' > span:first-of-type').text(window.getTemplateValue('external_link_error'));
           $('#file-url-error-' + file_id).show();
-        {% endif %}
-      {% endif %}
-      {% if related_objects_tree %}
+        }
+      }
+      if (window.getTemplateValue('has_related_objects_tree')) {
         $('input[name^=data_export_object_]').prop("checked", false);
         $('input.data_export_object').prop("checked", false);
-        $('input.data_export_object_{{ object_id }}').prop("checked", true);
-      {% endif %}
+        $(`input.data_export_object_${window.getTemplateValue('object_id')}`).prop("checked", true);
+      }
         function updateDataExportLink() {
           var format = ".pdf";
           var selected_format_option = $('#select-export-format > option:selected');
@@ -2048,18 +2080,18 @@
           });
           var pdf_export_language = $('#pdf–export-sections select[name="language"]').selectpicker('val');
           var object_ids_to_export = [];
-          {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
+          if (window.getTemplateValue('has_related_objects_tree')) {
             $('input[name^=data_export_object_]').each(function () {
               if ($(this).prop('checked')) {
                 object_ids_to_export.push(parseInt($(this).attr('data-object-id'), 10));
               }
             });
-          {% else %}
-            object_ids_to_export.push({{ object_id }});
-          {% endif %}
+          } else {
+            object_ids_to_export.push(window.getTemplateValue('object_id'));
+          }
           var export_link = $('#button-related-objects-export-data');
           if (object_ids_to_export.length > 0) {
-            export_link.attr('href', "{{ url_for('.export_data', object_id=object_id) }}?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)) + "&language=" + encodeURIComponent(pdf_export_language));
+            export_link.attr('href', window.getTemplateValue('export_data_url') + "?format=" + format + "&object_ids=" + encodeURIComponent(JSON.stringify(object_ids_to_export)) + "&sections=" + encodeURIComponent(JSON.stringify(enabled_sections)) + "&language=" + encodeURIComponent(pdf_export_language));
             export_link.removeClass("disabled");
           } else {
             export_link.attr('href', "#");
@@ -2091,7 +2123,7 @@
         });
         updateDataExportLink();
 
-      {% if show_download_service and not is_archived and action is not none and action.type is not none and action.type.enable_files and files %}
+      if (!window.getTemplateValue('is_archived') && window.getTemplateValue('show_download_service')) {
         $('#button-modal-files-select-all').on('click', function () {
           $('input[name^=data_download_service_checked_]').prop("checked", true);
         });
@@ -2100,16 +2132,16 @@
         });
         $('#button-modal-files-download-zip').on('click', function () {
           let file_ids = [];
-          $('input[name^=data_download_service_checked_]').each(function() {
+          $('input[name^=data_download_service_checked_]').each(function () {
             if ($(this).prop('checked')) {
               file_ids.push(parseInt($(this).attr('data-object-id')));
             }
           });
           let params = '?file_ids=' + file_ids.join('&file_ids=')
           let ifrm = document.getElementById('download_frame');
-          ifrm.src = '{{ url_for('.download_service', object_id=object_id) }}' + params;
+          ifrm.src = window.getTemplateValue('download_service_url') + params;
         });
-      {% endif %}
+      }
 
       $('span.copy-external-link').on('click', function () {
         var button = $(this);
@@ -2125,18 +2157,10 @@
         );
       });
     });
-    {% if not is_archived %}
-    {% if action is not none and action.type.enable_labels %}
+    if (!window.getTemplateValue('is_archived') && window.getTemplateValue('labels_enabled')) {
     function validateLabelsForm() {
-      const PAGE_SIZES = {
-        {% for paper_format in PAGE_SIZES %}
-          "{{ paper_format }}": [
-            {{ PAGE_SIZES[paper_format][0] / mm }},
-            {{ PAGE_SIZES[paper_format][1] / mm }}
-          ]{% if loop.index < (PAGE_SIZES | length) %},{% endif %}
-        {% endfor %}
-      };
-      const LABEL_PAPER_FORMATS = {{ config["LABEL_PAPER_FORMATS"] | tojson | safe }};
+      const PAGE_SIZES = window.getTemplateValue("page_sizes")
+      const LABEL_PAPER_FORMATS = window.getTemplateValue("label_paper_formats");
       var labels_form = $('#form-generate-labels');
       var is_valid = true;
       labels_form.find('.has-error').removeClass('has-error');
@@ -2147,12 +2171,12 @@
         if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
           var paper_format_group = labels_form.find('select[name="width-paper-format"]').closest('.form-group');
           paper_format_group.addClass('has-error');
-          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+          paper_format_group.find('.help-block').text(window.getTemplateValue('translations.select_a_paper_format'));
           is_valid = false;
         } else {
           labels_form.find('select[name="width-paper-format"]').closest('.form-group').addClass('has-success');
-          var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
-          var maximum_height = Math.floor(PAGE_SIZES[paper_format][1] - {{ VERTICAL_LABEL_MARGIN * 2 }});
+          var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - 2 * window.getTemplateValue('horizontal_label_margin'));
+          var maximum_height = Math.floor(PAGE_SIZES[paper_format][1] - 2 * window.getTemplateValue('vertical_label_margin'));
           var minimum_width = 20;
           if (labels_form.find('input[name="side-by-side"]').is(':checked')) {
             minimum_width = 40;
@@ -2167,7 +2191,7 @@
             input_width.val(label_width);
           } else {
             input_width_group.addClass('has-error');
-            input_width_help.text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", minimum_width.toString()).replace("{maximum}", maximum_width.toString()));
+            input_width_help.text(window.getTemplateValue('translations.enter_a_number_between_minimum_and_maximum').replace("{minimum}", minimum_width.toString()).replace("{maximum}", maximum_width.toString()));
             input_width.closest('.form-group').addClass('has-error');
             is_valid = false;
           }
@@ -2180,7 +2204,7 @@
             input_minimum_height.val(label_minimum_height);
           } else {
             input_minimum_height_group.addClass('has-error');
-            input_minimum_height_help.text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "0").replace("{maximum}", maximum_height.toString()));
+            input_minimum_height_help.text(window.getTemplateValue('translations.enter_a_number_between_minimum_and_maximum').replace("{minimum}", "0").replace("{maximum}", maximum_height.toString()));
             is_valid = false;
           }
         }
@@ -2190,11 +2214,11 @@
         if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
           var paper_format_group = labels_form.find('select[name="height-paper-format"]').closest('.form-group');
           paper_format_group.addClass('has-error');
-          paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+          paper_format_group.find('.help-block').text(window.getTemplateValue('translations.select_a_paper_format'));
           is_valid = false;
         } else {
           labels_form.find('select[name="height-paper-format"]').closest('.form-group').addClass('has-success');
-          var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
+          var maximum_width = Math.floor(PAGE_SIZES[paper_format][0] - 2 * window.getTemplateValue('horizontal_label_margin'));
           var input_minimum_width = $('#input-minimum-width');
           var input_minimum_width_group = input_minimum_width.closest('.form-group');
           var input_minimum_width_help = input_minimum_width_group.find('.help-block');
@@ -2204,7 +2228,7 @@
             input_minimum_width.val(label_minimum_width);
           } else {
             input_minimum_width_group.addClass('has-error');
-            input_minimum_width_help.text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "0").replace("{maximum}", maximum_width.toString()));
+            input_minimum_width_help.text(window.getTemplateValue('translations.enter_a_number_between_minimum_and_maximum').replace("{minimum}", "0").replace("{maximum}", maximum_width.toString()));
             is_valid = false;
           }
         }
@@ -2214,7 +2238,7 @@
         if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
          var paper_format_group = labels_form.find('select[name="mixed-paper-format"]').closest('.form-group');
          paper_format_group.addClass('has-error');
-         paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+         paper_format_group.find('.help-block').text(window.getTemplateValue('translations.select_a_paper_format'));
          is_valid = false;
         } else {
          labels_form.find('select[name="mixed-paper-format"]').closest('.form-group').addClass('has-success');
@@ -2236,21 +2260,21 @@
         var qr_code_number = input_qr_code_number.val();
         var qr_code_content = input_qr_code_content.val();
 
-        {% if config["LABEL_PAPER_FORMATS"] %}
+        if (LABEL_PAPER_FORMATS.length > 0) {
             if (Number(selected_label_dimension) < LABEL_PAPER_FORMATS.length || selected_label_dimension === "default") {
               input_qr_code_label_dimension_template_group.addClass('has-success');
             } else {
               input_qr_code_label_dimension_template_group.addClass('has-error');
-              input_qr_code_label_dimension_template_group.find('.help-block').text("{{ _('Please select an existing label paper format.') }}");
+              input_qr_code_label_dimension_template_group.find('.help-block').text(window.getTemplateValue('translations.select_an_existing_label_paper_format'));
               is_valid = false;
             }
-        {% endif %}
+        }
 
         if (LABEL_PAPER_FORMATS.length === 0 || selected_label_dimension === "default") {
             if(!PAGE_SIZES.hasOwnProperty(paper_format)) {
               var paper_format_group = labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group');
               paper_format_group.addClass('has-error');
-              paper_format_group.find('.help-block').text("{{ _('Please select a paper format.') }}");
+              paper_format_group.find('.help-block').text(window.getTemplateValue('translations.select_a_paper_format'));
               is_valid = false;
             } else {
               labels_form.find('select[name="qr-code-paper-format"]').closest('.form-group').addClass('has-success');
@@ -2260,7 +2284,7 @@
               input_qr_code_width_group.addClass('has-success');
             } else {
               input_qr_code_width_group.addClass('has-error');
-              input_qr_code_width_group.find('.help-block').text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "4").replace("{maximum}", "150"));
+              input_qr_code_width_group.find('.help-block').text(window.getTemplateValue('translations.enter_a_number_between_minimum_and_maximum').replace("{minimum}", "4").replace("{maximum}", "150"));
               is_valid = false;
             }
         }
@@ -2269,7 +2293,7 @@
           input_qr_code_number_group.addClass('has-success');
         } else {
           input_qr_code_number_group.addClass('has-error');
-          input_qr_code_number_group.find('.help-block').text("{{ _('Please enter a number between {minimum} and {maximum}.') }}".replace("{minimum}", "1").replace("{maximum}", "1000"));
+          input_qr_code_number_group.find('.help-block').text(window.getTemplateValue('translations.enter_a_number_between_minimum_and_maximum').replace("{minimum}", "1").replace("{maximum}", "1000"));
           is_valid = false;
         }
 
@@ -2277,7 +2301,7 @@
           input_qr_code_width_group.addClass('has-success');
         } else {
           input_qr_code_width_group.addClass('has-error');
-          input_qr_code_width_group.find('.help-block').text("{{ _('Please select which data should be stored in the qr codes.') }}");
+          input_qr_code_width_group.find('.help-block').text(window.getTemplateValue('translations.select_qr_code_data'));
           is_valid = false;
         }
       }
@@ -2325,16 +2349,15 @@
       labels_form.find('input[name="add-maximum-label-number"]').prop('disabled', !is_qr_code || !show_label_number);
     }
 
-    {% if config["LABEL_PAPER_FORMATS"] %}
+    if (window.getTemplateValue('label_paper_formats').length > 0) {
     function updateQRCodeLabelPaperDimensionSettings() {
       const form = $("#form-generate-labels");
       $('.defined-by-label-paper').toggle(form.find('select[name="qr-code-paper-dimension-template"]').val() === 'default');
     }
     updateQRCodeLabelPaperDimensionSettings();
-    {% endif %}
+    }
 
-    {% endif %}
-  {% endif %}
+  }
    $( document ).ready(function() {
       $('.modal-body table.diff').each(function(_, table) {
         let skipped_rows = 0;
