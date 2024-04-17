@@ -1649,43 +1649,47 @@
     ) %}
   {% endfor %}
   {% do set_template_value("languages", languages) %}
-  {% set filter_type_list = {
-      "versions": [ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH, ObjectLogEntryType.EDIT_OBJECT, ObjectLogEntryType.RESTORE_OBJECT_VERSION],
-      "measurements": [ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT],
-      "comments": [ObjectLogEntryType.POST_COMMENT],
-      "files": [ObjectLogEntryType.UPLOAD_FILE],
-      "locations": [ObjectLogEntryType.ASSIGN_LOCATION],
-      "references": [ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA, ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT, ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION],
-     }
-  %}
-  {% set activity_log_filter_type_dict = {"other": []} %}
-  {% set handled_entry_types = [] %}
-  {% for filter_label, entry_types in filter_type_list.items() %}
-    {% do activity_log_filter_type_dict.update({filter_label: []}) %}
-    {% for entry_type in entry_types %}
-        {% do activity_log_filter_type_dict[filter_label].append(entry_type.name.lower()) %}
-        {% do handled_entry_types.append(entry_type) %}
+  {% if object_log_entries %}
+    {% set filter_type_list = {
+        "versions": [ObjectLogEntryType.CREATE_OBJECT, ObjectLogEntryType.CREATE_BATCH, ObjectLogEntryType.EDIT_OBJECT, ObjectLogEntryType.RESTORE_OBJECT_VERSION],
+        "measurements": [ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT],
+        "comments": [ObjectLogEntryType.POST_COMMENT],
+        "files": [ObjectLogEntryType.UPLOAD_FILE],
+        "locations": [ObjectLogEntryType.ASSIGN_LOCATION],
+        "references": [ObjectLogEntryType.REFERENCE_OBJECT_IN_METADATA, ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT, ObjectLogEntryType.USE_OBJECT_IN_SAMPLE_CREATION],
+       }
+    %}
+    {% set activity_log_filter_type_dict = {"other": []} %}
+    {% set handled_entry_types = [] %}
+    {% for filter_label, entry_types in filter_type_list.items() %}
+      {% do activity_log_filter_type_dict.update({filter_label: []}) %}
+      {% for entry_type in entry_types %}
+          {% do activity_log_filter_type_dict[filter_label].append(entry_type.name.lower()) %}
+          {% do handled_entry_types.append(entry_type) %}
+      {% endfor %}
     {% endfor %}
-  {% endfor %}
-  {% for entry_type in ObjectLogEntryType %}
-    {% if entry_type not in handled_entry_types %}
-      {% do activity_log_filter_type_dict.other.append(entry_type.name.lower()) %}
-    {% endif %}
-  {% endfor %}
-  {% do set_template_value("activity_log_filter_type_dict", activity_log_filter_type_dict) %}
-  {% do set_template_value("horizontal_label_margin", HORIZONTAL_LABEL_MARGIN) %}
-  {% do set_template_value("vertical_label_margin", VERTICAL_LABEL_MARGIN) %}
-  {% do set_template_value("label_paper_formats", config["LABEL_PAPER_FORMATS"]) %}
-  {% set page_sizes = {} %}
-  {% for paper_format in PAGE_SIZES %}
-    {% do page_sizes.update({
-      paper_format: [
-        PAGE_SIZES[paper_format][0] / mm,
-        PAGE_SIZES[paper_format][1] / mm
-      ]
-    }) %}
-  {% endfor %}
-  {% do set_template_value("page_sizes", page_sizes) %}
+    {% for entry_type in ObjectLogEntryType %}
+      {% if entry_type not in handled_entry_types %}
+        {% do activity_log_filter_type_dict.other.append(entry_type.name.lower()) %}
+      {% endif %}
+    {% endfor %}
+    {% do set_template_value("activity_log_filter_type_dict", activity_log_filter_type_dict) %}
+  {% endif %}
+  {% if not is_archived %}
+    {% do set_template_value("horizontal_label_margin", HORIZONTAL_LABEL_MARGIN) %}
+    {% do set_template_value("vertical_label_margin", VERTICAL_LABEL_MARGIN) %}
+    {% do set_template_value("label_paper_formats", config["LABEL_PAPER_FORMATS"]) %}
+    {% set page_sizes = {} %}
+    {% for paper_format in PAGE_SIZES %}
+      {% do page_sizes.update({
+        paper_format: [
+          PAGE_SIZES[paper_format][0] / mm,
+          PAGE_SIZES[paper_format][1] / mm
+        ]
+      }) %}
+    {% endfor %}
+    {% do set_template_value("page_sizes", page_sizes) %}
+  {% endif %}
   {% do set_template_value("download_service_url", url_for('.download_service', object_id=object_id)) %}
   {% do set_template_value("export_data_url", url_for('.export_data', object_id=object_id)) %}
   {% if edit_external_link_file and edit_external_link_file is not none and edit_external_link_file | int(-1) != -1 and edit_external_link_error in external_link_errors %}
@@ -1698,11 +1702,11 @@
   {% do set_template_value("is_archived", is_archived or False) %}
   {% do set_template_value("labels_enabled", action is not none and action.type.enable_labels) %}
   {% do set_template_value("files_enabled", action is not none and action.type.enable_files) %}
-  {% do set_template_value("user_may_comments", user_may_comment and action is not none and action.type.enable_comments) %}
+  {% do set_template_value("user_may_comment", user_may_comment and action is not none and action.type.enable_comments) %}
   {% do set_template_value("user_may_upload_files", user_may_upload_files) %}
-  {% do set_template_value("has_object_log_entries", object_log_entries and action is not none and action.type.enable_activity_log) %}
-  {% do set_template_value("has_related_objects_tree", related_objects_tree and action is not none and action.type.enable_related_objects) %}
-  {% do set_template_value("show_download_service", show_download_service and action is not none and action.type is not none and action.type.enable_files and files) %}
+  {% do set_template_value("has_object_log_entries", (object_log_entries and action is not none and action.type.enable_activity_log) | bool) %}
+  {% do set_template_value("has_related_objects_tree", (related_objects_tree and action is not none and action.type.enable_related_objects) | bool) %}
+  {% do set_template_value("show_download_service", (show_download_service and action is not none and action.type is not none and action.type.enable_files and files) | bool) %}
   {% do set_template_value("translations.select_responsible_user_or_location", _("Please select one responsible user or one location")) %}
   {% do set_template_value("translations.files_selected", _('files selected')) %}
   {% do set_template_value("translations.select_a_paper_format", _('Please select a paper format.')) %}

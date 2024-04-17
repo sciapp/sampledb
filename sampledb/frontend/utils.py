@@ -103,6 +103,7 @@ JinjaFilter('urlencode')(quote_plus)
 JinjaFilter()(markdown_to_safe_html)
 JinjaFilter()(get_translated_text)
 JinjaFilter()(get_all_translated_texts)
+JinjaFilter()(bool)
 
 JinjaFunction()(get_component_or_none)
 JinjaFunction()(get_component_id_by_uuid)
@@ -1599,6 +1600,9 @@ def set_template_value(
         name: str,
         value: typing.Any
 ) -> None:
+    if type(value) is jinja2.runtime.Undefined:
+        # do not store undefined values, which will result in undefined as result in JavaScript
+        return
     if not hasattr(flask.g, 'template_values'):
         flask.g.template_values = {}
     if flask.g.template_values is None:
