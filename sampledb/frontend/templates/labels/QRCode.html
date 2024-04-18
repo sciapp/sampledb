@@ -63,152 +63,40 @@
     </head>
     <body>
         <div class="outbox">
-            {% if qr_quantity == 1 %}
-                {% if show_id %}
-                    {% if add_label_nr %}
-                        {% if add_maximum_label_nr %}
-                            {%- if has_label_dimension -%}
-                                <div class="outboxt" style="border: none">
-                                    <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;1_1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- else -%}
-                                <div class="outboxt" style="border: 0.15mm dashed black">
-                                    <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;1_1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- endif -%}
-                        {% else %}
-                            {%- if has_label_dimension -%}
-                                <div class="outboxt" style="border: none">
-                                    <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- else -%}
-                                <div class="outboxt" style="border: 0.15mm dashed black">
-                                    <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- endif -%}
-                        {% endif %}
-                    {% else %}
-                        {%- if has_label_dimension -%}
-                            <div class="outboxt" style="border: none">
-                                <div class="qrcode"></div><div class="text"><b>#{{sample_code}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                            </div>
-                        {%- else -%}
-                            <div class="outboxt" style="border: 0.15mm dashed black">
-                                <div class="qrcode"></div><div class="text"><b>#{{sample_code}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                            </div>
-                        {%- endif -%}
-                    {% endif %}
-                {% else %}
-                    {% if add_label_nr %}
-                        {% if add_maximum_label_nr %}
-                            {%- if has_label_dimension -%}
-                                <div class="outboxt" style="border: none">
-                                    <div class="qrcode"></div>&nbsp;<div class="text"><b>1_1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- else -%}
-                                <div class="outboxt" style="border: 0.15mm dashed black">
-                                    <div class="qrcode"></div>&nbsp;<div class="text"><b>1_1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- endif -%}
-                        {% else %}
-                            {%- if has_label_dimension -%}
-                                <div class="outboxt" style="border: none">
-                                    <div class="qrcode"></div>&nbsp;<div class="text"><b>1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- else -%}
-                                <div class="outboxt" style="border: 0.15mm dashed black">
-                                    <div class="qrcode"></div>&nbsp;<div class="text"><b>1</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- endif -%}
-                        {% endif %}
-                    {% else %}
-                        {%- if has_label_dimension -%}
-                            <div class="outboxt" style="border: none">
-                                <div class="qrcode"></div><div class="textname"><b>{{object_name}}</b></div>
-                            </div>
-                        {%- else -%}
-                            <div class="outboxt" style="border: 0.15mm dashed black">
-                                <div class="qrcode"></div><div class="textname"><b>{{object_name}}</b></div>
-                            </div>
-                        {%- endif -%}
-                    {% endif %}
-                {% endif %}
-            {% else %}
-                {% for i in range(1,qr_quantity + 1) -%}
+            {% for object_index in range(qr_quantity) -%}
+                {%- if has_label_dimension -%}
+                    <div class="outboxt" style="border: none">
+                {%- else -%}
+                    <div class="outboxt" style="border: 0.15mm dashed black">
+                {%- endif -%}
+                    <div class="qrcode"></div><div class="text">
                     {%- if show_id -%}
                         {%- if add_label_nr -%}
                             {%- if add_maximum_label_nr -%}
-                                {%- if has_label_dimension -%}
-                                    <div class="outboxt" style="border: none">
-                                        <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;{{i}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- else -%}
-                                    <div class="outboxt" style="border: 0.15mm dashed black">
-                                        <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;{{i}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- endif -%}
+                                <b>#{{sample_code}}&nbsp;{{object_index + 1}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b>
                             {%- else -%}
-                                {%- if has_label_dimension -%}
-                                    <div class="outboxt" style="border: none">
-                                        <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;{{i}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- else -%}
-                                    <div class="outboxt" style="border: 0.15mm dashed black">
-                                        <div class="qrcode"></div><div class="text"><b>#{{sample_code}}&nbsp;{{i}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- endif -%}
+                                <b>#{{sample_code}}&nbsp;{{object_index + 1}}</b></div><div class="textname"><b>{{object_name}}</b>
                             {%- endif -%}
                         {%- else -%}
-                            {%- if has_label_dimension -%}
-                                <div class="outboxt" style="border: none">
-                                    <div class="qrcode"></div><div class="text"><b>#{{sample_code}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- else -%}
-                                <div class="outboxt" style="border: 0.15mm dashed black">
-                                    <div class="qrcode"></div><div class="text"><b>#{{sample_code}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- endif -%}
+                            <b>#{{sample_code}}</b></div><div class="textname"><b>{{object_name}}</b>
                         {%- endif -%}
                     {%- else -%}
                         {%- if add_label_nr -%}
                             {%- if add_maximum_label_nr -%}
-                                {%- if has_label_dimension -%}
-                                    <div class="outboxt" style="border: none">
-                                        <div class="qrcode"></div>&nbsp;<div class="text"><b>{{i}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- else -%}
-                                    <div class="outboxt" style="border: 0.15mm dashed black">
-                                        <div class="qrcode"></div>&nbsp;<div class="text"><b>{{i}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- endif -%}
+                                <b>{{object_index + 1}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b>
                             {%- else -%}
-                                {%- if has_label_dimension -%}
-                                    <div class="outboxt" style="border: none">
-                                        <div class="qrcode"></div>&nbsp;<div class="text"><b>{{i}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- else -%}
-                                    <div class="outboxt" style="border: 0.15mm dashed black">
-                                        <div class="qrcode"></div>&nbsp;<div class="text"><b>{{i}}</b></div><div class="textname"><b>{{object_name}}</b></div>
-                                    </div>
-                                {%- endif -%}
+                                <b>{{object_index + 1}}</b></div><div class="textname"><b>{{object_name}}</b>
                             {%- endif -%}
                         {%- else -%}
-                            {%- if has_label_dimension -%}
-                                <div class="outboxt" style="border: none">
-                                    <div class="qrcode"></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- else -%}
-                                <div class="outboxt" style="border: 0.15mm dashed black">
-                                    <div class="qrcode"></div><div class="textname"><b>{{object_name}}</b></div>
-                                </div>
-                            {%- endif -%}
+                            <b>{{object_name}}</b></div>
                         {%- endif -%}
                     {%- endif -%}
-                    {% if i == labels_on_page and qr_quantity > labels_on_page and has_label_dimension %}
-                        <p style="page-break-before: always;"></p>
-                    {% endif %}
-                {%- endfor -%}
-            {%- endif -%}
+                    </div>
+                    </div>
+                {% if object_index + 1 == labels_on_page and qr_quantity > labels_on_page and has_label_dimension %}
+                    <p style="page-break-before: always;"></p>
+                {% endif %}
+            {%- endfor -%}
         </div>
     </body>
 </html>
