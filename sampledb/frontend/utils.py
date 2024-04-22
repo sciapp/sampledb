@@ -570,12 +570,37 @@ def get_style_aliases(style: str) -> typing.List[str]:
     }.get(style, [style])
 
 
-def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template_impl(template_folder, default_prefix, schema['type'], schema.get('style'), container_style)
+@JinjaFunction()
+def get_style_variant(
+        style: typing.Optional[typing.Union[str, typing.Dict[str, str]]],
+        template_mode: str
+) -> typing.Optional[str]:
+    if isinstance(style, str):
+        return style
+    if isinstance(style, dict):
+        if template_mode not in style and template_mode == 'inline_edit':
+            template_mode = 'view'
+        return style.get(template_mode)
+    return None
+
+
+def get_template(template_mode: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template_impl(
+        template_mode=template_mode,
+        default_prefix=default_prefix,
+        schema_type=schema['type'],
+        schema_style=get_style_variant(schema.get('style'), template_mode),
+        container_style=get_style_variant(container_style, template_mode)
+    )
 
 
 @functools.cache
-def get_template_impl(template_folder: str, default_prefix: str, schema_type: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+def get_template_impl(template_mode: str, default_prefix: str, schema_type: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+    template_folder = {
+        'view': 'objects/view/',
+        'inline_edit': 'objects/inline_edit/',
+        'form': 'objects/forms/'
+    }.get(template_mode, 'objects/view/')
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = str(schema_type) + ".html"
 
@@ -598,12 +623,21 @@ def get_template_impl(template_folder: str, default_prefix: str, schema_type: st
     return template_folder + default_prefix + base_file
 
 
-def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template_impl(template_folder, schema.get('style'), container_style)
+def get_property_template(template_mode: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[typing.Union[str, typing.Dict[str, str]]]) -> str:
+    return get_property_template_impl(
+        template_mode=template_mode,
+        schema_style=get_style_variant(schema.get('style'), template_mode),
+        container_style=get_style_variant(container_style, template_mode)
+    )
 
 
 @functools.cache
-def get_property_template_impl(template_folder: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+def get_property_template_impl(template_mode: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+    template_folder = {
+        'view': 'objects/view/',
+        'inline_edit': 'objects/inline_edit/',
+        'form': 'objects/forms/'
+    }.get(template_mode, 'objects/view/')
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
 
     file_order = ['regular_property.html']
@@ -623,32 +657,32 @@ def get_property_template_impl(template_folder: str, schema_style: typing.Option
 
 @JinjaFunction()
 def get_form_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template('objects/forms/', schema, container_style)
+    return get_property_template('form', schema, container_style)
 
 
 @JinjaFunction()
 def get_view_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template('objects/view/', schema, container_style)
+    return get_property_template('view', schema, container_style)
 
 
 @JinjaFunction()
 def get_inline_edit_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template('objects/inline_edit/', schema, container_style)
+    return get_property_template('inline_edit', schema, container_style)
 
 
 @JinjaFunction()
 def get_form_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template('objects/forms/', 'form_', schema, container_style)
+    return get_template('form', 'form_', schema, container_style)
 
 
 @JinjaFunction()
 def get_view_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template('objects/view/', '', schema, container_style)
+    return get_template('view', '', schema, container_style)
 
 
 @JinjaFunction()
 def get_inline_edit_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template('objects/inline_edit/', 'inline_edit_', schema, container_style)
+    return get_template('inline_edit', 'inline_edit_', schema, container_style)
 
 
 @JinjaFunction()

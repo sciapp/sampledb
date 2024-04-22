@@ -9,6 +9,7 @@ Currently in development.
 - Fixed search via API in combination with name_only parameter
 - Added ``timeline`` array style for arrays of objects with a ``datetime`` property
 - Added search to text fields with more than 10 choices (configurable with ``SAMPLEDB_MIN_NUM_TEXT_CHOICES_FOR_SEARCH``)
+- Allow using dicts for the ``style`` attribute
 
 Version 0.27
 ------------

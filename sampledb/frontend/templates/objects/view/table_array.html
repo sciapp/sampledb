@@ -2,7 +2,7 @@
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
 </div>
-<div {% if schema.style == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
+<div {% if get_style_variant(schema.style, template_mode) == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   {% if schema["items"]["type"] == 'object' %}
   <table class="table">
     <thead>
