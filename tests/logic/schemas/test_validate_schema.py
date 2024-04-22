@@ -1092,6 +1092,16 @@ def test_validate_array_schema_with_style():
         'style': 'table'
     }
     validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'style': {'form': 'table', 'view': None}
+    }
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_with_invalid_style():
@@ -1103,6 +1113,17 @@ def test_validate_array_schema_with_invalid_style():
             'type': 'text'
         },
         'style': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'style': {None: 'test'}
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))

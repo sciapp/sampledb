@@ -63,8 +63,8 @@ def validate_schema(
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
     _validate_title_and_tooltip_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
-    if 'style' in schema and not isinstance(schema['style'], str):
-        raise ValidationError('style must only contain text', path)
+    if 'style' in schema and not isinstance(schema['style'], str) and not (isinstance(schema['style'], dict) and all(isinstance(key, str) for key in schema['style'].keys()) and all(isinstance(value, str) or value is None for value in schema['style'].values())):
+        raise ValidationError('style must be a string or a dict of string keys and string or null values', path)
     if 'conditions' in schema:
         if parent_conditions is not None:
             if not isinstance(schema['conditions'], list):

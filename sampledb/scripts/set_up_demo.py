@@ -7,6 +7,7 @@ Usage: sampledb set_up_demo
 import datetime
 import json
 import os
+import string
 import sys
 import random
 import typing
@@ -1481,5 +1482,55 @@ This example shows how Markdown can be used for instrument Notes.
             },
             user_id=instrument_responsible_user.id
         )
+        large_table_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "table": {
+                        "type": "array",
+                        "title": {
+                            "en": "Large Table"
+                        },
+                        "items": {
+                            "type": "object",
+                            "title": {
+                                "en": "Row"
+                            },
+                            "properties": {
+                                letter: {
+                                    "title": {
+                                        "en": f"Column {letter.upper()}"
+                                    },
+                                    "type": "text"
+                                }
+                                for letter in string.ascii_lowercase
+                            }
+                        },
+                        "defaultItems": 1,
+                        "style": {
+                            "view": "full_width_table"
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "propertyOrder": [
+                    "name", "table"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, large_table_action.id, name="Full Width Table Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(large_table_action.id, sampledb.models.Permissions.READ)
 
     print("Success: set up demo data", flush=True)
