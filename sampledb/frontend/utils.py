@@ -65,8 +65,8 @@ from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
 from ..logic.files import File
-from ..utils import generate_inline_script_nonce
 from ..models import Permissions, Object
+from ..utils import generate_content_security_policy_nonce
 
 
 class JinjaFilter:
@@ -103,12 +103,12 @@ JinjaFilter('urlencode')(quote_plus)
 JinjaFilter()(markdown_to_safe_html)
 JinjaFilter()(get_translated_text)
 JinjaFilter()(get_all_translated_texts)
+JinjaFilter()(bool)
 
 JinjaFunction()(get_component_or_none)
 JinjaFunction()(get_component_id_by_uuid)
 JinjaFunction()(get_unhandled_object_responsibility_assignments)
 JinjaFunction()(is_full_location_tree_hidden)
-JinjaFunction()(generate_inline_script_nonce)
 JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
 JinjaFunction()(zip_longest)
@@ -735,7 +735,7 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
 
 
 @functools.lru_cache(maxsize=None)
-def get_fingerprint(file_path: str) -> str:
+def _get_fingerprint(file_path: str) -> str:
     """
     Calculate a fingerprint for a given file.
 
@@ -744,13 +744,13 @@ def get_fingerprint(file_path: str) -> str:
     """
     try:
         block_size = 65536
-        hash_method = hashlib.md5()
+        hash_method = hashlib.sha256()
         with open(file_path, 'rb') as input_file:
             buf = input_file.read(block_size)
             while buf:
                 hash_method.update(buf)
                 buf = input_file.read(block_size)
-        return hash_method.hexdigest()
+        return 'sha256-' + base64.b64encode(hash_method.digest()).decode('utf-8')
     except Exception:
         # if the file cannot be hashed for any reason, return an empty fingerprint
         return ''
@@ -761,11 +761,22 @@ STATIC_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 @JinjaFunction()
 def fingerprinted_static(filename: str) -> str:
-    return flask.url_for(
+    fingerprint = _get_fingerprint(os.path.join(STATIC_DIRECTORY, filename))
+    url = flask.url_for(
         'static',
         filename=filename,
-        v=get_fingerprint(os.path.join(STATIC_DIRECTORY, filename))
+        v=fingerprint or None
     )
+    file_extension = os.path.splitext(filename)[1]
+    result = markupsafe.escape(url)
+    # add integrity attribute for script files and stylesheets for SRI
+    if file_extension in ('.js', '.css') and fingerprint:
+        result = result + markupsafe.Markup('" integrity="' + fingerprint)
+    # add a nonce for script files for CSP
+    if file_extension == '.js':
+        nonce = generate_content_security_policy_nonce()
+        result = result + markupsafe.Markup('" nonce="' + nonce)
+    return result
 
 
 class SearchPathInfo(typing.TypedDict):
@@ -1633,6 +1644,9 @@ def set_template_value(
         name: str,
         value: typing.Any
 ) -> None:
+    if type(value) is jinja2.runtime.Undefined:
+        # do not store undefined values, which will result in undefined as result in JavaScript
+        return
     if not hasattr(flask.g, 'template_values'):
         flask.g.template_values = {}
     if flask.g.template_values is None:

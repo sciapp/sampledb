@@ -2,7 +2,7 @@
 /* eslint-env jquery */
 
 function addActionFilterButton (picker) {
-  const filterButton = $(`<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="${window.getTemplateValue('translation.filter_by_action')}"><i class="fa fa-filter"></i></button>`);
+  const filterButton = $(`<button type="button" class="btn btn-default objectpicker-filter-button"  data-toggle="tooltip" data-placement="left" title="${window.getTemplateValue('translations.filter_by_action')}"><i class="fa fa-filter"></i></button>`);
   picker.append(filterButton);
   const objectpicker = picker.find('.selectpicker');
   const actionpicker = picker.parent().find('select.objectpicker-actionpicker');
