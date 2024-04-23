@@ -7288,18 +7288,10 @@ msgstr ""
 "Ungültige Daten oder Schema in Version %(version_id)s von Objekt "
 "%(eln_object_id)s (%(error)s)"
 
-#, python-format
-msgid ""
-"Importing metadata for .eln files from %(eln_dialect)s is not yet "
-"supported."
+msgid "The .eln file did not contain any valid flexible metadata for this object."
 msgstr ""
-"Das Importieren von Metadaten wird für .eln-Dateien von %(eln_dialect)s "
-"noch nicht unterstützt."
-
-msgid "Importing metadata for .eln files from this ELN is not yet supported."
-msgstr ""
-"Das Importieren von Metadaten wird für .eln-Dateien von diesem ELN noch "
-"nicht unterstützt."
+"Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses "
+"Objekt."
 
 #, python-format
 msgid "Unnamed Instrument (#%(instrument_id)s)"
