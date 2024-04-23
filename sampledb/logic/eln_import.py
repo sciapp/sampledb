@@ -1,7 +1,9 @@
+import copy
 import dataclasses
 import datetime
 import hashlib
 import io
+import itertools
 import json
 import os.path
 import string
@@ -24,6 +26,7 @@ from .comments import create_comment
 from .schemas.validate_schema import validate_schema
 from .schemas.validate import validate
 from . import errors, object_log
+from .units import get_unit_for_un_cefact_code, ureg
 from ..models import eln_imports, users, Language, Permissions, UserType, Object
 
 
@@ -688,19 +691,13 @@ def parse_eln_file(
                     'name': {
                         '_type': 'text',
                         'text': {'en': name}
-                    },
-                    'description': {
-                        '_type': 'text',
-                        'text': {'en': description},
-                    },
-                    'import_note': {
-                        '_type': 'text',
-                        'text': {
-                            'en': 'The metadata for this object could not be imported.',
-                            'de': 'Die Metadaten für dieses Objekt konnten nicht importiert werden.'
-                        }
                     }
                 }
+                if description:
+                    fallback_data['description'] = {
+                        '_type': 'text',
+                        'text': {'en': description},
+                    }
                 fallback_schema = {
                     'type': 'object',
                     'title': {
@@ -714,36 +711,33 @@ def parse_eln_file(
                                 'en': 'Name',
                                 'de': 'Name'
                             }
-                        },
-                        'description': {
-                            'type': 'text',
-                            'title': {
-                                'en': 'Description',
-                                'de': 'Beschreibung'
-                            },
-                            'multiline': True
-                        },
-                        'import_note': {
-                            'type': 'text',
-                            'languages': ['en', 'de'],
-                            'title': {
-                                'en': 'Import Note',
-                                'de': 'Import-Hinweis'
-                            }
                         }
                     },
                     'required': ['name'],
-                    'propertyOrder': ['name', 'description', 'import_note']
+                    'propertyOrder': ['name']
                 }
+                fallback_schema_properties = typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])
+                fallback_schema_property_order = typing.cast(typing.List[str], fallback_schema['propertyOrder'])
+                if description:
+                    fallback_schema_properties['description'] = {
+                        'type': 'text',
+                        'title': {
+                            'en': 'Description',
+                            'de': 'Beschreibung'
+                        },
+                        'multiline': '\n' in description
+                    }
+                    fallback_schema_property_order.append('description')
+                has_metadata = False
                 if 'keywords' in object_node:
-                    typing.cast(typing.Dict[str, typing.Any], fallback_schema['properties'])['tags'] = {
+                    fallback_schema_properties['tags'] = {
                         'type': 'tags',
                         'title': {
                             'en': 'Tags',
                             'de': 'Tags'
                         }
                     }
-                    typing.cast(typing.List[str], fallback_schema['propertyOrder']).append('tags')
+                    fallback_schema_property_order.append('tags')
                     if isinstance(object_node['keywords'], list):
                         keywords = [
                             keyword
@@ -774,7 +768,32 @@ def parse_eln_file(
                         '_type': 'tags',
                         'tags': tags
                     }
-
+                else:
+                    tags = []
+                if 'variableMeasured' in object_node and object_node['variableMeasured'] is not None:
+                    _eln_assert(isinstance(object_node.get('variableMeasured', []), list), "Invalid variableMeasured list for Dataset")
+                    has_metadata = True
+                    property_values = []
+                    for property_value in object_node['variableMeasured']:
+                        _eln_assert(isinstance(property_value, dict), "Invalid variableMeasured item for Dataset")
+                        if '@id' in property_value and property_value['@id'] in graph_nodes_by_id:
+                            property_value = graph_nodes_by_id[property_value['@id']]
+                        # skip untyped variableMeasured entries, e.g. used by elabFTW for elabftw_metadata
+                        if '@type' not in property_value:
+                            continue
+                        _eln_assert(property_value.get('@type') == 'PropertyValue', "Invalid variableMeasured item type for Dataset")
+                        _eln_assert(isinstance(property_value.get('propertyID'), str), "Invalid variableMeasured item propertyID for Dataset")
+                        _eln_assert(isinstance(property_value.get('name', ''), str), "Invalid variableMeasured item name for Dataset")
+                        _eln_assert(isinstance(property_value.get('value'), (str, bool, int, float)), "Invalid variableMeasured item value for Dataset")
+                        _eln_assert(isinstance(property_value.get('unitCode', ''), str), "Invalid variableMeasured item unitCode for Dataset")
+                        _eln_assert(isinstance(property_value.get('unitText', ''), str), "Invalid variableMeasured item unitText for Dataset")
+                        property_values.append(property_value)
+                    fallback_data, fallback_schema = _convert_property_values_to_data_and_schema(
+                        property_values=property_values,
+                        name=name,
+                        description=description,
+                        tags=tags
+                    )
                 _eln_assert(isinstance(object_node.get('hasPart', []), list), "Invalid parts list for Dataset")
                 for object_part_ref in object_node.get('hasPart', []):
                     _eln_assert(isinstance(object_part_ref, dict), "Invalid reference")
@@ -934,6 +953,24 @@ def parse_eln_file(
                     if 'dateCreated' in object_node:
                         _eln_assert(isinstance(object_node.get('dateCreated'), str), "Invalid dateCreated for Dataset")
                         date_created = _parse_eln_import_datetime(object_node['dateCreated'])
+                    if not has_metadata:
+                        fallback_data['import_note'] = {
+                            '_type': 'text',
+                            'text': {
+                                'en': 'The .eln file did not contain any valid flexible metadata for this object.',
+                                'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
+                            }
+                        }
+                        parsed_data.import_notes[object_node["@id"]].append(gettext('The .eln file did not contain any valid flexible metadata for this object.'))
+                        fallback_schema_property_order.append('import_note')
+                        fallback_schema_properties['import_note'] = {
+                            'type': 'text',
+                            'languages': ['en', 'de'],
+                            'title': {
+                                'en': 'Import Note',
+                                'de': 'Import-Hinweis'
+                            }
+                        }
                     versions.append(ParsedELNVersion(
                         version_id=0,
                         data=fallback_data,
@@ -941,10 +978,6 @@ def parse_eln_file(
                         user_id=creator_id,
                         date_created=date_created
                     ))
-                    if eln_dialect:
-                        parsed_data.import_notes[object_node["@id"]].append(gettext('Importing metadata for .eln files from %(eln_dialect)s is not yet supported.', eln_dialect=eln_dialect))
-                    else:
-                        parsed_data.import_notes[object_node["@id"]].append(gettext('Importing metadata for .eln files from this ELN is not yet supported.'))
                 parsed_data.objects.append(ParsedELNObject(
                     id=object_node_ref['@id'],
                     name=name,
@@ -1112,3 +1145,409 @@ def _remove_template_ids(
             del schema['template']
         for property_schema in schema['properties'].values():
             _remove_template_ids(property_schema)
+
+
+def _convert_property_value_to_id_schema_and_data(
+        property_value: typing.Dict[str, typing.Any]
+) -> typing.Tuple[str, typing.Dict[str, typing.Any], typing.Dict[str, typing.Any], str]:
+    property_id = property_value['propertyID']
+    # bool
+    if isinstance(property_value['value'], bool):
+        property_schema = {
+            "type": "bool",
+            "title": {
+                "en": property_value.get('name', property_value['propertyID'])
+            }
+        }
+        property_data = {
+            "_type": "bool",
+            "value": property_value['value']
+        }
+        text_representation = json.dumps(property_value['value'])
+        return property_id, property_schema, property_data, text_representation
+    # datetime
+    if isinstance(property_value['value'], str):
+        try:
+            parsed_datetime = datetime.datetime.fromisoformat(property_value['value'])
+        except ValueError:
+            pass
+        else:
+            if parsed_datetime.tzinfo is not None:
+                parsed_datetime = parsed_datetime.astimezone(datetime.timezone.utc)
+            utc_datetime = parsed_datetime.replace(tzinfo=None)
+            property_schema = {
+                "type": "datetime",
+                "title": {
+                    "en": property_value.get('name', property_value['propertyID'])
+                }
+            }
+            property_data = {
+                "_type": "datetime",
+                "utc_datetime": utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            text_representation = property_value['value']
+            return property_id, property_schema, property_data, text_representation
+    # quantity
+    if isinstance(property_value['value'], (int, float)):
+        units = None
+        if 'unitCode' in property_value:
+            units = get_unit_for_un_cefact_code(property_value['unitCode'])
+        if units is None and 'unitText' in property_value:
+            try:
+                pint_units = ureg.parse_units(property_value['unitText'])
+            except Exception:
+                pass
+            else:
+                units = str(pint_units)
+        if units is None:
+            units = "1"
+        property_schema = {
+            "type": "quantity",
+            "title": {
+                "en": property_value.get('name', property_value['propertyID'])
+            },
+            "units": units
+        }
+        property_data = {
+            "_type": "quantity",
+            "magnitude": property_value['value'],
+            "units": units
+        }
+        if 'unitText' in property_value:
+            text_representation = f"{property_value['value']} {property_value['unitText']}"
+        else:
+            text_representation = f"{property_value['value']}"
+        return property_id, property_schema, property_data, text_representation
+    # text as fallback
+    text_representation = str(property_value['value'])
+    property_schema = {
+        "type": "text",
+        "title": {
+            "en": property_value.get('name', property_value['propertyID'])
+        }
+    }
+    property_data = {
+        "_type": "text",
+        "text": {
+            'en': text_representation
+        }
+    }
+    if '\n' in text_representation:
+        property_schema['multiline'] = True  # type: ignore
+    return property_id, property_schema, property_data, text_representation
+
+
+def _sanitize_keys(
+        keys: typing.Sequence[str],
+) -> typing.Union[typing.Dict[int, int], typing.Dict[int, str]]:
+    keys_with_original_indices = sorted(zip(keys, range(len(keys))))
+    used_indices: typing.List[typing.Tuple[int, int]] = []
+    for key, original_index in keys_with_original_indices:
+        try:
+            index = int(key)
+        except ValueError:
+            break
+        if index in dict(used_indices):
+            break
+        used_indices.append((index, original_index))
+    else:
+        used_indices.sort()
+        offset = 0
+        if used_indices[0][0] == 1:
+            offset = 1
+        if (used_indices[0][0] == offset) and (used_indices[-1][0] - offset == len(used_indices) - 1):
+            return {
+                original_index: int(key) - offset
+                for key, original_index in keys_with_original_indices
+            }
+    sanitized_keys: typing.Dict[int, str] = {}
+    for key, original_index in keys_with_original_indices:
+        sanitized_key = ''.join(
+            c
+            for c in key.lower()
+            if c in string.ascii_letters + string.digits + '_'
+        )
+        sanitized_key = sanitized_key.strip('_')
+        while '__' in sanitized_key:
+            sanitized_key = sanitized_key.replace('__', '_')
+        if sanitized_key and sanitized_key[0] in string.ascii_letters and sanitized_key not in sanitized_keys.values():
+            sanitized_keys[original_index] = sanitized_key
+        else:
+            if sanitized_key:
+                sanitized_key = '_' + sanitized_key
+            if 'property' + sanitized_key not in sanitized_keys.values():
+                sanitized_keys[original_index] = 'property' + sanitized_key
+            else:
+                for i in itertools.count(2):
+                    if f'property{i}' + sanitized_key not in sanitized_keys.values():
+                        sanitized_keys[original_index] = f'property{i}' + sanitized_key
+                        break
+    return sanitized_keys
+
+
+PropertyValue = typing.Dict[str, typing.Any]  # TODO: TypedDict?
+PropertyPath = typing.Tuple[typing.Union[int, str], ...]
+FlattenedPropertyValueTree = typing.Dict[typing.Sequence[typing.Union[int, str]], PropertyValue]
+
+
+def _map_property_values_to_paths(property_values: typing.Sequence[PropertyValue]) -> FlattenedPropertyValueTree:
+    if not property_values:
+        return {}
+    property_paths_and_values = []
+    for property_value in property_values:
+        property_id = property_value['propertyID']
+        property_path: PropertyPath = tuple(property_id.split('/'))
+        property_paths_and_values.append((property_path, property_value))
+    max_depth = max(
+        len(property_path)
+        for property_path, _ in property_paths_and_values
+    )
+    for depth in range(max_depth):
+        property_paths_and_values_by_prefix: typing.Dict[PropertyPath, typing.List[typing.Tuple[PropertyPath, PropertyValue]]] = {}
+        sanitized_property_paths_and_values = []
+        for property_path, property_value in property_paths_and_values:
+            if len(property_path) <= depth:
+                sanitized_property_paths_and_values.append((property_path, property_value))
+                continue
+            property_path_prefix = property_path[:depth]
+            if property_path_prefix not in property_paths_and_values_by_prefix:
+                property_paths_and_values_by_prefix[property_path_prefix] = []
+            property_paths_and_values_by_prefix[property_path_prefix].append((property_path, property_value))
+        for property_path_prefix, property_paths_and_values_for_prefix in property_paths_and_values_by_prefix.items():
+            property_paths_and_values_by_path_element: typing.Dict[str, typing.Tuple[typing.List[typing.Tuple[PropertyPath, PropertyValue]], typing.List[typing.Tuple[PropertyPath, PropertyValue]]]] = {}
+            for property_path, property_value in property_paths_and_values_for_prefix:
+                path_element = typing.cast(str, property_path[depth])
+                if path_element not in property_paths_and_values_by_path_element:
+                    property_paths_and_values_by_path_element[path_element] = ([], [])
+                if len(property_path) == depth + 1:
+                    property_paths_and_values_by_path_element[path_element][0].append((property_path, property_value))
+                else:
+                    property_paths_and_values_by_path_element[path_element][1].append((property_path, property_value))
+            unsanitized_path_elements = []
+            property_paths_and_values_by_path_element_index: typing.List[typing.List[typing.Tuple[PropertyPath, PropertyValue]]] = []
+            for path_element, property_path_and_values_for_path_element in property_paths_and_values_by_path_element.items():
+                unsanitized_path_elements += [path_element] * len(property_path_and_values_for_path_element[0])
+                property_paths_and_values_by_path_element_index.extend(
+                    [(property_path, property_value)]
+                    for property_path, property_value in property_path_and_values_for_path_element[0]
+                )
+                if property_path_and_values_for_path_element[1]:
+                    unsanitized_path_elements.append(path_element)
+                    property_paths_and_values_by_path_element_index.append(property_path_and_values_for_path_element[1])
+            sanitized_path_elements_by_index = _sanitize_keys(unsanitized_path_elements)
+            for path_element_index, sanitized_path_element in sanitized_path_elements_by_index.items():
+                for property_path, property_value in property_paths_and_values_by_path_element_index[path_element_index]:
+                    sanitized_property_paths_and_values.append((
+                        property_path_prefix + (sanitized_path_element,) + property_path[depth + 1:],
+                        property_value
+                    ))
+        property_paths_and_values = sanitized_property_paths_and_values
+    return {
+        property_path: property_value
+        for property_path, property_value in property_paths_and_values
+    }
+
+
+def _convert_property_value_trees_to_schema_and_data(
+        flattened_property_value_tree: FlattenedPropertyValueTree,
+        is_root: bool = False
+) -> typing.Tuple[typing.Dict[str, typing.Any], typing.Any, str, typing.Sequence[str]]:
+    if () in flattened_property_value_tree:
+        _, schema, data, text = _convert_property_value_to_id_schema_and_data(flattened_property_value_tree[()])
+        property_value = flattened_property_value_tree[()]
+        full_title = property_value['propertyID']
+        titles = full_title.split('/')
+        titles = [
+            title.strip() for title in titles
+        ]
+        if titles:
+            schema['title'] = {
+                'en': titles[-1] or 'Property'
+            }
+        return schema, data, text, titles
+    first_path_elements = [
+        property_path[0]
+        for property_path in flattened_property_value_tree
+    ]
+    if first_path_elements and not is_root and all(isinstance(first_path_element, int) for first_path_element in first_path_elements):
+        items = [
+            _convert_property_value_trees_to_schema_and_data(
+                {
+                    property_path[1:]: property_value
+                    for property_path, property_value in flattened_property_value_tree.items()
+                    if property_path[0] == index
+                }
+            )
+            for index in sorted(first_path_elements)
+        ]
+        if not items:
+            return {
+                'title': {
+                    'en': 'Array'
+                },
+                'type': 'array',
+                'items': {
+                    'title': 'Item',
+                    'type': 'text'
+                }
+            }, [], '', ['']
+        # check all schemas are the same / compatible (for quantities) and otherwise fall back to use text
+        first_item_schema = copy.deepcopy(items[0][0])
+        if all(item[0] == first_item_schema for item in items):
+            compatible_item_schema = first_item_schema
+        else:
+            item_schema_types = {item[0].get('type') for item in items}
+            if item_schema_types == {'quantity'}:
+                used_units = {
+                    item[0]['units'] for item in items
+                }
+                if len(used_units) == 1:
+                    compatible_item_schema = first_item_schema
+                else:
+                    compatible_item_schema = None
+            elif item_schema_types == {'object'}:
+                compatible_item_schema = None  # TODO: implement this
+            elif item_schema_types == {'array'}:
+                compatible_item_schema = None  # TODO: implement this
+            elif len(item_schema_types) == 1:
+                # while other schema types generally support incompatible restrictions, e.g. limiting object_references to specific action types, these features are not used here
+                compatible_item_schema = first_item_schema
+            else:
+                compatible_item_schema = None
+        if compatible_item_schema is not None:
+            item_schema = compatible_item_schema
+        else:
+            item_schema = {
+                'type': 'text',
+                'multiline': any('\n' in text for _, data, text, _ in items)
+            }
+        item_schema['title'] = {
+            'en': 'Item'
+        }
+        titles = items[0][3][:-1]
+        if not titles:
+            titles = ['Array']
+        return {
+            'title': {
+                'en': titles[-1]
+            },
+            'type': 'array',
+            'items': item_schema
+        }, [
+            data if compatible_item_schema is not None else {
+                '_type': 'text',
+                'text': {
+                    'en': text
+                }
+            }
+            for _, data, text, _ in items
+        ], '\n'.join(text for _, _, text, _ in items), titles
+    else:
+        properties = {
+            property_name: _convert_property_value_trees_to_schema_and_data(
+                {
+                    property_path[1:]: property_value
+                    for property_path, property_value in flattened_property_value_tree.items()
+                    if property_path[:1] == (property_name,)
+                }
+            )
+            for property_name in first_path_elements
+        }
+        if properties:
+            titles = next(iter(properties.values()))[3][:-1]
+        else:
+            titles = []
+        if not titles:
+            titles = ['Object']
+        return {
+            'title': {
+                'en': titles[-1]
+            },
+            'type': 'object',
+            'properties': {
+                path_element: schema_data_titles[0]
+                for path_element, schema_data_titles in properties.items()
+            },
+            'propertyOrder': [],
+            'required': []
+        }, {
+            path_element: schema_data_titles[1]
+            for path_element, schema_data_titles in properties.items()
+        }, '', titles  # TODO: implement text
+
+
+def _insert_property_into_schema_and_data(
+        schema: typing.Dict[str, typing.Any],
+        data: typing.Dict[str, typing.Any],
+        property_name: str,
+        property_title: str,
+        property_value: typing.Dict[str, typing.Any],
+        property_required: bool,
+        property_order_position: int
+) -> None:
+    if property_required:
+        if property_name not in schema['required']:
+            schema['required'].append(property_name)
+    if property_name in schema['propertyOrder']:
+        schema['propertyOrder'].remove(property_name)
+    schema['propertyOrder'].insert(property_order_position, property_name)
+    # if property is already in data with the correct text and schema, there is no need to duplicate it
+    if property_name in data and data[property_name] == property_value and property_name in schema['properties'] and schema['properties'][property_name].get('type') == property_value.get('_type') and not schema['properties'][property_name].get('multiline') and not schema['properties']['name'].get('markdown'):
+        return
+    if property_name in schema['properties']:
+        for i in itertools.count(1):
+            alternative_property_name = f'property{i if i > 1 else ""}_{property_name}'
+            if alternative_property_name not in schema['properties']:
+                schema['properties'][alternative_property_name] = schema['properties'][property_name]
+                data[alternative_property_name] = data[property_name]
+                break
+    schema['properties'][property_name] = {
+        'type': property_value.get('_type'),
+        'title': {
+            'en': property_title
+        }
+    }
+    data[property_name] = property_value
+
+
+def _convert_property_values_to_data_and_schema(
+        property_values: typing.Sequence[PropertyValue],
+        name: str,
+        description: str,
+        tags: typing.Sequence[str]
+) -> typing.Tuple[typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]:
+    flattened_property_value_tree = _map_property_values_to_paths(property_values=property_values)
+    schema, data, _, _ = _convert_property_value_trees_to_schema_and_data(
+        flattened_property_value_tree=flattened_property_value_tree,
+        is_root=True
+    )
+    _insert_property_into_schema_and_data(
+        schema=schema,
+        data=data,
+        property_name='name',
+        property_title='Name',
+        property_value={'_type': 'text', 'text': {'en': name}},
+        property_required=True,
+        property_order_position=0
+    )
+    if description:
+        _insert_property_into_schema_and_data(
+            schema=schema,
+            data=data,
+            property_name='description',
+            property_title='Description',
+            property_value={'_type': 'text', 'text': {'en': description}},
+            property_required=False,
+            property_order_position=1
+        )
+    if tags:
+        _insert_property_into_schema_and_data(
+            schema=schema,
+            data=data,
+            property_name='tags',
+            property_title='Tags',
+            property_value={'_type': 'tags', 'tags': tags},
+            property_required=False,
+            property_order_position=len(schema['propertyOrder'])
+        )
+    return data, schema
