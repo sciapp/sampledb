@@ -4,6 +4,8 @@
 """
 
 import decimal
+import functools
+import json
 import os
 import typing
 import pint
@@ -17,6 +19,20 @@ ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.
 
 int_ureg = pint.UnitRegistry()
 int_ureg.load_definitions(os.path.join(os.path.dirname(__file__), 'unit_definitions.txt'))
+
+with open(os.path.join(os.path.dirname(__file__), 'un_cefact_code_unit_pairs.json'), encoding='utf-8') as _json_file:
+    _un_cefact_code_unit_pairs: typing.List[typing.Tuple[str, str]] = [
+        (code, unit)
+        for code, unit in json.load(_json_file)
+    ]
+_un_cefact_code_to_symbol = {
+    code: unit
+    for code, unit in _un_cefact_code_unit_pairs
+}
+_symbol_to_un_cefact_code = {
+    unit: code
+    for code, unit in _un_cefact_code_unit_pairs
+}
 
 
 def prettify_units(units: typing.Optional[typing.Union[str, pint._typing.UnitLike]]) -> str:
@@ -72,3 +88,50 @@ def get_magnitude_in_base_units(
         return typing.cast(decimal.Decimal, ureg.Quantity(magnitude, ureg.Unit(units)).to_base_units().magnitude)
     except Exception:
         raise errors.InvalidUnitsError()
+
+
+@functools.cache
+def get_un_cefact_code_for_unit(
+        unit: str
+) -> typing.Optional[str]:
+    """
+    Get the UN CEFACT code for a given unit.
+
+    :param unit: the unit to get the UN CEFACT code for
+    :return: the UN CEFACT code for the given unit, or None
+    """
+    code = _symbol_to_un_cefact_code.get(unit)
+    if code is not None:
+        return code
+    try:
+        pint_unit = ureg.Unit(unit)
+    except Exception:
+        return None
+    for code, other_unit in _un_cefact_code_unit_pairs:
+        try:
+            pint_other_unit = ureg.Unit(other_unit)
+        except Exception:
+            continue
+        if pint_other_unit == pint_unit:
+            return code
+    return None
+
+
+@functools.cache
+def get_unit_for_un_cefact_code(
+        code: str
+) -> typing.Optional[str]:
+    """
+    Get the unit for a given UN CEFACT code.
+
+    :param code: the UN CEFACT code to get the unit for
+    :return: the unit for the given UN CEFACT code, or None
+    """
+    unit = _un_cefact_code_to_symbol.get(code)
+    if unit is None:
+        return None
+    try:
+        ureg.Unit(unit)
+    except Exception:
+        return None
+    return unit
