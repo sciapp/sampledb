@@ -172,94 +172,97 @@
 
 {% block body %}
     <div class="outerbox">
-    {% for object_index in range(0,object_amount) %}
-    {%- for i in range(0,page_amount) -%}
-    <div class="box">
-        <div class="labeltext">
-            <div class="boxname"><b>{{ object_name_list[object_index] }}</b></div>
-            <div class="boxinfo">
-                {{ username_list[object_index] }}<br>
-                {{ creation_date_list[object_index] }}
-            </div>
-            {%- if centered -%}
-            {%- if ghs_classes_side_by_side -%}
-            <div class="boxsidebyside">
-                {% if ghs_amount_list[object_index] > 0 %}
-                    <div class="boxqrcodeCSBSwghs">
-                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
-                        #{{ sample_code_list[object_index] }}
-                    </div>
-                {% else %}
-                    <div class="boxqrcodeCSBSwoghs">
-                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
-                        #{{ sample_code_list[object_index] }}
-                    </div>
-                {% endif %}
-                {% if ghs_amount_list[object_index] > 0 %}
-                <div class="boxghsCSBS">
-                    <div class="centeredghsbox">
-                    {%- for hazard_code in hazard_list[object_index] -%}
-                        <div class="ghs ghs0{{hazard_code}}"></div>
-                    {%- endfor -%}
-                    </div>
+        {% for object_index in range(0,object_amount) %}
+        {%- for i in range(0,page_amount) -%}
+        <div class="box">
+            <div class="labeltext">
+                <div class="boxname"><b>{{ object_name_list[object_index] }}</b></div>
+                <div class="boxinfo">
+                    {{ username_list[object_index] }}<br>
+                    {{ creation_date_list[object_index] }}
                 </div>
-                {% endif %}
-            </div>
-            {%- else -%}
-                <div class="boxqrcodeCnotSBS">
-                    <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
-                    #{{ sample_code_list[object_index] }}
-                </div>
-                {% if ghs_amount_list[object_index] > 0 %}
-                <div class="boxghsCnotSBS">
-                    <div class="centeredghsbox">
-                    {%- for hazard_code in hazard_list[object_index] -%}
-                        <div class="ghs ghs0{{hazard_code}}"></div>
-                    {%- endfor -%}
-                    </div>
-                </div>
-                {% endif %}
-            {%- endif -%}
-            {%- else -%}
-            {%- if ghs_classes_side_by_side -%}
-            <div class="boxsidebyside">
-                <div class="boxqrcodenotCSBS">
-                    <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
-                        #{{ sample_code_list[object_index] }}
-                </div>
-                {% if ghs_amount_list[object_index] > 0 %}
-                <div class="boxghsnotCSBS">
-                    <div class="centeredghsbox">
-                    {%- for hazard_code in hazard_list[object_index] -%}
-                        <div class="ghs ghs0{{hazard_code}}"></div>
-                    {%- endfor -%}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-            {%- else -%}
-                <div class="qrouterbox">
-                    <div class="boxqrcodenotCnotSBS">
-                        <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
-                        #{{ sample_code_list[object_index] }}
-                    </div>
-                </div>
-                {% if ghs_amount_list[object_index] > 0 %}
-                <div class="ghsouterbox">
-                    <div class="boxghsnotCnotSBS">
-                        <div class="centeredghsbox">
-                        {%- for hazard_code in hazard_list[object_index] -%}
-                            <div class="ghs ghs0{{hazard_code}}"></div>
-                        {%- endfor -%}
+                {%- if ghs_classes_side_by_side -%}
+                    <div class="boxsidebyside">
+                    {%- if centered -%}
+                        {% if ghs_amount_list[object_index] > 0 %}
+                            <div class="boxqrcodeCSBSwghs">
+                        {% else %}
+                            <div class="boxqrcodeCSBSwoghs">
+                        {% endif %}
+                    {% else %}
+                        <div class="boxqrcodenotCSBS">
+                    {% endif %}
+                {%- else -%}
+                    {%- if centered -%}
+                        <div class="boxqrcodeCnotSBS">
+                    {% else %}
+                        <div class="qrouterbox">
+                        <div class="boxqrcodenotCnotSBS">
+                    {% endif %}
+                {%- endif -%}
+                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                #{{ sample_code_list[object_index] }}
+                {%- if ghs_classes_side_by_side -%}
+                    {%- if centered -%}
+                        {% if ghs_amount_list[object_index] > 0 %}
+                            </div>
+                        {% else %}
+                            </div>
+                        {% endif %}
+                    {% else %}
                         </div>
-                    </div>
-                </div>
+                    {% endif %}
+                {%- else -%}
+                    {%- if centered -%}
+                        </div>
+                    {% else %}
+                        </div>
+                        </div>
+                    {% endif %}
+                {%- endif -%}
+                {% if ghs_amount_list[object_index] > 0 %}
+                    {%- if ghs_classes_side_by_side -%}
+                        {%- if centered -%}
+                            <div class="boxghsCSBS">
+                        {% else %}
+                            <div class="boxghsnotCSBS">
+                        {% endif %}
+                    {%- else -%}
+                        {%- if centered -%}
+                            <div class="boxghsCnotSBS">
+                        {% else %}
+                            <div class="ghsouterbox">
+                            <div class="boxghsnotCnotSBS">
+                        {% endif %}
+                    {%- endif -%}
                 {% endif %}
-            {%- endif -%}
-            {%- endif -%}
+                <div class="centeredghsbox">
+                    {%- for hazard_code in hazard_list[object_index] -%}
+                        <div class="ghs ghs0{{hazard_code}}"></div>
+                    {%- endfor -%}
+                </div>
+                {% if ghs_amount_list[object_index] > 0 %}
+                    {%- if ghs_classes_side_by_side -%}
+                        {%- if centered -%}
+                            </div>
+                        {% else %}
+                                </div>
+                        {% endif %}
+                    {%- else -%}
+                        {%- if centered -%}
+                                </div>
+                        {% else %}
+                                </div>
+                                </div>
+                        {% endif %}
+                    {%- endif -%}
+                {% endif %}
+                {%- if ghs_classes_side_by_side -%}
+                    </div>
+                {% endif %}
+            </div>
         </div>
-    </div>
-    {%- endfor -%}
-    {% endfor %}
+        {%- endfor -%}
+        {% endfor %}
     </div>
 {% endblock %}
