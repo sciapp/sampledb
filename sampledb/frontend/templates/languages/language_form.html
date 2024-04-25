@@ -58,6 +58,10 @@
         <label for="input-datetime-format-moment-output" class="control-label">{{ _('Datetime format for moment output') }}</label>
         <input type="text" class="form-control" id="input-datetime-format-moment-output" placeholder="{{ _('Datetime format for moment output') }}" value="{{ language_form.datetime_format_moment_output.data or '' }}" name="{{ language_form.datetime_format_moment_output.name }}">
       </div>
+      <div class="form-group {% if language_form.date_format_moment_output.name in language_form.errors %}has-error{% endif %}">
+        <label for="input-date-format-moment-output" class="control-label">{{ _('Date format for moment output') }}</label>
+        <input type="text" class="form-control" id="input-date-format-moment-output" placeholder="{{ _('Date format for moment output') }}" value="{{ language_form.date_format_moment_output.data or '' }}" name="{{ language_form.date_format_moment_output.name }}">
+      </div>
       <div class="form-group">
         <div class="checkbox">
           <label style="font-weight: bold">

@@ -24,6 +24,7 @@ class Language:
     datetime_format_datetime: str
     datetime_format_moment: str
     datetime_format_moment_output: str
+    date_format_moment_output: str
     enabled_for_input: bool
     enabled_for_user_interface: bool
 
@@ -39,17 +40,20 @@ class Language:
             datetime_format_datetime=language.datetime_format_datetime,
             datetime_format_moment=language.datetime_format_moment,
             datetime_format_moment_output=language.datetime_format_moment_output,
+            date_format_moment_output=language.date_format_moment_output,
             enabled_for_input=language.enabled_for_input,
             enabled_for_user_interface=language.enabled_for_user_interface
         )
 
 
 def create_language(
+        *,
         names: typing.Dict[str, str],
         lang_code: str,
         datetime_format_datetime: str,
         datetime_format_moment: str,
         datetime_format_moment_output: str,
+        date_format_moment_output: str,
         enabled_for_input: bool,
         enabled_for_user_interface: bool
 ) -> Language:
@@ -61,6 +65,7 @@ def create_language(
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
     :param datetime_format_moment_output: output format for moment
+    :param date_format_moment_output: output format for moment for dates only
     :param enabled_for_input: whether the language is enabled for input
     :param enabled_for_user_interface: whether the language is enabled
         for the user interface
@@ -88,6 +93,7 @@ def create_language(
         datetime_format_datetime=datetime_format_datetime,
         datetime_format_moment=datetime_format_moment,
         datetime_format_moment_output=datetime_format_moment_output,
+        date_format_moment_output=date_format_moment_output,
         enabled_for_input=enabled_for_input,
         enabled_for_user_interface=enabled_for_user_interface
     )
@@ -103,6 +109,7 @@ def update_language(
         datetime_format_datetime: str,
         datetime_format_moment: str,
         datetime_format_moment_output: str,
+        date_format_moment_output: str,
         enabled_for_input: bool,
         enabled_for_user_interface: bool
 ) -> None:
@@ -115,6 +122,7 @@ def update_language(
     :param datetime_format_datetime: format for datetime
     :param datetime_format_moment: format for moment
     :param datetime_format_moment_output: format for moment output
+    :param date_format_moment_output: output format for moment for dates only
     :param enabled_for_input: whether the language is enabled for input
     :param enabled_for_user_interface: whether the language is enabled
         for the user interface
@@ -150,6 +158,7 @@ def update_language(
     language.datetime_format_datetime = datetime_format_datetime
     language.datetime_format_moment = datetime_format_moment
     language.datetime_format_moment_output = datetime_format_moment_output
+    language.date_format_moment_output = date_format_moment_output
     language.enabled_for_input = enabled_for_input
     language.enabled_for_user_interface = enabled_for_user_interface
     db.session.add(language)

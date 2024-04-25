@@ -478,6 +478,7 @@ def translations(base_url, driver):
                 datetime_format_datetime=language.datetime_format_datetime,
                 datetime_format_moment=language.datetime_format_moment,
                 datetime_format_moment_output=language.datetime_format_moment_output,
+                date_format_moment_output=language.date_format_moment_output,
                 enabled_for_input=True,
                 enabled_for_user_interface=True
             )

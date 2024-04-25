@@ -1467,7 +1467,7 @@ function enableSchemaEditor () {
       'conditions', 'action_type_id', 'action_id',
       'may_copy', 'dataverse_export', 'languages',
       'min_magnitude', 'max_magnitude', 'statistics',
-      'calculation'
+      'calculation', 'style'
     ];
 
     for (const name of advancedSchemaFeatures) {

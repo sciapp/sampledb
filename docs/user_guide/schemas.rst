@@ -809,6 +809,13 @@ conditions
 
 This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
 
+style
+^^^^^
+
+This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the datetime should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. By default, the datetime will be shown as date and time, formatted according to the user's locale. If using the ``date`` or ``time`` styles, datetimes will still contain both a date and a time, but only one of those will be displayed, the time for the ``time`` style or the date for the ``date`` style. When editing a datetime property, both date and time will be shown and can be edited, independent of the style.
+
+.. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
+
 note
 ^^^^
 
