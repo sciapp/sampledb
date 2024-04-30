@@ -191,4 +191,19 @@ $(function () {
       urgentNotificationModal.modal();
     }
   }
+
+  $('.collapse-expand-button').each(function () {
+    const collapseExpandButton = $(this);
+    collapseExpandButton.on('click', function () {
+      const idPrefix = $(this).data('idPrefix');
+      const collapsibleDiv = $(`.collapsible-object-container[data-id-prefix=${idPrefix}]`);
+      const isCollapsed = !collapsibleDiv.is(':visible');
+      collapsibleDiv.toggle(isCollapsed);
+      collapseExpandButton.toggleClass('fa-minus-square-o', isCollapsed);
+      collapseExpandButton.toggleClass('fa-plus-square-o', !isCollapsed);
+      const collapseTooltipText = collapseExpandButton.data(isCollapsed ? 'collapseText' : 'expandText');
+      collapseExpandButton.attr('data-original-title', collapseTooltipText);
+      collapseExpandButton.tooltip('setContent').tooltip('show');
+    });
+  });
 });

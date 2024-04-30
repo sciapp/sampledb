@@ -1586,4 +1586,72 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, large_table_action.id, name="Full Width Table Demo Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(large_table_action.id, sampledb.models.Permissions.READ)
 
+        collapsible_object_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "collapsible_object": {
+                        "title": {
+                            "en": "Collapsible Object"
+                        },
+                        "type": "object",
+                        "style": "collapsible",
+                        "note": "This object has the 'collapsible' style. It has a button to collapse it.",
+                        "properties": {
+                            "text_in_object": {
+                                "title": {
+                                    "en": "Text in Object"
+                                },
+                                "type": "text"
+                            }
+                        },
+                        "propertyOrder": [
+                            "text_in_object"
+                        ]
+                    },
+                    "expandable_object": {
+                        "title": {
+                            "en": "Expandable Object"
+                        },
+                        "type": "object",
+                        "style": "expandable",
+                        "note": "This object has the 'expandable' style. It starts out collapsed with a button to expand it.",
+                        "properties": {
+                            "text_in_object": {
+                                "title": {
+                                    "en": "Text in Object"
+                                },
+                                "type": "text"
+                            }
+                        },
+                        "propertyOrder": [
+                            "text_in_object"
+                        ]
+                    }
+                },
+                "required": [
+                    "name",
+                    "collapsible_object",
+                    "expandable_object"
+                ],
+                "propertyOrder": [
+                    "name",
+                    "collapsible_object",
+                    "expandable_object"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, collapsible_object_action.id, name="Collapsible/Expandable Object Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(collapsible_object_action.id, sampledb.models.Permissions.READ)
+
     print("Success: set up demo data", flush=True)
