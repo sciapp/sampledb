@@ -1211,6 +1211,8 @@ This attribute allows to determine which statistics about the timeseries should 
 - ``"min"``: Minimum
 - ``"max"``: Maximum
 - ``"count"``: Count of values
+- ``"first"``: First value
+- ``"last"``: Last value
 
 
 .. _metadata_files:

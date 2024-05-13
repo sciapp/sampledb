@@ -5539,6 +5539,12 @@ msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
 msgid "at %(datetime)s"
 msgstr "am %(datetime)s"
 
+msgid "first value"
+msgstr "erster Wert"
+
+msgid "last value"
+msgstr "letzter Wert"
+
 msgid "View chart"
 msgstr "Graph anzeigen"
 

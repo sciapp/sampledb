@@ -1073,7 +1073,9 @@ This example shows how Markdown can be used for instrument Notes.
                     'pressure_series': {
                         'title': 'Pressure Series',
                         'type': 'timeseries',
-                        'units': 'bar', 'display_digits': 2
+                        'units': 'bar',
+                        'display_digits': 2,
+                        'statistics': ['first', 'last', 'count']
                     }
                 },
                 'required': ['name']

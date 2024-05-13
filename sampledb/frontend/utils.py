@@ -1451,6 +1451,8 @@ def to_timeseries_data(
     magnitude_min = None
     magnitude_max = None
     magnitude_count = None
+    magnitude_first = None
+    magnitude_last = None
 
     statistics = {'average', 'stddev'}
     if 'statistics' in schema:
@@ -1461,6 +1463,10 @@ def to_timeseries_data(
         magnitude_max = np.max(magnitudes)
     if 'count' in statistics:
         magnitude_count = len(magnitudes)
+    if 'first' in statistics:
+        magnitude_first = magnitudes[0]
+    if 'last' in statistics:
+        magnitude_last = magnitudes[-1]
 
     time_weights = np.zeros(len(magnitudes))
     # determine time-weighted average and standard deviation
@@ -1523,6 +1529,8 @@ def to_timeseries_data(
         'magnitude_min': magnitude_min,
         'magnitude_max': magnitude_max,
         'magnitude_count': magnitude_count,
+        'magnitude_first': magnitude_first,
+        'magnitude_last': magnitude_last,
         'same_day': same_day
     }
 
