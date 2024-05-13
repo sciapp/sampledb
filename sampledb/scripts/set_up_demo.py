@@ -1256,7 +1256,8 @@ This example shows how Markdown can be used for instrument Notes.
                     }
                 },
                 'required': ['name'],
-                'propertyOrder': ['name', 'file', 'list', 'table']
+                'propertyOrder': ['name', 'file', 'list', 'table'],
+                'displayProperties': ['file']
             }
         )
         set_action_translation(Language.ENGLISH, file_action.id, name="File Action", description="")
@@ -1280,8 +1281,8 @@ This example shows how Markdown can be used for instrument Notes.
         file = sampledb.logic.files.create_database_file(
             object_id=file_object.id,
             user_id=basic_user.id,
-            file_name='example.txt',
-            save_content=lambda f: typing.cast(None, f.write(b"Test"))
+            file_name='example.png',
+            save_content=lambda f: typing.cast(None, f.write(ghs01_image))
         )
         sampledb.logic.objects.update_object(
             object_id=file_object.id,
