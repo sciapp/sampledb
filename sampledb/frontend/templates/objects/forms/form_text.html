@@ -1,4 +1,4 @@
-{% extends "objects/forms/regular_property.html" %}
+{% extends get_form_property_template(schema, container_style) %}
 
 {% set input_languages = [] %}
 {% set disabled_language_codes = [] %}

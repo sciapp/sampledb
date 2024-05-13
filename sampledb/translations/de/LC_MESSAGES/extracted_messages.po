@@ -5502,6 +5502,9 @@ msgstr "Formel:"
 msgid "Apply Recipe"
 msgstr "Rezept anwenden"
 
+msgid "Your input is not valid. Please check."
+msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
+
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
 " this change."
@@ -5511,9 +5514,6 @@ msgstr ""
 
 msgid "Unsupported item type for horizontal_table style."
 msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
-
-msgid "Your input is not valid. Please check."
-msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 
 msgid "Hidden File"
 msgstr "Versteckte Datei"
