@@ -1095,7 +1095,7 @@ def _validate_timeseries_schema(
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
     if 'statistics' in schema:
-        valid_statistics_keys = {'average', 'stddev', 'min', 'max', 'count'}
+        valid_statistics_keys = {'average', 'stddev', 'min', 'max', 'count', 'first', 'last'}
         if not isinstance(schema['statistics'], list):
             raise ValidationError('statistics must be a list of strings', path)
         if not all(statistics_key in valid_statistics_keys for statistics_key in schema['statistics']):

@@ -29,21 +29,28 @@
         {{ timeseries_data.magnitude_count | format_int }} {{ ngettext('value', 'values', timeseries_data.magnitude_count) }}
       {% endif %}
     {% endif %}
-    {% if timeseries_data.relative_times %}
-      {% if timeseries_data.relative_times | length > 1 %}
+    {%- if timeseries_data.relative_times -%}
+      {%- if timeseries_data.relative_times | length > 1 -%}
         {{ _('within a period of %(time_s)s s', time_s=timeseries_data.relative_times[-1] - timeseries_data.relative_times[0]) }}
-      {% endif %}
-    {% else %}
-      {% if timeseries_data.utc_datetimes | length > 1 %}
-        {% if timeseries_data.same_day %}
+      {%- endif -%}
+    {%- else -%}
+      {%- if timeseries_data.utc_datetimes | length > 1 -%}
+        {% if timeseries_data.same_day -%}
           {{ _('between %(start_time)s and %(end_time)s on %(date)s', start_time=timeseries_data.utc_datetimes[0] | babel_format_time, end_time=timeseries_data.utc_datetimes[-1] | babel_format_time, date=timeseries_data.utc_datetimes[0] | babel_format_date) }}
-        {% else %}
+        {%- else -%}
           {{ _('between %(start_datetime)s and %(end_datetime)s', start_datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime, end_datetime=timeseries_data.utc_datetimes[-1] | babel_format_datetime) }}
-        {% endif %}
-      {% else %}
+        {%- endif -%}
+      {%- else -%}
         {{ _('at %(datetime)s', datetime=timeseries_data.utc_datetimes[0] | babel_format_datetime) }}
-      {% endif %}
-    {% endif %}
+      {%- endif -%}
+    {%- endif -%}
+    {%- if timeseries_data.magnitude_first is not none -%}
+      ; {{ _('first value') }}: {{ timeseries_data.magnitude_first | babel_format_number(schema.get('display_digits', 2)) }}{{ timeseries_data.units }}
+    {%- endif -%}
+    {%- if timeseries_data.magnitude_last is not none -%}
+      ; {{ _('last value') }}: {{ timeseries_data.magnitude_last | babel_format_number(schema.get('display_digits', 2)) }}{{ timeseries_data.units }}
+    {%- endif -%}
+    &nbsp;
     <button type="button" class="btn btn-default btn-xs timeseries-chart-button" data-toggle="tooltip" data-placement="top" title="{{ _('View chart') }}"><i class="fa fa-line-chart fa-fw"></i></button>
     <button type="button" class="btn btn-default btn-xs timeseries-table-button" data-toggle="tooltip" data-placement="top" title="{{ _('View table') }}"><i class="fa fa-table fa-fw"></i></button>
     <a href= {% if workflow_display_mode %}
