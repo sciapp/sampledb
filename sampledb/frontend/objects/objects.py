@@ -118,6 +118,7 @@ def objects() -> FlaskResponseT:
             'plotly_chart',
             'timeseries',
             'tags',
+            'file',
         )
     )
 
@@ -645,6 +646,7 @@ def objects() -> FlaskResponseT:
             'eln_import_id': obj.eln_import_id,
             'eln_object_id': obj.eln_object_id,
             'eln_import': obj.eln_import,
+            'files': logic.files.get_files_for_object(obj.object_id),
         })
 
         for property_name in display_properties:

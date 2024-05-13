@@ -11,6 +11,7 @@ Currently in development.
 - Added search to text fields with more than 10 choices (configurable with ``SAMPLEDB_MIN_NUM_TEXT_CHOICES_FOR_SEARCH``)
 - Allow using dicts for the ``style`` attribute
 - Improved .eln export
+- Added support for file references as display properties
 
 Version 0.27
 ------------

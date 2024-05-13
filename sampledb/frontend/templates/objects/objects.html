@@ -1078,6 +1078,7 @@
             {% endif %}
           </td>
         {% endif %}
+        {% set files = object.files %}
         {% for property_name in display_properties %}
           {% if object.display_properties[property_name] is not none %}
             {% set metadata_language = none %}
