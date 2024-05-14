@@ -61,8 +61,11 @@ def object_file(object_id: int, file_id: int) -> FlaskResponseT:
         return flask.abort(403)
     if file.storage in ('database', 'federation'):
         if 'preview' in flask.request.args:
+            mime_types = flask.current_app.config.get('MIME_TYPES', {})
+            if file.preview_image_binary_data is not None and file.preview_image_mime_type is not None and file.preview_image_mime_type.lower() in mime_types.values():
+                return flask.send_file(io.BytesIO(file.preview_image_binary_data), mimetype=file.preview_image_mime_type.lower(), last_modified=file.utc_datetime)
             file_extension = os.path.splitext(file.original_file_name)[1]
-            mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, None)
+            mime_type = mime_types.get(file_extension, None)
             if mime_type is not None:
                 try:
                     return flask.send_file(file.open(), mimetype=mime_type, last_modified=file.utc_datetime)

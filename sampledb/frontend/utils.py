@@ -144,9 +144,20 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
 def has_preview(file: File) -> bool:
     if file.storage not in {'database', 'federation'}:
         return False
+    if file.preview_image_binary_data and file.preview_image_mime_type:
+        return True
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
     return file_extension.lower() in flask.current_app.config.get('MIME_TYPES', {})
+
+
+@JinjaFilter()
+def has_preview_image(file: File) -> bool:
+    if not file.preview_image_mime_type or not file.preview_image_binary_data:
+        return is_image(file)
+    mime_types: typing.Dict[str, str] = flask.current_app.config.get('MIME_TYPES', {})
+    mime_type = file.preview_image_mime_type.lower()
+    return mime_type in mime_types.values() and mime_type.startswith('image/')
 
 
 def file_name_is_image(file_name: str) -> bool:

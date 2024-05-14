@@ -17,6 +17,7 @@ Currently in development.
 - Add support for ``sorting_properties`` for workflow views
 - Added ``date`` and ``time`` styles for datetime values
 - Added ``expandable`` and ``collapsible`` object styles
+- Added support for additional preview images for files uploaded via HTTP API
 
 Version 0.27
 ------------

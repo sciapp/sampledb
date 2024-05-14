@@ -41,6 +41,8 @@ class File(Model):
     component_id: Mapped[typing.Optional[int]] = db.Column(db.Integer, db.ForeignKey('components.id'), nullable=True)
     uploader: Mapped[typing.Optional['User']] = relationship('User')
     component: Mapped[typing.Optional['Component']] = relationship('Component')
+    preview_image_binary_data: Mapped[typing.Optional[bytes]] = db.deferred(db.Column(db.LargeBinary, nullable=True))  # TODO: migration
+    preview_image_mime_type: Mapped[typing.Optional[str]] = db.Column(db.String, nullable=True)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["File"]]
@@ -54,7 +56,9 @@ class File(Model):
             data: typing.Optional[typing.Dict[str, typing.Any]] = None,
             binary_data: typing.Optional[bytes] = None,
             fed_id: typing.Optional[int] = None,
-            component_id: typing.Optional[int] = None
+            component_id: typing.Optional[int] = None,
+            preview_image_binary_data: typing.Optional[bytes] = None,
+            preview_image_mime_type: typing.Optional[str] = None,
     ) -> None:
         super().__init__(
             id=file_id,
@@ -64,7 +68,9 @@ class File(Model):
             data=data,
             binary_data=binary_data,
             fed_id=fed_id,
-            component_id=component_id
+            component_id=component_id,
+            preview_image_binary_data=preview_image_binary_data,
+            preview_image_mime_type=preview_image_mime_type,
         )
 
     def __repr__(self) -> str:

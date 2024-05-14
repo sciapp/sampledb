@@ -2050,6 +2050,8 @@ Reading information for a file
     :>json string original_file_name: the original name of the file (for local or database storage)
     :>json string base64_content: the base64 encoded content of the file (for local or database storage)
     :>json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
+    :>json string base64_preview_image: the base64 encoded content of the file's preview image (optional, for database storage)
+    :>json string preview_image_mime_type: the mime type of the file's preview image (optional, for database storage)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or the file does not exist
@@ -2093,6 +2095,8 @@ Uploading a file
     :<json string original_file_name: the original name of the file
     :<json string base64_content: the base64 encoded content of the file
     :<json object hash: hash algorithm and hexdigest of the content (optional)
+    :<json string base64_preview_image: a base64 encoded preview image (optional)
+    :<json string preview_image_mime_type: the MIME type of the preview image (optional)
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist
