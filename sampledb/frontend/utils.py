@@ -1278,6 +1278,9 @@ def get_groups_form_data(
             ]
             for group in all_project_groups
         }
+    else:
+        project_group_names_by_id = {}
+        child_project_group_ids_by_id = {}
     all_group_categories = get_group_categories()
     group_category_names_by_id = {
         group_category.id: get_translated_text(

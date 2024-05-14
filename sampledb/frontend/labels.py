@@ -464,7 +464,6 @@ def create_multiple_labels(
         num_labels_per_row = 1
 
     horizontal_centering_offset = (page_width - 2 * horizontal_margin + horizontal_padding - num_labels_per_row * (label_width + horizontal_padding)) / 2
-    label_counter = 0
     object_ids = sorted(list(object_specifications.keys()))
     object_id = -1
     num_labels_per_row = int((page_width - 2 * horizontal_margin + horizontal_padding) / (label_width + horizontal_padding))
@@ -487,8 +486,10 @@ def create_multiple_labels(
 
     top_cursor_start = top_cursor
 
+    qr_code_uri = None
+    label_counter = 0
     while label_counter < quantity * len(object_ids) or fill_single_page:
-        if ((label_counter % quantity) == 0 and (not fill_single_page or label_counter == 0)) or add_label_number:
+        if ((label_counter % quantity) == 0 and (not fill_single_page or label_counter == 0)) or add_label_number or qr_code_uri is None:
             object_id = object_ids[min(int(label_counter / quantity), len(object_ids) - 1)]
             object_specification = object_specifications[object_id]
             if create_only_qr_codes:
