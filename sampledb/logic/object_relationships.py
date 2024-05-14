@@ -327,39 +327,38 @@ class WorkflowElement:
     files: typing.List[File]
 
 
-def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.Optional[typing.Dict[int, Action]] = None) -> typing.List[WorkflowElement]:
+def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.Optional[typing.Dict[int, Action]] = None) -> typing.List[typing.List[WorkflowElement]]:
     """
-    Creates a list describing all direct object relations for a workflow view as configured in an object's schema.
+    Creates a list describing all direct object relations for workflow views as configured in an object's schema.
 
-    :param object: The object for which the workflow view is to be created
-    :param user_id: User ID of the user viewing the workflow view taking into account the access permissions
+    :param object: The object for which workflow views are to be created
+    :param user_id: User ID of the user viewing the workflow views taking into account the access permissions
     :param actions_by_id: A dict containing cached actions by ID
-    :return: List of WorkflowElements containing, object ID, object data, action data and if the object is referenced
+    :return: List of lists of WorkflowElements containing, object ID, object data, action data and if the object is referenced
             and/or referencing the object the view is created for
     """
-    if object.schema is None or 'workflow_view' not in object.schema.keys():
+    if object.schema is None or ('workflow_view' not in object.schema.keys() and 'workflow_views' not in object.schema.keys()):
         return []
+
+    if 'workflow_view' in object.schema:
+        workflow_views = [object.schema['workflow_view']]
+    else:
+        workflow_views = object.schema['workflow_views']
 
     if actions_by_id is None:
         actions_by_id = {}
 
-    referencing_objects = {
+    referencing_object_ids = {
         object_ref.object_id
         for object_ref in get_referencing_object_ids({object.object_id})[object.object_id]
         if object_ref.is_local}
-    referenced_objects = {
+    referenced_object_ids = {
         object_ref.object_id
         for object_ref in _get_referenced_object_ids({object.object_id})[object.object_id]
         if object_ref.is_local
     }
 
-    referencing_workflow_action_ids = None if 'referencing_action_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referencing_action_id']] if isinstance(object.schema['workflow_view']['referencing_action_id'], int) else object.schema['workflow_view']['referencing_action_id']
-    referencing_workflow_action_type_ids = None if 'referencing_action_type_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referencing_action_type_id']] if isinstance(object.schema['workflow_view']['referencing_action_type_id'], int) else object.schema['workflow_view']['referencing_action_type_id']
-
-    referenced_workflow_action_ids = None if 'referenced_action_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referenced_action_id']] if isinstance(object.schema['workflow_view']['referenced_action_id'], int) else object.schema['workflow_view']['referenced_action_id']
-    referenced_workflow_action_type_ids = None if 'referenced_action_type_id' not in object.schema['workflow_view'] else [object.schema['workflow_view']['referenced_action_type_id']] if isinstance(object.schema['workflow_view']['referenced_action_type_id'], int) else object.schema['workflow_view']['referenced_action_type_id']
-
-    object_ids = list(referencing_objects.union(referenced_objects))
+    object_ids = list(referencing_object_ids.union(referenced_object_ids))
     if object_ids:
         objects = get_objects_with_permissions(user_id, Permissions.READ, object_ids=object_ids)
     else:
@@ -384,61 +383,86 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
 
     object_ids.sort(key=creation_time_key)
 
-    workflow = []
-    for object_id in object_ids:
-        action_id = initial_object_version_by_id[object_id].action_id
-        if action_id:
-            if action_id in actions_by_id:
-                action = actions_by_id[action_id]
-            else:
-                action = get_action(action_id)
-                actions_by_id[action_id] = action
+    workflows: typing.List[typing.List[WorkflowElement]] = [
+        []
+        for workflow_view in workflow_views
+    ]
+    files_by_object_id = {}
+    for workflow_index, workflow_view in enumerate(workflow_views):
+        if isinstance(workflow_view.get('referencing_action_id'), int):
+            referencing_workflow_action_ids = [workflow_view['referencing_action_id']]
         else:
-            action = None
-
-        if (
-            (referencing_workflow_action_ids is None and referenced_workflow_action_ids is None and referencing_workflow_action_type_ids is None and referenced_workflow_action_type_ids is None) or
-            (
-                object_id in referencing_objects and
-                (
-                    (referencing_workflow_action_ids is None or action_id in referencing_workflow_action_ids) and
-                    (
-                        referencing_workflow_action_type_ids is None or
-                        (
-                            action and action.type and (
-                                action.type.id in referencing_workflow_action_type_ids or
-                                (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in referencing_workflow_action_type_ids)
-                            )
-                        )
-                    )
-                )
-            ) or (
-                object_id in referenced_objects and
-                (
-                    (referenced_workflow_action_ids is None or action_id in referenced_workflow_action_ids) and
-                    (
-                        referenced_workflow_action_type_ids is None or
-                        (
-                            action and action.type and
-                            (
-                                action.type.id in referenced_workflow_action_type_ids or
-                                (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in referenced_workflow_action_type_ids)
-                            )
-                        )
-                    )
-                )
-            )
-        ):
-            if object_id in objects_by_id:
-                files = get_files_for_object(object_id)
+            referencing_workflow_action_ids = workflow_view.get('referencing_action_id')
+        if isinstance(workflow_view.get('referencing_action_type_id'), int):
+            referencing_workflow_action_type_ids = [workflow_view['referencing_action_type_id']]
+        else:
+            referencing_workflow_action_type_ids = workflow_view.get('referencing_action_type_id')
+        if isinstance(workflow_view.get('referenced_action_id'), int):
+            referenced_workflow_action_ids = [workflow_view['referenced_action_id']]
+        else:
+            referenced_workflow_action_ids = workflow_view.get('referenced_action_id')
+        if isinstance(workflow_view.get('referenced_action_type_id'), int):
+            referenced_workflow_action_type_ids = [workflow_view['referenced_action_type_id']]
+        else:
+            referenced_workflow_action_type_ids = workflow_view.get('referenced_action_type_id')
+        for object_id in object_ids:
+            action_id = initial_object_version_by_id[object_id].action_id
+            if action_id:
+                if action_id in actions_by_id:
+                    action = actions_by_id[action_id]
+                else:
+                    action = get_action(action_id)
+                    actions_by_id[action_id] = action
             else:
-                files = []
-            workflow.append(WorkflowElement(
-                object_id=object_id,
-                object=objects_by_id.get(object_id),
-                action=action,
-                is_referenced=object_id in referenced_objects,
-                is_referencing=object_id in referencing_objects,
-                files=files
-            ))
-    return workflow
+                action = None
+
+            if (
+                (referencing_workflow_action_ids is None and referenced_workflow_action_ids is None and referencing_workflow_action_type_ids is None and referenced_workflow_action_type_ids is None) or
+                (
+                    object_id in referencing_object_ids and
+                    (
+                        (referencing_workflow_action_ids is None or action_id in referencing_workflow_action_ids) and
+                        (
+                            referencing_workflow_action_type_ids is None or
+                            (
+                                action and action.type and (
+                                    action.type.id in referencing_workflow_action_type_ids or
+                                    (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in referencing_workflow_action_type_ids)
+                                )
+                            )
+                        )
+                    )
+                ) or (
+                    object_id in referenced_object_ids and
+                    (
+                        (referenced_workflow_action_ids is None or action_id in referenced_workflow_action_ids) and
+                        (
+                            referenced_workflow_action_type_ids is None or
+                            (
+                                action and action.type and
+                                (
+                                    action.type.id in referenced_workflow_action_type_ids or
+                                    (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in referenced_workflow_action_type_ids)
+                                )
+                            )
+                        )
+                    )
+                )
+            ):
+                if object_id in objects_by_id:
+                    if object_id not in files_by_object_id:
+                        files_by_object_id[object_id] = get_files_for_object(object_id)
+                    files = files_by_object_id[object_id]
+                else:
+                    files = []
+                workflows[workflow_index].append(
+                    WorkflowElement(
+                        object_id=object_id,
+                        object=objects_by_id.get(object_id),
+                        action=action,
+                        is_referenced=object_id in referenced_object_ids,
+                        is_referencing=object_id in referencing_object_ids,
+                        files=files
+                    )
+                )
+    return workflows

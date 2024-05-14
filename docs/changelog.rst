@@ -13,6 +13,7 @@ Currently in development.
 - Allow using dicts for the ``style`` attribute
 - Improved .eln export
 - Added support for file references as display properties
+- Allow configuring multiple workflow views
 
 Version 0.27
 ------------

@@ -429,9 +429,9 @@ def object(object_id: int) -> FlaskResponseT:
         "FedObjectLogEntryType": models.FedObjectLogEntryType,
     })
 
-    workflow = get_workflow_references(object, flask_login.current_user.id, actions_by_id)
+    workflows = get_workflow_references(object, flask_login.current_user.id, actions_by_id)
     template_kwargs.update({
-        "workflow": workflow,
+        "workflows": workflows,
     })
 
     # related objects tree

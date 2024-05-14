@@ -179,8 +179,8 @@ def workflow(base_url, driver, object, measurement_object_1, measurement_object_
     else:
         assert False
     y_offset = scroll_to_element(driver, heading)
-    driver.find_element(By.ID, f'show-more-workflow_{measurement_object_1.object_id}_-btn').click()
-    show_more = driver.find_element(By.ID, f'show-more-workflow_{measurement_object_2.object_id}_-btn')
+    driver.find_element(By.ID, f'show-more-workflow_1_{measurement_object_1.object_id}_-btn').click()
+    show_more = driver.find_element(By.ID, f'show-more-workflow_1_{measurement_object_2.object_id}_-btn')
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/workflow.png', (0, heading.location['y'] - y_offset, width, min(heading.location['y'] + max_height, show_more.location['y'] + show_more.rect['height']) - y_offset))
 
 

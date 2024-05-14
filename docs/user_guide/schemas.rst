@@ -224,10 +224,10 @@ show_more
 
 This attribute is a string array describing which properties to hide in the object view until a "show more"-button is pressed.
 
-workflow_view
-^^^^^^^^^^^^^
+workflow_views
+^^^^^^^^^^^^^^
 
-This attribute can be used to enable and define a workflow view. Workflow views display contents of related objects referencing or referenced by this object
+This attribute can be used to enable and define one or more workflow views. Workflow views display contents of related objects referencing or referenced by this object
 on the object page.
 
 By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. If both filters are set, both action and action type will have to match for an object to be included in the workflow view.
@@ -240,11 +240,13 @@ Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects
 .. code-block:: json
     :caption: A workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``
 
-    "workflow_view": {
-        "referencing_action_type_id": [-98, -99],
-        "referenced_action_id": 1,
-        "title": {"en": "Processing", "de": "Bearbeitung"}
-    }
+    "workflow_views": [
+        {
+            "referencing_action_type_id": [-98, -99],
+            "referenced_action_id": 1,
+            "title": {"en": "Processing", "de": "Bearbeitung"}
+        }
+    ]
 
 .. figure:: ../static/img/generated/workflow.png
     :alt: A workflow view, containing previews of related measurements

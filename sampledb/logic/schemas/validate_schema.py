@@ -352,6 +352,7 @@ def _validate_object_schema(
         valid_keys.add('batch_name_format')
         valid_keys.add('notebookTemplates')
         valid_keys.add('workflow_view')
+        valid_keys.add('workflow_views')
     if path:
         # the top level object must not have any conditions
         valid_keys.add('conditions')
@@ -507,26 +508,33 @@ def _validate_object_schema(
                 if property_name not in schema['properties'].keys():
                     raise ValidationError(f'unknown property: {property_name}', path)
 
+    if 'workflow_view' in schema and 'workflow_views' in schema:
+        raise ValidationError('workflow_view and workflow_views are mutually exclusive', path)
     if 'workflow_view' in schema:
+        workflow_views = [schema['workflow_view']]
+    else:
+        workflow_views = schema.get('workflow_views', [])
+    for workflow_index, workflow_view in enumerate(workflow_views):
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
         workflow_valid_keys = set(id_keys + ['title', 'show_action_info'])
-        if not isinstance(schema['workflow_view'], dict):
-            raise ValidationError('workflow_view must be a dict', path)
-        for key in schema['workflow_view'].keys():
+        if not isinstance(workflow_view, dict):
+            raise ValidationError(f'workflow_view {workflow_index} must be a dict', path)
+        for key in workflow_view.keys():
             if key not in workflow_valid_keys:
-                raise ValidationError(f'invalid key in workflow_view: {key}', path)
+                raise ValidationError(f'invalid key in workflow_view {workflow_index}: {key}', path)
         for key in id_keys:
-            if key in schema['workflow_view'] and not (
-                schema['workflow_view'][key] is None or
-                type(schema['workflow_view'][key]) is int or
-                type(schema['workflow_view'][key]) is list and all(
-                    type(action_type_id) is int for action_type_id in schema['workflow_view'][key]
+            if key in workflow_view and not (
+                workflow_view[key] is None or
+                type(workflow_view[key]) is int or
+                type(workflow_view[key]) is list and all(
+                    type(action_type_id) is int for action_type_id in workflow_view[key]
                 )
             ):
-                raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
-        _validate_title_and_tooltip_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
-        if 'show_action_info' in schema['workflow_view'] and not isinstance(schema['workflow_view']['show_action_info'], bool):
-            raise ValidationError('show_action_info must be bool', path)
+                raise ValidationError(f'{key} in workflow_view {workflow_index} must be int, None or a list of ints', path)
+        if 'title' in workflow_view:
+            _validate_title_and_tooltip_in_schema(workflow_view, path, all_language_codes=all_language_codes, strict=strict)
+        if 'show_action_info' in workflow_view and not isinstance(workflow_view['show_action_info'], bool):
+            raise ValidationError(f'show_action_info in workflow_view {workflow_index} must be bool', path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
