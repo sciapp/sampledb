@@ -87,11 +87,6 @@ class ObjectFiles(Resource):
             return {
                 "message": "storage must be set"
             }, 400
-        storage = request_json['storage']
-        if storage not in ('local_reference', 'url', 'database'):
-            return {
-                "message": "storage must be 'local_reference', 'database' or 'url'"
-            }, 400
         if 'hash' in request_json:
             if not isinstance(request_json['hash'], dict):
                 return {
@@ -111,6 +106,7 @@ class ObjectFiles(Resource):
                 return {
                     "message": "hash hexdigest be a lowercase string of hex characters"
                 }, 400
+        storage = request_json['storage']
         if storage == 'database':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'hash'}:
@@ -158,7 +154,7 @@ class ObjectFiles(Resource):
                 save_content=lambda stream: typing.cast(None, stream.write(content)),
                 hash=hash
             )
-        if storage == 'local_reference':
+        elif storage == 'local_reference':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'filepath', 'hash'}:
                     return {
@@ -182,7 +178,7 @@ class ObjectFiles(Resource):
                 return {
                     "message": "user not authorized to add this path"
                 }, 403
-        if storage == 'url':
+        elif storage == 'url':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'url'}:
                     return {
@@ -216,6 +212,10 @@ class ObjectFiles(Resource):
                 user_id=flask.g.user.id,
                 url=url
             )
+        else:
+            return {
+                "message": "storage must be 'local_reference', 'database' or 'url'"
+            }, 400
         file_url = flask.url_for(
             'api.object_file',
             object_id=file.object_id,
