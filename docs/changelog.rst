@@ -14,6 +14,7 @@ Currently in development.
 - Improved .eln export
 - Added support for file references as display properties
 - Allow configuring multiple workflow views
+- Add support for ``sorting_properties`` for workflow views
 
 Version 0.27
 ------------
