@@ -20,6 +20,7 @@ from .permission_forms import PermissionsForm
 from .utils import check_current_user_is_not_readonly
 from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
+from .users_forms import RevokeInvitationForm
 
 
 @frontend.route('/projects/<int:project_id>', methods=['GET', 'POST'])
@@ -40,6 +41,9 @@ def project(project_id: int) -> FlaskResponseT:
                 return flask.abort(403)
             if project_invitation.accepted:
                 flask.flash(_('This invitation token has already been used. Please request a new invitation.'), 'error')
+                return flask.abort(403)
+            if project_invitation.revoked:
+                flask.flash(_('This invitation has been revoked. Please request a new invitation.'), 'error')
                 return flask.abort(403)
         if token_data.get('project_id', None) != project_id:
             return flask.abort(403)
@@ -151,12 +155,26 @@ def project(project_id: int) -> FlaskResponseT:
     project_member_group_ids.sort(key=lambda group_id: get_translated_text(logic.groups.get_group(group_id).name).lower())
 
     if Permissions.GRANT in user_permissions:
+        revoke_invitation_form = RevokeInvitationForm()
+        if 'revoke_invitation' in flask.request.form and revoke_invitation_form.validate_on_submit():
+            invitation_id = revoke_invitation_form.invitation_id.data
+            try:
+                invitation = logic.projects.get_project_invitation(invitation_id)
+            except logic.errors.GroupInvitationDoesNotExistError:
+                flask.flash(_('Unknown project group invitation.'), 'error')
+                return flask.redirect(flask.url_for('.project', project_id=project_id))
+            if invitation.accepted:
+                flask.flash(_('This project group invitation has already been accepted.'), 'error')
+            else:
+                logic.projects.revoke_project_invitation(invitation_id)
+                flask.flash(_('The invitation has been revoked.'), 'success')
         invitable_user_list = []
         for user in logic.users.get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN'], exclude_fed=True, exclude_eln_import=True):
             if user.id not in project_member_user_ids_and_permissions:
                 invitable_user_list.append(user)
         parent_projects_with_add_permissions = logic.projects.get_ancestor_project_ids(project_id, only_if_child_can_add_users_to_ancestor=True)
     else:
+        revoke_invitation_form = None
         invitable_user_list = []
         parent_projects_with_add_permissions = set()
     if invitable_user_list:
@@ -507,6 +525,7 @@ def project(project_id: int) -> FlaskResponseT:
         addable_projects=addable_projects,
         remove_subproject_form=remove_subproject_form,
         user_may_edit_permissions=Permissions.GRANT in user_permissions,
+        revoke_invitation_form=revoke_invitation_form,
     )
 
 
