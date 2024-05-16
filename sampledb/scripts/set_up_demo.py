@@ -359,7 +359,7 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
-        sample_schema = {
+        sample_schema: typing.Dict[str, typing.Any] = {
             'title': 'Example Object',
             'type': 'object',
             'properties': {
@@ -379,10 +379,22 @@ This example shows how Markdown can be used for instrument Notes.
             action_type_id=ActionType.SAMPLE_CREATION,
             schema=sample_schema
         )
-        sample_schema['workflow_view'] = {
-            'referencing_action_type_id': -98,
-            'referenced_action_id': sample_action.id
-        }
+        sample_schema['workflow_views'] = [
+            {
+                'title': {'en': 'Referencing Measurements'},
+                'referencing_action_type_id': -98,
+                'referenced_action_id': []
+            },
+            {
+                'title': {'en': f'Referenced Samples from Action #{sample_action.id}'},
+                'referenced_action_id': sample_action.id,
+                'referencing_action_id': [],
+                'show_action_info': False
+            },
+            {
+                'title': {'en': 'All Related Objects'}
+            }
+        ]
         sampledb.logic.actions.update_action(action_id=sample_action.id, schema=sample_schema)
         set_action_translation(Language.ENGLISH, sample_action.id, name="sample_action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(sample_action.id, sampledb.models.Permissions.READ)

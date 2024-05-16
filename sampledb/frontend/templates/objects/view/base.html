@@ -20,8 +20,14 @@
   <nav>
     <ul>
       <li><a href="#information">{{ _('Information') }}</a></li>
-      {% if schema and 'workflow_view' in schema and workflow | length > 0 %}
-      <li><a href="#workflow">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</a></li>
+      {% if schema and 'workflow_view' in schema and workflows | length > 0 and workflows[0] | length > 0 %}
+        <li><a href="#workflow_1">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</a></li>
+      {% elif schema and 'workflow_views' in schema %}
+        {% for workflow_view in schema['workflow_views'] %}
+          {% if workflows | length > loop.index0 and workflows[loop.index0] | length  %}
+            <li><a href="#workflow_{{ loop.index }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</a></li>
+          {% endif %}
+        {% endfor %}
       {% endif %}
       <li><a href="#files">{{ _('Files') }}</a></li>
       <li><a href="#locations">{{ _('Locations') }}</a></li>
@@ -265,90 +271,100 @@
     </div>
     {% endif %}
   </div>
-  {% if schema and 'workflow_view' in schema and workflow | length > 0 %}
-    <h2 id="workflow">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</h2>
-    {# counter for plotly_chart_plots #}
-    {% set plot_counter = namespace(value=0) %}
-    {% for elem in workflow %}
-      <div>
-        <h4>
-          {% if elem.is_referenced %}
-            {% if elem.is_referencing %}
-              <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
-            {% else %}
-              <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
-            {% endif %}
-          {% else %}
-            <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
-          {% endif %}
-          <a href="{{ url_for('.object', object_id=elem.object_id) }}">
-            {% if ((show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text) or elem.object is none %}
-              {% if elem.action is not none and elem.action.type is not none %}
-                {{ elem.action.type.object_name | get_translated_text }}
+  {% if schema and 'workflow_view' in schema or 'workflow_views' in schema %}
+    {% set workflow_views = schema.get('workflow_views', []) %}
+    {% if 'workflow_view' in schema %}
+      {% do workflow_views.append(schema.workflow_view) %}
+    {% endif %}
+    {% for workflow_view in workflow_views %}
+      {% if workflows | length > loop.index0 and workflows[loop.index0] | length > 0 %}
+        {% set workflow = workflows[loop.index0] %}
+        {% set workflow_id = "workflow_" ~ loop.index %}
+        <h2 id="{{ workflow_id }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</h2>
+        {# counter for plotly_chart_plots #}
+        {% set plot_counter = namespace(value=0) %}
+        {% for elem in workflow %}
+          <div>
+            <h4>
+              {% if elem.is_referenced %}
+                {% if elem.is_referencing %}
+                  <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
+                {% else %}
+                  <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
+                {% endif %}
               {% else %}
-                {{ _('Object') }}
+                <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
               {% endif %}
-              #{{ elem.object_id }}{% if elem.object and elem.object.name %}: {% endif %}
-            {% endif %}
-            {% if elem.object and elem.object.name %}
-              {{ elem.object.name | get_translated_text(default='—') }}
-            {% endif %}
-          </a>
-          {% if elem.object %}
-            {{ import_information_symbol(elem.object) }}
-          {% endif %}
-        </h4>
-        {% if elem.object is not none and elem.action and not ('show_action_info' in schema['workflow_view'] and not schema['workflow_view']['show_action_info']) %}
-          <div class="row" style="padding-right:0.75em">
-            <label class="col-md-3" style="text-align: right">{{ _('Action') }}
-              {% if elem.action %}
-                <a href="{{ url_for('.objects', action_ids=elem.action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
+              <a href="{{ url_for('.object', object_id=elem.object_id) }}">
+                {% if ((show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text) or elem.object is none %}
+                  {% if elem.action is not none and elem.action.type is not none %}
+                    {{ elem.action.type.object_name | get_translated_text }}
+                  {% else %}
+                    {{ _('Object') }}
+                  {% endif %}
+                  #{{ elem.object_id }}{% if elem.object and elem.object.name %}: {% endif %}
+                {% endif %}
+                {% if elem.object and elem.object.name %}
+                  {{ elem.object.name | get_translated_text(default='—') }}
+                {% endif %}
+              </a>
+              {% if elem.object %}
+                {{ import_information_symbol(elem.object) }}
               {% endif %}
-            </label>
-            <div class="col-md-9">
-              {% if elem.action %}
-                {% if elem.action.user is not none %}
-                  <a href="{{ url_for('.user_profile', user_id=elem.action.user_id) }}" title="{{ elem.action.user.get_name() }}">{{ elem.action.user.get_name() }}</a>
-                  {{ import_information_symbol(elem.action.user) }} /
-                {% endif %}
-                {% if not config['DISABLE_INSTRUMENTS'] and elem.action.instrument %}
-                  <a href="{{ url_for('frontend.instrument', instrument_id=elem.action.instrument.id) }}">{{ elem.action.instrument.name | get_translated_text }}</a>
-                  {{ import_information_symbol(elem.action.instrument) }} &mdash;
-                {% endif %}
-                <a href="{{ url_for('frontend.action', action_id=elem.action.id) }}">{{ elem.action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
-                {{ import_information_symbol(elem.action) }}
-              {% else %}&mdash;{% endif %}
-            </div>
+            </h4>
+            {% if elem.object is not none and elem.action and not ('show_action_info' in workflow_view and not workflow_view.show_action_info) %}
+              <div class="row" style="padding-right:0.75em">
+                <label class="col-md-3" style="text-align: right">{{ _('Action') }}
+                  {% if elem.action %}
+                    <a href="{{ url_for('.objects', action_ids=elem.action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
+                  {% endif %}
+                </label>
+                <div class="col-md-9">
+                  {% if elem.action %}
+                    {% if elem.action.user is not none %}
+                      <a href="{{ url_for('.user_profile', user_id=elem.action.user_id) }}" title="{{ elem.action.user.get_name() }}">{{ elem.action.user.get_name() }}</a>
+                      {{ import_information_symbol(elem.action.user) }} /
+                    {% endif %}
+                    {% if not config['DISABLE_INSTRUMENTS'] and elem.action.instrument %}
+                      <a href="{{ url_for('frontend.instrument', instrument_id=elem.action.instrument.id) }}">{{ elem.action.instrument.name | get_translated_text }}</a>
+                      {{ import_information_symbol(elem.action.instrument) }} &mdash;
+                    {% endif %}
+                    <a href="{{ url_for('frontend.action', action_id=elem.action.id) }}">{{ elem.action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+                    {{ import_information_symbol(elem.action) }}
+                  {% else %}&mdash;{% endif %}
+                </div>
+              </div>
+            {% endif %}
+            {% if elem.object is none %}
+              <div class="row" style="padding-right:0.75em">
+                <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+                <div class="col-md-9">
+                  {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
+                </div>
+              </div>
+            {% elif elem.object.data is none or elem.object.schema is none %}
+              <div class="row" style="padding-right:0.75em">
+                <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+                <div class="col-md-9">
+                  <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+                </div>
+              </div>
+            {% else %}
+              {% set workflow_display_mode = True %}
+              {% set object_id = elem.object_id %}
+              {% set id_prefix_root = workflow_id ~ "_" ~ elem.object_id %}
+              {% set property_path = () %}
+              {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
+              {% set data = elem.object.data %}
+              {% set schema = elem.object.schema %}
+              {% set files = elem.files %}
+              {% set indent_level = 0 %}
+              {% set show_indent_border = False %}
+              {% include "objects/view/any.html" %}
+            {% endif %}
           </div>
-        {% endif %}
-        {% if elem.object is none %}
-          <div class="row" style="padding-right:0.75em">
-            <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-            <div class="col-md-9">
-              {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
-            </div>
-          </div>
-        {% elif elem.object.data is none or elem.object.schema is none %}
-          <div class="row" style="padding-right:0.75em">
-            <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-            <div class="col-md-9">
-              <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
-            </div>
-          </div>
-        {% else %}
-          {% set workflow_display_mode = True %}
-          {% set object_id = elem.object_id %}
-          {% set id_prefix_root = "workflow_" ~ elem.object_id %}
-          {% set property_path = () %}
-          {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
-          {% set data = elem.object.data %}
-          {% set schema = elem.object.schema %}
-          {% set files = elem.files %}
-          {% set indent_level = 0 %}
-          {% set show_indent_border = False %}
-          {% include "objects/view/any.html" %}
-        {% endif %}
-      </div>
+        {% endfor %}
+      {% endif %}
     {% endfor %}
   {% endif %}
   {% if not is_archived %}
