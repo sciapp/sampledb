@@ -286,14 +286,18 @@
         {% for elem in workflow %}
           <div>
             <h4>
-              {% if elem.is_referenced %}
-                {% if elem.is_referencing %}
-                  <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
-                {% else %}
-                  <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
-                {% endif %}
+              {% if not elem.is_current %}
+                <i class="fa fa-fw fa-exclamation-triangle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}"></i>
               {% else %}
-                <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
+                {% if elem.is_referenced %}
+                  {% if elem.is_referencing %}
+                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
+                  {% else %}
+                    <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
+                  {% endif %}
+                {% else %}
+                  <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
+                {% endif %}
               {% endif %}
               <a href="{{ url_for('.object', object_id=elem.object_id) }}">
                 {% if ((show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text) or elem.object is none %}
@@ -312,6 +316,7 @@
                 {{ import_information_symbol(elem.object) }}
               {% endif %}
             </h4>
+            <div {% if not elem.is_current %}style="opacity: 50%"{% endif %}>
             {% if elem.object is not none and elem.action and not ('show_action_info' in workflow_view and not workflow_view.show_action_info) %}
               <div class="row" style="padding-right:0.75em">
                 <label class="col-md-3" style="text-align: right">{{ _('Action') }}
@@ -362,6 +367,7 @@
               {% set show_indent_border = False %}
               {% include "objects/view/any.html" %}
             {% endif %}
+            </div>
           </div>
         {% endfor %}
       {% endif %}

@@ -325,6 +325,7 @@ class WorkflowElement:
     is_referencing: bool
     is_referenced: bool
     files: typing.List[File]
+    is_current: bool = True
 
 
 def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.Optional[typing.Dict[int, Action]] = None) -> typing.List[typing.List[WorkflowElement]]:
@@ -352,6 +353,18 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
         object_ref.object_id
         for object_ref in get_referencing_object_ids({object.object_id})[object.object_id]
         if object_ref.is_local}
+    referencing_objects_current = {}
+    for referencing_object_id in referencing_object_ids:
+        referencing_objects_current[referencing_object_id] = False
+        referencing_object = get_object(referencing_object_id)
+        for referenced_object_id, _previously_referenced_object_id, _schema_type in find_object_references(
+                object_id=referencing_object.object_id,
+                version_id=referencing_object.version_id,
+                object_data=referencing_object.data
+        ):
+            if referenced_object_id == object.object_id:
+                referencing_objects_current[referencing_object_id] = True
+                break
     referenced_object_ids = {
         object_ref.object_id
         for object_ref in _get_referenced_object_ids({object.object_id})[object.object_id]
@@ -454,7 +467,8 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
                         action=action,
                         is_referenced=object_id in referenced_object_ids,
                         is_referencing=object_id in referencing_object_ids,
-                        files=files
+                        files=files,
+                        is_current=(object_id in referenced_object_ids) or referencing_objects_current.get(object_id, False),
                     )
                 )
 

@@ -540,7 +540,7 @@ def _validate_object_schema(
         if 'show_action_info' in workflow_view and not isinstance(workflow_view['show_action_info'], bool):
             raise ValidationError(f'show_action_info in workflow_view {workflow_index} must be bool', path)
         if 'sorting_properties' in workflow_view and not isinstance(workflow_view['sorting_properties'], list):
-            raise ValidationError(f'in in workflow_view {workflow_index} must be list', path)
+            raise ValidationError(f'sorting_properties in workflow_view {workflow_index} must be list', path)
         for property_name in workflow_view.get('sorting_properties', []):
             _validate_property_name(property_name, False, path)
 

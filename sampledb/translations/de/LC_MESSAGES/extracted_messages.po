@@ -5707,6 +5707,13 @@ msgstr "Notebook erstellen"
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
 
+msgid ""
+"The relationship between these objects is outdated, please check their "
+"current information."
+msgstr ""
+"Der Zusammenhang zwischen diesen Objekten ist veraltet, bitte prüfen Sie "
+"die aktuellen Informationen."
+
 #, python-format
 msgid ""
 "Referenced by the metadata of %(object_name)s (#%(object_id)s) and "
