@@ -375,14 +375,6 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
         else:
             initial_object_version_by_id[object_id] = get_object(object_id, version_id=0)
 
-    def creation_time_key(object_id: int) -> datetime.datetime:
-        initital_object_version = initial_object_version_by_id.get(object_id)
-        if initital_object_version is None or initital_object_version.utc_datetime is None:
-            return datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
-        return initital_object_version.utc_datetime
-
-    object_ids.sort(key=creation_time_key)
-
     workflows: typing.List[typing.List[WorkflowElement]] = [
         []
         for workflow_view in workflow_views
@@ -465,4 +457,18 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
                         files=files
                     )
                 )
+
+    def creation_time_key(workflow_element: WorkflowElement) -> datetime.datetime:
+        object_id = workflow_element.object_id
+        current_object_version = objects_by_id.get(object_id)
+        if current_object_version is not None and current_object_version.data is not None:
+            for datetime_attribute in workflow_views[0].get('sorting_properties', []):
+                if isinstance(current_object_version.data.get(datetime_attribute), dict) and current_object_version.data[datetime_attribute].get('_type') == 'datetime':
+                    return datetime.datetime.strptime(current_object_version.data[datetime_attribute]['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+        initital_object_version = initial_object_version_by_id.get(object_id)
+        if initital_object_version is None or initital_object_version.utc_datetime is None:
+            return datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+        return initital_object_version.utc_datetime
+    for workflow in workflows:
+        workflow.sort(key=creation_time_key)
     return workflows

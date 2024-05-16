@@ -311,6 +311,26 @@ def _validate_tags_schema(
         raise ValidationError('Tags must be a top-level entry named "tags"', path)
 
 
+def _validate_property_name(property_name: str, strict: bool, path: typing.List[str]) -> None:
+    property_name_valid = True
+    if not property_name:
+        property_name_valid = False
+    if '__' in property_name:
+        property_name_valid = False
+    if strict and property_name_valid:
+        # property name may only consist of ascii characters, digits and underscores
+        if not all(c in (string.ascii_letters + string.digits + '_') for c in property_name):
+            property_name_valid = False
+        # property name must start with a character
+        if property_name[0] not in string.ascii_letters:
+            property_name_valid = False
+        # property name must not end with an underscore
+        if property_name.endswith('_'):
+            property_name_valid = False
+    if not property_name_valid:
+        raise ValidationError(f'invalid property name: {property_name}', path)
+
+
 def _validate_object_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
@@ -371,23 +391,7 @@ def _validate_object_schema(
     property_calculations: typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]] = []
     property_schemas = {}
     for property_name, property_schema in schema['properties'].items():
-        property_name_valid = True
-        if not property_name:
-            property_name_valid = False
-        if '__' in property_name:
-            property_name_valid = False
-        if strict and property_name_valid:
-            # property name may only consist of ascii characters, digits and underscores
-            if not all(c in (string.ascii_letters + string.digits + '_') for c in property_name):
-                property_name_valid = False
-            # property name must start with a character
-            if property_name[0] not in string.ascii_letters:
-                property_name_valid = False
-            # property name must not end with an underscore
-            if property_name.endswith('_'):
-                property_name_valid = False
-        if not property_name_valid:
-            raise ValidationError(f'invalid property name: {property_name}', path)
+        _validate_property_name(property_name, strict, path)
 
         validate_schema(
             property_schema,
@@ -516,7 +520,7 @@ def _validate_object_schema(
         workflow_views = schema.get('workflow_views', [])
     for workflow_index, workflow_view in enumerate(workflow_views):
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
-        workflow_valid_keys = set(id_keys + ['title', 'show_action_info'])
+        workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties'])
         if not isinstance(workflow_view, dict):
             raise ValidationError(f'workflow_view {workflow_index} must be a dict', path)
         for key in workflow_view.keys():
@@ -535,6 +539,10 @@ def _validate_object_schema(
             _validate_title_and_tooltip_in_schema(workflow_view, path, all_language_codes=all_language_codes, strict=strict)
         if 'show_action_info' in workflow_view and not isinstance(workflow_view['show_action_info'], bool):
             raise ValidationError(f'show_action_info in workflow_view {workflow_index} must be bool', path)
+        if 'sorting_properties' in workflow_view and not isinstance(workflow_view['sorting_properties'], list):
+            raise ValidationError(f'in in workflow_view {workflow_index} must be list', path)
+        for property_name in workflow_view.get('sorting_properties', []):
+            _validate_property_name(property_name, False, path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 

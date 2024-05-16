@@ -381,9 +381,10 @@ This example shows how Markdown can be used for instrument Notes.
         )
         sample_schema['workflow_views'] = [
             {
-                'title': {'en': 'Referencing Measurements'},
+                'title': {'en': 'Referencing Measurements (sorted by property "datetime")'},
                 'referencing_action_type_id': -98,
-                'referenced_action_id': []
+                'referenced_action_id': [],
+                'sorting_properties': ['datetime']
             },
             {
                 'title': {'en': f'Referenced Samples from Action #{sample_action.id}'},
@@ -408,6 +409,10 @@ This example shows how Markdown can be used for instrument Notes.
                         'title': 'Object Name',
                         'type': 'text',
                         'languages': ['en', 'de']
+                    },
+                    'datetime': {
+                        'title': 'Measurement Date/Time',
+                        'type': 'datetime'
                     },
                     'sample': {
                         'title': 'Sample',
@@ -466,6 +471,10 @@ This example shows how Markdown can be used for instrument Notes.
                 '_type': 'text',
                 'text': {"en": 'Measurement', 'de': 'Messung'}
             },
+            'datetime': {
+                '_type': 'datetime',
+                'utc_datetime': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            },
             'sample': {
                 '_type': 'sample',
                 'object_id': instrument_object.id
@@ -486,6 +495,34 @@ This example shows how Markdown can be used for instrument Notes.
             'name': {
                 '_type': 'text',
                 'text': {'en': 'Measurement 2', 'de': 'Messung 2'}
+            },
+            'datetime': {
+                '_type': 'datetime',
+                'utc_datetime': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'sample': {
+                '_type': 'sample',
+                'object_id': sample.id
+            },
+            'comment': {
+                '_type': 'text',
+                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'}
+            },
+            'tags': {
+                '_type': 'tags',
+                'tags': []
+            }
+        }
+        measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(measurement.id, sampledb.models.Permissions.READ)
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Measurement 3', 'de': 'Messung 3'}
+            },
+            'datetime': {
+                '_type': 'datetime',
+                'utc_datetime': (datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
             },
             'sample': {
                 '_type': 'sample',

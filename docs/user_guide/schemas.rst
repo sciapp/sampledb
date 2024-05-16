@@ -237,6 +237,8 @@ By setting ``show_action_ínfo`` to ``false`` you can disable displaying action 
 
 Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects' schemas to limit what object data will be shown as a preview.
 
+The ``sorting_properties`` can be set to a list of property names which will be used for sorting the objects, starting with the first datetime property from the list found for an object and falling back to the object creation datetime for objects which contain none of the listed datetime properties.
+
 .. code-block:: json
     :caption: A workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``
 
