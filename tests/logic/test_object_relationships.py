@@ -806,6 +806,30 @@ def test_get_workflow_references(sample_action, measurement_action, user):
         WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
     ]
 
+    data['sample']['object_id'] = sample.object_id
+    sampledb.logic.objects.update_object(measurement.object_id, data, user.id)
+    measurement = sampledb.logic.objects.get_object(measurement.object_id)
+
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[], is_current=False)
+    ]
+
+    data['sample']['object_id'] = workflow_object.object_id
+    sampledb.logic.objects.update_object(measurement.object_id, data, user.id)
+    measurement = sampledb.logic.objects.get_object(measurement.object_id)
+
+    workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
+    assert workflow == [
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+    ]
+
     workflow_schema['workflow_view'] = {
             'referencing_action_type_id': sampledb.models.ActionType.MEASUREMENT,
             'referencing_action_id': [],
