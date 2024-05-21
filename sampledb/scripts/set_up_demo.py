@@ -360,7 +360,7 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.db.session.commit()
 
         sample_schema: typing.Dict[str, typing.Any] = {
-            'title': 'Example Object',
+            'title': 'Sample Information',
             'type': 'object',
             'properties': {
                 'name': {
@@ -402,7 +402,7 @@ This example shows how Markdown can be used for instrument Notes.
         measurement_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.MEASUREMENT,
             schema={
-                'title': 'Example Object',
+                'title': 'Measurement Information',
                 'type': 'object',
                 'properties': {
                     'name': {
@@ -416,7 +416,8 @@ This example shows how Markdown can be used for instrument Notes.
                     },
                     'sample': {
                         'title': 'Sample',
-                        'type': 'sample'
+                        'type': 'sample',
+                        'style': 'include'
                     },
                     'comment': {
                         'title': {'en': 'Comment', 'de': 'Kommentar'},
