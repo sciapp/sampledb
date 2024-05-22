@@ -19,7 +19,7 @@
         {% for i in range(0,label_amount) %}
             <div class="outbox" style="width: {{box_width_list[I]}}mm">
                 <div class="labeltext">
-                    <b>{{ object_name_list[I] }}</b> &bullet; #{{ sample_code_list[I] }}<br>
+                    <b>{{ object_name_list[I] }}</b> &bullet; #{{ object_id_list[I] }}<br>
                         {{ username_list[I] }}
                         {% if include_qrcode %}
                         <br>

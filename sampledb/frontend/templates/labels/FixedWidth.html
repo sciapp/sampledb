@@ -5,7 +5,7 @@
         size: {{ paper_width }}mm {{ paper_height }}mm;
         margin: 7.5mm 5mm 7.5mm 1.5mm;
     }
-    .box {
+    .label {
         margin: 2mm 1.5mm;
         display: flex;
         flex-direction: column;
@@ -27,46 +27,31 @@
         text-align: center;
         border-top: none;
     }
-    .boxqrcodeCSBSwghs {
+    .boxqrcode {
         display: flex;
         flex-direction: column;
         align-items: center;
-        border-right: 1.5px solid black;
-        height: {{box_side_by_side_height}}mm;
+        height: 21mm;
         width: {{qrcode_box_width}}mm;
     }
-    .boxqrcodeCSBSwoghs {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        border-right: none;
+    .boxsidebyside > .boxqrcode {
         height: {{box_side_by_side_height}}mm;
+    }
+    .boxqrcodeCSBSwghs {
+        border-right: 1.5px solid black;
+    }
+    .boxqrcodeCSBSwoghs {
         width: {{box_width}}mm;
     }
     .boxqrcodeCnotSBS {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
         border: 1.5px solid black;
-        height: 21mm;
-        width: {{qrcode_box_width}}mm;
         border-top: none;
     }
     .boxqrcodenotCSBS {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
         border-right: 1.5px solid black;
-        height: {{box_side_by_side_height}}mm;
-        width: {{qrcode_box_width}}mm;
     }
     .boxqrcodenotCnotSBS {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
         border: 1.5px solid black;
-        height: 21mm;
-        width: {{qrcode_box_width}}mm;
         border-top: none;
         border-left: none;
     }
@@ -76,32 +61,26 @@
         height: 21mm;
         width: {{box_width}}mm;
     }
-    .boxghsCSBS{
-        border: none;
-        height: {{box_side_by_side_height}}mm;
-        width: {{ghs_box_width}}mm;
+    .boxghs {
         position: relative;
+        width: {{ghs_box_width}}mm;
+    }
+    .boxghsCSBS{
+        height: {{box_side_by_side_height}}mm;
     }
     .boxghsCnotSBS {
         border: 1.5px solid black;
-        height: {{ghs_height}}mm;
-        width: {{ghs_box_width}}mm;
-        position: relative;
         border-top: none;
+        height: {{ghs_height}}mm;
     }
     .boxghsnotCSBS{
         border-right: 1.5px solid black;
         height: {{box_side_by_side_height}}mm;
-        width: {{ghs_box_width}}mm;
-        position: relative;
     }
     .boxghsnotCnotSBS {
-        border: 1.5px solid black;
+        border-right: 1.5px solid black;
+        border-bottom: 1.5px solid black;
         height: {{ghs_height}}mm;
-        width: {{ghs_box_width}}mm;
-        position: relative;
-        border-top: none;
-        border-left: none;
     }
     .ghsouterbox{
         border: 1.5px solid black;
@@ -117,13 +96,13 @@
         display: flex;
         flex-direction: row;
     }
-    .outerbox {
+    .labelcontainer {
         border: none;
         height: {{outer_box_height}}mm;
         width: {{outer_box_width}}mm;
         text-align: center;
     }
-    .outerbox > div {
+    .labelcontainer > div {
         display: inline-block;
     }
     .centeredghsbox {
@@ -171,92 +150,76 @@
 {% endblock %}
 
 {% block body %}
-    <div class="outerbox">
+    <div class="labelcontainer">
         {% for object_index in range(0,object_amount) %}
         {%- for i in range(0,page_amount) -%}
-        <div class="box">
+        <div class="label">
             <div class="labeltext">
                 <div class="boxname"><b>{{ object_name_list[object_index] }}</b></div>
                 <div class="boxinfo">
                     {{ username_list[object_index] }}<br>
                     {{ creation_date_list[object_index] }}
                 </div>
+                {%- if not ghs_classes_side_by_side and not centered -%}
+                    <div class="qrouterbox">
+                {%- endif -%}
                 {%- if ghs_classes_side_by_side -%}
                     <div class="boxsidebyside">
-                    {%- if centered -%}
+                {%- endif -%}
+                <div class="boxqrcode
+                {% if ghs_classes_side_by_side %}
+                    {% if centered %}
                         {% if ghs_amount_list[object_index] > 0 %}
-                            <div class="boxqrcodeCSBSwghs">
+                            boxqrcodeCSBSwghs
                         {% else %}
-                            <div class="boxqrcodeCSBSwoghs">
+                            boxqrcodeCSBSwoghs
                         {% endif %}
                     {% else %}
-                        <div class="boxqrcodenotCSBS">
+                        boxqrcodenotCSBS
                     {% endif %}
-                {%- else -%}
-                    {%- if centered -%}
-                        <div class="boxqrcodeCnotSBS">
+                {% else %}
+                    {% if centered %}
+                       boxqrcodeCnotSBS
                     {% else %}
-                        <div class="qrouterbox">
-                        <div class="boxqrcodenotCnotSBS">
+                        boxqrcodenotCnotSBS
                     {% endif %}
-                {%- endif -%}
+                {% endif %}
+                ">
                 <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
                 #{{ sample_code_list[object_index] }}
-                {%- if ghs_classes_side_by_side -%}
-                    {%- if centered -%}
-                        {% if ghs_amount_list[object_index] > 0 %}
-                            </div>
-                        {% else %}
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        </div>
-                    {% endif %}
-                {%- else -%}
-                    {%- if centered -%}
-                        </div>
-                    {% else %}
-                        </div>
-                        </div>
-                    {% endif %}
+                </div>
+                {%- if not ghs_classes_side_by_side and not centered -%}
+                    </div>
                 {%- endif -%}
+                {%- if not ghs_classes_side_by_side and not centered -%}
+                    <div class="ghsouterbox">
+                {%- endif -%}
+                    <div class="boxghs
                 {% if ghs_amount_list[object_index] > 0 %}
                     {%- if ghs_classes_side_by_side -%}
                         {%- if centered -%}
-                            <div class="boxghsCSBS">
+                            boxghsCSBS
                         {% else %}
-                            <div class="boxghsnotCSBS">
+                            boxghsnotCSBS
                         {% endif %}
                     {%- else -%}
                         {%- if centered -%}
-                            <div class="boxghsCnotSBS">
+                            boxghsCnotSBS
                         {% else %}
-                            <div class="ghsouterbox">
-                            <div class="boxghsnotCnotSBS">
+                            boxghsnotCnotSBS
                         {% endif %}
                     {%- endif -%}
                 {% endif %}
+                ">
                 <div class="centeredghsbox">
                     {%- for hazard_code in hazard_list[object_index] -%}
                         <div class="ghs ghs0{{hazard_code}}"></div>
                     {%- endfor -%}
                 </div>
-                {% if ghs_amount_list[object_index] > 0 %}
-                    {%- if ghs_classes_side_by_side -%}
-                        {%- if centered -%}
-                            </div>
-                        {% else %}
-                                </div>
-                        {% endif %}
-                    {%- else -%}
-                        {%- if centered -%}
-                                </div>
-                        {% else %}
-                                </div>
-                                </div>
-                        {% endif %}
-                    {%- endif -%}
-                {% endif %}
+                </div>
+                {%- if not ghs_classes_side_by_side and not centered -%}
+                    </div>
+                {%- endif -%}
                 {%- if ghs_classes_side_by_side -%}
                     </div>
                 {% endif %}

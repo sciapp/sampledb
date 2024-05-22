@@ -200,7 +200,7 @@ def create_multiple_labels(
         html = flask.render_template("labels/LongLabel.html", username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
                                      object_url_list=object_url_list, hazard_list=hazard_list,
-                                     sample_code_list=sample_code_list, qr_code_uri_list=qr_code_uri_list,
+                                     object_id_list=sample_code_list, qr_code_uri_list=qr_code_uri_list,
                                      object_amount=object_amount, box_width_list=box_width_list,
                                      include_qrcode=include_qrcode_in_long_labels, box_height=box_height,
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
@@ -357,21 +357,26 @@ def create_multiple_labels(
         object_id = list(object_specifications.keys())[0]
         object_name = object_specifications[object_id]["object_name"]
         object_url = object_specifications[object_id]["object_url"]
-        sample_code = object_id
+        qr_code_uri = []
 
-        if only_id_qr_code:
-            url = sample_code
-        else:
-            url = object_url
-        image = qrcode.make(url, border=1)
-        image_stream = io.BytesIO()
-        image.save(image_stream, format='png')
-        image_stream.seek(0)
-        qr_code_uri = 'data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8')
+        for quantity_index in range(1, quantity + 1):
+            if only_id_qr_code:
+                if add_label_number:
+                    if add_maximum_label_number:
+                        url = str(object_id) + " " + str(quantity_index) + "_" + str(quantity)
+                    else:
+                        url = str(object_id) + " " + str(quantity_index)
+                else:
+                    url = object_id
+            else:
+                url = object_url
+            image = qrcode.make(url, border=1)
+            image_stream = io.BytesIO()
+            image.save(image_stream, format='png')
+            image_stream.seek(0)
+            qr_code_uri.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
+
         qr_quantity = quantity
-        show_id = show_id_on_label
-        add_label_nr = add_label_number
-        add_maximum_label_nr = add_maximum_label_number
         qrcode_width = qr_code_width
         box_height = max(math.floor(qrcode_width + 0.5), 6)
         has_label_dimension = False
@@ -382,15 +387,15 @@ def create_multiple_labels(
         text_name_top = ((qr_code_width - 3) / 4) * 3
         labels_on_page = 0
 
-        if not show_id and not add_label_nr and not add_maximum_label_nr:
+        if not show_id_on_label and not add_label_number and not add_maximum_label_number:
             text_name_top = (qr_code_width - 3) / 2
         if qr_code_width <= 6 and not has_label_dimension:
             text_top = 0.125
             text_name_top = 3.125
 
-        if show_id:
-            if add_label_nr:
-                if add_maximum_label_nr:
+        if show_id_on_label:
+            if add_label_number:
+                if add_maximum_label_number:
                     box_width = qr_code_width + max((len(str(object_id)) * 2.8) + (2 * len(str(qr_quantity))) + 6,
                                                     len(object_name) * 2.2)
                     if qr_quantity >= 10:
@@ -406,8 +411,8 @@ def create_multiple_labels(
                         box_width += 2.8
             else:
                 box_width = qr_code_width + max(2.8 + (len(str(object_id)) * 2.8), len(object_name) * 2.2)
-        elif add_label_nr:
-            if add_maximum_label_nr:
+        elif add_label_number:
+            if add_maximum_label_number:
                 box_width = qr_code_width + max((2 * len(str(qr_quantity))) + 5.6, len(object_name) * 2.2)
                 if qr_quantity >= 100:
                     box_width += 2.8
@@ -454,13 +459,13 @@ def create_multiple_labels(
         out_box_width = paper_width - 11.5
         out_box_height = paper_height - 4.5
         text_width = box_width - qr_code_width - 1.5
-        html = flask.render_template("labels/QRCode.html", qr_code_uri=qr_code_uri, sample_code=sample_code,
+        html = flask.render_template("labels/QRCode.html", qr_code_uri=qr_code_uri, object_id=object_id,
                                      box_width=box_width, include_qrcode=include_qrcode_in_long_labels,
                                      box_height=box_height, paper_width=paper_width, object_name=object_name,
                                      paper_height=paper_height, vertical_label_margin=vertical_label_margin,
                                      horizontal_label_margin=horizontal_label_margin, qrcode_width=qrcode_width,
-                                     qr_quantity=qr_quantity, show_id=show_id, add_label_nr=add_label_nr,
-                                     add_maximum_label_nr=add_maximum_label_nr, outer_box_width=outer_box_width,
+                                     qr_quantity=qr_quantity, show_id=show_id_on_label, add_label_nr=add_label_number,
+                                     add_maximum_label_nr=add_maximum_label_number, outer_box_width=outer_box_width,
                                      text_left=text_left, text_top=text_top, text_name_top=text_name_top,
                                      out_box_width=out_box_width, out_box_height=out_box_height,
                                      has_label_dimension=has_label_dimension, text_width=text_width,

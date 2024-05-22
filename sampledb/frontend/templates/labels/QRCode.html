@@ -6,8 +6,12 @@
                 size: {{ paper_width }}mm {{ paper_height }}mm;
                 margin: 4.5mm 0mm 0mm 11.5mm;
             }
+            body {
+                font-size: 8pt;
+                font-family: FreeSans;
+                line-height: 125%;
+            }
             .qrcode {
-                background-image: url({{ qr_code_uri }});
                 width: {{qrcode_width}}mm;
                 height: {{qrcode_width}}mm;
                 background-size: contain;
@@ -33,28 +37,25 @@
                 white-space: nowrap;
                 width: {{text_width}}mm;
             }
-            body {
-                font-size: 8pt;
-                font-family: FreeSans;
-                line-height: 125%;
-            }
-            .outbox {
-                border: none;
+
+            .labelcontainer {
                 height: {{out_box_height}}mm;
                 width: {{out_box_width}}mm;
             }
-            .outbox > div {
-                display: inline-block;
-            }
-            .outboxt {
+            .label {
                 padding: 0.25mm 0.5mm;
                 margin: {{vertical_label_margin}}mm {{horizontal_label_margin}}mm;
-                display: flex;
-                align-items: center;
+                display: inline-block;
                 height: {{box_height}}mm;
                 width: {{box_width}}mm;
                 vertical-align: middle;
                 position: relative;
+                {% if not has_label_dimension %}
+                    border: 0.15mm dashed black;
+                {% endif %}
+            }
+            .pagebreak {
+                page-break-before: always;
             }
             .labeltext {
                 padding: 0 1mm;
@@ -62,40 +63,34 @@
         </style>
     </head>
     <body>
-        <div class="outbox">
+        <div class="labelcontainer">
             {% for object_index in range(qr_quantity) -%}
-                {%- if has_label_dimension -%}
-                    <div class="outboxt" style="border: none">
-                {%- else -%}
-                    <div class="outboxt" style="border: 0.15mm dashed black">
-                {%- endif -%}
-                    <div class="qrcode"></div><div class="text">
-                    {%- if show_id -%}
-                        {%- if add_label_nr -%}
-                            {%- if add_maximum_label_nr -%}
-                                <b>#{{sample_code}}&nbsp;{{object_index + 1}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b>
-                            {%- else -%}
-                                <b>#{{sample_code}}&nbsp;{{object_index + 1}}</b></div><div class="textname"><b>{{object_name}}</b>
+                <div class="label">
+                    <div class="qrcode" style="background-image: url({{ qr_code_uri[object_index] }})"></div><div class="text"><b>
+                    {%- if show_id or add_label_nr -%}
+                        {%- if show_id -%}
+                            #{{object_id}}
+                            {%- if add_label_nr -%}
+                                &nbsp;
                             {%- endif -%}
-                        {%- else -%}
-                            <b>#{{sample_code}}</b></div><div class="textname"><b>{{object_name}}</b>
+                        {%- endif -%}
+                        {%- if add_label_nr -%}
+                            {{object_index + 1}}
+                            {%- if add_maximum_label_nr -%}
+                                _{{qr_quantity}}
+                            {%- endif -%}
                         {%- endif -%}
                     {%- else -%}
-                        {%- if add_label_nr -%}
-                            {%- if add_maximum_label_nr -%}
-                                <b>{{object_index + 1}}_{{qr_quantity}}</b></div><div class="textname"><b>{{object_name}}</b>
-                            {%- else -%}
-                                <b>{{object_index + 1}}</b></div><div class="textname"><b>{{object_name}}</b>
-                            {%- endif -%}
-                        {%- else -%}
-                            <b>{{object_name}}</b></div>
-                        {%- endif -%}
+                        {{object_name}}
                     {%- endif -%}
-                    </div>
-                    </div>
-                {% if object_index + 1 == labels_on_page and qr_quantity > labels_on_page and has_label_dimension %}
-                    <p style="page-break-before: always;"></p>
-                {% endif %}
+                    </b></div>
+                    {%- if show_id or add_label_nr -%}
+                        <div class="textname"><b>{{object_name}}</b></div>
+                    {%- endif -%}
+                </div>
+                {%- if object_index + 1 == labels_on_page and qr_quantity > labels_on_page and has_label_dimension -%}
+                    <p class="pagebreak"></p>
+                {%- endif -%}
             {%- endfor -%}
         </div>
     </body>
