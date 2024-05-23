@@ -12,6 +12,7 @@ Currently in development.
 - Added support for ``"first"`` and ``"last"`` statistic for timeseries
 - Allow using dicts for the ``style`` attribute
 - Added support for ``"include"`` style for object reference properties
+- Allow referenced objects in search queries
 - Improved .eln export
 - Added support for file references as display properties
 - Allow configuring multiple workflow views

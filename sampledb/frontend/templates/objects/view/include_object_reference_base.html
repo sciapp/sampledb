@@ -9,6 +9,7 @@
       {% if referenced_object and referenced_object.data %}
         {% set object_id = referenced_object.object_id %}
         {% set id_prefix_root = object_reference ~ "_" ~ referenced_object.object_id %}
+        {% set search_property_path_prefix = property_path[:-1] + ('*' + property_path[-1],) %}
         {% set property_path = () %}
         {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
         {% set data = referenced_object.data %}

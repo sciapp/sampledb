@@ -2784,3 +2784,89 @@ def test_find_by_missing_attribute(user, action) -> None:
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(objects) == 1 and objects[0].id == object1.id
     assert len(search_notes) == 0
+
+def test_find_by_referenced_object(user):
+    referenced_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referenced Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referenced_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 1'
+        }
+    }
+    referenced_object = sampledb.logic.objects.create_object(action_id=referenced_action.id, data=referenced_data, user_id=user.id)
+    referencing_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Referencing Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'object_reference': {
+                    'title': 'Object',
+                    'type': 'object_reference'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    referencing_data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name 2'
+        },
+        'object_reference': {
+            '_type': 'object_reference',
+            'object_id': referenced_object.object_id
+        }
+    }
+    referencing_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    referencing_data['object_reference']['object_id'] = referencing_object.id
+    other_object = sampledb.logic.objects.create_object(action_id=referencing_action.id, data=referencing_data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('*object_reference.name == "Name 1"', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1 and objects[0].id == referencing_object.id
+    assert len(search_notes) == 0
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('(*object_reference.name == "Name 1") || (*object_reference.name == "Name 2")', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(search_notes) == 0
+    assert len(objects) == 2 and {object.id for object in objects} == {referencing_object.id, other_object.id}
+
+@pytest.mark.parametrize('query_string', [
+    '*object_reference.*other_reference.name == "Name 1"',
+    'array.?.*other_reference.name == "Name 1"',
+    'object_reference*.name == "Name 1"',
+    'array.*.name == "Name 1"'
+])
+def test_invalid_referencing_query(query_string):
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(query_string, use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(search_notes) == 1
+    assert len(objects) == 0
