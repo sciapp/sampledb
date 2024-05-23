@@ -363,13 +363,13 @@ def create_multiple_labels(
             if only_id_qr_code:
                 if add_label_number:
                     if add_maximum_label_number:
-                        url = str(object_id) + " " + str(quantity_index) + "_" + str(quantity)
+                        url = f"{object_id} {quantity_index}_{quantity}"
                     else:
-                        url = str(object_id) + " " + str(quantity_index)
+                        url = f"{object_id} {quantity_index}"
                 else:
-                    url = object_id
+                    url = f"{object_id}"
             else:
-                url = object_url
+                url = f"{object_url}"
             image = qrcode.make(url, border=1)
             image_stream = io.BytesIO()
             image.save(image_stream, format='png')
