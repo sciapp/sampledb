@@ -191,7 +191,7 @@ def create_multiple_labels(
         else:
             box_height = 3 * 3.0
 
-        if quantity == 1 and fill_single_page:
+        if fill_single_page:
             label_amount = (2 + int((paper_height - 15) / (box_height + (2 * vertical_label_margin))))
         else:
             label_amount = quantity
@@ -199,14 +199,12 @@ def create_multiple_labels(
         object_amount = len(username_list)
         html = flask.render_template("labels/LongLabel.html", username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
-                                     object_url_list=object_url_list, hazard_list=hazard_list,
+                                     hazard_list=hazard_list, qrcode_width=qrcode_width, ghs_width=ghs_width,
                                      object_id_list=sample_code_list, qr_code_uri_list=qr_code_uri_list,
                                      object_amount=object_amount, box_width_list=box_width_list,
                                      include_qrcode=include_qrcode_in_long_labels, box_height=box_height,
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
-                                     GHS_IMAGE_URIS=GHS_IMAGE_URIS, vertical_label_margin=vertical_label_margin,
-                                     horizontal_label_margin=horizontal_label_margin, qrcode_width=qrcode_width,
-                                     ghs_width=ghs_width)
+                                     GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin)
 
     elif create_mixed_labels:
         has_ghs_list = []
@@ -235,7 +233,7 @@ def create_multiple_labels(
         sixth_box_qrcode_box_width = 20.0
         sixth_box_ghs_box_width = 20.0
 
-        if quantity == 1 and fill_single_page:
+        if fill_single_page:
             set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height))
         else:
             set_amount = quantity
@@ -376,9 +374,7 @@ def create_multiple_labels(
             image_stream.seek(0)
             qr_code_uri.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
-        qr_quantity = quantity
-        qrcode_width = qr_code_width
-        box_height = max(math.floor(qrcode_width + 0.5), 6)
+        box_height = max(math.floor(qr_code_width + 0.5), 6)
         has_label_dimension = False
         horizontal_label_margin = 0
         vertical_label_margin = 0
@@ -396,31 +392,31 @@ def create_multiple_labels(
         if show_id_on_label:
             if add_label_number:
                 if add_maximum_label_number:
-                    box_width = qr_code_width + max((len(str(object_id)) * 2.8) + (2 * len(str(qr_quantity))) + 6,
+                    box_width = qr_code_width + max((len(str(object_id)) * 2.8) + (2 * len(str(quantity))) + 6,
                                                     len(object_name) * 2.2)
-                    if qr_quantity >= 10:
+                    if quantity >= 10:
                         box_width += 2.8
-                    if qr_quantity >= 100:
+                    if quantity >= 100:
                         box_width += 2.8
                 else:
-                    box_width = qr_code_width + max(2.8 + (len(str(object_id)) * 2.8) + len(str(qr_quantity)),
+                    box_width = qr_code_width + max(2.8 + (len(str(object_id)) * 2.8) + len(str(quantity)),
                                                     len(object_name) * 2.2)
-                    if qr_quantity >= 10:
+                    if quantity >= 10:
                         box_width += 2.8
-                    if qr_quantity >= 100:
+                    if quantity >= 100:
                         box_width += 2.8
             else:
                 box_width = qr_code_width + max(2.8 + (len(str(object_id)) * 2.8), len(object_name) * 2.2)
         elif add_label_number:
             if add_maximum_label_number:
-                box_width = qr_code_width + max((2 * len(str(qr_quantity))) + 5.6, len(object_name) * 2.2)
-                if qr_quantity >= 100:
+                box_width = qr_code_width + max((2 * len(str(quantity))) + 5.6, len(object_name) * 2.2)
+                if quantity >= 100:
                     box_width += 2.8
-                if qr_quantity == 1000:
+                if quantity == 1000:
                     box_width += 2.8
             else:
-                box_width = qr_code_width + max(len(str(qr_quantity)) + 2.8, len(object_name) * 2.2)
-                if qr_quantity >= 100:
+                box_width = qr_code_width + max(len(str(quantity)) + 2.8, len(object_name) * 2.2)
+                if quantity >= 100:
                     box_width += 2.8
         else:
             box_width = qr_code_width + len(object_name) * 2.2
@@ -438,7 +434,7 @@ def create_multiple_labels(
             elif label_dimension["paper_format"] == 3:
                 paper_height = paper_formats["Letter (Landscape)"][0]
                 paper_width = paper_formats["Letter (Landscape)"][1]
-            qrcode_width = label_dimension["qr_code_width"]
+            qr_code_width = label_dimension["qr_code_width"]
             box_width = label_dimension["label_width"]
             box_height = label_dimension["label_height"]
             horizontal_label_margin = label_dimension["margin_horizontal"] / 2
@@ -448,7 +444,7 @@ def create_multiple_labels(
             has_label_dimension = True
             text_name_top += 2
             labels_on_page = labels_in_row * labels_in_col
-            if qrcode_width > 7:
+            if qr_code_width > 7:
                 text_top = 0.125
 
         if qr_code_width <= 8 and not has_label_dimension:
@@ -460,12 +456,12 @@ def create_multiple_labels(
         out_box_height = paper_height - 4.5
         text_width = box_width - qr_code_width - 1.5
         html = flask.render_template("labels/QRCode.html", qr_code_uri=qr_code_uri, object_id=object_id,
-                                     box_width=box_width, include_qrcode=include_qrcode_in_long_labels,
-                                     box_height=box_height, paper_width=paper_width, object_name=object_name,
-                                     paper_height=paper_height, vertical_label_margin=vertical_label_margin,
-                                     horizontal_label_margin=horizontal_label_margin, qrcode_width=qrcode_width,
-                                     qr_quantity=qr_quantity, show_id=show_id_on_label, add_label_nr=add_label_number,
-                                     add_maximum_label_nr=add_maximum_label_number, outer_box_width=outer_box_width,
+                                     box_width=box_width,
+                                     box_height=box_height, paper_width=paper_width, paper_height=paper_height,
+                                     object_name=object_name, vertical_label_margin=vertical_label_margin,
+                                     horizontal_label_margin=horizontal_label_margin, qrcode_width=qr_code_width,
+                                     qr_quantity=quantity, show_id=show_id_on_label, add_label_nr=add_label_number,
+                                     add_maximum_label_nr=add_maximum_label_number,
                                      text_left=text_left, text_top=text_top, text_name_top=text_name_top,
                                      out_box_width=out_box_width, out_box_height=out_box_height,
                                      has_label_dimension=has_label_dimension, text_width=text_width,
@@ -473,8 +469,7 @@ def create_multiple_labels(
 
     else:
         box_width = max(label_width, min_label_width)
-        qrcode_width = qr_code_width
-        ghs_width = qrcode_width / 2
+        ghs_width = qr_code_width / 2
         qrcode_box_width = box_width
         ghs_box_width = box_width
 
@@ -483,7 +478,7 @@ def create_multiple_labels(
                 qrcode_box_width = qrcode_box_width / 2
                 ghs_box_width = ghs_box_width / 2
         else:
-            qrcode_box_width = qrcode_width
+            qrcode_box_width = qr_code_width
             ghs_box_width = ghs_width * 2
 
         row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
@@ -536,10 +531,10 @@ def create_multiple_labels(
         if not fill_single_page:
             outer_box_height = (((quantity * object_amount) // 4) + 1) * box_height + 5
 
-        html = flask.render_template("labels/FixedWidth.html", vertical_label_margin=vertical_label_margin,
-                                     horizontal_label_margin=horizontal_label_margin, box_width=box_width,
+        html = flask.render_template("labels/FixedWidth.html",
+                                     box_width=box_width, object_amount=object_amount,
                                      box_height=box_height, qr_code_uri_list=qr_code_uri_list,
-                                     qrcode_width=qrcode_width, paper_width=paper_width, paper_height=paper_height,
+                                     qrcode_width=qr_code_width, paper_width=paper_width, paper_height=paper_height,
                                      hazard_list=hazard_list, GHS_IMAGE_URIS=GHS_IMAGE_URIS, ghs_width=ghs_width,
                                      sample_code_list=sample_code_list, username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
@@ -547,8 +542,7 @@ def create_multiple_labels(
                                      ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered,
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,
-                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
-                                     row_amount=row_amount, column_amount=column_amount, object_amount=object_amount)
+                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height)
 
     # return html.encode()
 
