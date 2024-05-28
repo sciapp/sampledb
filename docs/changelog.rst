@@ -15,6 +15,7 @@ Currently in development.
 - Added support for file references as display properties
 - Allow configuring multiple workflow views
 - Add support for ``sorting_properties`` for workflow views
+- Added ``date`` and ``time`` styles for datetime values
 
 Version 0.27
 ------------

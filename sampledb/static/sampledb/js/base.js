@@ -31,7 +31,7 @@ $(function () {
       const utcDatetime = moment.utc(utcDatetimeStr);
       const localDatetime = utcDatetime.local();
       const langCode = window.getTemplateValue('current_user.language.lang_code');
-      const format = window.getTemplateValue('current_user.language.datetime_format_moment_output');
+      const format = $(element).data('sampledb-time-only') ? 'LTS' : window.getTemplateValue($(element).data('sampledb-date-only') ? 'current_user.language.date_format_moment_output' : 'current_user.language.datetime_format_moment_output');
       element.innerText = localDatetime.locale(langCode).format(format);
     });
   }

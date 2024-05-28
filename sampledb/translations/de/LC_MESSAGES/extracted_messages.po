@@ -4303,6 +4303,9 @@ msgstr "Zeitpunktsformat für moment"
 msgid "Datetime format for moment output"
 msgstr "Zeitpunktsformat für moment-Ausgabe"
 
+msgid "Date format for moment output"
+msgstr "Datumsformat für moment-Ausgabe"
+
 msgid "Enabled for input"
 msgstr "Für Eingabe aktiviert"
 

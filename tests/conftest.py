@@ -147,6 +147,7 @@ def app(flask_server):
             datetime_format_datetime=german.datetime_format_datetime,
             datetime_format_moment=german.datetime_format_moment,
             datetime_format_moment_output=german.datetime_format_moment_output,
+            date_format_moment_output=german.date_format_moment_output,
             enabled_for_input=True,
             enabled_for_user_interface=german.enabled_for_user_interface
         )
