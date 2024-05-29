@@ -1,0 +1,97 @@
+<html lang="en">
+    <head>
+        <title>SampleDB</title>
+        <style>
+            @page {
+                size: {{ paper_width }}mm {{ paper_height }}mm;
+                margin: 4.5mm 0mm 0mm 11.5mm;
+            }
+            body {
+                font-size: 8pt;
+                font-family: FreeSans;
+                line-height: 125%;
+            }
+            .qrcode {
+                width: {{qrcode_width}}mm;
+                height: {{qrcode_width}}mm;
+                background-size: contain;
+                position: absolute;
+                top: {{qr_code_top}}mm;
+                left: 0.25
+            }
+            .text {
+                position: absolute;
+                top: {{text_top}}mm;
+                left: {{text_left}}mm;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                width: {{text_width}}mm;
+            }
+            .textname {
+                position: absolute;
+                top: {{text_name_top}}mm;
+                left: {{text_left}}mm;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                width: {{text_width}}mm;
+            }
+
+            .labelcontainer {
+                height: {{out_box_height}}mm;
+                width: {{out_box_width}}mm;
+            }
+            .label {
+                padding: 0.25mm 0.5mm;
+                margin: {{vertical_label_margin}}mm {{horizontal_label_margin}}mm;
+                display: inline-block;
+                height: {{box_height}}mm;
+                width: {{box_width}}mm;
+                vertical-align: middle;
+                position: relative;
+                {% if not has_label_dimension %}
+                    border: 0.15mm dashed black;
+                {% endif %}
+            }
+            .pagebreak {
+                page-break-before: always;
+            }
+            .labeltext {
+                padding: 0 1mm;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="labelcontainer">
+            {% for object_index in range(qr_quantity) -%}
+                <div class="label">
+                    <div class="qrcode" style="background-image: url({{ qr_code_uri[object_index] }})"></div><div class="text"><b>
+                    {%- if show_id or add_label_nr -%}
+                        {%- if show_id -%}
+                            #{{object_id}}
+                            {%- if add_label_nr -%}
+                                &nbsp;
+                            {%- endif -%}
+                        {%- endif -%}
+                        {%- if add_label_nr -%}
+                            {{object_index + 1}}
+                            {%- if add_maximum_label_nr -%}
+                                _{{qr_quantity}}
+                            {%- endif -%}
+                        {%- endif -%}
+                    {%- else -%}
+                        {{object_name}}
+                    {%- endif -%}
+                    </b></div>
+                    {%- if show_id or add_label_nr -%}
+                        <div class="textname"><b>{{object_name}}</b></div>
+                    {%- endif -%}
+                </div>
+                {%- if object_index + 1 == labels_on_page and qr_quantity > labels_on_page and has_label_dimension -%}
+                    <p class="pagebreak"></p>
+                {%- endif -%}
+            {%- endfor -%}
+        </div>
+    </body>
+</html>
