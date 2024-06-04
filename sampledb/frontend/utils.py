@@ -913,7 +913,11 @@ def get_search_query(
         else:
             return f'{attribute} == False'
     if data['_type'] == 'datetime':
-        return f'{attribute} == {data["utc_datetime"].split()[0]}'
+        utc_datetime = datetime.strptime(data["utc_datetime"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        local_timezone = pytz.timezone(current_user.timezone if hasattr(current_user, 'timezone') and current_user.timezone is not None else 'UTC')
+        local_datetime = utc_datetime.astimezone(local_timezone)
+        local_date = local_datetime.date()
+        return f'{attribute} == {local_date.year}-{local_date.month:02d}-{local_date.day:02d}'
     if data['_type'] == 'user':
         return f'{attribute} == #{data["user_id"]}'
     if data['_type'] in ('object_reference', 'sample', 'measurement'):

@@ -2,8 +2,10 @@
 '''
 
 '''
+import datetime
 
 import pytest
+import pytz
 
 from sampledb.logic import utils, errors
 from sampledb.models import Tag
@@ -304,3 +306,18 @@ def test_get_data_and_schema_by_id_path():
     }
     data_and_schema = utils.get_data_and_schema_by_id_path(data, schema, ['array', '0'], convert_id_path_elements=True)
     assert data_and_schema == (data['array'][0], schema['properties']['array']['items'])
+
+
+def test_get_postgres_timezone_alias():
+    for month in (1, 6):
+        reference_datetime = datetime.datetime(2024, month, 4, 12, 34, 56)
+        for timezone_name in pytz.all_timezones:
+            postgres_timezone_alias = utils.get_postgres_timezone_alias(timezone_name, reference_datetime.date())
+            if postgres_timezone_alias != timezone_name:
+                assert postgres_timezone_alias.startswith('UTC')
+                pytz_datetime = reference_datetime.replace(tzinfo=datetime.timezone.utc).astimezone(pytz.timezone(timezone_name))
+                postgres_datetime = db.session.execute(db.text(
+                    f"SELECT to_timestamp('2024-{month:02d}-4 12:34:56', 'YYYY-MM-DD HH24:MI:SS') AT TIME ZONE '{postgres_timezone_alias}';"
+                )).scalar()
+                assert postgres_datetime == pytz_datetime.replace(tzinfo=None)
+                assert postgres_datetime.strftime('%Y-%m-%d %H:%M:%S') == pytz_datetime.strftime('%Y-%m-%d %H:%M:%S')

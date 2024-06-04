@@ -2,6 +2,12 @@
 """
 
 """
+import dataclasses
+import datetime
+import inspect
+import typing
+
+import pytz
 import sqlalchemy
 import pytest
 
@@ -997,6 +1003,45 @@ def test_find_by_datetime_attribute_equal(user, action) -> None:
     assert len(objects) == 0
     assert len(search_notes) == 0
 
+def test_find_by_datetime_attribute_equal_with_timezones(user, action) -> None:
+    for day in (3, 4, 5):
+        for hour in range(24):
+            data = {
+                'name': {
+                    '_type': 'text',
+                    'text': 'Name'
+                },
+                'datetime_attr': {
+                    '_type': 'datetime',
+                    'utc_datetime': datetime.datetime(2024, 6, day, hour, 0, 0, 0, tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+                }
+            }
+            sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    @dataclasses.dataclass
+    class MockUser:
+        timezone: typing.Optional[str]
+
+    # mock current user to avoid being dependent on the request context
+    where_filters_module = inspect.getmodule(sampledb.logic.where_filters)
+    previous_current_user = where_filters_module.current_user
+
+    try:
+        for timezone_name in pytz.common_timezones:
+            timezone = pytz.timezone(timezone_name)
+            where_filters_module.current_user = MockUser(timezone=timezone_name)
+            filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('datetime_attr == 2024-06-04', use_advanced_search=True)
+            filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+            objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+            assert len(objects) == 24
+            assert len(search_notes) == 0
+            for object in objects:
+                utc_datetime = datetime.datetime.strptime(object.data['datetime_attr']['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=datetime.timezone.utc)
+                local_datetime = utc_datetime.astimezone(timezone)
+                local_date = local_datetime.date()
+                assert (local_date.year, local_date.month, local_date.day) == (2024, 6, 4)
+    finally:
+        where_filters_module.current_user = previous_current_user
 
 def test_find_by_datetime_on(user, action) -> None:
     data = {
