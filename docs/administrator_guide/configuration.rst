@@ -91,6 +91,8 @@ Customization
      - A file, http or https URL for a PNG or JPEG logo to be included in object export PDF documents
    * - SAMPLEDB_PDFEXPORT_LOGO_ALIGNMENT
      - The alignment (left, center or right) of the logo, if SAMPLEDB_PDFEXPORT_LOGO_URL is set (default: right)
+   * - SAMPLEDB_PDFEXPORT_LOGO_WIDTH
+     - The width of the logo in millimeters (default: 30). Large logos will overlap with the content of the object export, so make sure the size and alignment do not cause any issues.
    * - SAMPLEDB_HELP_URL
      - The URL to use for the help link
 
