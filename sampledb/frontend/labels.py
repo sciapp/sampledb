@@ -356,7 +356,8 @@ def create_labels(
         add_label_number: bool = False,
         add_maximum_label_number: bool = False,
         show_id_on_label: bool = True,
-        label_dimension: typing.Optional[dict[str, typing.Any]] = None
+        label_dimension: typing.Optional[dict[str, typing.Any]] = None,
+        custom_qr_code_texts: typing.Optional[typing.Dict[str, str]] = None
 ) -> bytes:
     object_specification = {
         object_id: {
@@ -386,7 +387,8 @@ def create_labels(
         add_label_number=add_label_number,
         add_maximum_label_number=add_maximum_label_number,
         show_id_on_label=show_id_on_label,
-        label_dimension=label_dimension
+        label_dimension=label_dimension,
+        custom_qr_code_texts=custom_qr_code_texts
     )
 
 
@@ -409,7 +411,8 @@ def create_multiple_labels(
         add_label_number: bool = False,
         add_maximum_label_number: bool = False,
         show_id_on_label: bool = True,
-        label_dimension: typing.Optional[dict[str, typing.Any]] = None
+        label_dimension: typing.Optional[dict[str, typing.Any]] = None,
+        custom_qr_code_texts: typing.Optional[typing.Dict[str, str]] = None
 ) -> bytes:
     page_size = PAGE_SIZES.get(paper_format, PAGE_SIZES[DEFAULT_PAPER_FORMAT])
     page_width, page_height = page_size
@@ -492,7 +495,16 @@ def create_multiple_labels(
         if ((label_counter % quantity) == 0 and (not fill_single_page or label_counter == 0)) or add_label_number or qr_code_uri is None:
             object_id = object_ids[min(int(label_counter / quantity), len(object_ids) - 1)]
             object_specification = object_specifications[object_id]
-            if create_only_qr_codes:
+            if custom_qr_code_texts and f"{object_id}_{label_counter + 1}" in custom_qr_code_texts and qr_code_width > 0:
+                # arbitrary limit of 1000 characters
+                qr_data = custom_qr_code_texts[f"{object_id}_{label_counter + 1}"][:1000]
+                qr = qrcode.QRCode(
+                    box_size=qr_code_width,
+                    border=0
+                )
+                qr.add_data(qr_data)
+                image = qr.make_image(fill_color="black", back_color="white")
+            elif create_only_qr_codes:
                 if only_id_qr_code:
                     if add_label_number:
                         qr_data = f"{object_id}_{label_counter + 1}_{quantity}"

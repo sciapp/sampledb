@@ -659,6 +659,16 @@ def print_object_label(object_id: int) -> FlaskResponseT:
     else:
         hazards = []
 
+    if 'custom-qr-code-texts-json' in flask.request.args:
+        try:
+            custom_qr_code_texts = json.loads(flask.request.args['custom-qr-code-texts-json'])
+        except ValueError:
+            return flask.abort(400)
+        if custom_qr_code_texts is not None and (not isinstance(custom_qr_code_texts, dict) or not all(isinstance(value, str) for value in custom_qr_code_texts.values())):
+            return flask.abort(400)
+    else:
+        custom_qr_code_texts = None
+
     pdf_data = create_labels(
         object_id=object_id,
         object_name=object_name,
@@ -682,7 +692,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         add_label_number=add_label_number,
         add_maximum_label_number=add_maximum_label_number,
         show_id_on_label=show_id_on_label,
-        label_dimension=label_dimension
+        label_dimension=label_dimension,
+        custom_qr_code_texts=custom_qr_code_texts
     )
     return flask.send_file(
         io.BytesIO(pdf_data),
