@@ -770,7 +770,7 @@ def fingerprinted_static(filename: str) -> str:
     file_extension = os.path.splitext(filename)[1]
     result = markupsafe.escape(url)
     # add integrity attribute for script files and stylesheets for SRI
-    if file_extension in ('.js', '.css') and fingerprint:
+    if file_extension in ('.js', '.css') and fingerprint and not flask.current_app.config['DEBUG']:
         result = result + markupsafe.Markup('" integrity="' + fingerprint)
     # add a nonce for script files for CSP
     if file_extension == '.js':

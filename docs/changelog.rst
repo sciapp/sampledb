@@ -16,6 +16,7 @@ Currently in development.
 - Allow configuring multiple workflow views
 - Add support for ``sorting_properties`` for workflow views
 - Added ``date`` and ``time`` styles for datetime values
+- Added ``expandable`` and ``collapsible`` object styles
 
 Version 0.27
 ------------

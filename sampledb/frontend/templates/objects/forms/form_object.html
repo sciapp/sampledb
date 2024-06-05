@@ -2,8 +2,14 @@
   {% set root_schema = schema %}
 {% endif %}
 {% set container_style = none %}
-<strong style="font-size:1.5em; margin-bottom: 0.25em; {% if property_path %}margin-left:4px;{% endif %} display:block;">{{ schema.title | get_translated_text }}</strong>
-<div style="{% if property_path %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em">
+{% set style = get_style_variant(schema.style, template_mode) %}
+<div style="font-size:1.5em; margin-bottom: 0.25em; {% if property_path %}margin-left:4px;{% endif %}">
+  {% if style in ("collapsible", "expandable") %}
+    <i class="fa fa-w {% if style == "collapsible" %}fa-minus-square-o{% else %}fa-plus-square-o{% endif %} collapse-expand-button" data-id-prefix="{{ id_prefix }}" style="font-size:0.8em;" data-toggle="tooltip" data-placement="top" title="{% if style == "collapsible" %}{{ _("Collapse") }}{% else %}{{ _("Expand") }}{% endif %}" data-collapse-text="{{ _("Collapse") }}" data-expand-text="{{ _("Expand") }}"></i>
+  {% endif %}
+  <strong>{{ schema.title | get_translated_text }}</strong>
+</div>
+<div style="{% if property_path %}border-left: 1px solid #dddddd; margin-left: 5px; padding-left: 5px;{% endif %} padding-top:1em; {% if style == "expandable" %}display:none;{% endif %}" class="collapsible-object-container" data-id-prefix="{{ id_prefix }}">
   {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
     <input type="hidden" name="{{ id_prefix }}_hidden" value="object" />
     {% for property_name in get_property_names_in_order(schema, previous_schema) %}

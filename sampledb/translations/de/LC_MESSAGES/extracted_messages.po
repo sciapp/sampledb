@@ -5487,6 +5487,12 @@ msgstr ""
 "Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
 "geben."
 
+msgid "Collapse"
+msgstr "Einklappen"
+
+msgid "Expand"
+msgstr "Ausklappen"
+
 msgid "Calculated Value:"
 msgstr "Berechneter Wert:"
 

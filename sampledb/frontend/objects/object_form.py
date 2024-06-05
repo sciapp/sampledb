@@ -52,6 +52,7 @@ def show_object_form(
         'ENGLISH': get_language(Language.ENGLISH),
         'get_component': get_component,
         'get_object_if_current_user_has_read_permissions': get_object_if_current_user_has_read_permissions,
+        'template_mode': 'form',
     }
 
     errors: typing.Dict[str, str] = {}
