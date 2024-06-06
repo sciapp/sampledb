@@ -779,6 +779,11 @@ msgstr ""
 "Dieses Einladungstoken wurde bereits verwendet. Bitte fragen Sie nach "
 "einer neuen Einladung."
 
+msgid "This invitation has been revoked. Please request a new invitation."
+msgstr ""
+"Diese Einladung wurde widerrufen. Bitte fragen Sie nach einer neuen "
+"Einladung."
+
 msgid ""
 "Invalid permissions in project group invitation token. Please request a "
 "new invitation."
@@ -794,6 +799,15 @@ msgstr ""
 
 msgid "You are already a member of this project group."
 msgstr "Sie sind bereits ein Mitglied dieser Projektgruppe."
+
+msgid "Unknown project group invitation."
+msgstr "Unbekannte Projektgruppen-Einladung."
+
+msgid "This project group invitation has already been accepted."
+msgstr "Diese Projektgruppen-Einladung wurde bereits akzeptiert."
+
+msgid "The invitation has been revoked."
+msgstr "Die Einladung wurde widerrufen."
 
 msgid "This project group does not exist."
 msgstr "Diese Projektgruppe existiert nicht."
@@ -1884,11 +1898,17 @@ msgstr ""
 msgid "accepted"
 msgstr "akzeptiert"
 
+msgid "revoked"
+msgstr "widerrufen"
+
 msgid "expired"
 msgstr "abgelaufen"
 
 msgid "pending"
 msgstr "ausstehend"
+
+msgid "Revoke Invitation"
+msgstr "Einladung widerrufen"
 
 msgid "Mobile File Upload"
 msgstr "Smartphone-Upload"
@@ -7044,6 +7064,12 @@ msgstr ""
 
 msgid "Unknown basic group invitation. Please request a new invitation."
 msgstr "Unbekannte Gruppen-Einladung. Bitte fragen Sie nach einer neuen Einladung."
+
+msgid "Unknown basic group invitation."
+msgstr "Unbekannte Gruppen-Einladung."
+
+msgid "This basic group invitation has already been accepted."
+msgstr "Diese Gruppen-Einladung wurde bereits akzeptiert."
 
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."

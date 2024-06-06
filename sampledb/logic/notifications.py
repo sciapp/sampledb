@@ -419,7 +419,8 @@ def create_notification_for_being_invited_to_a_group(
         group_id: int,
         inviter_id: int,
         confirmation_url: str,
-        expiration_utc_datetime: typing.Optional[datetime.datetime]
+        expiration_utc_datetime: typing.Optional[datetime.datetime],
+        invitation_id: int
 ) -> None:
     """
     Create a notification of type INVITED_TO_GROUP.
@@ -429,6 +430,7 @@ def create_notification_for_being_invited_to_a_group(
     :param inviter_id: the ID of who invited this user to the group
     :param confirmation_url: the confirmation URL
     :param expiration_utc_datetime: the datetime when the confirmation URL expires (optional)
+    :param invitation_id: the ID of an existing invitation
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         or assigner ID exists
     :raise errors.GroupDoesNotExistError: when no group with the given group
@@ -445,7 +447,8 @@ def create_notification_for_being_invited_to_a_group(
             'group_id': group_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
-            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None,
+            'invitation_id': invitation_id,
         }
     )
 
@@ -455,7 +458,8 @@ def create_notification_for_being_invited_to_a_project(
         project_id: int,
         inviter_id: int,
         confirmation_url: str,
-        expiration_utc_datetime: typing.Optional[datetime.datetime]
+        expiration_utc_datetime: typing.Optional[datetime.datetime],
+        invitation_id: int
 ) -> None:
     """
     Create a notification of type INVITED_TO_PROJECT.
@@ -465,6 +469,7 @@ def create_notification_for_being_invited_to_a_project(
     :param inviter_id: the ID of who invited this user to the project
     :param confirmation_url: the confirmation URL
     :param expiration_utc_datetime: the datetime when the confirmation URL expires (optional)
+    :param invitation_id: an ID of an existing invitation
     :raise errors.UserDoesNotExistError: when no user with the given user ID
         or assigner ID exists
     :raise errors.ProjectDoesNotExistError: when no project with the given project
@@ -481,7 +486,8 @@ def create_notification_for_being_invited_to_a_project(
             'project_id': project_id,
             'inviter_id': inviter_id,
             'confirmation_url': confirmation_url,
-            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None
+            'expiration_utc_datetime': expiration_utc_datetime.strftime('%Y-%m-%d %H:%M:%S') if expiration_utc_datetime is not None else None,
+            'invitation_id': invitation_id
         }
     )
 

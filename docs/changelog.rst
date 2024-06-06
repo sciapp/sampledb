@@ -16,6 +16,7 @@ Currently in development.
 - Added support for file references as display properties
 - Allow configuring multiple workflow views
 - Add support for ``sorting_properties`` for workflow views
+- Allow revoking group invitations
 - Added ``date`` and ``time`` styles for datetime values
 - Added ``expandable`` and ``collapsible`` object styles
 - Added support for additional preview images for files uploaded via HTTP API
