@@ -5,6 +5,7 @@ Script for setting up demo data in a previously unused SampleDB installation.
 Usage: sampledb set_up_demo
 """
 import datetime
+import io
 import json
 import os
 import string
@@ -12,6 +13,7 @@ import sys
 import random
 import typing
 
+from PIL import Image
 
 import sampledb
 from .. import create_app
@@ -1335,6 +1337,20 @@ This example shows how Markdown can be used for instrument Notes.
             user_id=basic_user.id,
             file_name='example.png',
             save_content=lambda f: typing.cast(None, f.write(ghs01_image))
+        )
+        preview_image = Image.open(io.BytesIO(ghs01_image), formats=['PNG'])
+        preview_image = preview_image.resize((10, 10), Image.LANCZOS).resize((100, 100), Image.NEAREST)
+        preview_image_file = io.BytesIO()
+        preview_image.save(preview_image_file, format='PNG')
+        preview_image_file.seek(0)
+        preview_image_binary_data = preview_image_file.read()
+        sampledb.logic.files.create_database_file(
+            object_id=file_object.id,
+            user_id=basic_user.id,
+            file_name='example.txt',
+            save_content=lambda f: typing.cast(None, f.write(b'Dies ist ein Test')),
+            preview_image_binary_data=preview_image_binary_data,
+            preview_image_mime_type='image/png'
         )
         sampledb.logic.objects.update_object(
             object_id=file_object.id,

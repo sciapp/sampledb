@@ -398,7 +398,7 @@
         {% for file in files %}
           {% if not file.is_hidden %}
             <tr id="file-{{ file.id }}">
-              <td style="white-space: nowrap;width: 1%;">{% if file | is_image %}
+              <td style="white-space: nowrap;width: 1%;">{% if file | has_preview_image %}
                 <img src="{{ url_for('.object_file', object_id=object_id, file_id=file.id) }}?preview" alt="{{ file.title }}" style="max-width:100px; max-height:100px;" class="show-fullscreen-image-preview"/>
                 <span class="fullscreen-image-preview">
                   <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
