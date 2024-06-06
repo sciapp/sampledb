@@ -25,7 +25,6 @@ from reportlab.lib.units import mm
 from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
 from .frontend.labels import PAGE_SIZE_KEYS, PAGE_SIZES
 
-
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'SQLALCHEMY_DATABASE_URI',
     'MAIL_SERVER',
