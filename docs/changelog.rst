@@ -10,6 +10,7 @@ Currently in development.
 - Added ``timeline`` array style for arrays of objects with a ``datetime`` property
 - Added search to text fields with more than 10 choices (configurable with ``SAMPLEDB_MIN_NUM_TEXT_CHOICES_FOR_SEARCH``)
 - Added support for ``"first"`` and ``"last"`` statistic for timeseries
+- Added badic and project groups to the HTTP API
 - Allow using dicts for the ``style`` attribute
 - Added support for ``"include"`` style for object reference properties
 - Allow referenced objects in search queries
