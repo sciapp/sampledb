@@ -1671,4 +1671,105 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, collapsible_object_action.id, name="Collapsible/Expandable Object Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(collapsible_object_action.id, sampledb.models.Permissions.READ)
 
+        horizontal_object_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "quantity_object": {
+                        "title": {
+                            "en": "Quantity Object"
+                        },
+                        "type": "object",
+                        "style": "horizontal",
+                        "properties": {
+                            "value": {
+                                "title": {
+                                    "en": "Value"
+                                },
+                                "type": "quantity",
+                                "units": "kg"
+                            },
+                            "uncertainty": {
+                                "title": {
+                                    "en": "Uncertainty"
+                                },
+                                "type": "quantity",
+                                "units": "kg"
+                            }
+                        },
+                        "required": [
+                            "value", "uncertainty"
+                        ],
+                        "propertyOrder": [
+                            "value", "uncertainty",
+                        ]
+                    },
+                    "large_object": {
+                        "title": {
+                            "en": "Large Object"
+                        },
+                        "type": "object",
+                        "style": "horizontal",
+                        "properties": {
+                            property_name: {
+                                "title": {
+                                    "en": f"Property {property_title}"
+                                },
+                                "type": "text",
+                                "languages": "all",
+                                "note": f"This is a note for property {property_title}"
+                            }
+                            for property_name, property_title in zip(string.ascii_lowercase, string.ascii_uppercase)
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "propertyOrder": [
+                    "name", "quantity_object", "large_object"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, horizontal_object_action.id, name="Horizontal Object Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(horizontal_object_action.id, sampledb.models.Permissions.READ)
+        sampledb.logic.objects.create_object(
+            action_id=horizontal_object_action.id,
+            data={
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "Horizontal Object Demo Object"}
+                },
+                "quantity_object": {
+                    "value": {
+                        "_type": "quantity",
+                        "units": "kg",
+                        "magnitude": 1
+                    },
+                    "uncertainty": {
+                        "_type": "quantity",
+                        "units": "kg",
+                        "magnitude": 0.2
+                    }
+                },
+                "large_object": {
+                    property_name: {
+                        "_type": "text",
+                        "text": {"en": "Value for " + property_name}
+                    }
+                    for property_name in string.ascii_lowercase
+                }
+            },
+            user_id=instrument_responsible_user.id
+        )
     print("Success: set up demo data", flush=True)

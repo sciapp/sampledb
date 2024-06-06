@@ -232,7 +232,7 @@ function updateMarkdownField (checkboxID, mdeAttribute, dataName, height) {
   });
   window.mdeFields[mdeAttribute] = [];
   if ($('#' + checkboxID).prop('checked')) {
-    $(`.form-group[data-name="${dataName}"] [data-language-id], .inline-edit-regular-property[data-name="${dataName}"] [data-language-id]`).each(function () {
+    $(`.form-group[data-name="${dataName}"] [data-language-id], .inline-edit-regular-property[data-name="${dataName}"] [data-language-id], .inline-edit-horizontal-property[data-name="${dataName}"] [data-language-id]`).each(function () {
       const textarea = $(this).find('textarea.form-control');
       if (textarea.length === 1) {
         window.mdeFields[mdeAttribute].push(initMarkdownField(textarea[0], height));

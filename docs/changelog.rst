@@ -19,6 +19,7 @@ Currently in development.
 - Added ``date`` and ``time`` styles for datetime values
 - Added ``expandable`` and ``collapsible`` object styles
 - Added support for additional preview images for files uploaded via HTTP API
+- Added ``expandable``, ``collapsible`` and ``horizontal`` object styles
 
 Version 0.27
 ------------

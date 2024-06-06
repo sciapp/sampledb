@@ -11,7 +11,7 @@ function updateSelectLanguage (selectpicker) {
   } else {
     enabledLanguages.push('en');
   }
-  const parentFormGroup = $(selectpicker).closest('.form-group, .inline-edit-regular-property');
+  const parentFormGroup = $(selectpicker).closest('.form-group, .inline-edit-regular-property, .inline-edit-horizontal-property');
   parentFormGroup.find('[data-sampledb-language-input-for]').each(function () {
     const langCode = $(this).data('sampledb-language-input-for');
     if (enabledLanguages.includes(langCode)) {
