@@ -8,9 +8,9 @@ import os
 import flask_sqlalchemy
 
 from .utils import table_has_column
-from .languages_add_date_format_moment_output import MIGRATION_INDEX as PREVIOUS_INDEX
+from .files_add_preview_image import MIGRATION_INDEX as PREVIOUS_MIGRATION_INDEX
 
-MIGRATION_INDEX = PREVIOUS_INDEX + 1
+MIGRATION_INDEX = PREVIOUS_MIGRATION_INDEX + 1
 MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
