@@ -2,12 +2,14 @@
 """
 
 """
+import datetime
 import functools
 import re
 import typing
 import sys
 
 import flask
+import pytz
 from flask_login import current_user
 
 from . import errors
@@ -400,3 +402,31 @@ def relative_url_for(
     elif url.startswith('/'):
         url = url[1:]
     return url
+
+
+@functools.cache
+def get_postgres_timezone_alias(timezone_name: str, reference_date: datetime.date) -> str:
+    current_utc_offset = pytz.timezone(timezone_name).utcoffset(datetime.datetime.now())
+    timezone_names_table = db.table(
+        'pg_timezone_names',
+        db.Column('name', db.String),
+        db.Column('utc_offset', db.Interval)
+    )
+    stmt = db.select(db.exists().where(db.and_(
+        timezone_names_table.columns.name == timezone_name,
+        timezone_names_table.columns.utc_offset == current_utc_offset
+    )))
+    if db.session.scalar(stmt):
+        return timezone_name
+    # create offset-based timezone as a fallback, if timezone data for postgres is out of date or incomplete
+    reference_datetime = datetime.datetime(reference_date.year, reference_date.month, reference_date.day)
+    naive_reference_datetime = reference_datetime.replace(tzinfo=None)
+    reference_utc_offset = pytz.timezone(timezone_name).utcoffset(naive_reference_datetime)
+    current_timezone = datetime.timezone(reference_utc_offset)
+    current_timezone_name = current_timezone.tzname(naive_reference_datetime)
+    # convert from ISO notation to POSIX notation
+    if '+' in current_timezone_name:
+        current_timezone_name = current_timezone_name.replace('+', '-')
+    elif '-' in current_timezone_name:
+        current_timezone_name = current_timezone_name.replace('-', '+')
+    return current_timezone_name
