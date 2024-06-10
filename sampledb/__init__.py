@@ -216,6 +216,11 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     signal.signal(signal.SIGTERM, signal_handler)
 
+    @app.route('/dashboard/telemetry/get_is_telemetry_answered')
+    def get_is_telemetry_answered() -> sampledb.utils.FlaskResponseT:
+        # disable broken Flask-MonitoringDashboard telemetry dialog
+        return flask.jsonify({'is_telemetry_answered': True})
+
     app.csp_reports = []  # type: ignore[attr-defined]
 
     @app.route('/csp-violation-report', methods=['POST'])
