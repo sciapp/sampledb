@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
-{% block template_values %}]
+{% block template_values %}
   {% do set_template_value("objects_allowed_to_select", objects_allowed_to_select) %}
   {% do set_template_value("translations.select_at_least_one_object", _('You have to select at least one object.')) %}
   {% do set_template_value("translations.you_do_not_have_write_permissions", _('You do not have write permissions for at least one object.')) %}
