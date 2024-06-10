@@ -4,12 +4,7 @@ Create the view user_object_permissions_by_all to speed up object requests
 with minimum permissions.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 7
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
