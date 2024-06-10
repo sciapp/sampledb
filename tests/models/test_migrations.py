@@ -1,7 +1,9 @@
 import os
+import sys
 
 import sampledb
 import sampledb.utils
+import sampledb.models.migrations
 
 
 def test_migrations():
@@ -32,3 +34,22 @@ def test_migrations():
     del engine
 
     sampledb.utils.migrations.run(sampledb.db)
+
+
+def test_all_migrations_listed():
+    migrations = sampledb.models.migrations.get_migrations()
+    migration_names = [
+        migration[1]
+        for migration in migrations
+    ]
+    migrations_dir = os.path.dirname(sampledb.models.migrations.__file__)
+    for migration_module_name in os.listdir(migrations_dir):
+        if not migration_module_name.endswith('.py'):
+            continue
+        if migration_module_name in ('__init__.py', 'utils.py'):
+            continue
+        assert os.path.splitext(migration_module_name)[0] in migration_names
+        with open(os.path.join(migrations_dir, migration_module_name), 'r', encoding='utf8') as migration_file:
+            migration_code = migration_file.read()
+        assert 'MIGRATION_INDEX' not in migration_code
+        assert 'MIGRATION_NAME' not in migration_code
