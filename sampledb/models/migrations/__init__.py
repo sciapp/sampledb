@@ -20,7 +20,7 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> None:
             # Perform migration
             if function(db):
                 print(f'Migration #{index} "{name}" applied.', file=sys.stderr)
-            else:
+            elif index > 0:
                 print(f'Migration #{index} "{name}" skipped.', file=sys.stderr)
 
             # Update migration index to skip this migration by index in the future
