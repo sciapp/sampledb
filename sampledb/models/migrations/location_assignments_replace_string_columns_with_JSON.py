@@ -3,12 +3,7 @@
 Replace string description column with JSON column in object_location_assignments table.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 57
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

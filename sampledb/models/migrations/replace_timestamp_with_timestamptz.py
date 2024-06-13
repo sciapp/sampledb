@@ -4,15 +4,9 @@ Replace columns of type TIMESTAMP WITHOUT TIME ZONE with columns of type
 TIMESTAMP WITH TIME ZONE, using UTC for the conversion.
 """
 
-import os
-
 import flask_sqlalchemy
 
-from .files_add_data_not_null_constraint import MIGRATION_INDEX as PREVIOUS_MIGRATION_INDEX
 from .utils import timestamp_add_timezone_utc_migration
-
-MIGRATION_INDEX = PREVIOUS_MIGRATION_INDEX + 1
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

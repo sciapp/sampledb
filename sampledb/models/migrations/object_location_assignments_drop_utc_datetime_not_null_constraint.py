@@ -3,12 +3,7 @@
 Remove NOT NULL constraints for utc_datetime column as intended by migration 85.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 131
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

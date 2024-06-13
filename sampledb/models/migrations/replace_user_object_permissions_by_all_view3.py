@@ -5,12 +5,7 @@ requires_anonymous_users column to allow filtering based on the
 ENABLE_ANONYMOUS_USERS configuration value.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 103
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

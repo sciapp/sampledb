@@ -3,12 +3,7 @@
 Replace NOT NULL constraints on name by NOT NULL constraint conditioned by federation reference in locations.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 83
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

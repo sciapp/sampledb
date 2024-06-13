@@ -3,14 +3,9 @@
 Add content_is_markdown column to instrument_log_entry_versions table.
 """
 
-import os
-
 import flask_sqlalchemy
 
 from .utils import table_has_column
-
-MIGRATION_INDEX = 46
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
