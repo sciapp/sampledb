@@ -4,7 +4,7 @@ Changelog
 Version 0.28
 ------------
 
-Currently in development.
+Released on June 13th, 2024.
 
 - Fixed search via API in combination with name_only parameter
 - Fixed search for datetime attributes not being timezone-aware
@@ -21,7 +21,6 @@ Currently in development.
 - Add support for ``sorting_properties`` for workflow views
 - Allow revoking group invitations
 - Added ``date`` and ``time`` styles for datetime values
-- Added ``expandable`` and ``collapsible`` object styles
 - Added support for additional preview images for files uploaded via HTTP API
 - Added ``expandable``, ``collapsible`` and ``horizontal`` object styles
 
