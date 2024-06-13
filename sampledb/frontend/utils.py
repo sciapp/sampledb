@@ -274,7 +274,11 @@ def custom_format_date(
     if isinstance(date, datetime):
         datetime_obj = date
     else:
-        datetime_obj = datetime.strptime(date, format)
+        if ' ' in date:
+            utc_datetime = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            datetime_obj = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
+        else:
+            datetime_obj = datetime.strptime(date, format)
     return format_date(datetime_obj)
 
 
