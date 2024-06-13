@@ -17,6 +17,9 @@
             @top-right {
                 content: element(header);
             }
+            @top-left {
+                content: element(footer);
+            }
 
             @bottom-center {
                 content: counter(page);
@@ -43,6 +46,30 @@
             font-size: 8pt;
             line-height: 1.2;
         }
+        {% if config.internal.PDFEXPORT_LOGO_URL %}
+          {% set logo_width = config.internal.PDFEXPORT_LOGO_WIDTH %}
+          {% set logo_height = logo_width / config.internal.PDFEXPORT_LOGO_ASPECT_RATIO %}
+          .logo {
+              position: fixed;
+              top: -10mm;
+          {% if config.PDFEXPORT_LOGO_ALIGNMENT == 'center' %}
+              left: 50%;
+              margin-left: -{{ logo_width / 2 }}mm;
+          {% elif config.PDFEXPORT_LOGO_ALIGNMENT == 'left' %}
+              left: -15mm;
+          {% else %}
+              right: -20mm;
+          {% endif %}
+              width: {{ logo_width }}mm;
+              height: {{ logo_height }}mm;
+              background-image: url({{ config.internal.PDFEXPORT_LOGO_URL }});
+              background-repeat: no-repeat;
+              background-size: {{ logo_width }}mm {{ logo_height }}mm;
+          }
+          header {
+            margin-bottom: -{{ 61 + 2 * logo_height }}mm;
+          }
+        {% endif %}
         article > ul {
             padding-left: 0;
             list-style-type: none;
@@ -92,9 +119,14 @@
     </style>
 </head>
 <body>
+  {% if config.internal.PDFEXPORT_LOGO_URL %}
+    <div class="logo"></div>
+  {% endif %}
 {% for object, action, activity_log_entries, location_entries, publications, comments, files, qrcode_url in objects %}
   <article>
-  <header style="background-image: url({{ qrcode_url }})">#{{ object.object_id }} {{ _('Exported&nbsp;on %(export_date)s', export_date=export_date | babel_format_date) }}</header>
+  <header style="background-image: url({{ qrcode_url }})">
+    #{{ object.object_id }} {{ _('Exported&nbsp;on %(export_date)s', export_date=export_date | babel_format_date) }}
+  </header>
   <h1>{{ get_object_type_name(action) }} #{{ object.object_id }}: {{ object.name | get_translated_text(metadata_language) }}</h1>
   <h2>{{ _('Information') }}</h2>
   {% with data = object.data %}

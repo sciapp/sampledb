@@ -4,15 +4,11 @@ Create default languages.
 """
 
 import json
-import os
 
 import flask_sqlalchemy
 
 from .utils import table_has_column
 from ..languages import Language
-
-MIGRATION_INDEX = 49
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
@@ -77,6 +73,17 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
         db.session.execute(db.text("""
             UPDATE languages
             SET datetime_format_moment_output = 'DD.MM.YYYY HH:mm:ss'
+            WHERE id = -98
+        """))
+    if table_has_column('languages', 'date_format_moment_output'):
+        db.session.execute(db.text("""
+            UPDATE languages
+            SET date_format_moment_output = 'MMM D, YYYY'
+            WHERE id = -99
+        """))
+        db.session.execute(db.text("""
+            UPDATE languages
+            SET date_format_moment_output = 'DD.MM.YYYY'
             WHERE id = -98
         """))
 

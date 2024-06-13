@@ -13,11 +13,8 @@
     <a id="plotly_info_link_{{ plot_id }}" data-hide-text="[{{ _('hide plot')}}]" data-show-text="[{{ _('show plot') }}]">[{{ _('show plot') }}]</a>
     <div id="plotly_plot_div_{{ plot_id }}" style="display: none"></div>
 
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      window.plotly_charts.push(['plotly_plot_div_{{ plot_id }}', {{ data.plotly|tojson|safe }}]);
-      document.getElementById('plotly_info_link_{{ plot_id }}').addEventListener('click', function() {
-        togglePlotlyChartDiv('{{ plot_id }}');
-      });
+    <script type="application/json" data-sampledb-plotly-chart="plotly_plot_div_{{ plot_id }}" data-sampledb-plotly-chart-toggle="plotly_info_link_{{ plot_id }}">
+      {{ data.plotly | tojson | safe }}
     </script>
   {% endif %}
   </div>

@@ -4,12 +4,7 @@ Replace the view user_object_permissions_by_all to use
 anonymous_user_object_permissions.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 101
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

@@ -30,6 +30,7 @@ class Language(Model):
     enabled_for_input: Mapped[bool] = db.Column(db.Boolean, nullable=False)
     enabled_for_user_interface: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default='FALSE')
     datetime_format_moment_output: Mapped[str] = db.Column(db.String, nullable=False, default='lll', server_default='lll')
+    date_format_moment_output: Mapped[str] = db.Column(db.String, nullable=False, default='ll', server_default='ll')
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Language"]]
@@ -41,6 +42,7 @@ class Language(Model):
             datetime_format_datetime: str,
             datetime_format_moment: str,
             datetime_format_moment_output: str,
+            date_format_moment_output: str,
             enabled_for_input: bool,
             enabled_for_user_interface: bool
     ) -> None:
@@ -50,6 +52,7 @@ class Language(Model):
             datetime_format_datetime=datetime_format_datetime,
             datetime_format_moment=datetime_format_moment,
             datetime_format_moment_output=datetime_format_moment_output,
+            date_format_moment_output=date_format_moment_output,
             enabled_for_input=enabled_for_input,
             enabled_for_user_interface=enabled_for_user_interface
         )
@@ -62,6 +65,7 @@ class Language(Model):
                 self.datetime_format_datetime == other.datetime_format_datetime and
                 self.datetime_format_moment == other.datetime_format_moment and
                 self.datetime_format_moment_output == other.datetime_format_moment_output and
+                self.date_format_moment_output == other.date_format_moment_output and
                 self.enabled_for_input == other.enabled_for_input and
                 self.enabled_for_user_interface == other.enabled_for_user_interface
             )

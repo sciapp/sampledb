@@ -15,11 +15,13 @@ import operator
 import json
 import typing
 
+import flask
 import sqlalchemy as db
+from flask_login import current_user
 
 from . import datatypes
 from . import languages
-from .utils import get_translated_text
+from .utils import get_translated_text, get_postgres_timezone_alias
 from ..models.files import File
 from ..models.file_log import FileLogEntry
 
@@ -94,9 +96,20 @@ def datetime_binary_operator(db_obj: typing.Any, other: typing.Union[datatypes.D
     if isinstance(other, datatypes.DateTime):
         other = other.utc_datetime
     other_date = other.date()
+
+    if flask.g.get('user') is not None and flask.g.user.timezone is not None:
+        current_timezone_name = flask.g.user.timezone
+    elif hasattr(current_user, 'timezone') and current_user.timezone is not None:
+        current_timezone_name = current_user.timezone
+    else:
+        current_timezone_name = 'UTC'
+    current_timezone_name = get_postgres_timezone_alias(current_timezone_name, other_date)
+    naive_datetime = db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD HH24:MI:SS')
+    local_timestamp = db.func.timezone(current_timezone_name, naive_datetime)
+    locale_date = db.func.date_trunc('day', local_timestamp)
     return db.and_(
         db_obj['_type'].astext == 'datetime',
-        operator(db.func.to_timestamp(db_obj['utc_datetime'].astext, 'YYYY-MM-DD'), other_date)
+        operator(locale_date, other_date)
     )
 
 

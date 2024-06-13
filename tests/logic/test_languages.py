@@ -21,6 +21,7 @@ def test_create_language():
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
         datetime_format_moment_output='lll',
+        date_format_moment_output='ll',
         enabled_for_input=True,
         enabled_for_user_interface=True
     )
@@ -47,6 +48,7 @@ def test_create_existing_language():
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
             datetime_format_moment_output='lll',
+            date_format_moment_output='ll',
             enabled_for_input=True,
             enabled_for_user_interface=True
         )
@@ -64,6 +66,7 @@ def test_create_language_with_unknown_name_translation():
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
             datetime_format_moment_output='lll',
+            date_format_moment_output='ll',
             enabled_for_input=True,
         enabled_for_user_interface=True
         )
@@ -79,6 +82,7 @@ def test_update_language():
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
         datetime_format_moment_output='lll',
+        date_format_moment_output='ll',
         enabled_for_input=True,
         enabled_for_user_interface=True
     )
@@ -93,6 +97,7 @@ def test_update_language():
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
         datetime_format_moment_output='lll',
+        date_format_moment_output='ll',
         enabled_for_input=False,
         enabled_for_user_interface=True
     )
@@ -121,6 +126,7 @@ def test_update_language_with_known_lang_code():
         datetime_format_datetime='%Y-%m-%d %H:%M:%S',
         datetime_format_moment='YYYY-MM-DD HH:mm:ss',
         datetime_format_moment_output='lll',
+        date_format_moment_output='ll',
         enabled_for_input=True,
         enabled_for_user_interface=True
     )
@@ -134,6 +140,7 @@ def test_update_language_with_known_lang_code():
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
             datetime_format_moment_output='lll',
+            date_format_moment_output='ll',
             enabled_for_input=False,
             enabled_for_user_interface=True
         )
@@ -152,6 +159,7 @@ def test_update_language_with_unknown_name_translation():
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
             datetime_format_moment_output='lll',
+            date_format_moment_output='ll',
             enabled_for_input=True,
             enabled_for_user_interface=True
         )
@@ -169,6 +177,7 @@ def test_update_language_with_locale_lang_code():
             datetime_format_datetime='%Y-%m-%d %H:%M:%S',
             datetime_format_moment='YYYY-MM-DD HH:mm:ss',
             datetime_format_moment_output='lll',
+            date_format_moment_output='ll',
             enabled_for_input=True,
             enabled_for_user_interface=True
         )
@@ -289,6 +298,7 @@ def test_get_language_codes():
             datetime_format_datetime='',
             datetime_format_moment='',
             datetime_format_moment_output='',
+            date_format_moment_output='',
             enabled_for_input=enabled_for_input,
             enabled_for_user_interface=enabled_for_user_interface
         )

@@ -1,0 +1,23 @@
+{% with %}
+  {% if schema.get('style') == 'include' and data and 'object_id' in data and 'component_uuid' not in data %}
+    {% if included_referenced_object_ids is not defined %}
+      {% set included_referenced_object_ids = [] %}
+    {% endif %}
+    {% if data.object_id not in included_referenced_object_ids %}
+      {% do included_referenced_object_ids.append(data.object_id) %}
+      {% set referenced_object = get_object_if_current_user_has_read_permissions(data.object_id) %}
+      {% if referenced_object and referenced_object.data %}
+        {% set object_id = referenced_object.object_id %}
+        {% set id_prefix_root = object_reference ~ "_" ~ referenced_object.object_id %}
+        {% set search_property_path_prefix = property_path[:-1] + ('*' + property_path[-1],) %}
+        {% set property_path = () %}
+        {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
+        {% set data = referenced_object.data %}
+        {% set schema = referenced_object.schema %}
+        {% set files = [] %}
+        {% set include_indent_level = indent_level + 1%}
+        {% include "objects/view/any.html" %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% endwith %}

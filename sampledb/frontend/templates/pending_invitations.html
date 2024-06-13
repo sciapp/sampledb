@@ -3,6 +3,19 @@
 {% for invitation in pending_invitations %}
   <li>
     {{ _('<a href="%(invitee_url)s">%(invitee_name)s (#%(invitee_id)s)</a> has been invited by <a href="%(inviter_url)s">%(inviter_name)s (#%(inviter_id)s)</a> on %(invitation_date)s.', invitee_url=url_for('.user_profile', user_id=invitation.user_id), invitee_name=get_user(invitation.user_id).name, invitee_id=invitation.user_id, inviter_url=url_for('.user_profile', user_id=invitation.inviter_id), inviter_name=get_user(invitation.inviter_id).name, inviter_id=invitation.inviter_id, invitation_date=invitation.utc_datetime | babel_format_datetime) }}
+    {% if invitation.accepted %}
+      <span class="label label-default">{{ _('accepted') }}</span>
+    {% elif invitation.revoked %}
+      <span class="label label-default">{{ _('revoked') }}</span>
+    {% elif (current_utc_datetime() - invitation.utc_datetime.replace(tzinfo=None)).total_seconds() >= config['INVITATION_TIME_LIMIT'] %}
+      <span class="label label-default">{{ _('expired') }}</span>
+    {% elif revoke_invitation_form %}
+      <form style="display: inline" method="post">
+        {{ revoke_invitation_form.hidden_tag() }}
+        <input type="hidden" name="{{ revoke_invitation_form.invitation_id.name }}" value="{{ invitation.id }}" />
+        <button class="btn btn-danger btn-xs" name="revoke_invitation" value="revoke_invitation">{{ _('Revoke Invitation') }}</button>
+      </form>
+    {% endif %}
   </li>
 {% endfor %}
 </ul>

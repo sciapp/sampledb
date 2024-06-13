@@ -46,6 +46,7 @@ class GroupInvitation(Model):
     inviter_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     accepted: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False)
+    revoked: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())  # TODO: migration
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["GroupInvitation"]]

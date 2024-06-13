@@ -25,7 +25,6 @@ from reportlab.lib.units import mm
 from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
 from .frontend.labels import PAGE_SIZE_KEYS, PAGE_SIZES
 
-
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'SQLALCHEMY_DATABASE_URI',
     'MAIL_SERVER',
@@ -69,6 +68,8 @@ def parse_configuration_values() -> None:
         'LDAP_CONNECT_TIMEOUT',
         'TEMPORARY_FILE_TIME_LIMIT',
         'SHARED_DEVICE_SIGN_OUT_MINUTES',
+        'MIN_NUM_TEXT_CHOICES_FOR_SEARCH',
+        'PDFEXPORT_LOGO_WIDTH',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -475,6 +476,7 @@ def check_config(
                 can_run = False
                 show_config_info = True
 
+    internal_config['PDFEXPORT_LOGO_WIDTH'] = min(200, max(0, config['PDFEXPORT_LOGO_WIDTH']))
     if config['PDFEXPORT_LOGO_URL'] is not None:
         logo_url = config['PDFEXPORT_LOGO_URL']
         logo_image = None
@@ -712,6 +714,7 @@ DOWNLOAD_SERVICE_TIME_LIMIT = 24 * 60 * 60
 # PDF export settings
 PDFEXPORT_LOGO_URL = None
 PDFEXPORT_LOGO_ALIGNMENT = 'right'
+PDFEXPORT_LOGO_WIDTH = 30
 
 # label settings
 LABEL_PAPER_FORMATS: list[dict[str, typing.Any]] = []
@@ -800,6 +803,8 @@ SHARED_DEVICE_SIGN_OUT_MINUTES = 30
 DISABLE_OUTDATED_USE_AS_TEMPLATE = False
 
 DISABLE_TOPICS = False
+
+MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

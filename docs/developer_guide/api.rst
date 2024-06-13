@@ -1737,6 +1737,208 @@ Reading the current user
     :>json string email: the user's email (only for API requests by administrators)
     :statuscode 200: no error
 
+Basic Groups
+------------
+
+Reading a list of all basic groups
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/groups/
+
+    Get a list of all basic groups.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/groups/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "group_id": 1,
+                "name": {
+                    "en": "Example Basic Group"
+                },
+                "description": {
+                    "en": "This is an example basic group."
+                },
+                "member_users": [
+                    {
+                        "user_id": 1,
+                        "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+                    }
+                ]
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading a basic group
+^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/groups/(int:group_id)
+
+    Get the specific basic group (`group_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/groups/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "group_id": 1,
+            "name": {
+                "en": "Example Basic Group"
+            },
+            "description": {
+                "en": "This is an example basic group."
+            },
+            "member_users": [
+                {
+                    "user_id": 1,
+                    "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+                }
+            ]
+        }
+
+    :>json number group_id: the basic group's ID
+    :>json object name: the basic group's name
+    :>json object description: the basic group's description
+    :>json array member_users: the basic group's member users
+    :statuscode 200: no error
+    :statuscode 404: the basic group does not exist
+
+Project Groups
+--------------
+
+Reading a list of all project groups
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/projects/
+
+    Get a list of all project groups.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/projects/ HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        [
+            {
+                "project_id": 1,
+                "name": {
+                    "en": "Example Project Group"
+                },
+                "description": {
+                    "en": "This is an example project group."
+                },
+                "member_users": [
+                    {
+                        "user_id": 1,
+                        "permissions": "grant",
+                        "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+                    }
+                ],
+                "member_groups": [
+                    {
+                        "group_id": 1,
+                        "permissions": "read",
+                        "href": "https://iffsamples.fz-juelich.de/api/v1/groups/1"
+                    }
+              ]
+            }
+        ]
+
+    :statuscode 200: no error
+
+
+Reading a project group
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. http:get:: /api/v1/projects/(int:project_id)
+
+    Get the specific project group (`project_id`).
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        GET /api/v1/projects/1 HTTP/1.1
+        Host: iffsamples.fz-juelich.de
+        Accept: application/json
+        Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "project_id": 1,
+            "name": {
+                "en": "Example Project Group"
+            },
+            "description": {
+                "en": "This is an example project group."
+            },
+            "member_users": [
+                {
+                    "user_id": 1,
+                    "permissions": "grant",
+                    "href": "https://iffsamples.fz-juelich.de/api/v1/users/1"
+                }
+            ],
+            "member_groups": [
+                {
+                    "group_id": 1,
+                    "permissions": "read",
+                    "href": "https://iffsamples.fz-juelich.de/api/v1/groups/1"
+                }
+            ]
+        }
+
+    :>json number project_id: the project group's ID
+    :>json object name: the project group's name
+    :>json object description: the project group's description
+    :>json array member_users: the project group's member users
+    :>json array member_groups: the project group's member basic groups
+    :statuscode 200: no error
+    :statuscode 404: the project group does not exist
 
 Locations
 ---------
@@ -2045,11 +2247,13 @@ Reading information for a file
 
     :>json number object_id: the object's ID
     :>json number file_id: the file's ID
-    :>json string storage: how the file is stored (local, database or url)
+    :>json string storage: how the file is stored (database, url, local_reference or federation)
     :>json string url: the URL of the file (for url storage)
-    :>json string original_file_name: the original name of the file (for local or database storage)
-    :>json string base64_content: the base64 encoded content of the file (for local or database storage)
-    :>json object hash: hash algorithm and hexdigest of the content (optional, for local, database or local_reference storage)
+    :>json string original_file_name: the original name of the file (for database storage)
+    :>json string base64_content: the base64 encoded content of the file (for database storage)
+    :>json object hash: hash algorithm and hexdigest of the content (optional, for database or local_reference storage)
+    :>json string base64_preview_image: the base64 encoded content of the file's preview image (optional, for database storage)
+    :>json string preview_image_mime_type: the mime type of the file's preview image (optional, for database storage)
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this object
     :statuscode 404: the object or the file does not exist
@@ -2093,6 +2297,8 @@ Uploading a file
     :<json string original_file_name: the original name of the file
     :<json string base64_content: the base64 encoded content of the file
     :<json object hash: hash algorithm and hexdigest of the content (optional)
+    :<json string base64_preview_image: a base64 encoded preview image (optional)
+    :<json string preview_image_mime_type: the MIME type of the preview image (optional)
     :statuscode 201: the file has been created successfully
     :statuscode 403: the user does not have WRITE permissions for this object
     :statuscode 404: the object does not exist

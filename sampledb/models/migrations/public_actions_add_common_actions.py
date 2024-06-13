@@ -5,12 +5,7 @@ Add entries to the public_actions table for all actions without a user_id.
 Previously, these actions were implicitly public.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 47
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

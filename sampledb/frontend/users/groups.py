@@ -12,6 +12,7 @@ from flask_babel import _
 from .. import frontend
 from ... import logic
 from .forms import InviteUserForm, EditGroupForm, LeaveGroupForm, CreateGroupForm, DeleteGroupForm, RemoveGroupMemberForm
+from ..users_forms import RevokeInvitationForm
 from ...logic.security_tokens import verify_token
 from ...logic.languages import get_languages, Language, get_language_by_lang_code, get_language
 from ..utils import check_current_user_is_not_readonly
@@ -149,6 +150,9 @@ def group(group_id: int) -> FlaskResponseT:
             if group_invitation.accepted:
                 flask.flash(_('This invitation token has already been used. Please request a new invitation.'), 'error')
                 return flask.abort(403)
+            if group_invitation.revoked:
+                flask.flash(_('This invitation has been revoked. Please request a new invitation.'), 'error')
+                return flask.abort(403)
         if token_data.get('group_id', None) != group_id:
             return flask.abort(403)
         user_id = token_data.get('user_id', None)
@@ -183,6 +187,7 @@ def group(group_id: int) -> FlaskResponseT:
     user_is_member = user_is_member or flask_login.current_user.has_admin_permissions
     group = logic.groups.get_group(group_id)
     show_edit_form = False
+    revoke_invitation_form = None
 
     english = get_language(Language.ENGLISH)
     allowed_language_ids = [
@@ -197,13 +202,27 @@ def group(group_id: int) -> FlaskResponseT:
         description: str
 
     translations: typing.List[GroupTranslation] = []
-    if user_is_member:
+    if user_is_member or flask_login.current_user.has_admin_permissions:
         show_objects_link = True
         if user_can_leave:
             leave_group_form = LeaveGroupForm()
         else:
             leave_group_form = None
         invite_user_form = InviteUserForm()
+        revoke_invitation_form = RevokeInvitationForm()
+        if 'revoke_invitation' in flask.request.form and revoke_invitation_form.validate_on_submit():
+            invitation_id = revoke_invitation_form.invitation_id.data
+            try:
+                invitation = logic.groups.get_group_invitation(invitation_id)
+            except logic.errors.GroupInvitationDoesNotExistError:
+                flask.flash(_('Unknown basic group invitation.'), 'error')
+                return flask.redirect(flask.url_for('.group', group_id=group_id))
+            if invitation.accepted:
+                flask.flash(_('This basic group invitation has already been accepted.'), 'error')
+            else:
+                logic.groups.revoke_group_invitation(invitation_id)
+                flask.flash(_('The invitation has been revoked.'), 'success')
+            return flask.redirect(flask.url_for('.group', group_id=group_id))
         edit_group_form = EditGroupForm()
         group_categories = list(logic.group_categories.get_group_categories())
         group_categories.sort(key=lambda category: get_translated_text(category.name).lower())
@@ -381,7 +400,8 @@ def group(group_id: int) -> FlaskResponseT:
         group_invitations = logic.groups.get_group_invitations(
             group_id=group_id,
             include_accepted_invitations=show_invitation_log,
-            include_expired_invitations=show_invitation_log
+            include_expired_invitations=show_invitation_log,
+            include_revoked_invitations=show_invitation_log
         )
 
     if english.id not in description_language_ids:
@@ -411,5 +431,6 @@ def group(group_id: int) -> FlaskResponseT:
         remove_group_member_form=remove_group_member_form,
         edit_group_form=edit_group_form,
         invite_user_form=invite_user_form,
-        show_edit_form=show_edit_form
+        show_edit_form=show_edit_form,
+        revoke_invitation_form=revoke_invitation_form
     )

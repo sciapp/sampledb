@@ -1,0 +1,12 @@
+<div style="padding-right:0.75em">
+  {% block property_label %}
+    {% set indent_level = -2 %}
+    {% set property_label_class = "" %}
+    {% include "objects/property_label.html" %}
+  {% endblock %}
+  {% block property_field %}
+  {% endblock %}
+  {% if data and data.export_edit_note %}
+    <p class="text-muted"><i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('Note:') }} {{ data.export_edit_note }}</p>
+  {% endif %}
+</div>

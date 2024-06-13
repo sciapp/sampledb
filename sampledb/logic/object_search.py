@@ -1242,11 +1242,51 @@ def transform_literal_to_query(
                 if i > 0:
                     jsonb_selector += " -> "
                 jsonb_selector += attribute
-            array_items = select(db.text(f'value FROM jsonb_array_elements_text((data -> {jsonb_selector})::jsonb)'))
+            data_name = str(data).split('.', maxsplit=1)[-1]  # "data" or "data_full", depending on the column name used
+            array_items = select(db.text(f'value FROM jsonb_array_elements_text(({data_name} -> {jsonb_selector})::jsonb)'))
             db_obj = db.literal_column('value').cast(postgresql.JSONB)
             for attribute in attributes[array_placeholder_index + 1:]:
                 db_obj = db_obj[attribute]
-            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text(f'jsonb_typeof(data -> {jsonb_selector}) = \'array\''), filter)).exists()
+            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: array_items.filter(db.and_(db.text(f'jsonb_typeof({data_name} -> {jsonb_selector}) = \'array\''), filter)).exists()
+        reference_attribute_indices = [
+            index
+            for index, attribute in enumerate(attributes)
+            if attribute.startswith('*')
+        ]
+        if len(reference_attribute_indices) == 1:
+            reference_placeholder_index = reference_attribute_indices[0]
+            # no danger of SQL injection as attributes may only consist of
+            # characters and underscores at this point
+            jsonb_selector = ''
+            for i, attribute in enumerate(attributes[:reference_placeholder_index + 1]):
+                if i == reference_placeholder_index:
+                    attribute = attribute[1:]
+                if isinstance(attribute, int):
+                    attribute = str(attribute)
+                else:
+                    attribute = "'" + attribute + "'"
+                if i > 0:
+                    jsonb_selector += " -> "
+                jsonb_selector += attribute
+            data_name = str(data).split('.', maxsplit=1)[-1]  # "data" or "data_full", depending on the column name used
+            referenced_object_table = select(db.text('referenced_object.object_id, referenced_object.value FROM (SELECT object_id, data AS value FROM objects_current) AS referenced_object'))
+            object_id_column = db.literal_column('referenced_object.object_id')
+            db_obj = db.literal_column('referenced_object.value').cast(postgresql.JSONB)
+            for attribute in attributes[reference_placeholder_index + 1:]:
+                db_obj = db_obj[attribute]
+            return Attribute(literal.input_text, literal.start_position, db_obj), lambda filter: referenced_object_table.filter(
+                db.and_(
+                    db.and_(
+                        db.or_(
+                            db.text(f'({data_name} -> {jsonb_selector} ->> \'_type\') = \'object_reference\'::text'),
+                            db.text(f'({data_name} -> {jsonb_selector} ->> \'_type\') = \'measurement\'::text'),
+                            db.text(f'({data_name} -> {jsonb_selector} ->> \'_type\') = \'sample\'::text'),
+                        ),
+                        db.text(f'({data_name} -> {jsonb_selector} ->> \'object_id\')::integer') == object_id_column
+                    ),
+                    filter
+                )
+            ).exists()
         return Attribute(literal.input_text, literal.start_position, data[attributes]), None
 
     if isinstance(literal, object_search_parser.Null):

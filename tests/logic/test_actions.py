@@ -2,6 +2,8 @@
 """
 
 """
+import itertools
+import uuid
 
 import pytest
 import sampledb
@@ -400,3 +402,73 @@ def test_get_action_owner_id():
     assert actions.get_action_owner_id(action2.id) == user.id
     with pytest.raises(errors.ActionDoesNotExistError):
         actions.get_action_owner_id(action2.id + 1)
+
+
+def test_sort_actions_for_user():
+    component = sampledb.logic.components.add_component(
+        uuid=str(uuid.uuid4())
+    )
+    test_user = sampledb.logic.users.create_user(
+        name="User",
+        email="example@example.com",
+        type=sampledb.models.UserType.PERSON
+    )
+    action_list = []
+    fed_id_iter = itertools.count(start=1)
+    for is_favorite, has_fed_id, user_name, instrument_name, action_name  in itertools.product(
+        [True, False],
+        [False, True],
+        [None, 'User A', 'User B'],
+        [None, 'Instrument A', 'Instrument B'],
+        ['Action A', 'Action B']
+    ):
+        if instrument_name:
+            instrument = sampledb.logic.instruments.create_instrument()
+            sampledb.logic.instrument_translations.set_instrument_translation(
+                language_id=sampledb.logic.languages.Language.ENGLISH,
+                instrument_id=instrument.id,
+                name=instrument_name,
+                description=''
+            )
+        else:
+            instrument = None
+        if user_name:
+            user = sampledb.logic.users.create_user(
+                name=user_name,
+                email="example@example.com",
+                type=sampledb.models.UserType.PERSON
+            )
+        else:
+            user = None
+        if has_fed_id:
+            fed_id = next(fed_id_iter)
+        else:
+            fed_id = None
+        action = actions.create_action(
+            action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+            schema=SCHEMA,
+            user_id=user.id if user is not None else None,
+            fed_id=fed_id,
+            component_id=component.id if fed_id is not None else None,
+            instrument_id=instrument.id if instrument is not None else None
+        )
+        sampledb.logic.action_translations.set_action_translation(
+            language_id=sampledb.logic.languages.Language.ENGLISH,
+            action_id=action.id,
+            name=action_name
+        )
+        if is_favorite:
+            sampledb.logic.favorites.add_favorite_action(
+                action_id=action.id,
+                user_id=test_user.id
+            )
+        sampledb.logic.action_permissions.set_user_action_permissions(
+            action_id=action.id,
+            user_id=test_user.id,
+            permissions=sampledb.models.Permissions.READ
+        )
+        action_list.append(sampledb.logic.actions.get_action(action.id))
+    assert sampledb.logic.actions.sort_actions_for_user(action_list, test_user.id) == action_list
+    assert sampledb.logic.actions.sort_actions_for_user(action_list[::-1], test_user.id) == action_list
+    assert sampledb.logic.actions.sort_actions_for_user(action_list, test_user.id, sort_by_favorite=False) == list(sum(zip(action_list[:len(action_list) // 2], action_list[len(action_list) // 2:]), ()))
+    assert sampledb.logic.actions.sort_actions_for_user(action_list[::-1], test_user.id, sort_by_favorite=False) == list(sum(zip(action_list[len(action_list) // 2:], action_list[:len(action_list) // 2]), ()))

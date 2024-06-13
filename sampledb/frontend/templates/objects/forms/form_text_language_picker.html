@@ -1,6 +1,6 @@
 {% if 'choices' not in schema %}
   {% if input_languages | length > 1 %}
-    <div class="row col-md-offset-4">
+    <div class="row {% if container_style != 'horizontal' %}col-md-offset-4{% endif %}">
       <select {% if is_template %} class="template-select" data-template-class="selectpicker col-md-12 select-language" {% else %} class="selectpicker col-md-12 select-language" {% endif %} multiple="multiple" style="padding-bottom: 5px;"  data-style="btn-default btn-xs" name="{{ id_prefix }}_text_languages">
         {% for language in input_languages %}
           <option value="{{ language.lang_code }}"

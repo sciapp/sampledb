@@ -16,6 +16,8 @@ from .locations import Location, Locations, ObjectLocationAssignment, ObjectLoca
 from .object_log import ObjectLogEntries
 from .object_permissions import UsersObjectPermissions, UserObjectPermissions, GroupsObjectPermissions, GroupObjectPermissions, ProjectsObjectPermissions, ProjectObjectPermissions, PublicObjectPermissions, AuthenticatedUserObjectPermissions, AnonymousUserObjectPermissions
 from .users import CurrentUser, User, Users
+from .groups import Group, Groups
+from .projects import Project, Projects
 
 api = Blueprint('api', __name__)
 api.add_url_rule('/api/v1/objects/', endpoint='objects', view_func=Objects.as_view('objects'))
@@ -60,4 +62,8 @@ api.add_url_rule('/api/v1/objects/<int:object_id>/permissions/anonymous_users', 
 api.add_url_rule('/api/v1/users/', endpoint='users', view_func=Users.as_view('users'))
 api.add_url_rule('/api/v1/users/<int:user_id>', endpoint='user', view_func=User.as_view('user'))
 api.add_url_rule('/api/v1/users/me', endpoint='current_user', view_func=CurrentUser.as_view('current_user'))
+api.add_url_rule('/api/v1/groups/', endpoint='groups', view_func=Groups.as_view('groups'))
+api.add_url_rule('/api/v1/groups/<int:group_id>', endpoint='group', view_func=Group.as_view('group'))
+api.add_url_rule('/api/v1/projects/', endpoint='projects', view_func=Projects.as_view('projects'))
+api.add_url_rule('/api/v1/projects/<int:project_id>', endpoint='project', view_func=Project.as_view('project'))
 api.add_url_rule('/api/v1/object_log_entries/', endpoint='object_log_entries', view_func=ObjectLogEntries.as_view('object_log_entry'))

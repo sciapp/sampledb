@@ -5,8 +5,8 @@ Logic for users' favorite actions and instruments.
 
 from typing import List
 
+from . import actions
 from .users import get_user
-from .actions import get_action
 from .instruments import get_instrument
 from ..models import FavoriteAction, FavoriteInstrument
 from .. import db
@@ -22,7 +22,7 @@ def add_favorite_action(action_id: int, user_id: int) -> None:
     :raises ActionDoesNotExistError: if the user does not exist
     """
     user = get_user(user_id)
-    action = get_action(action_id)
+    action = actions.get_action(action_id)
     db.session.add(FavoriteAction(action_id=action.id, user_id=user.id))
     db.session.commit()
 
@@ -39,7 +39,7 @@ def remove_favorite_action(action_id: int, user_id: int) -> None:
     :raises ActionDoesNotExistError: if the user does not exist
     """
     user = get_user(user_id)
-    action = get_action(action_id)
+    action = actions.get_action(action_id)
     favorite_action = FavoriteAction.query.filter_by(action_id=action.id, user_id=user.id).first()
     if favorite_action is not None:
         db.session.delete(favorite_action)

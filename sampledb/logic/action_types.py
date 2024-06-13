@@ -35,7 +35,7 @@ class ActionType:
     disable_create_objects: bool
     is_template: bool
     order_index: typing.Optional[int]
-    usable_in_action_types: typing.List['ActionType']
+    usable_in_action_types: typing.List['ActionType'] = dataclasses.field(compare=False)
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
     component: typing.Optional[components.Component] = None

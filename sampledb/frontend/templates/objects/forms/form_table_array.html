@@ -78,13 +78,11 @@
                 {% endif %}
               </td>
             {% endfor %}
-            {% if 'recipes' in schema %}
-              <td colspan="{{ item_property_names | length }}">
-                {% include "objects/forms/form_table_recipe.html" %}
-              </td>
-            {% endif %}
             <td>
               <div style="display: flex; justify-content: flex-end;">
+                {% if 'recipes' in schema %}
+                  {% include "objects/forms/form_table_recipe.html" %}
+                {% endif %}
                 <button type="button" id="action_{{ id_prefix }}_copy" class="btn btn-success form-copy-button" data-object-form-button="table_array_copy"><i class="fa fa-clone fa-fw"></i></button>
                 <button type="button" id="action_{{ id_prefix }}_delete" class="btn btn-danger form-delete-button" data-object-form-button="table_array_delete" data-element-id="{{ property_path[-1] }}"><i class="fa fa-times fa-fw"></i></button>
               </div>

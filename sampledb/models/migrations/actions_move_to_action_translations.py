@@ -3,15 +3,10 @@
 Splits actions into action and action_translations
 """
 
-import os
-
 import flask_sqlalchemy
 
 from .utils import table_has_column
 from ..languages import Language
-
-MIGRATION_INDEX = 50
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

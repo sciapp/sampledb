@@ -8,14 +8,12 @@ import typing
 import flask
 
 from . import actions
-from . import favorites
 from . import users
 from .permissions import ResourcePermissions
 from .actions import Action
 from ..models import Permissions, UserActionPermissions, GroupActionPermissions, ProjectActionPermissions, AllUserActionPermissions
 from ..models.instruments import instrument_user_association_table
 from .. import db, models
-from .utils import get_translated_text
 
 __author__ = 'Florian Rhiem <f.rhiem@fz-juelich.de>'
 
@@ -236,12 +234,4 @@ def get_sorted_actions_for_user(
         if Permissions.READ in permissions[action.id]:
             visible_actions.append(action)
             action_permissions[action.id] = permissions[action.id]
-    user_favorite_action_ids = favorites.get_user_favorite_action_ids(user_id)
-    visible_actions.sort(key=lambda action: (
-        0 if action.id in user_favorite_action_ids else 1,
-        0 if action.fed_id is None else 1,
-        action.user.name.lower() if action.user and action.user.name is not None else '',
-        get_translated_text(action.instrument.name).lower() if action.instrument else '',
-        get_translated_text(action.name).lower()
-    ))
-    return visible_actions
+    return actions.sort_actions_for_user(actions=visible_actions, user_id=user_id)

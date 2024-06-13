@@ -325,6 +325,269 @@ def test_eln_export(user, app):
             json.load(data_file)
 
 
+def test_eln_export_property_values(user, app):
+    sample_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.actions.ActionType.SAMPLE_CREATION,
+        schema={
+            "type": "object",
+            "title": {"en": "Object Information"},
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": {"en": "Name"}
+                }
+            },
+            "required": ["name"]
+        }
+    )
+    referenced_object_id1 = sampledb.logic.objects.create_object(
+        action_id=sample_action.id,
+        data={
+            "name": {
+                "_type": "text",
+                "text": {"en": "Referenced Object 1"},
+            }
+        },
+        user_id=user.id
+    ).id
+    referenced_object_id2 = sampledb.logic.objects.create_object(
+        action_id=sample_action.id,
+        data={
+            "name": {
+                "_type": "text",
+                "text": {"en": "Referenced Object 2"},
+            }
+        },
+        user_id=user.id
+    ).id
+    measurement_action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.logic.actions.ActionType.MEASUREMENT,
+        schema={
+            "type": "object",
+            "title": {"en": "Object Information"},
+            "properties": {
+                "name": {
+                    "type": "text",
+                    "title": {"en": "Name"}
+                },
+                "check": {
+                    "type": "bool",
+                    "title": {"en": "Checkbox"}
+                },
+                "creation_date": {
+                    "type": "datetime",
+                    "title": {"en": "Creation Date"}
+                },
+                "temperature": {
+                    "type": "quantity",
+                    "title": {"en": "Temperature"},
+                    "units": "degC"
+                },
+                "samples": {
+                    "type": "array",
+                    "title": {"en": "Samples"},
+                    "items": {
+                        "type": "sample",
+                        "title": {"en": "Sample"},
+                    }
+                },
+                "operator": {
+                    "type": "user",
+                    "title": {"en": "Operator"}
+                },
+                "setup_file": {
+                    "type": "file",
+                    "title": {"en": "Setup File"}
+                },
+                "log_file": {
+                    "type": "file",
+                    "title": {"en": "Log File"}
+                },
+                "hazards": {
+                    "type": "hazards",
+                    "title": {"en": "GHS Hazards"}
+                }
+            },
+            "required": ["name", "hazards"]
+        }
+    )
+    object_id = sampledb.logic.objects.create_object(
+        action_id=measurement_action.id,
+        data={
+            "name": {
+                "_type": "text",
+                "text": {"en": "Test Object"},
+            },
+            "check": {
+                "_type": "bool",
+                "value": True
+            },
+            "creation_date": {
+                "_type": "datetime",
+                "utc_datetime": "2024-01-02 03:04:05"
+            },
+            "temperature": {
+                "_type": "quantity",
+                "units": "degC",
+                "magnitude": 20
+            },
+            "samples": [
+                {
+                    "_type": "sample",
+                    "object_id": referenced_object_id1
+                },
+                {
+                    "_type": "sample",
+                    "object_id": referenced_object_id2
+                }
+            ],
+            "operator": {
+                "_type": "user",
+                "user_id": user.id
+            },
+            "hazards": {
+                "_type": "hazards",
+                "hazards": [1, 6]
+            }
+        },
+        user_id=user.id
+    ).id
+    setup_file_id = sampledb.logic.files.create_database_file(
+        object_id=object_id,
+        user_id=user.id,
+        file_name="setup.cfg",
+        save_content=lambda f: f.write(b"Setup")
+    ).id
+    log_file_id = sampledb.logic.files.create_database_file(
+        object_id=object_id,
+        user_id=user.id,
+        file_name="log.txt",
+        save_content=lambda f: f.write(b"Log")
+    ).id
+    sampledb.logic.objects.update_object(
+        object_id=object_id,
+        data={
+            "setup_file": {
+                "_type": "file",
+                "file_id": setup_file_id
+            },
+            "log_file": {
+                "_type": "file",
+                "file_id": log_file_id
+            },
+            **sampledb.logic.objects.get_object(object_id).data
+        },
+        user_id=user.id
+    )
+    sampledb.logic.files.hide_file(
+        object_id=object_id,
+        file_id=log_file_id,
+        user_id=user.id,
+        reason='Test'
+    )
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = 'localhost'
+    with app.app_context():
+        zip_bytes = export.get_eln_archive(user.id, object_ids=[
+            object_id,
+            referenced_object_id1
+        ])
+    app.config['SERVER_NAME'] = server_name
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
+        assert zip_file.testzip() is None
+        with zip_file.open('sampledb_export/ro-crate-metadata.json') as data_file:
+            ro_crate_metadata = json.load(data_file)
+        nodes_by_id = {
+            node['@id']: node
+            for node in ro_crate_metadata['@graph']
+        }
+        assert set(nodes_by_id.keys()) == {
+            'ro-crate-metadata.json',
+            './',
+            'SampleDB',
+            f'./objects/{object_id}',
+            f'./objects/{object_id}/version/0',
+            f'./objects/{object_id}/version/0/schema.json',
+            f'./objects/{object_id}/version/0/data.json',
+            f'./objects/{object_id}/version/1',
+            f'./objects/{object_id}/version/1/schema.json',
+            f'./objects/{object_id}/version/1/data.json',
+            f'./objects/{object_id}/files.json',
+            f'./objects/{object_id}/files/0/setup.cfg',
+            f'./objects/{referenced_object_id1}',
+            f'./objects/{referenced_object_id1}/version/0',
+            f'./objects/{referenced_object_id1}/version/0/schema.json',
+            f'./objects/{referenced_object_id1}/version/0/data.json',
+            f'./objects/{referenced_object_id1}/files.json',
+            f'./users/{user.id}'
+        }
+        object_node = nodes_by_id[f'./objects/{object_id}/version/1']
+        assert sorted(object_node['variableMeasured'], key=lambda p: p['propertyID']) == sorted([
+            {
+                "@type": "PropertyValue",
+                "propertyID": "name",
+                "name": "Name",
+                "value": "Test Object"
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "check",
+                "name": "Checkbox",
+                "value": True
+            },
+            {
+                "@type": "PropertyValue",
+                "name": "Creation Date",
+                "propertyID": "creation_date",
+                "value": "2024-01-02T03:04:05.000000",
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "temperature",
+                "name": "Temperature",
+                "value": 20.0,
+                "unitText": "degC",
+                "unitCode": "CEL"
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "samples/0",
+                "name": "Samples → 0",
+                "value": f"./objects/{referenced_object_id1}",
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "samples/1",
+                "name": "Samples → 1",
+                "value": f"http://localhost/objects/{referenced_object_id2}",
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "operator",
+                "name": "Operator",
+                "value": f"./users/{user.id}",
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "setup_file",
+                "name": "Setup File",
+                "value": f"./objects/{object_id}/files/{setup_file_id}/setup.cfg",
+            },
+            {
+                "@type": "PropertyValue",
+                "propertyID": "log_file",
+                "name": "Log File",
+                "value": f"http://localhost/objects/{object_id}/files/{log_file_id}",
+            },
+            {
+                "@type": "PropertyValue",
+                "name": "GHS Hazards",
+                "propertyID": "hazards",
+                "value": "Explosive, Toxic"
+            }
+        ], key=lambda p: p['propertyID'])
+
+
 def test_export_template_schema(user, app):
     template_action = sampledb.logic.actions.create_action(
         action_type_id=sampledb.logic.action_types.ActionType.TEMPLATE,

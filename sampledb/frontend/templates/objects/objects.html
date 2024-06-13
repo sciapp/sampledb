@@ -7,6 +7,49 @@
   <link rel="stylesheet" href="{{ fingerprinted_static('bootstrap-select/css/bootstrap-select.min.css') }}" />
 {% endblock %}
 
+{% block template_values %}
+  {% do set_template_value("objects_allowed_to_select", objects_allowed_to_select) %}
+  {% do set_template_value("translations.select_at_least_one_object", _('You have to select at least one object.')) %}
+  {% do set_template_value("translations.you_do_not_have_write_permissions", _('You do not have write permissions for at least one object.')) %}
+  {% if edit_location %}
+    {% do set_template_value("translations.you_have_to_select_a_location_or_responsible_user", _('You have to select a location or a responsible user.')) %}
+    {% do set_template_value("translations.you_have_unallowed_values_in_red_marked_fields", _('You have unallowed values in the red marked fields.')) %}
+  {% endif %}
+  {% if edit_permissions %}
+    {% do set_template_value("current_permissions_special_groups", current_permissions_special_groups) %}
+    {% do set_template_value("current_permissions_normal_entities", current_permissions_normal_entities) %}
+    {% do set_template_value("translations.you_have_to_select_a_target_type", _('You have to select a target type.')) %}
+    {% do set_template_value("translations.you_have_to_select_a_basic_group", _('You have to select a group.')) %}
+    {% do set_template_value("translations.you_have_to_select_a_project_group", _('You have to select a project group.')) %}
+    {% do set_template_value("translations.you_have_to_select_a_user", _('You have to select a user.')) %}
+    {% do set_template_value("translations.you_have_to_select_how_to_update", _('You have to select how you want to update the permissions.')) %}
+    {% do set_template_value("translations.you_have_to_select_a_permission", _('You have to select a permission.')) %}
+    {% do set_template_value("translations.you_have_selected_write_grant_permissions_for_special_group", _('You have selected write/grant permissions for a special group.')) %}
+  {% endif %}
+  {% if generate_labels %}
+    {% set page_sizes = {} %}
+    {% for paper_format in PAGE_SIZES %}
+      {% do page_sizes.update({
+        paper_format: [
+          PAGE_SIZES[paper_format][0] / mm,
+          PAGE_SIZES[paper_format][1] / mm
+        ]
+      }) %}
+    {% endfor %}
+    {% do set_template_value("page_sizes", page_sizes) %}
+    {% do set_template_value("horizontal_label_margin", HORIZONTAL_LABEL_MARGIN) %}
+    {% do set_template_value("vertical_label_margin", VERTICAL_LABEL_MARGIN) %}
+    {% do set_template_value("generate_labels_form.center_qr_ghs.name", generate_labels_form.center_qr_ghs.name) %}
+    {% do set_template_value("translations.select_a_paper_format", _("Select a Paper Format")) %}
+    {% do set_template_value("translations.quantity_must_be_greater_than_0", _('The quantity must be an integer value greater than 0.')) %}
+    {% do set_template_value("translations.width_must_be_between_min_and_max", _("The width must be a number between {minWidth} and {maxWidth}.")) %}
+    {% do set_template_value("translations.minimum_height_must_be_between_0_and_placeholder", _("The minimum height must be a number between 0 and {maxHeight}.")) %}
+    {% do set_template_value("translations.minimum_width_must_be_greater_or_equal_to_0", _("The minimum width must be a number greater or equal to 0.")) %}
+  {% endif %}
+
+  {{ super() }}
+{% endblock %}
+
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
@@ -14,576 +57,24 @@
   <script src="{{ fingerprinted_static('sampledb/js/treepicker.js') }}" type="module"></script>
   {% if get_user_language(current_user).lang_code == 'de' %}
     <script src="{{ fingerprinted_static('plotly/js/plotly-locale-de.js') }}"></script>
-    <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-      Plotly.setPlotConfig({locale: 'de'})
-    </script>
   {% endif %}
   <script src="{{ fingerprinted_static('sampledb/js/timeseries.js') }}" type="module"></script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-    const objects_allowed_to_select = {{ objects_allowed_to_select | tojson }};
-    const available_permissions = ['none', 'read', 'write', 'grant'];
-    const special_groups = {{ special_groups | tojson }};
-    const disabled_special_group_permissions = {{ disabled_special_group_permissions | tojson }};
-    let active_permissions;
-    const current_permissions_special_groups = {{ current_permissions_special_groups | tojson }};
-    const current_permissions_normal_entities = {{ current_permissions_normal_entities | tojson }};
-    let selected_object_ids = [];
-
-    $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover' });
-
-    window.object_location_translations = { '{{ ENGLISH.lang_code }}': '',};
-    window.languages = [
-      {% for lang in all_languages %}
-        {
-          'id': '{{ lang.id }}',
-          'name': '{{ lang.names | get_translated_text }}',
-          'lang_code': '{{ lang.lang_code }}'
-        },
-      {% endfor %}
-    ];
-
-
-    $(document).ready(function() {
-      $('.checkbox-select-child').on('click', function() {
-        handleObjectSelection(this);
-      });
-
-      let filter_origin_ids_picker = $('#filter_origin_ids');
-      let filter_action_type_ids_picker = $('#filter_action_type_ids');
-      let filter_action_ids_picker = $('#filter_action_ids');
-      let filter_instrument_picker = $('#filter_instrument_ids');
-      filter_origin_ids_picker.on('changed.bs.select', function() {
-        let selected_sources = filter_origin_ids_picker.val();
-        if (selected_sources.length === 0) {
-          // enable all options
-          filter_action_type_ids_picker.find('option').prop('disabled', false);
-          filter_action_ids_picker.find('option').prop('disabled', false);
-          filter_instrument_picker.find('option').prop('disabled', false);
-        } else {
-          // disable all options
-          filter_action_type_ids_picker.find('option').prop('disabled', true);
-          filter_action_ids_picker.find('option').prop('disabled', true);
-          filter_instrument_picker.find('option').prop('disabled', true);
-          // enable local default action types as they might be aliases for other action types
-          filter_action_type_ids_picker.find('option[data-source="local"][value^="-"]').prop('disabled', false);
-          // enable options for the selected sources
-          for (const source of selected_sources) {
-            filter_action_type_ids_picker.find('option[data-source="' + source + '"]').prop('disabled', false);
-            filter_action_ids_picker.find('option[data-source="' + source + '"]').prop('disabled', false);
-            filter_instrument_picker.find('option[data-source="' + source + '"]').prop('disabled', false);
-          }
-        }
-        // refresh to update enabled/disabled options
-        filter_action_type_ids_picker.selectpicker('refresh');
-        filter_action_ids_picker.selectpicker('refresh');
-        filter_instrument_picker.selectpicker('refresh');
-        // render to update selected options
-        filter_action_type_ids_picker.selectpicker('render');
-        filter_action_ids_picker.selectpicker('render');
-        filter_instrument_picker.selectpicker('render');
-      });
-      $(plotly_charts).each(function(index, element) {
-        Plotly.newPlot(element[0], element[1]);
-      });
-      $('.selectpicker').each(function(_, element) {
-        let selectpicker = $(element);
-        selectpicker.selectpicker();
-        // ensure options marked as selected will be selected again after page reload
-        let selected_options = selectpicker.find('option[selected]');
-        if (selected_options) {
-          let selected_option_values = [];
-          selected_options.each(function(_, option) {
-            selected_option_values.push($(option).val());
-          });
-          selectpicker.selectpicker('val', selected_option_values);
-        } else {
-          selectpicker.selectpicker('val', null);
-        }
-      });
-
-      checkSubmittable();
-      {% if edit_permissions %}
-        updateActivePermissionData();
-      {% endif %}
-
-      $("#object-location").selectpicker('val', '-1');
-      $("#object-responsible-user").selectpicker('val', '-1');
-
-      $(".checkbox-select-child").prop('checked', false);
-
-      $("#checkbox-select-overall").prop('checked', false);
-      $("#checkbox-select-overall").prop('indeterminate', false);
-
-    });
-
-    function checkAllAvailableSelected() {
-      return objects_allowed_to_select.every(id => selected_object_ids.includes(id));
-    }
-
-    function checkSomeAvailableSelected() {
-      return objects_allowed_to_select.some(id => selected_object_ids.includes(id));
-    }
-
-    function isSelectionValid() {
-        return selected_object_ids.every(id => objects_allowed_to_select.includes(id));
-    }
-
-    function checkSubmittable() {
-      let submit_tooltip = $("#multiselect-submit-tooltip");
-      let submit_button = $('#multiselect-submit');
-      const isInputValid = checkLabelFormSubmittable();
-      let has_invalid_ids = selected_object_ids.some(id => !objects_allowed_to_select.includes(id));
-
-      if(selected_object_ids.length === 0) {
-        submit_tooltip.attr("data-original-title", "{{ _('You have to select at least one object.') }}").tooltip("setContent").tooltip("enable");
-        submit_button.prop('disabled', true)
-        return false;
-      } else if(has_invalid_ids) {
-        submit_tooltip.attr("data-original-title", "{{ _('You do not have write permissions for at least one object.') }}").tooltip("setContent").tooltip('enable');
-        submit_button.prop('disabled', true);
-        return false;
-      }
-
-      {% if edit_location %}
-        resp = $('.selectpicker#object-responsible-user').val();
-        locat = $('.selectpicker#object-location').val();
-        if (resp === '-1' && locat === '-1') {
-          submit_tooltip.attr("data-original-title", "{{ _('You have to select a location or a responsible user.') }}").tooltip("setContent").tooltip('enable');
-          submit_button.prop('disabled', true);
-          return false;
-        }
-      {% elif generate_labels %}
-        if(!isInputValid) {
-          submit_tooltip.attr("data-original-title", "{{ _('You have unallowed values in the red marked fields.') }}").tooltip("setContent").tooltip("enable");
-          submit_button.prop('disabled', true);
-          return false;
-        }
-      {% elif edit_permissions %}
-        const target_type = $('#edit-permissions-target-type').val();
-        const update_mode = $('input:radio[name="update_mode"]:checked').val();
-        const permission = $("input:radio[name='permission']:checked").val();
-
-        if(target_type === null) {
-          submit_tooltip.attr("data-original-title", "{{ _('You have to select a target type.') }}").tooltip("setContent").tooltip("enable");
-          submit_button.prop('disabled', true);
-          return false;
-        } else if(target_type === 'group' && $('#edit-permissions-groups').val() === null) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select a group.') }}").tooltip("setContent").tooltip("enable");
-            submit_button.prop('disabled', true);
-            return false;
-        } else if(target_type === 'project-group' && $('#edit-permissions-project-groups').val() === null) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select a project group.') }}").tooltip("setContent").tooltip("enable");
-            submit_button.prop('disabled', true);
-            return false;
-        } else if(target_type === 'user' && $('#edit-permissions-users').val() === null) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select a user.') }}").tooltip("setContent").tooltip("enable");
-            submit_button.prop('disabled', true);
-            return false;
-        }
-
-        if(update_mode === undefined) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select how you want to update the permissions.') }}").tooltip("setContent").tooltip("enable");
-            submit_button.prop('disabled', true);
-            return false;
-        }
-
-        if(permission === undefined) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have to select a permission.') }}").tooltip("setContent").tooltip("enable");
-            submit_button.prop('disabled', true);
-            return false;
-        } else if(special_groups.includes($('#edit-permissions-target-type')) && disabled_special_group_permissions.includes($("input:radio[name='permission']:checked").val())) {
-            submit_tooltip.attr("data-original-title", "{{ _('You have selected write/grant permissions for a special group.') }}").tooltip("setContent").tooltip("enable");
-            submit_button.prop('disabled', true);
-            return false;
-        }
-
-      {% endif %}
-      submit_tooltip.tooltip('disable');
-      submit_button.prop('disabled', false);
-      return true;
-    }
-    $('[data-multiselect-check-submittable="true"]').on('change', checkSubmittable);
-
-    function checkLabelFormSubmittable() {
-      {% if generate_labels %}
-      const PAGE_SIZES = {
-        {% for paper_format in PAGE_SIZES %}
-          "{{ paper_format }}": [
-          {{ PAGE_SIZES[paper_format][0] / mm }},
-          {{ PAGE_SIZES[paper_format][1] / mm}}
-        ] {% if loop.index < (PAGE_SIZES | length ) %},{% endif %}
-        {% endfor %}
-      }
-
-      let labelVariant = $("#select-label-variant").val();
-      let form = $("form#generate-labels-form");
-      let submit_tooltip = $("#multiselect-submit-tooltip");
-      let submit_button = $('#multiselect-submit');
-      let submittable = true;
-      let shortform;
-      if (labelVariant === 'mixed-formats') {
-        shortform = 'mf';
-      } else if(labelVariant === 'fixed-width') {
-        shortform = 'fw';
-      } else if(labelVariant === 'minimal-height') {
-        shortform = 'mh';
-      }
-
-      let paperSizeSelect = $("#select-" + shortform + "-paper-size");
-      let labelsPerObjectInput = $("#input-" + shortform + "-labels-per-object");
-
-      form.find(".has-error").removeClass('has-error');
-      form.find(".generate-labels-helper").text("");
-
-      const paper_format = paperSizeSelect.val();
-      const maximumWidth = Math.floor(PAGE_SIZES[paper_format][0] - {{ HORIZONTAL_LABEL_MARGIN * 2 }});
-      const maximumHeight = Math.floor(PAGE_SIZES[paper_format][1] - {{ VERTICAL_LABEL_MARGIN * 2 }});
-
-      if (!PAGE_SIZES.hasOwnProperty(paper_format)) {
-        paperSizeSelect.parent().addClass('has-error');
-        $("#input-" + shortform + "-paper-size-helper").text('{{ _("Select a Paper Format") }}');
-        submittable = false;
-      }
-
-      if(isNaN(labelsPerObjectInput.val()) || labelsPerObjectInput.val().trim() === "" || labelsPerObjectInput.val() <= 0) {
-        labelsPerObjectInput.parent().addClass('has-error');
-        submittable = false;
-        $("#input-"+ shortform + "-labels-per-object-helper").text("{{ _('The quantity must be an integer value greater than 0.') }}");
-      }
-
-      if(labelVariant === "fixed-width") {
-        let labelWidthInput = $("#input-fw-label-width");
-        let minLabelHeightInput = $("#input-fw-label-min-height");
-        let labelWidthMin = $("input[name={{ generate_labels_form.center_qr_ghs.name }}]").is(':checked') ? 40 : 20;
-
-        if(isNaN(labelWidthInput.val()) || labelWidthInput.val() < labelWidthMin || labelWidthInput.val() > maximumWidth) {
-          labelWidthInput.parent().addClass('has-error');
-          submittable = false;
-          $("#input-fw-label-width-helper").text('{{ _("The width must be a number between {minWidth} and {maxWidth}.") }}'.replace("{minWidth}", labelWidthMin).replace("{maxWidth}", maximumWidth));
-        }
-
-        if(minLabelHeightInput.val().trim() === "" || minLabelHeightInput.val() < 0 || minLabelHeightInput.val() > maximumHeight) {
-          minLabelHeightInput.parent().addClass('has-error');
-          submittable = false;
-          $("#input-fw-min-label-height-helper").text('{{ _("The minimum height must be a number between 0 and {maxHeight}.")}}'.replace("{maxHeight}", maximumHeight));
-        }
-
-      } else if(labelVariant === "minimal-height") {
-        let labelMinWidthInput = $("#input-mh-min-label-width");
-
-        if(isNaN(labelMinWidthInput.val()) || labelMinWidthInput.val().trim() === "" || labelMinWidthInput.val() < 0) {
-          labelMinWidthInput.parent().addClass('has-error');
-          submittable = false;
-          $("#input-mh-min-label-width-helper").text('{{ _("The minimum width must be a number greater or equal to 0.") }}');
-        }
-      }
-
-      return submittable;
-      {% endif %}
-    }
-
-    function handleObjectSelection(cb) {
-      let handled_object_id = Number(cb.value);
-      const object_index = selected_object_ids.indexOf(handled_object_id);
-      if(!cb.checked && object_index >= 0) {
-        selected_object_ids.splice(object_index, 1);
-      } else if(cb.checked && object_index < 0) {
-        selected_object_ids.push(handled_object_id);
-      }
-
-      if(checkSomeAvailableSelected() && !checkAllAvailableSelected()) {
-        $("#checkbox-select-overall").prop('indeterminate', true);
-        $("#checkbox-select-overall").prop('checked', false);
-      } else {
-        if(checkAllAvailableSelected()) $("#checkbox-select-overall").prop('checked', true);
-        else $("#checkbox-select-overall").prop('checked', false);
-        $("#checkbox-select-overall").prop('indeterminate', false);
-      }
-      checkSubmittable();
-    }
-
-    function updateActivePermissionData() {
-      const target_type = $('#edit-permissions-target-type').val();
-      let permission_radio_buttons = $("input:radio[name='permission']");
-
-      if(target_type === 'group') {
-        const group_id = $('#edit-permissions-groups').val();
-        active_permissions = current_permissions_normal_entities[target_type].hasOwnProperty(group_id) ? current_permissions_normal_entities[target_type][group_id] : {};
-      } else if(target_type === 'project-group') {
-        const project_group_id = $('#edit-permissions-project-groups').val();
-        active_permissions = current_permissions_normal_entities[target_type].hasOwnProperty(project_group_id) ? current_permissions_normal_entities[target_type][project_group_id] : {};
-      } else if(target_type === 'user') {
-        const user_id = $('#edit-permissions-users').val();
-        active_permissions = current_permissions_normal_entities[target_type].hasOwnProperty(user_id) ? current_permissions_normal_entities[target_type][user_id] : {};
-      } else {
-        active_permissions = current_permissions_special_groups[target_type];
-      }
-
-      if(special_groups.includes(target_type)) {
-
-        for(const permission of disabled_special_group_permissions) {
-          if(permission === $(permission_radio_buttons).filter(":checked").val()) $(permission_radio_buttons).filter("[value='none']").prop("checked", true);
-          $(permission_radio_buttons).filter(`[value='${permission}']`).prop('disabled', true).parent().addClass("permission-entry-disabled");
-        }
-
-      } else {
-        for(const permission of disabled_special_group_permissions) {
-          $(permission_radio_buttons).filter(`[value='${permission}']`).prop('disabled', false).parent().removeClass("permission-entry-disabled");
-        }
-      }
-    }
-
-    function updatePermissionForm() {
-      let type = $('#edit-permissions-target-type').val();
-      if(type === 'group') {
-        $('#edit-permissions-groups-container').removeAttr('hidden');
-        $('#edit-permissions-groups').prop('disabled', false);
-      } else {
-        $('#edit-permissions-groups-container').attr('hidden', 'hidden');
-        $('#edit-permissions-groups').prop('disabled', true);
-      }
-
-      if(type === 'user') {
-        $('#edit-permissions-users-container').removeAttr('hidden');
-        $('#edit-permissions-users').prop('disabled', false);
-      } else {
-        $('#edit-permissions-users-container').attr('hidden', 'hidden')
-        $('#edit-permissions-users').prop('disabled', true);
-      }
-
-      if(type === 'project-group') {
-        $('#edit-permissions-project-groups-container').removeAttr('hidden');
-        $('#edit-permissions-project-groups').prop('disabled', false);
-      } else {
-        $('#edit-permissions-project-groups-container').attr('hidden', 'hidden');
-        $('#edit-permissions-project-groups').prop('disabled', true);
-      }
-
-      $("#edit-permissions-groups").selectpicker('refresh');
-      $("#edit-permissions-users").selectpicker('refresh');
-      $("#edit-permissions-project-groups").selectpicker('refresh');
-    }
-
-    function updatePermissionsTable() {
-      for(const object_id of objects_allowed_to_select) {
-        updatePermissionsTableRow(object_id);
-      }
-    }
-
-    function updatePermissionsTableRow(object_id) {
-      const update_mode = $("input:radio[name='update_mode']:checked").val();
-      const new_permission = $("input:radio[name='permission']:checked").val();
-      const new_permission_index = available_permissions.indexOf(new_permission);
-      let current_permission = active_permissions.hasOwnProperty(object_id) ? active_permissions[object_id] : 'none';
-      const current_permission_index = available_permissions.indexOf(current_permission);
-
-      const cell_id = "permission-" + object_id + "-";
-
-      if(((update_mode === 'set-min' && current_permission_index <= new_permission_index) || (update_mode === 'set-max' && current_permission_index >= new_permission_index)) && selected_object_ids.indexOf(object_id) >= 0) {
-        for(const available_permission of available_permissions) {
-          if(available_permission === new_permission) {
-            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-check');
-          } else {
-            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-times');
-          }
-        }
-      } else {
-        for(const available_permission of available_permissions) {
-          if(available_permission === current_permission) {
-            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-check');
-          } else {
-            $(`#${cell_id}${available_permission} i`).attr('class', 'fa fa-times');
-          }
-        }
-      }
-
-      if(selected_object_ids.indexOf(object_id) < 0) {
-        $(`.permissions-entry-${object_id}`).addClass("permission-entry-disabled");
-      } else {
-        $(`.permissions-entry-${object_id}`).removeClass("permission-entry-disabled");
-      }
-    }
-
-    $('#edit-permissions-target-type').on('change', function() {
-      updatePermissionForm();
-      updateActivePermissionData();
-    });
-    $('#edit-permissions-groups-container').on('change', updateActivePermissionData);
-    $('#edit-permissions-users').on('change', updateActivePermissionData);
-    $('#edit-permissions-project-groups').on('change', updateActivePermissionData);
-    $('#edit-permissions-form').on('change', function() {
-      updatePermissionsTable();
-      checkSubmittable();
-    });
-
-
-    $(function() {
-      const select_label_options = ['mixed-formats', 'fixed-width', 'minimal-height'];
-      let checkboxSelectOverall = $('#checkbox-select-overall');
-      let checkboxSelectChilds = $('.checkbox-select-child');
-      checkboxSelectOverall.on('change', function(e) {
-        let checked = $(this).prop('checked');
-        checkboxSelectChilds.each(function(i, element) {
-          if(objects_allowed_to_select.includes(Number($(element).prop('value')))) {
-            $(element).prop('checked', checked);
-            handleObjectSelection(element);
-          }
-        });
-        checkboxSelectOverall.prop('indeterminate', false);
-        {% if edit_permissions %}
-        updatePermissionsTable();
-        {% endif %}
-      });
-
-      checkboxSelectChilds.on('change', updatePermissionsTable);
-
-      function updateObjectLocationTranslationJSON() {
-        var translation_json = JSON.stringify(window.object_location_translations);
-        $('#input-object_location-translations').val(translation_json);
-      }
-
-      $('form#assign-location-form').on('submit', function() {
-        $('#selected_objects-input').val(selected_object_ids.join(','));
-      });
-
-      $('form#create-object-form').on('submit', function() {
-        $("form#create-object-form input#object-selection").val(selected_object_ids.join(','));
-      });
-
-      $('form#generate-labels-form').on('submit', function() {
-        $("form#generate-labels-form input#object-selection").val(selected_object_ids.join(','));
-      });
-
-      $('select#select-label-variant').on('change', function() {
-        const selection = $(this).val();
-        for(const option of select_label_options) {
-          $("div#form-"+option).find('input').attr('disabled', selection !== option);
-          $("div#form-"+option).find('.selectpicker').attr('disabled', selection !== option);
-          if(selection === option) {
-            $("div#form-"+option).removeClass('multiselect-form-disabled');
-          } else {
-            $("div#form-"+option).addClass('multiselect-form-disabled');
-          }
-        }
-        $('.selectpicker').selectpicker('refresh');
-      });
-
-      $('form#edit-permissions-form').on('submit', function() {
-        $('form#edit-permissions-form input#object-selection').val(selected_object_ids.join(','));
-      });
-
-      $("#object-location").on("change", () => checkSubmittable());
-      $("#object-responsible-user").on("change", () => checkSubmittable());
-
-      $("#select-language-object_location").on('change', function() {
-        var existing_languages = [];
-        $.each(window.object_location_translations, function(key, value) {
-          existing_languages.push(key);
-        });
-        let selected = ["{{ ENGLISH.lang_code }}", ];
-        let input_descriptions = $('[data-name="input-descriptions"]');
-        selected = selected.concat($(this).val());
-        let remove_languages = existing_languages.filter(n => !selected.includes(n));
-        let add_languages = selected.filter(n => !existing_languages.includes(n));
-        for (const del_language of remove_languages) {
-          let temp = $("#input-group-object_location-"+del_language);
-          $.each(window.object_location_translations, function (key, value) {
-            if (key === del_language)
-              delete window.object_location_translations[key];
-          });
-          $(temp).remove();
-          updateObjectLocationTranslationJSON();
-        }
-
-        for (const new_language of selected) {
-          if (!$('#input-group-object_location-' + new_language).length) {
-            $($('#object_location-template').html()).insertAfter(input_descriptions.children().last());
-            let temp = input_descriptions.children().last();
-            let lang_name = window.languages.find(lang => lang.lang_code === new_language).name;
-            $(temp).children().first().attr('id', 'textarea-object_location' + new_language.toString());
-
-            $(temp).attr('id', 'input-group-object_location-' + new_language);
-            $(temp).attr('data-name', 'input-group-object_location');
-            $(temp).children('.input-group-addon[data-name="language"]').text(lang_name);
-            $(temp).attr('data-language', new_language);
-
-            $(temp).change(function() {
-              var language = $(this).attr('data-language');
-              var translation_text = $(this).find('textarea').val();
-              window.object_location_translations[language] = translation_text;
-              updateObjectLocationTranslationJSON();
-            });
-            $(temp).find('textarea').change();
-          }
-          if(add_languages.includes(new_language)) {
-            window.object_location_translations[new_language] = '';
-          }
-          updateObjectLocationTranslationJSON();
-        }
-      });
-
-      $('#input-group-object_location-{{ ENGLISH.lang_code }}').change(function() {
-        var language = $(this).attr('data-language');
-        var translation_text = $(this).find('textarea').val();
-        window.object_location_translations[language] = translation_text;
-        updateObjectLocationTranslationJSON();
-      });
-      $('#input-group-object_location-{{ ENGLISH.lang_code }}').change();
-
-      $('#filter_instrument_ids, #filter_action_ids').on('rendered.bs.select', function() {
-        let values = $(this).val();
-        values.sort();
-        let uniqueValues = [];
-        for (const value of values) {
-          if (uniqueValues.length === 0 || uniqueValues[uniqueValues.length - 1] !== value) {
-            uniqueValues.push(value);
-          }
-        }
-        if (values.length === 0) {
-          return;
-        }
-        let selectedOptions = [];
-        for (const value of uniqueValues) {
-          selectedOptions.push($(this).find(`option[value="${value}"]`).first().text().trim())
-        }
-        const dropdownLabel = $(this).siblings('.dropdown-toggle').find('.filter-option-inner-inner');
-        dropdownLabel.text(selectedOptions.join(', '));
-      }).on('changed.bs.select', function (event, clickedIndex, isSelected, previousValue) {
-        if (clickedIndex !== null) {
-          const currentValue = $(this).val();
-          let values = currentValue.concat(previousValue);
-          values.sort();
-          let uniqueValues = [];
-          for (const value of values) {
-            if (uniqueValues.length === 0 || uniqueValues[uniqueValues.length - 1] !== value) {
-              uniqueValues.push(value);
-            }
-          }
-          for (const value of uniqueValues) {
-            const previousNumber = $.grep(previousValue, function (val) {
-                return val === value;
-            }).length;
-            const currentNumber = $.grep(currentValue, function (val) {
-                return val === value;
-            }).length;
-            if (previousNumber !== currentNumber) {
-              $(this).find(`option[value="${value}"]`).prop('selected', previousNumber < currentNumber);
-            }
-          }
-          $(this).selectpicker('refresh');
-        }
-      }).selectpicker('refresh');
-    });
-
-  </script>
+  <script src="{{ fingerprinted_static('sampledb/js/view-object-data.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/objects/filters.js') }}" type="module"></script>
+  {% if edit_location %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-edit-location.js') }}" type="module"></script>
+  {% elif create_from_objects %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-base.js') }}" type="module"></script>
+  {% elif generate_labels %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-generate-labels.js') }}" type="module"></script>
+  {% elif edit_permissions %}
+    <script src="{{ fingerprinted_static('sampledb/js/page/objects/multiselect-edit-permissions.js') }}" type="module"></script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
   {# counter for plotly_chart_plots #}
   {% set plot_counter = namespace(value=0) %}
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  window.plotly_charts = [];
-  </script>
   {% if search_notes is defined %}
   {% for category, note, start, end in search_notes %}
     {% if category == "error" %}
@@ -1110,7 +601,7 @@
     {% endif %}
   {% endfor %}
 
-  <form id="assign-location-form" method="post" action="{{ url_for('.edit_multiple_locations') }}">
+  <form id="multiselect-form" method="post" action="{{ url_for('.edit_multiple_locations') }}">
     {{ location_form.csrf_token }}
     <span class="text-muted">{{ _('Select objects for which you want to change the location.') }}</span>
     <div class="modal-body">
@@ -1146,16 +637,9 @@
                 <option value="{{ language.lang_code }}" {% if language.id == ENGLISH.id %} disabled="disabled" selected="selected" {% endif %}>{{ language.names | get_translated_text }}</option>
                 {% endfor %}
             </select>
-
-            <div {% if allowed_language_ids | length > 1 %} class="input-group" {% endif %} id="input-group-object_location-{{ ENGLISH.lang_code }}" data-name="input-group-object_location" data-language="{{ ENGLISH.lang_code}}">
-                <textarea class="form-control" rows="3" placeholder="{{ _('Description') }}" style="resize:vertical; min-height:2.5em;" id="textarea-object_location-{{ ENGLISH.lang_code }}"></textarea>
-                {% if allowed_language_ids | length > 1 %}
-                    <span class="input-group-addon language-addon" data-name="language"> {{ ENGLISH.names | get_translated_text }} </span>
-                {% endif %}
-            </div>
         </div>
         <input hidden="hidden" type="text" value="" id="input-object_location-translations" name="{{ location_form.description.name }}" />
-        <input hidden="hidden" type="text" value="" id="selected_objects-input" name="selected_objects" />
+        <input hidden="hidden" type="text" value="" id="object-selection" name="selected_objects" />
         <div class="text-right">
           <a type="button" class="btn btn-default" data-dismiss="modal" href="{{ build_modified_url(blocked_parameters=['edit_location']) }}">{{ _('Cancel') }} </a>
           <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
@@ -1165,24 +649,22 @@
     </div>
   </form>
   {% elif create_from_objects and not edit_location and not edit_permissions %}
-  <form id="create-object-form" method="post" action="{{ url_for('.multiselect_action') }}">
+  <form id="multiselect-form" method="post" action="{{ url_for('.multiselect_action') }}">
     {{ use_in_action_form.csrf_token }}
-    <input type="hidden" id="action-type-id-selection" name="{{ use_in_action_form.action_type_id.name }}" value="{{ use_in_action_type.id }}" />
-    <input type="hidden" id="action-id-selection" name="{{ use_in_action_form.action_id.name }}" value="" />
     <input type="hidden" id="object-selection" name="{{ use_in_action_form.objects.name }}" value="" />
     <span class="text-muted">{{ _('Select objects that can be used in %(action_type_name)s Actions.', action_type_name=use_in_action_type.name|get_translated_text) }}</span>
     <div class="text-left">
       <a type="button" class="btn btn-default" href="{{ build_modified_url(blocked_parameters=['use_in_action_type', 'create_from_objects']) }}"> {{ _('Cancel') }} </a>
-      {% if favorite_actions|length > 0 %}
+      {% if favorite_actions | length > 0 %}
         <div class="btn-group" style="display: inline-block; margin-top: 2px" id="multiselect-submit-tooltip" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
           <button class="btn btn-primary dropdown-toggle" id="multiselect-submit" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
             {{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text(default=_('Unnamed Action Type'))) }} <span class="caret"> </span>
           </button>
-          <div class="dropdown-menu dropdown-menu-right multiselect-actions" aria-labelledby="multiselect-submit">
+          <div class="dropdown-menu dropdown-menu-right multiselect-actions" aria-labelledby="multiselect-submit-by-action">
             <li style="padding: 3px 20px;"><strong>{{ _('Favorites') }}:</strong></li>
             {% for action in favorite_actions %}
               {% if not action.type.disable_create_objects and not action.disable_create_objects and not (action.admin_only and not current_user.is_admin) %}
-                <li><button id="multiselect-submit-action-id-{{ action.id }}" type="submit" class="btn btn-link" style="margin-bottom: 5px;">
+                <li><button type="submit" class="btn btn-link" style="margin-bottom: 5px;" name="{{ use_in_action_form.action_id.name }}" value="{{ action.id }}">
                     <i class="fa fa-bar-chart fa-fw"></i>
                     {% if action.user_id is not none %}
                       {% set action_owner = get_user(action.user_id) %}
@@ -1194,39 +676,21 @@
                     {% endif %}
                     {{ action.name | get_translated_text(default=_('Unnamed Action')) }}
                   </button></li>
-                  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-                    document.getElementById('multiselect-submit-action-id-{{ action.id }}').addEventListener('click', function() {
-                      $('#action-id-selection').val('{{ action.id }}');
-                      $('#action-type-id-selection').val('');
-                    });
-                  </script>
               {% endif %}
             {% endfor %}
             <li role="seperator" class="divider"></li>
-            <li><button type="submit" class="btn btn-link" id="multiselect-submit-action-type-id-{{ use_in_action_type.id }}">{{ _('See other %(action_type_name)s Actions...', action_type_name=use_in_action_type.name|get_translated_text) }}</button></li>
-            <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-              document.getElementById('multiselect-submit-action-type-id-{{ use_in_action_type.id }}').addEventListener('click', function() {
-               $('#action-id-selection').val('');
-               $('#action-type-id-selection').val('{{ use_in_action_type.id }}');
-              });
-            </script>
+            <li><button type="submit" class="btn btn-link" name="{{ use_in_action_form.action_type_id.name }}" value="{{ use_in_action_type.id }}">{{ _('See other %(action_type_name)s Actions...', action_type_name=use_in_action_type.name|get_translated_text) }}</button></li>
           </div>
         </div>
       {% else %}
         <span id="multiselect-submit-tooltip" style="display: inline-block;" tabindex="0" data-toggle="tooltip" title="{{ _("You have to select at least one object.") }}">
-          <button type="submit" class="btn btn-primary" id="multiselect-submit" disabled>{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
-          <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-            document.getElementById('multiselect-submit').addEventListener('click', function() {
-              $('#action-id-selection').val('');
-               $('#action-type-id-selection').val('{{ use_in_action_type.id }}');
-            });
-          </script>
+          <button type="submit" class="btn btn-primary" id="multiselect-submit" disabled data-action-type-id="{{ use_in_action_type.id }}">{{ _('Use in %(action_type_name)s', action_type_name=use_in_action_type.name|get_translated_text) }}</button>
         </span>
       {% endif %}
     </div>
   </form>
   {% elif generate_labels and not create_from_objects and not edit_location and not edit_permissions %}
-    <form id="generate-labels-form" method="get" action="{{ url_for('.multiselect_labels') }}">
+    <form id="multiselect-form" method="get" action="{{ url_for('.multiselect_labels') }}">
       {{ generate_labels_form.csrf_token }}
       <input type="hidden" id="object-selection" name="{{ generate_labels_form.objects.name }}"/>
       <span class="text-muted">{{ _('Select objects for which you want to generate labels.') }}</span>
@@ -1351,7 +815,7 @@
       </div>
     </form>
   {% elif not create_from_objects and not edit_location and not generate_labels and edit_permissions %}
-  <form id="edit-permissions-form" method="post" action="{{ url_for('.multiselect_permissions') }}" style="margin-bottom: 10px;">
+  <form id="multiselect-form" method="post" action="{{ url_for('.multiselect_permissions') }}" style="margin-bottom: 10px;">
     {{ edit_permissions_form.csrf_token }}
     <span class="text-muted">{{ _('Select objects for which you want to change the permissions.') }}</span>
     <input type="hidden" id="object-selection" name="{{ edit_permissions_form.objects.name }}" value="" />
@@ -1614,6 +1078,7 @@
             {% endif %}
           </td>
         {% endif %}
+        {% set files = object.files %}
         {% for property_name in display_properties %}
           {% if object.display_properties[property_name] is not none %}
             {% set metadata_language = none %}

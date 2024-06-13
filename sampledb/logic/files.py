@@ -58,6 +58,8 @@ class File:
     binary_data: typing.Optional[bytes] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
+    preview_image_binary_data: typing.Optional[bytes] = None
+    preview_image_mime_type: typing.Optional[str] = None
 
     @dataclasses.dataclass(frozen=True)
     class HashInfo:
@@ -113,7 +115,9 @@ class File:
             binary_data=file.binary_data,
             fed_id=file.fed_id,
             component_id=file.component_id,
-            hash=hash
+            hash=hash,
+            preview_image_binary_data=file.preview_image_binary_data,
+            preview_image_mime_type=file.preview_image_mime_type,
         )
 
     @property
@@ -372,6 +376,7 @@ def create_url_file(
     return file
 
 
+@typing.overload
 def create_database_file(
         object_id: int,
         user_id: int,
@@ -380,6 +385,39 @@ def create_database_file(
         hash: typing.Optional[File.HashInfo] = None,
         *,
         create_log_entry: bool = True,
+        preview_image_binary_data: bytes,
+        preview_image_mime_type: str,
+        utc_datetime: typing.Optional[datetime.datetime] = None
+) -> File:
+    ...
+
+
+@typing.overload
+def create_database_file(
+        object_id: int,
+        user_id: int,
+        file_name: str,
+        save_content: typing.Callable[[typing.BinaryIO], None],
+        hash: typing.Optional[File.HashInfo] = None,
+        *,
+        create_log_entry: bool = True,
+        preview_image_binary_data: None = None,
+        preview_image_mime_type: None = None,
+        utc_datetime: typing.Optional[datetime.datetime] = None
+) -> File:
+    ...
+
+
+def create_database_file(
+        object_id: int,
+        user_id: int,
+        file_name: str,
+        save_content: typing.Callable[[typing.BinaryIO], None],
+        hash: typing.Optional[File.HashInfo] = None,
+        *,
+        create_log_entry: bool = True,
+        preview_image_binary_data: typing.Optional[bytes] = None,
+        preview_image_mime_type: typing.Optional[str] = None,
         utc_datetime: typing.Optional[datetime.datetime] = None
 ) -> File:
     """
@@ -394,6 +432,8 @@ def create_database_file(
         given stream. The function will be called at most once.
     :param hash: the hash info for this file
     :param create_log_entry: whether to create a log entry
+    :param preview_image_binary_data: binary data for the preview image, or None
+    :param preview_image_mime_type: mime type for the preview image, or None
     :param utc_datetime: the datetime for the file, or None
     :return: the newly created file
     :raise errors.ObjectDoesNotExistError: when no object with the given
@@ -430,6 +470,8 @@ def create_database_file(
         utc_datetime=utc_datetime
     )
     db_file.binary_data = binary_data
+    db_file.preview_image_binary_data = preview_image_binary_data
+    db_file.preview_image_mime_type = preview_image_mime_type.lower() if preview_image_mime_type else ''
     db.session.commit()
     file = File.from_database(db_file)
     if create_log_entry:

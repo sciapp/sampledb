@@ -1565,3 +1565,39 @@ textarea.text-markdown-field {
 .column-space {
     padding-right: 10px;
 }
+
+.div-timeline-array ~ div {
+    display: none;
+}
+
+.div-timeline-array + div {
+    display: block;
+}
+
+.div-timeline-array > .plotly > .svg-container {
+    margin: 0 auto;
+}
+
+table .div-apply-recipe {
+    margin-right: 4px;
+}
+
+table .div-apply-recipe .input-group-button-for-selectpicker {
+    padding: 6px 9.5px;
+}
+
+table .div-apply-recipe  .btn {
+    height: 100%;
+}
+
+#template-separator {
+    display: none;
+}
+
+#template-separator:has(+li a) {
+    display: block;
+}
+
+.collapse-expand-button {
+    cursor: pointer;
+}

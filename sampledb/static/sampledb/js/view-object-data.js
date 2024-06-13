@@ -4,11 +4,11 @@
 
 /**
  * Toggles showing additional object properties.
- * @param prefix the object prefix
+ * @param btn the show more button
  */
-function toggleShowMore (prefix) {
+function toggleShowMore (btn) {
+  const prefix = btn.data('id-prefix');
   const properties = $('.show-more-' + prefix);
-  const btn = $('#show-more-' + prefix + '-btn');
   if (properties.hasClass('hidden')) {
     properties.addClass('show').removeClass('hidden');
     btn.text(window.getTemplateValue('translations.show_less'));
@@ -19,8 +19,26 @@ function toggleShowMore (prefix) {
 }
 
 $(document).ready(function () {
-  $(window.plotly_charts).each(function (index, element) {
-    Plotly.newPlot(element[0], element[1]);
+  $('.show-more-button').on('click', function () {
+    toggleShowMore($(this));
+  });
+
+  $('[data-sampledb-plotly-chart]').each(function () {
+    const plotDivID = $(this).data('sampledb-plotly-chart');
+    Plotly.newPlot(plotDivID, JSON.parse($(this).text()));
+    const toggleLinkID = $(this).data('sampledb-plotly-chart-toggle');
+    if (toggleLinkID) {
+      const plotDiv = $('#' + plotDivID);
+      const toggleLink = $('#' + toggleLinkID);
+      toggleLink.on('click', function () {
+        plotDiv.toggle();
+        if (plotDiv.is(':hidden')) {
+          toggleLink.text(toggleLink.data('showText'));
+        } else {
+          toggleLink.text(toggleLink.data('hideText'));
+        }
+      });
+    }
   });
 });
 

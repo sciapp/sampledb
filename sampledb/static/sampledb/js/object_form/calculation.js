@@ -267,6 +267,42 @@ function setUpCalculation (idPrefix, schema, rootSchema) { // eslint-disable-lin
   }
 }
 
+const calculationSetupScripts = [];
+
+/**
+ * Run all calculation setup scripts.
+ * This will also re-set up existing calculations, as available fields for the
+ * calculations may have changed due to array operations, conditions, etc.
+ */
+function setUpCalculations () {
+  $.each(calculationSetupScripts, function () {
+    this();
+  });
+}
+
+/**
+ * Set up calculations from calculation wrapper elements.
+ * @param element the DOM element to search for calculation wrappers
+ */
+function applySchemaCalculations (element) {
+  $(element).find('.calculation-wrapper').each(function () {
+    if ($(this).parents('.array-template').length === 0) {
+      const idPrefix = $(this).data('id-prefix');
+      const schema = $(this).data('schema');
+      const rootSchema = $(this).data('root-schema');
+      calculationSetupScripts.push(function () {
+        setUpCalculation(idPrefix, schema, rootSchema);
+      });
+    }
+  });
+  setUpCalculations();
+}
+
+$(function () {
+  applySchemaCalculations(document);
+});
+
 export {
-  setUpCalculation
+  setUpCalculations,
+  applySchemaCalculations
 };

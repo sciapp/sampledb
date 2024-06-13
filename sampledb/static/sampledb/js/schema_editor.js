@@ -69,7 +69,7 @@ function enableSchemaEditor () {
 
     const advancedRootObjectFeatures = [
       'recipes', 'batch', 'batch_name_format', 'displayProperties',
-      'notebookTemplates', 'show_more', 'workflow_view', 'workflow_show_more'
+      'notebookTemplates', 'show_more', 'workflow_view', 'workflow_views', 'workflow_show_more'
     ];
 
     for (const name of advancedRootObjectFeatures) {
@@ -1467,7 +1467,7 @@ function enableSchemaEditor () {
       'conditions', 'action_type_id', 'action_id',
       'may_copy', 'dataverse_export', 'languages',
       'min_magnitude', 'max_magnitude', 'statistics',
-      'calculation'
+      'calculation', 'style'
     ];
 
     for (const name of advancedSchemaFeatures) {

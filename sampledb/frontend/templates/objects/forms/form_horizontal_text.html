@@ -1,0 +1,14 @@
+{% extends "objects/forms/form_text.html" %}
+
+{% block property_label %}
+  {% set indent_level = -2 %}
+  {% set property_label_class = "control-label" %}
+  {% include "objects/forms/property_label.html" %}
+{% endblock %}
+
+{% block property_field %}
+  <div>
+  {% include "objects/forms/form_text_language_picker.html" %}
+  {% include "objects/fields/text_field.html" %}
+  </div>
+{% endblock %}

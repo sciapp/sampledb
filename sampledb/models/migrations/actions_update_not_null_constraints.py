@@ -3,12 +3,7 @@
 Replace NOT NULL constraints per column by NOT NULL constraints conditioned by federation reference in actions.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 80
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

@@ -117,6 +117,7 @@ def test_create_complex_action(flask_server, driver, user):
             datetime_format_datetime=german_language.datetime_format_datetime,
             datetime_format_moment=german_language.datetime_format_moment,
             datetime_format_moment_output=german_language.datetime_format_moment_output,
+            date_format_moment_output=german_language.date_format_moment_output,
             enabled_for_input=True,
             enabled_for_user_interface=True,
         )

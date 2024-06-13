@@ -118,6 +118,7 @@ def objects() -> FlaskResponseT:
             'plotly_chart',
             'timeseries',
             'tags',
+            'file',
         )
     )
 
@@ -645,6 +646,7 @@ def objects() -> FlaskResponseT:
             'eln_import_id': obj.eln_import_id,
             'eln_object_id': obj.eln_object_id,
             'eln_import': obj.eln_import,
+            'files': logic.files.get_files_for_object(obj.object_id),
         })
 
         for property_name in display_properties:
@@ -884,8 +886,6 @@ def objects() -> FlaskResponseT:
     available_action_types = []
     favorite_actions = []
     use_in_action_type = None
-    special_groups = ['signed-in-users', 'anonymous']
-    disabled_special_group_permissions = [Permissions.WRITE.name.lower(), Permissions.GRANT.name.lower()]
     current_permissions_special_groups: typing.Dict[str, typing.Dict[int, str]] = {}
     current_permissions_normal_entities: typing.Dict[str, typing.Dict[int, typing.Dict[int, str]]] = {}
     groups_treepicker_info = None
@@ -1105,8 +1105,6 @@ def objects() -> FlaskResponseT:
         edit_permissions_form=edit_permissions_form,
         current_permissions_special_groups=current_permissions_special_groups,
         current_permissions_normal_entities=current_permissions_normal_entities,
-        special_groups=special_groups,
-        disabled_special_group_permissions=disabled_special_group_permissions,
         groups_treepicker_info=groups_treepicker_info,
         projects_treepicker_info=projects_treepicker_info,
         sorted_action_topics=sorted_action_topics,

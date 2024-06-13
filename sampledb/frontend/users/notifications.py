@@ -128,6 +128,8 @@ def notifications(user_id: int) -> FlaskResponseT:
         get_group=_safe_get_group,
         is_group_member=_is_group_member,
         get_project=_safe_get_project,
+        is_group_invitation_revoked=_is_group_invitation_revoked,
+        is_project_invitation_revoked=_is_project_invitation_revoked,
         get_instrument=_safe_get_instrument,
         get_instrument_log_entry=_safe_get_instrument_log_entry,
         get_component=components.get_component,
@@ -189,3 +191,15 @@ def _safe_get_instrument_log_entry(instrument_log_entry_id: int) -> typing.Optio
         return instrument_log_entries.get_instrument_log_entry(instrument_log_entry_id)
     except errors.InstrumentLogEntryDoesNotExistError:
         return None
+
+
+def _is_group_invitation_revoked(invitation_id: typing.Optional[int]) -> bool:
+    if invitation_id is None:
+        return False
+    return groups.get_group_invitation(invitation_id).revoked
+
+
+def _is_project_invitation_revoked(invitation_id: typing.Optional[int]) -> bool:
+    if invitation_id is None:
+        return False
+    return projects.get_project_invitation(invitation_id).revoked

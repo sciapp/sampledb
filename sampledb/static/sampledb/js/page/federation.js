@@ -10,7 +10,7 @@ if (window.getTemplateValue('show_add_form')) {
     addModal.addClass('fade');
   });
 }
-if (window.getTemplateValue('federation_uuid') === null) {
+if (window.getTemplateValue('federation_uuid')) {
   $('span.copy-uuid').on('click', function () {
     const button = $(this);
     navigator.clipboard.writeText(button.attr('data-uuid')).then(

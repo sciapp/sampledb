@@ -46,17 +46,28 @@
     position: relative;
 }
 
+.inline-edit-horizontal-property {
+    padding-right:0.75em;
+    display: flex;
+}
+
+.inline-edit-horizontal-property .form-switch {
+    margin-bottom: 5px;
+}
+
 .inline-edit-table-property .form-switch .row {
     padding-right: 0.75em;
     padding-left: 1em;
 }
 
+.inline-edit-horizontal-property .form-switch .checkbox,
 .inline-edit-regular-property .form-switch .checkbox,
 .inline-edit-table-property .form-switch .checkbox {
     padding-top: 0;
     min-height: initial;
 }
 
+.inline-edit-horizontal-property .form-switch .checkbox label,
 .inline-edit-regular-property .form-switch .checkbox label,
 .inline-edit-table-property .form-switch .checkbox label {
     margin-bottom: 0;

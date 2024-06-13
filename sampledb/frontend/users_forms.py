@@ -70,3 +70,7 @@ class AuthenticationPasswordForm(FlaskForm):
         EqualTo('password')
     ])
     submit = SubmitField('Change Password')
+
+
+class RevokeInvitationForm(FlaskForm):
+    invitation_id = IntegerField(validators=[DataRequired()])

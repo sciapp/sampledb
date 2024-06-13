@@ -103,7 +103,7 @@
               {% endif %}
             {% endfor %}
             {% if nav_topics %}
-            <li role="separator" class="divider template-separator" style="display: none"></li>
+            <li role="separator" class="divider"></li>
             {% for topic in nav_topics %}
             <li><a href="{{ url_for('frontend.actions', topic_ids=topic.id) }}">{{ topic.name | get_translated_text(default=_('Unnamed Topic')) }} {{ import_information_symbol(topic, nolink=true) }}</a></li>
             {% endfor %}
@@ -141,14 +141,9 @@
             {% if config['FEDERATION_UUID'] is not none %}
             <li><a href="{{ url_for('frontend.federation') }}">{{ _('Other Databases') }}</a></li>
             {% endif %}
-            <li role="separator" class="divider template-separator" style="display: none"></li>
+            <li role="separator" class="divider" id="template-separator"></li>
             {% for action_type in get_action_types() %}
               {% if action_type.show_in_navbar and action_type.is_template and (action_type.fed_id is none or action_type.fed_id > 0) %}
-                <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-                    window.onload = function() {
-                        $('.template-separator').css('display', 'block');
-                    }
-                </script>
                 <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }}{{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
@@ -344,9 +339,12 @@
     {% do set_template_value("current_user.timezone_url", url_for('frontend.set_timezone')) %}
     {% do set_template_value("current_user.timezone_csrf_token", TimezoneForm().csrf_token.current_token) %}
   {% endif %}
+  {% do set_template_value("current_user.timezone", current_user.timezone) %}
   {% do set_template_value("current_user.has_timezone", current_user.timezone is not none) %}
   {% do set_template_value("current_user.language.lang_code", get_user_language(current_user).lang_code) %}
+  {% do set_template_value("current_user.language.datetime_format_moment", get_user_language(current_user).datetime_format_moment) %}
   {% do set_template_value("current_user.language.datetime_format_moment_output", get_user_language(current_user).datetime_format_moment_output) %}
+  {% do set_template_value("current_user.language.date_format_moment_output", get_user_language(current_user).date_format_moment_output) %}
 
   {% do set_template_value("notifications.num_urgent_notifications", num_urgent_notifications) %}
   {% do set_template_value("notifications.hide_notifications", "hide_notifications" in request.args) %}

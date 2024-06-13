@@ -67,6 +67,7 @@ class LanguageForm(FlaskForm):
     datetime_format_datetime = StringField(validators=[InputRequired()])
     datetime_format_moment = StringField(validators=[InputRequired()])
     datetime_format_moment_output = StringField(validators=[InputRequired()])
+    date_format_moment_output = StringField(validators=[InputRequired()])
     enabled_for_input = BooleanField()
     enabled_for_user_interface = BooleanField()
 
@@ -88,6 +89,7 @@ def show_language_form(
             language_form.datetime_format_datetime.data = language.datetime_format_datetime
             language_form.datetime_format_moment.data = language.datetime_format_moment
             language_form.datetime_format_moment_output.data = language.datetime_format_moment_output
+            language_form.date_format_moment_output.data = language.date_format_moment_output
             language_form.enabled_for_input.data = language.enabled_for_input
             language_form.enabled_for_user_interface.data = language.enabled_for_user_interface
     else:
@@ -115,6 +117,7 @@ def show_language_form(
                 datetime_format_datetime=language_form.datetime_format_datetime.data.strip(),
                 datetime_format_moment=language_form.datetime_format_moment.data.strip(),
                 datetime_format_moment_output=language_form.datetime_format_moment_output.data.strip(),
+                date_format_moment_output=language_form.date_format_moment_output.data.strip(),
                 enabled_for_input=bool(language_form.enabled_for_input.data),
                 enabled_for_user_interface=bool(language_form.enabled_for_user_interface.data)
             )
@@ -136,6 +139,7 @@ def show_language_form(
                     datetime_format_datetime=language_form.datetime_format_datetime.data.strip(),
                     datetime_format_moment=language_form.datetime_format_moment.data.strip(),
                     datetime_format_moment_output=language_form.datetime_format_moment_output.data.strip(),
+                    date_format_moment_output=language_form.date_format_moment_output.data.strip(),
                     enabled_for_input=bool(language_form.enabled_for_input.data),
                     enabled_for_user_interface=bool(language_form.enabled_for_user_interface.data)
                 )

@@ -1,6 +1,29 @@
 Changelog
 =========
 
+Version 0.28
+------------
+
+Released on June 13th, 2024.
+
+- Fixed search via API in combination with name_only parameter
+- Fixed search for datetime attributes not being timezone-aware
+- Added ``timeline`` array style for arrays of objects with a ``datetime`` property
+- Added search to text fields with more than 10 choices (configurable with ``SAMPLEDB_MIN_NUM_TEXT_CHOICES_FOR_SEARCH``)
+- Added support for ``"first"`` and ``"last"`` statistic for timeseries
+- Added badic and project groups to the HTTP API
+- Allow using dicts for the ``style`` attribute
+- Added support for ``"include"`` style for object reference properties
+- Allow referenced objects in search queries
+- Improved .eln export
+- Added support for file references as display properties
+- Allow configuring multiple workflow views
+- Add support for ``sorting_properties`` for workflow views
+- Allow revoking group invitations
+- Added ``date`` and ``time`` styles for datetime values
+- Added support for additional preview images for files uploaded via HTTP API
+- Added ``expandable``, ``collapsible`` and ``horizontal`` object styles
+
 Version 0.27
 ------------
 

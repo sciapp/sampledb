@@ -7,12 +7,7 @@ The new version also avoids unnecessary jsonb objects and only returns one row
 for each object_id and user_id combination, containing the maximum permissions.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 97
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

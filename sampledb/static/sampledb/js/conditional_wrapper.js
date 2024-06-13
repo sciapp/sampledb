@@ -78,7 +78,7 @@ function conditionalWrapper (idPrefix, schemaConditions) {
         const choiceElement = $(`[name="${parentIDPrefix}_${condition.property_name}__text"]`);
 
         const evaluateCondition = function () {
-          if (condition.choice === undefined) {
+          if (condition.choice === undefined || condition.choice === null) {
             setConditionEntry(!choiceElement.prop('disabled') && (choiceElement.selectpicker('val') === ''));
           } else {
             setConditionEntry(!choiceElement.prop('disabled') && (!!choiceElement.selectpicker('val') && choiceElement.find('option:selected').data('valueBase64') === condition.encoded_choice));

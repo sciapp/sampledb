@@ -3,15 +3,11 @@
 Create default location types.
 """
 import json
-import os
 
 import flask_sqlalchemy
 
 from .utils import table_has_column
 from ..locations import LocationType
-
-MIGRATION_INDEX = 115
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

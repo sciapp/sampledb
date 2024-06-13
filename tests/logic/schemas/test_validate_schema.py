@@ -2,7 +2,10 @@
 """
 
 """
+import copy
 import datetime
+import sys
+
 import pytest
 
 from sampledb.logic.schemas import validate_schema
@@ -1092,6 +1095,16 @@ def test_validate_array_schema_with_style():
         'style': 'table'
     }
     validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'style': {'form': 'table', 'view': None}
+    }
+    validate_schema(wrap_into_basic_schema(schema))
 
 
 def test_validate_array_schema_with_invalid_style():
@@ -1103,6 +1116,17 @@ def test_validate_array_schema_with_invalid_style():
             'type': 'text'
         },
         'style': 1
+    }
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+    schema = {
+        'title': 'Example',
+        'type': 'array',
+        'items': {
+            'title': 'Example Item',
+            'type': 'text'
+        },
+        'style': {None: 'test'}
     }
     with pytest.raises(ValidationError):
         validate_schema(wrap_into_basic_schema(schema))
@@ -3044,7 +3068,23 @@ def test_validate_workflow_show_more():
         validate_schema(schema)
 
 
-def test_validate_workflow_view():
+@pytest.mark.parametrize(
+    "key, value",
+    (
+        ('key', 'value'),
+        ('referencing_action_type_id', 'MEASUREMENT'),
+        ('referencing_action_id', 'Action'),
+        ('referenced_action_type_id', 'MEASUREMENT'),
+        ('referenced_action_id', 'Action'),
+        ('referencing_action_id', [ActionType.MEASUREMENT, False]),
+        ('referenced_action_type_id', [1, None]),
+        ('referenced_action_id', [-99, False]),
+        ('title', 3515),
+        ('title', {"de": "Prozessablauf"}),
+        ('show_action_info', 3515),
+    )
+)
+def test_validate_workflow_view(key, value):
     schema = {
         "title": "Example",
         "type": "object",
@@ -3065,61 +3105,27 @@ def test_validate_workflow_view():
         },
         "required": ["name"],
         "propertyOrder": ["name", "quantity", "text"],
-        "workflow_view": {
-            "referencing_action_type_id": 1,
-            "referencing_action_id": [1],
-            "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
-            "referenced_action_id": 1,
-            "title": {"en": "Workflow", "de": "Prozessablauf"},
-            "show_action_info": True
-        }
     }
+    schema1 = copy.deepcopy(schema)
+    schema2 = copy.deepcopy(schema)
 
-    validate_schema(schema)
-
-    schema['workflow_view']['key'] = 'value'
+    workflow_view = {
+        "referencing_action_type_id": 1,
+        "referencing_action_id": [1],
+        "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
+        "referenced_action_id": 1,
+        "title": {"en": "Workflow", "de": "Prozessablauf"},
+        "show_action_info": True
+    }
+    schema1['workflow_view'] = workflow_view
+    schema2['workflow_views'] = [workflow_view]
+    validate_schema(schema1)
+    validate_schema(schema2)
+    workflow_view[key] = value
     with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referencing_action_type_id'] = 'MEASUREMENT'
+        validate_schema(schema1)
     with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referencing_action_id'] = 'Action'
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referenced_action_type_id'] = 'MEASUREMENT'
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referenced_action_id'] = 'Action'
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referencing_action_id'] = [ActionType.MEASUREMENT, False]
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referenced_action_type_id'] = [1, None]
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['referenced_action_id'] = [-99, False]
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['title'] = 3515
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['title'] = {"de": "Prozessablauf"}
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
-
-    schema['workflow_view']['show_action_info'] = 3515
-    with pytest.raises(ValidationError):
-        validate_schema(schema)
+        validate_schema(schema2)
 
 
 def test_validate_timeseries_schema():

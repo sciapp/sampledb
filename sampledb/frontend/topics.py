@@ -72,11 +72,20 @@ def topic(topic_id: int) -> FlaskResponseT:
         topic_instruments = []
     else:
         topic_instruments = logic.instruments.get_instruments_for_topic(topic_id=topic_id)
+    topic_instruments.sort(key=lambda instrument: (
+        0 if instrument.fed_id is None else 1,
+        get_translated_text(instrument.name).lower()
+    ))
     topic_actions = [
         action
         for action in logic.actions.get_actions_for_topic(topic_id=topic_id)
         if Permissions.READ in logic.action_permissions.get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
     ]
+    topic_actions = logic.actions.sort_actions_for_user(
+        actions=topic_actions,
+        user_id=flask_login.current_user.id,
+        sort_by_favorite=False
+    )
     return flask.render_template(
         'topics/topic.html',
         topic=topic,

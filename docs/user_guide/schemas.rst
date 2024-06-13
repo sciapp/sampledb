@@ -219,15 +219,22 @@ conditions
 
 This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
 
+style
+^^^^^
+
+This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the object should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. By default, the object properties will be listed vertically. The ``horizontal`` style can be used on objects with very few properties to list them horizontally, side-by-side, as long as sufficient space is available. A regular object, outside of a list or table array, can also have the ``collapsible`` or ``expandable`` styles, which allow the object to be collapsed and expanded by the user, hiding all information other than the title. An ``expandable`` object will start as collapsed but can be expanded, while a ``collapsible`` object will start as expanded and can be collapsed.
+
+.. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
+
 show_more
 ^^^^^^^^^
 
 This attribute is a string array describing which properties to hide in the object view until a "show more"-button is pressed.
 
-workflow_view
-^^^^^^^^^^^^^
+workflow_views
+^^^^^^^^^^^^^^
 
-This attribute can be used to enable and define a workflow view. Workflow views display contents of related objects referencing or referenced by this object
+This attribute can be used to enable and define one or more workflow views. Workflow views display contents of related objects referencing or referenced by this object
 on the object page.
 
 By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. If both filters are set, both action and action type will have to match for an object to be included in the workflow view.
@@ -237,14 +244,18 @@ By setting ``show_action_ínfo`` to ``false`` you can disable displaying action 
 
 Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects' schemas to limit what object data will be shown as a preview.
 
+The ``sorting_properties`` can be set to a list of property names which will be used for sorting the objects, starting with the first datetime property from the list found for an object and falling back to the object creation datetime for objects which contain none of the listed datetime properties.
+
 .. code-block:: json
     :caption: A workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``
 
-    "workflow_view": {
-        "referencing_action_type_id": [-98, -99],
-        "referenced_action_id": 1,
-        "title": {"en": "Processing", "de": "Bearbeitung"}
-    }
+    "workflow_views": [
+        {
+            "referencing_action_type_id": [-98, -99],
+            "referenced_action_id": 1,
+            "title": {"en": "Processing", "de": "Bearbeitung"}
+        }
+    ]
 
 .. figure:: ../static/img/generated/workflow.png
     :alt: A workflow view, containing previews of related measurements
@@ -353,7 +364,7 @@ If the ``default`` attribute is not set, this number can be used to set how many
 style
 ^^^^^
 
-This attribute is a string indicating how the array should be displayed. By default, the items will be shown one after another, but sometimes a different behavior may be desired. If the items are objects, using the ``table`` style may be useful to create a table with the items as rows and their properties in the columns. For top-level tables with many columns, the ``full_width_table`` style can be used to let the table be as wide as the browser window permits. Alternatively, if the items should be in the columns and their properties should be in the rows, the ``horizontal_table`` style can be used. If the items are neither objects nor arrays, the ``list`` style may be useful to create a simple list. If the items are texts with a list of choices, then the style ``choice`` will result in a dropdown allowing the user to select multiple items.
+This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the array should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. By default, the items will be shown one after another, but sometimes a different behavior may be desired. If the items are objects, using the ``table`` style may be useful to create a table with the items as rows and their properties in the columns. For top-level tables with many columns, the ``full_width_table`` style can be used to let the table be as wide as the browser window permits. Alternatively, if the items should be in the columns and their properties should be in the rows, the ``horizontal_table`` style can be used. If the items are neither objects nor arrays, the ``list`` style may be useful to create a simple list. If the items are texts with a list of choices, then the style ``choice`` will result in a dropdown allowing the user to select multiple items. If the items are objects with a ``datetime`` property named datetime, the ``timeline`` style will show a timeline plot for the array items.
 
 .. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
 
@@ -805,6 +816,13 @@ conditions
 
 This attribute is a JSON array containing a list of conditions which need to be fulfilled for this property to be available to the user. By default, no conditions need to be met. For examples and more information, see :ref:`conditions`.
 
+style
+^^^^^
+
+This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the datetime should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. By default, the datetime will be shown as date and time, formatted according to the user's locale. If using the ``date`` or ``time`` styles, datetimes will still contain both a date and a time, but only one of those will be displayed, the time for the ``time`` style or the date for the ``date`` style. When editing a datetime property, both date and time will be shown and can be edited, independent of the style.
+
+.. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
+
 note
 ^^^^
 
@@ -1086,6 +1104,13 @@ dataverse_export
 
 This attribute is a boolean that controls whether this property should be exported as part of a :ref:`dataverse_export` or not, although the exporting user will still have the choice to enable or disable this property during the export. By default, it is set to ``false``.
 
+style
+^^^^^
+
+This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_edit"`` to strings or null, indicating how the object reference should be displayed. A string will be used for both editing and viewing object data, while a dict can specify the style depending on whether the user is editing the data or viewing the data, with or without inline editing enabled. If the style is set to ``"include"`` and the reference is not part of a list or table, the information for the referenced object is included in the object page.
+
+.. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
+
 conditions
 ^^^^^^^^^^
 
@@ -1211,6 +1236,8 @@ This attribute allows to determine which statistics about the timeseries should 
 - ``"min"``: Minimum
 - ``"max"``: Maximum
 - ``"count"``: Count of values
+- ``"first"``: First value
+- ``"last"``: Last value
 
 
 .. _metadata_files:

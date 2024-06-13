@@ -2,12 +2,15 @@
 """
 
 """
+import sys
 
 import requests
 import pytest
 import json
 import uuid
 import datetime
+
+import pytz
 
 import sampledb
 import sampledb.logic
@@ -58,6 +61,28 @@ def action():
                 'file': {
                     'title': 'Example File',
                     'type': 'file'
+                },
+                'other': {
+                    'title': 'Other Property',
+                    'type': 'text'
+                },
+                'datetime': {
+                    'title': 'Datetime Property',
+                    'type': 'datetime'
+                },
+                'array': {
+                    'title': 'Array',
+                    'type': 'array',
+                    'items': {
+                        'title': 'Item',
+                        'type': 'object',
+                        'properties': {
+                            'text': {
+                                'title': 'Item Text',
+                                'type': 'text'
+                            }
+                        }
+                    }
                 }
             },
             'required': ['name']
@@ -1083,7 +1108,23 @@ def test_search_objects(flask_server, auth, user, other_user, action):
         'name': {
             '_type': 'text',
             'text': 'Example'
-        }
+        },
+        'other': {
+            '_type': 'text',
+            'text': 'Test'
+        },
+        'datetime': {
+            '_type': 'datetime',
+            'utc_datetime': '2024-06-04 12:34:56'
+        },
+        'array': [
+            {
+                'text': {
+                    '_type': 'text',
+                    'text': 'Example Item'
+                }
+            }
+        ]
     }
     object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=other_user.id)
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
@@ -1213,6 +1254,117 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             "component_id": object.component_id
         }
     ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test2"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test2"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'other=="Test"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+            "data": {"name": {"_type": "text", "text": "Example"}},
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Demo Item"'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Demo Item"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == []
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Example Item"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': 'array.?.text == "Example Item"',
+        'name_only': 'name_only'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+            "data": {"name": {"_type": "text", "text": "Example"}},
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
+    for timezone_name in pytz.common_timezones:
+        sampledb.logic.settings.set_user_settings(user.id, {'TIMEZONE': timezone_name})
+        timezone = pytz.timezone(timezone_name)
+        r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+            'q': 'datetime == 2024-06-04',
+            'name_only': 'name_only'
+        })
+        assert r.status_code == 200
+        if datetime.datetime(2024, 6, 4, 12, 34, 56, tzinfo=datetime.timezone.utc).astimezone(timezone).date() == datetime.date(2024, 6, 4):
+            assert r.json() == [
+                {
+                    "object_id": object.object_id,
+                    "version_id": object.version_id,
+                    "action_id": object.action_id,
+                    "schema": {"title": "Object", "type": "object", "properties": {"name": {"title": "Name", "type": "text"}}},
+                    "data": {"name": {"_type": "text", "text": "Example"}},
+                    "fed_object_id": object.fed_object_id,
+                    "fed_version_id": object.fed_version_id,
+                    "component_id": object.component_id
+                }
+            ]
+        else:
+            assert r.json() == []
 
 
 def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, other_action):

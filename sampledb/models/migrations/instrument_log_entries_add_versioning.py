@@ -3,14 +3,9 @@
 Convert the instrument_log_entries table from containing content to using versioning.
 """
 
-import os
-
 import flask_sqlalchemy
 
 from .utils import table_has_column
-
-MIGRATION_INDEX = 35
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

@@ -3,14 +3,7 @@
 Add eln_import_id and eln_object_id columns to objects_previous table and update NOT NULL constraint.
 """
 
-import os
-
 import flask_sqlalchemy
-
-from .object_log_entry_type_add_import_from_eln_file import MIGRATION_INDEX as PREVIOUS_MIGRATION_INDEX
-
-MIGRATION_INDEX = PREVIOUS_MIGRATION_INDEX + 1
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

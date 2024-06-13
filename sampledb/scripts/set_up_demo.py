@@ -5,12 +5,15 @@ Script for setting up demo data in a previously unused SampleDB installation.
 Usage: sampledb set_up_demo
 """
 import datetime
+import io
 import json
 import os
+import string
 import sys
 import random
 import typing
 
+from PIL import Image
 
 import sampledb
 from .. import create_app
@@ -59,6 +62,7 @@ def main(arguments: typing.List[str]) -> None:
             datetime_format_datetime=german.datetime_format_datetime,
             datetime_format_moment=german.datetime_format_moment,
             datetime_format_moment_output=german.datetime_format_moment_output,
+            date_format_moment_output=german.date_format_moment_output,
             enabled_for_input=True,
             enabled_for_user_interface=True
         )
@@ -358,8 +362,8 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
         sampledb.db.session.commit()
 
-        sample_schema = {
-            'title': 'Example Object',
+        sample_schema: typing.Dict[str, typing.Any] = {
+            'title': 'Sample Information',
             'type': 'object',
             'properties': {
                 'name': {
@@ -378,17 +382,30 @@ This example shows how Markdown can be used for instrument Notes.
             action_type_id=ActionType.SAMPLE_CREATION,
             schema=sample_schema
         )
-        sample_schema['workflow_view'] = {
-            'referencing_action_type_id': -98,
-            'referenced_action_id': sample_action.id
-        }
+        sample_schema['workflow_views'] = [
+            {
+                'title': {'en': 'Referencing Measurements (sorted by property "datetime")'},
+                'referencing_action_type_id': -98,
+                'referenced_action_id': [],
+                'sorting_properties': ['datetime']
+            },
+            {
+                'title': {'en': f'Referenced Samples from Action #{sample_action.id}'},
+                'referenced_action_id': sample_action.id,
+                'referencing_action_id': [],
+                'show_action_info': False
+            },
+            {
+                'title': {'en': 'All Related Objects'}
+            }
+        ]
         sampledb.logic.actions.update_action(action_id=sample_action.id, schema=sample_schema)
         set_action_translation(Language.ENGLISH, sample_action.id, name="sample_action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(sample_action.id, sampledb.models.Permissions.READ)
         measurement_action = sampledb.logic.actions.create_action(
             action_type_id=ActionType.MEASUREMENT,
             schema={
-                'title': 'Example Object',
+                'title': 'Measurement Information',
                 'type': 'object',
                 'properties': {
                     'name': {
@@ -396,9 +413,14 @@ This example shows how Markdown can be used for instrument Notes.
                         'type': 'text',
                         'languages': ['en', 'de']
                     },
+                    'datetime': {
+                        'title': 'Measurement Date/Time',
+                        'type': 'datetime'
+                    },
                     'sample': {
                         'title': 'Sample',
-                        'type': 'sample'
+                        'type': 'sample',
+                        'style': 'include'
                     },
                     'comment': {
                         'title': {'en': 'Comment', 'de': 'Kommentar'},
@@ -453,6 +475,10 @@ This example shows how Markdown can be used for instrument Notes.
                 '_type': 'text',
                 'text': {"en": 'Measurement', 'de': 'Messung'}
             },
+            'datetime': {
+                '_type': 'datetime',
+                'utc_datetime': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            },
             'sample': {
                 '_type': 'sample',
                 'object_id': instrument_object.id
@@ -473,6 +499,34 @@ This example shows how Markdown can be used for instrument Notes.
             'name': {
                 '_type': 'text',
                 'text': {'en': 'Measurement 2', 'de': 'Messung 2'}
+            },
+            'datetime': {
+                '_type': 'datetime',
+                'utc_datetime': datetime.datetime.now(tz=datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'sample': {
+                '_type': 'sample',
+                'object_id': sample.id
+            },
+            'comment': {
+                '_type': 'text',
+                'text': {'en': 'This is a test.\nThis is a second line.\n\nThis line follows an empty line.'}
+            },
+            'tags': {
+                '_type': 'tags',
+                'tags': []
+            }
+        }
+        measurement = sampledb.logic.objects.create_object(measurement_action.id, data, instrument_responsible_user.id)
+        sampledb.logic.object_permissions.set_object_permissions_for_all_users(measurement.id, sampledb.models.Permissions.READ)
+        data = {
+            'name': {
+                '_type': 'text',
+                'text': {'en': 'Measurement 3', 'de': 'Messung 3'}
+            },
+            'datetime': {
+                '_type': 'datetime',
+                'utc_datetime': (datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
             },
             'sample': {
                 '_type': 'sample',
@@ -1072,7 +1126,9 @@ This example shows how Markdown can be used for instrument Notes.
                     'pressure_series': {
                         'title': 'Pressure Series',
                         'type': 'timeseries',
-                        'units': 'bar', 'display_digits': 2
+                        'units': 'bar',
+                        'display_digits': 2,
+                        'statistics': ['first', 'last', 'count']
                     }
                 },
                 'required': ['name']
@@ -1255,7 +1311,8 @@ This example shows how Markdown can be used for instrument Notes.
                     }
                 },
                 'required': ['name'],
-                'propertyOrder': ['name', 'file', 'list', 'table']
+                'propertyOrder': ['name', 'file', 'list', 'table'],
+                'displayProperties': ['file']
             }
         )
         set_action_translation(Language.ENGLISH, file_action.id, name="File Action", description="")
@@ -1279,8 +1336,22 @@ This example shows how Markdown can be used for instrument Notes.
         file = sampledb.logic.files.create_database_file(
             object_id=file_object.id,
             user_id=basic_user.id,
+            file_name='example.png',
+            save_content=lambda f: typing.cast(None, f.write(ghs01_image))
+        )
+        preview_image = Image.open(io.BytesIO(ghs01_image), formats=['PNG'])
+        preview_image = preview_image.resize((10, 10), Image.Resampling.LANCZOS).resize((100, 100), Image.Resampling.NEAREST)
+        preview_image_file = io.BytesIO()
+        preview_image.save(preview_image_file, format='PNG')
+        preview_image_file.seek(0)
+        preview_image_binary_data = preview_image_file.read()
+        sampledb.logic.files.create_database_file(
+            object_id=file_object.id,
+            user_id=basic_user.id,
             file_name='example.txt',
-            save_content=lambda f: typing.cast(None, f.write(b"Test"))
+            save_content=lambda f: typing.cast(None, f.write(b'Dies ist ein Test')),
+            preview_image_binary_data=preview_image_binary_data,
+            preview_image_mime_type='image/png'
         )
         sampledb.logic.objects.update_object(
             object_id=file_object.id,
@@ -1384,4 +1455,321 @@ This example shows how Markdown can be used for instrument Notes.
         set_action_translation(Language.ENGLISH, choice_array_action.id, name="Choice Array Demo Action", description="")
         sampledb.logic.action_permissions.set_action_permissions_for_all_users(choice_array_action.id, sampledb.models.Permissions.READ)
 
+        timeline_array_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": "Example Object",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": "Object Name",
+                        "type": "text"
+                    },
+                    "timeline_array": {
+                        "title": "Timeline Array",
+                        "type": "array",
+                        "style": "timeline",
+                        "items": {
+                            "title": "Event",
+                            "type": "object",
+                            "properties": {
+                                "datetime": {
+                                    "type": "datetime",
+                                    "title": "Datetime"
+                                },
+                                "label": {
+                                    "type": "text",
+                                    "title": "Label", "languages": "all"
+                                }
+                            },
+                            "required": ["datetime"]
+                        }
+                    }
+                },
+                "required": ["name"],
+                "propertyOrder": ["name", "timeline_array"]
+            }
+        )
+        set_action_translation(Language.ENGLISH, timeline_array_action.id, name="Timeline Array Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(timeline_array_action.id, sampledb.models.Permissions.READ)
+        sampledb.logic.objects.create_object(
+            action_id=timeline_array_action.id,
+            data={
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "Timeline Array Demo Object"}
+                },
+                "timeline_array": [
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:05"
+                        }
+                    },
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:06"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": "Very " * 5 + "Long Text"
+                        }
+                    },
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:07"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": {"en": "Translated Text EN", "de": "Translated Text DE"}
+                        }
+                    },
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:04"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": "HTML tags will be escaped<br />"
+                        }
+                    }
+                ] + [
+                    {
+                        "datetime": {
+                            "_type": "datetime",
+                            "utc_datetime": "2024-01-02 03:04:05"
+                        },
+                        "label": {
+                            "_type": "text",
+                            "text": f"Event {i}"
+                        }
+                    }
+                    for i in range(5)
+                ]
+            },
+            user_id=instrument_responsible_user.id
+        )
+        large_table_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "table": {
+                        "type": "array",
+                        "title": {
+                            "en": "Large Table"
+                        },
+                        "items": {
+                            "type": "object",
+                            "title": {
+                                "en": "Row"
+                            },
+                            "properties": {
+                                letter: {
+                                    "title": {
+                                        "en": f"Column {letter.upper()}"
+                                    },
+                                    "type": "text"
+                                }
+                                for letter in string.ascii_lowercase
+                            }
+                        },
+                        "defaultItems": 1,
+                        "style": {
+                            "view": "full_width_table"
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "propertyOrder": [
+                    "name", "table"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, large_table_action.id, name="Full Width Table Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(large_table_action.id, sampledb.models.Permissions.READ)
+
+        collapsible_object_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "collapsible_object": {
+                        "title": {
+                            "en": "Collapsible Object"
+                        },
+                        "type": "object",
+                        "style": "collapsible",
+                        "note": "This object has the 'collapsible' style. It has a button to collapse it.",
+                        "properties": {
+                            "text_in_object": {
+                                "title": {
+                                    "en": "Text in Object"
+                                },
+                                "type": "text"
+                            }
+                        },
+                        "propertyOrder": [
+                            "text_in_object"
+                        ]
+                    },
+                    "expandable_object": {
+                        "title": {
+                            "en": "Expandable Object"
+                        },
+                        "type": "object",
+                        "style": "expandable",
+                        "note": "This object has the 'expandable' style. It starts out collapsed with a button to expand it.",
+                        "properties": {
+                            "text_in_object": {
+                                "title": {
+                                    "en": "Text in Object"
+                                },
+                                "type": "text"
+                            }
+                        },
+                        "propertyOrder": [
+                            "text_in_object"
+                        ]
+                    }
+                },
+                "required": [
+                    "name",
+                    "collapsible_object",
+                    "expandable_object"
+                ],
+                "propertyOrder": [
+                    "name",
+                    "collapsible_object",
+                    "expandable_object"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, collapsible_object_action.id, name="Collapsible/Expandable Object Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(collapsible_object_action.id, sampledb.models.Permissions.READ)
+
+        horizontal_object_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "quantity_object": {
+                        "title": {
+                            "en": "Quantity Object"
+                        },
+                        "type": "object",
+                        "style": "horizontal",
+                        "properties": {
+                            "value": {
+                                "title": {
+                                    "en": "Value"
+                                },
+                                "type": "quantity",
+                                "units": "kg"
+                            },
+                            "uncertainty": {
+                                "title": {
+                                    "en": "Uncertainty"
+                                },
+                                "type": "quantity",
+                                "units": "kg"
+                            }
+                        },
+                        "required": [
+                            "value", "uncertainty"
+                        ],
+                        "propertyOrder": [
+                            "value", "uncertainty",
+                        ]
+                    },
+                    "large_object": {
+                        "title": {
+                            "en": "Large Object"
+                        },
+                        "type": "object",
+                        "style": "horizontal",
+                        "properties": {
+                            property_name: {
+                                "title": {
+                                    "en": f"Property {property_title}"
+                                },
+                                "type": "text",
+                                "languages": "all",
+                                "note": f"This is a note for property {property_title}"
+                            }
+                            for property_name, property_title in zip(string.ascii_lowercase, string.ascii_uppercase)
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ],
+                "propertyOrder": [
+                    "name", "quantity_object", "large_object"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, horizontal_object_action.id, name="Horizontal Object Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(horizontal_object_action.id, sampledb.models.Permissions.READ)
+        sampledb.logic.objects.create_object(
+            action_id=horizontal_object_action.id,
+            data={
+                "name": {
+                    "_type": "text",
+                    "text": {"en": "Horizontal Object Demo Object"}
+                },
+                "quantity_object": {
+                    "value": {
+                        "_type": "quantity",
+                        "units": "kg",
+                        "magnitude": 1
+                    },
+                    "uncertainty": {
+                        "_type": "quantity",
+                        "units": "kg",
+                        "magnitude": 0.2
+                    }
+                },
+                "large_object": {
+                    property_name: {
+                        "_type": "text",
+                        "text": {"en": "Value for " + property_name}
+                    }
+                    for property_name in string.ascii_lowercase
+                }
+            },
+            user_id=instrument_responsible_user.id
+        )
     print("Success: set up demo data", flush=True)

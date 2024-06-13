@@ -42,7 +42,7 @@ Next, start the SampleDB container:
         --restart=always \
         --name sampledb \
         -p 8000:8000 \
-        sciapp/sampledb:0.27.0
+        sciapp/sampledb:0.28.0
 
 This will start a minimal SampleDB installation at ``http://localhost:8000`` and allow you to sign in with the username ``admin`` and the password ``password``.
 
@@ -109,5 +109,5 @@ Next Steps
 - You might want to create :ref:`groups` or :ref:`projects` to model your existing team structures. While this can be useful, it is completely optional as users can set these up themselves.
 - You might want to create a basic hierarchy of :ref:`locations`. Like groups, users can create these themselves so this is optional.
 - If you already have a JupyterHub installation or want to set up one, you might want to enable SampleDB :ref:`JupyterHub support <jupyterhub_support>`.
-- SampleDB is still under active development. When a new version is released, you should consider :ref`upgrading your SampleDB installation <upgrading>`.
+- SampleDB is still under active development. When a new version is released, you should consider :ref:`upgrading your SampleDB installation <upgrading>`.
 - If you have any questions about SampleDB or run into any issues setting up or running SampleDB, please `create an issue on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.

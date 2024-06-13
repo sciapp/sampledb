@@ -15,7 +15,7 @@
   {% set default_option = ns.default_option %}
 {% endif %}
 
-<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker" {% endif %} data-sampledb-default="{{ default_option }}" name="{{ id_prefix }}_text">
+<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker" {% endif %} data-sampledb-default="{{ default_option }}" {% if schema.choices | length >= config['MIN_NUM_TEXT_CHOICES_FOR_SEARCH'] >= 0 %}data-live-search="true"{% endif %} name="{{ id_prefix }}_text">
   {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
     {% if not is_required %}
       <option value="">&mdash;</option>
