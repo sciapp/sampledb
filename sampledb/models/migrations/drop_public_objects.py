@@ -3,12 +3,7 @@
 Replace the public_objects table with the all_user_object_permissions table.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 96
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

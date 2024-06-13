@@ -3,12 +3,7 @@
 Replace the default_public_permissions table with the all_user_default_permissions table.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 98
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

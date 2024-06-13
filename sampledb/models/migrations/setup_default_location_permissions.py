@@ -4,12 +4,7 @@ Set WRITE permissions for all users for all existing locations if there are no
 location permissions yet.
 """
 
-import os
-
 import flask_sqlalchemy
-
-MIGRATION_INDEX = 99
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
