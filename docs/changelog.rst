@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 0.28.1
+--------------
+
+Currently in development.
+
+- Fixed use of timezones for ``date`` style ``datetime`` properties
+
 Version 0.28
 ------------
 
