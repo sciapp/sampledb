@@ -52,6 +52,7 @@ def show_object_form(
         'ENGLISH': get_language(Language.ENGLISH),
         'get_component': get_component,
         'get_object_if_current_user_has_read_permissions': get_object_if_current_user_has_read_permissions,
+        'template_mode': 'form',
     }
 
     errors: typing.Dict[str, str] = {}
@@ -602,7 +603,7 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
             return flask.abort(400)
     else:
         context_id = secrets.token_hex(32)
-        context_id_token = typing.cast(str, context_id_serializer.dumps((flask_login.current_user.id, context_id)))
+        context_id_token = context_id_serializer.dumps((flask_login.current_user.id, context_id))
 
     if object_id is not None:
         file_names_by_id = logic.files.get_file_names_by_id_for_object(object_id)

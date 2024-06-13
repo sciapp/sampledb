@@ -1,9 +1,15 @@
 'use strict';
 /* eslint-env jquery */
-/* globals Cookies, moment */
+/* globals Cookies, Plotly, moment */
 
 $(function () {
   $('[data-toggle="tooltip"]').tooltip();
+  if (typeof window.Plotly !== 'undefined') {
+    const langCode = window.getTemplateValue('current_user.language.lang_code');
+    if (langCode === 'de') {
+      Plotly.setPlotConfig({ locale: langCode });
+    }
+  }
 
   // update timezone for users who use the auto_tz setting
   if (window.getTemplateValue('current_user.is_authenticated')) {
@@ -25,7 +31,7 @@ $(function () {
       const utcDatetime = moment.utc(utcDatetimeStr);
       const localDatetime = utcDatetime.local();
       const langCode = window.getTemplateValue('current_user.language.lang_code');
-      const format = window.getTemplateValue('current_user.language.datetime_format_moment_output');
+      const format = $(element).data('sampledb-time-only') ? 'LTS' : window.getTemplateValue($(element).data('sampledb-date-only') ? 'current_user.language.date_format_moment_output' : 'current_user.language.datetime_format_moment_output');
       element.innerText = localDatetime.locale(langCode).format(format);
     });
   }
@@ -185,4 +191,19 @@ $(function () {
       urgentNotificationModal.modal();
     }
   }
+
+  $('.collapse-expand-button').each(function () {
+    const collapseExpandButton = $(this);
+    collapseExpandButton.on('click', function () {
+      const idPrefix = $(this).data('idPrefix');
+      const collapsibleDiv = $(`.collapsible-object-container[data-id-prefix=${idPrefix}]`);
+      const isCollapsed = !collapsibleDiv.is(':visible');
+      collapsibleDiv.toggle(isCollapsed);
+      collapseExpandButton.toggleClass('fa-minus-square-o', isCollapsed);
+      collapseExpandButton.toggleClass('fa-plus-square-o', !isCollapsed);
+      const collapseTooltipText = collapseExpandButton.data(isCollapsed ? 'collapseText' : 'expandText');
+      collapseExpandButton.attr('data-original-title', collapseTooltipText);
+      collapseExpandButton.tooltip('setContent').tooltip('show');
+    });
+  });
 });

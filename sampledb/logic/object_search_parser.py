@@ -416,8 +416,12 @@ def parse_null(text: str) -> typing.Optional[str]:
 
 def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.List[str]]:
     text = text.strip()
-    if text[:1] not in string.ascii_letters:
+    if text[:1] not in string.ascii_letters + '*':
         return None
+    if text.count('*') > 1:
+        raise ParseError("Multiple object references", start, end)
+    if '*' in text and '?' in text:
+        raise ParseError("Query cannot contain both an array placeholder (?) and an object reference (*)", start, end)
     attributes = text.split('.')
     for attribute in attributes:
         # empty attributes
@@ -435,6 +439,9 @@ def parse_attribute(text: str, start: int, end: int) -> typing.Optional[typing.L
                 continue
             else:
                 raise ParseError("Invalid array index", start, end)
+        # object reference dereferencing
+        if attribute.startswith('*'):
+            attribute = attribute[1:]
         # attribute name
         if attribute[0] in string.ascii_letters:
             if all(character in (string.ascii_letters + string.digits + '_') for character in attribute):

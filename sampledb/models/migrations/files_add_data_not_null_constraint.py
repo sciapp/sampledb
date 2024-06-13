@@ -3,14 +3,7 @@
 Add NOT NULL constraint for data unless fed_id and component_id are not null.
 """
 
-import os
-
 import flask_sqlalchemy
-
-from .actions_add_objects_readable_by_all_users_by_default import MIGRATION_INDEX as PREVIOUS_MIGRATION_INDEX
-
-MIGRATION_INDEX = PREVIOUS_MIGRATION_INDEX + 1
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

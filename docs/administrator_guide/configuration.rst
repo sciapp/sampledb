@@ -91,6 +91,8 @@ Customization
      - A file, http or https URL for a PNG or JPEG logo to be included in object export PDF documents
    * - SAMPLEDB_PDFEXPORT_LOGO_ALIGNMENT
      - The alignment (left, center or right) of the logo, if SAMPLEDB_PDFEXPORT_LOGO_URL is set (default: right)
+   * - SAMPLEDB_PDFEXPORT_LOGO_WIDTH
+     - The width of the logo in millimeters (default: 30). Large logos will overlap with the content of the object export, so make sure the size and alignment do not cause any issues.
    * - SAMPLEDB_HELP_URL
      - The URL to use for the help link
 
@@ -320,5 +322,7 @@ Miscellaneous
      - You can set this option to disable the :ref:`Topics <topics>` feature. (default: False, Topics enabled)
    * - SAMPLEDB_LABEL_PAPER_FORMATS
      - Specifies label paper formats that can be used for qr code labels. For more information, see :ref:`Label Paper Formats <labels>`. (default: ``[]``)
+   * - SAMPLEDB_MIN_NUM_TEXT_CHOICES_FOR_SEARCH
+     - The minimum number of choices a text field needs to have for search to be enabled (default: 10). Set to 0 to enable search for all choice text fields or to -1 to disable search for them.
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

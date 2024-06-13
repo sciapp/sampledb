@@ -65,8 +65,8 @@ from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
 from ..logic.files import File
-from ..utils import generate_inline_script_nonce
 from ..models import Permissions, Object
+from ..utils import generate_content_security_policy_nonce
 
 
 class JinjaFilter:
@@ -103,12 +103,12 @@ JinjaFilter('urlencode')(quote_plus)
 JinjaFilter()(markdown_to_safe_html)
 JinjaFilter()(get_translated_text)
 JinjaFilter()(get_all_translated_texts)
+JinjaFilter()(bool)
 
 JinjaFunction()(get_component_or_none)
 JinjaFunction()(get_component_id_by_uuid)
 JinjaFunction()(get_unhandled_object_responsibility_assignments)
 JinjaFunction()(is_full_location_tree_hidden)
-JinjaFunction()(generate_inline_script_nonce)
 JinjaFunction()(get_eln_import_for_object)
 JinjaFunction()(relative_url_for)
 JinjaFunction()(zip_longest)
@@ -144,9 +144,20 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
 def has_preview(file: File) -> bool:
     if file.storage not in {'database', 'federation'}:
         return False
+    if file.preview_image_binary_data and file.preview_image_mime_type:
+        return True
     file_name = file.original_file_name
     file_extension = os.path.splitext(file_name)[1]
     return file_extension.lower() in flask.current_app.config.get('MIME_TYPES', {})
+
+
+@JinjaFilter()
+def has_preview_image(file: File) -> bool:
+    if not file.preview_image_mime_type or not file.preview_image_binary_data:
+        return is_image(file)
+    mime_types: typing.Dict[str, str] = flask.current_app.config.get('MIME_TYPES', {})
+    mime_type = file.preview_image_mime_type.lower()
+    return mime_type in mime_types.values() and mime_type.startswith('image/')
 
 
 def file_name_is_image(file_name: str) -> bool:
@@ -570,12 +581,37 @@ def get_style_aliases(style: str) -> typing.List[str]:
     }.get(style, [style])
 
 
-def get_template(template_folder: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template_impl(template_folder, default_prefix, schema['type'], schema.get('style'), container_style)
+@JinjaFunction()
+def get_style_variant(
+        style: typing.Optional[typing.Union[str, typing.Dict[str, str]]],
+        template_mode: str
+) -> typing.Optional[str]:
+    if isinstance(style, str):
+        return style
+    if isinstance(style, dict):
+        if template_mode not in style and template_mode == 'inline_edit':
+            template_mode = 'view'
+        return style.get(template_mode)
+    return None
+
+
+def get_template(template_mode: str, default_prefix: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
+    return get_template_impl(
+        template_mode=template_mode,
+        default_prefix=default_prefix,
+        schema_type=schema['type'],
+        schema_style=get_style_variant(schema.get('style'), template_mode),
+        container_style=get_style_variant(container_style, template_mode)
+    )
 
 
 @functools.cache
-def get_template_impl(template_folder: str, default_prefix: str, schema_type: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+def get_template_impl(template_mode: str, default_prefix: str, schema_type: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+    template_folder = {
+        'view': 'objects/view/',
+        'inline_edit': 'objects/inline_edit/',
+        'form': 'objects/forms/'
+    }.get(template_mode, 'objects/view/')
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
     base_file = str(schema_type) + ".html"
 
@@ -598,12 +634,21 @@ def get_template_impl(template_folder: str, default_prefix: str, schema_type: st
     return template_folder + default_prefix + base_file
 
 
-def get_property_template(template_folder: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template_impl(template_folder, schema.get('style'), container_style)
+def get_property_template(template_mode: str, schema: typing.Dict[str, typing.Any], container_style: typing.Optional[typing.Union[str, typing.Dict[str, str]]]) -> str:
+    return get_property_template_impl(
+        template_mode=template_mode,
+        schema_style=get_style_variant(schema.get('style'), template_mode),
+        container_style=get_style_variant(container_style, template_mode)
+    )
 
 
 @functools.cache
-def get_property_template_impl(template_folder: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+def get_property_template_impl(template_mode: str, schema_style: typing.Optional[str], container_style: typing.Optional[str]) -> str:
+    template_folder = {
+        'view': 'objects/view/',
+        'inline_edit': 'objects/inline_edit/',
+        'form': 'objects/forms/'
+    }.get(template_mode, 'objects/view/')
     system_path = os.path.join(os.path.dirname(__file__), 'templates', template_folder)
 
     file_order = ['regular_property.html']
@@ -623,32 +668,32 @@ def get_property_template_impl(template_folder: str, schema_style: typing.Option
 
 @JinjaFunction()
 def get_form_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template('objects/forms/', schema, container_style)
+    return get_property_template('form', schema, container_style)
 
 
 @JinjaFunction()
 def get_view_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template('objects/view/', schema, container_style)
+    return get_property_template('view', schema, container_style)
 
 
 @JinjaFunction()
 def get_inline_edit_property_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_property_template('objects/inline_edit/', schema, container_style)
+    return get_property_template('inline_edit', schema, container_style)
 
 
 @JinjaFunction()
 def get_form_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template('objects/forms/', 'form_', schema, container_style)
+    return get_template('form', 'form_', schema, container_style)
 
 
 @JinjaFunction()
 def get_view_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template('objects/view/', '', schema, container_style)
+    return get_template('view', '', schema, container_style)
 
 
 @JinjaFunction()
 def get_inline_edit_template(schema: typing.Dict[str, typing.Any], container_style: typing.Optional[str]) -> str:
-    return get_template('objects/inline_edit/', 'inline_edit_', schema, container_style)
+    return get_template('inline_edit', 'inline_edit_', schema, container_style)
 
 
 @JinjaFunction()
@@ -701,7 +746,7 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
 
 
 @functools.lru_cache(maxsize=None)
-def get_fingerprint(file_path: str) -> str:
+def _get_fingerprint(file_path: str) -> str:
     """
     Calculate a fingerprint for a given file.
 
@@ -710,13 +755,13 @@ def get_fingerprint(file_path: str) -> str:
     """
     try:
         block_size = 65536
-        hash_method = hashlib.md5()
+        hash_method = hashlib.sha256()
         with open(file_path, 'rb') as input_file:
             buf = input_file.read(block_size)
             while buf:
                 hash_method.update(buf)
                 buf = input_file.read(block_size)
-        return hash_method.hexdigest()
+        return 'sha256-' + base64.b64encode(hash_method.digest()).decode('utf-8')
     except Exception:
         # if the file cannot be hashed for any reason, return an empty fingerprint
         return ''
@@ -727,11 +772,22 @@ STATIC_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 @JinjaFunction()
 def fingerprinted_static(filename: str) -> str:
-    return flask.url_for(
+    fingerprint = _get_fingerprint(os.path.join(STATIC_DIRECTORY, filename))
+    url = flask.url_for(
         'static',
         filename=filename,
-        v=get_fingerprint(os.path.join(STATIC_DIRECTORY, filename))
+        v=fingerprint or None
     )
+    file_extension = os.path.splitext(filename)[1]
+    result = markupsafe.escape(url)
+    # add integrity attribute for script files and stylesheets for SRI
+    if file_extension in ('.js', '.css') and fingerprint and not flask.current_app.config['DEBUG']:
+        result = result + markupsafe.Markup('" integrity="' + fingerprint)
+    # add a nonce for script files for CSP
+    if file_extension == '.js':
+        nonce = generate_content_security_policy_nonce()
+        result = result + markupsafe.Markup('" nonce="' + nonce)
+    return result
 
 
 class SearchPathInfo(typing.TypedDict):
@@ -857,7 +913,11 @@ def get_search_query(
         else:
             return f'{attribute} == False'
     if data['_type'] == 'datetime':
-        return f'{attribute} == {data["utc_datetime"].split()[0]}'
+        utc_datetime = datetime.strptime(data["utc_datetime"], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        local_timezone = pytz.timezone(current_user.timezone if hasattr(current_user, 'timezone') and current_user.timezone is not None else 'UTC')
+        local_datetime = utc_datetime.astimezone(local_timezone)
+        local_date = local_datetime.date()
+        return f'{attribute} == {local_date.year}-{local_date.month:02d}-{local_date.day:02d}'
     if data['_type'] == 'user':
         return f'{attribute} == #{data["user_id"]}'
     if data['_type'] in ('object_reference', 'sample', 'measurement'):
@@ -1233,6 +1293,9 @@ def get_groups_form_data(
             ]
             for group in all_project_groups
         }
+    else:
+        project_group_names_by_id = {}
+        child_project_group_ids_by_id = {}
     all_group_categories = get_group_categories()
     group_category_names_by_id = {
         group_category.id: get_translated_text(
@@ -1406,6 +1469,8 @@ def to_timeseries_data(
     magnitude_min = None
     magnitude_max = None
     magnitude_count = None
+    magnitude_first = None
+    magnitude_last = None
 
     statistics = {'average', 'stddev'}
     if 'statistics' in schema:
@@ -1416,6 +1481,10 @@ def to_timeseries_data(
         magnitude_max = np.max(magnitudes)
     if 'count' in statistics:
         magnitude_count = len(magnitudes)
+    if 'first' in statistics:
+        magnitude_first = magnitudes[0]
+    if 'last' in statistics:
+        magnitude_last = magnitudes[-1]
 
     time_weights = np.zeros(len(magnitudes))
     # determine time-weighted average and standard deviation
@@ -1478,6 +1547,8 @@ def to_timeseries_data(
         'magnitude_min': magnitude_min,
         'magnitude_max': magnitude_max,
         'magnitude_count': magnitude_count,
+        'magnitude_first': magnitude_first,
+        'magnitude_last': magnitude_last,
         'same_day': same_day
     }
 
@@ -1599,6 +1670,9 @@ def set_template_value(
         name: str,
         value: typing.Any
 ) -> None:
+    if type(value) is jinja2.runtime.Undefined:
+        # do not store undefined values, which will result in undefined as result in JavaScript
+        return
     if not hasattr(flask.g, 'template_values'):
         flask.g.template_values = {}
     if flask.g.template_values is None:
@@ -1687,3 +1761,89 @@ def parse_filter_id_params(
     if not filter_ids:
         return True, None
     return True, list(filter_ids)
+
+
+@JinjaFilter()
+def timeline_array_to_plotly_chart(
+        timeline_array: typing.List[typing.Dict[str, typing.Any]]
+) -> typing.Dict[str, typing.Any]:
+    utc_datetime_strings = []
+    for item in timeline_array:
+        utc_datetime_strings.append(item['datetime']['utc_datetime'])
+    markers = []
+    max_concurrent_count = 1
+    for index, item in enumerate(timeline_array):
+        utc_datetime_string = item['datetime']['utc_datetime']
+        concurrent_item_count = utc_datetime_strings.count(utc_datetime_string)
+        utc_datetime = datetime.strptime(utc_datetime_string, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        local_datetime = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
+        local_datetime_string = local_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(item.get('label'), dict) and item['label'].get('_type') == 'text' and not item['label'].get('multiline') and not item['label'].get('markdown') and get_translated_text(item['label'].get('text', '')).strip():
+            label = typing.cast(str, markupsafe.escape(get_translated_text(item['label'].get('text', '')).strip()))
+        else:
+            label = format_datetime(local_datetime, format='medium')
+        if concurrent_item_count > 1:
+            max_concurrent_count = max(max_concurrent_count, concurrent_item_count)
+            concurrent_item_index = utc_datetime_strings[:index].count(utc_datetime_string)
+            markers.append((local_datetime_string, concurrent_item_index, label))
+        else:
+            markers.append((local_datetime_string, 0, label))
+    plotly_chart = {
+        "data": [
+            {
+                "x": [
+                    marker[0]
+                    for marker in markers
+                ],
+                "y": [
+                    str(marker[1])
+                    for marker in markers
+                ],
+                "text": [
+                    marker[2]
+                    for marker in markers
+                ],
+                "mode": "markers+text",
+                "hoverinfo": "none",
+                "textposition": "top center",
+                "type": "scatter"
+            }
+        ],
+        "layout": {
+            "font": {
+                "family": "Arial, sans-serif",
+                "size": 12,
+                "color": "#000"
+            },
+            "showlegend": False,
+            "autosize": False,
+            "width": 800,
+            "height": 175 + 25 * max_concurrent_count,
+            "xaxis": {
+                "showgrid": False
+            },
+            "yaxis": {
+                "showgrid": False,
+                "zeroline": True,
+                "showticklabels": False,
+                "range": [
+                    -0.5,
+                    max_concurrent_count
+                ]
+            },
+            "margin": {
+                "l": 70,
+                "r": 40,
+                "b": 60,
+                "t": 60,
+                "pad": 2,
+                "autoexpand": True
+            },
+            "dragmode": "pan",
+            "paper_bgcolor": "#fff",
+            "plot_bgcolor": "#fff",
+            "hovermode": "closest",
+            "separators": ".,"
+        }
+    }
+    return plotly_chart

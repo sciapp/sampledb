@@ -9,6 +9,16 @@ import {
   initMarkdownField
 } from './sampledb-internationalization.js';
 
+import {
+  applySchemaConditions
+} from './conditional_wrapper.js';
+
+import {
+  addActionFilterButton
+} from './object_form/object-reference.js';
+
+window.mdeFields = [];
+
 // Enable to control that only one element can be edited in time
 let selectedElement = null;
 let formChanged = false;
@@ -215,4 +225,14 @@ $(document).ready(function () {
       });
     });
   });
+
+  $.each(window.conditionalWrapperScripts, function () {
+    this();
+  });
+
+  $('div.objectpicker').each(function () {
+    addActionFilterButton($(this));
+  });
+
+  applySchemaConditions(document);
 });

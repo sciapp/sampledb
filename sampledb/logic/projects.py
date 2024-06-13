@@ -69,6 +69,7 @@ class ProjectInvitation:
     inviter_id: int
     utc_datetime: datetime.datetime
     accepted: bool
+    revoked: bool
 
     @classmethod
     def from_database(cls, project_invitation: projects.ProjectInvitation) -> 'ProjectInvitation':
@@ -78,7 +79,8 @@ class ProjectInvitation:
             user_id=project_invitation.user_id,
             inviter_id=project_invitation.inviter_id,
             utc_datetime=project_invitation.utc_datetime,
-            accepted=project_invitation.accepted
+            accepted=project_invitation.accepted,
+            revoked=project_invitation.revoked
         )
 
     @property
@@ -418,7 +420,7 @@ def invite_user_to_project(
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
     expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.project", project_id=project_id, token=token, _external=True)
-    create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime)
+    create_notification_for_being_invited_to_a_project(user_id, project_id, inviter_id, confirmation_url, expiration_utc_datetime, invitation_id=invitation.id)
 
 
 def add_user_to_project(project_id: int, user_id: int, permissions: Permissions, other_project_ids: typing.Sequence[int] = ()) -> None:
@@ -870,17 +872,20 @@ def get_project_invitations(
         project_id: int,
         user_id: typing.Optional[int] = None,
         include_accepted_invitations: bool = True,
-        include_expired_invitations: bool = True
+        include_expired_invitations: bool = True,
+        include_revoked_invitations: bool = True
 ) -> typing.List[ProjectInvitation]:
     """
     Get all (current) invitations for a user to join a project.
 
     :param project_id: the ID of an existing project
     :param user_id: the ID of an existing user or None
-    :param include_accepted_invitations: whether or not to include invitations
-        that have already been accepted by the user
-    :param include_expired_invitations: whether or not to include invitations
-        that have already expired
+    :param include_accepted_invitations: whether to include invitations that
+        have already been accepted by the user
+    :param include_expired_invitations: whether to include invitations that
+        have already expired
+    :param include_revoked_invitations: whether to include invitations that
+        have been revoked
     :return: the list of project invitations
     :raise errors.ProjectDoesNotExistError: when no project with the given
         project ID exists
@@ -890,6 +895,8 @@ def get_project_invitations(
         project_invitations_query = project_invitations_query.filter_by(user_id=user_id)
     if not include_accepted_invitations:
         project_invitations_query = project_invitations_query.filter_by(accepted=False)
+    if not include_revoked_invitations:
+        project_invitations_query = project_invitations_query.filter_by(revoked=False)
     if not include_expired_invitations:
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
         expired_invitation_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=expiration_time_limit)
@@ -1159,3 +1166,19 @@ def get_project_object_links() -> typing.List[typing.Tuple[int, int]]:
         (link.project_id, link.object_id)
         for link in projects.ProjectObjectAssociation.query.all()
     ]
+
+
+def revoke_project_invitation(invitation_id: int) -> None:
+    """
+    Mark a project invitation as revoked.
+
+    :param invitation_id: the ID of an existing invitation
+    :raise errors.ProjectInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = projects.ProjectInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.ProjectInvitationDoesNotExistError()
+    invitation.revoked = True
+    db.session.add(invitation)
+    db.session.commit()

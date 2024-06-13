@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-03-13 11:46+0100\n"
+"POT-Creation-Date: 2024-04-02 10:34+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.13.1\n"
+"Generated-By: Babel 2.14.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -779,6 +779,11 @@ msgstr ""
 "Dieses Einladungstoken wurde bereits verwendet. Bitte fragen Sie nach "
 "einer neuen Einladung."
 
+msgid "This invitation has been revoked. Please request a new invitation."
+msgstr ""
+"Diese Einladung wurde widerrufen. Bitte fragen Sie nach einer neuen "
+"Einladung."
+
 msgid ""
 "Invalid permissions in project group invitation token. Please request a "
 "new invitation."
@@ -794,6 +799,15 @@ msgstr ""
 
 msgid "You are already a member of this project group."
 msgstr "Sie sind bereits ein Mitglied dieser Projektgruppe."
+
+msgid "Unknown project group invitation."
+msgstr "Unbekannte Projektgruppen-Einladung."
+
+msgid "This project group invitation has already been accepted."
+msgstr "Diese Projektgruppen-Einladung wurde bereits akzeptiert."
+
+msgid "The invitation has been revoked."
+msgstr "Die Einladung wurde widerrufen."
 
 msgid "This project group does not exist."
 msgstr "Diese Projektgruppe existiert nicht."
@@ -1210,6 +1224,9 @@ msgstr "Objekte"
 
 msgid "Unnamed Action"
 msgstr "Unbenannte Aktion"
+
+msgid ".eln file"
+msgstr ".eln-Datei"
 
 msgid "Only one of location_ids and location may be set."
 msgstr "location_ids und location dürfen nicht beide gesetzt sein."
@@ -1881,11 +1898,17 @@ msgstr ""
 msgid "accepted"
 msgstr "akzeptiert"
 
+msgid "revoked"
+msgstr "widerrufen"
+
 msgid "expired"
 msgstr "abgelaufen"
 
 msgid "pending"
 msgstr "ausstehend"
+
+msgid "Revoke Invitation"
+msgstr "Einladung widerrufen"
 
 msgid "Mobile File Upload"
 msgstr "Smartphone-Upload"
@@ -2581,9 +2604,6 @@ msgstr "Nutzer #%(user_id)s (%(component_name)s)"
 msgid "Imported from"
 msgstr "Importiert von"
 
-msgid ".eln file"
-msgstr ".eln-Datei"
-
 msgid "Last Update"
 msgstr "Letzte Aktualisierung"
 
@@ -2931,7 +2951,7 @@ msgstr "Ja, diesen Aktionstyp auf Startseite anzeigen"
 msgid "No, this action type should not be shown on the frontpage"
 msgstr "Nein, diesen Aktionstyp nicht auf Startseite anzeigen"
 
-msgid "Show on Navbar"
+msgid "Show in Navbar"
 msgstr "In Navigationsleiste anzeigen"
 
 msgid "Yes, actions of this type should be shown in the navbar"
@@ -4184,29 +4204,29 @@ msgstr "Vorherige Versionen ausblenden"
 msgid " and "
 msgstr " und "
 
-msgid "Expand all years"
-msgstr "Alle Jahre ausklappen"
-
-msgid "Collapse all years"
-msgstr "Alle Jahre einklappen"
-
-msgid "Expand all months"
-msgstr "Alle Monate ausklappen"
+msgid "Collapse all days"
+msgstr "Alle Monate einklappen"
 
 msgid "Collapse all months"
 msgstr "Alle Monate einklappen"
 
-msgid "Expand all days"
-msgstr "Alle Tage ausklappen"
-
-msgid "Collapse all days"
-msgstr "Alle Monate einklappen"
-
-msgid "Expand all authors"
-msgstr "Alle Autoren ausklappen"
+msgid "Collapse all years"
+msgstr "Alle Jahre einklappen"
 
 msgid "Collapse all authors"
 msgstr "Alle Autoren einklappen"
+
+msgid "Expand all days"
+msgstr "Alle Tage ausklappen"
+
+msgid "Expand all months"
+msgstr "Alle Monate ausklappen"
+
+msgid "Expand all years"
+msgstr "Alle Jahre ausklappen"
+
+msgid "Expand all authors"
+msgstr "Alle Autoren ausklappen"
 
 msgid "Please enter a category title."
 msgstr "Bitte geben Sie einen Kategorietitel ein."
@@ -4302,6 +4322,9 @@ msgstr "Zeitpunktsformat für moment"
 
 msgid "Datetime format for moment output"
 msgstr "Zeitpunktsformat für moment-Ausgabe"
+
+msgid "Date format for moment output"
+msgstr "Datumsformat für moment-Ausgabe"
 
 msgid "Enabled for input"
 msgstr "Für Eingabe aktiviert"
@@ -5419,12 +5442,12 @@ msgstr "%(item_name)s hinzufügen"
 msgid "The object could not be saved due to an error."
 msgstr "Das Objekt konnte aufgrund eines Fehlers nicht gespeichert werden."
 
+msgid "Filter by Action…"
+msgstr "Nach Aktion filtern…"
+
 #, python-format
 msgid "Field %(index)s"
 msgstr "Feld %(index)s"
-
-msgid "Filter by Action…"
-msgstr "Nach Aktion filtern…"
 
 msgid "sets:"
 msgstr "setzt:"
@@ -5484,6 +5507,12 @@ msgstr ""
 "Bitte wählen Sie eine einfache Gruppe aus, um dieser Berechtigungen zu "
 "geben."
 
+msgid "Collapse"
+msgstr "Einklappen"
+
+msgid "Expand"
+msgstr "Ausklappen"
+
 msgid "Calculated Value:"
 msgstr "Berechneter Wert:"
 
@@ -5492,6 +5521,9 @@ msgstr "Formel:"
 
 msgid "Apply Recipe"
 msgstr "Rezept anwenden"
+
+msgid "Your input is not valid. Please check."
+msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 
 msgid ""
 "There are errors in other fields. Please click \"Edit Object\" to perform"
@@ -5502,9 +5534,6 @@ msgstr ""
 
 msgid "Unsupported item type for horizontal_table style."
 msgstr "Nicht unterstützter item-Typ für horizontal_table-Style."
-
-msgid "Your input is not valid. Please check."
-msgstr "Ihre Eingabe ist nicht korrekt. Bitte überprüfen."
 
 msgid "Hidden File"
 msgstr "Versteckte Datei"
@@ -5538,6 +5567,12 @@ msgstr "zwischen %(start_datetime)s und %(end_datetime)s"
 #, python-format
 msgid "at %(datetime)s"
 msgstr "am %(datetime)s"
+
+msgid "first value"
+msgstr "erster Wert"
+
+msgid "last value"
+msgstr "letzter Wert"
 
 msgid "View chart"
 msgstr "Graph anzeigen"
@@ -5700,6 +5735,13 @@ msgstr "Notebook erstellen"
 
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
+
+msgid ""
+"The relationship between these objects is outdated, please check their "
+"current information."
+msgstr ""
+"Der Zusammenhang zwischen diesen Objekten ist veraltet, bitte prüfen Sie "
+"die aktuellen Informationen."
 
 #, python-format
 msgid ""
@@ -6367,6 +6409,12 @@ msgstr "Plot einblenden"
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
 
+msgid "Show all"
+msgstr "Alle anzeigen"
+
+msgid "Show on interaction"
+msgstr "Bei Interaktion anzeigen"
+
 msgid "Time"
 msgstr "Zeit"
 
@@ -7016,6 +7064,12 @@ msgstr ""
 
 msgid "Unknown basic group invitation. Please request a new invitation."
 msgstr "Unbekannte Gruppen-Einladung. Bitte fragen Sie nach einer neuen Einladung."
+
+msgid "Unknown basic group invitation."
+msgstr "Unbekannte Gruppen-Einladung."
+
+msgid "This basic group invitation has already been accepted."
+msgstr "Diese Gruppen-Einladung wurde bereits akzeptiert."
 
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."

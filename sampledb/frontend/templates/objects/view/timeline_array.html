@@ -1,0 +1,42 @@
+{% if schema['items'].type == 'object' and 'datetime' in schema['items']['properties'] and schema['items']['properties']['datetime']['type'] == 'datetime' and 'required' in schema['items'] and 'datetime' in schema['items']['required'] %}
+  {% if data is none %}
+    {% set data = [] %}
+  {% endif %}
+  {% set container_style = 'timeline' %}
+  <div class="form-group row">
+    {% if schema.title %}
+      {% include "objects/property_label.html" %}
+    {% endif %}
+    {% set is_required = True %}
+  </div>
+  <div style="padding-left:2.5em; position: relative">
+    <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
+    {% if data %}
+      {% set plot_counter.value = plot_counter.value + 1 %}
+      {% set plot_id = id_prefix ~ '_plot' ~ plot_counter.value %}
+      <div id="plotly_plot_div_{{ plot_id }}" class="div-timeline-array"></div>
+      <div class="checkbox text-center" style="margin-bottom: 1em">
+        <label>
+          <input type="checkbox" data-toggle="toggle" data-size="mini" data-width="200px" data-on="{{ _('Show all') }}" data-off="{{ _('Show on interaction') }}" />
+        </label>
+      </div>
+      <script type="application/json" data-sampledb-plotly-chart="plotly_plot_div_{{ plot_id }}">
+        {{ data | timeline_array_to_plotly_chart | tojson | safe }}
+      </script>
+      {% for item in data %}
+        {% set schema = schema['items'] %}
+        {% set property_path = property_path + (loop.index0,) %}
+        {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
+        {% set data = item %}
+        <div style="border-left:1px solid #cccccc; border-bottom:1px solid #cccccc; border-top:1px solid #cccccc; border-right:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:0.5em; padding-bottom: 0.5em; margin-bottom: 4px;">
+          {% set show_indent_border = False %}
+          {% include any_template or "objects/view/any.html" %}
+        </div>
+      {% endfor %}
+    {% else %}
+      &mdash;
+    {% endif %}
+  </div>
+{% else %}
+  {% include "objects/view/array.html" %}
+{% endif %}

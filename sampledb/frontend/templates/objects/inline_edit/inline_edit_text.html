@@ -1,4 +1,4 @@
-{% extends "objects/inline_edit/regular_property.html" %}
+{% extends get_inline_edit_property_template(schema, container_style) %}
 
 {% set input_languages = [] %}
 {% set disabled_language_codes = [] %}

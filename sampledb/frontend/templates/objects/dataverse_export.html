@@ -11,16 +11,7 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
-  <script type="text/javascript" nonce="{{ generate_inline_script_nonce() }}">
-  $(function() {
-    $('.dataverse-export-select-all').click(function() {
-      $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', true);
-    });
-    $('.dataverse-export-select-none').click(function() {
-      $(this).parent().parent().find('input[type="checkbox"]:not(:disabled)').prop('checked', false);
-    });
-  });
-  </script>
+  <script src="{{ fingerprinted_static('sampledb/js/page/dataverse-export.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}

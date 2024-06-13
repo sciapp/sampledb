@@ -154,11 +154,11 @@ def empty_database(
         migrations.run(db)
 
 
-def generate_inline_script_nonce() -> str:
-    nonce = getattr(flask.g, 'inline_script_nonce', None)
+def generate_content_security_policy_nonce() -> str:
+    nonce = getattr(flask.g, 'content_security_policy_nonce', None)
     if nonce is None:
         nonce = secrets.token_hex(32)
-        flask.g.inline_script_nonce = nonce
+        flask.g.content_security_policy_nonce = nonce
     return nonce
 
 

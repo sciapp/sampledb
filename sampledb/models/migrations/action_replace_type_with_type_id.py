@@ -3,15 +3,10 @@
 Replace the type column by the type_id column in the actions table.
 """
 
-import os
-
 import flask_sqlalchemy
 
 from .utils import table_has_column
 from ..actions import ActionType
-
-MIGRATION_INDEX = 31
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

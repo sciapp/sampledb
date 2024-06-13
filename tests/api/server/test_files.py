@@ -5,9 +5,11 @@
 
 import base64
 import hashlib
+import io
 
 import requests
 import pytest
+from PIL import Image
 
 import sampledb
 import sampledb.logic
@@ -299,12 +301,45 @@ def test_create_database_file_with_invalid_hash_algorithms(flask_server, object,
         assert len(files) == 0
 
 
+def test_create_database_file_with_preview_image(flask_server, object, auth):
+    preview_image = Image.new('RGBA', (100, 100), (255, 255, 255, 255))
+    preview_image_stream = io.BytesIO()
+    preview_image.save(preview_image_stream, format='PNG')
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 0
+    data = {
+        'storage': 'database',
+        'original_file_name': 'test.txt',
+        'base64_content': base64.b64encode('test'.encode('utf8')).decode('utf8'),
+        'preview_image_mime_type': 'image/png',
+        'base64_preview_image': base64.b64encode(preview_image_stream.getvalue()).decode('utf8')
+    }
+    r = requests.post(flask_server.base_url + 'api/v1/objects/{}/files/'.format(object.object_id), json=data, auth=auth, allow_redirects=False)
+    assert r.status_code == 201
+    files = sampledb.logic.files.get_files_for_object(object.id)
+    assert len(files) == 1
+    assert files[0].storage == 'database'
+    assert files[0].original_file_name == 'test.txt'
+    with files[0].open() as f:
+        assert f.read().decode('utf-8') == 'test'
+    assert files[0].hash is not None
+    assert files[0].hash.algorithm == sampledb.logic.files.DEFAULT_HASH_ALGORITHM
+    assert files[0].hash.hexdigest == getattr(hashlib, sampledb.logic.files.DEFAULT_HASH_ALGORITHM)(f'test'.encode('utf8')).hexdigest()
+    assert files[0].preview_image_mime_type == 'image/png'
+    assert files[0].preview_image_binary_data == preview_image_stream.getvalue()
+
+
 def test_get_database_file(flask_server, object, auth, user, tmpdir):
+    preview_image = Image.new('RGBA', (100, 100), (255, 255, 255, 255))
+    preview_image_stream = io.BytesIO()
+    preview_image.save(preview_image_stream, format='PNG')
     sampledb.logic.files.create_database_file(
         object_id=object.id,
         user_id=user.id,
         file_name='test.txt',
-        save_content=lambda stream: stream.write('test'.encode('utf8'))
+        save_content=lambda stream: stream.write('test'.encode('utf8')),
+        preview_image_mime_type='image/png',
+        preview_image_binary_data=preview_image_stream.getvalue()
     )
     r = requests.get(flask_server.base_url + 'api/v1/objects/{}/files/0'.format(object.object_id), auth=auth, allow_redirects=False)
     assert r.status_code == 200
@@ -320,7 +355,9 @@ def test_get_database_file(flask_server, object, auth, user, tmpdir):
                 algorithm=sampledb.logic.files.DEFAULT_HASH_ALGORITHM,
                 binary_data=b'test'
             ).hexdigest
-        }
+        },
+        'preview_image_mime_type': 'image/png',
+        'base64_preview_image': base64.b64encode(preview_image_stream.getvalue()).decode('utf8')
     }
 
 

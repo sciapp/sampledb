@@ -3,14 +3,9 @@
 Add user_id column to object_shares table.
 """
 
-import os
-
 import flask_sqlalchemy
 
 from .utils import table_has_column
-
-MIGRATION_INDEX = 136
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

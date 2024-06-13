@@ -3,15 +3,11 @@
 Create location log entries for object location assignments created before the location log was implemented.
 """
 import json
-import os
 import typing
 
 import flask_sqlalchemy
 
 from ..location_log import LocationLogEntryType
-
-MIGRATION_INDEX = 117
-MIGRATION_NAME, _ = os.path.splitext(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

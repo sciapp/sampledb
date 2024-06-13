@@ -2,14 +2,9 @@
 Add the status column to the dataverse_exports table.
 """
 
-import os
-
 import flask_sqlalchemy
 
 from .utils import table_has_column
-
-MIGRATION_INDEX = 125
-MIGRATION_NAME, _ = os.path.split(os.path.basename(__file__))
 
 
 def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:

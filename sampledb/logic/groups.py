@@ -62,6 +62,7 @@ class GroupInvitation:
     inviter_id: int
     utc_datetime: datetime.datetime
     accepted: bool
+    revoked: bool
 
     @classmethod
     def from_database(cls, group_invitation: groups.GroupInvitation) -> 'GroupInvitation':
@@ -71,7 +72,8 @@ class GroupInvitation:
             user_id=group_invitation.user_id,
             inviter_id=group_invitation.inviter_id,
             utc_datetime=group_invitation.utc_datetime,
-            accepted=group_invitation.accepted
+            accepted=group_invitation.accepted,
+            revoked=group_invitation.revoked
         )
 
     @property
@@ -326,7 +328,7 @@ def invite_user_to_group(group_id: int, user_id: int, inviter_id: int) -> None:
     expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
     expiration_utc_datetime = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=expiration_time_limit)
     confirmation_url = flask.url_for("frontend.group", group_id=group_id, token=token, _external=True)
-    create_notification_for_being_invited_to_a_group(user_id, group_id, inviter_id, confirmation_url, expiration_utc_datetime)
+    create_notification_for_being_invited_to_a_group(user_id, group_id, inviter_id, confirmation_url, expiration_utc_datetime, invitation_id=invitation.id)
 
 
 def add_user_to_group(group_id: int, user_id: int) -> None:
@@ -402,17 +404,20 @@ def get_group_invitations(
         group_id: int,
         user_id: typing.Optional[int] = None,
         include_accepted_invitations: bool = True,
-        include_expired_invitations: bool = True
+        include_expired_invitations: bool = True,
+        include_revoked_invitations: bool = True
 ) -> typing.List[GroupInvitation]:
     """
     Get all (current) invitations for a user to join a group.
 
     :param group_id: the ID of an existing group
     :param user_id: the ID of an existing user or None
-    :param include_accepted_invitations: whether or not to include invitations
-        that have already been accepted by the user
-    :param include_expired_invitations: whether or not to include invitations
-        that have already expired
+    :param include_accepted_invitations: whether to include invitations that
+        have already been accepted by the user
+    :param include_expired_invitations: whether to include invitations that
+        have already expired
+    :param include_revoked_invitations: whether to include invitations that
+        have been revoked
     :return: the list of group invitations
     :raise errors.GroupDoesNotExistError: when no group with the given
         group ID exists
@@ -422,6 +427,8 @@ def get_group_invitations(
         group_invitations_query = group_invitations_query.filter_by(user_id=user_id)
     if not include_accepted_invitations:
         group_invitations_query = group_invitations_query.filter_by(accepted=False)
+    if not include_revoked_invitations:
+        group_invitations_query = group_invitations_query.filter_by(revoked=False)
     if not include_expired_invitations:
         expiration_time_limit = flask.current_app.config['INVITATION_TIME_LIMIT']
         expired_invitation_datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=expiration_time_limit)
@@ -449,3 +456,19 @@ def get_group_invitation(invitation_id: int) -> GroupInvitation:
     if invitation is None:
         raise errors.GroupInvitationDoesNotExistError()
     return GroupInvitation.from_database(invitation)
+
+
+def revoke_group_invitation(invitation_id: int) -> None:
+    """
+    Mark a group invitation as revoked.
+
+    :param invitation_id: the ID of an existing invitation
+    :raise errors.GroupInvitationDoesNotExistError: when no invitation with
+        the given ID exists
+    """
+    invitation = groups.GroupInvitation.query.filter_by(id=invitation_id).first()
+    if invitation is None:
+        raise errors.GroupInvitationDoesNotExistError()
+    invitation.revoked = True
+    db.session.add(invitation)
+    db.session.commit()

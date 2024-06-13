@@ -63,8 +63,8 @@ def validate_schema(
     if 'title' not in schema:
         raise ValidationError('invalid schema (must contain title)', path)
     _validate_title_and_tooltip_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
-    if 'style' in schema and not isinstance(schema['style'], str):
-        raise ValidationError('style must only contain text', path)
+    if 'style' in schema and not isinstance(schema['style'], str) and not (isinstance(schema['style'], dict) and all(isinstance(key, str) for key in schema['style'].keys()) and all(isinstance(value, str) or value is None for value in schema['style'].values())):
+        raise ValidationError('style must be a string or a dict of string keys and string or null values', path)
     if 'conditions' in schema:
         if parent_conditions is not None:
             if not isinstance(schema['conditions'], list):
@@ -311,6 +311,26 @@ def _validate_tags_schema(
         raise ValidationError('Tags must be a top-level entry named "tags"', path)
 
 
+def _validate_property_name(property_name: str, strict: bool, path: typing.List[str]) -> None:
+    property_name_valid = True
+    if not property_name:
+        property_name_valid = False
+    if '__' in property_name:
+        property_name_valid = False
+    if strict and property_name_valid:
+        # property name may only consist of ascii characters, digits and underscores
+        if not all(c in (string.ascii_letters + string.digits + '_') for c in property_name):
+            property_name_valid = False
+        # property name must start with a character
+        if property_name[0] not in string.ascii_letters:
+            property_name_valid = False
+        # property name must not end with an underscore
+        if property_name.endswith('_'):
+            property_name_valid = False
+    if not property_name_valid:
+        raise ValidationError(f'invalid property name: {property_name}', path)
+
+
 def _validate_object_schema(
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
@@ -352,6 +372,7 @@ def _validate_object_schema(
         valid_keys.add('batch_name_format')
         valid_keys.add('notebookTemplates')
         valid_keys.add('workflow_view')
+        valid_keys.add('workflow_views')
     if path:
         # the top level object must not have any conditions
         valid_keys.add('conditions')
@@ -370,23 +391,7 @@ def _validate_object_schema(
     property_calculations: typing.List[typing.Tuple[typing.List[str], typing.Dict[str, typing.Any]]] = []
     property_schemas = {}
     for property_name, property_schema in schema['properties'].items():
-        property_name_valid = True
-        if not property_name:
-            property_name_valid = False
-        if '__' in property_name:
-            property_name_valid = False
-        if strict and property_name_valid:
-            # property name may only consist of ascii characters, digits and underscores
-            if not all(c in (string.ascii_letters + string.digits + '_') for c in property_name):
-                property_name_valid = False
-            # property name must start with a character
-            if property_name[0] not in string.ascii_letters:
-                property_name_valid = False
-            # property name must not end with an underscore
-            if property_name.endswith('_'):
-                property_name_valid = False
-        if not property_name_valid:
-            raise ValidationError(f'invalid property name: {property_name}', path)
+        _validate_property_name(property_name, strict, path)
 
         validate_schema(
             property_schema,
@@ -507,26 +512,37 @@ def _validate_object_schema(
                 if property_name not in schema['properties'].keys():
                     raise ValidationError(f'unknown property: {property_name}', path)
 
+    if 'workflow_view' in schema and 'workflow_views' in schema:
+        raise ValidationError('workflow_view and workflow_views are mutually exclusive', path)
     if 'workflow_view' in schema:
+        workflow_views = [schema['workflow_view']]
+    else:
+        workflow_views = schema.get('workflow_views', [])
+    for workflow_index, workflow_view in enumerate(workflow_views):
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
-        workflow_valid_keys = set(id_keys + ['title', 'show_action_info'])
-        if not isinstance(schema['workflow_view'], dict):
-            raise ValidationError('workflow_view must be a dict', path)
-        for key in schema['workflow_view'].keys():
+        workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties'])
+        if not isinstance(workflow_view, dict):
+            raise ValidationError(f'workflow_view {workflow_index} must be a dict', path)
+        for key in workflow_view.keys():
             if key not in workflow_valid_keys:
-                raise ValidationError(f'invalid key in workflow_view: {key}', path)
+                raise ValidationError(f'invalid key in workflow_view {workflow_index}: {key}', path)
         for key in id_keys:
-            if key in schema['workflow_view'] and not (
-                schema['workflow_view'][key] is None or
-                type(schema['workflow_view'][key]) is int or
-                type(schema['workflow_view'][key]) is list and all(
-                    type(action_type_id) is int for action_type_id in schema['workflow_view'][key]
+            if key in workflow_view and not (
+                workflow_view[key] is None or
+                type(workflow_view[key]) is int or
+                type(workflow_view[key]) is list and all(
+                    type(action_type_id) is int for action_type_id in workflow_view[key]
                 )
             ):
-                raise ValidationError(f'{key} in workflow_view must be int, None or a list of ints', path)
-        _validate_title_and_tooltip_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
-        if 'show_action_info' in schema['workflow_view'] and not isinstance(schema['workflow_view']['show_action_info'], bool):
-            raise ValidationError('show_action_info must be bool', path)
+                raise ValidationError(f'{key} in workflow_view {workflow_index} must be int, None or a list of ints', path)
+        if 'title' in workflow_view:
+            _validate_title_and_tooltip_in_schema(workflow_view, path, all_language_codes=all_language_codes, strict=strict)
+        if 'show_action_info' in workflow_view and not isinstance(workflow_view['show_action_info'], bool):
+            raise ValidationError(f'show_action_info in workflow_view {workflow_index} must be bool', path)
+        if 'sorting_properties' in workflow_view and not isinstance(workflow_view['sorting_properties'], list):
+            raise ValidationError(f'sorting_properties in workflow_view {workflow_index} must be list', path)
+        for property_name in workflow_view.get('sorting_properties', []):
+            _validate_property_name(property_name, False, path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
@@ -1095,7 +1111,7 @@ def _validate_timeseries_schema(
         if 'display_digits' in schema and schema['display_digits'] > 15:
             raise ValidationError('display_digits must be at most 15', path)
     if 'statistics' in schema:
-        valid_statistics_keys = {'average', 'stddev', 'min', 'max', 'count'}
+        valid_statistics_keys = {'average', 'stddev', 'min', 'max', 'count', 'first', 'last'}
         if not isinstance(schema['statistics'], list):
             raise ValidationError('statistics must be a list of strings', path)
         if not all(statistics_key in valid_statistics_keys for statistics_key in schema['statistics']):

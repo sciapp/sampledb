@@ -1,0 +1,31 @@
+<div class="form-area inline-edit-horizontal-property" data-name="{{ id_prefix }}_parent">
+  {# Label #}
+  {% block property_label %}
+    {% set indent_level = -2 %}
+    {% set property_label_class = "" %}
+    {% include "objects/property_label.html" %}
+  {% endblock %}
+  {# View #}
+  <div class="view-switch" style="position:relative; padding-left: 5px">
+    <div class="alert-upload-container">
+      {% block property_value %}
+      {% endblock %}
+      {% block property_edit_helper %}
+        <a class="edit-helper"><i class="fa fa-pencil-square-o"></i></a>
+      {% endblock %}
+      <div class="alert-upload-failed">
+        {{ _('Your input is not valid. Please check.') }}
+      </div>
+    </div>
+  </div>
+  {# Form #}
+  <div class="form-switch">
+    <div>
+      {% block property_field %}
+      {% endblock %}
+      {% if 'note' in schema %}
+        <span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>
+      {% endif %}
+    </div>
+  </div>
+</div>

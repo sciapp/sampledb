@@ -38,6 +38,9 @@ def file_info_to_json(file_info: File, include_content: bool = True) -> typing.D
             })
         if file_info.data:
             file_json['hash'] = file_info.data.get('hash')
+        if file_info.preview_image_binary_data and file_info.preview_image_mime_type:
+            file_json['base64_preview_image'] = base64.b64encode(file_info.preview_image_binary_data).decode('utf-8')
+            file_json['preview_image_mime_type'] = file_info.preview_image_mime_type
     if file_info.storage == 'url' and file_info.url is not None:
         file_json.update({
             'url': file_info.url
@@ -87,11 +90,6 @@ class ObjectFiles(Resource):
             return {
                 "message": "storage must be set"
             }, 400
-        storage = request_json['storage']
-        if storage not in ('local_reference', 'url', 'database'):
-            return {
-                "message": "storage must be 'local_reference', 'database' or 'url'"
-            }, 400
         if 'hash' in request_json:
             if not isinstance(request_json['hash'], dict):
                 return {
@@ -111,9 +109,10 @@ class ObjectFiles(Resource):
                 return {
                     "message": "hash hexdigest be a lowercase string of hex characters"
                 }, 400
+        storage = request_json['storage']
         if storage == 'database':
             for key in request_json:
-                if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'hash'}:
+                if key not in {'object_id', 'storage', 'original_file_name', 'base64_content', 'hash', 'base64_preview_image', 'preview_image_mime_type'}:
                     return {
                         "message": f"invalid key '{key}'"
                     }, 400
@@ -151,14 +150,33 @@ class ObjectFiles(Resource):
                     algorithm=DEFAULT_HASH_ALGORITHM,
                     binary_data=content
                 )
+            if 'base64_preview_image' in request_json:
+                base64_preview_image = request_json['base64_preview_image']
+                try:
+                    preview_image_binary_data = base64.b64decode(base64_preview_image.encode('utf-8'), validate=True)
+                except Exception:
+                    return {
+                        "message": "base64_preview_image must be base64 encoded"
+                    }, 400
+                preview_image_mime_type = request_json.get('preview_image_mime_type', '').lower()
+                supported_mime_types = sorted(flask.current_app.config['MIME_TYPES'].values())
+                if preview_image_mime_type not in supported_mime_types:
+                    return {
+                        "message": "preview_image_mime_type must be one of: " + ", ".join(supported_mime_types)
+                    }, 400
+            else:
+                preview_image_binary_data = None
+                preview_image_mime_type = None
             file = create_database_file(
                 object_id=object_id,
                 user_id=flask.g.user.id,
                 file_name=original_file_name,
                 save_content=lambda stream: typing.cast(None, stream.write(content)),
-                hash=hash
+                hash=hash,
+                preview_image_binary_data=preview_image_binary_data,
+                preview_image_mime_type=preview_image_mime_type
             )
-        if storage == 'local_reference':
+        elif storage == 'local_reference':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'filepath', 'hash'}:
                     return {
@@ -182,7 +200,7 @@ class ObjectFiles(Resource):
                 return {
                     "message": "user not authorized to add this path"
                 }, 403
-        if storage == 'url':
+        elif storage == 'url':
             for key in request_json:
                 if key not in {'object_id', 'storage', 'url'}:
                     return {
@@ -216,6 +234,10 @@ class ObjectFiles(Resource):
                 user_id=flask.g.user.id,
                 url=url
             )
+        else:
+            return {
+                "message": "storage must be 'local_reference', 'database' or 'url'"
+            }, 400
         file_url = flask.url_for(
             'api.object_file',
             object_id=file.object_id,

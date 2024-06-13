@@ -33,3 +33,12 @@ Instrument Log
 --------------
 
 Instrument scientists can use the instrument log to keep track of problems, maintenance or other events. They can decide whether the log can be seen by other users, and whether other users can also create log entries, e.g. to report issues. When a new log entry is created, a notification will be sent to the instrument scientists.
+
+.. _instrument_topics:
+
+Topics
+------
+
+Topics allow you to filter the instrument list by predefined topics.
+When creating or editing an instrument, you can optionally assign one or more topics to it.
+See the :ref:`topics section <topics>` for more details.

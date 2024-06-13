@@ -11,6 +11,9 @@ from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
 from .objects import find_object_references
+from .dataverse_export import flatten_metadata, get_title_for_property
+from .datatypes import Quantity
+from .units import get_un_cefact_code_for_unit
 
 
 def generate_ro_crate_metadata(
@@ -58,8 +61,12 @@ def generate_ro_crate_metadata(
         "sampledb_export": ro_crate_metadata["@graph"][1]
     }
     exported_object_ids = {
-        object_info['id']
+        object_info['id']: f"./objects/{object_info['id']}"
         for object_info in infos['objects']
+    }
+    exported_user_ids = {
+        user_info['id']: f"./users/{user_info['id']}"
+        for user_info in infos['users']
     }
     for object_info in infos['objects']:
         if object_info['action_id'] is not None:
@@ -74,6 +81,11 @@ def generate_ro_crate_metadata(
                 }.get(action.type_id, None)
         else:
             object_type = 'other'
+        exported_file_ids = {
+            file_info['id']: './' + file_info['path']
+            for file_info in object_info['files']
+            if 'path' in file_info
+        }
         ro_crate_metadata["@graph"].append({
             "@id": f"./objects/{object_info['id']}",
             "@type": "Dataset",
@@ -92,6 +104,14 @@ def generate_ro_crate_metadata(
             ],
             "creator": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
+            "variableMeasured": _convert_metadata_to_property_values(
+                object_id=object_info['id'],
+                data=object_info['versions'][0]['data'],
+                schema=object_info['versions'][0]['schema'],
+                exported_object_ids=exported_object_ids,
+                exported_user_ids=exported_user_ids,
+                exported_file_ids=exported_file_ids
+            ) if object_info['versions'][0]['data'] is not None else [],
             "mentions": [],
             "comment": [],
             "hasPart": [
@@ -120,7 +140,7 @@ def generate_ro_crate_metadata(
             )
             for referenced_object_id, _previously_reference_object_id, _object_reference_type in referenced_object_ids:
                 if referenced_object_id in exported_object_ids:
-                    ro_crate_metadata["@graph"][-1]["mentions"].append({"@id": f"./objects/{referenced_object_id}"})
+                    ro_crate_metadata["@graph"][-1]["mentions"].append({"@id": exported_object_ids[referenced_object_id]})
         if not ro_crate_metadata["@graph"][-1]["mentions"]:
             del ro_crate_metadata["@graph"][-1]["mentions"]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/files"] = ro_crate_metadata["@graph"][-1]
@@ -145,6 +165,14 @@ def generate_ro_crate_metadata(
                     })
                 ],
                 "url": flask.url_for('frontend.object_version', object_id=object_info['id'], version_id=version_info['id'], _external=True),
+                "variableMeasured": _convert_metadata_to_property_values(
+                    object_id=object_info['id'],
+                    data=version_info['data'],
+                    schema=version_info['schema'],
+                    exported_object_ids=exported_object_ids,
+                    exported_user_ids=exported_user_ids,
+                    exported_file_ids=exported_file_ids
+                ) if version_info['data'] is not None else [],
                 "hasPart": [
                     {
                         "@id": f"./objects/{object_info['id']}/version/{version_info['id']}/schema.json",
@@ -263,3 +291,70 @@ def generate_ro_crate_metadata(
 
     result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(ro_crate_metadata, indent=2).encode('utf-8')
     return result_files
+
+
+def _convert_metadata_to_property_values(
+        object_id: int,
+        data: typing.Dict[str, typing.Any],
+        schema: typing.Dict[str, typing.Any],
+        exported_object_ids: typing.Dict[int, str],
+        exported_user_ids: typing.Dict[int, str],
+        exported_file_ids: typing.Dict[int, str]
+) -> typing.List[typing.Dict[str, typing.Any]]:
+    property_values = []
+    for property_data, _property_path, full_property_path in flatten_metadata(data):
+        property_type = property_data.get('_type')
+        if not property_type:
+            continue
+        property_value: typing.Dict[str, typing.Any] = {
+            "@type": "PropertyValue",
+            "propertyID": '/'.join(str(path_element) for path_element in full_property_path),
+            "name": get_title_for_property(full_property_path, schema)
+        }
+        if property_type == 'text':
+            property_values.append({
+                "value": get_translated_text(property_data['text'], 'en'),
+                **property_value
+            })
+        elif property_type == 'bool':
+            property_values.append({
+                "value": property_data['value'],
+                **property_value
+            })
+        elif property_type == 'datetime':
+            property_values.append({
+                "value": datetime.datetime.strptime(property_data['utc_datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=None).isoformat(timespec='microseconds'),
+                **property_value
+            })
+        elif property_type == 'quantity':
+            quantity = Quantity.from_json(property_data)
+            un_cefact_code = get_un_cefact_code_for_unit(quantity.units)
+            if un_cefact_code is not None:
+                property_value["unitCode"] = un_cefact_code
+            property_values.append({
+                "value": quantity.magnitude,
+                "unitText": quantity.units,
+                **property_value
+            })
+        elif property_type in ('sample', 'measurement', 'object_reference'):
+            property_values.append({
+                "value": exported_object_ids.get(property_data['object_id'], flask.url_for('frontend.object', object_id=property_data['object_id'], _external=True)),
+                **property_value
+            })
+        elif property_type == 'user':
+            property_values.append({
+                "value": exported_user_ids.get(property_data['user_id'], flask.url_for('frontend.user_profile', user_id=property_data['user_id'], _external=True)),
+                **property_value
+            })
+        elif property_type == 'file':
+            property_values.append({
+                "value": exported_file_ids.get(property_data['file_id'], flask.url_for('frontend.object_file', object_id=object_id, file_id=property_data['file_id'], _external=True)),
+                **property_value
+            })
+        elif property_type == 'hazards':
+            hazard_texts = {1: 'Explosive', 2: 'Flammable', 3: 'Oxidizing', 4: 'Compressed Gas', 5: 'Corrosive', 6: 'Toxic', 7: 'Harmful', 8: 'Health Hazard', 9: 'Environmental Hazard'}
+            property_values.append({
+                "value": ", ".join(f"{hazard_texts[hazard]}" for hazard in sorted(property_data['hazards'])),
+                **property_value
+            })
+    return property_values
