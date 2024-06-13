@@ -11,7 +11,7 @@ def generate_token(
         secret_key: str
 ) -> str:
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key)
-    return typing.cast(str, serializer.dumps(data, salt=salt))
+    return serializer.dumps(data, salt=salt)
 
 
 def verify_token(

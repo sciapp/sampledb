@@ -350,6 +350,7 @@ def test_status_codes(flask_server, user, driver):
         'api/v1/projects/': 200,
         f'api/v1/projects/{project_id}': 200,
         'apple-touch-icon.png': 200,
+        'dashboard/telemetry/get_is_telemetry_answered': 200,
         'eln_imports': 200,
         f'eln_imports/{eln_import_id}': 302,
         'favicon.ico': 200,

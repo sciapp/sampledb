@@ -1,3 +1,4 @@
+from sampledb import db
 import sampledb.logic.background_tasks
 import sampledb.logic.background_tasks.core
 import time
@@ -36,7 +37,11 @@ def test_background_tasks(app):
     assert task_status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.POSTED
     assert task is not None
     # give the background task time to be processed
-    time.sleep(0.1)
+    for _ in range(5):
+        db.session.refresh(task)
+        if task.status in (sampledb.logic.background_tasks.core.BackgroundTaskStatus.DONE, sampledb.logic.background_tasks.core.BackgroundTaskStatus.FAILED):
+            break
+        time.sleep(0.1)
     task = sampledb.logic.background_tasks.core.get_background_task(task.id)
     assert task.status == sampledb.logic.background_tasks.core.BackgroundTaskStatus.DONE
     assert handler_call_args == [
