@@ -4,7 +4,7 @@ Changelog
 Version 0.28.1
 --------------
 
-Currently in development.
+Released on June 18th, 2024.
 
 - Fixed use of timezones for ``date`` style ``datetime`` properties
 - Fixed validation of ORCID iDs
