@@ -274,7 +274,11 @@ def custom_format_date(
     if isinstance(date, datetime):
         datetime_obj = date
     else:
-        datetime_obj = datetime.strptime(date, format)
+        if ' ' in date:
+            utc_datetime = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            datetime_obj = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
+        else:
+            datetime_obj = datetime.strptime(date, format)
     return format_date(datetime_obj)
 
 
@@ -1030,7 +1034,14 @@ def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
     if orcid.startswith(orcid_prefix):
         orcid = orcid[len(orcid_prefix):]
     # check ORCID iD syntax
-    if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
+    if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{3}[\dX]', orcid, flags=re.ASCII):
+        return False, None
+    # check ISO 7064 Mod 11, 2 checksum
+    checksum = '0123456789X'[(12 - sum(
+        int(digit) << index
+        for index, digit in enumerate(reversed(orcid.replace('-', '')[:-1]), start=1)
+    ) % 11) % 11]
+    if checksum != orcid[-1]:
         return False, None
     # return sanitized ORCID iD on success
     return True, orcid
