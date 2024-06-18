@@ -762,3 +762,18 @@ def test_get_search_paths():
             for action_type in all_action_types
         }
     )
+
+def test_validate_orcid():
+    for orcid in [
+        '0000-0001-2345-6789',
+        '0000-0001-2345-672X',
+    ]:
+        assert sampledb.frontend.utils.validate_orcid(orcid) == (True, orcid)
+    for orcid in [
+        '0000-0001-2345-6780',
+        '0000-0000-0000-000',
+        '0000-0000-0000-00000',
+        '0000-0000-0000-00X0',
+        '0000-0000-0000-000a',
+    ]:
+        assert sampledb.frontend.utils.validate_orcid(orcid) == (False, None)
