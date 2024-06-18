@@ -7,6 +7,7 @@ Version 0.28.1
 Currently in development.
 
 - Fixed use of timezones for ``date`` style ``datetime`` properties
+- Fixed validation of ORCID iDs
 
 Version 0.28
 ------------
