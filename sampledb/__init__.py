@@ -33,11 +33,11 @@ def babel_locale_selector() -> str:
     if not current_user or not current_user.is_authenticated:
         return request_locale
 
-    auto_lc = sampledb.logic.settings.get_user_setting(current_user.id, 'AUTO_LC')
+    auto_lc = current_user.settings['AUTO_LC']
     if auto_lc:
         return request_locale
 
-    stored_locale = sampledb.logic.settings.get_user_setting(current_user.id, 'LOCALE')
+    stored_locale = current_user.settings['LOCALE']
     if stored_locale in sampledb.logic.locale.get_allowed_language_codes():
         return typing.cast(str, stored_locale)
 
@@ -48,10 +48,9 @@ def babel_timezone_selector() -> typing.Optional[str]:
     if flask.current_app.config['TIMEZONE']:
         return typing.cast(typing.Optional[str], flask.current_app.config['TIMEZONE'])
     if current_user.is_authenticated:
-        settings = sampledb.logic.settings.get_user_settings(current_user.id)
-        if settings['AUTO_TZ']:
-            return typing.cast(typing.Optional[str], flask.request.args.get('timezone', settings['TIMEZONE']))
-        return typing.cast(typing.Optional[str], settings['TIMEZONE'])
+        if current_user.settings['AUTO_TZ']:
+            return typing.cast(typing.Optional[str], flask.request.args.get('timezone', current_user.settings['TIMEZONE']))
+        return typing.cast(typing.Optional[str], current_user.settings['TIMEZONE'])
     return flask.request.args.get('timezone', None)
 
 

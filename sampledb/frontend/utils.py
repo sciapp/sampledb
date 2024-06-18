@@ -268,18 +268,11 @@ def custom_format_datetime(
 
 @JinjaFilter('babel_format_date')
 def custom_format_date(
-        date: typing.Union[datetime, str],
-        format: str = '%Y-%m-%d'
+        utc_datetime: typing.Union[datetime, str]
 ) -> str:
-    if isinstance(date, datetime):
-        datetime_obj = date
-    else:
-        if ' ' in date:
-            utc_datetime = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-            datetime_obj = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
-        else:
-            datetime_obj = datetime.strptime(date, format)
-    return format_date(datetime_obj)
+    if isinstance(utc_datetime, str):
+        utc_datetime = datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S')
+    return format_date(utc_datetime)
 
 
 @JinjaFilter('babel_format_time')
