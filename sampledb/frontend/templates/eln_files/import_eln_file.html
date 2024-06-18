@@ -62,7 +62,7 @@
       {% for user_info in parsed_eln_file_data.users | sort(attribute='id') %}
         <div class="row">
           <li>
-            <span class="col-sm-10">{{ user_info.id }}: {{ user_info.name or '—' }} {% if user_info.url %}({{ user_info.url }}){% endif %}</span><span class="col-sm-2" style="float: left;"><input type="checkbox" class="checkboxes-fed-identities" name="{{ user_info.id }}" data-eln-user-id="{{ user_info.id }}"></span>
+            <span class="col-sm-10" style="word-break: break-all">{{ user_info.id }}: {{ user_info.name or '—' }} {% if user_info.url %}({{ user_info.url }}){% endif %}</span><span class="col-sm-2" style="float: left;"><input type="checkbox" class="checkboxes-fed-identities" name="{{ user_info.id }}" data-eln-user-id="{{ user_info.id }}"></span>
           </li>
         </div>
       {% endfor %}
