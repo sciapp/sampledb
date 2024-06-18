@@ -1034,7 +1034,14 @@ def validate_orcid(orcid: str) -> typing.Tuple[bool, typing.Optional[str]]:
     if orcid.startswith(orcid_prefix):
         orcid = orcid[len(orcid_prefix):]
     # check ORCID iD syntax
-    if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{4}', orcid, flags=re.ASCII):
+    if not re.fullmatch(r'\d{4}-\d{4}-\d{4}-\d{3}[\dX]', orcid, flags=re.ASCII):
+        return False, None
+    # check ISO 7064 Mod 11, 2 checksum
+    checksum = '0123456789X'[(12 - sum(
+        int(digit) << index
+        for index, digit in enumerate(reversed(orcid.replace('-', '')[:-1]), start=1)
+    ) % 11) % 11]
+    if checksum != orcid[-1]:
         return False, None
     # return sanitized ORCID iD on success
     return True, orcid
