@@ -32,6 +32,7 @@ class InstrumentLogEntry:
     user_id: int
     versions: typing.Sequence['InstrumentLogEntryVersion'] = ()
     _Cache = typing.TypedDict('_Cache', {
+        'author': users.User,
         'file_attachments': typing.List['InstrumentLogFileAttachment'],
         'object_attachments': typing.List['InstrumentLogObjectAttachment']
     }, total=False)
@@ -51,7 +52,9 @@ class InstrumentLogEntry:
 
     @property
     def author(self) -> users.User:
-        return users.get_user(self.user_id)
+        if 'author' not in self._cache:
+            self._cache.update({'author': users.get_user(self.user_id)})
+        return self._cache['author']
 
     @property
     def file_attachments(self) -> typing.List['InstrumentLogFileAttachment']:
@@ -74,6 +77,22 @@ class InstrumentLogEntry:
 
         :param log_entries: the log entries
         """
+        log_entries_with_empty_author_cache = [
+            log_entry
+            for log_entry in log_entries
+            if 'author' not in log_entry._cache
+        ]
+        if log_entries_with_empty_author_cache:
+            author_ids = {
+                log_entry.user_id
+                for log_entry in log_entries_with_empty_author_cache
+            }
+            authors_by_id = {
+                author_id: users.get_user(author_id)
+                for author_id in author_ids
+            }
+            for log_entry in log_entries_with_empty_author_cache:
+                log_entry._cache['author'] = authors_by_id[log_entry.user_id]
         log_entries_with_empty_file_attachments_cache = [
             log_entry
             for log_entry in log_entries
