@@ -519,7 +519,10 @@ def parse_eln_file(
         with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zip_file:
             _eln_assert(zip_file.testzip() is None, ".eln file must be valid .zip file")
 
-            member_names = zip_file.namelist()
+            member_names = {
+                os.path.normpath(member_name): member_name
+                for member_name in zip_file.namelist()
+            }
             root_path_names = set()
             for member_name in member_names:
                 path_name, file_name = os.path.split(member_name)
@@ -528,9 +531,10 @@ def parse_eln_file(
             root_path_name = list(root_path_names)[0]
 
             ro_crate_metadata_file_name = root_path_name + '/ro-crate-metadata.json'
+            ro_crate_metadata_file_name = os.path.normpath(ro_crate_metadata_file_name)
             _eln_assert(ro_crate_metadata_file_name in member_names, ".eln file must contain ro-crate-metadata.json in its root directory")
             try:
-                with zip_file.open(root_path_name + '/ro-crate-metadata.json') as ro_crate_metadata_file:
+                with zip_file.open(member_names[ro_crate_metadata_file_name]) as ro_crate_metadata_file:
                     ro_crate_metadata = json.load(ro_crate_metadata_file)
             except Exception:
                 raise errors.InvalidELNFileError("ro-crate-metadata.json must contain a JSON-encoded object")
@@ -787,9 +791,10 @@ def parse_eln_file(
                         elif not file_path.startswith('/'):
                             file_path = '/' + file_path
                         file_path = root_path_name + file_path
+                        file_path = os.path.normpath(file_path)
                         _eln_assert(file_path in member_names, "File not found in .eln file (1)")
                         file_name = os.path.split(file_path)[1]
-                        with zip_file.open(file_path) as file:
+                        with zip_file.open(member_names[file_path]) as file:
                             file_data = file.read()
                         if isinstance(object_part.get('contentSize'), str):
                             try:
@@ -864,6 +869,7 @@ def parse_eln_file(
                         elif not data_file_name.startswith('/'):
                             data_file_name = '/' + data_file_name
                         data_file_name = root_path_name + data_file_name
+                        data_file_name = os.path.normpath(data_file_name)
                         _eln_assert(data_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
                         schema_file_name = object_part['@id'] + '/schema.json'
                         if schema_file_name.startswith('./'):
@@ -871,11 +877,12 @@ def parse_eln_file(
                         elif not schema_file_name.startswith('/'):
                             schema_file_name = '/' + schema_file_name
                         schema_file_name = root_path_name + schema_file_name
+                        schema_file_name = os.path.normpath(schema_file_name)
                         _eln_assert(schema_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
                         try:
-                            with zip_file.open(data_file_name) as data_file:
+                            with zip_file.open(member_names[data_file_name]) as data_file:
                                 version_data = json.load(data_file)
-                            with zip_file.open(schema_file_name) as schema_file:
+                            with zip_file.open(member_names[schema_file_name]) as schema_file:
                                 version_schema = json.load(schema_file)
                         except Exception:
                             raise errors.InvalidELNFileError("SampleDB .eln file must contain data and schema for each version")
