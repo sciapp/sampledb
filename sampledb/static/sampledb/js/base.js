@@ -193,9 +193,9 @@ $(function () {
   }
 
   $('.collapse-expand-button').each(function () {
-    const collapseExpandButton = $(this);
-    collapseExpandButton.on('click', function () {
-      const idPrefix = $(this).data('idPrefix');
+    $(this).on('click', function () {
+      const collapseExpandButton = $(this);
+      const idPrefix = collapseExpandButton.data('idPrefix');
       const collapsibleDiv = $(`.collapsible-object-container[data-id-prefix=${idPrefix}]`);
       const isCollapsed = !collapsibleDiv.is(':visible');
       collapsibleDiv.toggle(isCollapsed);

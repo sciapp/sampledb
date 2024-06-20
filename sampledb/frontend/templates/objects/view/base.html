@@ -93,6 +93,7 @@
   {% block includes %}
       {# counter for plotly_chart_plots #}
       {% set plot_counter = namespace(value=0) %}
+      {% set object_reference_counter = namespace(value=0) %}
       {% set indent_level = 0 %}
       {% set show_indent_border = False %}
       {% if data is not none and schema is not none %}
@@ -283,6 +284,7 @@
         <h2 id="{{ workflow_id }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</h2>
         {# counter for plotly_chart_plots #}
         {% set plot_counter = namespace(value=0) %}
+        {% set object_reference_counter = namespace(value=0) %}
         {% for elem in workflow %}
           <div>
             <h4>

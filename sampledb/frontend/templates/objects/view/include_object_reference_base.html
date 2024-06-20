@@ -8,7 +8,8 @@
       {% set referenced_object = get_object_if_current_user_has_read_permissions(data.object_id) %}
       {% if referenced_object and referenced_object.data %}
         {% set object_id = referenced_object.object_id %}
-        {% set id_prefix_root = object_reference ~ "_" ~ referenced_object.object_id %}
+        {% set object_reference_counter.value = object_reference_counter.value + 1 %}
+        {% set id_prefix_root = "object_reference_" ~ object_reference_counter.value ~ "_" ~ referenced_object.object_id %}
         {% set search_property_path_prefix = property_path[:-1] + ('*' + property_path[-1],) %}
         {% set property_path = () %}
         {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
