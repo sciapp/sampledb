@@ -271,7 +271,7 @@
     </div>
     {% endif %}
   </div>
-  {% if schema and 'workflow_view' in schema or 'workflow_views' in schema %}
+  {% if schema and ('workflow_view' in schema or 'workflow_views' in schema) %}
     {% set workflow_views = schema.get('workflow_views', []) %}
     {% if 'workflow_view' in schema %}
       {% do workflow_views.append(schema.workflow_view) %}
