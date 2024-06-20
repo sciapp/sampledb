@@ -26,7 +26,7 @@ from .utils import get_user_if_exists
 from ..logic.action_permissions import get_user_action_permissions
 from ..logic.components import get_component
 from ..logic.instruments import get_instrument, create_instrument, update_instrument, set_instrument_responsible_users, get_instruments, set_instrument_location, get_instrument_object_links, set_instrument_object
-from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_object_attachments, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
+from ..logic.instrument_log_entries import get_instrument_log_entries, create_instrument_log_entry, get_instrument_log_file_attachment, create_instrument_log_file_attachment, create_instrument_log_object_attachment, get_instrument_log_categories, create_instrument_log_category, update_instrument_log_category, delete_instrument_log_category, update_instrument_log_entry, hide_instrument_log_file_attachment, hide_instrument_log_object_attachment, get_instrument_log_entry, get_instrument_log_object_attachment
 from ..logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation, delete_instrument_translation
 from ..logic.languages import get_languages, get_language, Language, get_user_language
 from ..logic.actions import get_actions, get_action
@@ -293,7 +293,7 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         instrument_log_entries = get_instrument_log_entries(instrument_id)
         attached_object_ids = set()
         for log_entry in instrument_log_entries:
-            for object_attachment in get_instrument_log_object_attachments(log_entry.id):
+            for object_attachment in log_entry.object_attachments:
                 attached_object_ids.add(object_attachment.object_id)
         attached_object_infos = get_object_info_with_permissions(
             user_id=flask_login.current_user.id,

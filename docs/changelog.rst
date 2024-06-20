@@ -7,6 +7,7 @@ Version 0.28.2
 Currently in development.
 
 - Fixed collapse/expand button symbol for ``expandable`` or ``collapsible`` style objects in arrays
+- Fixed instrument log performance issues
 
 Version 0.28.1
 --------------

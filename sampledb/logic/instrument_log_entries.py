@@ -31,6 +31,12 @@ class InstrumentLogEntry:
     instrument_id: int
     user_id: int
     versions: typing.Sequence['InstrumentLogEntryVersion'] = ()
+    _Cache = typing.TypedDict('_Cache', {
+        'author': users.User,
+        'file_attachments': typing.List['InstrumentLogFileAttachment'],
+        'object_attachments': typing.List['InstrumentLogObjectAttachment']
+    }, total=False)
+    _cache: _Cache = dataclasses.field(default_factory=_Cache.__call__, compare=False, repr=False)
 
     @classmethod
     def from_database(cls, instrument_log_entry: instrument_log_entries.InstrumentLogEntry) -> 'InstrumentLogEntry':
@@ -46,15 +52,82 @@ class InstrumentLogEntry:
 
     @property
     def author(self) -> users.User:
-        return users.get_user(self.user_id)
+        if 'author' not in self._cache:
+            self._cache.update({'author': users.get_user(self.user_id)})
+        return self._cache['author']
 
     @property
     def file_attachments(self) -> typing.List['InstrumentLogFileAttachment']:
-        return get_instrument_log_file_attachments(self.id)
+        if 'file_attachments' not in self._cache:
+            self._cache.update({'file_attachments': get_instrument_log_file_attachments(self.id)})
+        return self._cache['file_attachments']
 
     @property
     def object_attachments(self) -> typing.List['InstrumentLogObjectAttachment']:
-        return get_instrument_log_object_attachments(self.id)
+        if 'object_attachments' not in self._cache:
+            self._cache.update({'object_attachments': get_instrument_log_object_attachments(self.id)})
+        return self._cache['object_attachments']
+
+    @staticmethod
+    def preload_cached_properties(
+            log_entries: typing.Sequence['InstrumentLogEntry']
+    ) -> None:
+        """
+        Load the content of all cached properties for multiple log entries.
+
+        :param log_entries: the log entries
+        """
+        log_entries_with_empty_author_cache = [
+            log_entry
+            for log_entry in log_entries
+            if 'author' not in log_entry._cache
+        ]
+        if log_entries_with_empty_author_cache:
+            author_ids = {
+                log_entry.user_id
+                for log_entry in log_entries_with_empty_author_cache
+            }
+            authors_by_id = {
+                author_id: users.get_user(author_id)
+                for author_id in author_ids
+            }
+            for log_entry in log_entries_with_empty_author_cache:
+                log_entry._cache['author'] = authors_by_id[log_entry.user_id]
+        log_entries_with_empty_file_attachments_cache = [
+            log_entry
+            for log_entry in log_entries
+            if 'file_attachments' not in log_entry._cache
+        ]
+        if log_entries_with_empty_file_attachments_cache:
+            for log_entry in log_entries_with_empty_file_attachments_cache:
+                log_entry._cache['file_attachments'] = []
+            log_entries_by_id = {
+                log_entry.id: log_entry
+                for log_entry in log_entries_with_empty_file_attachments_cache
+            }
+            file_attachments = instrument_log_entries.InstrumentLogFileAttachment.query.filter(
+                instrument_log_entries.InstrumentLogFileAttachment.log_entry_id.in_(log_entries_by_id.keys())
+            ).order_by(instrument_log_entries.InstrumentLogFileAttachment.id).all()
+            for file_attachment in file_attachments:
+                log_entries_by_id[file_attachment.log_entry_id]._cache['file_attachments'].append(InstrumentLogFileAttachment.from_database(file_attachment))
+
+        log_entries_with_empty_object_attachments_cache = [
+            log_entry
+            for log_entry in log_entries
+            if 'object_attachments' not in log_entry._cache
+        ]
+        if log_entries_with_empty_object_attachments_cache:
+            for log_entry in log_entries_with_empty_object_attachments_cache:
+                log_entry._cache['object_attachments'] = []
+            log_entries_by_id = {
+                log_entry.id: log_entry
+                for log_entry in log_entries_with_empty_object_attachments_cache
+            }
+            object_attachments = instrument_log_entries.InstrumentLogObjectAttachment.query.filter(
+                instrument_log_entries.InstrumentLogObjectAttachment.log_entry_id.in_(log_entries_by_id.keys())
+            ).order_by(instrument_log_entries.InstrumentLogObjectAttachment.id).all()
+            for object_attachment in object_attachments:
+                log_entries_by_id[object_attachment.log_entry_id]._cache['object_attachments'].append(InstrumentLogObjectAttachment.from_database(object_attachment))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -395,14 +468,16 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
     log_entries = instrument_log_entries.InstrumentLogEntry.query.filter_by(
         instrument_id=instrument_id
     ).all()
-    log_entries.sort(key=lambda e: e.versions[0].utc_datetime)
     if not log_entries:
         # ensure that the instrument exists
         instruments.check_instrument_exists(instrument_id)
-    return [
+    wrapped_log_entries = [
         InstrumentLogEntry.from_database(log_entry)
         for log_entry in log_entries
     ]
+    wrapped_log_entries.sort(key=lambda log_entry: log_entry.versions[0].utc_datetime)
+    InstrumentLogEntry.preload_cached_properties(wrapped_log_entries)
+    return wrapped_log_entries
 
 
 def create_instrument_log_file_attachment(
