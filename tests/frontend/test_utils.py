@@ -1,9 +1,12 @@
 import copy
+import datetime
 import glob
 import os.path
 import re
 
 import markupsafe
+import pytest
+import pytz
 
 import sampledb
 import sampledb.frontend.utils as utils
@@ -777,3 +780,22 @@ def test_validate_orcid():
         '0000-0000-0000-000a',
     ]:
         assert sampledb.frontend.utils.validate_orcid(orcid) == (False, None)
+
+
+@pytest.mark.parametrize(['timezone', 'lang_code', 'expected_date_str'], [
+    ('UTC', 'en', 'Jan 2, 2024'),
+    ('UTC', 'de', '02.01.2024'),
+    ('America/Los_Angeles', 'en', 'Jan 1, 2024'),
+    ('America/Los_Angeles', 'de', '01.01.2024')
+])
+def test_custom_format_date(timezone, lang_code, expected_date_str, mock_current_user):
+    mock_current_user.settings['AUTO_TZ'] = False
+    mock_current_user.settings['AUTO_LC'] = False
+    mock_current_user.settings['TIMEZONE'] = timezone
+    mock_current_user.timezone = timezone
+    mock_current_user.set_language_by_lang_code(lang_code)
+    example_datetime = datetime.datetime(2024, 1, 2, 3, 4, 5)
+    assert utils.custom_format_date(example_datetime.strftime('%Y-%m-%d %H:%M:%S')) == expected_date_str
+    assert utils.custom_format_date(example_datetime) == expected_date_str
+    assert utils.custom_format_date(example_datetime.replace(tzinfo=datetime.timezone.utc)) == expected_date_str
+    assert utils.custom_format_date(example_datetime.replace(tzinfo=datetime.timezone.utc).astimezone(pytz.timezone(timezone))) == expected_date_str
