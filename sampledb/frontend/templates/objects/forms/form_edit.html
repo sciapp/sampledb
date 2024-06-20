@@ -5,6 +5,7 @@
 {% block content %}
   {{ super() }}
   {% set plot_counter = namespace(value=0) %}
+  {% set object_reference_counter = namespace(value=0) %}
   <form class="form-horizontal" method="post" action="{{ url_for('.object', object_id=object_id, mode=mode) }}">
     {{ form.csrf_token() }}
     <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
