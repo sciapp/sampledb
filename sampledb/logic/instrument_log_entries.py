@@ -468,7 +468,6 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
     log_entries = instrument_log_entries.InstrumentLogEntry.query.filter_by(
         instrument_id=instrument_id
     ).all()
-    log_entries.sort(key=lambda e: e.versions[0].utc_datetime)
     if not log_entries:
         # ensure that the instrument exists
         instruments.check_instrument_exists(instrument_id)
@@ -476,6 +475,7 @@ def get_instrument_log_entries(instrument_id: int) -> typing.List[InstrumentLogE
         InstrumentLogEntry.from_database(log_entry)
         for log_entry in log_entries
     ]
+    wrapped_log_entries.sort(key=lambda log_entry: log_entry.versions[0].utc_datetime)
     InstrumentLogEntry.preload_cached_properties(wrapped_log_entries)
     return wrapped_log_entries
 
