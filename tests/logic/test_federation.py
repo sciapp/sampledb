@@ -33,6 +33,7 @@ from sampledb.logic.federation.objects import shared_object_preprocessor, parse_
 from sampledb.logic.federation.users import parse_user, shared_user_preprocessor, parse_import_user
 from sampledb.logic.federation.update import update_shares
 from sampledb.logic.federation.components import parse_import_component_info
+from sampledb.logic.federation.login import update_metadata
 from sampledb.logic.files import get_file, create_url_file, get_files_for_object
 from sampledb.logic.groups import create_group
 from sampledb.logic.instrument_translations import get_instrument_translations_for_instrument, set_instrument_translation
@@ -45,7 +46,7 @@ from sampledb.logic.projects import create_project
 from sampledb.logic.tags import get_tags
 from sampledb.logic.users import get_user, create_sampledb_federated_identity, get_user_by_federated_user, get_federated_identities, get_federated_user_links_by_component_id, get_user_email_hashes, get_email_hashes_for_federation_candidates, _hash_credential, link_users_by_email_hashes
 from sampledb.logic.authentication import add_email_authentication
-from sampledb.models import User, UserType, Action, ActionType, Comment, ObjectLocationAssignment, File, UserFederationAlias, Instrument, Location, InstrumentTranslation, ActionTranslation, ActionTypeTranslation, Permissions, MarkdownImage, FederatedIdentity, Authentication, AuthenticationType
+from sampledb.models import User, UserType, Action, ActionType, Comment, ObjectLocationAssignment, File, UserFederationAlias, Instrument, Location, InstrumentTranslation, ActionTranslation, ActionTypeTranslation, Permissions, MarkdownImage, FederatedIdentity, Authentication, AuthenticationType, SAMLMetadata, SAMLMetadataType
 from sampledb.models.fed_logs import FedActionLogEntryType, FedInstrumentLogEntryType, FedInstrumentLogEntry, FedActionLogEntry, FedUserLogEntryType, FedUserLogEntry, FedLocationLogEntry, FedLocationLogEntryType, FedLocationTypeLogEntry, FedLocationTypeLogEntryType, FedCommentLogEntry, FedCommentLogEntryType, FedObjectLocationAssignmentLogEntry, FedObjectLocationAssignmentLogEntryType, FedFileLogEntry, FedFileLogEntryType, FedActionTypeLogEntryType, FedActionTypeLogEntry, FedObjectLogEntry, FedObjectLogEntryType
 from tests.logic.schemas.test_validate_schema import wrap_into_basic_schema
 
@@ -4598,3 +4599,25 @@ def test_link_users_by_email_hashes(component):
     assert identity.user_id == users[0].id
     assert identity.local_fed_user.component_id == component.id
     assert identity.local_fed_user.fed_id == 2
+
+
+def test_update_metadata(component):
+    test_update = {
+        "idp": "test idp metadata",
+        "sp": "test sp metadata",
+        "enabled": True
+    }
+
+    update_metadata(component, test_update)
+
+    metadata = SAMLMetadata.query.filter_by(component_id=component.id).all()
+    assert len(metadata) == 2
+    metadata_types = [md.type for md in metadata]
+    assert SAMLMetadataType.IDENTITY_PROVIDER_METADATA in metadata_types
+    assert SAMLMetadataType.SERVICE_PROVIDER_METADATA in metadata_types
+
+    assert get_component(component.id).fed_login_available
+
+    update_metadata(component, {})
+
+    assert not get_component(component.id).fed_login_available
