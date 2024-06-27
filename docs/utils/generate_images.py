@@ -962,7 +962,7 @@ def api_token_list(base_url, driver):
     driver.get(base_url + f'users/{user.id}/preferences')
     resize_for_screenshot(driver, width, min_height)
     header1 = driver.find_element(By.ID, 'api_tokens')
-    header2 = driver.find_element(By.ID, '2fa')
+    header2 = driver.find_element(By.ID, 'api_access_tokens')
     y_offset = scroll_to_element(driver, header1)
     save_cropped_screenshot_as_file(driver, 'docs/static/img/generated/api_token_list.png', (0, header1.location['y'] - y_offset, width, header2.location['y'] - y_offset))
 
