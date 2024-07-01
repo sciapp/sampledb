@@ -6,6 +6,7 @@ import os.path
 import typing
 
 import flask
+import minisign
 
 from .utils import get_translated_text
 from .actions import get_action
@@ -306,7 +307,18 @@ def generate_ro_crate_metadata(
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
 
     result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
+    result_files['sampledb_export/ro-crate-metadata.json.minisig'] = _sign_ro_crate_metadata(result_files['sampledb_export/ro-crate-metadata.json'])
     return result_files
+
+
+def _sign_ro_crate_metadata(
+    data: bytes
+) -> bytes:
+    # TODO use instance keypair instead of newly generated keys
+    keypair = minisign.KeyPair.generate()
+
+    sig = keypair.secret_key.sign(data, trusted_comment=str(keypair.public_key.to_base64()))
+    return bytes(sig)
 
 
 def _convert_metadata_to_property_values(
