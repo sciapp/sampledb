@@ -43,13 +43,22 @@
 {% endmacro %}
 
 {% macro _eln_import_information_symbol(obj, text=false, nolink=false) %}
+  {% set eln_signed_import = is_signed_import(obj.eln_import_id) %}
   {% if not nolink %}
     <a href="{{ url_for('.eln_import', eln_import_id=obj.eln_import_id) }}" class="import-information-symbol">
   {% endif %}
   {% if text %}
-    ({{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }})
+    {% if eln_signed_import %}
+      ({{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }} Signed)
+    {% else %}
+      ({{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }})
+    {% endif %}
   {% else %}
-    <i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }}"></i>
+    {% if eln_signed_import %}
+      <i class="fa fa-lock" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }} Signed"></i>
+    {% else %}
+      <i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }}"></i>
+    {% endif %}
   {% endif %}
   {% if not nolink %}
     </a>

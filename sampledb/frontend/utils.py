@@ -38,7 +38,7 @@ import numpy as np
 from ..logic import errors
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
-from ..logic.eln_import import get_eln_import_for_object
+from ..logic.eln_import import get_eln_import_for_object, is_signed_eln_import
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
@@ -1720,6 +1720,12 @@ def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User
     if federated_user is not None:
         return federated_user, user
     return user, None
+
+
+@JinjaFunction()
+def is_signed_import(eln_import_id: int) -> bool:
+    # TODO remove cast when column is not nullable (requires change in set_up_demo)
+    return bool(is_signed_eln_import(eln_import_id))
 
 
 def build_modified_url(
