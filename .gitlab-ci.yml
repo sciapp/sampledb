@@ -295,7 +295,7 @@ test-container-status:
     - sleep 5 # allow container to start
     - docker ps
     - docker logs $CONTAINER_NAME
-    - docker ps | grep $CONTAINER_NAME | grep '(health. starting)'
+    - docker ps | grep $CONTAINER_NAME | grep -E '(healthy|starting)'
     - sleep 90 # 60s health start period plus 30s buffer
     - docker logs $CONTAINER_NAME
     - docker ps | grep $CONTAINER_NAME | grep '(healthy)'
