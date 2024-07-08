@@ -2,7 +2,7 @@
   {% if data is none %}
     {% set data = [] %}
   {% endif %}
-  <div class="form-group row error-parent" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="list" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}" data-name="{{ id_prefix }}_parent">
+  <div class="form-group row error-parent" data-template-order-index="{{ template_order_index }}" data-id-prefix="{{ id_prefix }}" data-array-container="list" data-min-items="{{ minItems }}" data-max-items="{{ maxItems }}" data-default-items="{{ defaultItems }}" style="padding-right:0.75em" data-name="{{ id_prefix }}_parent">
     <div class="col-md-3 control-label">
       {% if schema.title %}<strong><span {% if is_required and schema.minItems %}class="required-label"{% endif %} {% if 'tooltip' in schema %}data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}"{% endif %}>{{ schema.title | get_translated_text }}{% if 'tooltip' in schema %} <i class="fa fa-question-circle" aria-hidden="true"></i>{% endif %}</span></strong>{% endif %}
     </div>

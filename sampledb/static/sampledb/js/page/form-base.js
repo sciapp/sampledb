@@ -813,10 +813,24 @@ function insertFormData () {
   if (Object.keys(formData).length === 0) {
     return;
   }
+  const initializedChoiceArrayPickers = [];
 
   $.each(formData, function (key, value) {
     const field = $(`[name="${key}"]`);
     if (field.length === 0) {
+      if (!key.endsWith('__text')) {
+        return;
+      }
+      const idPrefix = key.split('__').slice(0, -2).join('__') + '_';
+      const choicepickerField = $(`[data-sampledb-choice-array="${idPrefix}"]`);
+      if (choicepickerField.length === 0) {
+        return;
+      }
+      if (!initializedChoiceArrayPickers.includes(idPrefix)) {
+        initializedChoiceArrayPickers.push(idPrefix);
+        choicepickerField.selectpicker('val', []);
+      }
+      choicepickerField.selectpicker('val', choicepickerField.selectpicker('val').concat([value]));
       return;
     }
     if (field.hasClass('objectpicker')) {

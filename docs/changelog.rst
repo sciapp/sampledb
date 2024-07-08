@@ -9,6 +9,7 @@ Currently in development.
 - Fixed collapse/expand button symbol for ``expandable`` or ``collapsible`` style objects in arrays
 - Fixed instrument log performance issues
 - Fixed sending of notifications when creating instrument log entries via HTTP API
+- Fixed editing of choice style array dropdowns
 
 Version 0.28.1
 --------------
