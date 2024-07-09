@@ -4,7 +4,7 @@ Changelog
 Version 0.28.2
 --------------
 
-Currently in development.
+Released on July 9th, 2024.
 
 - Fixed collapse/expand button symbol for ``expandable`` or ``collapsible`` style objects in arrays
 - Fixed instrument log performance issues
