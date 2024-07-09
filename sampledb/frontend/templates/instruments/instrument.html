@@ -129,6 +129,7 @@
       {% set schema = linked_object.schema %}
       {% set data = linked_object.data %}
       {% set plot_counter = namespace(value=0) %}
+      {% set object_reference_counter = namespace(value=0) %}
       {% set indent_level = 0 %}
       {% set show_indent_border = False %}
       {% include "objects/view/object.html" %}

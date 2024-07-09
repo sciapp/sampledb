@@ -42,7 +42,7 @@ Next, start the SampleDB container:
         --restart=always \
         --name sampledb \
         -p 8000:8000 \
-        sciapp/sampledb:0.28.1
+        sciapp/sampledb:0.28.2
 
 This will start a minimal SampleDB installation at ``http://localhost:8000`` and allow you to sign in with the username ``admin`` and the password ``password``.
 
