@@ -76,7 +76,7 @@ class InstrumentLogEntry(Model):
     instrument_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(Instrument.id), nullable=False)
     user_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     author: Mapped['User'] = relationship('User')
-    versions: Mapped[typing.List['InstrumentLogEntryVersion']] = relationship('InstrumentLogEntryVersion')
+    versions: Mapped[typing.List['InstrumentLogEntryVersion']] = relationship('InstrumentLogEntryVersion', lazy="joined")
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["InstrumentLogEntry"]]
@@ -104,7 +104,7 @@ class InstrumentLogEntryVersion(Model):
     utc_datetime: Mapped[datetime.datetime] = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     content_is_markdown: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     event_utc_datetime: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
-    categories: Mapped[typing.List[InstrumentLogCategory]] = relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table)
+    categories: Mapped[typing.List[InstrumentLogCategory]] = relationship('InstrumentLogCategory', secondary=instrument_log_entry_category_association_table, lazy="joined")
     log_entry: Mapped[InstrumentLogEntry] = relationship(InstrumentLogEntry, back_populates='versions')
 
     if typing.TYPE_CHECKING:
