@@ -233,8 +233,7 @@ def get_export_infos(
                                     'id': category.id,
                                     'title': category.title
                                 })
-                        file_attachments = logic.instrument_log_entries.get_instrument_log_file_attachments(log_entry.id)
-                        for file_attachment in file_attachments:
+                        for file_attachment in log_entry.file_attachments:
                             file_name = os.path.basename(file_attachment.file_name)
                             file_path = f'instruments/{instrument_info.id}/log_entries/{log_entry.id}/files/{file_attachment.id}/{file_name}'
                             instrument_infos[-1]['instrument_log_entries'][-1]['file_attachments'].append({
@@ -243,8 +242,7 @@ def get_export_infos(
                             })
                             archive_files["sampledb_export/" + file_path] = file_attachment.content
 
-                        object_attachments = logic.instrument_log_entries.get_instrument_log_object_attachments(log_entry.id)
-                        for object_attachment in object_attachments:
+                        for object_attachment in log_entry.object_attachments:
                             instrument_infos[-1]['instrument_log_entries'][-1]['object_attachments'].append({
                                 'object_id': object_attachment.object_id
                             })

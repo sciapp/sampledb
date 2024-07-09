@@ -229,8 +229,8 @@
 
     {% for file in files %}
       {% if not file.is_hidden and file.storage == 'database' %}
-        {% for file_extension in ['.png', '.jpg', '.jpeg'] %}
-          {% if file.original_file_name.endswith(file_extension) %}
+        {% for file_extension in IMAGE_FORMATS %}
+          {% if file.original_file_name.lower().endswith(file_extension) %}
             <h3>{{ _('File') }} #{{ file.id }}: {{ file.title }}</h3>
             <img src="./object_files/{{ object.id }}/{{ file.id }}" class="object-file-image"/>
           {% endif %}
