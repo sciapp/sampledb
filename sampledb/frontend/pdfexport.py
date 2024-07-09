@@ -70,7 +70,7 @@ def create_pdfexport(
                 file = exported_files[(object_id, file_id)]
                 if file.storage == 'database' and not file.is_hidden:
                     for file_extension, mime_type in IMAGE_FORMATS.items():
-                        if file.original_file_name.endswith(file_extension):
+                        if file.original_file_name.lower().endswith(file_extension):
                             image_data = file.open(read_only=True).read()
                             url = 'data:' + mime_type + ';base64,' + base64.b64encode(image_data).decode('utf-8')
                             break
@@ -305,7 +305,8 @@ def create_pdfexport(
         get_user=get_user_if_exists,
         metadata_language=lang_code,
         files_by_object_id=files_by_object_id,
-        eln_import_urls={object[0].object_id: logic.eln_import.get_eln_import_object_url(object[0].object_id) for object in objects}
+        eln_import_urls={object[0].object_id: logic.eln_import.get_eln_import_object_url(object[0].object_id) for object in objects},
+        IMAGE_FORMATS=IMAGE_FORMATS
     )
 
     # use regular user language again

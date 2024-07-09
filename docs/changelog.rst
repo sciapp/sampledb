@@ -10,6 +10,7 @@ Currently in development.
 - Fixed instrument log performance issues
 - Fixed sending of notifications when creating instrument log entries via HTTP API
 - Fixed editing of choice style array dropdowns
+- Fixed including image files with uppercase file extensions in PDF export
 
 Version 0.28.1
 --------------
