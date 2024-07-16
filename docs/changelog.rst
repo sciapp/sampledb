@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.28.3
+--------------
+
+- Fixed simple search query escaping to support searching for special characters
+
 Version 0.28.2
 --------------
 

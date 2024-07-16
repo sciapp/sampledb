@@ -167,6 +167,46 @@ def test_find_by_simple_text(user, action) -> None:
         assert 'test' in object.data['text_attr']['text']
 
 
+@pytest.mark.parametrize('special_character', ['ä', '%', '_', '.', ':', '{', '[', '(', "'", '"',])
+def test_find_by_special_characters(user, special_character) -> None:
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Example Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': "This is a test without any special characters"
+        }
+    }
+    sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': f"This contains {special_character}"
+        }
+    }
+    sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func(data['name']['text'], use_advanced_search=False)
+    assert not use_advanced_search
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(objects) == 1
+    assert len(search_notes) == 0
+    for object in objects:
+        assert data['name']['text'] in object.data['name']['text']
+
 def test_find_by_tag(user, action) -> None:
     data = {
         'name': {
