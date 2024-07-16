@@ -489,8 +489,8 @@ def create_multiple_labels(
         row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
 
         tmp_index = 0
-        max_box_height = 0
-        max_ghs_height = 0
+        max_box_height = 0.0
+        max_ghs_height = 0.0
 
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
