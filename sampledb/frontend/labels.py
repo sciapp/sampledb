@@ -489,6 +489,9 @@ def create_multiple_labels(
         row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
 
         tmp_index = 0
+        max_box_height = 0
+        max_ghs_height = 0
+
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
             object_name_list.append(object_specifications[object_id]["object_name"])
@@ -517,33 +520,38 @@ def create_multiple_labels(
                 if min_label_height > ghs_height + 33:
                     ghs_height += min_label_height - (ghs_height + 33)
 
-            box_side_by_side_height = max(21, math.ceil(ghs_height), box_height - 12)
-            column_amount = int(math.floor((paper_height - 15) / (box_height + 5)))
-
-            if quantity == 1 and fill_single_page:
-                page_amount = row_amount * column_amount
-                outer_box_width = paper_width - 10
-                outer_box_height = paper_height - 15
-            else:
-                page_amount = quantity
-                outer_box_width = paper_width - 10
-                outer_box_height = ((quantity // 4) + 1) * box_height + 5
-
             tmp_index += 1
+            if box_height > max_box_height:
+                max_box_height = box_height
+            if ghs_height > max_ghs_height:
+                max_ghs_height = ghs_height
 
         object_amount = len(username_list)
 
+        column_amount = int(math.floor((paper_height - 15) / (max_box_height + 5)))
+        box_side_by_side_height = max(21, math.ceil(max_ghs_height), max_box_height - 12)
+        if quantity == 1 and fill_single_page:
+            page_amount = row_amount * column_amount
+            outer_box_width = paper_width - 10
+            outer_box_height = paper_height - 15
+        else:
+            page_amount = quantity
+            outer_box_width = paper_width - 10
+            outer_box_height = ((quantity // 4) + 1) * max_box_height + 5
+
         if not fill_single_page:
-            outer_box_height = (((quantity * object_amount) // 4) + 1) * box_height + 5
+            outer_box_height = (((quantity * object_amount) // 4) + 1) * max_box_height + 5
+
+        has_ghs = [True if len(hazard_list[hazard_index]) > 0 else False for hazard_index in range(0, len(hazard_list))]
 
         html = flask.render_template("labels/FixedWidth.html",
                                      box_width=box_width, object_amount=object_amount,
-                                     box_height=box_height, qr_code_uri_list=qr_code_uri_list,
+                                     box_height=max_box_height, qr_code_uri_list=qr_code_uri_list,
                                      qrcode_width=qr_code_width, paper_width=paper_width, paper_height=paper_height,
                                      hazard_list=hazard_list, GHS_IMAGE_URIS=GHS_IMAGE_URIS, ghs_width=ghs_width,
                                      sample_code_list=sample_code_list, username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
-                                     ghs_amount_list=ghs_amount_list, ghs_height=ghs_height,
+                                     ghs_amount_list=ghs_amount_list, ghs_height=max_ghs_height, has_ghs=has_ghs,
                                      ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered,
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,

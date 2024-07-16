@@ -125,7 +125,7 @@
     .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(6) {
         top: 15.5mm;
     }
-    .centeredghsbox .ghs:nth-child(7)
+    .centeredghsbox .ghs:nth-child(7) {
         top: 20mm;
     }
     .centeredghsbox .ghs:nth-child(8), .centeredghsbox .ghs:nth-child(9) {
@@ -192,7 +192,11 @@
                     </div>
                 {%- endif -%}
                 {%- if not ghs_classes_side_by_side and not centered -%}
-                    <div class="ghsouterbox">
+                    {%- if has_ghs[object_index] -%}
+                        <div class="ghsouterbox">
+                    {%- else -%}
+                        <div>
+                    {%- endif -%}
                 {%- endif -%}
                     <div class="boxghs
                 {% if ghs_amount_list[object_index] > 0 %}
