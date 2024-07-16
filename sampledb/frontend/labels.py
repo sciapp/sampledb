@@ -360,40 +360,21 @@ def create_multiple_labels(
         object_url = object_specifications[object_id]["object_url"]
         qr_code_uri = []
 
-        object_ids = sorted(list(object_specifications.keys()))
-        object_specification = object_specifications[object_id]
-        label_counter = 0
-        while label_counter < quantity * len(object_ids) or fill_single_page:
-            if ((label_counter % quantity) == 0 and (
-                not fill_single_page or label_counter == 0)) or add_label_number or qr_code_uri is None:
-                object_id = object_ids[min(int(label_counter / quantity), len(object_ids) - 1)]
-                object_specification = object_specifications[object_id]
-                if custom_qr_code_texts and f"{object_id}_{label_counter + 1}" in custom_qr_code_texts and qr_code_width > 0:
-                    # arbitrary limit of 1000 characters
-                    qr_data = custom_qr_code_texts[f"{object_id}_{label_counter + 1}"][:1000]
-                    qr = qrcode.QRCode(
-                        box_size=qr_code_width,
-                        border=0
-                    )
-                    qr.add_data(qr_data)
-                    image = qr.make_image(fill_color="black", back_color="white")
-                elif create_only_qr_codes:
-                    if only_id_qr_code:
-                        if add_label_number:
-                            qr_data = f"{object_id}_{label_counter + 1}_{quantity}"
+        for quantity_index in range(1, quantity + 1):
+            if custom_qr_code_texts and f"{object_id}_{quantity_index - 1}" in custom_qr_code_texts:
+                url = custom_qr_code_texts[f"{object_id}_{quantity_index - 1}"]
+            else:
+                if only_id_qr_code:
+                    if add_label_number:
+                        if add_maximum_label_number:
+                            url = f"{object_id} {quantity_index}_{quantity}"
                         else:
-                            qr_data = str(object_id)
+                            url = f"{object_id} {quantity_index}"
                     else:
-                        qr_data = object_specification["object_url"]
-                    qr = qrcode.QRCode(
-                        box_size=qr_code_width,
-                        border=0
-                    )
-                    qr.add_data(qr_data)
-                    image = qr.make_image(fill_color="black", back_color="white")
+                        url = f"{object_id}"
                 else:
-                    image = qrcode.make(object_specification["object_url"])
-
+                    url = f"{object_url}"
+            image = qrcode.make(url, border=1)
             image_stream = io.BytesIO()
             image.save(image_stream, format='png')
             image_stream.seek(0)
@@ -476,7 +457,6 @@ def create_multiple_labels(
             text_top -= 0.5
             text_name_top += 0.5
         qr_code_top = (box_height - qr_code_width) / 2
-        outer_box_width = paper_width
         out_box_width = paper_width - 11.5
         out_box_height = paper_height - 4.5
         text_width = box_width - qr_code_width - 1.5
