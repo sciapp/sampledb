@@ -542,7 +542,7 @@ def create_multiple_labels(
         if not fill_single_page:
             outer_box_height = (((quantity * object_amount) // 4) + 1) * max_box_height + 5
 
-        has_ghs = [True if len(hazard_list[hazard_index]) > 0 else False for hazard_index in range(0, len(hazard_list))]
+        has_ghs = [len(hazard_list[hazard_index]) > 0 for hazard_index in range(0, len(hazard_list))]
 
         html = flask.render_template("labels/FixedWidth.html",
                                      box_width=box_width, object_amount=object_amount,
