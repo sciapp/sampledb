@@ -361,8 +361,8 @@ def create_multiple_labels(
         qr_code_uri = []
 
         for quantity_index in range(1, quantity + 1):
-            if custom_qr_code_texts and f"{object_id}_{quantity_index - 1}" in custom_qr_code_texts:
-                url = custom_qr_code_texts[f"{object_id}_{quantity_index - 1}"]
+            if custom_qr_code_texts and f"{object_id}_{quantity_index}" in custom_qr_code_texts:
+                url = custom_qr_code_texts[f"{object_id}_{quantity_index}"]
             else:
                 if only_id_qr_code:
                     if add_label_number:
