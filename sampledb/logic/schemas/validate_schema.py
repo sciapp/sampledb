@@ -519,7 +519,7 @@ def _validate_object_schema(
     else:
         workflow_views = schema.get('workflow_views', [])
     for workflow_index, workflow_view in enumerate(workflow_views):
-        id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
+        id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id', 'recurse_action_type_id', 'recurse_action_type_id']
         workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties'])
         if not isinstance(workflow_view, dict):
             raise ValidationError(f'workflow_view {workflow_index} must be a dict', path)
