@@ -661,12 +661,14 @@ def parse_timeseries_form_data(
     timeseries_data_str = form_data.get(id_prefix + '__data', [''])[0]
     if not timeseries_data_str and not required:
         return None
+    timeseries_data: typing.List[typing.List[typing.Union[str, int, float]]]
     if not timeseries_data_str:
         timeseries_data = []
     else:
         csv_file = io.StringIO(timeseries_data_str)
         reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC)
-        timeseries_data = list(reader)
+        # csv.QUOTE_NONNUMERIC enables data conversion, however type annotations do not reflect this
+        timeseries_data = list(reader)  # type: ignore
         if timeseries_data and all(isinstance(value, str) for value in timeseries_data[0]):
             # skip header rows
             timeseries_data = timeseries_data[1:]
@@ -679,7 +681,7 @@ def parse_timeseries_form_data(
                 raise ValueError(_('invalid timeseries CSV data, expected datetime string or relative time in seconds, magnitude and (optional) magnitude in base units'))
             if not is_relative_time:
                 try:
-                    parsed_datetime = datetime.datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S.%f')
+                    parsed_datetime = datetime.datetime.strptime(typing.cast(str, row[0]), '%Y-%m-%d %H:%M:%S.%f')
                 except ValueError as exc:
                     raise ValueError(_('invalid datetime in timeseries, expected format: YYYY-MM-DD hh:mm:ss.ffffff')) from exc
                 if user_timezone != pytz.utc:
