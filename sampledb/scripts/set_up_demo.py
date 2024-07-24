@@ -397,6 +397,10 @@ This example shows how Markdown can be used for instrument Notes.
             },
             {
                 'title': {'en': 'All Related Objects'}
+            },
+            {
+                'title': {'en': 'All Related Objects, recurse Samples'},
+                'recurse_action_type_id': -99
             }
         ]
         sampledb.logic.actions.update_action(action_id=sample_action.id, schema=sample_schema)

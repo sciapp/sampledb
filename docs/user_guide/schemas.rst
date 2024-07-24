@@ -246,6 +246,9 @@ Use the ``show_more`` or ``workflow_show_more`` attributes in the linked objects
 
 The ``sorting_properties`` can be set to a list of property names which will be used for sorting the objects, starting with the first datetime property from the list found for an object and falling back to the object creation datetime for objects which contain none of the listed datetime properties.
 
+By setting ``recurse_action_id`` and/or ``recurse_action_type_id`` referencing and referenced objects of the described actions or action types are included in
+the workflow view as if they were directly referenced (therefore applying the workflow view configuration of this, not the related object, and merging the object information).
+
 .. code-block:: json
     :caption: A workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``
 
