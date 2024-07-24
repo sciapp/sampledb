@@ -1601,3 +1601,12 @@ table .div-apply-recipe  .btn {
 .collapse-expand-button {
     cursor: pointer;
 }
+
+@media (max-width: 991px) {
+    .width-md-important {
+        width: 100% !important;
+    }
+    label.width-md-important {
+        text-align: left !important;
+    }
+}
