@@ -31,7 +31,7 @@ class Tag:
 def get_object_tags(object: objects.Object) -> typing.Sequence[str]:
     if object.data is not None and 'tags' in object.data:
         tags_entry = object.data['tags']
-        if tags_entry['_type'] == 'tags' and 'tags' in tags_entry:
+        if isinstance(tags_entry, dict) and '_type' in tags_entry and tags_entry['_type'] == 'tags' and 'tags' in tags_entry:
             return [tag.strip() for tag in tags_entry["tags"]]
     return ()
 

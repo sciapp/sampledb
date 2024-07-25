@@ -104,7 +104,9 @@
             {% set diff = none %}
             {% set previous_schema = none %}
           {% endif %}
-          {% include "objects/view/any.html" %}
+          <div style="margin-left: -15px; margin-right:-15px">
+            {% include "objects/view/any.html" %}
+          </div>
       {% endif %}
   {% endblock %}
   {% if data is none or schema is none %}
