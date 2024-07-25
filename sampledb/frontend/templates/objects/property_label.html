@@ -1,7 +1,7 @@
 {% if property_label_class is not defined %}
-  {% set property_label_class = 'col-md-3' %}
+  {% set property_label_class = 'col-md-3 width-md-important' %}
 {% endif %}
-<label class="{{ property_label_class }}" style="text-align: right; padding-left: {{ indent_level * 10 + 10 + 15 }}px">
+<label class="{{ property_label_class }}" style="text-align: right; width: {% if property_label_width %}{{ property_label_width }}{% else %}calc(25% - {{ indent_level * 10 * 0.75 + 5 * 0.75 * (indent_level-1) }}px){% endif %};">
   {% if 'tooltip' in schema %}
     <span data-toggle="tooltip" data-placement="top" title="{{ schema.tooltip | get_translated_text }}">
       {{ schema.title | get_translated_text }}

@@ -20,8 +20,9 @@
 {% endfor %}
 
 {% block property_label %}
-  <div class="col-md-3" style="padding-right: 0">
-    {% set property_label_class = 'col-md-12' %}
+  <div class="col-md-3 width-md-important" style="padding-right: 0; padding-left: 0; width: calc(25% - {{ indent_level * 10 * 0.75 + 5 * 0.75 * (indent_level-1) }}px);">
+    {% set property_label_class = 'col-md-12 width-md-important' %}
+    {% set property_label_width = '100%' %}
     {% include "objects/property_label.html" %}
     <div class="form-switch">
       {% include "objects/forms/form_text_language_picker.html" %}

@@ -1,7 +1,7 @@
 <div class="form-area inline-edit-horizontal-property" data-name="{{ id_prefix }}_parent">
   {# Label #}
   {% block property_label %}
-    {% set indent_level = -2 %}
+    {% set property_label_width = "auto" %}
     {% set property_label_class = "" %}
     {% include "objects/property_label.html" %}
   {% endblock %}

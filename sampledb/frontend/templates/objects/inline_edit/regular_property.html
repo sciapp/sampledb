@@ -4,7 +4,7 @@
     {% include "objects/property_label.html" %}
   {% endblock %}
   {# View #}
-  <div class="view-switch col-md-9" style="position:relative; padding-left: 15px">
+  <div class="view-switch col-md-9 width-md-important" style="padding-left: 15px; width: calc(75% + {{ (indent_level-1) * (10 * 0.75 + 0.75 * 5) }}px);">
     <div class="alert-upload-container">
       {% block property_value %}
       {% endblock %}
@@ -18,7 +18,7 @@
   </div>
   {# Form #}
   <div class="form-switch">
-    <div class="col-md-9">
+    <div class="col-md-9 width-md-important" style="width: calc(75% + {{ (indent_level-1) * (10 * 0.75 + 0.75 * 5) }}px);">
       {% block property_field %}
       {% endblock %}
       {% if 'note' in schema %}

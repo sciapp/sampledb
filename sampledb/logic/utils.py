@@ -335,7 +335,7 @@ def cache(function: typing.Callable[..., _T]) -> typing.Callable[..., _T]:
     if not ENABLE_FUNCTION_CACHES:
         return function
     cache_function = functools.cache(function)
-    _CACHE_FUNCTIONS.add(cache_function)
+    _CACHE_FUNCTIONS.add(cache_function)  # type: ignore
     return cache_function
 
 

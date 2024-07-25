@@ -475,9 +475,9 @@ def base64encode(value: typing.Any) -> str:
 
 @JinjaFilter('are_conditions_fulfilled')
 def filter_are_conditions_fulfilled(data: typing.Dict[str, typing.Any], property_schema: typing.Dict[str, typing.Any]) -> bool:
-    if not data:
-        return False
     if not isinstance(property_schema, dict):
+        return False
+    if not data and 'conditions' in property_schema:
         return False
     return are_conditions_fulfilled(property_schema.get('conditions'), data)
 

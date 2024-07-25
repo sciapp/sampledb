@@ -17,7 +17,7 @@
     {% set object_reference_counter = namespace(value=0) %}
     {% set indent_level = 0 %}
     {% set show_indent_border = False %}
-    <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form" autocomplete="off">
+    <form class="form-horizontal" action="{{ url_for('.object', object_id=object_id, mode='edit') }}" id="data-form" autocomplete="off" style="margin-left: -15px; margin-right:-15px">
         {{ form.csrf_token() }}
         <input type="hidden" name="context_id_token" value="{{ context_id_token }}" />
         {% include "objects/inline_edit/inline_edit_any.html" %}

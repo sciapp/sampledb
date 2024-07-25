@@ -2,7 +2,7 @@
   {% block property_label %}
     {% include "objects/property_label.html" %}
   {% endblock %}
-  <div class="col-md-9">
+  <div class="col-md-9 width-md-important" style="padding-left: 15px; width: calc(75% + {{ (indent_level-1) * (10 * 0.75 + 0.75 * 5) }}px)">
     {% block property_field %}
     {% endblock %}
     {% if data and data.export_edit_note %}

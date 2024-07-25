@@ -1,6 +1,5 @@
 # coding: utf-8
 import functools
-import json
 import typing
 
 from sqlalchemy import String, and_, or_
@@ -1644,9 +1643,13 @@ def generate_filter_func(
                     query_string: str = query_string
             ) -> typing.Any:
                 """ Filter objects based on search query string """
-                # The query string is converted to json to escape quotes, backslashes, etc
-                query_string = json.dumps(query_string)[1:-1]
-                return data.cast(String).ilike('%: "%' + query_string + '%"%')
+                # escape /, % and _ as that is required for ILIKE
+                query_string = query_string.replace('\\', '\\\\')
+                query_string = query_string.replace('%', '\\%')
+                query_string = query_string.replace('_', '\\_')
+                # escape " as that will have happened during JSON serialization in PostgreSQL
+                query_string = query_string.replace('"', '\\\\"')
+                return data.cast(String).ilike('%: "%' + query_string + '%"%', escape='\\')
     else:
         def filter_func(
                 data: typing.Any,
