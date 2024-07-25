@@ -268,27 +268,37 @@ def custom_format_datetime(
 
 @JinjaFilter('babel_format_date')
 def custom_format_date(
-        utc_datetime: typing.Union[datetime, str]
+        utc_datetime: typing.Union[datetime, str],
+        format: typing.Optional[str] = None
 ) -> str:
+    """
+    Return a formatted date.
+
+    :param utc_datetime: a datetime string or object in UTC
+    :param format: the babel date format, or None
+    :return: the formatted date
+    """
     if isinstance(utc_datetime, str):
         utc_datetime = datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S')
-    return format_date(utc_datetime)
+    return format_date(utc_datetime, format=format)
 
 
 @JinjaFilter('babel_format_time')
 def custom_format_time(
-        utc_datetime: typing.Union[str, datetime]
+        utc_datetime: typing.Union[str, datetime],
+        format: typing.Optional[str] = None
 ) -> typing.Union[str, datetime]:
     """
     Return a formatted time.
 
     :param utc_datetime: a datetime string or object in UTC
+    :param format: the babel time format, or None
     :return: the formatted time or utc_datetime in case of an error
     """
     try:
         if not isinstance(utc_datetime, datetime):
             utc_datetime = parse_datetime_string(utc_datetime)
-        return flask_babel.format_time(utc_datetime)
+        return flask_babel.format_time(utc_datetime, format=format)
     except ValueError:
         return utc_datetime
 
