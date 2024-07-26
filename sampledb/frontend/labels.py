@@ -363,17 +363,12 @@ def create_multiple_labels(
         for quantity_index in range(1, quantity + 1):
             if custom_qr_code_texts and f"{object_id}_{quantity_index}" in custom_qr_code_texts:
                 url = custom_qr_code_texts[f"{object_id}_{quantity_index}"]
+            elif only_id_qr_code and add_label_number:
+                url = f"{object_id} {quantity_index}"
+                if add_maximum_label_number:
+                    url += f"_{quantity}"
             else:
-                if only_id_qr_code:
-                    if add_label_number:
-                        if add_maximum_label_number:
-                            url = f"{object_id} {quantity_index}_{quantity}"
-                        else:
-                            url = f"{object_id} {quantity_index}"
-                    else:
-                        url = f"{object_id}"
-                else:
-                    url = f"{object_url}"
+                url = f"{object_id if only_id_qr_code else object_url}"
             image = qrcode.make(url, border=1)
             image_stream = io.BytesIO()
             image.save(image_stream, format='png')
@@ -460,6 +455,8 @@ def create_multiple_labels(
         out_box_width = paper_width - 11.5
         out_box_height = paper_height - 4.5
         text_width = box_width - qr_code_width - 1.5
+        if not show_id_on_label and not add_label_number:
+            text_top = (qr_code_width - 2) / 2
         html = flask.render_template("labels/QRCode.html", qr_code_uri=qr_code_uri, object_id=object_id,
                                      box_width=box_width,
                                      box_height=box_height, paper_width=paper_width, paper_height=paper_height,
