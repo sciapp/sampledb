@@ -135,7 +135,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      border-right: 1.5px solid black;
       padding-top: 1mm;
   }
   .sixthbox {
@@ -216,11 +215,16 @@
       height: {{outer_box_height}}mm;
       width: {{outer_box_width}}mm;
   }
+  .groupbox {
+      width: {{ paper_width - 2 * horizontal_label_margin}}mm
+      break-inside: avoid;
+  }
 {% endblock %}
 
 {% block body %}
   {% for object_index in range(0,object_amount) %}
     {% for i in range(0,set_amount) %}
+      <div class="groupbox" style="height: {{group_box_height_list[object_index]}}mm">
       <div class="firstbox" style="width: {{first_box_width_list[object_index]}}mm">
           <div class="labeltext">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
@@ -294,7 +298,10 @@
               {{ creation_date_list[object_index] }}
           </div>
           <div class="fifthinnerbox" style="width: {{fifth_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
-          <div class="fifthboxqrcode" style="width: {{fifth_box_qrcode_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
+          <div class="fifthboxqrcode" style="width: {{fifth_box_qrcode_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm;
+                                      {% if ghs_amount_list[object_index] > 0 %}
+                                          border-right: 1.5px solid black;
+                                      {% endif %}">
               <div class="qrcodefifthbox" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
                   #{{ sample_code_list[object_index] }}
           </div>
@@ -328,6 +335,7 @@
               </div>
               {% endif %}
           </div>
+      </div>
       </div>
       </div>
     {% endfor %}

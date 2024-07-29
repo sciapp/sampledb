@@ -231,15 +231,12 @@ def create_multiple_labels(
         sixth_box_height_list = []
         sixth_inner_box_height_list = []
 
+        group_box_height_list = []
+
         outer_box_width = 200.0
         outer_box_height = 60.0
         sixth_box_qrcode_box_width = 20.0
         sixth_box_ghs_box_width = 20.0
-
-        if fill_single_page:
-            set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height))
-        else:
-            set_amount = quantity
 
         tmp_index = 0
 
@@ -284,8 +281,13 @@ def create_multiple_labels(
                                                       len(creation_date_list[tmp_index]),
                                                       len(str(sample_code_list[tmp_index]))) * 2))
             fifth_box_height_list.append(max(50.0, 12.0 + math.ceil(ghs_height)))
-            fifth_box_qrcode_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
-            fifth_box_ghs_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
+
+            if len(hazard_list[tmp_index]) > 0:
+                fifth_box_qrcode_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
+                fifth_box_ghs_box_width_list.append(fifth_box_width_list[tmp_index] / 2.0)
+            else:
+                fifth_box_qrcode_box_width_list.append(fifth_box_width_list[tmp_index])
+                fifth_box_ghs_box_width_list.append(0)
 
             sixth_box_width_list.append(
                 max(80.0 - ((third_box_width_list[tmp_index] - 20) + (forth_box_width_list[tmp_index] - 20)),
@@ -319,7 +321,14 @@ def create_multiple_labels(
                 fifth_inner_box_height_list.append(22.0)
                 sixth_inner_box_height_list.append(22.0)
 
+            group_box_height_list.append(outer_box_height + 26)
+
             tmp_index += 1
+
+        if fill_single_page:
+            set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height))
+        else:
+            set_amount = quantity
 
         object_amount = len(username_list)
         html = flask.render_template("labels/MixedFormats.html",
@@ -352,7 +361,8 @@ def create_multiple_labels(
                                      third_box_ghs_box_height_list=third_box_ghs_box_height_list,
                                      fourth_box_qrcode_box_height_list=fourth_box_qrcode_box_height_list,
                                      fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
-                                     object_amount=object_amount)
+                                     object_amount=object_amount, group_box_height_list=group_box_height_list,
+                                     ghs_amount_list=ghs_amount_list)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
