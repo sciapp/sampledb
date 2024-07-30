@@ -493,7 +493,7 @@ def create_multiple_labels(
             qrcode_box_width = qr_code_width
             ghs_box_width = ghs_width * 2
 
-        row_amount = int(math.floor((paper_width - 10) / (box_width + 5)))
+        row_amount = int(math.floor((paper_width - 6.5) / (box_width + 5)))
 
         tmp_index = 0
         max_box_height = 0.0
