@@ -321,7 +321,7 @@ def create_multiple_labels(
                 fifth_inner_box_height_list.append(22.0)
                 sixth_inner_box_height_list.append(22.0)
 
-            group_box_height_list.append(outer_box_height + 26)
+            group_box_height_list.append(outer_box_height + 25)
 
             tmp_index += 1
 
