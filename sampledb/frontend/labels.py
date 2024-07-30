@@ -195,7 +195,11 @@ def create_multiple_labels(
             box_height = 3 * 3.0
 
         if fill_single_page:
-            label_amount = (2 + int((paper_height - 15) / (box_height + (2 * vertical_label_margin))))
+            label_amount = math.floor((paper_height - (8 * vertical_label_margin) - 15)
+                                      / (box_height + vertical_label_margin))
+            if ((paper_format == "Letter (Portrait)" and include_qrcode_in_long_labels)
+                    or paper_format == "Letter (Landscape)"):
+                label_amount += 1
         else:
             label_amount = quantity
 
