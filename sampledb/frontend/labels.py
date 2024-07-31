@@ -234,11 +234,11 @@ def create_multiple_labels(
         sixth_box_width_list = []
         sixth_box_height_list = []
         sixth_inner_box_height_list = []
+        outer_box_height_list = []
 
         group_box_height_list = []
 
         outer_box_width = 200.0
-        outer_box_height = 60.0
         sixth_box_qrcode_box_width = 20.0
         sixth_box_ghs_box_width = 20.0
 
@@ -313,7 +313,7 @@ def create_multiple_labels(
                 fifth_inner_box_height_list.append(max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
                 sixth_inner_box_height_list.append(max(22.0, 17.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
 
-                outer_box_height = 60.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9
+                outer_box_height_list.append(60.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
             else:
                 has_ghs_list.append(False)
                 third_box_qrcode_box_height_list.append(40.0)
@@ -324,13 +324,14 @@ def create_multiple_labels(
 
                 fifth_inner_box_height_list.append(22.0)
                 sixth_inner_box_height_list.append(22.0)
+                outer_box_height_list.append(60)
 
-            group_box_height_list.append(outer_box_height + 25)
+            group_box_height_list.append(outer_box_height_list[tmp_index] + 25)
 
             tmp_index += 1
 
         if fill_single_page:
-            set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height))
+            set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height_list[0]))
         else:
             set_amount = quantity
 
@@ -353,7 +354,7 @@ def create_multiple_labels(
                                      forth_box_width_list=forth_box_width_list,
                                      fifth_box_width_list=fifth_box_width_list,
                                      sixth_box_width_list=sixth_box_width_list,
-                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
+                                     outer_box_width=outer_box_width, outer_box_height_list=outer_box_height_list,
                                      ghs_width=ghs_width,
                                      fifth_box_qrcode_box_width_list=fifth_box_qrcode_box_width_list,
                                      fifth_box_ghs_box_width_list=fifth_box_ghs_box_width_list,
