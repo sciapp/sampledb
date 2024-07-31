@@ -212,7 +212,6 @@
       margin: 1mm {{vertical_label_margin}}mm;
       display: flex;
       border: none;
-      height: {{outer_box_height}}mm;
       width: {{outer_box_width}}mm;
   }
   .groupbox {
@@ -246,7 +245,7 @@
           {% endfor %}
           <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
       </div>
-      <div class="outerbox">
+      <div class="outerbox" style="height: {{outer_box_height_list[object_index]}}mm">
       <div class="thirdbox" style="width: {{third_box_width_list[object_index]}}mm; height: {{third_box_height_list[object_index]}}mm">
           <div class="labeltext">
               <div class="thirdboxname" style="width: {{third_box_width_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
