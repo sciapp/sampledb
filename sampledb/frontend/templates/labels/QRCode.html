@@ -88,7 +88,7 @@
                         <div class="textname"><b>{{object_name}}</b></div>
                     {%- endif -%}
                 </div>
-                {%- if object_index + 1 == labels_on_page and qr_quantity > labels_on_page and has_label_dimension -%}
+                {%- if (object_index + 1) % labels_on_page == 0 and qr_quantity > ((object_index + 1) / labels_on_page) * labels_on_page and has_label_dimension -%}
                     <p class="pagebreak"></p>
                 {%- endif -%}
             {%- endfor -%}
