@@ -4,9 +4,12 @@ Changelog
 Version 0.29
 ------------
 
+Currently in development.
+
 - Fixed simple search query escaping to support searching for special characters
 - Fixed handling of property named tags that contains an array or an object instead of tags
 - Fixed indentation level styling
+- Added support for flexible metadata in .eln imports
 
 Version 0.28.2
 --------------
