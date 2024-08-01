@@ -2,7 +2,7 @@
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
 </div>
-<div style="padding-left:2.5em;">
+<div style="padding-left:2.5em; padding-right: 15px; overflow-wrap: anywhere">
   {% if data is not none %}
     {% for item in data %}
       {% set schema = schema['items'] %}
