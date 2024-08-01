@@ -467,7 +467,7 @@ def create_multiple_labels(
             text_top -= 0.5
             text_name_top += 0.5
         qr_code_top = (box_height - qr_code_width) / 2
-        out_box_width = paper_width - 11.5
+        out_box_width = paper_width - 13.5
         out_box_height = paper_height - 4.5
         text_width = box_width - qr_code_width - 1.5
         if not show_id_on_label and not add_label_number:
