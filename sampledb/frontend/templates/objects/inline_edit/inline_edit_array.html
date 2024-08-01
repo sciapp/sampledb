@@ -5,7 +5,7 @@
   {% endif %}
   {% set is_required = True %}
 </div>
-<div style="padding-left:2.5em;">
+<div style="padding-left:2.5em; padding-right: 15px; overflow-wrap: anywhere">
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if data is not none %}
     {% for item in data %}
