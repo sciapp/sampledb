@@ -1610,3 +1610,8 @@ table .div-apply-recipe  .btn {
         text-align: left !important;
     }
 }
+
+.log_entry_date_picker {
+    width: 100%;
+}
+
