@@ -989,6 +989,12 @@ th:hover .search-helper {
     cursor: initial;
 }
 
+.fullscreen-image-preview-loading {
+    background: transparent;
+    color: white;
+    display: none;
+}
+
 label.instrument-log-show-versions,
 span.instrument-log-show-edit {
     font-size: 0.8em;

@@ -309,7 +309,8 @@
                     <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
                       <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
                     </a>
-                    <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}" alt="Fullscreen Image Preview">
+                    <img data-src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}" alt="Fullscreen Image Preview">
+                    <i class="fullscreen-image-preview-loading fa fa-spinner fa-pulse fa-3x"></i>
                   </span>
                 </span>
                 <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
