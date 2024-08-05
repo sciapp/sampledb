@@ -155,7 +155,26 @@ $(function () {
     e.stopPropagation();
   });
   $('.show-fullscreen-image-preview').on('click', function (e) {
-    $(this).next('.fullscreen-image-preview').css('display', 'flex');
+    const fullscreenImagePreview = $(this).next('.fullscreen-image-preview');
+    fullscreenImagePreview.css('display', 'flex');
+    // some fullscreen image previews do have src set only as data attribute to avoid loading them right away
+    // these images will be loaded on demand and a loading symbol will be shown if it exists
+    fullscreenImagePreview.find('img[data-src]:not([src])').each(function () {
+      const imageElement = $(this);
+      imageElement.hide();
+      const loadingElement = imageElement.siblings('.fullscreen-image-preview-loading');
+      loadingElement.show();
+      imageElement.attr('src', imageElement.data('src'));
+      function onload () {
+        if (!imageElement[0].complete) {
+          setTimeout(onload, 10);
+          return;
+        }
+        loadingElement.hide();
+        imageElement.show();
+      }
+      onload();
+    });
   });
 
   // show urgent notifications
