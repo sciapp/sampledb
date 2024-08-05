@@ -242,6 +242,9 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "files_add_preview_image",
         "group_invitations_add_revoked",
         "project_invitations_add_revoked",
+        "fed_identity_add_login_column",
+        "components_add_fed_login_available_column",
+        "authentication_type_add_federated_login"
     ]
 
     migrations = []
