@@ -326,25 +326,41 @@ class WorkflowElement:
     is_referenced: bool
     files: typing.List[File]
     is_current: bool = True
+    parent: typing.Optional[WorkflowElement] = None
 
 
-def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.Optional[typing.Dict[int, Action]] = None) -> typing.List[typing.List[WorkflowElement]]:
+initial_object_version_by_id = {}
+
+
+def get_workflow_references(
+    object: Object,
+    user_id: int,
+    actions_by_id: typing.Optional[typing.Dict[int, Action]] = None,
+    workflow_view_schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    parent: typing.Optional[WorkflowElement] = None
+) -> typing.List[typing.List[WorkflowElement]]:
     """
     Creates a list describing all direct object relations for workflow views as configured in an object's schema.
 
     :param object: The object for which workflow views are to be created
     :param user_id: User ID of the user viewing the workflow views taking into account the access permissions
     :param actions_by_id: A dict containing cached actions by ID
+    :param workflow_view_schema: The workflow schema to apply, if different from the object's schema; used in recursive
+        workflow views; optional
+    :param parent: Parent workflow element, if called in a recursive workflow; optional
     :return: List of lists of WorkflowElements containing, object ID, object data, action data and if the object is referenced
             and/or referencing the object the view is created for
     """
     if object.schema is None or ('workflow_view' not in object.schema.keys() and 'workflow_views' not in object.schema.keys()):
-        return []
-
-    if 'workflow_view' in object.schema:
-        workflow_views = [object.schema['workflow_view']]
+        if workflow_view_schema:
+            workflow_views: typing.List[typing.Any] = [workflow_view_schema]
+        else:
+            return []
     else:
-        workflow_views = object.schema['workflow_views']
+        if 'workflow_view' in object.schema:
+            workflow_views = [object.schema['workflow_view']]
+        else:
+            workflow_views = object.schema['workflow_views']
 
     if actions_by_id is None:
         actions_by_id = {}
@@ -380,7 +396,7 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
         object.object_id: object
         for object in objects
     }
-    initial_object_version_by_id = {}
+
     for object_id in object_ids:
         current_object_version = objects_by_id.get(object_id)
         if current_object_version is not None and current_object_version.version_id == 0:
@@ -390,7 +406,7 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
 
     workflows: typing.List[typing.List[WorkflowElement]] = [
         []
-        for workflow_view in workflow_views
+        for _ in workflow_views
     ]
     files_by_object_id = {}
     for workflow_index, workflow_view in enumerate(workflow_views):
@@ -460,17 +476,32 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
                     files = files_by_object_id[object_id]
                 else:
                     files = []
-                workflows[workflow_index].append(
-                    WorkflowElement(
-                        object_id=object_id,
-                        object=objects_by_id.get(object_id),
-                        action=action,
-                        is_referenced=object_id in referenced_object_ids,
-                        is_referencing=object_id in referencing_object_ids,
-                        files=files,
-                        is_current=(object_id in referenced_object_ids) or referencing_objects_current.get(object_id, False),
-                    )
+
+                welem = WorkflowElement(
+                    object_id=object_id,
+                    object=objects_by_id.get(object_id),
+                    action=action,
+                    is_referenced=object_id in referenced_object_ids,
+                    is_referencing=object_id in referencing_object_ids,
+                    files=files,
+                    is_current=(object_id in referenced_object_ids) or referencing_objects_current.get(object_id, False),
+                    parent=parent
                 )
+
+                workflows[workflow_index].append(welem)
+
+                # Recurse only if not already in recursion
+                if workflow_view_schema is None and action_id:
+                    recurse_action_ids = workflow_view.get('recurse_action_id', [])
+                    if isinstance(recurse_action_ids, int):
+                        recurse_action_ids = [recurse_action_ids]
+
+                    recurse_action_type_ids = workflow_view.get('recurse_action_type_id', [])
+                    if isinstance(recurse_action_type_ids, int):
+                        recurse_action_type_ids = [recurse_action_type_ids]
+
+                    if action_id in recurse_action_ids or (actions_by_id[action_id].type_id in recurse_action_type_ids) and object_id in objects_by_id:
+                        workflows[workflow_index].extend(get_workflow_references(objects_by_id.get(object_id), user_id, actions_by_id, workflow_view, welem)[0])    # type: ignore
 
     def creation_time_key(workflow_element: WorkflowElement) -> datetime.datetime:
         object_id = workflow_element.object_id

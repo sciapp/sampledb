@@ -3082,6 +3082,8 @@ def test_validate_workflow_show_more():
         ('title', 3515),
         ('title', {"de": "Prozessablauf"}),
         ('show_action_info', 3515),
+        ('recurse_action_type_id', False),
+        ('recurse_action_id', 'ten'),
     )
 )
 def test_validate_workflow_view(key, value):
