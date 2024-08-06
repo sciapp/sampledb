@@ -526,7 +526,7 @@ def parse_eln_file(
             root_path_names = set()
             for member_name in member_names:
                 path_name, file_name = os.path.split(member_name)
-                root_path_names.add(path_name.split('/')[0])
+                root_path_names.add(path_name.split(os.sep)[0])
             _eln_assert(len(root_path_names) == 1, ".eln file must contain a single root directory")
             root_path_name = list(root_path_names)[0]
 
