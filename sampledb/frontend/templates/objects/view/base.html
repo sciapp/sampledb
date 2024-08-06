@@ -297,7 +297,7 @@
                 {% set ref_object_id = object_id if not elem.parent else elem.parent.object_id %}
                 {% if elem.is_referenced %}
                   {% if elem.is_referencing %}
-                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=ref_name | get_translated_text(default='—'), object_id=ref_object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
+                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=ref_name | get_translated_text(default='—'), object_id=ref_object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -0.85em;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
                   {% else %}
                     <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=ref_name | get_translated_text(default='—'), object_id=ref_object_id) }}"></i>
                   {% endif %}
@@ -330,7 +330,7 @@
               {% else %}
                 {% if elem.parent.is_referenced %}
                   {% if elem.parent.is_referencing %}
-                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
+                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -0.85em;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
                   {% else %}
                     <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
                   {% endif %}
