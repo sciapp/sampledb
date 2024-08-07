@@ -1,6 +1,6 @@
 'use strict';
 /* eslint-env jquery */
-/* globals Cookies, Plotly, moment */
+/* globals Image, Cookies, Plotly, moment, ResizeObserver */
 
 $(function () {
   $('[data-toggle="tooltip"]').tooltip();
@@ -155,7 +155,63 @@ $(function () {
     e.stopPropagation();
   });
   $('.show-fullscreen-image-preview').on('click', function (e) {
-    $(this).next('.fullscreen-image-preview').css('display', 'flex');
+    const fullscreenImagePreview = $(this).next('.fullscreen-image-preview');
+    fullscreenImagePreview.css('display', 'flex');
+    fullscreenImagePreview.find('img[data-full-src]').each(function () {
+      const imageElement = $(this);
+      const image = new Image();
+      if (!imageElement.attr('src')) {
+        imageElement.hide();
+      }
+      const loadingElement = imageElement.siblings('.fullscreen-image-preview-loading');
+      loadingElement.show();
+      image.src = imageElement.data('full-src');
+      imageElement.removeData('full-src');
+      imageElement.removeAttr('full-src');
+      function onload () {
+        if (!image.complete) {
+          setTimeout(onload, 10);
+          return;
+        }
+        imageElement[0].src = image.src;
+        imageElement.removeAttr('width');
+        imageElement.removeAttr('height');
+        imageElement.css('width', 'auto');
+        imageElement.css('height', 'auto');
+        loadingElement.hide();
+        imageElement.show();
+      }
+      onload();
+      // ensure aspect ratio is preserved for the placeholder image
+      const originalWidth = imageElement.attr('width');
+      const originalHeight = imageElement.attr('height');
+      if (originalWidth && originalHeight) {
+        imageElement.removeAttr('width');
+        imageElement.removeAttr('height');
+        imageElement.css('aspect-ratio', originalWidth / originalHeight);
+        const onResize = function (width, height) {
+          if (image.complete) {
+            return;
+          }
+          if (width / height > originalWidth / originalHeight) {
+            imageElement.css('width', 'auto');
+            imageElement.css('height', '100%');
+          } else {
+            imageElement.css('width', '100%');
+            imageElement.css('height', 'auto');
+          }
+        };
+        onResize(fullscreenImagePreview.width() - 80, fullscreenImagePreview.height() - 80);
+        const ro = new ResizeObserver(function (entries) {
+          for (const entry of entries) {
+            if (entry.target === fullscreenImagePreview[0]) {
+              onResize(entry.contentRect.width, entry.contentRect.height);
+            }
+          }
+        });
+        ro.observe(fullscreenImagePreview[0]);
+      }
+    });
   });
 
   // show urgent notifications
