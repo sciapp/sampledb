@@ -303,13 +303,14 @@
               <li>
                 {% if file_attachment | attachment_is_image %}
                 <span class="file-attachment-preview">
-                  <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="&#xf15b;" class="show-fullscreen-image-preview" />
+                  <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, thumbnail=1) }}" alt="&#xf15b;" class="show-fullscreen-image-preview" />
                   <span class="fullscreen-image-preview">
                     <span class="close-fullscreen-image-preview"><i class="fa fa-close fa-fw"></i></span>
                     <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">
                       <span class="download-fullscreen-image-preview"><i class="fa fa-download fa-fw"></i></span>
                     </a>
-                    <img src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}" alt="Fullscreen Image Preview">
+                    <img {% if file_attachment.image_info %}width="{{ file_attachment.image_info.width }}" height="{{ file_attachment.image_info.height }}" src="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, thumbnail=1) }}" data-full-src="{% else %} src="{% endif %}{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id, preview=1) }}" alt="Fullscreen Image Preview">
+                    <i class="fullscreen-image-preview-loading fa fa-spinner fa-pulse fa-3x"></i>
                   </span>
                 </span>
                 <a href="{{ url_for('.instrument_log_file_attachment', instrument_id=instrument.id, log_entry_id=log_entry.id, file_attachment_id=file_attachment.id) }}">

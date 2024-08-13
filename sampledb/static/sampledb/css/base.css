@@ -980,6 +980,20 @@ th:hover .search-helper {
     text-align: right;
 }
 
+.fullscreen-image-preview-loading {
+    position: fixed;
+    background: rgba(0, 0, 0, 20%);
+    color: white;
+    display: none;
+    width: 50px;
+    height: 50px;
+    padding: 4px;
+    top: calc(50% - 25px);
+    left: calc(50% - 25px);
+    border-radius: 50%;
+}
+
+
 .fullscreen-image-preview img {
     max-width: 100%;
     max-height: 100%;
