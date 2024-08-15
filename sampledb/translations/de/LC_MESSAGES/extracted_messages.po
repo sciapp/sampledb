@@ -4228,6 +4228,9 @@ msgstr "Alle Jahre ausklappen"
 msgid "Expand all authors"
 msgstr "Alle Autoren ausklappen"
 
+msgid "files selected"
+msgstr "Dateien ausgewählt"
+
 msgid "Please enter a category title."
 msgstr "Bitte geben Sie einen Kategorietitel ein."
 
@@ -6383,9 +6386,6 @@ msgstr "Alle abwählen"
 
 msgid "Please select one responsible user or one location"
 msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
-
-msgid "files selected"
-msgstr "Dateien ausgewählt"
 
 msgid "Please select a paper format."
 msgstr "Bitte wählen Sie ein Papierformat aus."
