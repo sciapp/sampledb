@@ -520,7 +520,7 @@ def _validate_object_schema(
         workflow_views = schema.get('workflow_views', [])
     for workflow_index, workflow_view in enumerate(workflow_views):
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
-        workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties'])
+        workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties', 'recursion_filters'])
         if not isinstance(workflow_view, dict):
             raise ValidationError(f'workflow_view {workflow_index} must be a dict', path)
         for key in workflow_view.keys():
@@ -543,6 +543,28 @@ def _validate_object_schema(
             raise ValidationError(f'sorting_properties in workflow_view {workflow_index} must be list', path)
         for property_name in workflow_view.get('sorting_properties', []):
             _validate_property_name(property_name, False, path)
+        if 'recursion_filters' in workflow_view:
+            recursion_id_keys = ['referenced_action_id', 'referenced_action_type_id', 'referencing_action_id', 'referencing_action_type_id']
+            recursion_valid_keys = set(id_keys + ['max_depth'])
+            recursion_filters = workflow_view['recursion_filters']
+            if not isinstance(recursion_filters, dict):
+                raise ValidationError(f'recursion_filters in workflow_view {workflow_index} must be a dict', path)
+            for key in recursion_filters.keys():
+                if key not in recursion_valid_keys:
+                    raise ValidationError(f'invalid key in recursion_filters in workflow_view {workflow_index}: {key}', path)
+            for key in recursion_id_keys:
+                if key in recursion_filters and not (
+                    recursion_filters[key] is None or
+                    type(recursion_filters[key]) is int or
+                    type(recursion_filters[key]) is list and all(
+                        type(action_type_id) is int for action_type_id in recursion_filters[key]
+                    )
+                ):
+                    raise ValidationError(f'{key} in recursion_filters in workflow_view {workflow_index} must be int, None or a list of ints', path)
+            if 'max_depth' in recursion_filters and not isinstance(recursion_filters['max_depth'], int):
+                raise ValidationError(f'max_depth in recursion_filters in workflow_view {workflow_index} must be int', path)
+            if 'max_depth' in recursion_filters and recursion_filters['max_depth'] <= 0:
+                raise ValidationError(f'max_depth in recursion_filters in workflow_view {workflow_index} must not be negative', path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
