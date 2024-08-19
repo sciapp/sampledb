@@ -55,6 +55,9 @@
   }
   .thirdboxname {
       border: 1.5px solid black;
+      display: flex;
+      flex-direction: column;
+      min-height: 4mm;
       width: {{third_box_width}}mm;
       text-align: center;
       overflow-wrap: break-word;
@@ -94,6 +97,9 @@
   }
   .fourthboxname {
       border: 1.5px solid black;
+      display: flex;
+      flex-direction: column;
+      min-height: 4mm;
       width: {{forth_box_width}}mm;
       text-align: center;
       overflow-wrap: break-word;
@@ -124,6 +130,9 @@
   }
   .fifthboxname {
       border: 1.5px solid black;
+      display: flex;
+      flex-direction: column;
+      min-height: 4mm;
       width: {{fifth_box_width}}mm;
       text-align: center;
       overflow-wrap: break-word;
@@ -153,6 +162,9 @@
   }
   .sixthboxname {
       border: 1.5px solid black;
+      display: flex;
+      flex-direction: column;
+      min-height: 4mm;
       width: {{sixth_box_width}}mm;
       text-align: center;
       overflow-wrap: break-word;
@@ -252,7 +264,7 @@
       <div class="outerbox" style="height: {{outer_box_height_list[object_index]}}mm">
       <div class="thirdbox" style="width: {{third_box_width}}mm; height: {{third_box_height_list[object_index]}}mm">
           <div class="labeltext">
-              <div class="thirdboxname" style="height: {{third_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+              <div class="thirdboxname"><b>{{ object_name_list[object_index] }}</b></div>
               <div class="thirdboxinfo" style="width: {{third_box_width}}mm">
                   {{ username_list[object_index] }}<br>
                   {{ creation_date_list[object_index] }}
@@ -274,7 +286,7 @@
       </div>
       <div class="fourthbox" style="width: {{forth_box_width}}mm; height: {{forth_box_height_list[object_index]}}mm">
           <div class="labeltext">
-              <div class="fourthboxname" style="height: {{forth_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+              <div class="fourthboxname"><b>{{ object_name_list[object_index] }}</b></div>
               <div class="fourthboxinfo" style="width: {{forth_box_width}}mm">
                   {{ username_list[object_index] }}<br>
                   {{ creation_date_list[object_index] }}
@@ -295,7 +307,7 @@
           </div>
       </div>
       <div class="fifthbox" style="width: {{fifth_box_width}}mm; height: {{fifth_box_height_list[object_index]}}mm">
-          <div class="fifthboxname" style="height: {{fifth_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+          <div class="fifthboxname"><b>{{ object_name_list[object_index] }}</b></div>
           <div class="fifthboxinfo" style="width: {{fifth_box_width}}mm">
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
@@ -318,7 +330,7 @@
           </div>
       </div>
       <div class="sixthbox" style="width: {{sixth_box_width}}mm; height: {{sixth_box_height_list[object_index]}}mm">
-          <div class="sixthboxname" style="height: {{sixth_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+          <div class="sixthboxname"><b>{{ object_name_list[object_index] }}</b></div>
           <div class="sixthboxinfo" style="width: {{sixth_box_width}}mm">
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
