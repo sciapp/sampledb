@@ -596,7 +596,7 @@ def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.D
     if 'context_id_token' in flask.request.form:
         context_id_token = flask.request.form.get('context_id_token', '')
         try:
-            user_id, context_id = context_id_serializer.loads(context_id_token, max_age=15 * 60)
+            user_id, context_id = context_id_serializer.loads(context_id_token, max_age=flask.current_app.config['TEMPORARY_FILE_TIME_LIMIT'])
         except itsdangerous.BadSignature:
             return flask.abort(400)
         if user_id != flask_login.current_user.id:
