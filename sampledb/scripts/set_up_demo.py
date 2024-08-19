@@ -1339,7 +1339,7 @@ This example shows how Markdown can be used for instrument Notes.
             file_name='example.png',
             save_content=lambda f: typing.cast(None, f.write(ghs01_image))
         )
-        preview_image = Image.open(io.BytesIO(ghs01_image), formats=['PNG'])
+        preview_image: Image.Image = Image.open(io.BytesIO(ghs01_image), formats=['PNG'])
         preview_image = preview_image.resize((10, 10), Image.Resampling.LANCZOS).resize((100, 100), Image.Resampling.NEAREST)
         preview_image_file = io.BytesIO()
         preview_image.save(preview_image_file, format='PNG')

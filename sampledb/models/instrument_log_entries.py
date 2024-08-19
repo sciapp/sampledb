@@ -140,6 +140,7 @@ class InstrumentLogFileAttachment(Model):
     file_name: Mapped[str] = db.Column(db.String, nullable=False)
     content: Mapped[bytes] = db.Column(db.LargeBinary, nullable=False)
     is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    image_info: Mapped['InstrumentLogFileAttachmentImageInfo'] = relationship('InstrumentLogFileAttachmentImageInfo', backref='file_attachment', uselist=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["InstrumentLogFileAttachment"]]
@@ -158,6 +159,19 @@ class InstrumentLogFileAttachment(Model):
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}(id={self.id}, log_entry_id={self.log_entry_id}, file_name="{self.file_name}")>'
+
+
+class InstrumentLogFileAttachmentImageInfo(Model):
+    __tablename__ = 'instrument_log_file_attachment_image_infos'
+
+    file_attachment_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey(InstrumentLogFileAttachment.id), primary_key=True)
+    thumbnail_content: Mapped[bytes] = db.Column(db.LargeBinary, nullable=False)
+    thumbnail_mime_type: Mapped[str] = db.Column(db.String, nullable=False)
+    width: Mapped[int] = db.Column(db.Integer, nullable=False)
+    height: Mapped[int] = db.Column(db.Integer, nullable=False)
+
+    if typing.TYPE_CHECKING:
+        query: typing.ClassVar[Query["InstrumentLogFileAttachmentImageInfo"]]
 
 
 class InstrumentLogObjectAttachment(Model):

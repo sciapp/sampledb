@@ -980,27 +980,38 @@ def instrument_log_file_attachment(instrument_id: int, log_entry_id: int, file_a
         file_attachment = get_instrument_log_file_attachment(file_attachment_id)
     except InstrumentLogFileAttachmentDoesNotExistError:
         return flask.abort(404)
-    file_extension = os.path.splitext(file_attachment.file_name)[1]
-    download = 'preview' not in flask.request.args
-    mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '')
-    if not mime_type:
-        download = True
-    if download:
-        return flask.Response(
-            file_attachment.content,
-            200,
-            headers={
-                'Content-Disposition': f'attachment; filename="{file_attachment.file_name}"'
-            }
-        )
-    else:
-        return flask.Response(
-            file_attachment.content,
-            200,
-            headers={
-                'Content-Type': mime_type
-            }
-        )
+    return_preview = 'preview' in flask.request.args
+    return_thumbnail = 'thumbnail' in flask.request.args
+
+    if return_thumbnail:
+        if file_attachment.image_info:
+            return flask.Response(
+                file_attachment.image_info.thumbnail_content,
+                200,
+                headers={
+                    'Content-Type': file_attachment.image_info.thumbnail_mime_type
+                }
+            )
+        else:
+            return_preview = True
+    if return_preview:
+        file_extension = os.path.splitext(file_attachment.file_name)[1]
+        mime_type = flask.current_app.config.get('MIME_TYPES', {}).get(file_extension, '')
+        if mime_type:
+            return flask.Response(
+                file_attachment.content,
+                200,
+                headers={
+                    'Content-Type': mime_type
+                }
+            )
+    return flask.Response(
+        file_attachment.content,
+        200,
+        headers={
+            'Content-Disposition': f'attachment; filename="{file_attachment.file_name}"'
+        }
+    )
 
 
 @frontend.route('/instruments/<int:instrument_id>/log/mobile_upload/<token>', methods=['GET'])

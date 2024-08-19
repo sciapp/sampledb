@@ -10,7 +10,7 @@ $(function () {
   window.categoriesShown = window.getTemplateValue('categories_shown');
   window.filterDate = null;
   window.filterUser = null;
-  window.log_entries = {};
+  window.editLogEntryContentMDE = null;
 });
 function setupInstrumentLogFilterStates () {
   for (const categoryID in window.categoriesShown) {
@@ -109,57 +109,105 @@ $(function () {
   $('#input-content-is-markdown').change(updateNewLogEntryMarkdown);
   updateNewLogEntryMarkdown();
 
-  for (const logEntryID of window.getTemplateValue('instrument_log_entries.editable_ids')) {
-    const changeHandler = function () {
-      const files = $(`#input-file-upload-${logEntryID}`).get(0).files;
-      if (files.length === 0) {
-        $(`#input-file-text-${logEntryID}`).val('');
-      } else if (files.length === 1) {
-        $(`#input-file-text-${logEntryID}`).val(files[0].name);
-      } else {
-        $(`#input-file-text-${logEntryID}`).val(files.length + ' files selected');
-      }
-    };
-    $(`#input-file-upload-${logEntryID}`).on('change', changeHandler);
-    const dropHandler = function (e) {
-      e.preventDefault();
-      $(`#input-file-upload-${logEntryID}`)[0].files = e.dataTransfer.files;
-      changeHandler();
-    };
-    const dragOverHandler = function (e) {
-      e.preventDefault();
-    };
-    const uploadArea = $(`#upload-area-${logEntryID}`)[0];
-    uploadArea.ondrop = dropHandler;
-    uploadArea.ondragover = dragOverHandler;
+  const editLogEntryModal = $('#editLogEntryModal');
+  editLogEntryModal.on('show.bs.modal', function (event) {
+    if (!event || !event.relatedTarget) {
+      return;
+    }
+    const logEntryInfo = $(event.relatedTarget).data('json-log-entry-info');
+    editLogEntryModal.find('#input-edit-log-entry-id').val(logEntryInfo.id);
+    editLogEntryModal.find('#input-edit-content-is-markdown').prop('checked', logEntryInfo.contentIsMarkdown);
+    editLogEntryModal.find('#textarea-edit-log-entry-text').val(logEntryInfo.content);
+    updateEditLogEntryMarkdown();
+    editLogEntryModal.find('#textarea-edit-log-entry-text').val(logEntryInfo.content);
+    editLogEntryModal.find('#input-edit-has-event-datetime').prop('checked', logEntryInfo.hasEventDatetime);
+    editLogEntryModal.find('#textarea-edit-log-entry-event_utc_datetime').val(logEntryInfo.hasEventDatetime ? logEntryInfo.eventDatetime : '').prop('disabled', !logEntryInfo.hasEventDatetime);
+    editLogEntryModal.find('#select-edit-categories').selectpicker('val', logEntryInfo.categoryIds);
+    const newObjectAttachmentSelectpicker = editLogEntryModal.find('#select-edit-new-object-attachments');
+    newObjectAttachmentSelectpicker.find('option').each(function () {
+      const option = $(this);
+      option.prop('disabled', logEntryInfo.existingAttachedObjectIds.includes(+(option.val())));
+    });
+    newObjectAttachmentSelectpicker.selectpicker('refresh');
+    if (logEntryInfo.existingObjectAttachments.length === 0 && logEntryInfo.existingFileAttachments.length === 0) {
+      $('#hr-edit-hide-attachments').hide().nextAll().hide();
+    } else {
+      $('#hr-edit-hide-attachments').show().nextAll().show();
+    }
+    const existingObjectAttachmentsSelectpicker = editLogEntryModal.find('#select-edit-existing-object-attachments');
+    existingObjectAttachmentsSelectpicker.empty();
+    for (const objectAttachment of logEntryInfo.existingObjectAttachments) {
+      const option = $(`<option value="${objectAttachment.id}"></option>`);
+      option.text(objectAttachment.label);
+      existingObjectAttachmentsSelectpicker.prepend(option);
+    }
+    if (logEntryInfo.existingObjectAttachments.length === 0) {
+      existingObjectAttachmentsSelectpicker.closest('.form-group').hide();
+    }
+    existingObjectAttachmentsSelectpicker.selectpicker('refresh');
+    const existingFileAttachmentsSelectpicker = editLogEntryModal.find('#select-edit-existing-file-attachments');
+    existingFileAttachmentsSelectpicker.empty();
+    for (const fileAttachment of logEntryInfo.existingFileAttachments) {
+      const option = $(`<option value="${fileAttachment.id}"></option>`);
+      option.text(fileAttachment.label);
+      existingFileAttachmentsSelectpicker.prepend(option);
+    }
+    if (logEntryInfo.existingFileAttachments.length === 0) {
+      existingFileAttachmentsSelectpicker.closest('.form-group').hide();
+    }
+    existingFileAttachmentsSelectpicker.selectpicker('refresh');
+  });
 
-    const updateLogEntryMarkdown = function () {
-      if ($(`#input-edit-content-is-markdown-${logEntryID}`).prop('checked')) {
-        if (window.log_entries[logEntryID]) {
-          window.log_entries[logEntryID].toTextArea();
-        }
-        window.log_entries[logEntryID] = new InscrybMDE({
-          element: $(`#textarea-log-entry-text-${logEntryID}`)[0],
-          indentWithTabs: false,
-          spellChecker: false,
-          status: false,
-          hideIcons: ['guide', 'fullscreen', 'side-by-side', 'quote'],
-          showIcons: ['code', 'table'],
-          minHeight: '100px',
-          autoDownloadFontAwesome: false
-        });
-        setupImageDragAndDrop(window.log_entries[logEntryID]);
-      } else {
-        if (window.log_entries[logEntryID]) {
-          window.log_entries[logEntryID].toTextArea();
-          delete window.log_entries[logEntryID];
-        }
-      }
-    };
-    $(`#input-edit-content-is-markdown-${logEntryID}`).change(updateLogEntryMarkdown);
-    $(`#logEntryContentModal_${logEntryID}`).on('shown.bs.modal', updateLogEntryMarkdown);
-    updateLogEntryMarkdown();
+  function editLogEntryFileChangeHandler () {
+    const files = $('#input-edit-file-upload').get(0).files;
+    if (files.length === 0) {
+      $('#input-file-text').val('');
+    } else if (files.length === 1) {
+      $('#input-edit-file-text').val(files[0].name);
+    } else {
+      $('#input-edit-file-text').val(files.length + ' ' + window.getTemplateValue('translations.files_selected'));
+    }
   }
+  $('#input-edit-file-upload').on('change', editLogEntryFileChangeHandler);
+
+  function editLogEntryFileDropHandler (e) {
+    e.preventDefault();
+    $('#input-edit-file-upload')[0].files = e.dataTransfer.files;
+    editLogEntryFileChangeHandler();
+  }
+  function editLogEntryFileDragOverHandler (e) {
+    e.preventDefault();
+  }
+  const uploadArea = $('#edit-upload-area')[0];
+  uploadArea.ondrop = editLogEntryFileDropHandler;
+  uploadArea.ondragover = editLogEntryFileDragOverHandler;
+
+  function updateEditLogEntryMarkdown () {
+    if (editLogEntryModal.find('#input-edit-content-is-markdown').prop('checked')) {
+      if (window.editLogEntryContentMDE) {
+        window.editLogEntryContentMDE.toTextArea();
+      }
+      window.editLogEntryContentMDE = new InscrybMDE({
+        element: editLogEntryModal.find('#textarea-edit-log-entry-text')[0],
+        indentWithTabs: false,
+        spellChecker: false,
+        status: false,
+        hideIcons: ['guide', 'fullscreen', 'side-by-side', 'quote'],
+        showIcons: ['code', 'table'],
+        minHeight: '100px',
+        autoDownloadFontAwesome: false
+      });
+      setupImageDragAndDrop(window.editLogEntryContentMDE);
+    } else {
+      if (window.editLogEntryContentMDE) {
+        window.editLogEntryContentMDE.toTextArea();
+        window.editLogEntryContentMDE = null;
+      }
+    }
+  }
+  editLogEntryModal.find('#input-edit-content-is-markdown').change(updateEditLogEntryMarkdown);
+  editLogEntryModal.on('shown.bs.modal', updateEditLogEntryMarkdown);
+
   function changeHandler () {
     const files = $('#input-file-upload').get(0).files;
     if (files.length === 0) {
@@ -167,7 +215,7 @@ $(function () {
     } else if (files.length === 1) {
       $('#input-file-text').val(files[0].name);
     } else {
-      $('#input-file-text').val(files.length + ' files selected');
+      $('#input-file-text').val(files.length + ' ' + window.getTemplateValue('translations.files_selected'));
     }
   }
   if (window.getTemplateValue('can_create_instrument_log_entries')) {

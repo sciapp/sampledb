@@ -14,6 +14,9 @@ with control files or photographs of an experiment setup.
 import dataclasses
 import datetime
 import typing
+import io
+
+from PIL import Image
 
 from .. import db
 from . import errors, instruments, users, user_log, objects
@@ -169,6 +172,7 @@ class InstrumentLogFileAttachment:
     file_name: str
     content: bytes
     is_hidden: bool = False
+    image_info: typing.Optional['InstrumentLogFileAttachmentImageInfo'] = None
 
     @classmethod
     def from_database(
@@ -180,7 +184,33 @@ class InstrumentLogFileAttachment:
             log_entry_id=instrument_log_file_attachment.log_entry_id,
             file_name=instrument_log_file_attachment.file_name,
             content=instrument_log_file_attachment.content,
-            is_hidden=instrument_log_file_attachment.is_hidden
+            is_hidden=instrument_log_file_attachment.is_hidden,
+            image_info=InstrumentLogFileAttachmentImageInfo.from_database(instrument_log_file_attachment.image_info) if instrument_log_file_attachment.image_info else None
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class InstrumentLogFileAttachmentImageInfo:
+    """
+    This class provides an immutable wrapper around models.instrument_log_entries.InstrumentLogFileAttachmentImageInfo.
+    """
+    file_attachment_id: int
+    thumbnail_content: bytes
+    thumbnail_mime_type: str
+    width: int
+    height: int
+
+    @classmethod
+    def from_database(
+            cls,
+            instrument_log_file_attachment_image_info: instrument_log_entries.InstrumentLogFileAttachmentImageInfo
+    ) -> 'InstrumentLogFileAttachmentImageInfo':
+        return InstrumentLogFileAttachmentImageInfo(
+            file_attachment_id=instrument_log_file_attachment_image_info.file_attachment_id,
+            thumbnail_content=instrument_log_file_attachment_image_info.thumbnail_content,
+            thumbnail_mime_type=instrument_log_file_attachment_image_info.thumbnail_mime_type,
+            width=instrument_log_file_attachment_image_info.width,
+            height=instrument_log_file_attachment_image_info.height
         )
 
 
@@ -502,6 +532,48 @@ def create_instrument_log_file_attachment(
         content=content
     )
     db.session.add(attachment)
+    db.session.commit()
+    _generate_instrument_log_file_attachment_image_info(attachment)
+
+
+def generate_instrument_log_file_attachment_image_info(
+        file_attachment_id: int
+) -> None:
+    file_attachment = instrument_log_entries.InstrumentLogFileAttachment.query.filter_by(id=file_attachment_id).first()
+    if file_attachment is not None:
+        _generate_instrument_log_file_attachment_image_info(file_attachment=file_attachment)
+
+
+def _generate_instrument_log_file_attachment_image_info(
+        file_attachment: instrument_log_entries.InstrumentLogFileAttachment
+) -> None:
+    if file_attachment.image_info is not None:
+        return
+
+    if not any(
+            file_attachment.file_name.endswith(file_extension)
+            for file_extension, format in Image.registered_extensions().items()
+            if format in Image.OPEN
+    ):
+        return
+    try:
+        image = Image.open(io.BytesIO(file_attachment.content))
+    except Exception:
+        return
+    width, height = image.size
+    image.thumbnail(size=(100, 100))
+    image_io = io.BytesIO()
+    image.save(image_io, format='png')
+    image_info = instrument_log_entries.InstrumentLogFileAttachmentImageInfo(
+        file_attachment_id=file_attachment.id,
+        thumbnail_content=image_io.getvalue(),
+        thumbnail_mime_type='image/png',
+        width=width,
+        height=height,
+    )
+    file_attachment.image_info = image_info
+    db.session.add(image_info)
+    db.session.add(file_attachment)
     db.session.commit()
 
 

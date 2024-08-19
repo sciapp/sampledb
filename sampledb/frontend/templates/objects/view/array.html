@@ -2,7 +2,7 @@
 <div class="row" style="padding-right: 0.75em;">
   {% include "objects/property_label.html" %}
 </div>
-<div style="padding-left:2.5em;">
+<div style="padding-left:2.5em; padding-right: 15px; overflow-wrap: anywhere">
   {% if data is not none %}
     {% for item in data %}
       {% set schema = schema['items'] %}
@@ -20,7 +20,7 @@
         {% set diff = none %}
         {% set previous_schema = none %}
       {% endif %}
-      <div style="margin-left: {{ (include_indent_level or 0) * 5 }}px">
+      <div>
         <div style="border:1px solid #cccccc; margin-right:-1px; border-radius:5px 0 0 5px; padding-left:2.5em; padding-top:1em; margin-bottom: 1em;  padding-bottom: 0.5em;">
           {% set show_indent_border = False %}
           {% include "objects/view/any.html" %}

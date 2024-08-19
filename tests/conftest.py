@@ -230,6 +230,7 @@ def _drop_empty_database_copy():
 @pytest.fixture
 def mock_current_user():
     modules = [
+        sampledb,
         sampledb.frontend.utils,
         sampledb.frontend.objects.object_form_parser,
         sampledb.logic.utils,
@@ -241,10 +242,12 @@ def mock_current_user():
             self.language_cache: typing.List[typing.Optional[sampledb.logic.languages.Language]] = [None]
             self.is_authenticated = True
             self.timezone = 'UTC'
+            self.settings = sampledb.logic.settings.DEFAULT_SETTINGS.copy()
 
         def set_language_by_lang_code(self, lang_code):
             language = sampledb.logic.languages.get_language_by_lang_code(lang_code)
             self.language_cache[0] = language
+            self.settings['LOCALE'] = lang_code
 
     mock_user = MockUser()
     # use english by default to avoid settings lookups

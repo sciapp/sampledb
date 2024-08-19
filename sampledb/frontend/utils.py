@@ -268,34 +268,37 @@ def custom_format_datetime(
 
 @JinjaFilter('babel_format_date')
 def custom_format_date(
-        date: typing.Union[datetime, str],
-        format: str = '%Y-%m-%d'
+        utc_datetime: typing.Union[datetime, str],
+        format: typing.Optional[str] = None
 ) -> str:
-    if isinstance(date, datetime):
-        datetime_obj = date
-    else:
-        if ' ' in date:
-            utc_datetime = datetime.strptime(date, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
-            datetime_obj = utc_datetime.astimezone(pytz.timezone(current_user.timezone or 'UTC'))
-        else:
-            datetime_obj = datetime.strptime(date, format)
-    return format_date(datetime_obj)
+    """
+    Return a formatted date.
+
+    :param utc_datetime: a datetime string or object in UTC
+    :param format: the babel date format, or None
+    :return: the formatted date
+    """
+    if isinstance(utc_datetime, str):
+        utc_datetime = datetime.strptime(utc_datetime, '%Y-%m-%d %H:%M:%S')
+    return format_date(utc_datetime, format=format)
 
 
 @JinjaFilter('babel_format_time')
 def custom_format_time(
-        utc_datetime: typing.Union[str, datetime]
+        utc_datetime: typing.Union[str, datetime],
+        format: typing.Optional[str] = None
 ) -> typing.Union[str, datetime]:
     """
     Return a formatted time.
 
     :param utc_datetime: a datetime string or object in UTC
+    :param format: the babel time format, or None
     :return: the formatted time or utc_datetime in case of an error
     """
     try:
         if not isinstance(utc_datetime, datetime):
             utc_datetime = parse_datetime_string(utc_datetime)
-        return flask_babel.format_time(utc_datetime)
+        return flask_babel.format_time(utc_datetime, format=format)
     except ValueError:
         return utc_datetime
 
@@ -482,9 +485,9 @@ def base64encode(value: typing.Any) -> str:
 
 @JinjaFilter('are_conditions_fulfilled')
 def filter_are_conditions_fulfilled(data: typing.Dict[str, typing.Any], property_schema: typing.Dict[str, typing.Any]) -> bool:
-    if not data:
-        return False
     if not isinstance(property_schema, dict):
+        return False
+    if not data and 'conditions' in property_schema:
         return False
     return are_conditions_fulfilled(property_schema.get('conditions'), data)
 

@@ -16,7 +16,6 @@
         {% set data = referenced_object.data %}
         {% set schema = referenced_object.schema %}
         {% set files = [] %}
-        {% set include_indent_level = indent_level + 1%}
         {% include "objects/view/any.html" %}
       {% endif %}
     {% endif %}

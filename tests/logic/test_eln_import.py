@@ -1,5 +1,9 @@
+import copy
 import datetime
+import itertools
 import os.path
+import string
+import sys
 
 import pytest
 
@@ -158,7 +162,7 @@ def test_import_sampledb_eln_file(sampledb_eln_import_id):
 
 
 def test_import_elabftw_eln_file(user):
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'elabftw-single-experiment.eln'), 'rb') as eln_export_file:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'elabftw-export.eln'), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
     eln_import_id = logic.eln_import.create_eln_import(
         user_id=user.id,
@@ -166,39 +170,91 @@ def test_import_elabftw_eln_file(user):
         zip_bytes=eln_zip_bytes
     ).id
     parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
-    assert all(len(import_notes) == 1 for import_notes in parsed_eln_import.import_notes.values())
+    import sys
+    print(parsed_eln_import.import_notes, file=sys.stderr)
+    assert parsed_eln_import.import_notes == {
+        './RD - Testing-relationship-between-acceleration-and-gravity - 5adb0eb3/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Demo - Synthesis-of-Aspirin - 6bc46aec/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - Testing-the-eLabFTW-lab-notebook - 8ebcfca1/': [],
+        './Project-CRYPTO-COOL - Gold-master-experiment - df81f900/': [],
+        './Tests - Numquam-delectus-sint-quis-sint-cupiditate-non-voluptatem - 10df895d/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Generated - Architecto-est-recusandae-tempora-facilis-nemo - 67d460ac/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Generated - Minus-qui-dolorem-praesentium-quos-aliquam-quia-ea - 18fd5717/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - Effect-of-temperature-on-enzyme-activity - d938ab84/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - フルーツフライの食性に関する研究 - f44d2c0b/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - Synthesis-and-Characterization-of-a-Novel-Organic-Compound-with-Antimicrobial- - 412e346f/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - Transfection-of-p103Δ12-22-into-RPE-1-Actin-RFP - 4b08c8b1/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - An-example-experiment - 4ae900b8/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Project-CRYPTO-COOL - Test-the-grouped-extra-fields - 4220974c/': [],
+        './Production - Omnis-non-est-unde-excepturi-maxime - f04d5cb3/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Support-ticket - Nisi-voluptatem-placeat-repudiandae-et-provident - a58088c7/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Tests - Et-ea-sapiente-officiis-hic-libero - a6c65a6d/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Discussions - Numquam-alias-repellendus-corporis - 2c266830/': ['The .eln file did not contain any valid flexible metadata for this object.'],
+        './Demo - Officiis-consequatur-vel-ut-nihil-sit-ut - 350a45f5/': ['The .eln file did not contain any valid flexible metadata for this object.']
+    }
     object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
-    assert len(object_ids) == 1
-    imported_object = sampledb.logic.objects.get_object(object_ids[0])
-    assert imported_object.data == {
-        'description': {
-            '_type': 'text',
-            'text': {
-                'en': ''
+    assert len(object_ids) == 18
+    for object_id in object_ids:
+        imported_object = sampledb.logic.objects.get_object(object_id)
+        if imported_object.eln_object_id == './RD - Testing-relationship-between-acceleration-and-gravity - 5adb0eb3/':
+            assert imported_object.data == {
+                'name': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'Testing relationship between acceleration and gravity'
+                    }
+                },
+                'import_note': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'The .eln file did not contain any valid flexible metadata for this object.',
+                        'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
+                    }
+                },
+                'tags': {
+                    '_type': 'tags',
+                    'tags': [
+                        'has-mathjax',
+                        'physics'
+                    ]
+                }
             }
-        },
-        'name': {
-            '_type': 'text',
-            'text': {
-                'en': 'Example experiment title'
+        elif imported_object.eln_object_id == './Project-CRYPTO-COOL - Testing-the-eLabFTW-lab-notebook - 8ebcfca1/':
+            assert imported_object.data == {
+                'name': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'Testing the eLabFTW lab notebook'
+                    }
+                },
+                'tags': {
+                    '_type': 'tags',
+                    'tags': [
+                        'demo',
+                        'test'
+                    ]
+                },
+                'omerodataseturl': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'https://omero.uni.example.edu/viewer?team=39&project=194'
+                    }
+                },
+                'annieareyouokay': {
+                    '_type': 'text',
+                    'text': {
+                        'en': ''
+                    }
+                },
+                'thisisacustomlistinput': {
+                    '_type': 'text',
+                    'text': {
+                        'en': 'Some choice'
+                    }
+                }
             }
-        },
-        'import_note': {
-            '_type': 'text',
-            'text': {
-                'en': 'The metadata for this object could not be imported.',
-                'de': 'Die Metadaten für dieses Objekt konnten nicht importiert werden.'
-            }
-        },
-        'tags': {
-            '_type': 'tags',
-            'tags': []
-        }
-    }
-    assert len(users_by_id) == 1
-    assert 'https://orcid.org/0000-0012-3456-7890' in users_by_id
-    assert users_by_id['https://orcid.org/0000-0012-3456-7890'].eln_object_id == 'https://orcid.org/0000-0012-3456-7890'
+    assert len(users_by_id) == 4
 
 
 def test_import_kadi4mat_eln_file(user):
@@ -216,12 +272,6 @@ def test_import_kadi4mat_eln_file(user):
     assert len(object_ids) == 1
     imported_object = sampledb.logic.objects.get_object(object_ids[0])
     assert imported_object.data == {
-        'description': {
-            '_type': 'text',
-            'text': {
-                'en': ''
-            }
-        },
         'name': {
             '_type': 'text',
             'text': {
@@ -231,8 +281,8 @@ def test_import_kadi4mat_eln_file(user):
         'import_note': {
             '_type': 'text',
             'text': {
-                'en': 'The metadata for this object could not be imported.',
-                'de': 'Die Metadaten für dieses Objekt konnten nicht importiert werden.'
+                'en': 'The .eln file did not contain any valid flexible metadata for this object.',
+                'de': 'Die .eln-Datei enthielt keine gültigen flexiblen Metadaten für dieses Objekt.'
             }
         },
         'tags': {
@@ -266,3 +316,236 @@ def test_edit_eln_federated_identity(user, sampledb_eln_import_id):
     assert federated_identity.active
     logic.users.delete_user_link(user.id, federated_identity.local_fed_id)
     assert logic.users.FederatedIdentity.query.filter_by(user_id=user.id, local_fed_id=eln_dummy.id).first() is None
+
+
+def test_convert_property_values_to_data_and_schema():
+    assert sampledb.logic.eln_import._convert_property_values_to_data_and_schema(
+        property_values=[
+            {
+                "@type": "PropertyValue",
+                "propertyID": "name",
+                "value": "Example Object"
+            }
+        ],
+        name='Example Object',
+        description='',
+        tags=[]
+    ) == (
+        {
+            "name": {
+                "_type": "text",
+                "text": {
+                    "en": "Example Object"
+                }
+            }
+        },
+        {
+            "title": {
+                "en": "Object"
+            },
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": {
+                        "en": "name"
+                    },
+                    "type": "text"
+                }
+            },
+            "required": ["name"],
+            "propertyOrder": ["name"]
+        }
+    )
+    assert sampledb.logic.eln_import._convert_property_values_to_data_and_schema(
+        property_values=[
+            {
+                "@type": "PropertyValue",
+                "propertyID": "name",
+                "value": "Other Object"
+            }
+        ],
+        name='Example Object',
+        description='Example Description',
+        tags=['test', 'tag']
+    ) == (
+        {
+            "name": {
+                "_type": "text",
+                "text": {
+                    "en": "Example Object"
+                }
+            },
+            "property_name": {
+                "_type": "text",
+                "text": {
+                    "en": "Other Object"
+                }
+            },
+            "description": {
+                "_type": "text",
+                "text": {
+                    "en": "Example Description"
+                }
+            },
+            "tags": {
+                "_type": "tags",
+                "tags": ["test", "tag"]
+            }
+        },
+        {
+            "title": {
+                "en": "Object"
+            },
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": {
+                        "en": "Name"
+                    },
+                    "type": "text"
+                },
+                "property_name": {
+                    "title": {
+                        "en": "name"
+                    },
+                    "type": "text"
+                },
+                "description": {
+                    "title": {
+                        "en": "Description"
+                    },
+                    "type": "text"
+                },
+                "tags": {
+                    "title": {
+                        "en": "Tags"
+                    },
+                    "type": "tags"
+                }
+            },
+            "required": ["name"],
+            "propertyOrder": ["name", "description", "tags"]
+        }
+    )
+
+
+def test_map_property_values_to_paths():
+    assert sampledb.logic.eln_import._map_property_values_to_paths([
+        {
+            'propertyID': 'name',
+            'value': 0
+        },
+        {
+            'propertyID': 'samples',
+            'value': 1
+        },
+        {
+            'propertyID': 'samples',
+            'value': 2
+        },
+        {
+            'propertyID': 'samples/1',
+            'value': 3
+        },
+        {
+            'propertyID': 'samples/2',
+            'value': 4
+        },
+        {
+            'propertyID': 'samples/0',
+            'value': 5
+        },
+        {
+            'propertyID': 'other/property/id',
+            'value': 6
+        }
+    ]) == {
+        ('name',): {
+            'propertyID': 'name',
+            'value': 0
+        },
+        ('samples',): {
+            'propertyID': 'samples',
+            'value': 1
+        },
+        ('property_samples',): {
+            'propertyID': 'samples',
+            'value': 2
+        },
+        ('property2_samples', 0): {
+            'propertyID': 'samples/0',
+            'value': 5
+        },
+        ('property2_samples', 1): {
+            'propertyID': 'samples/1',
+            'value': 3
+        },
+        ('property2_samples', 2): {
+            'propertyID': 'samples/2',
+            'value': 4
+        },
+        ('other', 'property', 'id'): {
+            'propertyID': 'other/property/id',
+            'value': 6
+        }
+    }
+
+    assert sampledb.logic.eln_import._map_property_values_to_paths([
+        {
+            'propertyID': '',
+            'value': 0
+        },
+        {
+            'propertyID': '_',
+            'value': 1
+        },
+        {
+            'propertyID': '__',
+            'value': 2
+        },
+        {
+            'propertyID': '___',
+            'value': 3
+        },
+        {
+            'propertyID': '/',
+            'value': 4
+        },
+        {
+            'propertyID': '//',
+            'value': 5
+        },
+        {
+            'propertyID': '/property/',
+            'value': 6
+        }
+    ]) == {
+        ('property',): {
+            'propertyID': '',
+            'value': 0
+        },
+        ('property3',): {
+            'propertyID': '_',
+            'value': 1
+        },
+        ('property4',): {
+            'propertyID': '__',
+            'value': 2
+        },
+        ('property5',): {
+            'propertyID': '___',
+            'value': 3
+        },
+        ('property2','property'): {
+            'propertyID': '/',
+            'value': 4
+        },
+        ('property2', 'property2', 'property'): {
+            'propertyID': '//',
+            'value': 5
+        },
+        ('property2', 'property_property', 'property'): {
+            'propertyID': '/property/',
+            'value': 6
+        }
+    }
