@@ -7,6 +7,7 @@ Version 0.29.1
 Currently in development.
 
 - Fixed Bad Request error in the object form after more than 15 minutes without submitting the form
+- Fixed sorting of instrument log entries
 
 
 Version 0.29
