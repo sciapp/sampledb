@@ -4,7 +4,7 @@ Changelog
 Version 0.29
 ------------
 
-Currently in development.
+Released on August 19th, 2024.
 
 - Fixed simple search query escaping to support searching for special characters
 - Fixed handling of property named tags that contains an array or an object instead of tags
