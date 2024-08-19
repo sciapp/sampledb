@@ -479,7 +479,7 @@ def check_config(
     internal_config['PDFEXPORT_LOGO_WIDTH'] = min(200, max(0, config['PDFEXPORT_LOGO_WIDTH']))
     if config['PDFEXPORT_LOGO_URL'] is not None:
         logo_url = config['PDFEXPORT_LOGO_URL']
-        logo_image = None
+        logo_image: typing.Optional[Image.Image] = None
         if logo_url.startswith('file://'):
             logo_path = logo_url[7:]
             try:
