@@ -55,8 +55,9 @@
   }
   .thirdboxname {
       border: 1.5px solid black;
-      height: 4mm;
+      width: {{third_box_width}}mm;
       text-align: center;
+      overflow-wrap: break-word;
   }
   .thirdboxinfo {
       border: 1.5px solid black;
@@ -93,8 +94,9 @@
   }
   .fourthboxname {
       border: 1.5px solid black;
-      height: 4mm;
+      width: {{forth_box_width}}mm;
       text-align: center;
+      overflow-wrap: break-word;
   }
   .fourthboxinfo {
       border: 1.5px solid black;
@@ -122,8 +124,9 @@
   }
   .fifthboxname {
       border: 1.5px solid black;
-      height: 4mm;
+      width: {{fifth_box_width}}mm;
       text-align: center;
+      overflow-wrap: break-word;
   }
   .fifthboxinfo {
       border: 1.5px solid black;
@@ -150,8 +153,9 @@
   }
   .sixthboxname {
       border: 1.5px solid black;
-      height: 4mm;
+      width: {{sixth_box_width}}mm;
       text-align: center;
+      overflow-wrap: break-word;
   }
   .sixthboxinfo {
       border: 1.5px solid black;
@@ -246,19 +250,19 @@
           <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
       </div>
       <div class="outerbox" style="height: {{outer_box_height_list[object_index]}}mm">
-      <div class="thirdbox" style="width: {{third_box_width_list[object_index]}}mm; height: {{third_box_height_list[object_index]}}mm">
+      <div class="thirdbox" style="width: {{third_box_width}}mm; height: {{third_box_height_list[object_index]}}mm">
           <div class="labeltext">
-              <div class="thirdboxname" style="width: {{third_box_width_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
-              <div class="thirdboxinfo" style="width: {{third_box_width_list[object_index]}}mm">
+              <div class="thirdboxname" style="height: {{third_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+              <div class="thirdboxinfo" style="width: {{third_box_width}}mm">
                   {{ username_list[object_index] }}<br>
                   {{ creation_date_list[object_index] }}
               </div>
-              <div class="thirdboxqrcode" style="width: {{third_box_width_list[object_index]}}mm; height: {{third_box_qrcode_box_height_list[object_index]}}mm">
+              <div class="thirdboxqrcode" style="width: {{third_box_width}}mm; height: {{third_box_qrcode_box_height_list[object_index]}}mm">
               <div class="qrcodethirdbox" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
                   #{{ sample_code_list[object_index] }}
               </div>
               {% if has_ghs_list[object_index] %}
-              <div class="ghsbox" style="width: {{third_box_width_list[object_index]}}mm; height: {{third_box_ghs_box_height_list[object_index]}}mm">
+              <div class="ghsbox" style="width: {{third_box_width}}mm; height: {{third_box_ghs_box_height_list[object_index]}}mm">
                 <div class="centeredghsbox">
                     {%- for hazard_code in hazard_list[object_index] -%}
                         <div class="ghs ghs0{{hazard_code}}"></div>
@@ -268,19 +272,19 @@
               {% endif %}
           </div>
       </div>
-      <div class="fourthbox" style="width: {{forth_box_width_list[object_index]}}mm; height: {{forth_box_height_list[object_index]}}mm">
+      <div class="fourthbox" style="width: {{forth_box_width}}mm; height: {{forth_box_height_list[object_index]}}mm">
           <div class="labeltext">
-              <div class="fourthboxname" style="width: {{forth_box_width_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
-              <div class="fourthboxinfo" style="width: {{forth_box_width_list[object_index]}}mm">
+              <div class="fourthboxname" style="height: {{forth_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+              <div class="fourthboxinfo" style="width: {{forth_box_width}}mm">
                   {{ username_list[object_index] }}<br>
                   {{ creation_date_list[object_index] }}
               </div>
-              <div class="fourthboxqrcode" style="width: {{forth_box_width_list[object_index]}}mm; height: {{fourth_box_qrcode_box_height_list[object_index]}}mm">
+              <div class="fourthboxqrcode" style="width: {{forth_box_width}}mm; height: {{fourth_box_qrcode_box_height_list[object_index]}}mm">
               <div class="qrcodefourthbox" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
                   #{{ sample_code_list[object_index] }}
               </div>
               {% if has_ghs_list[object_index] %}
-              <div class="ghsbox" style="width: {{forth_box_width_list[object_index]}}mm; height: {{fourth_box_ghs_box_height_list[object_index]}}mm">
+              <div class="ghsbox" style="width: {{forth_box_width}}mm; height: {{fourth_box_ghs_box_height_list[object_index]}}mm">
                 <div class="centeredghsbox">
                   {%- for hazard_code in hazard_list[object_index] -%}
                       <div class="ghs ghs0{{hazard_code}}"></div>
@@ -290,13 +294,13 @@
               {% endif %}
           </div>
       </div>
-      <div class="fifthbox" style="width: {{fifth_box_width_list[object_index]}}mm; height: {{fifth_box_height_list[object_index]}}mm">
-          <div class="fifthboxname" style="width: {{fifth_box_width_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
-          <div class="fifthboxinfo" style="width: {{fifth_box_width_list[object_index]}}mm">
+      <div class="fifthbox" style="width: {{fifth_box_width}}mm; height: {{fifth_box_height_list[object_index]}}mm">
+          <div class="fifthboxname" style="height: {{fifth_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+          <div class="fifthboxinfo" style="width: {{fifth_box_width}}mm">
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="fifthinnerbox" style="width: {{fifth_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
+          <div class="fifthinnerbox" style="width: {{fifth_box_width}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
           <div class="fifthboxqrcode" style="width: {{fifth_box_qrcode_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm;
                                       {% if ghs_amount_list[object_index] > 0 %}
                                           border-right: 1.5px solid black;
@@ -313,13 +317,13 @@
               </div>
           </div>
       </div>
-      <div class="sixthbox" style="width: {{sixth_box_width_list[object_index]}}mm; height: {{sixth_box_height_list[object_index]}}mm">
-          <div class="sixthboxname" style="width: {{sixth_box_width_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
-          <div class="sixthboxinfo" style="width: {{sixth_box_width_list[object_index]}}mm">
+      <div class="sixthbox" style="width: {{sixth_box_width}}mm; height: {{sixth_box_height_list[object_index]}}mm">
+          <div class="sixthboxname" style="height: {{sixth_box_name_height_list[object_index]}}mm"><b>{{ object_name_list[object_index] }}</b></div>
+          <div class="sixthboxinfo" style="width: {{sixth_box_width}}mm">
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="sixthinnerbox" style="width: {{sixth_box_width_list[object_index]}}mm; height: {{sixth_inner_box_height_list[object_index]}}mm">
+          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index]}}mm">
           <div class="sixthboxqrcode" style="height: {{sixth_inner_box_height_list[object_index]}}mm">
               <div class="qrcodesixthbox" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
                   #{{ sample_code_list[object_index] }}
