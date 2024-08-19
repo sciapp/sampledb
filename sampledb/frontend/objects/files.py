@@ -233,7 +233,7 @@ def temporary_file_upload() -> FlaskResponseT:
         return flask.abort(400)
     serializer = itsdangerous.URLSafeTimedSerializer(flask.current_app.config['SECRET_KEY'], salt='temporary-file-upload')
     try:
-        user_id, context_id = serializer.loads(context_id_token, max_age=15 * 60)
+        user_id, context_id = serializer.loads(context_id_token, max_age=flask.current_app.config['TEMPORARY_FILE_TIME_LIMIT'])
     except itsdangerous.BadData:
         return flask.abort(400)
     if user_id != flask_login.current_user.id:
