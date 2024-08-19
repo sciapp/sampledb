@@ -289,7 +289,7 @@ def create_multiple_labels(
                 fifth_box_qrcode_box_width_list.append(fifth_box_width / 2.0)
                 fifth_box_ghs_box_width_list.append(fifth_box_width / 2.0)
             else:
-                fifth_box_qrcode_box_width_list.append(fifth_box_width[tmp_index])
+                fifth_box_qrcode_box_width_list.append(fifth_box_width)
                 fifth_box_ghs_box_width_list.append(0)
 
             sixth_box_name_height_list.append(max(4, 4 * math.floor(name_len / sixth_box_width)))
