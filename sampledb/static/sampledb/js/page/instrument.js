@@ -178,9 +178,11 @@ $(function () {
   function editLogEntryFileDragOverHandler (e) {
     e.preventDefault();
   }
-  const uploadArea = $('#edit-upload-area')[0];
-  uploadArea.ondrop = editLogEntryFileDropHandler;
-  uploadArea.ondragover = editLogEntryFileDragOverHandler;
+  const uploadArea = $('#edit-upload-area');
+  if (uploadArea.length > 0) {
+    uploadArea[0].ondrop = editLogEntryFileDropHandler;
+    uploadArea[0].ondragover = editLogEntryFileDragOverHandler;
+  }
 
   function updateEditLogEntryMarkdown () {
     if (editLogEntryModal.find('#input-edit-content-is-markdown').prop('checked')) {

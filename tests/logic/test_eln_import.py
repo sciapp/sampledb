@@ -170,8 +170,6 @@ def test_import_elabftw_eln_file(user):
         zip_bytes=eln_zip_bytes
     ).id
     parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
-    import sys
-    print(parsed_eln_import.import_notes, file=sys.stderr)
     assert parsed_eln_import.import_notes == {
         './RD - Testing-relationship-between-acceleration-and-gravity - 5adb0eb3/': ['The .eln file did not contain any valid flexible metadata for this object.'],
         './Demo - Synthesis-of-Aspirin - 6bc46aec/': ['The .eln file did not contain any valid flexible metadata for this object.'],
