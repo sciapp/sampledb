@@ -519,6 +519,10 @@ def create_multiple_labels(
                 if min_label_height > ghs_height + 33:
                     ghs_height += min_label_height - (ghs_height + 33)
 
+            box_side_by_side_height = max(21, math.ceil(max_ghs_height), box_height - 12)
+
+            box_height = box_height + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / box_width)
+
             tmp_index += 1
             if box_height > max_box_height:
                 max_box_height = box_height
@@ -528,7 +532,6 @@ def create_multiple_labels(
         object_amount = len(username_list)
 
         column_amount = int(math.floor((paper_height - 15) / (max_box_height + 5)))
-        box_side_by_side_height = max(21, math.ceil(max_ghs_height), max_box_height - 12)
         if quantity == 1 and fill_single_page:
             page_amount = row_amount * column_amount
             outer_box_width = paper_width - 10
