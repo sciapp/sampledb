@@ -16,9 +16,12 @@
     }
     .boxname {
         border: 1.5px solid black;
-        height: 4mm;
+        display: flex;
+        flex-direction: column;
+        min-height: 4mm;
         width: {{box_width}}mm;
         text-align: center;
+        overflow-wrap: break-word;
     }
     .boxinfo {
         border: 1.5px solid black;
@@ -231,5 +234,6 @@
         </div>
         {%- endfor -%}
         {% endfor %}
+    </div>
     </div>
 {% endblock %}
