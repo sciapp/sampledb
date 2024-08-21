@@ -800,10 +800,10 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     assert len(sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)) == 1
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[])
     ]
 
     data['sample']['object_id'] = sample.object_id
@@ -812,10 +812,10 @@ def test_get_workflow_references(sample_action, measurement_action, user):
 
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[], is_current=False)
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[], is_current_referenced=True, is_current_referencing=False, path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[], is_current_referenced=False, is_current_referencing=False, path=[])
     ]
 
     data['sample']['object_id'] = workflow_object.object_id
@@ -824,10 +824,10 @@ def test_get_workflow_references(sample_action, measurement_action, user):
 
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -863,10 +863,10 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -878,7 +878,7 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -891,8 +891,8 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -905,9 +905,9 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -918,11 +918,11 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[]),
-        WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -933,10 +933,10 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[])
     ]
 
     workflow_schema['workflow_view'] = {
@@ -948,7 +948,7 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
     ]
 
     workflow_schema['workflow_view'] = {}
@@ -957,11 +957,11 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     workflow_object = sampledb.logic.objects.get_object(workflow_object.object_id)
     workflow = sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)[0]
     assert workflow == [
-        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[]),
-        WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, files=[])
+        WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+        WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+        WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[]),
+        WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[])
     ]
 
     del workflow_schema['workflow_view']
@@ -972,9 +972,9 @@ def test_get_workflow_references(sample_action, measurement_action, user):
     assert len(sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id)) == 2
     for workflow in sampledb.logic.object_relationships.get_workflow_references(workflow_object, user.id):
         assert workflow == [
-            WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, files=[file]),
-            WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, files=[]),
-            WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, files=[]),
-            WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, files=[]),
-            WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, files=[])
+            WorkflowElement(sample.object_id, sample, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[file], path=[]),
+            WorkflowElement(bidirectional_sample.object_id, bidirectional_sample, sample_action, is_referenced=True, is_referencing=True, is_current_referenced=True, is_current_referencing=True, files=[], path=[]),
+            WorkflowElement(no_permission_sample.object_id, None, sample_action, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[]),
+            WorkflowElement(measurement.object_id, measurement, measurement_action, is_referenced=False, is_referencing=True, is_current_referenced=False, is_current_referencing=True, files=[], path=[]),
+            WorkflowElement(fed_no_data_sample.object_id, fed_no_data_sample, None, is_referenced=True, is_referencing=False, is_current_referenced=True, is_current_referencing=False, files=[], path=[])
         ]

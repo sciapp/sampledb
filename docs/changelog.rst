@@ -8,6 +8,7 @@ Currently in development.
 
 - Added starting number in batch object creation
 - Fixed search by array index
+- Introduce recursive workflow view
 
 
 Version 0.29.1
