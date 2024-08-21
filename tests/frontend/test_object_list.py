@@ -9,12 +9,16 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
 from urllib.parse import urlparse, parse_qs
-from reportlab.lib.pagesizes import A4, LETTER
 
 import sampledb
 import sampledb.logic
 import sampledb.models
 
+
+inch = 72.0
+mm = (inch / 2.54) * 0.1
+A4 = (210*mm,297*mm)
+LETTER = (8.5*inch, 11*inch)
 
 @pytest.fixture
 def user(flask_server):

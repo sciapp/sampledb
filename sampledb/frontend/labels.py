@@ -9,7 +9,6 @@ import os
 import typing
 
 from PIL import Image
-from reportlab.lib.pagesizes import A4, LETTER
 from weasyprint import HTML
 
 import qrcode
@@ -18,11 +17,13 @@ import qrcode.image.pil
 import flask
 
 DEFAULT_PAPER_FORMAT = 'DIN A4 (Portrait)'
+inch = 72.0
+mm = (inch / 2.54) * 0.1
 PAGE_SIZES = {
-    'DIN A4 (Portrait)': A4,
-    'DIN A4 (Landscape)': (A4[1], A4[0]),
-    'Letter (Portrait)': LETTER,
-    'Letter (Landscape)': (LETTER[1], LETTER[0])
+    'DIN A4 (Portrait)': (210 * mm, 297 * mm),
+    'DIN A4 (Landscape)': (297 * mm, 210 * mm),
+    'Letter (Portrait)': (8.5 * inch, 11 * inch),
+    'Letter (Landscape)': (11 * inch, 8.5 * inch)
 }
 
 PAGE_SIZE_KEYS = ['DIN A4 (Portrait)', 'DIN A4 (Landscape)', 'Letter (Portrait)', 'Letter (Landscape)']
