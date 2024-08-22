@@ -16,6 +16,22 @@ from .datatypes import Quantity
 from .units import get_un_cefact_code_for_unit
 
 
+def _unpack_single_item_arrays(json_value: typing.Any) -> typing.Any:
+    if isinstance(json_value, dict):
+        return {
+            key: _unpack_single_item_arrays(value)
+            for key, value in json_value.items()
+        }
+    if isinstance(json_value, (list, tuple)):
+        if len(json_value) == 1:
+            return _unpack_single_item_arrays(json_value[0])
+        return [
+            _unpack_single_item_arrays(value)
+            for value in json_value
+        ]
+    return json_value
+
+
 def generate_ro_crate_metadata(
         archive_files: typing.Dict[str, typing.Union[str, bytes]],
         infos: typing.Dict[str, typing.Any]
@@ -289,7 +305,7 @@ def generate_ro_crate_metadata(
         if user_info.get('orcid_id'):
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
 
-    result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(ro_crate_metadata, indent=2).encode('utf-8')
+    result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
     return result_files
 
 

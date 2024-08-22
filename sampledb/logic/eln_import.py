@@ -583,7 +583,9 @@ def parse_eln_file(
                 eln_dialect = 'SampleDB'
             else:
                 eln_dialect = None
-            _eln_assert(isinstance(root_node.get('hasPart'), list), "ro-crate-metadata.json @graph root node must have parts")
+            _eln_assert('hasPart' in root_node, "ro-crate-metadata.json @graph root node must have parts")
+            if not isinstance(root_node['hasPart'], list):
+                root_node['hasPart'] = [root_node['hasPart']]
 
             for object_node_ref in root_node['hasPart']:
                 _eln_assert(isinstance(object_node_ref, dict), "Invalid reference")
@@ -636,7 +638,8 @@ def parse_eln_file(
                     object_type = None
                     object_type_id = None
 
-                _eln_assert(isinstance(object_node.get('comment', []), list), "Invalid comment list for Dataset")
+                if 'comment' in object_node and not isinstance(object_node['comment'], list):
+                    object_node['comment'] = [object_node['comment']]
                 comments: typing.List[ParsedELNComment] = []
                 for comment_ref in object_node.get('comment', []):
                     _eln_assert(isinstance(comment_ref, dict), "Invalid comment reference or node")
@@ -771,7 +774,8 @@ def parse_eln_file(
                 else:
                     tags = []
                 if 'variableMeasured' in object_node and object_node['variableMeasured'] is not None:
-                    _eln_assert(isinstance(object_node.get('variableMeasured', []), list), "Invalid variableMeasured list for Dataset")
+                    if not isinstance(object_node['variableMeasured'], list):
+                        object_node['variableMeasured'] = [object_node['variableMeasured']]
                     has_metadata = True
                     property_values = []
                     for property_value in object_node['variableMeasured']:
@@ -794,7 +798,8 @@ def parse_eln_file(
                         description=description,
                         tags=tags
                     )
-                _eln_assert(isinstance(object_node.get('hasPart', []), list), "Invalid parts list for Dataset")
+                if 'hasPart' in object_node and not isinstance(object_node['hasPart'], list):
+                    object_node['hasPart'] = [object_node['hasPart']]
                 for object_part_ref in object_node.get('hasPart', []):
                     _eln_assert(isinstance(object_part_ref, dict), "Invalid reference")
                     _eln_assert(list(object_part_ref.keys()) == ['@id'], "Invalid reference")
