@@ -3,7 +3,7 @@
   {% if in_export_data_modal %}<span class="data_export_object_wrapper"><input type="checkbox" title="{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree.object_id) }}" {% if related_objects_tree.referenced_objects is not none %}name="data_export_object_{{ related_objects_tree.object_id }}" id="data_export_object_{{ related_objects_tree.object_id }}" data-object-id="{{ related_objects_tree.object_id }}" {% else %}disabled="disabled"{% endif %} class="data_export_object data_export_object_{{ related_objects_tree.object_id }}"><label for="data_export_object_{{ related_objects_tree.object_id }}" class="fa fa-fw"><span class="sr-only">{{ _('Include #%(object_id)s in Export', object_id=related_objects_tree.object_id) }}</span></label></span>{% endif %}
   <a href="{{ url_for('.object', object_id=related_objects_tree.object_id) }}">{{ object_name }} &bullet; #{{ related_objects_tree.object_id }}</a>
   {% if related_objects_tree.object is not none %}
-    {{ import_information_symbol(object) }}
+    {{ import_information_symbol(related_objects_tree.object) }}
   {% endif %}
   {% if related_objects_tree.referenced_objects or related_objects_tree.referencing_objects %}
   <ul>
@@ -27,11 +27,11 @@
     #{{ related_objects_tree.object_id }} @ {{ object_ref.component.get_name() }}
     {{ import_information_symbol(object_ref) }}
   {% else %}
-    <a href="{{ url_for('frontend.object', object_id=data.object_id) }}">#{{  related_objects_tree.object_id }}</a>
+    <a href="{{ url_for('frontend.object', object_id=related_objects_tree.object_id) }}">#{{  related_objects_tree.object_id }}</a>
   {% endif %}
 {% else %}
   {% if related_objects_tree.eln_object_url %}
-    <a href="{{ data.eln_object_url }}">
+    <a href="{{ related_objects_tree.eln_object_url }}">
   {% endif %}
   {{ _('Object') }} #{{ related_objects_tree.object_id }} @
   {% if not related_objects_tree.eln_object_url %}
