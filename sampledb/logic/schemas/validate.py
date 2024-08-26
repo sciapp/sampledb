@@ -292,8 +292,13 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     if not isinstance(instance['text'], str) and not isinstance(instance['text'], dict):
         raise ValidationError('text must be str or a dictionary', path)
     choices = schema.get('choices', None)
-    if choices and instance['text'] not in choices:
-        raise ValidationError(_('The text must be one of: %(choices)s.', choices=', '.join(get_translated_text(choice) for choice in choices)), path)
+    if choices:
+        for choice in choices:
+            if str(choice) == instance['text'] or choice == {'en': instance['text']} or instance['text'] == {'en': choice}:
+                instance['text'] = choice
+                break
+        if instance['text'] not in choices:
+            raise ValidationError(_('The text must be one of: %(choices)s.', choices=', '.join(get_translated_text(choice) for choice in choices)), path)
     min_length = schema.get('minLength', 0)
     max_length = schema.get('maxLength', None)
 

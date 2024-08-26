@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.30
+------------
+
+Currently in development.
+
+- Added starting number in batch object creation
+
+
 Version 0.29.1
 --------------
 
