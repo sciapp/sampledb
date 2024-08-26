@@ -41,6 +41,7 @@ should_stop = False
 wake_event = threading.Event()
 
 handler_threads: typing.List[threading.Thread] = []
+cleanup_thread: typing.Optional[threading.Thread] = None
 
 
 def get_background_tasks() -> typing.Sequence[BackgroundTask]:
@@ -119,14 +120,20 @@ def start_handler_threads(app: flask.Flask) -> None:
         handler_threads.append(handler_thread)
 
     if not daemon:
+        global cleanup_thread
         # create thread that takes care of stopping the background task threads if
         # the main thread exits without stopping them, e.g. for scripts
         # this is only necessary if the handler threads are not daemons
-        def cleanup_thread_function() -> None:
-            threading.main_thread().join()
-            stop_handler_threads(app)
+        if cleanup_thread is not None and not cleanup_thread.is_alive():
+            cleanup_thread.join()
+            cleanup_thread = None
+        if cleanup_thread is None:
+            def cleanup_thread_function() -> None:
+                threading.main_thread().join()
+                stop_handler_threads(app)
 
-        threading.Thread(target=cleanup_thread_function).start()
+            cleanup_thread = threading.Thread(target=cleanup_thread_function)
+            cleanup_thread.start()
 
 
 def stop_handler_threads(app: flask.Flask) -> None:
