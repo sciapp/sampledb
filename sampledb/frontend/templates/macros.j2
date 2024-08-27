@@ -55,11 +55,12 @@
     {% endif %}
   {% else %}
     {% if eln_signed_import %}
-      <span class="fa-stack" data-toggle="tooltip" data-placement="top" title="" data-original-title="./objects/3 @ .eln file #{{ obj.eln_import_id }} Signed">
-        <i aria-hidden="true" class="fa fa-file-archive-o fa-stack-1x"></i>
-        <i class="fa fa-lock fa-stack-1x" aria-hidden="true" style="padding-left: .8em; padding-top: .3em;"></i>
+      <span class="fa-stack" data-toggle="tooltip" data-placement="top" title="" data-original-title="./objects/3 @ .eln file #{{ obj.eln_import_id }} Signed" style="height: 1em">
+        <i aria-hidden="true" class="fa fa-file-archive-o fa-stack-1x" style="line-height: 1em"></i>
+        <i class="fa fa-lock fa-stack-1x" aria-hidden="true" style="padding-left: .8em; padding-top: .3em; line-height: 1em"></i>
       </span>
     {% else %}
+      &nbsp
       <i class="fa fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ obj.eln_object_id }} @ {{ _('.eln file') }} #{{ obj.eln_import_id }}"></i>
     {% endif %}
   {% endif %}
