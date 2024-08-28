@@ -7,6 +7,7 @@ Version 0.30
 Currently in development.
 
 - Added starting number in batch object creation
+- Fixed search by array index
 
 
 Version 0.29.1

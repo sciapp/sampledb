@@ -1250,7 +1250,7 @@ def transform_literal_to_query(
         reference_attribute_indices = [
             index
             for index, attribute in enumerate(attributes)
-            if attribute.startswith('*')
+            if isinstance(attribute, str) and attribute.startswith('*')
         ]
         if len(reference_attribute_indices) == 1:
             reference_placeholder_index = reference_attribute_indices[0]
