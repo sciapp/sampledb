@@ -11,6 +11,7 @@ import typing
 import zipfile
 
 import flask
+import requests
 from flask_babel import gettext
 import minisign
 
@@ -509,8 +510,9 @@ def _parse_person_ref(
 
 
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
-    # TODO get key e.g. from .well-known link
-    pub = minisign.PublicKey.from_base64(signature.trusted_comment.split("'")[1])
+    # TODO replace hardcoded url to localhost
+    res = requests.get('http://localhost:8000/.well-known/pub-key/')
+    pub = minisign.PublicKey.from_base64(res.content)
     try:
         pub.verify(json_bytes, signature)
     except minisign.exceptions.VerifyError:

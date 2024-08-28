@@ -45,6 +45,7 @@ from . import users_forms
 from . import errors
 from . import utils
 from . import federation
+from . import well_known
 
 
 __all__ = [
@@ -78,4 +79,5 @@ __all__ = [
     'errors',
     'utils',
     'federation',
+    'well_known',
 ]

@@ -8,6 +8,9 @@ import typing
 import flask
 import minisign
 
+from . import minisign_keys
+from .. import db
+from .. import models
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
@@ -15,6 +18,7 @@ from .objects import find_object_references
 from .dataverse_export import flatten_metadata, get_title_for_property
 from .datatypes import Quantity
 from .units import get_un_cefact_code_for_unit
+from ..models import SecretKey, PublicKey
 
 
 def _unpack_single_item_arrays(json_value: typing.Any) -> typing.Any:
@@ -314,10 +318,9 @@ def generate_ro_crate_metadata(
 def _sign_ro_crate_metadata(
     data: bytes
 ) -> bytes:
-    # TODO use instance keypair instead of newly generated keys
-    keypair = minisign.KeyPair.generate()
-
-    sig = keypair.secret_key.sign(data, trusted_comment=str(keypair.public_key.to_base64()))
+    kp = minisign_keys.get_key_pair()
+    # TODO remove pubkey from comment
+    sig = kp.secret_key.sign(data, trusted_comment=str(kp.public_key.to_base64()))
     return bytes(sig)
 
 
