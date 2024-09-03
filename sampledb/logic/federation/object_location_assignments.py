@@ -47,7 +47,7 @@ def import_object_location_assignment(
         fed_logs.import_object_location_assignment(assignment.id, component.id)
         if user_id:
             object_log.assign_location(user_id, object_id=object.object_id, object_location_assignment_id=assignment.id, utc_datetime=assignment.utc_datetime, is_imported=True)
-    elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.utc_datetime != assignment_data['utc_datetime']:
+    elif assignment.location_id != location_id or assignment.user_id != user_id or assignment.responsible_user_id != responsible_user_id or assignment.description != assignment_data['description'] or assignment.object_id != object.object_id or assignment.confirmed != assignment_data['confirmed'] or assignment.declined != assignment_data.get('declined', False) or assignment.utc_datetime != assignment_data['utc_datetime']:
         assignment.location_id = location_id
         assignment.responsible_user_id = responsible_user_id
         assignment.user_id = user_id
