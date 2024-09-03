@@ -61,7 +61,6 @@ pyphen==0.15.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
 qrcode==8.0
-reportlab==4.2.5
 requests==2.31.0
 scipy==1.14.1
 setuptools==75.5.0
