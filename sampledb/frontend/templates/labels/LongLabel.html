@@ -6,35 +6,46 @@
         margin: 7.5mm 5mm;
     }
     .outbox {
-        margin: {{horizontal_label_margin}}mm {{horizontal_label_margin}}mm;
+        margin: {{horizontal_label_margin / 2}}mm {{horizontal_label_margin}}mm;
         display: flex;
         align-items: center;
         border: 1.5px solid black;
         height: {{box_height}}mm;
+        min-width: {{min_label_width}}mm;
+    }
+    .tmpbox {
+        display: flex;
+    }
+    .extrabox {
+        position: relative;
     }
 {% endblock %}
 
 {% block body %}
-    {% for object_index in range(object_amount) %}
-        {% for label_index in range(label_amount) %}
-            <div class="outbox" style="width: {{box_width_list[object_index]}}mm">
-                <div class="labeltext">
-                    <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ object_id_list[object_index] }}<br>
-                        {{ username_list[object_index] }}
-                        {% if include_qrcode %}
-                        <br>
-                        {{ creation_date_list[object_index] }}
-                        {% else %}
-                        &bullet; {{ creation_date_list[object_index] }}
-                        {% endif %}
+    {%- for object_index in range(object_amount) -%}
+        {%- for label_index in range(label_amount) -%}
+            <div class="tmpbox">
+                <div class="outbox" style="white-space: nowrap">
+                    <div class="labeltext">
+                        <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ object_id_list[object_index] }}<br>
+                            {{ username_list[object_index] }}
+                            {%- if include_qrcode -%}
+                            <br>
+                            {{ creation_date_list[object_index] }}
+                            {%- else -%}
+                            &bullet; {{ creation_date_list[object_index] }}
+                            {%- endif -%}
+                    </div>
+                    <div class="extrabox" style="width: {{text_extra_width_list[object_index]}}mm">
+                        {%- for hazard_code in hazard_list[object_index] -%}
+                            <div class="ghs ghs0{{hazard_code}}" style="position: absolute; left: {{loop.index0 * 9}}mm; top: -4.5mm"></div>
+                        {%- endfor -%}
+                        {%- if include_qrcode -%}
+                            <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }}); position: absolute; top: -6mm; left: {{hazard_list[0]|count * 9}}mm"></div>
+                        {%- endif -%}
+                    </div>
                 </div>
-                {% for hazard_code in hazard_list[object_index] %}
-                    <div class="ghs ghs0{{hazard_code}}"></div>
-                {% endfor %}
-                {% if include_qrcode %}
-                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
-                {% endif %}
             </div>
-        {% endfor %}
-    {% endfor %}
-{% endblock %}
+        {%- endfor -%}
+    {%- endfor -%}
+{%- endblock -%}

@@ -159,6 +159,7 @@ def create_multiple_labels(
 
     if create_long_labels:
         box_width_list = []
+        text_extra_width_list = []
         tmp_index = 0
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
@@ -175,19 +176,22 @@ def create_multiple_labels(
             image_stream.seek(0)
             qr_code_uri_list.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
+            # if include_qrcode_in_long_labels:
+            #     label_width = 2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
+            #         max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
+            #             len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2
+            #     if len(hazard_list[tmp_index]) == 0:
+            #         label_width += 2
+            # else:
+            #     label_width = ghs_width * len(hazard_list[tmp_index]) + (
+            #         max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
+            #             len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2
+            #
+            # box_width_list.append(max(label_width, min_label_width))
+
+            text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
             if include_qrcode_in_long_labels:
-                label_width = 2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
-                    max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
-                        len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2
-                if len(hazard_list[tmp_index]) == 0:
-                    label_width += 2
-            else:
-                label_width = ghs_width * len(hazard_list[tmp_index]) + (
-                    max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
-                        len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2
-
-            box_width_list.append(max(label_width, min_label_width))
-
+                text_extra_width_list[tmp_index] = text_extra_width_list[tmp_index] + qrcode_width
             tmp_index += 1
 
         if include_qrcode_in_long_labels:
@@ -212,7 +216,8 @@ def create_multiple_labels(
                                      object_amount=object_amount, box_width_list=box_width_list,
                                      include_qrcode=include_qrcode_in_long_labels, box_height=box_height,
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
-                                     GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin)
+                                     GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
+                                     min_label_width=min_label_width, text_extra_width_list=text_extra_width_list)
 
     elif create_mixed_labels:
         has_ghs_list = []
