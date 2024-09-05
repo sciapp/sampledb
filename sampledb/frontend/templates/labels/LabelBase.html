@@ -3,13 +3,22 @@
         <title>SampleDB</title>
         <style>
             {% block style %}{% endblock %}
+            @font-face {
+                font-family: Helvetica;
+                src: url({{helvetica_font}});
+            }
+            @font-face {
+                font-family: Helvetica;
+                src: url({{helvetica_bold_font}});
+                font-weight: bold;
+            }
             body {
-                font-size: 7.25pt;
-                font-family: FreeSans;
+                font-size: 8pt;
+                font-family: Helvetica, sans-serif;
                 line-height: 125%;
             }
             .ghs00 {
-                    background-image: url({{ GHS_IMAGE_URIS[0] }});
+                background-image: url({{ GHS_IMAGE_URIS[0] }});
             }
             .ghs01 {
                 background-image: url({{ GHS_IMAGE_URIS[1] }});
