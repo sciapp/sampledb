@@ -158,7 +158,6 @@ def create_multiple_labels(
     qrcode_width = 12.0
 
     if create_long_labels:
-        box_width_list = []
         text_extra_width_list = []
         tmp_index = 0
         for object_id in object_specifications:
@@ -176,35 +175,28 @@ def create_multiple_labels(
             image_stream.seek(0)
             qr_code_uri_list.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
-            # if include_qrcode_in_long_labels:
-            #     label_width = 2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
-            #         max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
-            #             len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2
-            #     if len(hazard_list[tmp_index]) == 0:
-            #         label_width += 2
-            # else:
-            #     label_width = ghs_width * len(hazard_list[tmp_index]) + (
-            #         max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
-            #             len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2
-            #
-            # box_width_list.append(max(label_width, min_label_width))
-
             text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
             if include_qrcode_in_long_labels:
                 text_extra_width_list[tmp_index] = text_extra_width_list[tmp_index] + qrcode_width
             tmp_index += 1
 
+        page_amounts: typing.Dict[str, typing.List[int]] = {
+            "DIN A4 (Portrait)": [21, 16],
+            "DIN A4 (Landscape)": [14, 11],
+            "Letter (Portrait)": [19, 15],
+            "Letter (Landscape)": [15, 11]
+        }
+
         if include_qrcode_in_long_labels:
-            box_height = 4 * 3.0
+            box_height = 12.0
         else:
-            box_height = 3 * 3.0
+            box_height = 9.0
 
         if fill_single_page:
-            label_amount = math.floor((paper_height - (8 * vertical_label_margin) - 15) /
-                                      (box_height + vertical_label_margin))
-            if ((paper_format == "Letter (Portrait)" and include_qrcode_in_long_labels) or
-                    paper_format == "Letter (Landscape)"):
-                label_amount += 1
+            if include_qrcode_in_long_labels:
+                label_amount = page_amounts[paper_format][1]
+            else:
+                label_amount = page_amounts[paper_format][0]
         else:
             label_amount = quantity
 
@@ -213,7 +205,7 @@ def create_multiple_labels(
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
                                      hazard_list=hazard_list, qrcode_width=qrcode_width, ghs_width=ghs_width,
                                      object_id_list=sample_code_list, qr_code_uri_list=qr_code_uri_list,
-                                     object_amount=object_amount, box_width_list=box_width_list,
+                                     object_amount=object_amount,
                                      include_qrcode=include_qrcode_in_long_labels, box_height=box_height,
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
