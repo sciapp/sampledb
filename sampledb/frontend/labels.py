@@ -8,6 +8,7 @@ import math
 import os
 import typing
 
+import flask_login
 from PIL import Image
 from weasyprint import HTML
 
@@ -15,6 +16,8 @@ import qrcode
 import qrcode.image.pil
 
 import flask
+
+from sampledb import logic
 
 DEFAULT_PAPER_FORMAT = 'DIN A4 (Portrait)'
 inch = 72.0
@@ -140,6 +143,13 @@ def create_multiple_labels(
         "Letter (Landscape)": [215.9, 279.4]
     }
 
+    with open("/home/sampledb/sampledb/Helvetica.otf", "rb") as font_file:
+        helvetica_font = ('data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8'))
+
+    with open("/home/sampledb/sampledb/Helvetica-Bold.otf", "rb") as font_file:
+        helvetica_bold_font = ('data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8'))
+
+
     paper_height = paper_formats[paper_format][0]
     paper_width = paper_formats[paper_format][1]
 
@@ -155,11 +165,12 @@ def create_multiple_labels(
     qr_code_uri_list = []
     ghs_amount_list = []
     ghs_width = 9.0
-    qrcode_width = 12.0
+    qrcode_width = 12
 
     if create_long_labels:
         text_extra_width_list = []
         tmp_index = 0
+        qrcode_width = 12.5
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
             object_name_list.append(object_specifications[object_id]["object_name"])
@@ -177,7 +188,7 @@ def create_multiple_labels(
 
             text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
             if include_qrcode_in_long_labels:
-                text_extra_width_list[tmp_index] = text_extra_width_list[tmp_index] + qrcode_width
+                text_extra_width_list[tmp_index] = text_extra_width_list[tmp_index] + qrcode_width + 1
             tmp_index += 1
 
         page_amounts: typing.Dict[str, typing.List[int]] = {
@@ -188,9 +199,9 @@ def create_multiple_labels(
         }
 
         if include_qrcode_in_long_labels:
-            box_height = 12.0
+            box_height = 12.75
         else:
-            box_height = 9.0
+            box_height = 9.04
 
         if fill_single_page:
             if include_qrcode_in_long_labels:
@@ -209,7 +220,8 @@ def create_multiple_labels(
                                      include_qrcode=include_qrcode_in_long_labels, box_height=box_height,
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
-                                     min_label_width=min_label_width, text_extra_width_list=text_extra_width_list)
+                                     min_label_width=min_label_width, text_extra_width_list=text_extra_width_list,
+                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
 
     elif create_mixed_labels:
         has_ghs_list = []
@@ -352,7 +364,8 @@ def create_multiple_labels(
                                      fourth_box_qrcode_box_height_list=fourth_box_qrcode_box_height_list,
                                      fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
                                      object_amount=object_amount, group_box_height_list=group_box_height_list,
-                                     ghs_amount_list=ghs_amount_list)
+                                     ghs_amount_list=ghs_amount_list,
+                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
@@ -467,7 +480,8 @@ def create_multiple_labels(
                                      text_left=text_left, text_top=text_top, text_name_top=text_name_top,
                                      out_box_width=out_box_width, out_box_height=out_box_height,
                                      has_label_dimension=has_label_dimension, text_width=text_width,
-                                     qr_code_top=qr_code_top, labels_on_page=labels_on_page)
+                                     qr_code_top=qr_code_top, labels_on_page=labels_on_page,
+                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
 
     else:
         box_width = max(label_width, min_label_width)
@@ -555,7 +569,8 @@ def create_multiple_labels(
                                      ghs_classes_side_by_side=ghs_classes_side_by_side, centered=centered,
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,
-                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height)
+                                     outer_box_width=outer_box_width, outer_box_height=outer_box_height,
+                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
 
     # return html.encode()
 
