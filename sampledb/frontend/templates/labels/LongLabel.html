@@ -3,10 +3,10 @@
 {% block style %}
     @page {
         size: {{ paper_width }}mm {{ paper_height }}mm;
-        margin: 7.5mm 5mm;
+        margin: 10mm 5mm;
     }
     .outbox {
-        margin: {{horizontal_label_margin / 2}}mm {{horizontal_label_margin}}mm;
+        margin: {{horizontal_label_margin / 2 + 0.3}}mm {{horizontal_label_margin}}mm;
         display: flex;
         align-items: center;
         border: 1.5px solid black;
@@ -16,12 +16,12 @@
     .tmpbox {
         display: flex;
     }
-  .labeltext {
+    .labeltext {
         position:relative;
-  }
+    }
     .extrabox {
         position: absolute;
-        top: -0.7mm;
+        top: -1.25mm;
         right: 0;
         display: flex;
         align-items: center;
@@ -38,15 +38,19 @@
             <div class="tmpbox">
                 <div class="outbox" style="white-space: nowrap">
                     <div class="labeltext" style="padding-right: {{ text_extra_width_list[object_index] + 1 }}mm">
-                        <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ object_id_list[object_index] + 1}}<br>
+                        <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ object_id_list[object_index]}}<br>
                         {{ username_list[object_index] }}
                         {%- if include_qrcode -%}
                             <br>
                             {{ creation_date_list[object_index] }}
                         {%- else -%}
-                            &bullet; {{ creation_date_list[object_index] }}
+                            &nbsp;&bullet; {{ creation_date_list[object_index] }}
                         {%- endif -%}
-                        <div class="extrabox" style="width: {{ text_extra_width_list[object_index] + 1}}mm">
+                        <div class="extrabox" style="{% if include_qrcode %}
+                                                      width: {{ text_extra_width_list[object_index] + 1 }}mm
+                                                    {% else %}
+                                                      width: {{ text_extra_width_list[object_index] }}mm
+                                                    {% endif %}">
                             {%- for hazard_code in hazard_list[object_index] -%}
                                 <div class="ghs ghs0{{hazard_code}}"></div>
                             {%- endfor -%}
