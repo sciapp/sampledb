@@ -8,7 +8,6 @@ import math
 import os
 import typing
 
-import flask_login
 from PIL import Image
 from weasyprint import HTML
 
@@ -17,7 +16,6 @@ import qrcode.image.pil
 
 import flask
 
-from sampledb import logic
 
 DEFAULT_PAPER_FORMAT = 'DIN A4 (Portrait)'
 inch = 72.0
@@ -149,7 +147,6 @@ def create_multiple_labels(
     with open("/home/sampledb/sampledb/Helvetica-Bold.otf", "rb") as font_file:
         helvetica_bold_font = ('data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8'))
 
-
     paper_height = paper_formats[paper_format][0]
     paper_width = paper_formats[paper_format][1]
 
@@ -165,7 +162,7 @@ def create_multiple_labels(
     qr_code_uri_list = []
     ghs_amount_list = []
     ghs_width = 9.0
-    qrcode_width = 12
+    qrcode_width = 12.0
 
     if create_long_labels:
         text_extra_width_list = []
