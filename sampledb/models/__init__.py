@@ -29,6 +29,7 @@ from . import settings
 from . import temporary_files
 from . import topics
 from . import users
+from . import webhooks
 
 from .actions import Action, ActionType, SciCatExportType
 from .action_translations import ActionTranslation, ActionTypeTranslation
@@ -73,6 +74,7 @@ from .topics import Topic
 from .temporary_files import TemporaryFile
 from .users import User, UserType, UserFederationAlias, FederatedIdentity
 from .user_log import UserLogEntry, UserLogEntryType
+from .webhooks import Webhook, WebhookType
 
 
 __all__ = [
@@ -103,6 +105,7 @@ __all__ = [
     'temporary_files',
     'topics',
     'users',
+    'webhooks',
     'Action',
     'ActionType',
     'ActionTranslation',
@@ -207,5 +210,7 @@ __all__ = [
     'FedFileLogEntry',
     'FedFileLogEntryType',
     'FedObjectLocationAssignmentLogEntry',
-    'FedObjectLocationAssignmentLogEntryType'
+    'FedObjectLocationAssignmentLogEntryType',
+    'Webhook',
+    'WebhookType',
 ]

@@ -6,6 +6,7 @@
 import contextlib
 import getpass
 import copy
+import json
 import logging
 import os
 import random
@@ -123,7 +124,8 @@ def create_app():
     @sampledb_app.route('/users/<int:user_id>/autologin')
     def autologin(user_id):
         user = sampledb.logic.users.get_user(user_id)
-        flask_login.login_user(user)
+        fresh = json.loads(flask.request.args.get('fresh', 'true'))
+        flask_login.login_user(user, fresh=fresh)
         return ''
 
     return sampledb_app
@@ -162,7 +164,7 @@ def app_context(app):
 
 
 @pytest.fixture(scope='session')
-def driver():
+def driver_session():
     options = Options()
     options.add_argument("--lang=en-US")
     options.add_argument('--headless')
@@ -174,6 +176,12 @@ def driver():
         time.sleep(5)
         driver.execute_cdp_cmd('Emulation.setTimezoneOverride', {'timezoneId': 'UTC'})
         yield driver
+
+
+@pytest.fixture()
+def driver(driver_session):
+    driver_session.delete_all_cookies()
+    return driver_session
 
 
 @pytest.fixture(autouse=True)

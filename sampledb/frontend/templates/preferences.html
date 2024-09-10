@@ -293,7 +293,7 @@
          <tbody>
            {% for webhook in webhooks %}
            <tr>
-             <td>{{ webhook.name }}</td>
+             <td>{{ webhook.name or '—' }}</td>
              <td>{{ webhook.target_url }}</td>
              <td>{% if not webhook.last_contact %}&mdash;{% else %}{{ webhook.last_contact }}{% endif %}</td>
              <td class="text-right">
@@ -356,14 +356,14 @@
         {% for notification_type in notification_types %}
           {% set notification_description = notification_types[notification_type][0] %}
           {% set notification_can_be_ignored = notification_types[notification_type][1] %}
-          {% if notification_type not in instrument_related_notification_types %}
+          {% if notification_type not in instrument_related_notification_types or is_instrument_responsible_user %}
           <tr>
             <td style="vertical-align: middle">{{ notification_description }}</td>
             {% for notification_mode in [NotificationMode.IGNORE, NotificationMode.WEBAPP, NotificationMode.EMAIL] %}
             <td class="text-center" style="vertical-align: middle">
               {% if notification_mode != NotificationMode.IGNORE or notification_can_be_ignored %}
                 <label for="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" class="sr-only">{{ notification_mode.name.lower() }}</label>
-                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.IGNORE if (notification_type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED) else NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
+                <input type="radio" id="notification_mode_for_type_{{ notification_type.name.lower() }}_{{ notification_mode.name.lower() }}" name="notification_mode_for_type_{{ notification_type.name.lower() }}" class="notification-mode-input-{{ notification_mode.name.lower() }}" value="{{ notification_mode.name.lower() }}" {% if notification_modes.get(notification_type, notification_modes.get(None, NotificationMode.IGNORE if (notification_type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED and not is_instrument_responsible_user) else NotificationMode.WEBAPP)) == notification_mode %}checked="checked"{% endif %}/>
               {% endif %}
             </td>
             {% endfor %}

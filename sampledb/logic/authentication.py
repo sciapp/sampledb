@@ -147,6 +147,16 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     db.session.commit()
 
 
+def get_api_tokens(user_id: int) -> typing.Sequence[Authentication]:
+    """
+    Get all API tokens for a given user.
+
+    :param user_id: the ID of an existing user
+    :return: the API tokens for the user
+    """
+    return Authentication.query.filter_by(user_id=user_id, type=AuthenticationType.API_TOKEN).all()
+
+
 def add_fido2_passkey(user_id: int, credential_data: AttestedCredentialData, description: str) -> None:
     """
     Add a FIDO2 passkey as an authentication method for a given user.
