@@ -319,8 +319,8 @@ def _sign_ro_crate_metadata(
     data: bytes
 ) -> bytes:
     kp = minisign_keys.get_key_pair()
-    # TODO remove pubkey from comment
-    sig = kp.secret_key.sign(data, trusted_comment=str(kp.public_key.to_base64()))
+    #TODO replace with instance URL
+    sig = kp.secret_key.sign(data, trusted_comment="http://localhost:8000/")
     return bytes(sig)
 
 

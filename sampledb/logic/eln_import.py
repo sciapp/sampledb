@@ -510,8 +510,9 @@ def _parse_person_ref(
 
 
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
-    # TODO replace hardcoded url to localhost
-    res = requests.get('http://localhost:8000/.well-known/pub-key/')
+    base_url = signature.trusted_comment
+    res = requests.get(base_url + ".well-known/pub-key/")
+    
     pub = minisign.PublicKey.from_base64(res.content)
     try:
         pub.verify(json_bytes, signature)
