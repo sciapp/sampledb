@@ -1301,7 +1301,7 @@ def _map_property_values_to_paths(property_values: typing.Sequence[PropertyValue
     property_paths_and_values = []
     for property_value in property_values:
         property_id = property_value['propertyID']
-        property_path: PropertyPath = tuple(property_id.split('/'))
+        property_path: PropertyPath = tuple(property_id.split('.'))
         property_paths_and_values.append((property_path, property_value))
     max_depth = max(
         len(property_path)
@@ -1361,7 +1361,7 @@ def _convert_property_value_trees_to_schema_and_data(
         _, schema, data, text = _convert_property_value_to_id_schema_and_data(flattened_property_value_tree[()])
         property_value = flattened_property_value_tree[()]
         full_title = property_value['propertyID']
-        titles = full_title.split('/')
+        titles = full_title.split('.')
         titles = [
             title.strip() for title in titles
         ]

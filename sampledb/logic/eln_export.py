@@ -324,7 +324,7 @@ def _convert_metadata_to_property_values(
             continue
         property_value: typing.Dict[str, typing.Any] = {
             "@type": "PropertyValue",
-            "propertyID": '/'.join(str(path_element) for path_element in full_property_path),
+            "propertyID": '.'.join(str(path_element) for path_element in full_property_path),
             "name": get_title_for_property(full_property_path, schema)
         }
         if property_type == 'text':

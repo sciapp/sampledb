@@ -551,13 +551,13 @@ def test_eln_export_property_values(user, app):
             },
             {
                 "@type": "PropertyValue",
-                "propertyID": "samples/0",
+                "propertyID": "samples.0",
                 "name": "Samples → 0",
                 "value": f"./objects/{referenced_object_id1}",
             },
             {
                 "@type": "PropertyValue",
-                "propertyID": "samples/1",
+                "propertyID": "samples.1",
                 "name": "Samples → 1",
                 "value": f"http://localhost/objects/{referenced_object_id2}",
             },

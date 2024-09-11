@@ -442,19 +442,19 @@ def test_map_property_values_to_paths():
             'value': 2
         },
         {
-            'propertyID': 'samples/1',
+            'propertyID': 'samples.1',
             'value': 3
         },
         {
-            'propertyID': 'samples/2',
+            'propertyID': 'samples.2',
             'value': 4
         },
         {
-            'propertyID': 'samples/0',
+            'propertyID': 'samples.0',
             'value': 5
         },
         {
-            'propertyID': 'other/property/id',
+            'propertyID': 'other.property.id',
             'value': 6
         }
     ]) == {
@@ -471,19 +471,19 @@ def test_map_property_values_to_paths():
             'value': 2
         },
         ('property2_samples', 0): {
-            'propertyID': 'samples/0',
+            'propertyID': 'samples.0',
             'value': 5
         },
         ('property2_samples', 1): {
-            'propertyID': 'samples/1',
+            'propertyID': 'samples.1',
             'value': 3
         },
         ('property2_samples', 2): {
-            'propertyID': 'samples/2',
+            'propertyID': 'samples.2',
             'value': 4
         },
         ('other', 'property', 'id'): {
-            'propertyID': 'other/property/id',
+            'propertyID': 'other.property.id',
             'value': 6
         }
     }
@@ -506,15 +506,15 @@ def test_map_property_values_to_paths():
             'value': 3
         },
         {
-            'propertyID': '/',
+            'propertyID': '.',
             'value': 4
         },
         {
-            'propertyID': '//',
+            'propertyID': '..',
             'value': 5
         },
         {
-            'propertyID': '/property/',
+            'propertyID': '.property.',
             'value': 6
         }
     ]) == {
@@ -535,15 +535,15 @@ def test_map_property_values_to_paths():
             'value': 3
         },
         ('property2','property'): {
-            'propertyID': '/',
+            'propertyID': '.',
             'value': 4
         },
         ('property2', 'property2', 'property'): {
-            'propertyID': '//',
+            'propertyID': '..',
             'value': 5
         },
         ('property2', 'property_property', 'property'): {
-            'propertyID': '/property/',
+            'propertyID': '.property.',
             'value': 6
         }
     }
