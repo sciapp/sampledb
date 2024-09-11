@@ -327,6 +327,7 @@ def test_convert_property_values_to_data_and_schema():
         ],
         name='Example Object',
         description='',
+        description_is_markdown=False,
         tags=[]
     ) == (
         {
@@ -364,6 +365,7 @@ def test_convert_property_values_to_data_and_schema():
         ],
         name='Example Object',
         description='Example Description',
+        description_is_markdown=True,
         tags=['test', 'tag']
     ) == (
         {
@@ -383,7 +385,8 @@ def test_convert_property_values_to_data_and_schema():
                 "_type": "text",
                 "text": {
                     "en": "Example Description"
-                }
+                },
+                "is_markdown": True
             },
             "tags": {
                 "_type": "tags",
@@ -412,7 +415,8 @@ def test_convert_property_values_to_data_and_schema():
                     "title": {
                         "en": "Description"
                     },
-                    "type": "text"
+                    "type": "text",
+                    "markdown": True
                 },
                 "tags": {
                     "title": {

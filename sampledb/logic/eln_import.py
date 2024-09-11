@@ -598,8 +598,14 @@ def parse_eln_file(
 
                 parsed_data.import_notes[object_node["@id"]] = []
 
-                _eln_assert(isinstance(object_node.get('description', ''), str), "Invalid description for Dataset")
+                _eln_assert(isinstance(object_node.get('description', ''), (str, dict)), "Invalid description for Dataset")
                 description = object_node.get('description', '')
+                if isinstance(description, dict):
+                    _eln_assert(description.get('@type') == 'TextObject', "Invalid description for Dataset")
+                    description_is_markdown = description.get('encodingFormat') == 'text/markdown'
+                    description = description.get('text', '')
+                else:
+                    description_is_markdown = False
 
                 if 'url' in object_node:
                     _eln_assert(isinstance(object_node.get('url'), str), "Invalid URL for Dataset")
@@ -701,6 +707,8 @@ def parse_eln_file(
                         '_type': 'text',
                         'text': {'en': description},
                     }
+                    if description_is_markdown:
+                        fallback_data['description']['is_markdown'] = True  # type: ignore[assignment]
                 fallback_schema = {
                     'type': 'object',
                     'title': {
@@ -730,6 +738,9 @@ def parse_eln_file(
                         },
                         'multiline': '\n' in description
                     }
+                    if description_is_markdown:
+                        fallback_schema_properties['description']['multiline'] = False
+                        fallback_schema_properties['description']['markdown'] = True
                     fallback_schema_property_order.append('description')
                 has_metadata = False
                 if 'keywords' in object_node:
@@ -796,6 +807,7 @@ def parse_eln_file(
                         property_values=property_values,
                         name=name,
                         description=description,
+                        description_is_markdown=description_is_markdown,
                         tags=tags
                     )
                 if 'hasPart' in object_node and not isinstance(object_node['hasPart'], list):
@@ -1519,6 +1531,7 @@ def _convert_property_values_to_data_and_schema(
         property_values: typing.Sequence[PropertyValue],
         name: str,
         description: str,
+        description_is_markdown: bool,
         tags: typing.Sequence[str]
 ) -> typing.Tuple[typing.Dict[str, typing.Any], typing.Dict[str, typing.Any]]:
     flattened_property_value_tree = _map_property_values_to_paths(property_values=property_values)
@@ -1545,6 +1558,9 @@ def _convert_property_values_to_data_and_schema(
             property_required=False,
             property_order_position=1
         )
+        if description_is_markdown:
+            data['description']['is_markdown'] = True
+            schema['properties']['description']['markdown'] = True
     if tags:
         _insert_property_into_schema_and_data(
             schema=schema,
