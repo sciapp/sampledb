@@ -18,7 +18,6 @@ from .objects import find_object_references
 from .dataverse_export import flatten_metadata, get_title_for_property
 from .datatypes import Quantity
 from .units import get_un_cefact_code_for_unit
-from ..models import SecretKey, PublicKey
 
 
 def _unpack_single_item_arrays(json_value: typing.Any) -> typing.Any:
@@ -320,7 +319,8 @@ def _sign_ro_crate_metadata(
 ) -> bytes:
     kp = minisign_keys.get_key_pair()
     #TODO replace with instance URL
-    sig = kp.secret_key.sign(data, trusted_comment="http://localhost:8000/")
+    secret_key = minisign.SecretKey.from_bytes(kp.sk_bytes)
+    sig = secret_key.sign(data, trusted_comment="http://localhost:8000/")
     return bytes(sig)
 
 
