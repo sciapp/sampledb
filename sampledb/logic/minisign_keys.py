@@ -10,15 +10,13 @@ from .. import db
 from .. import models
 
 
-def create_dummy_kps():
-    if len(db.session.query(models.KeyPair).all()) < 2:
-        for i in range(2):
-            new_key_pair = minisign.KeyPair.generate()
-            kp = models.KeyPair(sk_bytes=bytes(new_key_pair.secret_key), pk_bytes=bytes(new_key_pair.public_key))
-            db.session.add(kp)
-        db.session.commit()
-
-    # create_dummy_kps()
+# def create_dummy_kps():
+#     if len(db.session.query(models.KeyPair).all()) < 2:
+#         for i in range(2):
+#             new_key_pair = minisign.KeyPair.generate()
+#             kp = models.KeyPair(sk_bytes=bytes(new_key_pair.secret_key), pk_bytes=bytes(new_key_pair.public_key))
+#             db.session.add(kp)
+#         db.session.commit()
 
 
 # TODO manage keys, keypair expiration?

@@ -41,7 +41,7 @@ class ELNImport:
     import_utc_datetime: typing.Optional[datetime.datetime]
     invalid_reason: typing.Optional[str]
     user: User
-    signed: bool
+    signed_by: typing.Optional[str]
 
     @classmethod
     def from_database(cls, eln_import: eln_imports.ELNImport) -> 'ELNImport':
@@ -53,7 +53,7 @@ class ELNImport:
             import_utc_datetime=eln_import.import_utc_datetime,
             invalid_reason=eln_import.invalid_reason,
             user=User.from_database(eln_import.user),
-            signed=eln_import.signed
+            signed_by=eln_import.signed_by
         )
 
     @property
@@ -124,7 +124,7 @@ class ParsedELNImport:
     objects: typing.List[ParsedELNObject]
     users: typing.List[ParsedELNUser]
     import_notes: typing.Dict[str, typing.List[str]]
-    signed: bool
+    signed_by: typing.Optional[str]
 
 
 def get_eln_import(eln_import_id: int) -> ELNImport:
@@ -240,7 +240,7 @@ def import_eln_file(
         return [], {}, ['Invalid Action Type ID information for this ELN file']
 
     eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
-    eln_import.signed = parsed_data.signed
+    eln_import.signed_by = parsed_data.signed_by
     db.session.add(eln_import)
     db.session.commit()
 
@@ -535,7 +535,7 @@ def parse_eln_file(
         objects=[],
         users=[],
         import_notes={},
-        signed=False
+        signed_by=None
     )
 
     try:
@@ -579,7 +579,7 @@ def parse_eln_file(
                     parsed_data.objects,
                     parsed_data.users,
                     parsed_data.import_notes,
-                    _json_has_valid_signature(ro_crate_metadata_bytes, ro_crate_metadata_sig)
+                    ro_crate_metadata_sig.trusted_comment if _json_has_valid_signature(ro_crate_metadata_bytes, ro_crate_metadata_sig) else None
                 )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")
@@ -1150,7 +1150,7 @@ def is_signed_eln_import(
         eln_import_id: int
 ) -> bool:
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
-    return eln_import.signed
+    return eln_import.signed_by is not None
 
 
 def _replace_references(
