@@ -9,8 +9,6 @@ import flask
 import minisign
 
 from . import minisign_keys
-from .. import db
-from .. import models
 from .utils import get_translated_text
 from .actions import get_action
 from .action_types import ActionType
@@ -317,7 +315,7 @@ def generate_ro_crate_metadata(
 def _sign_ro_crate_metadata(
     data: bytes
 ) -> bytes:
-    kp = minisign_keys.get_key_pair()
+    kp = minisign_keys.get_current_key_pair()
     #TODO replace with instance URL
     secret_key = minisign.SecretKey.from_bytes(kp.sk_bytes)
     sig = secret_key.sign(data, trusted_comment="http://localhost:8000/")

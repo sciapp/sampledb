@@ -2,7 +2,6 @@
 """
 
 """
-import json
 
 import flask
 import minisign
@@ -14,7 +13,7 @@ from ..utils import FlaskResponseT
 
 @frontend.route('/.well-known/pub-key/')
 def minisign_pub_key() -> bytes:
-    kp = minisign_keys.get_key_pair()
+    kp = minisign_keys.get_current_key_pair()
     public_key = minisign.PublicKey.from_bytes(kp.pk_bytes)
     return public_key.to_base64()
 
@@ -32,7 +31,7 @@ def key_list_json() -> FlaskResponseT:
         }
         for kp in key_pairs
     ]
-    return json.dumps(res)
+    return flask.jsonify(res)
 
 
 @frontend.route('/.well-known/keys/<int:id>/')
@@ -40,6 +39,5 @@ def minisign_pub_key_by_id(id: int) -> bytes:
     kp = minisign_keys.get_key_pair_by_id(id)
     if kp is None:
         return flask.abort(404)
-    kp = minisign_keys.get_key_pair()
     public_key = minisign.PublicKey.from_bytes(kp.pk_bytes)
     return public_key.to_base64()
