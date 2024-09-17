@@ -1724,8 +1724,7 @@ def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User
 
 @JinjaFunction()
 def is_signed_import(eln_import_id: int) -> bool:
-    # TODO remove cast when column is not nullable (requires change in set_up_demo)
-    return bool(is_signed_eln_import(eln_import_id))
+    return is_signed_eln_import(eln_import_id)
 
 
 def build_modified_url(

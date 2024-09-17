@@ -68,8 +68,8 @@
       {% endfor %}
       </ul>
       {% endif %}
-      {% if parsed_eln_file_data.signed %}
-      <p>{{ _('This .eln file contains a valid signature.') }}</p>
+      {% if parsed_eln_file_data.signed_by %}
+      <p>{{ _('This .eln file was signed by') + " " + parsed_eln_file_data.signed_by + "." }}</p>
       {% else %}
       <p>{{ _('No signature file included or signature is invalid.') }}</p>
       {% endif %}
