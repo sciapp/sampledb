@@ -511,15 +511,18 @@ def _parse_person_ref(
 
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
     base_url = signature.trusted_comment
-    res = requests.get(base_url + ".well-known/pub-key/")
-    
-    pub = minisign.PublicKey.from_base64(res.content)
-    try:
-        pub.verify(json_bytes, signature)
-    except minisign.exceptions.VerifyError:
-        return False
+    # TODO handle parse errors
+    res = requests.get(base_url + ".well-known/keys.json/").json()
+    for elem in res:
+        key_b64 = requests.get(elem['contentUrl'])
+        pub = minisign.PublicKey.from_base64(key_b64.content)
+        try:
+            pub.verify(json_bytes, signature)
+            return True
+        except minisign.exceptions.VerifyError:
+            print("wrong pub key or invalid signature")
 
-    return True
+    return False
 
 
 def parse_eln_file(
