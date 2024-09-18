@@ -2,10 +2,17 @@
 """
 
 """
+import secrets
 
+import flask
 import requests
 import pytest
+import pyotp
 from bs4 import BeautifulSoup
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import visibility_of_element_located
 
 import sampledb
 import sampledb.models
@@ -937,3 +944,1048 @@ def test_user_preferences_change_password(flask_server, user):
     # expect True, used new password
     assert session.get(flask_server.base_url + 'users/me/loginstatus').json() is True
 
+
+def test_create_api_token_selenium(flask_server, driver, user):
+    api_tokens = sampledb.logic.authentication.get_api_tokens(user.id)
+    assert not api_tokens
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#createApiTokenModal"]').click()
+
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#createApiTokenModal #input-description')))
+    driver.find_element(By.CSS_SELECTOR, '#createApiTokenModal #input-description').send_keys('Example API Token', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[name="create_api_token"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#viewApiTokenModal input[type="text"].disabled')))
+    api_token = driver.find_element(By.CSS_SELECTOR, '#viewApiTokenModal input[type="text"].disabled').get_attribute("value")
+    api_tokens = sampledb.logic.authentication.get_api_tokens(user.id)
+    assert len(api_tokens) == 1
+    assert api_tokens[0].login['description'] == 'Example API Token'
+    assert api_tokens[0].login['login'] == api_token[:8]
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#api_tokens + div tbody tr")
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'Example API Token'
+    assert rows[0].find_element(By.CSS_SELECTOR, "td a").get_attribute("href") == flask_server.base_url + f'users/me/api_token_id/{api_tokens[0].id}/log/'
+
+
+def test_view_api_tokens_selenium(flask_server, driver, user):
+    api_token = secrets.token_hex(32)
+    sampledb.logic.authentication.add_api_token(user.id, api_token, 'Example API Token')
+    sampledb.logic.authentication.add_api_token(user.id, api_token, 'Other API Token')
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#api_tokens + div tbody tr")
+    assert len(rows) == 2
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'Example API Token'
+    assert rows[1].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'Other API Token'
+
+
+def test_delete_api_token_selenium(flask_server, driver, user):
+    api_token = secrets.token_hex(32)
+    sampledb.logic.authentication.add_api_token(user.id, api_token, 'Example API Token')
+    sampledb.logic.authentication.add_api_token(user.id, api_token, 'Other API Token')
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#api_tokens + div tbody tr")
+    assert len(rows) == 2
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'Example API Token'
+    rows[0].find_element(By.CSS_SELECTOR, "td button").click()
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#api_tokens + div tbody tr")
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'Other API Token'
+    assert len(sampledb.logic.authentication.get_api_tokens(user.id)) == 1
+    assert sampledb.logic.authentication.get_api_tokens(user.id)[0].login['description'] == 'Other API Token'
+
+
+def test_user_add_email_authentication_method_selenium(flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    assert {
+        authentication_method.login['login']: authentication_method.confirmed
+        for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+        'example@example.com': True
+    }
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addAuthenticationMethodModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login')))
+    assert driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodTypeSelect + button').text == 'Email'
+    driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('user@example.com', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
+    with sampledb.mail.record_messages() as outbox:
+        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#authentication_methods + div tbody tr:nth-child(2)')))
+
+    # check if the authentication method got added
+    assert {
+        authentication_method.login['login']: authentication_method.confirmed
+        for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+        'example@example.com': True,
+        'user@example.com': False
+    }
+
+    # check if a confirmation mail was sent
+    assert len(outbox) == 1
+    assert 'user@example.com' in outbox[0].recipients
+    message = outbox[0].html
+    assert 'SampleDB Email Confirmation' in message
+
+    # open confirmation link
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
+    driver.get(confirmation_url)
+
+    # check if the authentication method got confirmed
+    assert {
+       authentication_method.login['login']: authentication_method.confirmed
+       for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+   } == {
+       'example@example.com': True,
+       'user@example.com': True
+   }
+
+
+def test_user_add_email_authentication_method_already_exists_selenium(flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    add_email_authentication(user_id=user.id, email='user@example.com', password='password', confirmed=True)
+    assert {
+        authentication_method.login['login']: authentication_method.confirmed
+        for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+        'example@example.com': True,
+        'user@example.com': True
+    }
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addAuthenticationMethodModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login')))
+    assert driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodTypeSelect + button').text == 'Email'
+    driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('user@example.com', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
+    with sampledb.mail.record_messages() as outbox:
+        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+    assert len(outbox) == 0
+    assert 'Failed to add an authentication method.' in driver.find_element(By.CSS_SELECTOR, '.alert-danger').get_attribute('innerText')
+
+    assert {
+       authentication_method.login['login']: authentication_method.confirmed
+       for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+   } == {
+       'example@example.com': True,
+       'user@example.com': True
+   }
+
+
+def test_user_add_email_authentication_method_empty_email_selenium(flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    assert {
+        authentication_method.login['login']: authentication_method.confirmed
+        for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+        'example@example.com': True
+    }
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addAuthenticationMethodModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login')))
+    assert driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodTypeSelect + button').text == 'Email'
+    driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
+    with sampledb.mail.record_messages() as outbox:
+        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+    assert len(outbox) == 0
+    assert 'Failed to add an authentication method.' in driver.find_element(By.CSS_SELECTOR, '.alert-danger').get_attribute('innerText')
+
+    assert {
+       authentication_method.login['login']: authentication_method.confirmed
+       for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+   } == {
+       'example@example.com': True
+   }
+
+
+def test_user_preferences_change_password_selenium(flask_server, driver, user):
+    authentication_method = sampledb.models.Authentication.query.first()
+    assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'abc.123')
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, f'[data-target="#pwModal{authentication_method.id}"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw')))
+    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw').send_keys('password', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw-confirmation').send_keys('password', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
+
+    sampledb.db.session.refresh(authentication_method)
+    assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'password')
+
+
+def test_user_preferences_change_password_too_short_selenium(flask_server, driver, user):
+    authentication_method = sampledb.models.Authentication.query.first()
+    assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'abc.123')
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, f'[data-target="#pwModal{authentication_method.id}"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw')))
+    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw').send_keys('pw', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw-confirmation').send_keys('pw', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
+
+    sampledb.db.session.refresh(authentication_method)
+    assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'abc.123')
+    assert "Failed to change password." in driver.find_element(By.CSS_SELECTOR, ".alert-danger").get_attribute("innerText")
+
+
+def test_user_remove_authentication_method_selenium(flask_server, driver, user):
+    add_email_authentication(user_id=user.id, email='user@example.com', password='password', confirmed=True)
+    assert {
+           authentication_method.login['login']
+           for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+       'example@example.com', 'user@example.com'
+    }
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#authentication_methods + div tbody tr")
+    assert len(rows) == 2
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'example@example.com'
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
+    assert rows[1].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'user@example.com'
+    assert rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
+    rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').click()
+
+    assert {
+           authentication_method.login['login']
+           for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+       'example@example.com',
+    }
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#authentication_methods + div tbody tr")
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'example@example.com'
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is not None
+
+def test_user_remove_authentication_method_already_removed_selenium(flask_server, driver, user):
+    add_email_authentication(user_id=user.id, email='user@example.com', password='password', confirmed=True)
+    assert {
+           authentication_method.login['login']
+           for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+       'example@example.com', 'user@example.com'
+    }
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    authentication_method = sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).filter(sampledb.models.Authentication.login['login'].astext == 'example@example.com').first()
+    sampledb.logic.authentication.remove_authentication_method(authentication_method.id)
+    assert {
+           authentication_method.login['login']
+           for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+       'user@example.com',
+    }
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#authentication_methods + div tbody tr")
+    assert len(rows) == 2
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'example@example.com'
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
+    assert rows[1].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'user@example.com'
+    assert rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is None
+    rows[1].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').click()
+
+    assert {
+           authentication_method.login['login']
+           for authentication_method in sampledb.models.Authentication.query.filter_by(user_id=user.id, type=sampledb.models.AuthenticationType.EMAIL).all()
+    } == {
+       'user@example.com',
+    }
+
+    rows = driver.find_elements(By.CSS_SELECTOR, "#authentication_methods + div tbody tr")
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, "td:first-child").get_attribute("innerText") == 'user@example.com'
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td button[name="remove"]').get_attribute('disabled') is not None
+
+
+def test_user_preferences_change_name_selenium(flask_server, driver, user):
+    assert user.name == 'Basic User'
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, '#input-username').clear()
+    driver.find_element(By.CSS_SELECTOR, '#input-username').send_keys('Renamed User', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+
+    assert driver.find_element(By.CSS_SELECTOR, '#input-username').get_attribute('value') == 'Renamed User'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.name == 'Renamed User'
+
+
+def test_user_preferences_change_email_selenium(flask_server, driver, user):
+    assert user.email == 'example@example.com'
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_element(By.CSS_SELECTOR, '#input-email').get_attribute('value') == 'example@example.com'
+
+    driver.find_element(By.CSS_SELECTOR, '#input-email').clear()
+    driver.find_element(By.CSS_SELECTOR, '#input-email').send_keys('user@example.com', Keys.TAB)
+    with sampledb.mail.record_messages() as outbox:
+        driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+
+    assert driver.find_element(By.CSS_SELECTOR, '#input-email').get_attribute('value') == 'example@example.com'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.email == 'example@example.com'
+
+    # check if a confirmation mail was sent
+    assert len(outbox) == 1
+    assert 'user@example.com' in outbox[0].recipients
+    message = outbox[0].html
+    assert 'SampleDB Email Confirmation' in message
+
+    # open the confirmation link
+    confirmation_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
+    driver.get(confirmation_url)
+
+    # check that the email was updated after confirming it
+    assert driver.find_element(By.CSS_SELECTOR, '#input-email').get_attribute('value') == 'user@example.com'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.email == 'user@example.com'
+
+
+def test_user_preferences_change_orcid_id_selenium(flask_server, driver, user):
+    assert user.orcid is None
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, '#input-orcid').clear()
+    driver.find_element(By.CSS_SELECTOR, '#input-orcid').send_keys('0000-0002-1825-0097', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+
+    assert driver.find_element(By.CSS_SELECTOR, '#input-orcid').get_attribute('value') == '0000-0002-1825-0097'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.orcid == '0000-0002-1825-0097'
+
+
+def test_user_preferences_change_affiliation_selenium(flask_server, driver, user):
+    assert user.affiliation is None
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, '#input-affiliation').clear()
+    driver.find_element(By.CSS_SELECTOR, '#input-affiliation').send_keys('Example University', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+
+    assert driver.find_element(By.CSS_SELECTOR, '#input-affiliation').get_attribute('value') == 'Example University'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.affiliation == 'Example University'
+
+
+def test_user_preferences_change_role_selenium(flask_server, driver, user):
+    assert user.role is None
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, '#input-role').clear()
+    driver.find_element(By.CSS_SELECTOR, '#input-role').send_keys('Example User', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+
+    assert driver.find_element(By.CSS_SELECTOR, '#input-role').get_attribute('value') == 'Example User'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.role == 'Example User'
+
+
+def test_user_preferences_change_extra_field_selenium(flask_server, driver, user):
+    flask.current_app.config['EXTRA_USER_FIELDS'] = {
+        'location': {'en': 'Location'}
+    }
+    assert user.extra_fields == {}
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.CSS_SELECTOR, '#extra_field_location').clear()
+    driver.find_element(By.CSS_SELECTOR, '#extra_field_location').send_keys('Building A, Room 1', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, 'button[name="change"]').click()
+
+    assert driver.find_element(By.CSS_SELECTOR, '#extra_field_location').get_attribute('value') == 'Building A, Room 1'
+    user = sampledb.logic.users.get_user(user.id)
+    assert user.extra_fields == {
+        'location': 'Building A, Room 1'
+    }
+
+
+def test_user_preferences_change_notification_modes_selenium(flask_server, driver, user):
+    # create an instrument to be able to test the instrument scientist notification types
+    instrument = sampledb.logic.instruments.create_instrument()
+    sampledb.logic.instruments.add_instrument_responsible_user(instrument.id, user.id)
+
+    for notification_type in sampledb.logic.notifications.NotificationType:
+        assert sampledb.logic.notifications.get_notification_modes(user.id).get(notification_type, sampledb.logic.notifications.NotificationMode.WEBAPP) == sampledb.logic.notifications.NotificationMode.WEBAPP
+
+        driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+        driver.get(flask_server.base_url + 'users/me/preferences')
+
+        assert len(driver.find_elements(By.CSS_SELECTOR, f'[name="notification_mode_for_type_{notification_type.name.lower()}"]')) >= 2
+        assert all(element.get_attribute("id") in (f'notification_mode_for_type_{notification_type.name.lower()}_webapp', f'notification_mode_for_type_{notification_type.name.lower()}_ignore', f'notification_mode_for_type_{notification_type.name.lower()}_email') for element in driver.find_elements(By.CSS_SELECTOR, f'[name="notification_mode_for_type_{notification_type.name.lower()}"]'))
+
+        assert driver.find_element(By.CSS_SELECTOR, f'[name="notification_mode_for_type_{notification_type.name.lower()}"]:checked').get_attribute('id') == f'notification_mode_for_type_{notification_type.name.lower()}_webapp'
+        driver.find_element(By.CSS_SELECTOR, f'#notification_mode_for_type_{notification_type.name.lower()}_email').click()
+        driver.find_element(By.CSS_SELECTOR, 'button[name="edit_notification_settings"]').click()
+
+        assert driver.find_element(By.CSS_SELECTOR, f'[name="notification_mode_for_type_{notification_type.name.lower()}"]:checked').get_attribute('id') == f'notification_mode_for_type_{notification_type.name.lower()}_email'
+        user = sampledb.logic.users.get_user(user.id)
+        assert sampledb.logic.notifications.get_notification_modes(user.id)[notification_type] == sampledb.logic.notifications.NotificationMode.EMAIL
+
+@pytest.mark.parametrize(
+    [
+        'setting_name', 'radio_button_name', 'input_value_before', 'input_value_after', 'setting_value_before', 'setting_value_after'
+    ], [
+        ('USE_SCHEMA_EDITOR', 'input-use-schema-editor', 'yes', 'no', True, False),
+        ('USE_SCHEMA_EDITOR', 'input-use-schema-editor', 'no', 'yes', False, True),
+        ('SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'input-show-object-type-and-id-on-object-page', 'default', 'no', None, False),
+        ('SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'input-show-object-type-and-id-on-object-page', 'default', 'yes', None, True),
+        ('SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE', 'input-show-object-type-and-id-on-object-page', 'yes', 'default', True, None),
+        ('SHOW_OBJECT_TITLE', 'input-show-object-title', 'default', 'no', None, False),
+        ('SHOW_OBJECT_TITLE', 'input-show-object-title', 'default', 'yes', None, True),
+        ('SHOW_OBJECT_TITLE', 'input-show-object-title', 'yes', 'default', True, None),
+        ('FULL_WIDTH_OBJECTS_TABLE', 'input-full-width-objects-table', 'default', 'no', None, False),
+        ('FULL_WIDTH_OBJECTS_TABLE', 'input-full-width-objects-table', 'default', 'yes', None, True),
+        ('FULL_WIDTH_OBJECTS_TABLE', 'input-full-width-objects-table', 'yes', 'default', True, None),
+    ]
+)
+def test_change_other_settings_radio_buttons_selenium(flask_server, driver, user, setting_name, radio_button_name, input_value_before, input_value_after, setting_value_before, setting_value_after):
+    sampledb.logic.settings.set_user_settings(user.id, {setting_name: setting_value_before})
+    assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_before
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    assert driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_before}"]').get_attribute("checked")
+    assert not driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').get_attribute("checked")
+    driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').click()
+    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+
+    assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
+
+
+@pytest.mark.parametrize(
+    [
+        'setting_name', 'select_name', 'input_value_before', 'input_value_after', 'setting_value_before', 'setting_value_after'
+    ], [
+        ('AUTO_TZ', 'select-timezone', 'auto_tz', 'Etc/UTC', True, False),
+        ('AUTO_TZ', 'select-timezone', 'Etc/UTC', 'auto_tz', False, True),
+        ('TIMEZONE', 'select-timezone', 'Etc/UTC', 'Europe/Berlin', 'Etc/UTC', 'Europe/Berlin'),
+        ('OBJECTS_PER_PAGE', 'input-objects-per-page', 'all', '10', None, 10),
+        ('OBJECTS_PER_PAGE', 'input-objects-per-page', '25', 'all', 25, None),
+        ('AUTO_LC', 'select-locale', 'auto_lc', 'en', True, False),
+        ('AUTO_LC', 'select-locale', 'en', 'auto_lc', False, True),
+        ('LOCALE', 'select-locale', 'en', 'de', 'en', 'de'),
+    ]
+)
+def test_change_other_settings_selectpicker_selenium(flask_server, driver, user, setting_name, select_name, input_value_before, input_value_after, setting_value_before, setting_value_after):
+    if setting_name == 'AUTO_TZ':
+        if setting_value_before:
+            sampledb.logic.settings.set_user_settings(user.id, {'TIMEZONE': None})
+        else:
+            sampledb.logic.settings.set_user_settings(user.id, {'TIMEZONE': 'Etc/UTC'})
+    if setting_name == 'TIMEZONE':
+        if setting_value_before:
+            sampledb.logic.settings.set_user_settings(user.id, {'AUTO_TZ': False})
+        else:
+            sampledb.logic.settings.set_user_settings(user.id, {'AUTO_TZ': True})
+    if setting_name == 'AUTO_LC':
+        if setting_value_before:
+            sampledb.logic.settings.set_user_settings(user.id, {'LOCALE': None})
+        else:
+            sampledb.logic.settings.set_user_settings(user.id, {'LOCALE': 'en'})
+    if setting_name == 'LOCALE':
+        if setting_value_before:
+            sampledb.logic.settings.set_user_settings(user.id, {'AUTO_LC': False})
+        else:
+            sampledb.logic.settings.set_user_settings(user.id, {'AUTO_LC': True})
+    sampledb.logic.settings.set_user_settings(user.id, {setting_name: setting_value_before})
+    assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_before
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    assert driver.find_element(By.CSS_SELECTOR, f'[name="{select_name}"] option[value="{input_value_before}"]').get_attribute("selected")
+    assert driver.find_element(By.CSS_SELECTOR, f'[name="{select_name}"] option[value="{input_value_after}"]').get_attribute("selected") is None
+    input_text_after = driver.find_element(By.CSS_SELECTOR, f'[name="{select_name}"] option[value="{input_value_after}"]').get_attribute("innerText")
+    driver.find_element(By.CSS_SELECTOR, f'[data-id="{select_name}"]').click()
+    driver.find_element(By.XPATH, f'//span[text()="{input_text_after}"]').click()
+    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+
+    assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
+
+
+@pytest.mark.parametrize(
+    [
+        'setting_name', 'radio_button_name', 'input_value_before', 'input_value_after', 'setting_value_before', 'setting_value_after'
+    ], [
+        ('USE_ADMIN_PERMISSIONS', 'input-use-admin-permissions', 'yes', 'no', True, False),
+        ('USE_ADMIN_PERMISSIONS', 'input-use-admin-permissions', 'no', 'yes', False, True),
+        ('SHOW_INVITATION_LOG', 'input-show-invitation-log', 'yes', 'no', True, False),
+        ('SHOW_INVITATION_LOG', 'input-show-invitation-log', 'no', 'yes', False, True),
+        ('SHOW_HIDDEN_USERS_AS_ADMIN', 'input-show-hidden-users-as-admin', 'yes', 'no', True, False),
+        ('SHOW_HIDDEN_USERS_AS_ADMIN', 'input-show-hidden-users-as-admin', 'no', 'yes', False, True),
+    ]
+)
+def test_change_admin_settings_radio_buttons_selenium(flask_server, driver, user, setting_name, radio_button_name, input_value_before, input_value_after, setting_value_before, setting_value_after):
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    sampledb.logic.settings.set_user_settings(user.id, {setting_name: setting_value_before})
+    assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_before
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    assert driver.find_elements(By.CSS_SELECTOR, f'[name="{radio_button_name}"]')
+    assert driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_before}"]').get_attribute("checked")
+    assert not driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').get_attribute("checked")
+    driver.find_element(By.CSS_SELECTOR, f'[name="{radio_button_name}"][value="{input_value_after}"]').click()
+    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+
+    assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, f'[name="{radio_button_name}"]')
+
+
+def test_add_webhook_selenium(flask_server, driver, user):
+    flask.current_app.config['WEBHOOKS_ALLOW_HTTP'] = True
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 0
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
+    assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
+    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#webhook-secret input')))
+    assert len(sampledb.logic.webhooks.get_webhooks(user_id=user.id)) == 1
+    webhook = sampledb.logic.webhooks.get_webhooks(user_id=user.id)[0]
+    assert webhook.user_id == user.id
+    assert webhook.target_url == flask_server.base_url
+    assert webhook.secret == driver.find_element(By.CSS_SELECTOR, '#webhook-secret input').get_attribute("value")
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:first-child').get_attribute("innerText") == "Example Webhook"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == flask_server.base_url
+
+
+def test_add_webhook_exist_already_selenium(flask_server, driver, user):
+    flask.current_app.config['WEBHOOKS_ALLOW_HTTP'] = True
+    sampledb.logic.webhooks.create_webhook(
+        type=sampledb.models.WebhookType.OBJECT_LOG,
+        user_id=user.id,
+        target_url=flask_server.base_url,
+        name='Example Webhook'
+    )
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    assert 'A webhook of this type with this target address already exists' in driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget + .help-block').get_attribute('innerText')
+    assert len(sampledb.logic.webhooks.get_webhooks(user_id=user.id)) == 1
+
+
+def test_add_webhook_http_selenium(flask_server, driver, user):
+    flask.current_app.config['WEBHOOKS_ALLOW_HTTP'] = False
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 0
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    assert 'Only secure communication via https is allowed' in driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget + .help-block').get_attribute('innerText')
+    assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
+
+
+def test_add_webhook_invalid_url_selenium(flask_server, driver, user):
+    flask.current_app.config['WEBHOOKS_ALLOW_HTTP'] = True
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 0
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys("example", Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    assert 'This webhook address is invalid' in driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget + .help-block').get_attribute('innerText')
+    assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
+
+
+def test_add_webhook_admin_only_selenium(flask_server, driver, user):
+    flask.current_app.config['WEBHOOKS_ALLOW_HTTP'] = True
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = False
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 0
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('Example Webhook', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys("example", Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    assert "You are not allowed to create Webhooks." in driver.find_element(By.CSS_SELECTOR, ".alert-danger").get_attribute("innerText")
+    assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
+
+
+def test_add_webhook_blank_name_selenium(flask_server, driver, user):
+    flask.current_app.config['WEBHOOKS_ALLOW_HTTP'] = True
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    sampledb.logic.users.set_user_administrator(user.id, True)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    sampledb.logic.users.set_user_administrator(user.id, False)
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 0
+
+    driver.find_element(By.CSS_SELECTOR, '[data-target="#addWebhookModal"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#addWebhookName')))
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookName').send_keys('', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#addWebhookTarget').send_keys(flask_server.base_url, Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '[name="add_webhook"]').click()
+    WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#webhook-secret input')))
+    assert len(sampledb.logic.webhooks.get_webhooks(user_id=user.id)) == 1
+    webhook = sampledb.logic.webhooks.get_webhooks(user_id=user.id)[0]
+    assert webhook.user_id == user.id
+    assert webhook.target_url == flask_server.base_url
+    assert webhook.secret == driver.find_element(By.CSS_SELECTOR, '#webhook-secret input').get_attribute("value")
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:first-child').get_attribute("innerText") == "—"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == flask_server.base_url
+
+
+def test_remove_webhook_selenium(flask_server, driver, user):
+    flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS'] = True
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 0
+
+    sampledb.logic.webhooks.create_webhook(
+        type=sampledb.models.WebhookType.OBJECT_LOG,
+        user_id=user.id,
+        target_url='https://example.com',
+        name='Example Webhook',
+    )
+
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    assert len(driver.find_elements(By.CSS_SELECTOR, '#webhooks + div tbody tr')) == 1
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:first-child').get_attribute("innerText") == "Example Webhook"
+    assert driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(2)').get_attribute("innerText") == 'https://example.com'
+
+    assert sampledb.logic.webhooks.get_webhooks(user_id=user.id)
+    driver.find_element(By.CSS_SELECTOR, '#webhooks + div tbody tr td:nth-child(4) button').click()
+    assert not sampledb.logic.webhooks.get_webhooks(user_id=user.id)
+
+
+def test_add_totp_two_factor_authentication_selenium(flask_server, driver, user):
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    driver.find_element(By.XPATH, '//a[text()="Set up TOTP-based Two-Factor Authentication"]').click()
+    secret = driver.find_element(By.CSS_SELECTOR, "#totp_secret").get_attribute("innerText")
+    for _ in range(2):
+        form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
+        form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
+        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1:
+            break
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 0
+
+
+def test_disable_totp_two_factor_authentication_selenium(flask_server, driver, user):
+    secret = pyotp.random_base32()
+    method = sampledb.logic.authentication.create_totp_two_factor_authentication_method(user.id, secret, "Example TOTP")
+    sampledb.logic.authentication.activate_two_factor_authentication_method(method.id)
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, 'h3[id="2fa"] + table tbody tr')
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
+    assert not rows[0].find_elements(By.CSS_SELECTOR, 'button[value="enable"]')
+    assert rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').get_attribute("disabled")
+    rows[0].find_element(By.CSS_SELECTOR, 'button[value="disable"]').click()
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 0
+
+    for _ in range(2):
+        form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
+        form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
+        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        # the form might have failed if the code expired in just the wrong moment
+        if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0:
+            break
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 1
+
+
+def test_enable_totp_two_factor_authentication_selenium(flask_server, driver, user):
+    secret = pyotp.random_base32()
+    sampledb.logic.authentication.create_totp_two_factor_authentication_method(user.id, secret, "Example TOTP")
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, 'h3[id="2fa"] + table tbody tr')
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
+    assert not rows[0].find_elements(By.CSS_SELECTOR, 'button[value="disable"]')
+    rows[0].find_element(By.CSS_SELECTOR, 'button[value="enable"]').click()
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 1
+
+    for _ in range(2):
+        form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
+        form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
+        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        # the form might have failed if the code expired in just the wrong moment
+        if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1:
+            break
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 0
+
+
+def test_delete_totp_two_factor_authentication_selenium(flask_server, driver, user):
+    secret = pyotp.random_base32()
+    sampledb.logic.authentication.create_totp_two_factor_authentication_method(user.id, secret, "Example TOTP")
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, 'h3[id="2fa"] + table tbody tr')
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
+    rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 0
+
+
+def test_delete_active_totp_two_factor_authentication_selenium(flask_server, driver, user):
+    secret = pyotp.random_base32()
+    method = sampledb.logic.authentication.create_totp_two_factor_authentication_method(user.id, secret, "Example TOTP")
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    rows = driver.find_elements(By.CSS_SELECTOR, 'h3[id="2fa"] + table tbody tr')
+    assert len(rows) == 1
+    assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
+
+    sampledb.logic.authentication.activate_two_factor_authentication_method(method.id)
+    rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
+    assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
+    assert "You cannot delete an active two-factor authentication method." in driver.find_element(By.CSS_SELECTOR, ".alert-danger").get_attribute("innerText")
+
+
+def test_reset_email_password_selenium(flask_server, driver, user):
+    authentication_method = sampledb.models.Authentication.query.first()
+    assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'abc.123')
+
+    driver.get(flask_server.base_url + 'users/me/preferences')
+    driver.find_element(By.CSS_SELECTOR, '#input-email').send_keys("example@example.com", Keys.TAB)
+    with sampledb.mail.record_messages() as outbox:
+        driver.find_element(By.XPATH, f'//button[text()="Send Recovery Email"]').click()
+
+    # check if a recovery mail was sent
+    assert len(outbox) == 1
+    assert 'example@example.com' in outbox[0].recipients
+    message = outbox[0].html
+    assert 'SampleDB Account Recovery' in message
+
+    recovery_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
+    driver.get(recovery_url)
+    driver.find_element(By.CSS_SELECTOR, "#form-password-recovery #input-password").send_keys('password', Keys.TAB)
+    driver.find_element(By.CSS_SELECTOR, '#form-password-recovery button[type="submit"]').click()
+
+    sampledb.db.session.refresh(authentication_method)
+    assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'password')
+
+def test_delete_dataverse_api_token_selenium(flask_server, driver, user):
+    sampledb.logic.settings.set_user_settings(user.id, {
+        'DATAVERSE_API_TOKEN': 'api_token'
+    })
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    assert sampledb.logic.settings.get_user_setting(user.id, 'DATAVERSE_API_TOKEN') == 'api_token'
+    driver.find_element(By.CSS_SELECTOR, '[name="delete_dataverse_api_token"]').click()
+    assert not sampledb.logic.settings.get_user_setting(user.id, 'DATAVERSE_API_TOKEN')
+
+
+def test_user_preferences_wrong_user_selenium(flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id + 1}/preferences')
+    assert driver.find_elements(By.XPATH, '//h1[contains(text(), "403")]')
+
+
+def test_user_preferences_login_not_fresh_selenium(flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin?fresh=false')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert driver.find_elements(By.XPATH, '//h1[contains(text(), "Sign in to")]')
+    assert driver.find_elements(By.XPATH, '//div[contains(text(), "please sign in again")]')
+
+
+def test_user_preferences_login_not_authorized_selenium(flask_server, driver, user):
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert driver.find_elements(By.XPATH, '//h1[contains(text(), "Sign in to")]')
+    assert not driver.find_elements(By.XPATH, '//div[contains(text(), "please sign in again")]')
+
+
+def test_add_user_to_default_permissions_selenium(flask_server, driver, user):
+    other_users = [
+        sampledb.logic.users.create_user(
+            name="Other User",
+            email="other@example.com",
+            type=sampledb.models.UserType.PERSON
+        )
+        for _ in range(3)
+    ]
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert sampledb.logic.default_permissions.get_default_permissions_for_users(user.id) == {
+        user.id: sampledb.models.Permissions.GRANT
+    }
+
+    add_user_form = driver.find_element(By.CSS_SELECTOR, "#add_user + form")
+    add_user_form.find_element(By.CSS_SELECTOR, '.dropdown-toggle').click()
+    add_user_form.find_element(By.XPATH, f'//span[contains(text(), "(#{other_users[1].id})")]').click()
+    add_user_form.find_element(By.CSS_SELECTOR, 'input[type="radio"][name="permissions"][value="write"]').click()
+    add_user_form.find_element(By.CSS_SELECTOR, '[name="add_user_permissions"]').click()
+    assert sampledb.logic.default_permissions.get_default_permissions_for_users(user.id) == {
+        user.id: sampledb.models.Permissions.GRANT,
+        other_users[1].id: sampledb.models.Permissions.WRITE
+    }
+
+
+def test_add_basic_group_to_default_permissions_selenium(flask_server, driver, user):
+    basic_groups = [
+        sampledb.logic.groups.create_group(
+            name=f"Basic Group {i}",
+            description="",
+            initial_user_id=user.id
+        )
+        for i in range(3)
+    ]
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert sampledb.logic.default_permissions.get_default_permissions_for_groups(user.id) == {}
+
+    add_group_form = driver.find_element(By.XPATH, '//h3[contains(text(), "Add Basic Group")]/following-sibling::form')
+    add_group_form.find_element(By.CSS_SELECTOR, '.dropdown-toggle').click()
+    add_group_form.find_element(By.XPATH, f'//span[contains(text(), "Basic Group 1")]').click()
+    add_group_form.find_element(By.CSS_SELECTOR, 'input[type="radio"][name="permissions"][value="grant"]').click()
+    add_group_form.find_element(By.CSS_SELECTOR, '[name="add_group_permissions"]').click()
+    assert sampledb.logic.default_permissions.get_default_permissions_for_groups(user.id) == {
+        basic_groups[1].id: sampledb.models.Permissions.GRANT
+    }
+
+
+def test_add_project_group_to_default_permissions_selenium(flask_server, driver, user):
+    project_groups = [
+        sampledb.logic.projects.create_project(
+            name=f"Project Group {i}",
+            description="",
+            initial_user_id=user.id
+        )
+        for i in range(3)
+    ]
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert sampledb.logic.default_permissions.get_default_permissions_for_projects(user.id) == {}
+
+    add_group_form = driver.find_element(By.XPATH, '//h3[contains(text(), "Add Project Group")]/following-sibling::form')
+    add_group_form.find_element(By.CSS_SELECTOR, '.dropdown-toggle').click()
+    add_group_form.find_element(By.XPATH, f'//span[contains(text(), "Project Group 1")]').click()
+    add_group_form.find_element(By.CSS_SELECTOR, 'input[type="radio"][name="permissions"][value="grant"]').click()
+    add_group_form.find_element(By.CSS_SELECTOR, '[name="add_project_permissions"]').click()
+    assert sampledb.logic.default_permissions.get_default_permissions_for_projects(user.id) == {
+        project_groups[1].id: sampledb.models.Permissions.GRANT
+    }
+
+
+def test_edit_default_permissions_selenium(flask_server, driver, user):
+    other_users = [
+        sampledb.logic.users.create_user(
+            name="Other User",
+            email="other@example.com",
+            type=sampledb.models.UserType.PERSON
+        )
+        for _ in range(4)
+    ]
+    basic_groups = [
+        sampledb.logic.groups.create_group(
+            name=f"Basic Group {i}",
+            description="",
+            initial_user_id=user.id
+        )
+        for i in range(4)
+    ]
+    project_groups = [
+        sampledb.logic.projects.create_project(
+            name=f"Project Group {i}",
+            description="",
+            initial_user_id=user.id
+        )
+        for i in range(4)
+    ]
+    for other_user in other_users:
+        sampledb.logic.default_permissions.set_default_permissions_for_user(user.id, other_user.id, sampledb.models.Permissions.READ)
+    for basic_group in basic_groups:
+        sampledb.logic.default_permissions.set_default_permissions_for_group(user.id, basic_group.id, sampledb.models.Permissions.READ)
+    for project_group in project_groups:
+        sampledb.logic.default_permissions.set_default_permissions_for_project(user.id, project_group.id, sampledb.models.Permissions.READ)
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + f'users/{user.id}/preferences')
+    assert sampledb.logic.default_permissions.get_default_permissions_for_users(user.id) == {
+        user.id: sampledb.models.Permissions.GRANT,
+        other_users[0].id: sampledb.models.Permissions.READ,
+        other_users[1].id: sampledb.models.Permissions.READ,
+        other_users[2].id: sampledb.models.Permissions.READ,
+        other_users[3].id: sampledb.models.Permissions.READ,
+    }
+    assert sampledb.logic.default_permissions.get_default_permissions_for_groups(user.id) == {
+        basic_groups[0].id: sampledb.models.Permissions.READ,
+        basic_groups[1].id: sampledb.models.Permissions.READ,
+        basic_groups[2].id: sampledb.models.Permissions.READ,
+        basic_groups[3].id: sampledb.models.Permissions.READ,
+    }
+    assert sampledb.logic.default_permissions.get_default_permissions_for_projects(user.id) == {
+        project_groups[0].id: sampledb.models.Permissions.READ,
+        project_groups[1].id: sampledb.models.Permissions.READ,
+        project_groups[2].id: sampledb.models.Permissions.READ,
+        project_groups[3].id: sampledb.models.Permissions.READ,
+    }
+    default_preferences_form = driver.find_element(By.CSS_SELECTOR, '#form-permissions')
+
+    assert len(default_preferences_form.find_elements(By.CSS_SELECTOR, f'[name^="user_permissions-"][name$="-user_id"]')) == 5
+    assert len(default_preferences_form.find_elements(By.CSS_SELECTOR, '[name^="group_permissions-"][name$="-group_id"]')) == 4
+    assert len(default_preferences_form.find_elements(By.CSS_SELECTOR, '[name^="project_permissions-"][name$="-project_id"]')) == 4
+
+    for other_user, permissions in zip(other_users, ["none", "read", "write", "grant"]):
+        id_field = default_preferences_form.find_element(By.CSS_SELECTOR, f'[name^="user_permissions-"][name$="-user_id"][value="{other_user.id}"]')
+        row = id_field.find_element(By.XPATH, "./ancestor::tr")
+        row.find_element(By.CSS_SELECTOR, f'[name^="user_permissions-"][name$="-permissions"][value="{permissions}"]').click()
+
+    for basic_group, permissions in zip(basic_groups, ["none", "read", "write", "grant"]):
+        id_field = default_preferences_form.find_element(By.CSS_SELECTOR, f'[name^="group_permissions-"][name$="-group_id"][value="{basic_group.id}"]')
+        row = id_field.find_element(By.XPATH, "./ancestor::tr")
+        row.find_element(By.CSS_SELECTOR, f'[name^="group_permissions-"][name$="-permissions"][value="{permissions}"]').click()
+
+    for project_group, permissions in zip(project_groups, ["none", "read", "write", "grant"]):
+        id_field = default_preferences_form.find_element(By.CSS_SELECTOR, f'[name^="project_permissions-"][name$="-project_id"][value="{project_group.id}"]')
+        row = id_field.find_element(By.XPATH, "./ancestor::tr")
+        row.find_element(By.CSS_SELECTOR, f'[name^="project_permissions-"][name$="-permissions"][value="{permissions}"]').click()
+
+    default_preferences_form.find_element(By.CSS_SELECTOR, '[name="edit_permissions"]').click()
+
+    assert sampledb.logic.default_permissions.get_default_permissions_for_users(user.id) == {
+        user.id: sampledb.models.Permissions.GRANT,
+        other_users[1].id: sampledb.models.Permissions.READ,
+        other_users[2].id: sampledb.models.Permissions.WRITE,
+        other_users[3].id: sampledb.models.Permissions.GRANT,
+    }
+    assert sampledb.logic.default_permissions.get_default_permissions_for_groups(user.id) == {
+        basic_groups[1].id: sampledb.models.Permissions.READ,
+        basic_groups[2].id: sampledb.models.Permissions.WRITE,
+        basic_groups[3].id: sampledb.models.Permissions.GRANT,
+    }
+    assert sampledb.logic.default_permissions.get_default_permissions_for_projects(user.id) == {
+        project_groups[1].id: sampledb.models.Permissions.READ,
+        project_groups[2].id: sampledb.models.Permissions.WRITE,
+        project_groups[3].id: sampledb.models.Permissions.GRANT,
+    }
