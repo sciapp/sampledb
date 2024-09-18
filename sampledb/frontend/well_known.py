@@ -26,8 +26,10 @@ def key_list_json() -> FlaskResponseT:
             "@context": "https://schema.org",
 	        "@type": "MediaObject",
             #TODO replace hardcoded URL
-            "url": "http://localhost:8000/.well-known/keys/" + str(kp.id),
-            "name": "ed25519_pub_" + str(kp.id)
+            "contentUrl": f"http://localhost:8000/.well-known/keys/{str(kp.id)}",
+            "name": f"ed25519_pub_{str(kp.id)}",
+            "encodingFormat": "application/x-minisign-key",
+            "description": f"Signing key for exported archives, created: {kp.utc_datetime_created}"
         }
         for kp in key_pairs
     ]
