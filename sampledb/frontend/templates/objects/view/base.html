@@ -288,19 +288,117 @@
         {% set plot_counter = namespace(value=0) %}
         {% set object_reference_counter = namespace(value=0) %}
         {% for elem in workflow %}
+          {% set wfpath_object = namespace(name=name, id=object_id) %}
           <div>
-            <h4>
-              {% if not elem.is_current %}
-                <i class="fa fa-fw fa-exclamation-triangle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}"></i>
-              {% else %}
-                {% if elem.is_referenced %}
-                  {% if elem.is_referencing %}
-                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"><i class="fa fa-fw fa-arrow-left" style="margin-right: -15px;" aria-hidden="true"></i><i class="fa fa-fw fa-arrow-right" aria-hidden="true"></i></span>
-                  {% else %}
-                    <i class="fa fa-fw fa-arrow-left" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
+            {% if elem.path %}
+            <h5>
+              {% for path_elem in elem.path %}
+                {% if path_elem.is_referenced and path_elem.is_current_referenced and path_elem.is_referencing and path_elem.is_current_referencing %}
+                    <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name = wfpath_object.name | get_translated_text(default='—'), object_id=wfpath_object.id) }}" class="fa-stack" style="position: relative; width: 2em; height: 2em;">
+                      <i class="fa fa-arrow-left fa-stack-1x"></i>
+                      <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                    </span>
+                {% elif path_elem.is_referenced and path_elem.is_current_referenced and path_elem.is_referencing and not path_elem.is_current_referencing %}
+                  <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                    <i class="fa fa-arrow-left fa-stack-1x"></i>
+                    <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                    <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(0.8em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                  </span>
+                {% elif path_elem.is_referenced and not path_elem.is_current_referenced and path_elem.is_referencing and path_elem.is_current_referencing %}
+                  <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                    <i class="fa fa-arrow-left fa-stack-1x"></i>
+                    <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                    <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(-0.25em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                  </span>
+                {% elif path_elem.is_referenced and not path_elem.is_current_referenced and path_elem.is_referencing and not path_elem.is_current_referencing %}
+                  <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                    <i class="fa fa-arrow-left fa-stack-1x"></i>
+                    <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                    <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(0.25em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                  </span>
+                {% elif path_elem.is_referenced and path_elem.is_current_referenced %}
+                  <i class="fa fa-fw fa-arrow-left" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name = wfpath_object.name | get_translated_text(default='—'), object_id=wfpath_object.id) }}"></i>
+                {% elif path_elem.is_referencing and path_elem.is_current_referencing %}
+                  <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name = wfpath_object.name | get_translated_text(default='—'), object_id=wfpath_object.id) }}"></i>
+                {% elif path_elem.is_referenced and not path_elem.is_current_referenced %}
+                  <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                    <i class="fa fa-arrow-left fa-stack-1x"></i>
+                    <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(0.25em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                  </span>
+                {% elif path_elem.is_referencing and not path_elem.is_current_referencing %}
+                  <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                    <i class="fa fa-arrow-right fa-stack-1x"></i>
+                    <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(-0.3em, -0.65em); font-size: 0.6em; color: orangered;"></i>
+                  </span>
+                {% endif %}
+                <a href="{{ url_for('.object', object_id=path_elem.object_id) }}">
+                  {% if ((show_object_type_and_id_on_object_page_text is none and not config['HIDE_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE']) or show_object_type_and_id_on_object_page_text) or path_elem.object is none %}
+                    {% if path_elem.action is not none and path_elem.action.type is not none %}
+                      {{ path_elem.action.type.object_name | get_translated_text }}
+                    {% else %}
+                      {{ _('Object') }}
+                    {% endif %}
+                    #{{ path_elem.object_id }}{% if path_elem.object and path_elem.object.name %}: {% endif %}
                   {% endif %}
+                  {% if path_elem.object and path_elem.object.name %}
+                    {{ path_elem.object.name | get_translated_text(default='—') }}
+                    {% set wfpath_object.name = path_elem.object.name %}
+                  {% endif %}
+                  {% set wfpath_object.id = path_elem.object.object_id %}
+                </a>
+                {% if path_elem.object %}
+                  {{ import_information_symbol(path_elem.object) }}
+                {% endif %}
+              {% endfor %}
+            </h5>
+            {% endif %}
+            <h4>
+              {% if elem.path %}
+                <span style="padding-left: 1em; "></span>
+              {% endif %}
+              {% if elem.is_referenced and elem.is_current_referenced and elem.is_referencing and elem.is_current_referencing %}
+                <span data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s) and references %(object_name)s (#%(object_id)s) in its metadata', object_name = wfpath_object.name | get_translated_text(default='—'), object_id=wfpath_object.id) }}" class="fa-stack" style="position: relative; width: 2em; height: 2em;">
+                  <i class="fa fa-arrow-left fa-stack-1x"></i>
+                  <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                </span>
+              {% elif elem.is_referenced and elem.is_current_referenced and elem.is_referencing and not elem.is_current_referencing %}
+                <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                  <i class="fa fa-arrow-left fa-stack-1x"></i>
+                  <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                  <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(0.8em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                </span>
+              {% elif elem.is_referenced and not elem.is_current_referenced and elem.is_referencing and elem.is_current_referencing %}
+                <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                  <i class="fa fa-arrow-left fa-stack-1x"></i>
+                  <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                  <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(-0.25em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                </span>
+              {% elif elem.is_referenced and not elem.is_current_referenced and elem.is_referencing and not elem.is_current_referencing %}
+                <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                  <i class="fa fa-arrow-left fa-stack-1x"></i>
+                  <i class="fa fa-arrow-right fa-stack-1x" style="position: absolute; transform: translate(0.4em, 0em);"></i>
+                  <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(0.25em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                </span>
+              {% elif elem.is_referenced and elem.is_current_referenced %}
+                <i class="fa fa-fw fa-arrow-left" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name = wfpath_object.name | get_translated_text(default='—'), object_id=wfpath_object.id) }}"></i>
+              {% elif elem.is_referencing and elem.is_current_referencing %}
+                <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name = wfpath_object.name | get_translated_text(default='—'), object_id=wfpath_object.id) }}"></i>
+              {% elif elem.is_referenced and not elem.is_current_referenced %}
+                <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                  <i class="fa fa-arrow-left fa-stack-1x"></i>
+                  <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(0.25em, -0.65em); font-size: 0.65em; color: orangered;"></i>
+                </span>
+              {% elif elem.is_referencing and not elem.is_current_referencing %}
+                <span class="fa-stack" style="position: relative; width: 2em; height: 2em;" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('The relationship between these objects is outdated, please check their current information.') }}">
+                  <i class="fa fa-arrow-right fa-stack-1x"></i>
+                  <i class="fa fa-exclamation-triangle fa-stack-1x" style="position: absolute; transform: translate(-0.3em, -0.65em); font-size: 0.6em; color: orangered;"></i>
+                </span>
+              {% endif %}
+              {% if elem.duplicate %}
+                {% if elem.object_id == object_id %}
+                  <i class="fa fa-clone" data-toggle="tooltip" data-placement="top" title="{{ _('This is the object this workflow is based on.') }}"></i>
                 {% else %}
-                  <i class="fa fa-fw fa-arrow-right" style="margin-left: 8px;" aria-hidden="true" data-toggle="tooltip" data-placement="right" title="{{ _('References %(object_name)s (#%(object_id)s) in its metadata', object_name=name | get_translated_text(default='—'), object_id=object_id) }}"></i>
+                  <i class="fa fa-clone" data-toggle="tooltip" data-placement="top" title="{{ _('This object is already included in this workflow.') }}"></i>
                 {% endif %}
               {% endif %}
               <a href="{{ url_for('.object', object_id=elem.object_id) }}">
@@ -320,56 +418,65 @@
                 {{ import_information_symbol(elem.object) }}
               {% endif %}
             </h4>
-            <div {% if not elem.is_current %}style="opacity: 50%"{% endif %}>
-            {% if elem.object is not none and elem.action and not ('show_action_info' in workflow_view and not workflow_view.show_action_info) %}
-              <div class="row" style="padding-right:0.75em">
-                <label class="col-md-3" style="text-align: right">{{ _('Action') }}
-                  {% if elem.action %}
-                    <a href="{{ url_for('.objects', action_ids=elem.action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
-                  {% endif %}
-                </label>
-                <div class="col-md-9">
-                  {% if elem.action %}
-                    {% if elem.action.user is not none %}
-                      <a href="{{ url_for('.user_profile', user_id=elem.action.user_id) }}" title="{{ elem.action.user.get_name() }}">{{ elem.action.user.get_name() }}</a>
-                      {{ import_information_symbol(elem.action.user) }} /
+            <div
+              {% if (not elem.is_referncing and elem.is_referenced and not elem.is_current_referenced)
+                  or (not elem.is_referenced and elem.is_referencing and not elem.is_current_referencing)
+                  or (elem.is_referenced and elem.is_referencing and not elem.is_current_referencing and not elem.is_current_referenced)
+              %}
+                style="opacity: 50%"
+              {% endif %}
+            >
+            {% if not elem.duplicate %}
+              {% if elem.object is not none and elem.action and not ('show_action_info' in workflow_view and not workflow_view.show_action_info) %}
+                <div class="row" style="padding-right:0.75em">
+                  <label class="col-md-3" style="text-align: right">{{ _('Action') }}
+                    {% if elem.action %}
+                      <a href="{{ url_for('.objects', action_ids=elem.action.id) }}" class="search-helper"><i class="fa fa-search" aria-hidden="true"></i></a>{% else %}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i>
                     {% endif %}
-                    {% if not config['DISABLE_INSTRUMENTS'] and elem.action.instrument %}
-                      <a href="{{ url_for('frontend.instrument', instrument_id=elem.action.instrument.id) }}">{{ elem.action.instrument.name | get_translated_text }}</a>
-                      {{ import_information_symbol(elem.action.instrument) }} &mdash;
-                    {% endif %}
-                    <a href="{{ url_for('frontend.action', action_id=elem.action.id) }}">{{ elem.action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
-                    {{ import_information_symbol(elem.action) }}
-                  {% else %}&mdash;{% endif %}
+                  </label>
+                  <div class="col-md-9">
+                    {% if elem.action %}
+                      {% if elem.action.user is not none %}
+                        <a href="{{ url_for('.user_profile', user_id=elem.action.user_id) }}" title="{{ elem.action.user.get_name() }}">{{ elem.action.user.get_name() }}</a>
+                        {{ import_information_symbol(elem.action.user) }} /
+                      {% endif %}
+                      {% if not config['DISABLE_INSTRUMENTS'] and elem.action.instrument %}
+                        <a href="{{ url_for('frontend.instrument', instrument_id=elem.action.instrument.id) }}">{{ elem.action.instrument.name | get_translated_text }}</a>
+                        {{ import_information_symbol(elem.action.instrument) }} &mdash;
+                      {% endif %}
+                      <a href="{{ url_for('frontend.action', action_id=elem.action.id) }}">{{ elem.action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+                      {{ import_information_symbol(elem.action) }}
+                    {% else %}&mdash;{% endif %}
+                  </div>
                 </div>
-              </div>
-            {% endif %}
-            {% if elem.object is none %}
-              <div class="row" style="padding-right:0.75em">
-                <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-                <div class="col-md-9">
-                  {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
+              {% endif %}
+              {% if elem.object is none %}
+                <div class="row" style="padding-right:0.75em">
+                  <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+                  <div class="col-md-9">
+                    {{ _('You do not have sufficient <a href="%(help_url)s">permissions</a> to access this object.', help_url='https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/user_guide/objects.html#permissions') }}
+                  </div>
                 </div>
-              </div>
-            {% elif elem.object.data is none or elem.object.schema is none %}
-              <div class="row" style="padding-right:0.75em">
-                <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
-                <div class="col-md-9">
-                  <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+              {% elif not elem.duplicate and elem.object.data is none or elem.object.schema is none %}
+                <div class="row" style="padding-right:0.75em">
+                  <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
+                  <div class="col-md-9">
+                    <i class="fa fa-share-alt" aria-hidden="true"></i> {{ _('This object has been imported without data.') }}
+                  </div>
                 </div>
-              </div>
-            {% else %}
-              {% set workflow_display_mode = True %}
-              {% set object_id = elem.object_id %}
-              {% set id_prefix_root = workflow_id ~ "_" ~ elem.object_id %}
-              {% set property_path = () %}
-              {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
-              {% set data = elem.object.data %}
-              {% set schema = elem.object.schema %}
-              {% set files = elem.files %}
-              {% set indent_level = 0 %}
-              {% set show_indent_border = False %}
-              {% include "objects/view/any.html" %}
+              {% else %}
+                {% set workflow_display_mode = True %}
+                {% set object_id = elem.object_id %}
+                {% set id_prefix_root = workflow_id ~ "_" ~ elem.object_id %}
+                {% set property_path = () %}
+                {% set id_prefix = id_prefix_for_property_path(property_path, id_prefix_root) %}
+                {% set data = elem.object.data %}
+                {% set schema = elem.object.schema %}
+                {% set files = elem.files %}
+                {% set indent_level = 0 %}
+                {% set show_indent_border = False %}
+                {% include "objects/view/any.html" %}
+              {% endif %}
             {% endif %}
             </div>
           </div>

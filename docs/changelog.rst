@@ -9,6 +9,7 @@ Currently in development.
 - Added starting number in batch object creation
 - Improved .eln export and import
 - Fixed search by array index
+- Introduce recursive workflow view
 
 
 Version 0.29.1

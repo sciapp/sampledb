@@ -390,10 +390,23 @@ This example shows how Markdown can be used for instrument Notes.
                 'sorting_properties': ['datetime']
             },
             {
+                'title': {'en': 'Referencing Measurements (recursion)'},
+                'referencing_action_type_id': [ActionType.MEASUREMENT, ActionType.SAMPLE_CREATION],
+                'referenced_action_id': [],
+                'sorting_properties': ['datetime'],
+                'recursion_filters': {
+                    'referenced_action_id': sample_action.id,
+                    'referenced_action_type_id': ActionType.MEASUREMENT,
+                    'referencing_action_id': sample_action.id,
+                    'referencing_action_type_id': ActionType.MEASUREMENT,
+                    'max_depth': 2,
+                }
+            },
+            {
                 'title': {'en': f'Referenced Samples from Action #{sample_action.id}'},
                 'referenced_action_id': sample_action.id,
                 'referencing_action_id': [],
-                'show_action_info': False
+                'show_action_info': False,
             },
             {
                 'title': {'en': 'All Related Objects'}

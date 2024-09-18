@@ -262,6 +262,30 @@ The ``sorting_properties`` can be set to a list of property names which will be 
 
     A workflow view, containing previews of related measurements
 
+Recursive workflows can be defined by defining filters in the ``recursion_filters`` dictionary.
+These workflows also include objects referenced by or referencing other objects in the workflow based on the base workflow configuration.
+To set up a recursive view  ``recursion_filters`` dictionary, recursive workflows can be configured.
+If ``referenced_action_id`` and/or ``referenced_action_type_id`` are provided as single IDs or lists of IDs only referenced objects having matching actions are included. To disable a filter you can also set it to ``null``.
+Similarly, the filters ``referencing_action_id`` and ``referencing_action_type_id`` apply to referencing objects.
+If these values are omitted or set to ``null``, no additional filter is applied for the recursion.
+The maximum recursion depth of the view can be configured by providing a positive integer for ``max_depth``.
+
+.. code-block:: json
+    :caption: A recursive workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``. Only referenced objects created using the action with ID ``1`` are handled recursively to a maximum recursion depth of ``2``.
+
+    "workflow_views": [
+        {
+            "referencing_action_type_id": [-98, -99],
+            "referenced_action_id": 1,
+            "recursion_filters": {
+                "referenced_action_id": 1,
+                "referencing_action_id": [],
+                "max_depth": 2
+            },
+            "title": {"en": "Processing", "de": "Bearbeitung"}
+        }
+    ]
+
 workflow_show_more
 ^^^^^^^^^^^^^^^^^^
 

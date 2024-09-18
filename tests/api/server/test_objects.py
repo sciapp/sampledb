@@ -1565,19 +1565,19 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
             'object_id': sample.object_id
         }
     }
-    measurment2 = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
+    measurement2 = sampledb.logic.objects.create_object(action_id=other_action.id, data=measurement_data, user_id=user.id)
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, params={'get_referencing_objects': 'True'}, allow_redirects=False)
     assert r.status_code == 200
     assert r.json() == [
         {
-            "object_id": measurment2.object_id,
-            "version_id": measurment2.version_id,
-            "action_id": measurment2.action_id,
-            "schema": measurment2.schema,
-            "data": measurment2.data,
-            "fed_object_id": measurment2.fed_object_id,
-            "fed_version_id": measurment2.fed_version_id,
-            "component_id": measurment2.component_id,
+            "object_id": measurement2.object_id,
+            "version_id": measurement2.version_id,
+            "action_id": measurement2.action_id,
+            "schema": measurement2.schema,
+            "data": measurement2.data,
+            "fed_object_id": measurement2.fed_object_id,
+            "fed_version_id": measurement2.fed_version_id,
+            "component_id": measurement2.component_id,
             "referencing_objects": []
         },
         {
@@ -1598,7 +1598,7 @@ def test_get_referencing_objects(flask_server, auth, user, action, other_action)
             'fed_object_id': sample.fed_object_id,
             'fed_version_id': sample.fed_version_id,
             'object_id': sample.object_id,
-            'referencing_objects': [{'object_id': measurment2.object_id}],
+            'referencing_objects': [{'object_id': measurement2.object_id}],
             'schema': sample.schema,
             'version_id': sample.version_id
          }

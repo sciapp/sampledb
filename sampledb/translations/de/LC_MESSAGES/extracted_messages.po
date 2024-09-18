@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-08-21 16:07+0200\n"
+"POT-Creation-Date: 2024-09-16 19:43+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5762,13 +5762,6 @@ msgstr "Notebook erstellen"
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
 
-msgid ""
-"The relationship between these objects is outdated, please check their "
-"current information."
-msgstr ""
-"Der Zusammenhang zwischen diesen Objekten ist veraltet, bitte prüfen Sie "
-"die aktuellen Informationen."
-
 #, python-format
 msgid ""
 "Referenced by the metadata of %(object_name)s (#%(object_id)s) and "
@@ -5777,6 +5770,13 @@ msgstr ""
 "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s) und "
 "referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
+msgid ""
+"The relationship between these objects is outdated, please check their "
+"current information."
+msgstr ""
+"Der Zusammenhang zwischen diesen Objekten ist veraltet, bitte prüfen Sie "
+"die aktuellen Informationen."
+
 #, python-format
 msgid "Referenced by the metadata of %(object_name)s (#%(object_id)s)"
 msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
@@ -5784,6 +5784,12 @@ msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
 #, python-format
 msgid "References %(object_name)s (#%(object_id)s) in its metadata"
 msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
+msgid "This is the object this workflow is based on."
+msgstr "Dieses Objekt ist ist das Ausgangsobjekt dieser Workflow Ansicht."
+
+msgid "This object is already included in this workflow."
+msgstr "Dieses Objekt ist bereits Teil dieser Workflow Ansicht."
 
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"

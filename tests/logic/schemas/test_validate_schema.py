@@ -3149,7 +3149,6 @@ def test_validate_timeseries_schema():
         validate_schema(wrap_into_basic_schema(schema))
 
 
-
 def test_validate_with_tooltip():
     schema = {
         'title': "Basic Schema",
@@ -3166,3 +3165,72 @@ def test_validate_with_tooltip():
     validate_schema(schema)
     schema['properties']['name']['tooltip'] = {'en': 'The name of the object'}
     validate_schema(schema)
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    (
+        ('key', 'value'),
+        ('referenced_action_id', [1, False]),
+        ('referenced_action_id', ['1']),
+        ('referenced_action_id', 0.1),
+        ('referenced_action_type_id', [1, False]),
+        ('referenced_action_type_id', ['1']),
+        ('referenced_action_type_id', 0.2),
+        ('referencing_action_id', [1, False]),
+        ('referencing_action_id', '1'),
+        ('referencing_action_type_id', [1, False]),
+        ('referencing_action_type_id', '1'),
+        ('max_depth', '1'),
+        ('max_depth', -1),
+    )
+)
+def test_validate_workflow_recursion_filter(key, value):
+    schema = {
+        "title": "Example",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text"
+            },
+            "quantity": {
+                "title": "Quantity",
+                "type": "quantity",
+                "units": "1"
+            },
+            "text": {
+                "title": "Text",
+                "type": "text",
+            }
+        },
+        "required": ["name"],
+        "propertyOrder": ["name", "quantity", "text"],
+    }
+    schema1 = copy.deepcopy(schema)
+    schema2 = copy.deepcopy(schema)
+
+    workflow_view = {
+        "referencing_action_type_id": 1,
+        "referencing_action_id": [1],
+        "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
+        "referenced_action_id": 1,
+        "title": {"en": "Workflow", "de": "Prozessablauf"},
+        "recursion_filters": {
+            "referenced_action_id": [1, 2],
+            "referenced_action_type_id": 1,
+            "referencing_action_id": [1, 2],
+            "referencing_action_type_id": 1,
+            "max_depth": 2,
+        },
+        "show_action_info": True
+    }
+    schema1['workflow_view'] = workflow_view
+    schema2['workflow_views'] = [workflow_view]
+    validate_schema(schema1)
+    validate_schema(schema2)
+    workflow_view[key] = value
+    with pytest.raises(ValidationError):
+        validate_schema(schema1)
+    with pytest.raises(ValidationError):
+        validate_schema(schema2)
