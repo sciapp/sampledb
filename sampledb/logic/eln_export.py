@@ -207,7 +207,7 @@ def generate_ro_crate_metadata(
                 "description": f"Schema for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "schema.json",
                 "encodingFormat": "application/json",
-                "contentSize": len(schema_json),
+                "contentSize": str(len(schema_json)),
                 "sha256": hashlib.sha256(schema_json).hexdigest()
             })
 
@@ -219,7 +219,7 @@ def generate_ro_crate_metadata(
                 "description": f"Data for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "data.json",
                 "encodingFormat": "application/json",
-                "contentSize": len(data_json),
+                "contentSize": str(len(data_json)),
                 "sha256": hashlib.sha256(data_json).hexdigest()
             })
 
@@ -246,7 +246,7 @@ def generate_ro_crate_metadata(
             "description": f"Data about files for Object #{object_info['id']}",
             "name": "files.json",
             "encodingFormat": "application/json",
-            "contentSize": len(files_json),
+            "contentSize": str(len(files_json)),
             "sha256": hashlib.sha256(files_json).hexdigest()
         })
 
@@ -283,7 +283,7 @@ def generate_ro_crate_metadata(
                     } if file_info['uploader_id'] is not None else None,
                     "dateCreated": file_info['utc_datetime'],
                     "encodingFormat": file_type,
-                    "contentSize": len(file_content),
+                    "contentSize": str(len(file_content)),
                     "contentUrl": flask.url_for('frontend.object_file', object_id=object_info['id'], file_id=file_info['id'], _external=True),
                     "sha256": file_hash
                 })
@@ -324,7 +324,7 @@ def _convert_metadata_to_property_values(
             continue
         property_value: typing.Dict[str, typing.Any] = {
             "@type": "PropertyValue",
-            "propertyID": '/'.join(str(path_element) for path_element in full_property_path),
+            "propertyID": '.'.join(str(path_element) for path_element in full_property_path),
             "name": get_title_for_property(full_property_path, schema)
         }
         if property_type == 'text':

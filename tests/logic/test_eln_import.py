@@ -327,6 +327,7 @@ def test_convert_property_values_to_data_and_schema():
         ],
         name='Example Object',
         description='',
+        description_is_markdown=False,
         tags=[]
     ) == (
         {
@@ -364,6 +365,7 @@ def test_convert_property_values_to_data_and_schema():
         ],
         name='Example Object',
         description='Example Description',
+        description_is_markdown=True,
         tags=['test', 'tag']
     ) == (
         {
@@ -383,7 +385,8 @@ def test_convert_property_values_to_data_and_schema():
                 "_type": "text",
                 "text": {
                     "en": "Example Description"
-                }
+                },
+                "is_markdown": True
             },
             "tags": {
                 "_type": "tags",
@@ -412,7 +415,8 @@ def test_convert_property_values_to_data_and_schema():
                     "title": {
                         "en": "Description"
                     },
-                    "type": "text"
+                    "type": "text",
+                    "markdown": True
                 },
                 "tags": {
                     "title": {
@@ -442,19 +446,19 @@ def test_map_property_values_to_paths():
             'value': 2
         },
         {
-            'propertyID': 'samples/1',
+            'propertyID': 'samples.1',
             'value': 3
         },
         {
-            'propertyID': 'samples/2',
+            'propertyID': 'samples.2',
             'value': 4
         },
         {
-            'propertyID': 'samples/0',
+            'propertyID': 'samples.0',
             'value': 5
         },
         {
-            'propertyID': 'other/property/id',
+            'propertyID': 'other.property.id',
             'value': 6
         }
     ]) == {
@@ -471,19 +475,19 @@ def test_map_property_values_to_paths():
             'value': 2
         },
         ('property2_samples', 0): {
-            'propertyID': 'samples/0',
+            'propertyID': 'samples.0',
             'value': 5
         },
         ('property2_samples', 1): {
-            'propertyID': 'samples/1',
+            'propertyID': 'samples.1',
             'value': 3
         },
         ('property2_samples', 2): {
-            'propertyID': 'samples/2',
+            'propertyID': 'samples.2',
             'value': 4
         },
         ('other', 'property', 'id'): {
-            'propertyID': 'other/property/id',
+            'propertyID': 'other.property.id',
             'value': 6
         }
     }
@@ -506,15 +510,15 @@ def test_map_property_values_to_paths():
             'value': 3
         },
         {
-            'propertyID': '/',
+            'propertyID': '.',
             'value': 4
         },
         {
-            'propertyID': '//',
+            'propertyID': '..',
             'value': 5
         },
         {
-            'propertyID': '/property/',
+            'propertyID': '.property.',
             'value': 6
         }
     ]) == {
@@ -535,15 +539,15 @@ def test_map_property_values_to_paths():
             'value': 3
         },
         ('property2','property'): {
-            'propertyID': '/',
+            'propertyID': '.',
             'value': 4
         },
         ('property2', 'property2', 'property'): {
-            'propertyID': '//',
+            'propertyID': '..',
             'value': 5
         },
         ('property2', 'property_property', 'property'): {
-            'propertyID': '/property/',
+            'propertyID': '.property.',
             'value': 6
         }
     }

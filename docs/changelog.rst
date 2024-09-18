@@ -7,6 +7,7 @@ Version 0.30
 Currently in development.
 
 - Added starting number in batch object creation
+- Improved .eln export and import
 - Fixed search by array index
 
 
