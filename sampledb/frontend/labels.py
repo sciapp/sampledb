@@ -141,11 +141,11 @@ def create_multiple_labels(
         "Letter (Landscape)": [215.9, 279.4]
     }
 
-    with open("/home/sampledb/sampledb/Helvetica.otf", "rb") as font_file:
-        helvetica_font = ('data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8'))
+    with open(os.path.join(os.path.dirname(__file__), "..", "static", "sampledb", "fonts", "NimbusSanL-Reg.otf"), "rb") as font_file:
+        regular_font = 'data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8')
 
-    with open("/home/sampledb/sampledb/Helvetica-Bold.otf", "rb") as font_file:
-        helvetica_bold_font = ('data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8'))
+    with open(os.path.join(os.path.dirname(__file__), "..", "static", "sampledb", "fonts", "NimbusSanL-Bol.otf"), "rb") as font_file:
+        bold_font = 'data:font/otf;base64,' + base64.b64encode(font_file.read()).decode('utf-8')
 
     paper_height = paper_formats[paper_format][0]
     paper_width = paper_formats[paper_format][1]
@@ -218,7 +218,7 @@ def create_multiple_labels(
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
                                      min_label_width=min_label_width, text_extra_width_list=text_extra_width_list,
-                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
+                                     helvetica_font=regular_font, helvetica_bold_font=bold_font)
 
     elif create_mixed_labels:
         has_ghs_list = []
@@ -362,7 +362,8 @@ def create_multiple_labels(
                                      fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
                                      object_amount=object_amount, group_box_height_list=group_box_height_list,
                                      ghs_amount_list=ghs_amount_list,
-                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
+                                     helvetica_font=regular_font, helvetica_bold_font=bold_font,
+                                     qrcode_width=qrcode_width)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
@@ -478,7 +479,7 @@ def create_multiple_labels(
                                      out_box_width=out_box_width, out_box_height=out_box_height,
                                      has_label_dimension=has_label_dimension, text_width=text_width,
                                      qr_code_top=qr_code_top, labels_on_page=labels_on_page,
-                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
+                                     helvetica_font=regular_font, helvetica_bold_font=bold_font)
 
     else:
         box_width = max(label_width, min_label_width)
@@ -567,7 +568,7 @@ def create_multiple_labels(
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,
                                      outer_box_width=outer_box_width, outer_box_height=outer_box_height,
-                                     helvetica_font=helvetica_font, helvetica_bold_font=helvetica_bold_font)
+                                     helvetica_font=regular_font, helvetica_bold_font=bold_font)
 
     # return html.encode()
 
