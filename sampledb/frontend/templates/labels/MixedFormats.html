@@ -5,11 +5,6 @@
       size: {{ paper_width }}mm {{ paper_height }}mm;
       margin: 7.5mm 5mm;
   }
-  .qrcode {
-      width: 12mm;
-      height: 12mm;
-      background-size: contain;
-  }
   .qrcodethirdbox {
       width: 15mm;
       height: 15mm;
@@ -228,6 +223,20 @@
   .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
     left: {{ ghs_width }}mm;
   }
+  .tmpbox {
+    display: flex;
+  }
+  .extrabox {
+    position: absolute;
+    top: -0.75mm;
+    right: 0;
+    display: flex;
+    align-items: center;
+  }
+  .extrabox .qrcode {
+    background-position: right center;
+    flex: 0 0 {{qrcode_width + 1}}mm;
+  }
   .outerbox {
       margin: 1mm 3mm;
       display: flex;
@@ -244,26 +253,34 @@
   {% for object_index in range(0,object_amount) %}
     {% for i in range(0,set_amount) %}
       <div class="groupbox" style="min-height: {{group_box_height_list[object_index]}}mm">
-      <div class="firstbox" style="width: {{first_box_width_list[object_index]}}mm">
-          <div class="labeltext">
+      <div class="tmpbox">
+        <div class="firstbox" style="min-width: {{first_box_min_width_list[object_index]}}mm; white-space: nowrap;">
+          <div class="labeltext" style="padding-right:{{ text_extra_width_list[object_index] + 1 }}mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }} &bullet; {{ creation_date_list[object_index] }}
+            <div class="extrabox">
+              {% for hazard_code in hazard_list[object_index] %}
+                  <div class="ghs ghs0{{hazard_code}}"></div>
+              {% endfor %}
+            </div>
           </div>
-          {% for hazard_code in hazard_list[object_index] %}
-              <div class="ghs ghs0{{hazard_code}}"></div>
-          {% endfor %}
+        </div>
       </div>
-      <div class="secondbox" style="width: {{second_box_width_list[object_index]}}mm">
-          <div class="labeltext">
+      <div class="tmpbox">
+        <div class="secondbox" style="min-width: {{second_box_min_width_list[object_index]}}mm">
+          <div class="labeltext" style="padding-right:{{ text_extra_width_list_qr[object_index] + 1 }}mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }}
                   <br>
                   {{ creation_date_list[object_index] }}
+            <div class="extrabox">
+              {% for hazard_code in hazard_list[object_index] %}
+                  <div class="ghs ghs0{{hazard_code}}"></div>
+              {% endfor %}
+              <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+            </div>
           </div>
-          {% for hazard_code in hazard_list[object_index] %}
-              <div class="ghs ghs0{{hazard_code}}"></div>
-          {% endfor %}
-          <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+        </div>
       </div>
       <div class="outerbox" style="min-height: {{outer_box_height_list[object_index]}}mm">
       <div class="thirdbox" style="width: {{third_box_width}}mm; min-height: {{third_box_height_list[object_index]}}mm">
