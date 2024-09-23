@@ -6,12 +6,13 @@
         margin: 10mm 5mm;
     }
     .outbox {
-        margin: {{horizontal_label_margin / 2 + 0.3}}mm {{horizontal_label_margin}}mm;
+        margin: {{horizontal_label_margin / 2 + 0.6}}mm {{horizontal_label_margin}}mm;
         display: flex;
         align-items: center;
         border: 1.35px solid black;
         height: {{box_height}}mm;
         min-width: {{min_label_width}}mm;
+        padding-top: 1mm
     }
     .tmpbox {
         display: flex;
@@ -21,8 +22,8 @@
     }
     .extrabox {
         position: absolute;
-        top: -0.75mm;
-        right: 0;
+        top: -1.5mm;
+        right: -0.1mm;
         display: flex;
         align-items: center;
     }
@@ -36,7 +37,7 @@
     {%- for object_index in range(object_amount) -%}
         {%- for label_index in range(label_amount) -%}
             <div class="tmpbox">
-                <div class="outbox" style="white-space: nowrap">
+                <div class="outbox" style="white-space: nowrap;">
                     <div class="labeltext" style="padding-right: {{ text_extra_width_list[object_index] + 1 }}mm">
                         <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ object_id_list[object_index]}}<br>
                         {{ username_list[object_index] }}
@@ -46,13 +47,7 @@
                         {%- else -%}
                             &nbsp;&bullet; {{ creation_date_list[object_index] }}
                         {%- endif -%}
-                        <div class="extrabox" style="{% if include_qrcode %}
-                                                      width: {{ text_extra_width_list[object_index] }}mm;
-                                                      top: -0.75mm;
-                                                    {% else %}
-                                                      width: {{ text_extra_width_list[object_index] }}mm;
-                                                      top: -0.75mm
-                                                    {% endif %}">
+                        <div class="extrabox" style="width: {{ text_extra_width_list[object_index] }}mm;">
                             {%- for hazard_code in hazard_list[object_index] -%}
                                 <div class="ghs ghs0{{hazard_code}}"></div>
                             {%- endfor -%}

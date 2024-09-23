@@ -196,9 +196,9 @@ def create_multiple_labels(
         }
 
         if include_qrcode_in_long_labels:
-            box_height = 12.75
+            box_height = 11.4
         else:
-            box_height = 9.04
+            box_height = 7.65
 
         if fill_single_page:
             if include_qrcode_in_long_labels:
@@ -223,8 +223,8 @@ def create_multiple_labels(
     elif create_mixed_labels:
         has_ghs_list = []
 
-        first_box_width_list = []
-        second_box_width_list = []
+        first_box_min_width_list = []
+        second_box_min_width_list = []
         third_box_height_list = []
         third_box_qrcode_box_height_list = []
         third_box_ghs_box_height_list = []
@@ -240,6 +240,8 @@ def create_multiple_labels(
         outer_box_height_list = []
 
         group_box_height_list = []
+        text_extra_width_list = []
+        text_extra_width_list_qr = []
 
         third_box_width = 18.0
         forth_box_width = 20.0
@@ -268,15 +270,12 @@ def create_multiple_labels(
 
             ghs_height = 17.0 + int((len(hazard_list[tmp_index]) - 1) / 3) * 9
 
-            first_box_width_list.append(ghs_width * len(hazard_list[tmp_index]) + (
-                max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
-                    len(username_list[tmp_index]) + 3 + len(creation_date_list[tmp_index]))) * 2)
+            first_box_min_width_list.append(ghs_width * len(hazard_list[tmp_index]))
 
-            second_box_width_list.append(2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]) + (
-                max(3 + len(object_name_list[tmp_index]) + len(str(sample_code_list[tmp_index])),
-                    len(username_list[tmp_index]), len(creation_date_list[tmp_index]))) * 2)
-            if len(hazard_list[tmp_index]) == 0:
-                second_box_width_list[tmp_index] += 2
+            second_box_min_width_list.append(2 + qrcode_width + ghs_width * len(hazard_list[tmp_index]))
+
+            text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
+            text_extra_width_list_qr.append(len(hazard_list[tmp_index]) * ghs_width + qrcode_width)
 
             third_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
 
@@ -342,8 +341,8 @@ def create_multiple_labels(
                                      forth_box_height_list=forth_box_height_list,
                                      fifth_box_height_list=fifth_box_height_list,
                                      sixth_box_height_list=sixth_box_height_list,
-                                     first_box_width_list=first_box_width_list,
-                                     second_box_width_list=second_box_width_list,
+                                     first_box_min_width_list=first_box_min_width_list,
+                                     second_box_min_width_list=second_box_min_width_list,
                                      third_box_width=third_box_width,
                                      forth_box_width=forth_box_width,
                                      fifth_box_width=fifth_box_width,
@@ -363,7 +362,8 @@ def create_multiple_labels(
                                      object_amount=object_amount, group_box_height_list=group_box_height_list,
                                      ghs_amount_list=ghs_amount_list,
                                      helvetica_font=regular_font, helvetica_bold_font=bold_font,
-                                     qrcode_width=qrcode_width)
+                                     qrcode_width=qrcode_width, text_extra_width_list=text_extra_width_list,
+                                     text_extra_width_list_qr=text_extra_width_list_qr)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
