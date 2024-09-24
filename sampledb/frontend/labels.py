@@ -196,9 +196,9 @@ def create_multiple_labels(
         }
 
         if include_qrcode_in_long_labels:
-            box_height = 11.4
+            box_height = 11.45
         else:
-            box_height = 7.65
+            box_height = 7.7
 
         if fill_single_page:
             if include_qrcode_in_long_labels:
