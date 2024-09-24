@@ -229,7 +229,6 @@
   .extrabox {
     position: absolute;
     top: -0.75mm;
-    right: 0;
     display: flex;
     align-items: center;
   }
@@ -258,7 +257,7 @@
           <div class="labeltext" style="padding-right:{{ text_extra_width_list[object_index] + 1 }}mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }} &bullet; {{ creation_date_list[object_index] }}
-            <div class="extrabox">
+            <div class="extrabox" style="right: {{ text_extra_width_list[object_index] - 9 }}mm; top: -0.9mm;">
               {% for hazard_code in hazard_list[object_index] %}
                   <div class="ghs ghs0{{hazard_code}}"></div>
               {% endfor %}
@@ -273,7 +272,7 @@
                   {{ username_list[object_index] }}
                   <br>
                   {{ creation_date_list[object_index] }}
-            <div class="extrabox">
+            <div class="extrabox"  style="right: {{ text_extra_width_list_qr[object_index] - 11 }}mm;">
               {% for hazard_code in hazard_list[object_index] %}
                   <div class="ghs ghs0{{hazard_code}}"></div>
               {% endfor %}
