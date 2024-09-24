@@ -3,10 +3,10 @@
 {% block style %}
     @page {
         size: {{ paper_width }}mm {{ paper_height }}mm;
-        margin: 7.5mm 5mm 7.5mm 1.5mm;
+        margin: 9.605mm 5mm 7.5mm 2.445mm;
     }
     .label {
-        margin: 2mm 1.5mm;
+        margin: 1.2mm 1.7mm;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -18,27 +18,31 @@
         border: 1.5px solid black;
         display: flex;
         flex-direction: column;
-        min-height: 4mm;
-        width: {{box_width}}mm;
+        min-height: 3mm;
+        width: {{box_width - 1}}mm;
         text-align: center;
         overflow-wrap: break-word;
+        padding: 0.5mm 0.5mm;
     }
     .boxinfo {
         border: 1.5px solid black;
-        height: 8mm;
-        width: {{box_width}}mm;
+        min-height: 7mm;
+        width: {{box_width - 1}}mm;
         text-align: center;
         border-top: none;
+        padding: 0.5mm 0.5mm;
     }
     .boxqrcode {
         display: flex;
         flex-direction: column;
         align-items: center;
-        height: 21mm;
+        height: 18mm;
         width: {{qrcode_box_width}}mm;
+        font-size: 8px;
+        padding-top: 1mm;
     }
     .boxsidebyside > .boxqrcode {
-        height: {{box_side_by_side_height}}mm;
+        height: {{box_side_by_side_height - 2.5}}mm;
     }
     .boxqrcodeCSBSwghs {
         border-right: 1.5px solid black;
@@ -54,14 +58,12 @@
         border-right: 1.5px solid black;
     }
     .boxqrcodenotCnotSBS {
-        border: 1.5px solid black;
-        border-top: none;
-        border-left: none;
+        border-right: 1.5px solid black;
     }
     .qrouterbox{
         border: 1.5px solid black;
         border-top: none;
-        height: 21mm;
+        height: 19mm;
         width: {{box_width}}mm;
     }
     .boxghs {
@@ -78,7 +80,7 @@
     }
     .boxghsnotCSBS{
         border-right: 1.5px solid black;
-        height: {{box_side_by_side_height}}mm;
+        height: {{box_side_by_side_height - 1.5}}mm;
     }
     .boxghsnotCnotSBS {
         border-right: 1.5px solid black;
@@ -94,7 +96,7 @@
     .boxsidebyside{
         border: 1.5px solid black;
         border-top: none;
-        height: {{box_side_by_side_height}}mm;
+        height: {{box_side_by_side_height - 1.5}}mm;
         width: {{box_width}}mm;
         display: flex;
         flex-direction: row;
@@ -117,32 +119,32 @@
         position: absolute;
     }
     .centeredghsbox .ghs:nth-child(1) {
-        top: 2mm;
+        top: 1.5mm;
     }
     .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(3) {
-        top: 6.5mm;
+        top: 6mm;
     }
     .centeredghsbox .ghs:nth-child(4) {
-        top: 11mm;
+        top: 10.5mm;
     }
     .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(6) {
-        top: 15.5mm;
+        top: 15mm;
     }
     .centeredghsbox .ghs:nth-child(7) {
-        top: 20mm;
+        top: 19.5mm;
     }
     .centeredghsbox .ghs:nth-child(8), .centeredghsbox .ghs:nth-child(9) {
-        top: 24.5mm;
+        top: 24mm;
     }
     .centeredghsbox .ghs:nth-child(1), .centeredghsbox .ghs:nth-child(4), .centeredghsbox .ghs:nth-child(7) {
         left: {{ ghs_width / 2 }}mm;
     }
-    .centeredghsbox .ghs:nth-child(2), .centeredghsbox .ghs:nth-child(5), .centeredghsbox .ghs:nth-child(8) {
+    .centeredghsbox .ghs:nth-child(3), .centeredghsbox .ghs:nth-child(6), .centeredghsbox .ghs:nth-child(9) {
         left: {{ ghs_width }}mm;
     }
     /* special case with only two GHS symbols */
     .centeredghsbox .ghs:nth-child(1):nth-last-child(2), .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
-        top: 5.5mm;
+        top: 5mm;
     }
     .centeredghsbox .ghs:nth-child(1):nth-last-child(2) {
         left: 0;
@@ -188,7 +190,7 @@
                     {% endif %}
                 {% endif %}
                 ">
-                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }})"></div>
+                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.75mm"></div>
                 #{{ sample_code_list[object_index] }}
                 </div>
                 {%- if not ghs_classes_side_by_side and not centered -%}

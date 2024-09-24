@@ -486,6 +486,7 @@ def create_multiple_labels(
         ghs_width = qr_code_width / 2
         qrcode_box_width = box_width
         ghs_box_width = box_width
+        qrcode_width = 15
 
         if centered:
             if ghs_classes_side_by_side:
@@ -559,7 +560,7 @@ def create_multiple_labels(
         html = flask.render_template("labels/FixedWidth.html",
                                      box_width=box_width, object_amount=object_amount,
                                      box_height=max_box_height, qr_code_uri_list=qr_code_uri_list,
-                                     qrcode_width=qr_code_width, paper_width=paper_width, paper_height=paper_height,
+                                     qrcode_width=qrcode_width, paper_width=paper_width, paper_height=paper_height,
                                      hazard_list=hazard_list, GHS_IMAGE_URIS=GHS_IMAGE_URIS, ghs_width=ghs_width,
                                      sample_code_list=sample_code_list, username_list=username_list,
                                      object_name_list=object_name_list, creation_date_list=creation_date_list,
