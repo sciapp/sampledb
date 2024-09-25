@@ -218,7 +218,7 @@ def create_multiple_labels(
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
                                      min_label_width=min_label_width, text_extra_width_list=text_extra_width_list,
-                                     helvetica_font=regular_font, helvetica_bold_font=bold_font)
+                                     regular_font=regular_font, bold_font=bold_font)
 
     elif create_mixed_labels:
         has_ghs_list = []
@@ -361,7 +361,7 @@ def create_multiple_labels(
                                      fourth_box_ghs_box_height_list=fourth_box_ghs_box_height_list,
                                      object_amount=object_amount, group_box_height_list=group_box_height_list,
                                      ghs_amount_list=ghs_amount_list,
-                                     helvetica_font=regular_font, helvetica_bold_font=bold_font,
+                                     regular_font=regular_font, bold_font=bold_font,
                                      qrcode_width=qrcode_width, text_extra_width_list=text_extra_width_list,
                                      text_extra_width_list_qr=text_extra_width_list_qr)
 
@@ -479,7 +479,7 @@ def create_multiple_labels(
                                      out_box_width=out_box_width, out_box_height=out_box_height,
                                      has_label_dimension=has_label_dimension, text_width=text_width,
                                      qr_code_top=qr_code_top, labels_on_page=labels_on_page,
-                                     helvetica_font=regular_font, helvetica_bold_font=bold_font)
+                                     regular_font=regular_font, bold_font=bold_font)
 
     else:
         box_width = max(label_width, min_label_width)
@@ -501,6 +501,7 @@ def create_multiple_labels(
         tmp_index = 0
         max_box_height = 0.0
         max_ghs_height = 0.0
+        max_box_height_amount = 0.0
 
         for object_id in object_specifications:
             username_list.append(object_specifications[object_id]["creation_user"])
@@ -532,17 +533,19 @@ def create_multiple_labels(
 
             box_side_by_side_height = max(21, math.ceil(max_ghs_height), box_height - 12)
 
-            box_height = box_height + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / box_width)
+            box_height_amount = box_height + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / box_width)
 
             tmp_index += 1
             if box_height > max_box_height:
                 max_box_height = box_height
             if ghs_height > max_ghs_height:
                 max_ghs_height = ghs_height
+            if box_height_amount > max_box_height_amount:
+                max_box_height_amount = box_height_amount
 
         object_amount = len(username_list)
 
-        column_amount = int(math.floor((paper_height - 15) / (max_box_height + 5)))
+        column_amount = int(math.floor((paper_height - 15) / (max_box_height_amount + 5)))
         if quantity == 1 and fill_single_page:
             page_amount = row_amount * column_amount
             outer_box_width = paper_width - 10
@@ -569,7 +572,7 @@ def create_multiple_labels(
                                      qrcode_box_width=qrcode_box_width, ghs_box_width=ghs_box_width,
                                      box_side_by_side_height=box_side_by_side_height, page_amount=page_amount,
                                      outer_box_width=outer_box_width, outer_box_height=outer_box_height,
-                                     helvetica_font=regular_font, helvetica_bold_font=bold_font)
+                                     regular_font=regular_font, bold_font=bold_font)
 
     # return html.encode()
 

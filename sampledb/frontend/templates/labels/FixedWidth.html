@@ -11,7 +11,7 @@
         flex-direction: column;
         align-items: center;
         border: none;
-        height: {{box_height}}mm;
+        min-height: {{box_height}}mm;
         width: {{box_width}}mm;
     }
     .boxname {
@@ -190,6 +190,7 @@
                     {% endif %}
                 {% endif %}
                 ">
+                <div style="position: absolute; top: 1mm; right: 1mm;"></div>
                 <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.75mm"></div>
                 #{{ sample_code_list[object_index] }}
                 </div>
