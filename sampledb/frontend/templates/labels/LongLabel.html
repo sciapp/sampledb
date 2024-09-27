@@ -3,10 +3,10 @@
 {% block style %}
     @page {
         size: {{ paper_width }}mm {{ paper_height }}mm;
-        margin: 9.9mm 5mm 5mm;
+        margin: {{page_margin[0]}}mm {{page_margin[1]}}mm {{page_margin[2]}}mm {{page_margin[3]}}mm;
     }
     .outbox {
-        margin: {{horizontal_label_margin / 2 + 0.544}}mm {{horizontal_label_margin + 0.3}}mm;
+        margin: {{label_margin[0]}}mm {{label_margin[1]}}mm;
         display: flex;
         align-items: center;
         border: 1.35px solid black;
