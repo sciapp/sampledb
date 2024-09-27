@@ -196,9 +196,13 @@ def create_multiple_labels(
         }
 
         if include_qrcode_in_long_labels:
-            box_height = 11.45
+            box_height = 11.69
+            label_margin = [horizontal_label_margin / 2 + 0.3, horizontal_label_margin + 0.3]
+            page_margin = [9.55, 5, 5, 4.9]
         else:
             box_height = 7.7
+            label_margin = [horizontal_label_margin / 2 + 0.544, horizontal_label_margin + 0.3]
+            page_margin = [9.9, 5, 5, 5]
 
         if fill_single_page:
             if include_qrcode_in_long_labels:
@@ -218,7 +222,8 @@ def create_multiple_labels(
                                      paper_width=paper_width, paper_height=paper_height, label_amount=label_amount,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS, horizontal_label_margin=horizontal_label_margin,
                                      min_label_width=min_label_width, text_extra_width_list=text_extra_width_list,
-                                     regular_font=regular_font, bold_font=bold_font)
+                                     regular_font=regular_font, bold_font=bold_font, label_margin=label_margin,
+                                     page_margin=page_margin)
 
     elif create_mixed_labels:
         has_ghs_list = []
@@ -306,7 +311,7 @@ def create_multiple_labels(
                 fifth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
                 sixth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
 
-                outer_box_height_list.append(56.0 + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / third_box_width) +
+                outer_box_height_list.append(26.0 + 4 * math.floor(len(object_name_list[tmp_index]) * 2.3 / third_box_width) +
                                              int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
             else:
                 has_ghs_list.append(False)
