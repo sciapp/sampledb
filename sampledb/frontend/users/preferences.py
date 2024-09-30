@@ -203,6 +203,10 @@ def _handle_authentication_methods_forms(
         options=options,
     )
 
+    if logic.oidc.is_oidc_only_auth_method():
+        # The form isn't shown to the user, so ignore attempts.
+        return None
+
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
         if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
             authentication_method_id = authentication_password_form.id.data

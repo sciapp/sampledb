@@ -15,6 +15,7 @@ from fido2.webauthn import UserVerificationRequirement
 import werkzeug.wrappers.response
 
 from .. import frontend
+from ...logic import oidc
 from ...logic.authentication import login, get_active_two_factor_authentication_methods, get_all_fido2_passkey_credentials, get_user_id_for_fido2_passkey_credential_id, get_webauthn_server
 from ...logic.users import get_user, User, create_sampledb_federated_identity, get_federated_identity, enable_federated_identity_for_login
 from ...logic.components import get_component, get_federated_login_components
@@ -95,6 +96,9 @@ def _redirect_to_next_url(
 
 
 def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
+    if oidc.is_oidc_only_auth_method():
+        return flask.redirect(flask.url_for('frontend.oidc_start'))
+
     form = SigninForm()
     passkey_form = WebAuthnLoginForm()
     all_credentials = get_all_fido2_passkey_credentials()
@@ -199,7 +203,8 @@ def complete_sign_in(
         shared_device: bool,
         *,
         next_url: typing.Optional[str] = None,
-        federated_login_token: typing.Optional[str] = None
+        federated_login_token: typing.Optional[str] = None,
+        oidc_id_token_hint: typing.Optional[str] = None,
 ) -> FlaskResponseT:
     if not user:
         flask.flash(_('Please sign in again.'), 'error')
@@ -231,6 +236,10 @@ def complete_sign_in(
         flask_login.login_user(user, remember=remember_me)
         refresh()
     flask.session['using_shared_device'] = shared_device
+    if oidc_id_token_hint:
+        flask.session['oidc_id_token_hint'] = oidc_id_token_hint
+    else:
+        flask.session.pop('oidc_id_token_hint', None)
     response = _redirect_to_next_url(next_url)
     response.set_cookie('SAMPLEDB_LAST_ACTIVITY_DATETIME', '', samesite='Lax')
     return response
@@ -259,7 +268,11 @@ def sign_out() -> FlaskResponseT:
     form = SignoutForm()
     if form.validate_on_submit():
         flask_login.logout_user()
-        return flask.redirect(flask.url_for('.index'))
+        redirect_uri = flask.url_for('.index', _external=True)
+        id_token_hint = flask.session.pop('oidc_id_token_hint', None)
+        if id_token_hint:
+            return flask.redirect(oidc.logout(id_token_hint, redirect_uri))
+        return flask.redirect(redirect_uri)
     return flask.render_template('sign_out.html')
 
 
@@ -270,3 +283,56 @@ def shared_device_state() -> FlaskResponseT:
     if flask_login.current_user.is_authenticated:
         shared_device_state = bool(flask.g.get('shared_device_state'))
     return flask.jsonify(shared_device_state)
+
+
+@frontend.route('/users/me/oidc/start')
+def oidc_start() -> FlaskResponseT:
+    if not oidc.is_oidc_configured():
+        flask.flash(_('OIDC is disabled.'), 'error')
+        return flask.redirect(flask.url_for('.index'))
+
+    if flask_login.current_user.is_authenticated:
+        return _redirect_to_next_url()
+
+    url, token = oidc.start_authentication(
+        flask.request.args.get('next', flask.url_for('.index')),
+    )
+    flask.session['oidc_token'] = token
+    return flask.redirect(url)
+
+
+@frontend.route('/users/me/oidc/callback')
+def oidc_callback() -> FlaskResponseT:
+    if not oidc.is_oidc_configured():
+        flask.flash(_('OIDC is disabled.'), 'error')
+        return flask.redirect(flask.url_for('.index'))
+
+    if flask_login.current_user.is_authenticated:
+        return _redirect_to_next_url()
+
+    try:
+        result = oidc.handle_authentication(
+            flask.request.url,
+            flask.session.pop('oidc_token'),
+        )
+    except Exception:
+        flask.flash(_('Login failed. Please contact an administrator.'), 'error')
+        flask_login.logout_user()
+        return flask.redirect(flask.url_for('.index'))
+
+    user, id_token_hint, next = result
+
+    # While the check in the user_loader would prevent a login, ensure this is
+    # handled as soon as possible with a reliable message.
+    if not user.is_active:
+        flask.flash(_('Your user account has been deactivated. Please contact an administrator.'), 'error')
+        return flask.redirect(flask.url_for('.index'))
+
+    return complete_sign_in(
+        user,
+        is_for_refresh=False,
+        remember_me=False,
+        shared_device=False,
+        next_url=next,
+        oidc_id_token_hint=id_token_hint
+    )

@@ -186,7 +186,7 @@
               <li role="separator" class="divider"></li>
             {% endif %}
             {% if config['DISABLE_USER_INVITATIONS'] is not true %}
-              <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
+              <li><a href="{{ url_for('frontend.invitation_route')}}">{% if is_ldap_configured or is_oidc_configured %}{{ _('Invite a Guest') }}{% else %}{{ _('Invite another User') }}{% endif %}</a></li>
               <li role="separator" class="divider"></li>
             {% endif %}
               <li><a href="{{ url_for('frontend.export', user_id=current_user.id) }}">{{ _('Export Data') }}</a></li>

@@ -118,7 +118,16 @@
                     {{ import_information_symbol(fed_user) }}
                   {% endif %}
                </td>
-               <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other'), 'fido2_passkey': _('FIDO2 Passkey'), 'federated_login': _('Federated Login')}[authentication.type.name.lower()] }}</td>
+               <td style="vertical-align: middle;">{{
+                  {
+                    'ldap': 'LDAP',
+                    'email': _('Email'),
+                    'other': _('Other'),
+                    'fido2_passkey': _('FIDO2 Passkey'),
+                    'federated_login': _('Federated Login'),
+                    'oidc': _('OIDC'),
+                  }[authentication.type.name.lower()]
+               }}</td>
                <td class="text-right">
                    <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
@@ -126,7 +135,7 @@
                        {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                        {% if authentications|length > 1 %}
                           {% if confirmed_authentication_methods > 1 %}
-                             {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' and authentication.type.name.lower() != 'federated_login' %}
+                             {% if authentication.type.name.lower() not in ('ldap', 'fido2_passkey', 'federated_login', 'oidc') %}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                              {% endif %}
                              {% if authentication.type.name.lower() != 'federated_login' %}
@@ -136,7 +145,7 @@
                              {% endif %}
                           {% else %}
                                {% if authentication.confirmed  %}
-                                 {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' and authentication.type.name.lower() != 'federated_login' %}
+                                 {% if authentication.type.name.lower() not in ('ldap', 'fido2_passkey', 'federated_login', 'oidc') %}
                                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                  {% endif %}
                                  <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -145,7 +154,7 @@
                                {% endif %}
                           {% endif %}
                        {% else %}
-                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' and authentication.type.name.lower() != 'federated_login' %}
+                         {% if authentication.confirmed and authentication.type.name.lower() not in ('ldap', 'fido2_passkey', 'federated_login', 'oidc') %}
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                          {% endif %}
                          <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -156,13 +165,15 @@
            {% endif %}
            {% endfor %}
          </tbody>
-         <tfoot>
-           <tr>
-             <td></td>
-             <td></td>
-             <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#addAuthenticationMethodModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
-           </tr>
-         </tfoot>
+         {% if not is_oidc_only_auth_method %}
+          <tfoot>
+            <tr>
+              <td></td>
+              <td></td>
+              <td class="text-right"><button type="button" class="btn btn-success" data-toggle="modal" data-target="#addAuthenticationMethodModal"><i class="fa fa-plus" aria-hidden="true"></i></button></td>
+            </tr>
+          </tfoot>
+         {% endif %}
        </table>
     </div>
 

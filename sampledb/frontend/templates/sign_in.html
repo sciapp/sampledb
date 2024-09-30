@@ -24,7 +24,7 @@
   <div class="help-block text-center">
     {% if is_ldap_configured %}
     {{ _('If you have an LDAP account, you can use your LDAP username to sign in. Otherwise, if you do not have a %(service_name)s account yet, please ask another user for an invitation.', service_name=service_name) }}
-    {% else %}
+    {% elif not is_oidc_configured %}
     {{ _('If you do not have a %(service_name)s account yet, please ask another user for an invitation.', service_name=service_name) }}
     {% endif %}
   </div>
@@ -61,7 +61,7 @@
       <input type="hidden" name="remember_me" value="" />
       <input type="hidden" name="shared_device" value="" />
     </form>
-    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] or (config['ENABLE_FEDERATED_LOGIN'] and components and not federated_login_authentication) %}
+    {% if config['ENABLE_FIDO2_PASSKEY_AUTHENTICATION'] or (config['ENABLE_FEDERATED_LOGIN'] and components and not federated_login_authentication) or is_oidc_configured %}
       <div style="border-left: 1px solid #ccc; width: 0; margin: 40px; display: flex; justify-content: center; flex-direction: column">
         <div class="text-muted" style="width: 40px; margin-left:-20px; background: linear-gradient(transparent, white, white, transparent); text-align: center; padding: 40px 0; flex:0">
           {{ _('or') }}
@@ -79,6 +79,11 @@
         <input type="hidden" name="remember_me" value="" />
         <input type="hidden" name="shared_device" value="" />
       </form>
+      {% endif %}
+      {% if is_oidc_configured %}
+        <a class="btn btn-primary" href="{{ url_for('frontend.oidc_start') }}">
+          {{ _('Sign in with %(oidc_name)s', oidc_name=config['OIDC_NAME']) }}
+        </a>
       {% endif %}
       {% if config['ENABLE_FEDERATED_LOGIN'] and components and not federated_login_authentication %}
           {% for component in components %}

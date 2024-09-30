@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-02-03 10:26+0100\n"
+"POT-Creation-Date: 2025-02-17 16:47+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2329,6 +2329,9 @@ msgstr "FIDO2 Passkey"
 msgid "Federated Login"
 msgstr "Föderierte Anmeldung"
 
+msgid "OIDC"
+msgstr "OIDC"
+
 msgid ""
 "To remove this authentication method, revoke the corresponding federated "
 "identity."
@@ -3009,6 +3012,10 @@ msgstr ""
 
 msgid "Use Passkey"
 msgstr "Passkey nutzen"
+
+#, python-format
+msgid "Sign in with %(oidc_name)s"
+msgstr "Anmelden mit %(oidc_name)s"
 
 msgid "Remember me"
 msgstr "Angemeldet bleiben"
@@ -7269,6 +7276,12 @@ msgid "The federated user already has a federated identity with a different user
 msgstr ""
 "Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
 "Identität mit einem anderen Nutzer."
+
+msgid "OIDC is disabled."
+msgstr "OIDC ist deaktiviert."
+
+msgid "Login failed. Please contact an administrator."
+msgstr "Anmeldung fehlgeschlagen. Bitte kontaktieren Sie einen Administrator."
 
 msgid "Please enter a valid user name."
 msgstr "Bitte geben Sie einen gültigen Nutzernamen ein."

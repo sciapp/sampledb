@@ -96,6 +96,8 @@ def setup_admin_account_from_config(app: flask.Flask) -> None:
 def setup_jinja_environment(app: flask.Flask) -> None:
     with app.app_context():
         is_ldap_configured = sampledb.logic.ldap.is_ldap_configured()
+        is_oidc_configured = sampledb.logic.oidc.is_oidc_configured()
+        is_oidc_only_auth_method = sampledb.logic.oidc.is_oidc_only_auth_method()
 
     if app.config['JUPYTERHUB_TEMPLATES_URL']:
         jupyterhub_templates_url = app.config['JUPYTERHUB_TEMPLATES_URL']
@@ -119,6 +121,8 @@ def setup_jinja_environment(app: flask.Flask) -> None:
         service_accessibility=app.config['SERVICE_ACCESSIBILITY'],
         ldap_name=app.config['LDAP_NAME'],
         is_ldap_configured=is_ldap_configured,
+        is_oidc_configured=is_oidc_configured,
+        is_oidc_only_auth_method=is_oidc_only_auth_method,
         get_action_types=sampledb.logic.action_types.get_action_types,
         get_translated_text=sampledb.logic.utils.get_translated_text,
         get_topics=sampledb.logic.topics.get_topics,
@@ -183,6 +187,10 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     login_manager.login_view = 'frontend.sign_in'
     login_manager.anonymous_user = sampledb.logic.users.AnonymousUser
+
+    with app.app_context():
+        if sampledb.logic.oidc.is_oidc_configured():
+            sampledb.logic.oidc.init_app(app)
 
     def custom_send_static_file(filename: str) -> sampledb.utils.FlaskResponseT:
         response = flask.make_response(

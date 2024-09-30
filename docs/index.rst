@@ -53,6 +53,7 @@ Administrator Guide
     administrator_guide/getting_started.rst
     administrator_guide/configuration.rst
     administrator_guide/tls_termination.rst
+    administrator_guide/oidc.rst
     administrator_guide/backup_and_restore.rst
     administrator_guide/upgrading.rst
     administrator_guide/administration_scripts.rst

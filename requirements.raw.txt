@@ -22,9 +22,10 @@ Pint
 plotly
 psycopg2-binary
 pyotp
+pysaml2
 qrcode
 reportlab
 requests
-pysaml2
+simple_openid_connect
 SQLAlchemy
 weasyprint

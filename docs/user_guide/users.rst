@@ -8,9 +8,31 @@ Users
 Authentication
 --------------
 
+SampleDB offers three authentication methods:
+
+1. LDAP Authentication
+^^^^^^^^^^^^^^^^^^^^^^
 Users at facilities which use LDAP for user management can use their **LDAP username** with the corresponding password to sign in. An account will be created automatically.
 
-Guests, or users at facilities without LDAP, should ask another user of |service_name| for an **invitation**, e.g. the scientist responsible for the instrument they will be using. Once they have confirmed their email address by clicking the confirmation link in the invitation email, they can then set a password for their new |service_name| account.
+2. OpenID Connect (OIDC) Authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Users at facilities which offer OIDC authentication can sign in using this provider. Depending on the facility's configuration, this process may either create a new account or automatically link to an existing one.
+
+Depending on the configuration, this method may permit guests to sign in as well.
+
+3. Federated Login using a federated SampleDB instance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If the SampleDB is part of a federation and Federated Login is configured, users may use their login at another SampleDB instance to sign in.
+
+4. Invitation-based Authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* For guests or users at facilities where the previous three authentication methods are not available:
+   - Request an **invitation** from an existing |service_name| user (typically the scientist responsible for your instrument).
+   - Click the confirmation link in the invitation email to verify your email address.
+   - Set a password for your new |service_name| account.
+
+.. note::
+   If you're unsure which method to use, contact your facility's IT support or the |service_name| administrator.
 
 .. figure:: ../static/img/generated/guest_invitation.png
     :alt: User Invitation Form
