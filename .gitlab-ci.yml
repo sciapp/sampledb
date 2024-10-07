@@ -12,7 +12,7 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   services:
     - name: postgres:12
       alias: postgres-test
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -220,7 +220,7 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   services:
     - name: postgres:12
       alias: postgres-documentation
@@ -407,7 +407,7 @@ deploy-to-dockerhub:
 
 deploy-to-pypi:
   stage: deploy
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
