@@ -2,7 +2,7 @@
 """
 
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 import flask
 import pytest
@@ -119,7 +119,7 @@ def test_update_webhook(user1):
     assert len(webhooks.get_webhooks()) == 0
     wh1 = webhooks.create_webhook(type=WebhookType.OBJECT_LOG, user_id=user1.id, secret='This is a secret', target_url='https://example.com')
     assert len(webhooks.get_webhooks()) == 1
-    ts = datetime.utcnow()
+    ts = datetime.now(tz=timezone.utc).replace(tzinfo=None)
     webhooks.update_webhook(wh1.id, ts)
     wh1_u = webhooks.get_webhook(wh1.id)
     assert len(webhooks.get_webhooks()) == 1
