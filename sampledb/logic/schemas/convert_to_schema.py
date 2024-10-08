@@ -234,6 +234,8 @@ def _try_convert_object_reference_to_object_reference(
             action_compatible = True
     if action_type_compatible and action_compatible:
         return data, []
+    if (action_type_compatible or action_compatible) and new_schema.get('filter_operator', 'and') == 'or':
+        return data, []
     return None
 
 
@@ -298,6 +300,11 @@ def _try_convert_legacy_object_reference_to_object_reference(
     else:
         action_compatible = True
     if action_type_compatible and action_compatible:
+        return {
+            '_type': 'object_reference',
+            'object_id': data['object_id']
+        }, []
+    if (action_type_compatible or action_compatible) and new_schema.get('filter_operator', 'and') == 'or':
         return {
             '_type': 'object_reference',
             'object_id': data['object_id']

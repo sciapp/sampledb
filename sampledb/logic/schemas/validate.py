@@ -657,6 +657,8 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
             object = objects.get_object(object_id=instance['object_id'])
         except ObjectDoesNotExistError:
             raise ValidationError('object does not exist', path)
+        filter_operator = schema.get('filter_operator', 'and')
+        action_id_error = None
         if 'action_id' in schema:
             if type(schema['action_id']) is int:
                 valid_action_ids = [schema['action_id']]
@@ -664,9 +666,12 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 valid_action_ids = schema['action_id']
             if valid_action_ids is not None:
                 if object.action_id is None:
-                    raise ValidationError('object has no action type', path)
-                if object.action_id not in valid_action_ids:
-                    raise ValidationError('object has wrong action', path)
+                    action_id_error = 'object has no action'
+                elif object.action_id not in valid_action_ids:
+                    action_id_error = 'object has wrong action'
+        if filter_operator == 'and' and action_id_error:
+            raise ValidationError(action_id_error, path)
+        action_type_id_error = None
         if 'action_type_id' in schema:
             if type(schema['action_type_id']) is int:
                 valid_action_type_ids = [schema['action_type_id']]
@@ -674,12 +679,17 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
                 valid_action_type_ids = schema['action_type_id']
             if valid_action_type_ids is not None:
                 if object.action_id is None:
-                    raise ValidationError('object has no action type', path)
-                action = actions.get_action(object.action_id)
-                if action.type is None:
-                    raise ValidationError('object has no action type', path)
-                if action.type_id not in valid_action_type_ids and (action.type.fed_id is None or action.type.fed_id >= 0 or action.type.fed_id not in valid_action_type_ids):
-                    raise ValidationError('object has wrong action type', path)
+                    action_type_id_error = 'object has no action type'
+                else:
+                    action = actions.get_action(object.action_id)
+                    if action.type is None:
+                        action_type_id_error = 'object has no action type'
+                    elif action.type_id not in valid_action_type_ids and (action.type.fed_id is None or action.type.fed_id >= 0 or action.type.fed_id not in valid_action_type_ids):
+                        action_type_id_error = 'object has wrong action type'
+        if filter_operator == 'and' and action_type_id_error:
+            raise ValidationError(action_type_id_error, path)
+        if filter_operator == 'or' and action_id_error and action_type_id_error:
+            raise ValidationError(action_id_error, path)
 
 
 def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:

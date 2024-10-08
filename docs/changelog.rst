@@ -7,6 +7,7 @@ Version 0.30
 Currently in development.
 
 - Added starting number in batch object creation
+- Added support for filter_operator for object_reference properties and workflow views
 - Improved .eln export and import
 - Fixed search by array index
 - Introduce recursive workflow view

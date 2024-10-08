@@ -354,6 +354,69 @@ def test_convert_sample_to_object_reference():
     assert new_data is None
     assert warnings
 
+@pytest.mark.parametrize('old_type', ['sample', 'measurement', 'object_reference'])
+@pytest.mark.parametrize(
+    [
+        'action_id_match',
+        'action_type_id_match',
+        'filter_operator',
+        'success'
+    ],
+    [
+        (True, True, 'and', True),
+        (True, False, 'and', False),
+        (False, True, 'and', False),
+        (False, False, 'and', False),
+        (True, True, 'or', True),
+        (True, False, 'or', True),
+        (False, True, 'or', True),
+        (False, False, 'or', False),
+        (None, None, 'and', True),
+        (None, False, 'and', False),
+        (False, None, 'and', False),
+        (False, False, 'and', False),
+        (None, None, 'or', True),
+        (None, False, 'or', True),
+        (False, None, 'or', True),
+        (False, False, 'or', False),
+    ]
+)
+def test_convert_object_reference_with_filter_operator(old_type, action_id_match, action_type_id_match, filter_operator, success):
+    object_id = create_object_of_type({
+        'sample': sampledb.models.ActionType.SAMPLE_CREATION,
+        'measurement': sampledb.models.ActionType.MEASUREMENT,
+        'object_reference': sampledb.models.ActionType.SAMPLE_CREATION,
+    }.get(old_type))
+    data = {
+        '_type': old_type,
+        'object_id': object_id
+    }
+    previous_schema = {
+        'type': old_type,
+        'title': 'Test'
+    }
+    new_schema = {
+        'type': 'object_reference',
+        'title': 'Test',
+        'action_id': sampledb.logic.objects.get_object(object_id).action_id + (0 if action_id_match else 1),
+        'action_type_id': sampledb.logic.actions.get_action(sampledb.logic.objects.get_object(object_id).action_id).type_id + (0 if action_type_id_match else 1),
+        'filter_operator': filter_operator
+    }
+    if action_id_match is None:
+        del new_schema['action_id']
+    if action_type_id_match is None:
+        del new_schema['action_type_id']
+    new_data, warnings = convert_to_schema(data, previous_schema, new_schema)
+    if success:
+        assert new_data == {
+            '_type': 'object_reference',
+            'object_id': object_id
+        }
+        assert not warnings
+    else:
+        assert new_data is None
+        assert warnings
+
 
 def test_convert_object_reference_to_sample():
     object_id = create_object_of_type(sampledb.models.ActionType.SAMPLE_CREATION)
