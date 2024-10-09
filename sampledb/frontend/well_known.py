@@ -26,7 +26,8 @@ def key_list_json() -> FlaskResponseT:
         {
             "@context": "https://schema.org",
 	        "@type": "MediaObject",
-            "contentUrl": f"http://localhost:8000/.well-known/keys/{str(kp.id)}",
+            # "contentUrl": f"http://localhost:8000/.well-known/keys/{str(kp.id)}",
+            "contentUrl": f"http://{flask.current_app.config['SERVER_NAME']}/.well-known/keys/{str(kp.id)}",
             "name": f"ed25519_pub_{str(kp.id)}",
             "encodingFormat": "application/x-minisign-key",
             "description": f"Signing key for exported archives",
