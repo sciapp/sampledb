@@ -512,9 +512,22 @@ def _parse_person_ref(
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
     base_url = signature.trusted_comment
     # TODO handle parse errors
-    res = requests.get(base_url + ".well-known/keys.json/").json()
+    try:
+        res = requests.get(base_url + ".well-known/keys.json/").json()
+    except requests.exceptions.ConnectionError:
+        print(f"no connection to {base_url + '.well-known/keys.json/'}")
+        return False
+    except requests.exceptions.JSONDecodeError:
+        print("no valid json returned")
+        return False
+
     for elem in res:
-        key_b64 = requests.get(elem['contentUrl'])
+        try:
+            key_b64 = requests.get(elem['contentUrl'])
+        except requests.exceptions.ConnectionError:
+            print(f"no connection to {elem['contentUrl']}")
+            continue
+
         pub = minisign.PublicKey.from_base64(key_b64.content)
         try:
             pub.verify(json_bytes, signature)
