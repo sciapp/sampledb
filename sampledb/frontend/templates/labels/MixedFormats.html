@@ -242,7 +242,7 @@
   }
   .extrabox {
     position: absolute;
-    top: -0.9mm;
+    top: -1mm;
     display: flex;
     align-items: center;
   }
@@ -251,7 +251,7 @@
     flex: 0 0 {{qrcode_width + 1}}mm;
   }
   .outerbox {
-      margin: 0.125mm 3mm 1mm;
+      margin: 0.125mm 3mm 0.25mm;
       display: flex;
       border: none;
       width: {{outer_box_width}}mm;
@@ -297,7 +297,7 @@
       </div>
       <div class="outerbox" style="min-height: {{outer_box_height_list[object_index]}}mm">
       <div class="thirdbox" style="width: {{third_box_width}}mm; min-height: {{third_box_height_list[object_index]}}mm">
-          <div class="labeltext">
+          <div class="labeltext" style="min-height: 54mm;">
               <div class="thirdboxname"><b>{{ object_name_list[object_index] }}</b></div>
               <div class="thirdboxinfo" style="width: {{third_box_width}}mm">
                   {{ username_list[object_index] }}<br>
@@ -308,7 +308,7 @@
                   #{{ sample_code_list[object_index] }}
               </div>
               {% if has_ghs_list[object_index] %}
-              <div class="ghsbox" style="width: {{third_box_width}}mm; height: {{third_box_ghs_box_height_list[object_index]}}mm">
+              <div class="ghsbox" style="width: {{third_box_width}}mm; min-height: {{ 2 * third_box_ghs_box_height_list[object_index]}}mm">
                 <div class="centeredghsbox" style="margin-left: -0.25mm;">
                     {%- for hazard_code in hazard_list[object_index] -%}
                         <div class="ghs ghs0{{hazard_code}}"></div>
@@ -319,7 +319,7 @@
           </div>
       </div>
       <div class="fourthbox" style="width: {{forth_box_width}}mm; min-height: {{forth_box_height_list[object_index]}}mm">
-          <div class="labeltext">
+          <div class="labeltext" style="min-height: 54mm;">
               <div class="fourthboxname"><b>{{ object_name_list[object_index] }}</b></div>
               <div class="fourthboxinfo" style="width: {{forth_box_width}}mm">
                   {{ username_list[object_index] }}<br>
@@ -330,7 +330,7 @@
                   #{{ sample_code_list[object_index] }}
               </div>
               {% if has_ghs_list[object_index] %}
-              <div class="ghsbox" style="width: {{forth_box_width}}mm; height: {{fourth_box_ghs_box_height_list[object_index]}}mm">
+              <div class="ghsbox" style="width: {{forth_box_width}}mm; min-height: {{fourth_box_ghs_box_height_list[object_index]}}mm">
                 <div class="centeredghsbox">
                   {%- for hazard_code in hazard_list[object_index] -%}
                       <div class="ghs ghs0{{hazard_code}}"></div>
