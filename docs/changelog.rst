@@ -8,6 +8,7 @@ Currently in development.
 
 - Added starting number in batch object creation
 - Improved .eln export and import
+- Only show action types with usable actions in the navbar Actions dropdown
 - Fixed search by array index
 - Introduce recursive workflow view
 

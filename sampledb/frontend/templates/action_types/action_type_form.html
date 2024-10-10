@@ -198,6 +198,7 @@
             <input type="checkbox" id="input-show_in_navbar" name="{{ action_type_form.show_in_navbar.name }}"
                    {% if action_type_form.show_in_navbar.data %}checked="checked"{% endif %}> {{ _('Show actions of this type in the navbar') }}
           </label>
+          <span data-toggle="tooltip" data-placement="top" title="{{ _('Only action types with usable actions are shown in the navbar Actions drop-down menu') }}"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
         </div>
         <div class="checkbox">
           <label for="input-show_in_object_filters" style="font-weight:400">
