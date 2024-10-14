@@ -23,7 +23,7 @@ def key_list_json() -> FlaskResponseT:
             "contentUrl": f"http://{flask.current_app.config['SERVER_NAME']}/.well-known/keys/{str(kp.id)}",
             "name": f"ed25519_pub_{str(kp.id)}",
             "encodingFormat": "application/x-minisign-key",
-            "description": f"Signing key for exported archives",
+            "description": "Signing key for exported archives",
             "dateCreated": kp.utc_datetime_created
         }
         for kp in key_pairs
