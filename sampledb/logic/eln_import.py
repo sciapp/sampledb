@@ -513,9 +513,9 @@ def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) 
     base_url = signature.trusted_comment
     # TODO handle parse errors
     try:
-        res = requests.get(base_url + ".well-known/keys.json/").json()
+        res = requests.get(base_url + ".well-known/keys.json").json()
     except requests.exceptions.ConnectionError:
-        print(f"no connection to {base_url + '.well-known/keys.json/'}")
+        print(f"no connection to {base_url + '.well-known/keys.json'}")
         return False
     except requests.exceptions.JSONDecodeError:
         print("no valid json returned")

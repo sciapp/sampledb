@@ -11,14 +11,7 @@ from . import frontend
 from ..utils import FlaskResponseT
 
 
-@frontend.route('/.well-known/pub-key/')
-def minisign_pub_key() -> bytes:
-    kp = minisign_keys.get_current_key_pair()
-    public_key = minisign.PublicKey.from_bytes(kp.pk_bytes)
-    return public_key.to_base64()
-
-
-@frontend.route('/.well-known/keys.json/')
+@frontend.route('/.well-known/keys.json')
 def key_list_json() -> FlaskResponseT:
     key_pairs = minisign_keys.get_key_pairs()
     # TODO replace hardcoded URL to localhost
@@ -38,9 +31,9 @@ def key_list_json() -> FlaskResponseT:
     return flask.jsonify(res)
 
 
-@frontend.route('/.well-known/keys/<int:id>/')
-def minisign_pub_key_by_id(id: int) -> bytes:
-    kp = minisign_keys.get_key_pair_by_id(id)
+@frontend.route('/.well-known/keys/<int:keypair_id>')
+def minisign_pub_key_by_id(keypair_id: int) -> bytes:
+    kp = minisign_keys.get_key_pair_by_id(keypair_id)
     if kp is None:
         return flask.abort(404)
     public_key = minisign.PublicKey.from_bytes(kp.pk_bytes)
