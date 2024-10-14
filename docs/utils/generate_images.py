@@ -16,7 +16,6 @@ from PIL import Image
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 
-import chromedriver_binary
 from selenium.webdriver.common.by import By
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
