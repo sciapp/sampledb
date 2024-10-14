@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-09-16 19:43+0200\n"
+"POT-Creation-Date: 2024-10-14 15:37+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3804,6 +3804,12 @@ msgstr ""
 "Durch Auswählen von Nutzer werden für jeden ausgewählten Nutzer "
 "föderierte Identitäten mit Ihnen erstellt."
 
+msgid "This .eln file was signed by %(sign_url)."
+msgstr "Diese .eln-Datei wurde von %(sign_url) signiert."
+
+msgid "No signature file included or signature is invalid."
+msgstr "Keine Signatur enthalten oder die Signatur ist nicht valide."
+
 msgid "Browse..."
 msgstr "Durchsuchen..."
 
@@ -3847,6 +3853,9 @@ msgstr "Widerrufen"
 #, python-format
 msgid "Removes the federated identity with %(username)s permanently."
 msgstr "Entfernt die föderierte Identität mit %(username)s endgültig."
+
+msgid "Signed by"
+msgstr "Signiert von"
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -6386,6 +6395,9 @@ msgid "The original URL is <a href=\"%(eln_import_url)s\">%(eln_import_url)s</a>
 msgstr ""
 "Die ursprüngliche URL ist <a "
 "href=\"%(eln_import_url)s\">%(eln_import_url)s</a>."
+
+msgid "The import contained a valid signature."
+msgstr "Der Import enthielt eine valide Signatur."
 
 msgid ""
 "The schema for this object is out-of-date and the action it was created "
