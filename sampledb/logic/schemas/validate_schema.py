@@ -520,7 +520,7 @@ def _validate_object_schema(
         workflow_views = schema.get('workflow_views', [])
     for workflow_index, workflow_view in enumerate(workflow_views):
         id_keys = ['referencing_action_id', 'referenced_action_id', 'referencing_action_type_id', 'referenced_action_type_id']
-        workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties', 'recursion_filters'])
+        workflow_valid_keys = set(id_keys + ['title', 'show_action_info', 'sorting_properties', 'recursion_filters', 'referenced_filter_operator', 'referencing_filter_operator'])
         if not isinstance(workflow_view, dict):
             raise ValidationError(f'workflow_view {workflow_index} must be a dict', path)
         for key in workflow_view.keys():
@@ -543,9 +543,14 @@ def _validate_object_schema(
             raise ValidationError(f'sorting_properties in workflow_view {workflow_index} must be list', path)
         for property_name in workflow_view.get('sorting_properties', []):
             _validate_property_name(property_name, False, path)
+        valid_filter_operators = ['and', 'or']
+        default_filter_operator = 'and'
+        for filter_operator_key in ('referencing_filter_operator', 'referenced_filter_operator'):
+            if workflow_view.get(filter_operator_key, default_filter_operator) not in valid_filter_operators:
+                raise ValidationError(f'{filter_operator_key} must be one of:' + ', '.join(map(repr, valid_filter_operators)), path)
         if 'recursion_filters' in workflow_view:
             recursion_id_keys = ['referenced_action_id', 'referenced_action_type_id', 'referencing_action_id', 'referencing_action_type_id']
-            recursion_valid_keys = set(id_keys + ['max_depth'])
+            recursion_valid_keys = set(id_keys + ['max_depth', 'referenced_filter_operator', 'referencing_filter_operator'])
             recursion_filters = workflow_view['recursion_filters']
             if not isinstance(recursion_filters, dict):
                 raise ValidationError(f'recursion_filters in workflow_view {workflow_index} must be a dict', path)
@@ -565,6 +570,12 @@ def _validate_object_schema(
                 raise ValidationError(f'max_depth in recursion_filters in workflow_view {workflow_index} must be int', path)
             if 'max_depth' in recursion_filters and recursion_filters['max_depth'] <= 0:
                 raise ValidationError(f'max_depth in recursion_filters in workflow_view {workflow_index} must not be negative', path)
+            valid_filter_operators = ['and', 'or']
+            default_filter_operator = 'and'
+            for filter_operator_key in ('referencing_filter_operator', 'referenced_filter_operator'):
+                if recursion_filters.get(filter_operator_key, default_filter_operator) not in valid_filter_operators:
+                    raise ValidationError(
+                        f'{filter_operator_key} must be one of:' + ', '.join(map(repr, valid_filter_operators)), path)
 
     _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
@@ -935,7 +946,7 @@ def _validate_object_reference_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
+    valid_keys = {'type', 'title', 'note', 'action_type_id', 'action_id', 'filter_operator', 'dataverse_export', 'scicat_export', 'conditions', 'may_copy', 'style', 'tooltip'}
     required_keys = {'type', 'title'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -961,6 +972,10 @@ def _validate_object_reference_schema(
             )
     ):
         raise ValidationError('action_id must be int, None or a list of ints', path)
+    valid_filter_operators = ['and', 'or']
+    default_filter_operator = 'and'
+    if schema.get('filter_operator', default_filter_operator) not in valid_filter_operators:
+        raise ValidationError('filter_operator must be one of:' + ', '.join(map(repr, valid_filter_operators)), path)
     if 'dataverse_export' in schema and not isinstance(schema['dataverse_export'], bool):
         raise ValidationError('dataverse_export must be True or False', path)
     if 'scicat_export' in schema and not isinstance(schema['scicat_export'], bool):

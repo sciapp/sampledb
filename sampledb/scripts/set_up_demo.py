@@ -397,8 +397,10 @@ This example shows how Markdown can be used for instrument Notes.
                 'recursion_filters': {
                     'referenced_action_id': sample_action.id,
                     'referenced_action_type_id': ActionType.MEASUREMENT,
+                    'referenced_filter_operator': 'or',
                     'referencing_action_id': sample_action.id,
                     'referencing_action_type_id': ActionType.MEASUREMENT,
+                    'referencing_filter_operator': 'and',
                     'max_depth': 2,
                 }
             },

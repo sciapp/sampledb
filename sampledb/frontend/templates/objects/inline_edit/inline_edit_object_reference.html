@@ -12,4 +12,5 @@
 {% else %}
   {% set schema_action_ids = schema['action_id'] %}
 {% endif %}
+{% set filter_operator = schema.get('filter_operator', 'and') %}
 {% include 'objects/inline_edit/inline_edit_object_reference_base.html' %}
