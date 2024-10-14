@@ -21,6 +21,7 @@ class Component(Model):
     description: Mapped[str] = db.Column(db.Text, nullable=False, default='')
     last_sync_timestamp: Mapped[typing.Optional[datetime.datetime]] = db.Column(db.TIMESTAMP(timezone=True), nullable=True)
     discoverable: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+    fed_login_available: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Component"]]
@@ -32,7 +33,8 @@ class Component(Model):
             description: typing.Optional[str] = '',
             address: typing.Optional[str] = None,
             last_sync_timestamp: typing.Optional[datetime.datetime] = None,
-            discoverable: bool = True
+            discoverable: bool = True,
+            fed_login_available: bool = False
     ) -> None:
         super().__init__(
             address=address,
@@ -40,11 +42,12 @@ class Component(Model):
             name=name,
             description=description,
             last_sync_timestamp=last_sync_timestamp,
-            discoverable=discoverable
+            discoverable=discoverable,
+            fed_login_available=fed_login_available
         )
 
     def __repr__(self) -> str:
-        return f'<{type(self).__name__}(id={self.id}, address={self.address}, uuid={self.uuid}, name={self.name}, description={self.description})>'
+        return f'<{type(self).__name__}(id={self.id}, address={self.address}, uuid={self.uuid}, name={self.name}, description={self.description}, fed_login_available={self.fed_login_available})>'
 
 
 class ComponentInfo(Model):

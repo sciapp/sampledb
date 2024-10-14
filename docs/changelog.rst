@@ -10,7 +10,7 @@ Currently in development.
 - Improved .eln export and import
 - Fixed search by array index
 - Introduce recursive workflow view
-
+- Added federated login
 
 Version 0.29.1
 --------------

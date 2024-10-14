@@ -33,6 +33,7 @@ class Component:
     import_token_available: bool
     export_token_available: bool
     discoverable: bool
+    fed_login_available: bool
 
     @classmethod
     def from_database(cls, component: components.Component) -> 'Component':
@@ -47,7 +48,8 @@ class Component:
             last_sync_timestamp=component.last_sync_timestamp,
             import_token_available=import_token_available,
             export_token_available=export_token_available,
-            discoverable=component.discoverable
+            discoverable=component.discoverable,
+            fed_login_available=component.fed_login_available
         )
 
     def get_name(self) -> str:
@@ -102,11 +104,20 @@ def get_components() -> typing.List[Component]:
     return [Component.from_database(component) for component in components.Component.query.order_by(db.asc(components.Component.name)).all()]
 
 
+def get_federated_login_components() -> typing.List[Component]:
+    """
+    Returns a list of all components which have the federated login enabled.
+
+    :return: the list of components
+    """
+    return [Component.from_database(component) for component in components.Component.query.filter_by(fed_login_available=True).order_by(db.asc(components.Component.name)).all()]
+
+
 def add_component(
         uuid: str,
         name: typing.Optional[str] = None,
         address: typing.Optional[str] = None,
-        description: typing.Optional[str] = ''
+        description: typing.Optional[str] = '',
 ) -> Component:
     """
     Adds a new component with the given address, name and description.
@@ -406,5 +417,21 @@ def set_component_discoverable(component_id: int, discoverable: bool) -> None:
     if component is None:
         raise errors.ComponentDoesNotExistError()
     component.discoverable = discoverable
+    db.session.add(component)
+    db.session.commit()
+
+
+def set_component_fed_login_available(component_id: int, fed_login_available: bool) -> None:
+    """
+    Update wether the federated login is available for a component.
+
+    :param component_id: the ID of an existing component
+    :param fed_login_available: whether the component should be available for the federated login
+    :raise errors.ComponentDoesNotExistError: when no component with the given component ID exists
+    """
+    component = components.Component.query.filter_by(id=component_id).first()
+    if component is None:
+        raise errors.ComponentDoesNotExistError()
+    component.fed_login_available = fed_login_available
     db.session.add(component)
     db.session.commit()

@@ -205,12 +205,13 @@ class FederatedIdentity(Model):
     local_fed_id: Mapped[int] = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, primary_key=True)
     local_fed_user: Mapped[User] = relationship('User', foreign_keys=[local_fed_id])
     active: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=True)
+    login: Mapped[bool] = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["FederatedIdentity"]]
 
-    def __init__(self, user_id: int, local_fed_id: int, active: bool = True):
-        super().__init__(user_id=user_id, local_fed_id=local_fed_id, active=active)
+    def __init__(self, user_id: int, local_fed_id: int, active: bool = True, login: bool = False):
+        super().__init__(user_id=user_id, local_fed_id=local_fed_id, active=active, login=login)
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__}(user_id={self.user_id}, local_fed_id={self.local_fed_id}, active={self.active})>"
+        return f"<{type(self).__name__}(user_id={self.user_id}, local_fed_id={self.local_fed_id}, active={self.active}, login={self.login})>"
