@@ -18,7 +18,6 @@ import typing
 os.environ['FLASK_DEBUG'] = '1'
 
 import cherrypy
-import chromedriver_binary
 import flask
 import flask_login
 import pytest

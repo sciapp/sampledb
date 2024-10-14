@@ -1,4 +1,3 @@
-chromedriver-binary-auto
 coverage
 jsonschema
 lxml
