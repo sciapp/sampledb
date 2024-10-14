@@ -316,7 +316,7 @@ def _sign_ro_crate_metadata(
     data: bytes
 ) -> bytes:
     kp = minisign_keys.get_current_key_pair()
-    #TODO replace with instance URL
+    # TODO replace with instance URL
     secret_key = minisign.SecretKey.from_bytes(kp.sk_bytes)
     # sig = secret_key.sign(data, trusted_comment="http://localhost:8000/")
     sig = secret_key.sign(data, trusted_comment=f"http://{flask.current_app.config['SERVER_NAME']}/")

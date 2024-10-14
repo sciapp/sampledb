@@ -18,7 +18,7 @@ def key_list_json() -> FlaskResponseT:
     res = [
         {
             "@context": "https://schema.org",
-	        "@type": "MediaObject",
+            "@type": "MediaObject",
             # "contentUrl": f"http://localhost:8000/.well-known/keys/{str(kp.id)}",
             "contentUrl": f"http://{flask.current_app.config['SERVER_NAME']}/.well-known/keys/{str(kp.id)}",
             "name": f"ed25519_pub_{str(kp.id)}",

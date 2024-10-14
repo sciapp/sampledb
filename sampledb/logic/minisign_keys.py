@@ -31,5 +31,5 @@ def get_key_pairs() -> typing.List[models.KeyPair]:
 
 
 def get_key_pair_by_id(id: int) -> models.KeyPair:
-    kp = db.session.query(models.KeyPair).filter(models.KeyPair.id==id).first()
+    kp = db.session.query(models.KeyPair).filter(models.KeyPair.id == id).first()
     return kp
