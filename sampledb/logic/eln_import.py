@@ -583,11 +583,12 @@ def parse_eln_file(
 
             # TODO add config with allowed import level (e. g. no imports, only signed imports, all imports marked accordingly)
             ro_crate_metadata_sig_file_name = root_path_name + '/ro-crate-metadata.json.minisig'
+            ro_crate_metadata_sig_file_name = os.path.normpath(ro_crate_metadata_sig_file_name)
             # _eln_assert(ro_crate_metadata_sig_file_name in member_names, ".eln file must contain ro-crate-metadata.json.minisig in its root directory")
             # _eln_assert(_json_has_valid_signature(ro_crate_metadata_bytes, ro_crate_metadata_sig), "ro-crate-metadata.json must be signed")
             if ro_crate_metadata_sig_file_name in member_names:
                 try:
-                    with zip_file.open(root_path_name + '/ro-crate-metadata.json.minisig') as ro_crate_metadata_sig_bytes:
+                    with zip_file.open(member_names[ro_crate_metadata_sig_file_name]) as ro_crate_metadata_sig_bytes:
                         ro_crate_metadata_sig = minisign.Signature.from_bytes(ro_crate_metadata_sig_bytes.read())
                 except minisign.ParseError:
                     raise errors.InvalidELNFileError("ro-crate-metadata.json.minisig must contain a minisign signature")
