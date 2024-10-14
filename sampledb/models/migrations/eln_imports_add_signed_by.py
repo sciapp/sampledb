@@ -16,6 +16,6 @@ def run(db: flask_sqlalchemy.SQLAlchemy) -> bool:
     # Perform migration
     db.session.execute(db.text("""
         ALTER TABLE eln_imports
-        ADD signed_by TEXT NULL
+        ADD signed_by TEXT DEFAULT NULL
     """))
     return True
