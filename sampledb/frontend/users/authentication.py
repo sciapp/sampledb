@@ -62,7 +62,7 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     URLs are deemed safe if they are absolute URLs on the current domain and
     server path. This is enforced by only allowing URLs that start with the
     absolute server path and only consist of alphanumerical characters or the
-    following characters: /=?&_.+-
+    following characters: /=?&_.,+-
 
     :param url: the URL to check
     :return: whether it is safe to redirect to or not
@@ -77,7 +77,7 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     # prevent double slashes that would change the domain
     if url.startswith('//'):
         return False
-    return url.startswith(server_path) and all(c in '/=?&_.+-' or c.isalnum() for c in url)
+    return url.startswith(server_path) and all(c in '/=?&_.,+-' or c.isalnum() for c in url)
 
 
 def _redirect_to_next_url(
