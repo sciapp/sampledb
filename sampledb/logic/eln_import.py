@@ -1167,7 +1167,7 @@ def is_signed_eln_import(
         eln_import_id: int
 ) -> bool:
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
-    return eln_import.signed_by is not None
+    return eln_import is not None and eln_import.signed_by is not None
 
 
 def _replace_references(
