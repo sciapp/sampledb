@@ -2,6 +2,7 @@
 """
 
 """
+import typing
 
 import flask
 import minisign
@@ -37,4 +38,4 @@ def minisign_pub_key_by_id(keypair_id: int) -> bytes:
     if kp is None:
         return flask.abort(404)
     public_key = minisign.PublicKey.from_bytes(kp.pk_bytes)
-    return public_key.to_base64()  # type: ignore
+    return typing.cast(bytes, public_key.to_base64())
