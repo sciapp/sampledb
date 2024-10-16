@@ -511,7 +511,6 @@ def _parse_person_ref(
 
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
     base_url = signature.trusted_comment
-    # TODO handle parse errors
     try:
         res = requests.get(base_url + ".well-known/keys.json", timeout=3).json()
     except requests.exceptions.ConnectionError:
