@@ -2,8 +2,6 @@
 """
 
 """
-import typing
-
 import flask
 import minisign
 
