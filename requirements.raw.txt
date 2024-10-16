@@ -16,6 +16,7 @@ itsdangerous
 kaleido
 ldap3
 Markdown
+minisign @ git+https://github.com/x13a/py-minisign.git
 Pillow
 Pint
 plotly
