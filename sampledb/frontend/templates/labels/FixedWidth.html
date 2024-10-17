@@ -3,10 +3,10 @@
 {% block style %}
     @page {
         size: {{ paper_width }}mm {{ paper_height }}mm;
-        margin: 9.605mm 5mm 7.5mm 2.445mm;
+        margin: 9.525mm 5mm 7.5mm 1.7mm;
     }
     .label {
-        margin: 1.2mm 1.7mm;
+        margin: 1.2mm 1.3mm 1.2mm 1.7mm;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -19,7 +19,7 @@
         display: flex;
         flex-direction: column;
         min-height: 3mm;
-        width: {{box_width - 1}}mm;
+        width: {{box_width - 1.45}}mm;
         text-align: center;
         overflow-wrap: break-word;
         padding: 0.5mm 0.5mm;
@@ -27,7 +27,7 @@
     .boxinfo {
         border: 1.5px solid black;
         min-height: 7mm;
-        width: {{box_width - 1}}mm;
+        width: {{box_width - 1.45}}mm;
         text-align: center;
         border-top: none;
         padding: 0.5mm 0.5mm;
@@ -37,12 +37,12 @@
         flex-direction: column;
         align-items: center;
         height: 18mm;
-        width: {{qrcode_box_width}}mm;
+        width: {{qrcode_box_width - 0.45}}mm;
         font-size: 8px;
         padding-top: 1mm;
     }
     .boxsidebyside > .boxqrcode {
-        height: {{box_side_by_side_height - 2.5}}mm;
+        height: {{box_side_by_side_height - 2.95}}mm;
     }
     .boxqrcodeCSBSwghs {
         border-right: 1.5px solid black;
@@ -64,11 +64,11 @@
         border: 1.5px solid black;
         border-top: none;
         height: 19mm;
-        width: {{box_width}}mm;
+        width: {{box_width - 0.45}}mm;
     }
     .boxghs {
         position: relative;
-        width: {{ghs_box_width}}mm;
+        width: {{ghs_box_width - 0.45}}mm;
     }
     .boxghsCSBS{
         height: {{box_side_by_side_height}}mm;
@@ -91,7 +91,7 @@
         border: 1.5px solid black;
         border-top: none;
         height: {{ghs_height}}mm;
-        width: {{box_width}}mm;
+        width: {{box_width - 0.45}}mm;
     }
     .boxsidebyside{
         border: 1.5px solid black;
