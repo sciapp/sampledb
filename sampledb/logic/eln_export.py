@@ -7,6 +7,7 @@ import typing
 
 import flask
 import minisign
+from flask import url_for
 
 from . import minisign_keys
 from .utils import get_translated_text
@@ -317,7 +318,7 @@ def _sign_ro_crate_metadata(
 ) -> bytes:
     kp = minisign_keys.get_current_key_pair()
     secret_key = minisign.SecretKey.from_bytes(kp.sk_bytes)
-    sig = secret_key.sign(data, trusted_comment=f"http://{flask.current_app.config['SERVER_NAME']}/")
+    sig = secret_key.sign(data, trusted_comment=url_for('frontend.key_list_json', _external=True))
     return bytes(sig)
 
 
