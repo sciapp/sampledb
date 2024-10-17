@@ -1162,11 +1162,13 @@ def get_eln_import_users(
     ]
 
 
-def is_signed_eln_import(
+def get_import_signed_by(
         eln_import_id: int
-) -> bool:
+) -> typing.Optional[str]:
     eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
-    return eln_import is not None and eln_import.signed_by is not None
+    if eln_import is None:
+        return None
+    return eln_import.signed_by
 
 
 def _replace_references(

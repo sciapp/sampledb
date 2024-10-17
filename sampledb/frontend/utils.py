@@ -38,7 +38,7 @@ import numpy as np
 from ..logic import errors
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
-from ..logic.eln_import import get_eln_import_for_object, is_signed_eln_import
+from ..logic.eln_import import get_eln_import_for_object, get_import_signed_by
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
@@ -1723,8 +1723,8 @@ def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User
 
 
 @JinjaFunction()
-def is_signed_import(eln_import_id: int) -> bool:
-    return is_signed_eln_import(eln_import_id)
+def get_signed_by(eln_import_id: int) -> typing.Optional[str]:
+    return get_import_signed_by(eln_import_id)
 
 
 def build_modified_url(
