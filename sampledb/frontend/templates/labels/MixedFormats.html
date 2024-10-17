@@ -3,7 +3,7 @@
 {% block style %}
   @page {
       size: {{ paper_width }}mm {{ paper_height }}mm;
-      margin: 8.2mm 5mm 7.5mm 5.2mm;
+      margin: 8.4mm 5mm 7.5mm 5.2mm;
   }
   .qrcodethirdbox {
       width: 15mm;
@@ -26,7 +26,7 @@
       background-size: contain;
   }
   .firstbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
+      margin: {{horizontal_label_margin - 0.2}}mm {{vertical_label_margin}}mm {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
       display: flex;
       align-items: center;
       border: 1.5px solid black;
@@ -41,14 +41,12 @@
       height: 12.6mm;
   }
   .thirdbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin + 0.45}}mm;
-      margin-left: 0mm;
-      margin-bottom: 0mm;
+      margin: 2.5mm 1.95mm 0mm 0mm;
       border: 1.5px solid black;
-      display: flex;
+      display: inline-block;
       flex-direction: column;
       align-items: center;
-      min-height: 45mm;
+      min-height: 51.65mm;
   }
   .thirdboxname {
       border-bottom: 1.5px solid black;
@@ -75,8 +73,6 @@
       padding-top: 1mm;
       font-size: 8px;
   }
-  .thirdbox, .fourthbox {
-  }
   .ghsbox {
       position: relative;
   }
@@ -86,14 +82,14 @@
     margin: 0 auto;
   }
   .fourthbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
-      display: flex;
+      margin: 2.5mm {{vertical_label_margin - 0.55}}mm;
+      display: inline-block;
       flex-direction: column;
       align-items: center;
       border: none;
       margin-bottom: 0mm;
       border: 1.5px solid black;
-      min-height: 45mm;
+      min-height: 51.65mm;
   }
   .fourthboxname {
       border-bottom: 1.5px solid black;
@@ -122,8 +118,9 @@
       font-size: 8px;
   }
   .fifthbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin + 0.5}}mm {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
+      margin: 2.5mm {{vertical_label_margin - 0.55}}mm;
       align-items: center;
+      display: inline-block;
   }
   .fifthinnerbox {
       display: flex;
@@ -157,9 +154,10 @@
       font-size: 8px;
   }
   .sixthbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
+      margin: {{horizontal_label_margin}}mm {{vertical_label_margin + 0.1}}mm;
       align-items: center;
       height: {{sixth_box_height}}mm;
+      display: inline-block;
   }
   .sixthinnerbox {
       display: flex;
@@ -249,10 +247,14 @@
     flex: 0 0 {{qrcode_width + 1}}mm;
   }
   .outerbox {
-      margin: 0.125mm 3mm 0.25mm;
-      display: flex;
+      margin: 0.125mm 2.5mm 0.25mm;
       border: none;
       width: {{outer_box_width}}mm;
+      min-height: 52mm;
+  }
+  .outerbox > div {
+      display: inline-block;
+      vertical-align: top;
   }
   .groupbox {
       width: {{ paper_width - 2 * horizontal_label_margin}}mm;
@@ -293,7 +295,7 @@
           </div>
         </div>
       </div>
-      <div class="outerbox" style="min-height: {{outer_box_height_list[object_index]}}mm">
+      <div class="outerbox">
       <div class="thirdbox" style="width: {{third_box_width}}mm;">
         <div class="thirdboxname"><b>{{ object_name_list[object_index] }}</b></div>
         <div class="thirdboxinfo" style="width: {{third_box_width}}mm">
@@ -304,7 +306,7 @@
         <div class="qrcodethirdbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.75mm"></div>
             #{{ sample_code_list[object_index] }}
         </div>
-        {% if has_ghs_list[object_index] %}
+        {%- if has_ghs_list[object_index] -%}
         <div class="ghsbox" style="width: {{third_box_width}}mm; height: {{third_box_ghs_box_height_list[object_index]}}mm">
           <div class="centeredghsbox" style="margin-left: -0.25mm;">
               {%- for hazard_code in hazard_list[object_index] -%}
@@ -312,7 +314,7 @@
               {%- endfor -%}
           </div>
         </div>
-        {% endif %}
+        {%- endif -%}
       </div>
       <div class="fourthbox" style="width: {{forth_box_width}}mm;">
         <div class="fourthboxname"><b>{{ object_name_list[object_index] }}</b></div>
@@ -324,7 +326,7 @@
         <div class="qrcodefourthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm"></div>
             #{{ sample_code_list[object_index] }}
         </div>
-        {% if has_ghs_list[object_index] %}
+        {%- if has_ghs_list[object_index] -%}
         <div class="ghsbox" style="width: {{forth_box_width}}mm; height: {{fourth_box_ghs_box_height_list[object_index]}}mm">
           <div class="centeredghsbox">
             {%- for hazard_code in hazard_list[object_index] -%}
@@ -332,7 +334,7 @@
             {%- endfor -%}
         </div>
         </div>
-        {% endif %}
+        {%- endif -%}
       </div>
       <div class="fifthbox" style="width: {{fifth_box_width}}mm; min-height: {{fifth_box_height_list[object_index]}}mm">
           <div class="fifthboxname"><b>{{ object_name_list[object_index] }}</b></div>
