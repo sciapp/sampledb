@@ -162,7 +162,6 @@ def create_multiple_labels(
     qr_code_uri_list = []
     ghs_amount_list = []
     ghs_width = 9.0
-    qrcode_width = 12.0
 
     if create_long_labels:
         text_extra_width_list = []
@@ -230,10 +229,8 @@ def create_multiple_labels(
 
         first_box_min_width_list = []
         second_box_min_width_list = []
-        third_box_height_list = []
         third_box_qrcode_box_height_list = []
         third_box_ghs_box_height_list = []
-        forth_box_height_list = []
         fourth_box_qrcode_box_height_list = []
         fourth_box_ghs_box_height_list = []
         fifth_box_height_list = []
@@ -283,10 +280,6 @@ def create_multiple_labels(
             text_extra_width_list.append(len(hazard_list[tmp_index]) * ghs_width)
             text_extra_width_list_qr.append(len(hazard_list[tmp_index]) * ghs_width + qrcode_width)
 
-            third_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
-
-            forth_box_height_list.append(max(60.0, 32 + math.ceil(ghs_height)))
-
             fifth_box_height_list.append(max(50.0, 12.0 + math.ceil(ghs_height)))
 
             if len(hazard_list[tmp_index]) > 0:
@@ -300,12 +293,13 @@ def create_multiple_labels(
 
             ghs_amount_list.append(len(hazard_list[tmp_index]))
 
+            third_box_qrcode_box_height_list.append(18.25)
+            fourth_box_qrcode_box_height_list.append(20.0)
+
             if ghs_amount_list[tmp_index] > 0:
                 has_ghs_list.append(True)
-                third_box_qrcode_box_height_list.append(18.25)
-                third_box_ghs_box_height_list.append(16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
-                fourth_box_qrcode_box_height_list.append(20.0)
+                third_box_ghs_box_height_list.append(16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
                 fourth_box_ghs_box_height_list.append(16.5 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
                 fifth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
@@ -315,10 +309,7 @@ def create_multiple_labels(
                                              int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
             else:
                 has_ghs_list.append(False)
-                third_box_qrcode_box_height_list.append(40.0)
                 third_box_ghs_box_height_list.append(0.0)
-
-                fourth_box_qrcode_box_height_list.append(40.0)
                 fourth_box_ghs_box_height_list.append(0.0)
 
                 fifth_inner_box_height_list.append(22.0)
@@ -343,8 +334,6 @@ def create_multiple_labels(
                                      horizontal_label_margin=horizontal_label_margin,
                                      vertical_label_margin=vertical_label_margin,
                                      GHS_IMAGE_URIS=GHS_IMAGE_URIS,
-                                     third_box_height_list=third_box_height_list,
-                                     forth_box_height_list=forth_box_height_list,
                                      fifth_box_height_list=fifth_box_height_list,
                                      sixth_box_height_list=sixth_box_height_list,
                                      first_box_min_width_list=first_box_min_width_list,
