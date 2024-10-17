@@ -512,9 +512,9 @@ def _parse_person_ref(
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
     base_url = signature.trusted_comment
     try:
-        res = requests.get(base_url + ".well-known/keys.json", timeout=3).json()
+        res = requests.get(base_url, timeout=3).json()
     except requests.exceptions.ConnectionError:
-        print(f"no connection to {base_url + '.well-known/keys.json'}")
+        print(f"no connection to {base_url}")
         return False
     except requests.exceptions.JSONDecodeError:
         print("no valid json returned")

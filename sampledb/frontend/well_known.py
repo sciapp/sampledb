@@ -18,7 +18,7 @@ def key_list_json() -> FlaskResponseT:
         {
             "@context": "https://schema.org",
             "@type": "MediaObject",
-            "contentUrl": url_for("frontend.minisign_pub_key_by_id", keypair_id=kp.id, _external=True),  # f"{url_for(flask.current_app.config['SERVER_NAME'])}/.well-known/keys/{str(kp.id)}",
+            "contentUrl": url_for("frontend.minisign_pub_key_by_id", keypair_id=kp.id, _external=True),
             "name": f"ed25519_pub_{str(kp.id)}",
             "encodingFormat": "application/x-minisign-key",
             "description": "Signing key for exported archives",
