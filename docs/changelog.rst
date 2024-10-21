@@ -10,6 +10,7 @@ Currently in development.
 - Improved .eln export and import
 - Fixed search by array index
 - Introduce recursive workflow view
+- Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
 
 
 Version 0.29.1

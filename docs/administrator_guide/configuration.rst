@@ -252,6 +252,8 @@ Miscellaneous
      - The secret key for Flask and Flask extensions. See: https://flask.palletsprojects.com/en/1.1.x/config/#SECRET_KEY
    * - SAMPLEDB_WTF_CSRF_TIME_LIMIT
      - The time limit for WTForms CSRF tokens in seconds. See: https://flask-wtf.readthedocs.io/en/stable/config.html
+   * - SAMPLEDB_DISABLE_USER_INVITATIONS
+     - If set, existing users won't be able to invite new users to register an account.
    * - SAMPLEDB_INVITATION_TIME_LIMIT
      - The time limit for invitation links in seconds.
    * - SAMPLEDB_ONLY_ADMINS_CAN_MANAGE_LOCATIONS

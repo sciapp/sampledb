@@ -89,6 +89,7 @@ def parse_configuration_values() -> None:
 
     # parse boolean values
     for config_name in [
+        'DISABLE_USER_INVITATIONS',
         'ONLY_ADMINS_CAN_MANAGE_LOCATIONS',
         'ONLY_ADMINS_CAN_CREATE_GROUPS',
         'ONLY_ADMINS_CAN_DELETE_GROUPS',
@@ -725,6 +726,7 @@ WTF_CSRF_TIME_LIMIT = 12 * 60 * 60
 
 # invitation link time limit
 INVITATION_TIME_LIMIT = 7 * 24 * 60 * 60
+DISABLE_USER_INVITATIONS = False
 
 # Flask-MonitoringDashboard settings
 ENABLE_MONITORINGDASHBOARD = False
