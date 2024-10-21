@@ -14,7 +14,7 @@ from ...logic.action_types import get_action_type
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.settings import get_user_setting
 from ...logic.objects import get_object, get_object_versions, get_current_object_version_id
-from ...logic.languages import get_language_by_lang_code, get_languages_in_object_data, get_language, Language
+from ...logic.languages import get_languages_in_object_data, get_language, get_languages, Language
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
 from ...logic.utils import get_translated_text
@@ -40,7 +40,6 @@ def object_versions(object_id: int) -> FlaskResponseT:
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
 @object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
 def object_version(object_id: int, version_id: int) -> FlaskResponseT:
-    english = get_language(Language.ENGLISH)
     object = get_object(object_id=object_id, version_id=version_id)
     previous_version_data_diff = None
     previous_version_schema = None
@@ -65,23 +64,31 @@ def object_version(object_id: int, version_id: int) -> FlaskResponseT:
     action_type = get_action_type(action.type_id) if action and action.type_id else None
     instrument = action.instrument if action else None
 
-    object_languages = get_languages_in_object_data(object.data) if object.data else []
-    languages = []
-    for lang_code in object_languages:
-        languages.append(get_language_by_lang_code(lang_code))
-
+    # languages
+    english = get_language(Language.ENGLISH)
+    all_languages = get_languages()
+    languages_by_lang_code = {
+        language.lang_code: language
+        for language in all_languages
+    }
+    if object.data:
+        object_languages = [
+            languages_by_lang_code.get(lang_code)
+            for lang_code in get_languages_in_object_data(object.data)
+        ]
+    else:
+        object_languages = []
     metadata_language = flask.request.args.get('language', None)
-    if not any(
-        language.lang_code == metadata_language
-        for language in languages
-    ):
+    if metadata_language not in languages_by_lang_code:
         metadata_language = None
+
     return flask.render_template(
         'objects/view/base.html',
         template_mode="view",
         show_object_type_and_id_on_object_page_text=get_user_setting(flask_login.current_user.id, "SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"),
         show_object_title=get_user_setting(flask_login.current_user.id, "SHOW_OBJECT_TITLE"),
-        languages=languages,
+        languages=object_languages,
+        object_languages=object_languages,
         metadata_language=metadata_language,
         ENGLISH=english,
         is_archived=True,
