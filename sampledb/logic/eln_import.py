@@ -9,9 +9,12 @@ import os.path
 import string
 import typing
 import zipfile
+from urllib.parse import urlsplit
 
 import flask
+import requests
 from flask_babel import gettext
+import minisign
 
 from .. import db
 from .utils import parse_url, relative_url_for
@@ -39,6 +42,7 @@ class ELNImport:
     import_utc_datetime: typing.Optional[datetime.datetime]
     invalid_reason: typing.Optional[str]
     user: User
+    signed_by: typing.Optional[str]
 
     @classmethod
     def from_database(cls, eln_import: eln_imports.ELNImport) -> 'ELNImport':
@@ -49,7 +53,8 @@ class ELNImport:
             upload_utc_datetime=eln_import.upload_utc_datetime,
             import_utc_datetime=eln_import.import_utc_datetime,
             invalid_reason=eln_import.invalid_reason,
-            user=User.from_database(eln_import.user)
+            user=User.from_database(eln_import.user),
+            signed_by=eln_import.signed_by
         )
 
     @property
@@ -120,6 +125,7 @@ class ParsedELNImport:
     objects: typing.List[ParsedELNObject]
     users: typing.List[ParsedELNUser]
     import_notes: typing.Dict[str, typing.List[str]]
+    signed_by: typing.Optional[str]
 
 
 def get_eln_import(eln_import_id: int) -> ELNImport:
@@ -235,6 +241,7 @@ def import_eln_file(
         return [], {}, ['Invalid Action Type ID information for this ELN file']
 
     eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
+    eln_import.signed_by = parsed_data.signed_by
     db.session.add(eln_import)
     db.session.commit()
 
@@ -503,6 +510,34 @@ def _parse_person_ref(
     return person_id
 
 
+def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
+    base_url = signature.trusted_comment
+    if not flask.current_app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] and urlsplit(base_url).scheme != "https":
+        return False
+
+    try:
+        res = requests.get(base_url, timeout=3).json()
+    except requests.exceptions.ConnectionError:
+        return False
+    except requests.exceptions.JSONDecodeError:
+        return False
+
+    for elem in res:
+        try:
+            key_b64 = requests.get(elem['contentUrl'], timeout=3)
+        except requests.exceptions.ConnectionError:
+            continue
+
+        pub = minisign.PublicKey.from_base64(key_b64.content)
+        try:
+            pub.verify(json_bytes, signature)
+            return True
+        except minisign.exceptions.VerifyError:
+            continue
+
+    return False
+
+
 def parse_eln_file(
         eln_import_id: int
 ) -> ParsedELNImport:
@@ -515,7 +550,8 @@ def parse_eln_file(
     parsed_data = ParsedELNImport(
         objects=[],
         users=[],
-        import_notes={}
+        import_notes={},
+        signed_by=None
     )
 
     try:
@@ -541,6 +577,27 @@ def parse_eln_file(
                     ro_crate_metadata = json.load(ro_crate_metadata_file)
             except Exception:
                 raise errors.InvalidELNFileError("ro-crate-metadata.json must contain a JSON-encoded object")
+
+            with zip_file.open(root_path_name + '/ro-crate-metadata.json') as ro_crate_metadata_file:
+                ro_crate_metadata_bytes = ro_crate_metadata_file.read()
+
+            # TODO add config with allowed import level (e. g. no imports, only signed imports, all imports marked accordingly)
+            ro_crate_metadata_sig_file_name = root_path_name + '/ro-crate-metadata.json.minisig'
+            ro_crate_metadata_sig_file_name = os.path.normpath(ro_crate_metadata_sig_file_name)
+            # _eln_assert(ro_crate_metadata_sig_file_name in member_names, ".eln file must contain ro-crate-metadata.json.minisig in its root directory")
+            # _eln_assert(_json_has_valid_signature(ro_crate_metadata_bytes, ro_crate_metadata_sig), "ro-crate-metadata.json must be signed")
+            if ro_crate_metadata_sig_file_name in member_names:
+                try:
+                    with zip_file.open(member_names[ro_crate_metadata_sig_file_name]) as ro_crate_metadata_sig_bytes:
+                        ro_crate_metadata_sig = minisign.Signature.from_bytes(ro_crate_metadata_sig_bytes.read())
+                except minisign.ParseError:
+                    raise errors.InvalidELNFileError("ro-crate-metadata.json.minisig must contain a minisign signature")
+                parsed_data = ParsedELNImport(
+                    parsed_data.objects,
+                    parsed_data.users,
+                    parsed_data.import_notes,
+                    ro_crate_metadata_sig.trusted_comment if _json_has_valid_signature(ro_crate_metadata_bytes, ro_crate_metadata_sig) else None
+                )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")
             _eln_assert(ro_crate_metadata.get('@context') == 'https://w3id.org/ro/crate/1.1/context', "ro-crate-metadata.json @context must be RO-Crate 1.1 context")
@@ -1104,6 +1161,15 @@ def get_eln_import_users(
         User.from_database(eln_import_user)
         for eln_import_user in eln_import_users
     ]
+
+
+def get_import_signed_by(
+        eln_import_id: int
+) -> typing.Optional[str]:
+    eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
+    if eln_import is None:
+        return None
+    return eln_import.signed_by
 
 
 def _replace_references(

@@ -243,6 +243,7 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "group_invitations_add_revoked",
         "project_invitations_add_revoked",
         "instrument_log_file_attachments_generate_image_infos",
+        'eln_imports_add_signed_by',
     ]
 
     migrations = []

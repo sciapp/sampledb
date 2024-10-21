@@ -68,6 +68,11 @@
       {% endfor %}
       </ul>
       {% endif %}
+      {% if parsed_eln_file_data.signed_by %}
+      <p>{{ _("This .eln file was signed by %(sign_url)s.", sign_url=parsed_eln_file_data.signed_by) }}</p>
+      {% else %}
+      <p>{{ _('No signature file included or signature is invalid.') }}</p>
+      {% endif %}
       <input type="hidden" id="federated-identities-list" name="{{ import_eln_file_form.federated_identities.name }}" value="">
       <div class="text-center" style="margin-top: 2em">
         <button type="submit" class="btn btn-primary">{{ _('Import Data')}}</button>

@@ -8,6 +8,7 @@ Currently in development.
 
 - Added starting number in batch object creation
 - Improved .eln export and import
+- Added signed export and import for .eln files
 - Fixed search by array index
 - Introduce recursive workflow view
 - Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
