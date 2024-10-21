@@ -27,6 +27,8 @@ from ...utils import FlaskResponseT
 
 @frontend.route('/users/invitation', methods=['GET', 'POST'])
 def invitation_route() -> FlaskResponseT:
+    if flask.current_app.config['DISABLE_USER_INVITATIONS']:
+        return flask.abort(403)
     if flask_login.current_user.is_authenticated:
         return invitation()
     elif 'token' in flask.request.args:
