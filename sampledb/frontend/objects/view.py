@@ -141,7 +141,8 @@ def object(object_id: int) -> FlaskResponseT:
         metadata_language = None
     template_kwargs.update({
         "metadata_language": metadata_language,
-        "languages": object_languages,
+        "languages": object_languages,  # Will be overwritten in inline edit
+        "object_languages": object_languages,
         "all_languages": all_languages,
         "SUPPORTED_LOCALES": logic.locale.SUPPORTED_LOCALES,
         "ENGLISH": english,

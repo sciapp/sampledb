@@ -118,13 +118,13 @@
     </div>
   {% endif %}
   <div class="object-button-bar">
-    {% if languages | length > 1 %}
+    {% if object_languages | length > 1 %}
     <div class="form-group">
       <div class="btn-group" data-toggle="tooltip" data-placement="top" title="{{ _("View object information in a different language.") }}">
         <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-language" aria-hidden="true"></i> {{ _("Change Language") }} <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
-          {% for language in languages %}
-            <li><a href="?language={{ language.lang_code }}">{{ language.names | get_translated_text }}{% if (metadata_language is none and language.id == get_user_language(current_user).id) or (metadata_language is none and get_user_language(current_user) not in languages and language.lang_code == 'en') or language.lang_code == metadata_language %}  <i class="fa fa-check" aria-hidden="true"> </i>{% endif %}</a></li>
+          {% for language in object_languages %}
+            <li><a href="?language={{ language.lang_code }}{{'&diff' if previous_version_data_diff else ''}}">{{ language.names | get_translated_text }}{% if (metadata_language is none and language.id == get_user_language(current_user).id) or (metadata_language is none and get_user_language(current_user) not in languages and language.lang_code == 'en') or language.lang_code == metadata_language %}  <i class="fa fa-check" aria-hidden="true"> </i>{% endif %}</a></li>
           {% endfor %}
           {% if languages | length == 0 %}
             <li><a>{{ ENGLISH.names | get_translated_text }}  <i class="fa fa-check" aria-hidden="true"> </i></a></li>
