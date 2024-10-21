@@ -9,6 +9,7 @@ import os.path
 import string
 import typing
 import zipfile
+from urllib.parse import urlsplit
 
 import flask
 import requests
@@ -511,20 +512,20 @@ def _parse_person_ref(
 
 def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> bool:
     base_url = signature.trusted_comment
+    if not flask.current_app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] and urlsplit(base_url).scheme != "https":
+        return False
+
     try:
         res = requests.get(base_url, timeout=3).json()
     except requests.exceptions.ConnectionError:
-        print(f"no connection to {base_url}")
         return False
     except requests.exceptions.JSONDecodeError:
-        print("no valid json returned")
         return False
 
     for elem in res:
         try:
             key_b64 = requests.get(elem['contentUrl'], timeout=3)
         except requests.exceptions.ConnectionError:
-            print(f"no connection to {elem['contentUrl']}")
             continue
 
         pub = minisign.PublicKey.from_base64(key_b64.content)
@@ -532,7 +533,7 @@ def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) 
             pub.verify(json_bytes, signature)
             return True
         except minisign.exceptions.VerifyError:
-            print("wrong pub key or invalid signature")
+            continue
 
     return False
 
