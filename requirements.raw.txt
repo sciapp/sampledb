@@ -22,7 +22,6 @@ plotly
 psycopg2-binary
 pyotp
 qrcode
-reportlab
 requests
 SQLAlchemy
 weasyprint
