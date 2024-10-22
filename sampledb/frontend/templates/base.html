@@ -33,6 +33,7 @@
   {% set object_responsibility_assignments = [] %}
 {% endif %}
 {% set num_urgent_notifications = object_responsibility_assignments | length %}
+{% set action_type_ids_with_usable_actions = get_action_type_ids_with_usable_actions() %}
 <nav class="navbar navbar-default navbar-static-top">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -98,7 +99,7 @@
           <a href="{{ url_for('frontend.actions') }}" style="display:inline-block; padding-right: 0;">{{ _('Actions') }}</a><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" style="display:inline-block; padding-left: 3px;"><span class="caret"></span></a>
           <ul class="dropdown-menu">
             {% for action_type in get_action_types() %}
-              {% if action_type.show_in_navbar and not (action_type.disable_create_objects and action_type.is_template) and (action_type.fed_id is none or action_type.fed_id > 0) %}
+              {% if action_type.show_in_navbar and action_type.id in action_type_ids_with_usable_actions and not (action_type.disable_create_objects and action_type.is_template) and (action_type.fed_id is none or action_type.fed_id > 0) %}
               <li><a href="{{ url_for('frontend.actions', t=action_type.id) }}">{{ action_type.name | get_translated_text(default=_('Unnamed Action Type')) }} {{ import_information_symbol(action_type, nolink=true) }}</a></li>
               {% endif %}
             {% endfor %}
