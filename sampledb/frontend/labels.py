@@ -321,7 +321,10 @@ def create_multiple_labels(
             tmp_index += 1
 
         if fill_single_page:
-            set_amount = math.floor((paper_height - 15) / (28.5 + outer_box_height_list[0]))
+            if ghs_amount_list[0] > 4:
+                set_amount = 2
+            else:
+                set_amount = 3
         else:
             set_amount = quantity
 
