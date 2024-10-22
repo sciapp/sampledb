@@ -12,7 +12,7 @@ Currently in development.
 - Fixed search by array index
 - Introduce recursive workflow view
 - Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
-
+- Added federated login
 
 Version 0.29.1
 --------------
