@@ -1787,4 +1787,54 @@ This example shows how Markdown can be used for instrument Notes.
             },
             user_id=instrument_responsible_user.id
         )
+
+        hazards_action = sampledb.logic.actions.create_action(
+            action_type_id=ActionType.SAMPLE_CREATION,
+            schema={
+                "title": {
+                    "en": "Object Information"
+                },
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "title": {
+                            "en": "Name"
+                        },
+                        "type": "text"
+                    },
+                    "hazards": {
+                        "type": "hazards",
+                        "title": {
+                            "de": "GHS Gefahren",
+                            "en": "GHS Hazards"
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "hazards"
+                ],
+                "propertyOrder": [
+                    "name",
+                    "hazards"
+                ]
+            }
+        )
+        set_action_translation(Language.ENGLISH, hazards_action.id, name="Hazards Demo Action", description="")
+        sampledb.logic.action_permissions.set_action_permissions_for_all_users(hazards_action.id, sampledb.models.Permissions.READ)
+        for num_hazards in range(10):
+            object = sampledb.logic.objects.create_object(
+                action_id=hazards_action.id,
+                data={
+                    "name": {
+                        "_type": "text",
+                        "text": {"en": "Hazards Demo Object"}
+                    },
+                    "hazards": {
+                        "_type": "hazards",
+                        "hazards": list(range(1, num_hazards+1))
+                    }
+                },
+                user_id=instrument_responsible_user.id
+            )
     print("Success: set up demo data", flush=True)
