@@ -56,7 +56,7 @@
       width: {{third_box_width - 0.4}}mm;
       text-align: center;
       overflow-wrap: break-word;
-      padding: 0.5mm 0.2mm 0mm 0.2mm;
+      padding: 0.5mm 0.2mm 0.5mm 0.2mm;
   }
   .thirdboxinfo {
       border-bottom: 1.5px solid black;
@@ -99,7 +99,7 @@
       width: {{forth_box_width - 0.4}}mm;
       text-align: center;
       overflow-wrap: break-word;
-      padding: 0.5mm 0.2mm 0mm 0.2mm;
+      padding: 0.5mm 0.2mm 0.5mm 0.2mm;
   }
   .fourthboxinfo {
       border-bottom: 1.5px solid black;
@@ -119,27 +119,27 @@
   }
   .fifthbox {
       margin: 2.5mm {{vertical_label_margin - 0.55}}mm;
+      border: 1.5px solid black;
       align-items: center;
       display: inline-block;
+      min-height: 30mm
   }
   .fifthinnerbox {
       display: flex;
       align-items: center;
-      border: 1.5px solid black;
-      border-top: none;
   }
   .fifthboxname {
-      border: 1.5px solid black;
+      border-bottom: 1.5px solid black;
       display: flex;
       flex-direction: column;
       min-height: 4mm;
       width: {{fifth_box_width - 0.4}}mm;
       text-align: center;
       overflow-wrap: break-word;
-      padding: 0.5mm 0.2mm 0mm 0.2mm;
+      padding: 0.5mm 0.2mm 0.4mm 0.2mm;
   }
   .fifthboxinfo {
-      border: 1.5px solid black;
+      border-bottom: 1.5px solid black;
       min-height: 7.25mm;
       text-align: center;
       border-top: none;
@@ -156,17 +156,17 @@
   .sixthbox {
       margin: {{horizontal_label_margin}}mm {{vertical_label_margin + 0.1}}mm;
       align-items: center;
-      height: {{sixth_box_height}}mm;
+      min-height: 30mm;
       display: inline-block;
+      border: 1.5px solid black;
+      width: {{sixth_box_width}}mm;
   }
   .sixthinnerbox {
       display: flex;
       align-items: center;
-      border: 1.5px solid black;
-      border-top: none;
   }
   .sixthboxname {
-      border: 1.5px solid black;
+      border-bottom: 1.5px solid black;
       display: flex;
       flex-direction: column;
       min-height: 4mm;
@@ -176,10 +176,9 @@
       padding: 0.5mm 0.2mm 0.4mm 0.2mm;
   }
   .sixthboxinfo {
-      border: 1.5px solid black;
+      border-bottom: 1.5px solid black;
       min-height: 7.25mm;
       text-align: center;
-      border-top: none;
       overflow-wrap: break-word;
       padding-top: 0.75mm;
   }
@@ -241,6 +240,7 @@
     top: -1mm;
     display: flex;
     align-items: center;
+    top: -0.75mm;
   }
   .extrabox .qrcode {
     background-position: right center;
@@ -259,6 +259,7 @@
   .groupbox {
       width: {{ paper_width - 2 * horizontal_label_margin}}mm;
       break-inside: avoid;
+      line-height: 3.325mm;
   }
 {% endblock %}
 
@@ -268,10 +269,10 @@
       <div class="groupbox" style="min-height: {{group_box_height_list[object_index]}}mm">
       <div class="tmpbox">
         <div class="firstbox" style="min-width: {{first_box_min_width_list[object_index]}}mm; white-space: nowrap;">
-          <div class="labeltext" style="padding-right:{{ text_extra_width_list[object_index] + 1 }}mm; position:relative;">
+          <div class="labeltext" style="padding-right:{{ text_extra_width_list[object_index] + 1 }}mm; padding-top: 1mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }} &bullet; {{ creation_date_list[object_index] }}
-            <div class="extrabox" style="right: {{ text_extra_width_list[object_index] - 9 }}mm; top: -0.9mm;">
+            <div class="extrabox" style="right: {{ text_extra_width_list[object_index] - 9 }}mm;">
               {% for hazard_code in hazard_list[object_index] %}
                   <div class="ghs ghs0{{hazard_code}}"></div>
               {% endfor %}
@@ -281,7 +282,7 @@
       </div>
       <div class="tmpbox">
         <div class="secondbox" style="min-width: {{second_box_min_width_list[object_index]}}mm">
-          <div class="labeltext" style="padding-right:{{ text_extra_width_list_qr[object_index] + 1 }}mm; position:relative;">
+          <div class="labeltext" style="padding-right:{{ text_extra_width_list_qr[object_index] + 1 }}mm; padding-top: 1mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }}
                   <br>
@@ -336,7 +337,7 @@
         </div>
         {%- endif -%}
       </div>
-      <div class="fifthbox" style="width: {{fifth_box_width}}mm; min-height: {{fifth_box_height_list[object_index]}}mm">
+      <div class="fifthbox" style="width: {{fifth_box_width}}mm;">
           <div class="fifthboxname"><b>{{ object_name_list[object_index] }}</b></div>
           <div class="fifthboxinfo" style="width: {{fifth_box_width}}mm">
               {{ username_list[object_index] }}<br>
@@ -359,19 +360,19 @@
               </div>
           </div>
       </div>
-      <div class="sixthbox" style="width: {{sixth_box_width}}mm; min-height: {{sixth_box_height_list[object_index]}}mm">
+      <div class="sixthbox">
           <div class="sixthboxname"><b>{{ object_name_list[object_index] }}</b></div>
           <div class="sixthboxinfo" style="width: {{sixth_box_width}}mm">
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index]}}mm">
-          <div class="sixthboxqrcode" style="height: {{sixth_inner_box_height_list[object_index]}}mm">
+          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index]}}mm; top: 2mm;">
+          <div class="sixthboxqrcode" style="height: {{sixth_inner_box_height_list[object_index]}}mm;">
               <div class="qrcodesixthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm"></div>
                   #{{ sample_code_list[object_index] }}
           </div>
               {% if has_ghs_list[object_index] %}
-              <div class="ghsbox" style="height: {{sixth_inner_box_height_list[object_index]}}mm">
+              <div class="ghsbox" style="height: {{sixth_inner_box_height_list[object_index]}}mm;">
                 <div class="centeredghsbox">
                   {%- for hazard_code in hazard_list[object_index] -%}
                     <div class="ghs ghs0{{hazard_code}}"></div>

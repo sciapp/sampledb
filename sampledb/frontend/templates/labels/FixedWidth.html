@@ -20,30 +20,30 @@
         display: flex;
         flex-direction: column;
         min-height: 3mm;
-        width: {{box_width - 1.45}}mm;
+        width: {{box_width - 2}}mm;
         text-align: center;
         overflow-wrap: break-word;
-        padding: 0.5mm 0.5mm;
+        padding: 0.5mm 1mm 0.5mm 1mm;
     }
     .boxinfo {
         border-bottom: 1.5px solid black;
         min-height: 7mm;
-        width: {{box_width - 1.45}}mm;
+        width: {{box_width - 2}}mm;
         text-align: center;
         border-top: none;
-        padding: 0.5mm 0.5mm;
+        padding: 0.5mm 1mm 0.5mm 1mm;
     }
     .boxqrcode {
         display: flex;
         flex-direction: column;
         align-items: center;
         height: 18mm;
-        width: {{qrcode_box_width - 0.45}}mm;
+        width: {{qrcode_box_width}}mm;
         font-size: 8px;
         padding-top: 1mm;
     }
     .boxsidebyside > .boxqrcode {
-        height: {{box_side_by_side_height - 2.95}}mm;
+        height: {{box_side_by_side_height - 2}}mm;
     }
     .boxqrcodeCSBSwghs {
         border-right: 1.5px solid black;
@@ -65,11 +65,11 @@
         border-bottom: 1.5px solid black;
         border-top: none;
         height: 19mm;
-        width: {{box_width - 0.45}}mm;
+        width: {{box_width}}mm;
     }
     .boxghs {
         position: relative;
-        width: {{ghs_box_width - 0.45}}mm;
+        width: {{ghs_box_width}}mm;
     }
     .boxghsCSBS{
         height: {{box_side_by_side_height}}mm;
@@ -84,7 +84,7 @@
     }
     .boxghsnotCnotSBS {
         border-right: 1.5px solid black;
-        height: {{ghs_height}}mm;
+        height: {{ghs_height + 0.5}}mm;
     }
     .ghsouterbox{
         height: {{ghs_height}}mm;
