@@ -321,10 +321,13 @@ def create_multiple_labels(
             tmp_index += 1
 
         if fill_single_page:
-            if ghs_amount_list[0] > 4:
-                set_amount = 2
-            else:
-                set_amount = 3
+            page_amounts: typing.Dict[str, int] = {
+                "DIN A4 (Portrait)": 3,
+                "DIN A4 (Landscape)": 2,
+                "Letter (Portrait)": 2,
+                "Letter (Landscape)": 2
+            }
+            set_amount = page_amounts[paper_format]
         else:
             set_amount = quantity
 
