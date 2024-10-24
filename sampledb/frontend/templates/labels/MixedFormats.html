@@ -5,6 +5,10 @@
       size: {{ paper_width }}mm {{ paper_height }}mm;
       margin: 8.4mm 5mm 8.5mm 5.2mm;
   }
+  /* Prevent outputting more than one page (workaround) */
+  body {
+      height: 0;
+  }
   .qrcodethirdbox {
       width: 15mm;
       height: 15.75mm;
