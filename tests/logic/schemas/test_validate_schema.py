@@ -1473,6 +1473,23 @@ def test_validate_object_reference_schema_with_action_id():
     validate_schema(wrap_into_basic_schema(schema))
 
 
+def test_validate_object_reference_schema_with_filter_operator():
+    schema = {
+        'title': 'Example',
+        'type': 'object_reference',
+        'note': 'Example Note',
+        'action_type_id': ActionType.SAMPLE_CREATION,
+        'action_id': 1,
+        'filter_operator': 'and'
+    }
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['filter_operator'] = 'or'
+    validate_schema(wrap_into_basic_schema(schema))
+    schema['filter_operator'] = 'not'
+    with pytest.raises(ValidationError):
+        validate_schema(wrap_into_basic_schema(schema))
+
+
 def test_validate_object_reference_schema_with_invalid_action_id_type():
     schema = {
         'title': 'Example',
@@ -3082,6 +3099,8 @@ def test_validate_workflow_show_more():
         ('title', 3515),
         ('title', {"de": "Prozessablauf"}),
         ('show_action_info', 3515),
+        ('filter_operator', 'or'),
+        ('referencing_filter_operator', 'not')
     )
 )
 def test_validate_workflow_view(key, value):
@@ -3115,7 +3134,9 @@ def test_validate_workflow_view(key, value):
         "referenced_action_type_id": [ActionType.SAMPLE_CREATION],
         "referenced_action_id": 1,
         "title": {"en": "Workflow", "de": "Prozessablauf"},
-        "show_action_info": True
+        "show_action_info": True,
+        "referenced_filter_operator": "or",
+        "referencing_filter_operator": "and"
     }
     schema1['workflow_view'] = workflow_view
     schema2['workflow_views'] = [workflow_view]
@@ -3183,6 +3204,8 @@ def test_validate_with_tooltip():
         ('referencing_action_type_id', '1'),
         ('max_depth', '1'),
         ('max_depth', -1),
+        ('referenced_filter_operator', 'not'),
+        ('referencing_filter_operator', 'not')
     )
 )
 def test_validate_workflow_recursion_filter(key, value):
@@ -3222,6 +3245,8 @@ def test_validate_workflow_recursion_filter(key, value):
             "referencing_action_id": [1, 2],
             "referencing_action_type_id": 1,
             "max_depth": 2,
+            "referenced_filter_operator": "or",
+            "referencing_filter_operator": "and"
         },
         "show_action_info": True
     }

@@ -9,6 +9,7 @@ import datetime
 import itertools
 import typing
 import sys
+import operator
 
 import flask
 
@@ -332,15 +333,46 @@ class WorkflowElement:
 
 
 @dataclasses.dataclass(frozen=True)
-class ActionFilters:
-    referencing_action_ids: typing.Optional[typing.List[int]]
-    referencing_action_type_ids: typing.Optional[typing.List[int]]
-    referenced_action_ids: typing.Optional[typing.List[int]]
-    referenced_action_type_ids: typing.Optional[typing.List[int]]
+class ActionFilter:
+    action_ids: typing.Optional[typing.List[int]] = None
+    action_type_ids: typing.Optional[typing.List[int]] = None
+    filter_operator: typing.Callable[[bool, bool], bool] = operator.and_
 
     @property
     def is_none(self) -> bool:
-        return self.referencing_action_ids is None and self.referenced_action_ids is None and self.referencing_action_type_ids is None and self.referenced_action_type_ids is None
+        return self.action_ids is None and self.action_type_ids is None
+
+    def __call__(self, action: typing.Optional[Action]) -> bool:
+        return self.filter_operator(
+            self.action_ids is None or
+            (
+                action is not None and
+                action.id in self.action_ids
+            ),
+            self.action_type_ids is None or
+            (
+                action is not None and
+                action.type is not None and
+                (
+                    action.type.id in self.action_type_ids or
+                    (
+                        action.type.fed_id is not None and
+                        action.type.fed_id < 0 and
+                        action.type.fed_id in self.action_type_ids
+                    )
+                )
+            )
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class ActionFilters:
+    referencing_objects_filter: ActionFilter = ActionFilter()
+    referenced_objects_filter: ActionFilter = ActionFilter()
+
+    @property
+    def is_none(self) -> bool:
+        return self.referencing_objects_filter.is_none and self.referenced_objects_filter.is_none
 
 
 def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.Optional[typing.Dict[int, Action]] = None) -> typing.List[typing.List[WorkflowElement]]:
@@ -447,34 +479,9 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
             if (
                 wf.is_none or
                 (
-                    object_id in referencing_object_ids and
-                    (
-                        (wf.referencing_action_ids is None or action_id in wf.referencing_action_ids) and
-                        (
-                            wf.referencing_action_type_ids is None or
-                            (
-                                action and action.type and (
-                                    action.type.id in wf.referencing_action_type_ids or
-                                    (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in wf.referencing_action_type_ids)
-                                )
-                            )
-                        )
-                    )
+                    object_id in referencing_object_ids and wf.referencing_objects_filter(action)
                 ) or (
-                    object_id in referenced_object_ids and
-                    (
-                        (wf.referenced_action_ids is None or action_id in wf.referenced_action_ids) and
-                        (
-                            wf.referenced_action_type_ids is None or
-                            (
-                                action and action.type and
-                                (
-                                    action.type.id in wf.referenced_action_type_ids or
-                                    (action.type.fed_id and action.type.fed_id < 0 and action.type.fed_id in wf.referenced_action_type_ids)
-                                )
-                            )
-                        )
-                    )
+                    object_id in referenced_object_ids and wf.referenced_objects_filter(action)
                 )
             ):
                 if object_id in objects_by_id:
@@ -501,41 +508,39 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
 
                 if ((welem.is_referenced and welem.is_current_referenced) or (welem.is_referencing and welem.is_current_referencing)) and elem_object and (max_depth is None or len(path) < max_depth) and not welem.duplicate and (
                     rf.is_none or (
-                        object_id in referenced_object_ids and elem_object.action_id and (
-                            rf.referencing_action_ids and (
-                                (rf.referenced_action_ids and elem_object.action_id in rf.referenced_action_ids) or
-                                (rf.referenced_action_type_ids and get_action(elem_object.action_id).type_id in rf.referenced_action_type_ids)
-                            )
-                        )
+                        object_id in referenced_object_ids and elem_object.action_id and rf.referenced_objects_filter(get_action(elem_object.action_id))
                     ) or (
-                        object_id in referencing_object_ids and elem_object.action_id and (
-                            (rf.referencing_action_ids and elem_object.action_id in rf.referencing_action_ids) or
-                            (rf.referencing_action_type_ids and get_action(elem_object.action_id).type_id in rf.referencing_action_type_ids)
-                        )
+                        object_id in referenced_object_ids and elem_object.action_id and rf.referencing_objects_filter(get_action(elem_object.action_id))
                     )
                 ):
                     _handle_object(elem_object, workflow_index, path + [welem], actions_by_id, workflow_action_filters, recursion_action_filters, max_depth)
 
-    def _get_action_filter_lists(dictionary: typing.Dict[str, typing.Any]) -> ActionFilters:
+    def _get_action_filter_lists(dictionary: typing.Dict[str, typing.Any], default_filter_operator: typing.Callable[[bool, bool], bool]) -> ActionFilters:
         return ActionFilters(
-            referenced_action_ids=[dictionary['referenced_action_id']] if isinstance(dictionary.get('referenced_action_id'), int) else dictionary.get('referenced_action_id'),
-            referenced_action_type_ids=[dictionary['referenced_action_type_id']] if isinstance(dictionary.get('referenced_action_type_id'), int) else dictionary.get('referenced_action_type_id'),
-            referencing_action_ids=[dictionary['referencing_action_id']] if isinstance(dictionary.get('referencing_action_id'), int) else dictionary.get('referencing_action_id'),
-            referencing_action_type_ids=[dictionary['referencing_action_type_id']] if isinstance(dictionary.get('referencing_action_type_id'), int) else dictionary.get('referencing_action_type_id')
+            referenced_objects_filter=ActionFilter(
+                action_ids=[dictionary['referenced_action_id']] if isinstance(dictionary.get('referenced_action_id'), int) else dictionary.get('referenced_action_id'),
+                action_type_ids=[dictionary['referenced_action_type_id']] if isinstance(dictionary.get('referenced_action_type_id'), int) else dictionary.get('referenced_action_type_id'),
+                filter_operator={'or': operator.or_, 'and': operator.and_}.get(typing.cast(str, dictionary.get('referenced_filter_operator', '')), default_filter_operator)
+            ),
+            referencing_objects_filter=ActionFilter(
+                action_ids=[dictionary['referencing_action_id']] if isinstance(dictionary.get('referencing_action_id'), int) else dictionary.get('referencing_action_id'),
+                action_type_ids=[dictionary['referencing_action_type_id']] if isinstance(dictionary.get('referencing_action_type_id'), int) else dictionary.get('referencing_action_type_id'),
+                filter_operator={'or': operator.or_, 'and': operator.and_}.get(typing.cast(str, dictionary.get('referencing_filter_operator', '')), default_filter_operator)
+            )
         )
 
     for workflow_index, workflow_view in enumerate(workflow_views):
         objects_in_workflow = {object.object_id}
 
-        workflow_action_filters = _get_action_filter_lists(workflow_view)
+        workflow_action_filters = _get_action_filter_lists(workflow_view, operator.and_)
 
         recursion_filters = workflow_view.get('recursion_filters')
         if recursion_filters:
             max_depth = recursion_filters.get('max_depth', None)
-            recursion_action_filters = _get_action_filter_lists(recursion_filters)
+            recursion_action_filters = _get_action_filter_lists(recursion_filters, operator.or_)
         else:
             max_depth = 0  # No filters defined -> no recursion
-            recursion_action_filters = ActionFilters(None, None, None, None)
+            recursion_action_filters = ActionFilters()
 
         _handle_object(object, workflow_index, [], actions_by_id, workflow_action_filters, recursion_action_filters, max_depth)
 

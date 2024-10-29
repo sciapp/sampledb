@@ -1538,6 +1538,62 @@ def test_validate_object_reference():
     validate(instance, schema)
 
 
+def test_validate_object_reference_with_filter_operator():
+    user = sampledb.logic.users.create_user("User", "example@example.com", sampledb.models.UserType.PERSON)
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            "title": "Sample Information",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "title": "Sample Name",
+                    "type": "text"
+                }
+            },
+            'required': ['name']
+        }
+    )
+    object = create_object(data={'name': {'_type': 'text', 'text': 'example'}}, user_id=user.id, action_id=action.id)
+
+    instance = {
+        '_type': 'object_reference',
+        'object_id': object.id
+    }
+    for filter_operator in [None, 'and', 'or']:
+        schema = {
+            'title': 'Example',
+            'type': 'object_reference',
+            'filter_operator': filter_operator
+        }
+        if filter_operator is None:
+            del schema['filter_operator']
+        schema['action_id'] = action.id
+        schema['action_type_id'] = action.type_id
+        validate(instance, schema)
+
+        schema['action_id'] = action.id + 1
+        schema['action_type_id'] = action.type_id + 1
+        with pytest.raises(ValidationError):
+            validate(instance, schema)
+
+        schema['action_id'] = action.id + 1
+        schema['action_type_id'] = action.type_id
+        if filter_operator == 'or':
+            validate(instance, schema)
+        else:
+            with pytest.raises(ValidationError):
+                validate(instance, schema)
+
+        schema['action_id'] = action.id
+        schema['action_type_id'] = action.type_id + 1
+        if filter_operator == 'or':
+            validate(instance, schema)
+        else:
+            with pytest.raises(ValidationError):
+                validate(instance, schema)
+
+
 def test_validate_object_reference_invalid_type():
     from sampledb.models.users import User, UserType
     from sampledb.models.actions import Action
