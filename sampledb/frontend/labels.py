@@ -293,14 +293,14 @@ def create_multiple_labels(
 
             ghs_amount_list.append(len(hazard_list[tmp_index]))
 
-            third_box_qrcode_box_height_list.append(18.25)
+            third_box_qrcode_box_height_list.append(18)
             fourth_box_qrcode_box_height_list.append(20.0)
 
             if ghs_amount_list[tmp_index] > 0:
                 has_ghs_list.append(True)
 
-                third_box_ghs_box_height_list.append(16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
-                fourth_box_ghs_box_height_list.append(16.5 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                third_box_ghs_box_height_list.append(13 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                fourth_box_ghs_box_height_list.append(12 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
                 fifth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
                 sixth_inner_box_height_list.append(max(21.25, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
@@ -321,13 +321,13 @@ def create_multiple_labels(
             tmp_index += 1
 
         if fill_single_page:
-            page_amounts: typing.Dict[str, int] = {
+            amount_on_page: typing.Dict[str, int] = {
                 "DIN A4 (Portrait)": 3,
                 "DIN A4 (Landscape)": 2,
                 "Letter (Portrait)": 2,
                 "Letter (Landscape)": 2
             }
-            set_amount = page_amounts[paper_format]
+            set_amount = int(amount_on_page[paper_format])
         else:
             set_amount = quantity
 

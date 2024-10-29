@@ -50,7 +50,7 @@
       display: inline-block;
       flex-direction: column;
       align-items: center;
-      min-height: 51.65mm;
+      min-height: 50mm;
   }
   .thirdboxname {
       border-bottom: 1.5px solid black;
@@ -64,7 +64,8 @@
   }
   .thirdboxinfo {
       border-bottom: 1.5px solid black;
-      min-height: 7.25mm;
+      min-height: 9mm;
+      width: {{third_box_width}}mm;
       text-align: center;
       border-top: none;
       overflow-wrap: break-word;
@@ -107,7 +108,7 @@
   }
   .fourthboxinfo {
       border-bottom: 1.5px solid black;
-      min-height: 7.25mm;
+      min-height: 9mm;
       text-align: center;
       border-top: none;
       overflow-wrap: break-word;
@@ -158,7 +159,7 @@
       font-size: 8px;
   }
   .sixthbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin + 0.1}}mm;
+      margin: {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
       align-items: center;
       min-height: 30mm;
       display: inline-block;
@@ -303,7 +304,7 @@
       <div class="outerbox">
       <div class="thirdbox" style="width: {{third_box_width}}mm;">
         <div class="thirdboxname"><b>{{ object_name_list[object_index] }}</b></div>
-        <div class="thirdboxinfo" style="width: {{third_box_width}}mm">
+        <div class="thirdboxinfo">
             {{ username_list[object_index] }}<br>
             {{ creation_date_list[object_index] }}
         </div>
@@ -347,7 +348,7 @@
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="fifthinnerbox" style="width: {{fifth_box_width}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
+          <div class="fifthinnerbox" style="width: {{fifth_box_width}}mm; height: {{fifth_inner_box_height_list[object_index] - 0.25}}mm">
           <div class="fifthboxqrcode" style="width: {{fifth_box_qrcode_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index] - 1}}mm;
                                       {% if ghs_amount_list[object_index] > 0 %}
                                           border-right: 1.5px solid black;
@@ -370,13 +371,13 @@
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index]}}mm; top: 2mm;">
-          <div class="sixthboxqrcode" style="height: {{sixth_inner_box_height_list[object_index]}}mm;">
+          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index] - 0.25}}mm; top: 2mm;">
+          <div class="sixthboxqrcode" style="height: {{sixth_inner_box_height_list[object_index] - 0.75}}mm;">
               <div class="qrcodesixthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm"></div>
                   #{{ sample_code_list[object_index] }}
           </div>
               {% if has_ghs_list[object_index] %}
-              <div class="ghsbox" style="height: {{sixth_inner_box_height_list[object_index]}}mm;">
+              <div class="ghsbox" style="height: {{sixth_inner_box_height_list[object_index] - 0.25}}mm;">
                 <div class="centeredghsbox">
                   {%- for hazard_code in hazard_list[object_index] -%}
                     <div class="ghs ghs0{{hazard_code}}"></div>
