@@ -11,6 +11,7 @@ Currently in development.
 - Improved .eln export and import
 - Only show action types with usable actions in the navbar Actions dropdown
 - Fixed search by array index
+- Fixed notification for automatic creation of federated identities
 - Introduce recursive workflow view
 - Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
 
