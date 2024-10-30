@@ -10,9 +10,11 @@
       height: 0;
   }
   .qrcodethirdbox {
-      width: 15mm;
-      height: 15.75mm;
+      width: 15.25mm;
+      height: 16mm;
       background-size: contain;
+      margin: 0mm -0.5mm -0.75mm;
+      background-repeat: no-repeat;
   }
   .qrcodefourthbox {
       width: 17mm;
@@ -50,7 +52,7 @@
       display: inline-block;
       flex-direction: column;
       align-items: center;
-      min-height: 50mm;
+      min-height: 51.5mm;
   }
   .thirdboxname {
       border-bottom: 1.5px solid black;
@@ -69,7 +71,7 @@
       text-align: center;
       border-top: none;
       overflow-wrap: break-word;
-      padding-top: 0.75mm;
+      padding: 0.75mm 0mm;
   }
   .thirdboxqrcode {
       display: flex;
@@ -108,11 +110,11 @@
   }
   .fourthboxinfo {
       border-bottom: 1.5px solid black;
-      min-height: 9mm;
+      min-height: 4mm;
       text-align: center;
       border-top: none;
       overflow-wrap: break-word;
-      padding-top: 0.75mm;
+      padding: 0.75mm 0mm;
   }
   .fourthboxqrcode {
       display: flex;
@@ -159,7 +161,7 @@
       font-size: 8px;
   }
   .sixthbox {
-      margin: {{horizontal_label_margin}}mm {{vertical_label_margin}}mm;
+      margin: {{horizontal_label_margin}}mm {{vertical_label_margin - 0.5}}mm;
       align-items: center;
       min-height: 30mm;
       display: inline-block;
@@ -229,7 +231,7 @@
   }
   /* special case with only two GHS symbols */
   .centeredghsbox .ghs:nth-child(1):nth-last-child(2), .centeredghsbox .ghs:nth-child(2):nth-last-child(1) {
-    top: 6mm;
+    top: 1.5mm;
   }
   .centeredghsbox .ghs:nth-child(1):nth-last-child(2) {
     left: 0;
@@ -274,7 +276,7 @@
       <div class="groupbox" style="min-height: {{group_box_height_list[object_index]}}mm">
       <div class="tmpbox">
         <div class="firstbox" style="min-width: {{first_box_min_width_list[object_index]}}mm; white-space: nowrap;">
-          <div class="labeltext" style="padding-right:{{ text_extra_width_list[object_index] + 1 }}mm; padding-top: 1mm; position:relative;">
+          <div class="labeltext" style="padding-right:{{ text_extra_width_list[object_index]}}mm; padding-top: 1mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }} &bullet; {{ creation_date_list[object_index] }}
             <div class="extrabox" style="right: {{ text_extra_width_list[object_index] - 9 }}mm;">
@@ -287,7 +289,7 @@
       </div>
       <div class="tmpbox">
         <div class="secondbox" style="min-width: {{second_box_min_width_list[object_index]}}mm">
-          <div class="labeltext" style="padding-right:{{ text_extra_width_list_qr[object_index] + 1 }}mm; padding-top: 1mm; position:relative;">
+          <div class="labeltext" style="padding-right:{{ text_extra_width_list_qr[object_index] + 2 }}mm; padding-top: 0.75mm; position:relative;">
               <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ sample_code_list[object_index] }}<br>
                   {{ username_list[object_index] }}
                   <br>
@@ -309,7 +311,7 @@
             {{ creation_date_list[object_index] }}
         </div>
         <div class="thirdboxqrcode" style="width: {{third_box_width}}mm; height: {{third_box_qrcode_box_height_list[object_index]}}mm; {% if has_ghs_list[object_index] %} border-bottom: 1.5px solid black; {%- endif -%}">
-        <div class="qrcodethirdbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.75mm"></div>
+        <div class="qrcodethirdbox" style="background-image: url({{ qr_code_uri_list[object_index] }});"></div>
             #{{ sample_code_list[object_index] }}
         </div>
         {%- if has_ghs_list[object_index] -%}
@@ -322,7 +324,7 @@
         </div>
         {%- endif -%}
       </div>
-      <div class="fourthbox" style="width: {{forth_box_width}}mm;">
+        <div class="fourthbox" style="width: {{forth_box_width}}mm;">
         <div class="fourthboxname"><b>{{ object_name_list[object_index] }}</b></div>
         <div class="fourthboxinfo" style="width: {{forth_box_width}}mm">
             {{ username_list[object_index] }}<br>
@@ -342,7 +344,7 @@
         </div>
         {%- endif -%}
       </div>
-      <div class="fifthbox" style="width: {{fifth_box_width}}mm;">
+        <div class="fifthbox" style="width: {{fifth_box_width}}mm;">
           <div class="fifthboxname"><b>{{ object_name_list[object_index] }}</b></div>
           <div class="fifthboxinfo" style="width: {{fifth_box_width}}mm">
               {{ username_list[object_index] }}<br>
@@ -365,7 +367,7 @@
               </div>
           </div>
       </div>
-      <div class="sixthbox">
+        <div class="sixthbox">
           <div class="sixthboxname"><b>{{ object_name_list[object_index] }}</b></div>
           <div class="sixthboxinfo" style="width: {{sixth_box_width}}mm">
               {{ username_list[object_index] }}<br>

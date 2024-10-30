@@ -1832,7 +1832,7 @@ This example shows how Markdown can be used for instrument Notes.
                     },
                     "hazards": {
                         "_type": "hazards",
-                        "hazards": list(range(1, num_hazards+1))
+                        "hazards": list(range(1, num_hazards + 1))
                     }
                 },
                 user_id=instrument_responsible_user.id
