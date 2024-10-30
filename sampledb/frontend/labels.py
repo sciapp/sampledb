@@ -347,8 +347,10 @@ def create_multiple_labels(
                 "Letter (Landscape)": 2
             }
             set_amount = int(amount_on_page[paper_format])
+            body_height = 0
         else:
             set_amount = quantity
+            body_height = 1
 
         object_amount = len(username_list)
         html = flask.render_template("labels/MixedFormats.html",
@@ -383,7 +385,7 @@ def create_multiple_labels(
                                      ghs_amount_list=ghs_amount_list,
                                      regular_font=regular_font, bold_font=bold_font,
                                      qrcode_width=qrcode_width, text_extra_width_list=text_extra_width_list,
-                                     text_extra_width_list_qr=text_extra_width_list_qr)
+                                     text_extra_width_list_qr=text_extra_width_list_qr, body_height=body_height)
 
     elif create_only_qr_codes:
         object_id = list(object_specifications.keys())[0]
