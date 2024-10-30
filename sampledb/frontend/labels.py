@@ -300,8 +300,8 @@ def create_multiple_labels(
                 has_ghs_list.append(True)
 
                 if ghs_amount_list[tmp_index] <= 2:
-                    third_box_ghs_box_height_list.append(12 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
-                    fourth_box_ghs_box_height_list.append(12 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                    third_box_ghs_box_height_list.append(12.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                    fourth_box_ghs_box_height_list.append(12.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
                 else:
                     third_box_ghs_box_height_list.append(16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
                     fourth_box_ghs_box_height_list.append(16.5 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
@@ -313,15 +313,15 @@ def create_multiple_labels(
                                              int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
                 if ghs_amount_list[tmp_index] == 4:
-                    third_box_ghs_box_height_list[tmp_index] -= ghs_width / 2
-                    fourth_box_ghs_box_height_list[tmp_index] -= ghs_width / 2
+                    third_box_ghs_box_height_list[tmp_index] -= ghs_width / 2.0
+                    fourth_box_ghs_box_height_list[tmp_index] -= ghs_width / 2.0
                     fifth_inner_box_height_list[tmp_index] -= ghs_width / 2 - 0.5
                     sixth_inner_box_height_list[tmp_index] -= ghs_width / 2 - 0.5
                 elif ghs_amount_list[tmp_index] == 7:
-                    third_box_ghs_box_height_list[tmp_index] -= ghs_width / 2
-                    fourth_box_ghs_box_height_list[tmp_index] -= ghs_width / 2
-                    fifth_inner_box_height_list[tmp_index] -= ghs_width / 2
-                    sixth_inner_box_height_list[tmp_index] -= ghs_width / 2
+                    third_box_ghs_box_height_list[tmp_index] -= ghs_width / 2.0
+                    fourth_box_ghs_box_height_list[tmp_index] -= ghs_width / 2.0
+                    fifth_inner_box_height_list[tmp_index] -= ghs_width / 2.0
+                    sixth_inner_box_height_list[tmp_index] -= ghs_width / 2.0
 
                 if ghs_amount_list[tmp_index] > 3:
                     fifth_inner_box_height_list[tmp_index] += 0.5
