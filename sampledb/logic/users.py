@@ -1128,8 +1128,9 @@ def link_users_by_email_hashes(component_id: int, user_informations: list[dict[s
             if user_id is not None and fed_id not in component_fed_ids:
                 create_sampledb_federated_identity(user_id, component, fed_id)
                 create_notification_for_being_automatically_linked(
-                    user_id=user_data['user_id'],
-                    component_id=component_id
+                    user_id=user_id,
+                    component_id=component_id,
+                    fed_id=fed_id
                 )
                 break
 
