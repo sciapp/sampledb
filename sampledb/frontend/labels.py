@@ -299,12 +299,15 @@ def create_multiple_labels(
             if ghs_amount_list[tmp_index] > 0:
                 has_ghs_list.append(True)
 
-                if ghs_amount_list[tmp_index] <= 2:
+                if ghs_amount_list[tmp_index] < 2:
                     third_box_ghs_box_height_list.append(12.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
                     fourth_box_ghs_box_height_list.append(12.0 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                elif ghs_amount_list[tmp_index] == 2:
+                    third_box_ghs_box_height_list.append(12.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                    fourth_box_ghs_box_height_list.append(12.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
                 else:
-                    third_box_ghs_box_height_list.append(16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
-                    fourth_box_ghs_box_height_list.append(16.5 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                    third_box_ghs_box_height_list.append(16.75 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
+                    fourth_box_ghs_box_height_list.append(16.75 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9)
 
                 fifth_inner_box_height_list.append(max(22.0, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
                 sixth_inner_box_height_list.append(max(22.0, 16.25 + int((ghs_amount_list[tmp_index] - 1) / 3) * 9))
