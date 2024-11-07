@@ -250,8 +250,8 @@ def create_multiple_labels(
         fifth_box_width = 39.5
         sixth_box_width = 74.5
         outer_box_width = 200.0
-        sixth_box_qrcode_box_width = 20.0
-        sixth_box_ghs_box_width = 20.0
+        sixth_box_qrcode_box_width = 19.75
+        sixth_box_ghs_box_width = 19.25
         qrcode_width = 12.5
 
         tmp_index = 0
@@ -328,8 +328,8 @@ def create_multiple_labels(
                     sixth_inner_box_height_list[tmp_index] -= ghs_width / 2.0
 
                 if ghs_amount_list[tmp_index] > 3:
-                    fifth_inner_box_height_list[tmp_index] += 0.5
-                    sixth_inner_box_height_list[tmp_index] += 0.5
+                    fifth_inner_box_height_list[tmp_index] += 0.75
+                    sixth_inner_box_height_list[tmp_index] += 0.75
             else:
                 has_ghs_list.append(False)
                 third_box_ghs_box_height_list.append(0.0)

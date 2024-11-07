@@ -23,12 +23,12 @@
   }
   .qrcodefifthbox {
       width: 17mm;
-      height: 17.5mm;
+      height: 17mm;
       background-size: contain;
   }
   .qrcodesixthbox {
       width: 17mm;
-      height: 17.5mm;
+      height: 17mm;
       background-size: contain;
   }
   .firstbox {
@@ -350,12 +350,12 @@
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="fifthinnerbox" style="width: {{fifth_box_width}}mm; height: {{fifth_inner_box_height_list[object_index] - 0.25}}mm">
+          <div class="fifthinnerbox" style="width: {{fifth_box_width}}mm; height: {{fifth_inner_box_height_list[object_index] - 0.5}}mm">
           <div class="fifthboxqrcode" style="width: {{fifth_box_qrcode_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index] - 1}}mm;
                                       {% if ghs_amount_list[object_index] > 0 %}
                                           border-right: 1.5px solid black;
                                       {% endif %}">
-              <div class="qrcodefifthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm"></div>
+              <div class="qrcodefifthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm; margin-top: 0.5mm;"></div>
                   #{{ sample_code_list[object_index] }}
           </div>
               <div class="ghsbox" style="width: {{fifth_box_ghs_box_width_list[object_index]}}mm; height: {{fifth_inner_box_height_list[object_index]}}mm">
@@ -373,9 +373,9 @@
               {{ username_list[object_index] }}<br>
               {{ creation_date_list[object_index] }}
           </div>
-          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index] - 0.25}}mm; top: 2mm;">
+          <div class="sixthinnerbox" style="width: {{sixth_box_width}}mm; height: {{sixth_inner_box_height_list[object_index] - 0.5}}mm; top: 2mm;">
           <div class="sixthboxqrcode" style="height: {{sixth_inner_box_height_list[object_index] - 0.75}}mm;">
-              <div class="qrcodesixthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm"></div>
+              <div class="qrcodesixthbox" style="background-image: url({{ qr_code_uri_list[object_index] }}); margin-bottom: -0.5mm; margin-top: 0.5mm;"></div>
                   #{{ sample_code_list[object_index] }}
           </div>
               {% if has_ghs_list[object_index] %}
