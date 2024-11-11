@@ -187,6 +187,10 @@ class User:
         self._settings_cache[0] = user_settings
         return user_settings
 
+    def clear_caches(self) -> None:
+        self.language_cache[0] = None
+        self._settings_cache[0] = None
+
 
 class AnonymousUser(flask_login.AnonymousUserMixin):
     @property

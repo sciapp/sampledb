@@ -1432,6 +1432,25 @@ def test_change_other_settings_selectpicker_selenium(flask_server, driver, user,
     assert sampledb.logic.settings.get_user_setting(user.id, setting_name) == setting_value_after
 
 
+def test_change_locale_notification_selenium(flask_server, driver, user):
+    sampledb.logic.settings.set_user_settings(user.id, {'AUTO_LC': False})
+    sampledb.logic.settings.set_user_settings(user.id, {'LOCALE': 'en'})
+
+    assert sampledb.logic.settings.get_user_setting(user.id, 'LOCALE') == 'en'
+
+    driver.get(flask_server.base_url + f'users/{user.id}/autologin')
+    driver.get(flask_server.base_url + 'users/me/preferences')
+
+    input_text_after = driver.find_element(By.CSS_SELECTOR, '[name="select-locale"] option[value="de"]').get_attribute("innerText")
+    driver.find_element(By.CSS_SELECTOR, '[data-id="select-locale"]').click()
+    driver.find_element(By.XPATH, f'//span[text()="{input_text_after}"]').click()
+    driver.find_element(By.CSS_SELECTOR, '[name="edit_other_settings"]').click()
+
+    assert sampledb.logic.settings.get_user_setting(user.id, 'LOCALE') == 'de'
+
+    assert "Ihre Einstellungen wurden erfolgreich aktualisiert." in driver.find_element(By.CSS_SELECTOR, '.alert.alert-success').get_attribute("innerText")
+
+
 @pytest.mark.parametrize(
     [
         'setting_name', 'radio_button_name', 'input_value_before', 'input_value_after', 'setting_value_before', 'setting_value_after'
