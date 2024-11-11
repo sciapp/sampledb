@@ -8,6 +8,7 @@ Currently in development.
 
 - Added starting number in batch object creation
 - Added support for filter_operator for object_reference properties and workflow views
+- Added support for event_utc_datetime when creating instrument log entries via the HTTP API
 - Improved .eln export and import
 - Only show action types with usable actions in the navbar Actions dropdown
 - Fixed search by array index

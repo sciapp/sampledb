@@ -829,6 +829,28 @@ def test_create_instrument_log_entry(flask_server, auth, user):
     assert r.status_code == 400
     assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 3
 
+    data['content'] = 'Example Log Entry Test'
+    data['event_utc_datetime'] = '2024-01-02T03:04:05.678910'
+    r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
+    assert r.status_code == 201
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
+    assert sampledb.logic.instrument_log_entries.get_instrument_log_entry(int(r.headers['Location'].rsplit('/', maxsplit=1)[1])).versions[0].event_utc_datetime == datetime.datetime(2024, 1, 2, 3, 4, 5, 678910, datetime.timezone.utc)
+
+    data['event_utc_datetime'] = '2024-01-02T03:04:05'
+    r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
+    assert r.status_code == 400
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
+
+    data['event_utc_datetime'] = '0001-01-01T00:00:00.00000'
+    r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
+    assert r.status_code == 400
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
+
+    data['event_utc_datetime'] = '9999-01-01T00:00:00.00000'
+    r = requests.post(flask_server.base_url + f'api/v1/instruments/{instrument.id}/log_entries/', auth=auth, json=data)
+    assert r.status_code == 400
+    assert len(sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument.id)) == 4
+
 
 def test_instrument_log_categories(flask_server, auth, user, app):
     r = requests.get(flask_server.base_url + 'api/v1/instruments/1/log_categories/', auth=auth)
