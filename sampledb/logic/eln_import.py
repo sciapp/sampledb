@@ -619,13 +619,13 @@ def parse_eln_file(
                 if eln_dialect == 'SampleDB':
                     _eln_assert(object_node_ref['@id'].startswith('./objects/'), "Invalid @id for Dataset for SampleDB .eln file")
                     try:
-                        original_object_id_str = object_node_ref['@id'][len('./objects/'):]
+                        original_object_id_str = object_node_ref['@id'][len('./objects/'):].rstrip('/')
                         original_object_id = int(original_object_id_str)
                         _eln_assert(str(original_object_id) == original_object_id_str and original_object_id > 0, "Invalid @id for Dataset for SampleDB .eln file")
                     except ValueError:
                         _eln_assert(False, "Invalid @id for Dataset for SampleDB .eln file")
                     _eln_assert(isinstance(url, str), "Invalid url for Dataset for SampleDB .eln file")
-                    _eln_assert(url.endswith(object_node_ref['@id'][1:]), "Invalid url for Dataset for SampleDB .eln file")
+                    _eln_assert(url.endswith(object_node_ref['@id'].rstrip('/')[1:]), "Invalid url for Dataset for SampleDB .eln file")
                     eln_source_url = url[:-len(object_node_ref['@id'][2:])]
                 else:
                     eln_source_url = None
@@ -842,7 +842,7 @@ def parse_eln_file(
                         if 'sha256' in object_part:
                             _eln_assert(isinstance(object_part.get('sha256'), str), "Invalid SHA256 hash for File")
                             _eln_assert(hashlib.sha256(file_data).hexdigest() == object_part['sha256'], "Hash mismatch for File")
-                        if eln_dialect == 'SampleDB' and object_part['@id'] == object_node_ref['@id'] + '/files.json':
+                        if eln_dialect == 'SampleDB' and object_part['@id'] == object_node_ref['@id'] + ('/' if not object_node_ref['@id'].endswith('/') else '') + 'files.json':
                             try:
                                 files_info = json.loads(file_data.decode('utf-8'))
                             except Exception:
@@ -890,15 +890,15 @@ def parse_eln_file(
                                 date_created=date_created,
                             ))
                     if eln_dialect == 'SampleDB' and object_part['@type'] == 'Dataset':
-                        _eln_assert(object_part['@id'].startswith(object_node['@id'] + '/version/'), "SampleDB .eln file must only contain versions as Dataset parts of objects")
+                        _eln_assert(any(object_part['@id'].startswith(object_node['@id'] + ('/' if not object_node['@id'].endswith('/') else '') + version_suffix) for version_suffix in ('version/', 'versions/')), "SampleDB .eln file must only contain versions as Dataset parts of objects")
                         try:
-                            version_id = int(object_part['@id'].rsplit('/', maxsplit=1)[1])
+                            version_id = int(object_part['@id'].strip('/').rsplit('/', maxsplit=1)[1])
                         except ValueError:
                             raise errors.InvalidELNFileError("SampleDB .eln file must only contain versions as Dataset parts of objects")
                         _eln_assert(isinstance(object_part.get('hasPart'), list), "SampleDB .eln file must contain data and schema for each version")
                         _eln_assert(len(object_part['hasPart']) == 2, "SampleDB .eln file must contain data and schema for each version")
-                        _eln_assert({'@id': object_part['@id'] + '/data.json'} in object_part['hasPart'], "SampleDB .eln file must contain data and schema for each version")
-                        _eln_assert({'@id': object_part['@id'] + '/schema.json'} in object_part['hasPart'], "SampleDB .eln file must contain data and schema for each version")
+                        _eln_assert({'@id': object_part['@id'] + ('/' if not object_part['@id'].endswith('/') else '') + 'data.json'} in object_part['hasPart'], "SampleDB .eln file must contain data and schema for each version")
+                        _eln_assert({'@id': object_part['@id'] + ('/' if not object_part['@id'].endswith('/') else '') + 'schema.json'} in object_part['hasPart'], "SampleDB .eln file must contain data and schema for each version")
                         data_file_name = object_part['@id'] + '/data.json'
                         if data_file_name.startswith('./'):
                             data_file_name = data_file_name[1:]
