@@ -390,7 +390,7 @@ def get_eln_archive(user_id: int, object_ids: typing.Optional[typing.List[int]] 
         include_instruments=False,
         include_locations=False,
     )
-    binary_archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos)
+    binary_archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos, user_id, object_ids)
     zip_bytes = io.BytesIO()
     with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
         for file_name, file_content in binary_archive_files.items():
