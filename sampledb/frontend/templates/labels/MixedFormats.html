@@ -46,6 +46,14 @@
       border: 1.5px solid black;
       height: 12.6mm;
   }
+  .firstbox, .secondbox {
+      max-width: {{ paper_width - 16.9 }}mm;
+  }
+  .firstbox .labeltext, .secondbox .labeltext {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+  }
   .thirdbox {
       margin: 2.5mm 1.95mm 0mm 0mm;
       border: 1.5px solid black;
