@@ -14,6 +14,7 @@ Currently in development.
 - Fixed notification for automatic creation of federated identities
 - Introduce recursive workflow view
 - Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
+- Fixed notification for user languages change
 
 
 Version 0.29.1

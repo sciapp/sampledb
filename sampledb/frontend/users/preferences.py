@@ -664,6 +664,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
             show_hidden_users_as_admin = flask.request.form.get('input-show-hidden-users-as-admin', 'yes') != 'no'
             modified_settings['SHOW_HIDDEN_USERS_AS_ADMIN'] = show_hidden_users_as_admin
         set_user_settings(flask_login.current_user.id, modified_settings)
+        flask_login.current_user.clear_caches()
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
