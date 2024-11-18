@@ -64,9 +64,7 @@ def generate_ro_crate_metadata(
             },
             {
                 "@id": "./",
-                "@type": [
-                    "Dataset"
-                ],
+                "@type": "Dataset",
                 "name": "SampleDB .eln export",
                 "description": description,
                 "license": {
