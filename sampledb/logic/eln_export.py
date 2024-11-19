@@ -42,7 +42,7 @@ def generate_ro_crate_metadata(
     date_created = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec='microseconds')
     description = f"SampleDB .eln export generated for user #{user_id}"
     if object_ids:
-        description += "for objects #" + ', #'.join(map(str, object_ids))
+        description += " for objects #" + ', #'.join(map(str, sorted(object_ids)))
     ro_crate_metadata: typing.Dict[str, typing.Any] = {
         "@context": "https://w3id.org/ro/crate/1.1/context",
         "@graph": [
@@ -64,9 +64,7 @@ def generate_ro_crate_metadata(
             },
             {
                 "@id": "./",
-                "@type": [
-                    "Dataset"
-                ],
+                "@type": "Dataset",
                 "name": "SampleDB .eln export",
                 "description": description,
                 "license": {
