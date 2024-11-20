@@ -1,6 +1,7 @@
 import copy
 import datetime
 import glob
+import json
 import os.path
 import re
 
@@ -799,3 +800,9 @@ def test_custom_format_date(timezone, lang_code, expected_date_str, mock_current
     assert utils.custom_format_date(example_datetime) == expected_date_str
     assert utils.custom_format_date(example_datetime.replace(tzinfo=datetime.timezone.utc)) == expected_date_str
     assert utils.custom_format_date(example_datetime.replace(tzinfo=datetime.timezone.utc).astimezone(pytz.timezone(timezone))) == expected_date_str
+
+def test_plotly_base64_image_from_json():
+    assert utils.plotly_base64_image_from_json({'invalid': 'ploty_json'}) is None
+    with open(os.path.join(os.path.dirname(sampledb.__file__), 'scripts', 'demo_data', 'objects', 'plotly-example-data1.sampledb.json'), 'r') as f:
+        plotly_json = json.load(f)
+    assert utils.plotly_base64_image_from_json(plotly_json) is not None
