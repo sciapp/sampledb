@@ -12,17 +12,19 @@
         border: 1.35px solid black;
         height: {{box_height}}mm;
         min-width: {{min_label_width}}mm;
-        padding-top: 1mm
+        padding-top: {{padding_top}}mm;
+        padding-right: {{padding_right}}mm;
     }
     .tmpbox {
         display: flex;
+        line-height: 3.325mm;
     }
     .labeltext {
         position:relative;
     }
     .extrabox {
         position: absolute;
-        top: -1.5mm;
+        top: -1.45mm;
         right: -0.1mm;
         display: flex;
         align-items: center;
