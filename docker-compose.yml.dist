@@ -32,7 +32,7 @@ services:
 
   # the postgres database image
   db:
-    image: postgres:12
+    image: postgres:15
     restart: always
     container_name: sampledb-postgres
     healthcheck:
