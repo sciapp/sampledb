@@ -14,7 +14,7 @@ test:
   needs: []
   image: python:3.12-slim-bookworm
   services:
-    - name: postgres:12
+    - name: postgres:15
       alias: postgres-test
       variables:
         POSTGRES_HOST: postgres-test
@@ -222,7 +222,7 @@ documentation:
   needs: []
   image: python:3.12-slim-bookworm
   services:
-    - name: postgres:12
+    - name: postgres:15
       alias: postgres-documentation
       variables:
         POSTGRES_HOST: postgres-documentation
@@ -277,7 +277,7 @@ test-container-status:
         -e POSTGRES_DB=postgres
         -e POSTGRES_USER=postgres
         -e POSTGRES_PASSWORD=postgres
-        postgres:12
+        postgres:15
     - sleep 5 # allow container to start
     - docker ps
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY

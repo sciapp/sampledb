@@ -41,7 +41,7 @@ You can then recreate the database container and restore the backup using the ``
         -v `pwd`/pgdata:/var/lib/postgresql/data/pgdata:rw \
         --restart=always \
         --name sampledb-postgres \
-        postgres:12
+        postgres:15
     docker exec -i sampledb-postgres psql -U postgres postgres < backup.sql
 
 If you have set different options for the database container before, e.g. setting it in a specific network and giving it a fixed IP, you should also set these options here.
