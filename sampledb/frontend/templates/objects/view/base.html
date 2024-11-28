@@ -1627,12 +1627,17 @@
     {% endif %}
   {% endif %}
 
-  {% if not is_archived and related_objects_tree and action is not none and action.type.enable_related_objects %}
+  {% if not is_archived and related_objects_subtrees and action is not none and action.type.enable_related_objects %}
     <h2 id="related_objects">{{ _('Related Objects') }}</h2>
 
     <div class="related-objects">
-      {% set in_export_data_modal = False %}
-      {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+      {% with current_object_ref = object_ref %}
+        {% set root_object_ref = current_object_ref %}
+        {% set object_refs_encountered = [current_object_ref] %}
+        {% set show_related_objects = True %}
+        {% set in_export_data_modal = False %}
+        {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+      {% endwith %}
     </div>
   {% endif %}
 
@@ -1709,16 +1714,21 @@
               </div>
             </div>
 
-            {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
+            {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
             <div class="related-objects">
               <div>{{ _('Objects') }}</div>
-              {% set in_export_data_modal = True %}
-              {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+              {% with current_object_ref = object_ref %}
+                {% set root_object_ref = current_object_ref %}
+                {% set object_refs_encountered = [current_object_ref] %}
+                {% set show_related_objects = True %}
+                {% set in_export_data_modal = True %}
+                {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
+              {% endwith %}
             </div>
             {% endif %}
           </div>
           <div class="modal-footer">
-            {% if related_objects_tree and action is not none and action.type.enable_related_objects %}
+            {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
             <button type="button" class="btn btn-default" id="button-related-objects-select-all">{{ _('Select All') }}</button>
             <button type="button" class="btn btn-default" id="button-related-objects-deselect-all">{{ _('Deselect All') }}</button>
             {% endif %}
@@ -1838,7 +1848,7 @@
   {% do set_template_value("user_may_comment", user_may_comment and action is not none and action.type.enable_comments) %}
   {% do set_template_value("user_may_upload_files", user_may_upload_files) %}
   {% do set_template_value("has_object_log_entries", (object_log_entries and action is not none and action.type.enable_activity_log) | bool) %}
-  {% do set_template_value("has_related_objects_tree", (related_objects_tree and action is not none and action.type.enable_related_objects) | bool) %}
+  {% do set_template_value("has_related_objects_tree", (related_objects_subtrees and action is not none and action.type.enable_related_objects) | bool) %}
   {% do set_template_value("show_download_service", (show_download_service and action is not none and action.type is not none and action.type.enable_files and files) | bool) %}
   {% do set_template_value("translations.select_responsible_user_or_location", _("Please select one responsible user or one location")) %}
   {% do set_template_value("translations.files_selected", _('files selected')) %}

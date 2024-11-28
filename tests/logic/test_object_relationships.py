@@ -100,6 +100,13 @@ def test_single_object(sample_action, user, user2):
         referenced_objects=[],
         referencing_objects=[]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+    }
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user2.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
         object_ref=sampledb.logic.object_relationships.ObjectRef(
@@ -114,6 +121,13 @@ def test_single_object(sample_action, user, user2):
         referenced_objects=None,
         referencing_objects=None
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+    }
 
 
 def test_object_with_measurement(sample_action, measurement_action, user):
@@ -165,6 +179,25 @@ def test_object_with_measurement(sample_action, measurement_action, user):
             )
         ]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=measurement.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=measurement.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+    }
+
 
 
 def test_object_with_sample(sample_action, user):
@@ -216,6 +249,24 @@ def test_object_with_sample(sample_action, user):
             )
         ]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=sample.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+    }
 
 
 def test_object_with_cyclic_sample(sample_action, user):
@@ -293,6 +344,31 @@ def test_object_with_cyclic_sample(sample_action, user):
             )
         ]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=sample.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=sample.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+    }
 
 
 def test_object_with_unknown_sample(sample_action, user):
@@ -363,6 +439,35 @@ def test_object_with_unknown_sample(sample_action, user):
         ],
         referencing_objects=[]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(sample.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object.id,
+                    component_uuid='91402d3c-b1a7-4c7e-8a68-15bfd21ceace',
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+            referencing_objects=[],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+            referencing_objects=[],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid='91402d3c-b1a7-4c7e-8a68-15bfd21ceace', eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+    }
 
 
 def test_object_with_sample_without_permissions(sample_action, user):
@@ -415,6 +520,24 @@ def test_object_with_sample_without_permissions(sample_action, user):
             )
         ]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(sample.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+            referencing_objects=[],
+        ),
+    }
     sampledb.logic.object_permissions.set_user_object_permissions(user_id=user.id, object_id=object.id, permissions=sampledb.models.Permissions.READ)
     sampledb.logic.object_permissions.set_user_object_permissions(user_id=user.id, object_id=sample.id, permissions=sampledb.models.Permissions.NONE)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object.id, user_id=user.id)
@@ -431,6 +554,24 @@ def test_object_with_sample_without_permissions(sample_action, user):
         referenced_objects=[],
         referencing_objects=[]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=sample.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=object.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=sample.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+    }
 
 
 def test_object_chain_without_permissions(sample_action, user):
@@ -548,6 +689,49 @@ def test_object_chain_without_permissions(sample_action, user):
             )
         ]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object1.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object1.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object3.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object3.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object2.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+    }
     sampledb.logic.object_permissions.set_user_object_permissions(user_id=user.id, object_id=object3.id, permissions=sampledb.models.Permissions.NONE)
     tree = sampledb.logic.object_relationships.build_related_objects_tree(object_id=object1.id, user_id=user.id)
     assert tree == sampledb.logic.object_relationships.RelatedObjectsTree(
@@ -591,6 +775,49 @@ def test_object_chain_without_permissions(sample_action, user):
             )
         ]
     )
+    subtrees = sampledb.logic.object_relationships.gather_related_object_subtrees(object1.id)
+    assert subtrees == {
+        sampledb.logic.object_relationships.ObjectRef(object_id=object1.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object3.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object2.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=object3.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object1.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+        sampledb.logic.object_relationships.ObjectRef(object_id=object2.id, component_uuid=None, eln_source_url=None, eln_object_url=None): sampledb.logic.object_relationships.RelatedObjectsSubTree(
+            referenced_objects=[],
+            referencing_objects=[
+                sampledb.logic.object_relationships.ObjectRef(
+                    object_id=object3.id,
+                    component_uuid=None,
+                    eln_source_url=None,
+                    eln_object_url=None,
+                ),
+            ],
+        ),
+    }
 
 
 def test_get_referenced_object_ids(sample_action, user):

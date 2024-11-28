@@ -439,11 +439,29 @@ def object(object_id: int) -> FlaskResponseT:
 
     # related objects tree
     if action and action.type and action.type.enable_related_objects:
-        related_objects_tree = logic.object_relationships.build_related_objects_tree(object_id, user_id=flask_login.current_user.id)
+        related_objects_subtrees = logic.object_relationships.gather_related_object_subtrees(object_id)
+        related_object_refs_by_object_id = {}
+        for object_ref in related_objects_subtrees:
+            if object_ref.is_local:
+                related_object_refs_by_object_id[object_ref.object_id] = object_ref
+        related_object_ids = set(related_object_refs_by_object_id)
+        related_objects = logic.object_permissions.get_objects_with_permissions(
+            user_id=flask_login.current_user.id,
+            permissions=Permissions.READ,
+            object_ids=tuple(related_object_ids),
+            name_only=True
+        )
+        related_object_by_object_ref = {
+            related_object_refs_by_object_id[related_object.object_id]: related_object
+            for related_object in related_objects
+        }
     else:
-        related_objects_tree = None
+        related_objects_subtrees = None
+        related_object_by_object_ref = None
     template_kwargs.update({
-        "related_objects_tree": related_objects_tree,
+        "related_objects_subtrees": related_objects_subtrees,
+        "related_object_by_object_ref": related_object_by_object_ref,
+        "object_ref": logic.object_relationships.ObjectRef(object_id=object_id, component_uuid=None, eln_object_url=None, eln_source_url=None),
     })
 
     # various getters

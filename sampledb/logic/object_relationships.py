@@ -103,6 +103,12 @@ class ObjectRef:
 
 
 @dataclasses.dataclass(kw_only=True)
+class RelatedObjectsSubTree:
+    referenced_objects: typing.List[ObjectRef]
+    referencing_objects: typing.List[ObjectRef]
+
+
+@dataclasses.dataclass(kw_only=True)
 class RelatedObjectsTree:
     object_ref: ObjectRef
     path: typing.List[typing.Union[int, ObjectRef]]
@@ -147,15 +153,21 @@ def build_related_objects_tree(
     :param user_id: the ID of an existing user
     :return: the related objects tree
     """
-    object_ref = ObjectRef(
-        object_id=object_id,
-        component_uuid=None,
-        eln_source_url=None,
-        eln_object_url=None
-    )
-    subtrees = _gather_subtrees(
-        object_ref=object_ref
-    )
+    subtrees = {
+        object_ref: (
+            RelatedObjectsTree(
+                object_ref=object_ref,
+                path=[],
+                object=None,
+                object_name=None,
+                referenced_objects=None,
+                referencing_objects=None,
+            ),
+            subtree.referenced_objects,
+            subtree.referencing_objects,
+        )
+        for object_ref, subtree in gather_related_object_subtrees(object_id).items()
+    }
 
     object_ids = tuple(
         object_ref.object_id
@@ -167,6 +179,12 @@ def build_related_objects_tree(
         object.object_id: object
         for object in objects
     }
+    object_ref = ObjectRef(
+        object_id=object_id,
+        component_uuid=None,
+        eln_source_url=None,
+        eln_object_url=None
+    )
     return _assemble_tree(subtrees[object_ref][0], objects_by_id, subtrees)
 
 
@@ -223,10 +241,16 @@ def _get_referenced_object_ids(
     return referenced_object_ids_by_id
 
 
-def _gather_subtrees(
-        object_ref: ObjectRef,
-) -> typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]]:
-    subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]] = {}
+def gather_related_object_subtrees(
+        object_id: int
+) -> typing.Dict[ObjectRef, RelatedObjectsSubTree]:
+    object_ref = ObjectRef(
+        object_id=object_id,
+        component_uuid=None,
+        eln_source_url=None,
+        eln_object_url=None,
+    )
+    subtrees: typing.Dict[ObjectRef, RelatedObjectsSubTree] = {}
     object_ref_stack: typing.List[typing.Tuple[ObjectRef, typing.Optional[ObjectRef]]] = [
         (object_ref, None)
     ]
@@ -235,15 +259,7 @@ def _gather_subtrees(
     while object_ref_stack:
         object_ref, parent_object_ref = object_ref_stack.pop()
         if object_ref not in subtrees:
-            tree = RelatedObjectsTree(
-                object_ref=object_ref,
-                path=[],
-                object=None,
-                object_name=None,
-                referenced_objects=None,
-                referencing_objects=None,
-            )
-            subtrees[object_ref] = (tree, [], [])
+            subtrees[object_ref] = RelatedObjectsSubTree(referenced_objects=[], referencing_objects=[])
 
             if object_ref.is_local:
                 referencing_object_ids = referencing_object_ids_by_id.get(object_ref.object_id)
@@ -254,8 +270,8 @@ def _gather_subtrees(
                     referenced_object_ids = _get_referenced_object_ids({object_ref.object_id})[object_ref.object_id]
 
                 for child_object_list, filtered_child_object_list in [
-                    (referenced_object_ids, subtrees[object_ref][1]),
-                    (referencing_object_ids, subtrees[object_ref][2])
+                    (referenced_object_ids, subtrees[object_ref].referenced_objects),
+                    (referencing_object_ids, subtrees[object_ref].referencing_objects)
                 ]:
                     for child_object_ref in child_object_list:
                         if child_object_ref != parent_object_ref:
@@ -263,7 +279,7 @@ def _gather_subtrees(
                             object_ref_stack.append((child_object_ref, object_ref))
                 local_child_object_ids = {
                     child_object_ref.object_id
-                    for child_object_ref in itertools.chain(subtrees[object_ref][1], subtrees[object_ref][2])
+                    for child_object_ref in itertools.chain(subtrees[object_ref].referenced_objects, subtrees[object_ref].referencing_objects)
                     if child_object_ref.is_local and child_object_ref not in subtrees
                 }
                 referencing_object_ids_by_id.update(get_referencing_object_ids(local_child_object_ids))
