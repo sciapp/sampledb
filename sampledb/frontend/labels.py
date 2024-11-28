@@ -512,7 +512,7 @@ def create_multiple_labels(
                                      regular_font=regular_font, bold_font=bold_font)
 
     else:
-        box_width = max(label_width, min_label_width)
+        box_width = max(label_width, min_label_width) - 0.4
         ghs_width = qr_code_width / 2
         qrcode_box_width = box_width
         ghs_box_width = box_width
@@ -548,18 +548,22 @@ def create_multiple_labels(
             image_stream.seek(0)
             qr_code_uri_list.append('data:image/png;base64,' + base64.b64encode(image_stream.read()).decode('utf-8'))
 
-            ghs_height = 17.0 + int((len(hazard_list[tmp_index]) - 1) / 3) * 9
+            if len(hazard_list[tmp_index]) in (0, 1, 2, 4, 7):
+                ghs_height = 12.3 + int((len(hazard_list[tmp_index]) - 1) / 3) * 9
+            else:
+                ghs_height = 16.7 + int((len(hazard_list[tmp_index]) - 1) / 3) * 9
+
             ghs_amount_list.append(len(hazard_list[tmp_index]))
 
             if ghs_classes_side_by_side:
-                box_height = max(min_label_height, 33, 15 + ghs_height)
+                box_height = max(min_label_height, 28, 15 + ghs_height)
             else:
                 if len(hazard_list[tmp_index]) == 0:
-                    box_height = 33
+                    box_height = 28
                 else:
-                    box_height = max(min_label_height, ghs_height + 33)
-                if min_label_height > ghs_height + 33:
-                    ghs_height += min_label_height - (ghs_height + 33)
+                    box_height = max(min_label_height, ghs_height + 28)
+                if min_label_height > ghs_height + 38:
+                    ghs_height += min_label_height - (ghs_height + 38)
 
             box_side_by_side_height = max(21, math.ceil(max_ghs_height), box_height - 12)
 
