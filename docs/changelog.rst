@@ -17,6 +17,7 @@ Currently in development.
 - Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
 - Fixed notification for user languages change
 - Changed PostgreSQL version in the documentation and the docker-compose.yml.dist from 12 to 15, as PostgreSQL 12 is now end-of-life
+- Fixed handling of parentheses and chained operators in advanced search
 
 
 Version 0.29.1
