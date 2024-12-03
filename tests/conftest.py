@@ -120,7 +120,7 @@ def create_app():
     def check_login():
         return flask.jsonify(flask_login.current_user.is_authenticated)
 
-    @sampledb_app.route('/users/<int:user_id>/autologin')
+    @sampledb_app.route('/users/<int:user_id>/autologin', methods=['GET', 'POST'])
     def autologin(user_id):
         user = sampledb.logic.users.get_user(user_id)
         fresh = json.loads(flask.request.args.get('fresh', 'true'))

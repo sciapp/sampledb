@@ -435,7 +435,7 @@ def test_invite_user_to_project(flask_server, app):
 
         app.config['SERVER_NAME'] = server_name
         session = requests.session()
-        assert session.get(flask_server.base_url + 'users/{}/autologin'.format(other_user.id)).status_code == 200
+        assert session.post(flask_server.base_url + 'users/{}/autologin'.format(other_user.id)).status_code == 200
         invitation_url = invitation_url.replace('http://localhost/', flask_server.base_url)
         r = session.get(invitation_url)
         assert r.status_code == 200
