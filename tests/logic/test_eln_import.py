@@ -255,6 +255,24 @@ def test_import_elabftw_eln_file(user):
     assert len(users_by_id) == 4
 
 
+def test_import_pasta_eln_file(user):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'PASTA.eln'), 'rb') as eln_export_file:
+        eln_zip_bytes = eln_export_file.read()
+    eln_import_id = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.eln',
+        zip_bytes=eln_zip_bytes
+    ).id
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    assert all(len(import_notes) <= 1 for import_notes in parsed_eln_import.import_notes.values())
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    assert not errors
+    assert len(object_ids) == 16
+    assert len(users_by_id) == 1
+    assert 'author_Steffen_Brinckmann' in users_by_id
+    assert users_by_id['author_Steffen_Brinckmann'].eln_object_id == 'author_Steffen_Brinckmann'
+
+
 def test_import_kadi4mat_eln_file(user):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_exports', 'kadi4mat-records-example.eln'), 'rb') as eln_export_file:
         eln_zip_bytes = eln_export_file.read()
