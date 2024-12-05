@@ -93,7 +93,7 @@ def generate_ro_crate_metadata(
         "sampledb_export": ro_crate_metadata["@graph"][1]
     }
     exported_object_ids = {
-        object_info['id']: f"./objects/{object_info['id']}"
+        object_info['id']: f"./objects/{object_info['id']}/"
         for object_info in infos['objects']
     }
     exported_user_ids = {

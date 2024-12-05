@@ -615,7 +615,7 @@ def test_eln_export_property_values(user, app):
                 "@type": "PropertyValue",
                 "propertyID": "samples.0",
                 "name": "Samples → 0",
-                "value": f"./objects/{referenced_object_id1}",
+                "value": f"./objects/{referenced_object_id1}/",
             },
             {
                 "@id": f"./objects/{object_id}/versions/1/properties/samples.1",
