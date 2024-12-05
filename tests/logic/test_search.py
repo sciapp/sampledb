@@ -3022,3 +3022,62 @@ def test_find_by_array_index(user):
     objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
     assert len(search_notes) == 0
     assert objects == []
+
+
+def test_parse_extra_parenthesis(user):
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema={
+            'title': 'Object',
+            'type': 'object',
+            'properties': {
+                'name': {
+                    'title': 'Name',
+                    'type': 'text'
+                },
+                'a': {
+                    'title': 'A',
+                    'type': 'bool'
+                },
+                'b': {
+                    'title': 'B',
+                    'type': 'bool'
+                },
+                'c': {
+                    'title': 'C',
+                    'type': 'bool'
+                }
+            },
+            'required': ['name']
+        }
+    )
+    data = {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
+        'a': {
+            '_type': 'bool',
+            'value': False
+        },
+        'b': {
+            '_type': 'bool',
+            'value': False
+        },
+        'c': {
+            '_type': 'bool',
+            'value': True
+        }
+    }
+    sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    data['a']['value'] = True
+    object = sampledb.logic.objects.create_object(action_id=action.id, data=data, user_id=user.id)
+    filter_func, search_tree, use_advanced_search = sampledb.logic.object_search.generate_filter_func('(a) and ((b) or c)', use_advanced_search=True)
+    filter_func, search_notes = sampledb.logic.object_search.wrap_filter_func(filter_func)
+    objects = sampledb.logic.objects.get_objects(filter_func=filter_func)
+    assert len(search_notes) == 0
+    assert len(objects) == 1
+    assert objects[0].object_id == object.object_id
+
+def test_parse_chained_binary_operators():
+    assert repr(sampledb.logic.object_search_parser.parse_query_string('a and (b and c and d)')) == """[<Attribute(['a'])>, <Operator(operator="and")>, [[<Attribute(['b'])>, <Operator(operator="and")>, <Attribute(['c'])>], <Operator(operator="and")>, <Attribute(['d'])>]]"""
