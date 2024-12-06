@@ -42,6 +42,7 @@ $(document).ready(function () {
       $('#revokedIdentitiesModal').find('button[type="submit"]').prop('disabled', !checkboxesRevokedModal.is(':checked'));
     });
   }
+  updateAuthRelevantCheckboxes();
 });
 if (window.getTemplateValue('create_api_token_form_has_errors')) {
   $('#createApiTokenModal').modal('show');
@@ -62,3 +63,9 @@ $('span.copy-uuid').on('click', function () {
     }
   );
 });
+$('input.auth-relevant').on('change', updateAuthRelevantCheckboxes);
+function updateAuthRelevantCheckboxes () {
+  const notCheckedAuthRelevant = $('input.auth-relevant').filter(':not(:checked)');
+  notCheckedAuthRelevant.prop('disabled', notCheckedAuthRelevant.length <= 1);
+  notCheckedAuthRelevant.tooltip(notCheckedAuthRelevant.length <= 1 ? 'enable' : 'disable');
+}

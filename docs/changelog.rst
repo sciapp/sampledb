@@ -18,7 +18,7 @@ Currently in development.
 - Fixed notification for user languages change
 - Changed PostgreSQL version in the documentation and the docker-compose.yml.dist from 12 to 15, as PostgreSQL 12 is now end-of-life
 - Fixed handling of parentheses and chained operators in advanced search
-
+- Added federated login
 
 Version 0.29.1
 --------------
