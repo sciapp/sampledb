@@ -45,6 +45,29 @@
         {% if 'input_num_batch_objects' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors['input_num_batch_objects'] }}</span>{% endif %}
       </div>
     </div>
+    <div class="form-group row{% if 'input_first_number_batch' in errors %} has-error{% elif 'input_first_number_batch' in form_data %} has-success{% endif %}" style="padding-right:0.75em">
+      <label class="control-label col-md-3 required-label">{{ _('First Number') }}</label>
+      <div class="col-md-3">
+        <input type="number" step="1" value="{% if 'input_first_number_batch' in form_data %}{{ form_data['input_first_number_batch'] }}{% else %}1{% endif %}" class="form-control" name="input_first_number_batch" />
+        {% if 'input_first_number_batch' in errors %}<span class="help-block"><strong>{{ _('Error:') }}</strong> {{ errors['input_first_number_batch'] }}</span>{% endif %}
+      </div>
+      <label class="control-label col-md-3 required-label">{{ _('Last Number') }}</label>
+      <div class="col-md-3">
+        <input disabled type="number" step="1" value="" class="form-control" name="input_last_number_batch" />
+      </div>
+    </div>
+      {% if 'batch' in errors %}
+        <div class="alert alert-danger" role="alert">
+          {{ _('The generated batch object names resulted in the following errors:') }}
+          <div>
+            <ul>
+              {% for error in errors['batch'].split('\n') %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% endif %}
     {% endif %}
     {% set id_prefix_root = "object" %}
     {% set property_path = () %}

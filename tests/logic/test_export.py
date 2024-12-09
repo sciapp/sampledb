@@ -5,11 +5,17 @@
 
 import io
 import json
+import os.path
 import sys
 import tarfile
+import tempfile
 import zipfile
 
 import pytest
+import rocrate_validator.models
+import rocrate_validator.services
+import rocrate_validator.utils
+from rocrate.rocrate import ROCrate
 
 import sampledb
 from sampledb.models import User
@@ -309,10 +315,6 @@ def test_tar_gz_export(user, app):
 
 def test_eln_export(user, app):
     set_up_state(user)
-    object_id = sampledb.logic.objects.get_objects()[0].id
-    instrument_id = sampledb.logic.instruments.get_instruments()[0].id
-    instrument_log_entry_id = sampledb.logic.instrument_log_entries.get_instrument_log_entries(instrument_id)[0].id
-    instrument_log_entry_file_id = sampledb.logic.instrument_log_entries.get_instrument_log_file_attachments(instrument_log_entry_id)[0].id
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
@@ -323,6 +325,28 @@ def test_eln_export(user, app):
         assert zip_file.testzip() is None
         with zip_file.open('sampledb_export/ro-crate-metadata.json') as data_file:
             json.load(data_file)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            zip_file.extractall(temp_dir)
+            rocrate_dir = os.path.join(temp_dir, 'sampledb_export')
+            ROCrate(rocrate_dir)
+            for severity in [
+                rocrate_validator.models.Severity.REQUIRED
+            ]:
+                result = rocrate_validator.services.validate({
+                    "profiles_path": rocrate_validator.utils.get_profiles_path(),
+                    "profile_identifier": "ro-crate",
+                    "requirement_severity": severity.name,
+                    "requirement_severity_only": False,
+                    "inherit_profiles": True,
+                    "verbose": True,
+                    "data_path": rocrate_dir,
+                    "ontology_path": None,
+                    "abort_on_first": False
+                })
+                result_dict = result.to_dict()
+                assert result_dict['issues'] == []
+                assert result_dict['passed']
+                assert result.passed(severity)
 
 
 def test_eln_export_property_values(user, app):
@@ -505,43 +529,80 @@ def test_eln_export_property_values(user, app):
             'ro-crate-metadata.json',
             './',
             'SampleDB',
-            f'./objects/{object_id}',
-            f'./objects/{object_id}/version/0',
-            f'./objects/{object_id}/version/0/schema.json',
-            f'./objects/{object_id}/version/0/data.json',
-            f'./objects/{object_id}/version/1',
-            f'./objects/{object_id}/version/1/schema.json',
-            f'./objects/{object_id}/version/1/data.json',
+            './license',
+            f'./objects/{object_id}/',
+            f'./objects/{object_id}/properties/check',
+            f'./objects/{object_id}/properties/creation_date',
+            f'./objects/{object_id}/properties/hazards',
+            f'./objects/{object_id}/properties/name',
+            f'./objects/{object_id}/properties/operator',
+            f'./objects/{object_id}/properties/samples.0',
+            f'./objects/{object_id}/properties/samples.1',
+            f'./objects/{object_id}/properties/temperature',
+            f'./objects/{object_id}/versions/0/',
+            f'./objects/{object_id}/versions/0/schema.json',
+            f'./objects/{object_id}/versions/0/data.json',
+            f'./objects/{object_id}/versions/0/properties/check',
+            f'./objects/{object_id}/versions/0/properties/creation_date',
+            f'./objects/{object_id}/versions/0/properties/hazards',
+            f'./objects/{object_id}/versions/0/properties/name',
+            f'./objects/{object_id}/versions/0/properties/operator',
+            f'./objects/{object_id}/versions/0/properties/samples.0',
+            f'./objects/{object_id}/versions/0/properties/samples.1',
+            f'./objects/{object_id}/versions/0/properties/temperature',
+            f'./objects/{object_id}/versions/1/',
+            f'./objects/{object_id}/versions/1/schema.json',
+            f'./objects/{object_id}/versions/1/data.json',
+            f'./objects/{object_id}/versions/1/properties/check',
+            f'./objects/{object_id}/versions/1/properties/creation_date',
+            f'./objects/{object_id}/versions/1/properties/hazards',
+            f'./objects/{object_id}/versions/1/properties/log_file',
+            f'./objects/{object_id}/versions/1/properties/name',
+            f'./objects/{object_id}/versions/1/properties/operator',
+            f'./objects/{object_id}/versions/1/properties/samples.0',
+            f'./objects/{object_id}/versions/1/properties/samples.1',
+            f'./objects/{object_id}/versions/1/properties/setup_file',
+            f'./objects/{object_id}/versions/1/properties/temperature',
             f'./objects/{object_id}/files.json',
             f'./objects/{object_id}/files/0/setup.cfg',
-            f'./objects/{referenced_object_id1}',
-            f'./objects/{referenced_object_id1}/version/0',
-            f'./objects/{referenced_object_id1}/version/0/schema.json',
-            f'./objects/{referenced_object_id1}/version/0/data.json',
+            f'./objects/{referenced_object_id1}/',
+            f'./objects/{referenced_object_id1}/properties/name',
+            f'./objects/{referenced_object_id1}/versions/0/',
+            f'./objects/{referenced_object_id1}/versions/0/schema.json',
+            f'./objects/{referenced_object_id1}/versions/0/data.json',
+            f'./objects/{referenced_object_id1}/versions/0/properties/name',
             f'./objects/{referenced_object_id1}/files.json',
             f'./users/{user.id}'
         }
-        object_node = nodes_by_id[f'./objects/{object_id}/version/1']
-        assert sorted(object_node['variableMeasured'], key=lambda p: p['propertyID']) == sorted([
+        object_node = nodes_by_id[f'./objects/{object_id}/versions/1/']
+        variables_measured = [
+            property_value if 'propertyID' in property_value else nodes_by_id[property_value['@id']]
+            for property_value in object_node['variableMeasured']
+        ]
+        assert sorted(variables_measured, key=lambda p: p['propertyID']) == sorted([
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/name",
                 "@type": "PropertyValue",
                 "propertyID": "name",
                 "name": "Name",
                 "value": "Test Object"
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/check",
                 "@type": "PropertyValue",
                 "propertyID": "check",
                 "name": "Checkbox",
                 "value": True
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/creation_date",
                 "@type": "PropertyValue",
                 "name": "Creation Date",
                 "propertyID": "creation_date",
                 "value": "2024-01-02T03:04:05.000000",
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/temperature",
                 "@type": "PropertyValue",
                 "propertyID": "temperature",
                 "name": "Temperature",
@@ -550,36 +611,42 @@ def test_eln_export_property_values(user, app):
                 "unitCode": "CEL"
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/samples.0",
                 "@type": "PropertyValue",
-                "propertyID": "samples/0",
+                "propertyID": "samples.0",
                 "name": "Samples → 0",
-                "value": f"./objects/{referenced_object_id1}",
+                "value": f"./objects/{referenced_object_id1}/",
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/samples.1",
                 "@type": "PropertyValue",
-                "propertyID": "samples/1",
+                "propertyID": "samples.1",
                 "name": "Samples → 1",
                 "value": f"http://localhost/objects/{referenced_object_id2}",
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/operator",
                 "@type": "PropertyValue",
                 "propertyID": "operator",
                 "name": "Operator",
                 "value": f"./users/{user.id}",
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/setup_file",
                 "@type": "PropertyValue",
                 "propertyID": "setup_file",
                 "name": "Setup File",
                 "value": f"./objects/{object_id}/files/{setup_file_id}/setup.cfg",
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/log_file",
                 "@type": "PropertyValue",
                 "propertyID": "log_file",
                 "name": "Log File",
                 "value": f"http://localhost/objects/{object_id}/files/{log_file_id}",
             },
             {
+                "@id": f"./objects/{object_id}/versions/1/properties/hazards",
                 "@type": "PropertyValue",
                 "name": "GHS Hazards",
                 "propertyID": "hazards",

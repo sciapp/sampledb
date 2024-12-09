@@ -4,6 +4,7 @@ RESTful API for SampleDB
 """
 
 import base64
+import datetime
 import json
 import typing
 
@@ -110,16 +111,17 @@ class InstrumentLogEntries(Resource):
             }, 403
         try:
             data = json.loads(flask.request.data)
-            unexpected_keys = set(data.keys()) - {'content', 'category_ids', 'file_attachments', 'object_attachments'}
+            unexpected_keys = set(data.keys()) - {'content', 'category_ids', 'file_attachments', 'object_attachments', 'event_utc_datetime'}
             if unexpected_keys:
                 raise ValueError()
             content = data['content']
             category_ids = data.get('category_ids', [])
             file_attachments = data.get('file_attachments', [])
             object_attachments = data.get('object_attachments', [])
+            event_utc_datetime_str = data.get('event_utc_datetime', None)
         except Exception:
             return {
-                "message": "expected json object containing content, category_ids, file_attachments and object attachments"
+                "message": "expected json object containing content, category_ids, file_attachments, object attachments and event_utc_datetime"
             }, 400
         if content is None:
             content = ''
@@ -216,11 +218,26 @@ class InstrumentLogEntries(Resource):
                 "message": "log entry must contain content or an attachment"
             }, 400
 
+        if event_utc_datetime_str is None:
+            event_utc_datetime = None
+        else:
+            try:
+                event_utc_datetime = datetime.datetime.strptime(event_utc_datetime_str, '%Y-%m-%dT%H:%M:%S.%f')
+            except Exception:
+                return {
+                    "message": "event_utc_datetime must be in ISO format including microseconds, e.g. 2024-01-02T03:04:05.678910"
+                }, 400
+            if abs(event_utc_datetime.year - datetime.date.today().year) > 1000:
+                return {
+                    "message": "event_utc_datetime must be not be more than 1000 years before or after the current date"
+                }, 400
+
         log_entry = create_instrument_log_entry(
             instrument_id=instrument.id,
             user_id=flask.g.user.id,
             content=content,
-            category_ids=category_ids
+            category_ids=category_ids,
+            event_utc_datetime=event_utc_datetime
         )
 
         for file_attachment in file_attachments:

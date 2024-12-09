@@ -43,6 +43,7 @@ from . import objects
 from . import object_log
 from . import object_relationships
 from . import object_search
+from . import object_search_parser
 from . import object_permissions
 from . import object_sorting
 from . import projects
@@ -112,6 +113,7 @@ __all__ = [
     'object_log',
     'object_relationships',
     'object_search',
+    'object_search_parser',
     'object_permissions',
     'object_sorting',
     'projects',

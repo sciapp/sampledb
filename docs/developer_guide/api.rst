@@ -1295,7 +1295,8 @@ Creating an instrument log entry
                 {
                     "object_id": 2
                 }
-            ]
+            ],
+            "event_utc_datetime": "2020-08-03T12:13:14.123456",
         }
 
     **Example response**:
@@ -1310,6 +1311,7 @@ Creating an instrument log entry
     :<json list category_ids: an optional list of category IDs for the log entry
     :<json list file_attachments: an optional list of file attachments as json objects with file_name and base64_content attributes
     :<json list object_attachments: an optional list of object attachments as json objects with an object_id attribute
+    :<json string event_utc_datetime: an optional string containing the date and time of the event in UTC in ISO format
     :statuscode 201: the log entry and optional attachments have been created successfully
     :statuscode 400: there was an error in the given json data
     :statuscode 403: only instrument scientists can write to the instrument log

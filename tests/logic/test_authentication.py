@@ -2,8 +2,10 @@
 """
 
 """
+import secrets
 
 import pytest
+
 from sampledb.logic import errors, users, authentication
 
 
@@ -77,3 +79,14 @@ def test_delete_two_factor_authentication_method(user_id):
     assert not authentication.get_two_factor_authentication_methods(user_id)
     with pytest.raises(errors.TwoFactorAuthenticationMethodDoesNotExistError):
         authentication.delete_two_factor_authentication_method(method_id)
+
+
+def test_get_api_tokens(user_id):
+    assert not authentication.get_api_tokens(user_id)
+    api_token = secrets.token_hex(32)
+    authentication.add_api_token(user_id, api_token, 'Example API Token')
+    assert len(authentication.get_api_tokens(user_id)) == 1
+    assert authentication.get_api_tokens(user_id)[0].user_id == user_id
+    assert authentication.get_api_tokens(user_id)[0].login['description'] == 'Example API Token'
+    assert authentication.get_api_tokens(user_id)[0].login['login'] == api_token[:8]
+    authentication._validate_password_hash(api_token[8:], authentication.get_api_tokens(user_id)[0].login['bcrypt_hash'])

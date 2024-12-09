@@ -89,6 +89,8 @@ class InstrumentLogEntryForm(FlaskForm):
                 # convert datetime to utc
                 local_datetime = pytz.timezone(flask_login.current_user.timezone or 'UTC').localize(parsed_datetime)
                 utc_datetime = local_datetime.astimezone(pytz.utc)
+                if abs(utc_datetime.year - datetime.date.today().year) > 1000:
+                    raise ValueError()
                 field.data = utc_datetime.strftime('%Y-%m-%d %H:%M:%S')
             except Exception:
                 raise ValidationError("Invalid datetime")

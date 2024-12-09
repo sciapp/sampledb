@@ -2,6 +2,36 @@
 /* eslint-env jquery */
 
 $(function () {
+  const first = $('[name="input_first_number_batch"]');
+  const last = $('[name="input_last_number_batch"]');
+  const count = $('[name="input_num_batch_objects"]');
+  function updateLastNumber () {
+    const firstnum = Number(first.val());
+    const countnum = Number(count.val());
+    let err = false;
+    if (Number.isInteger(firstnum) && first.val() !== '') {
+      first.parent().removeClass('has-error');
+    } else {
+      first.parent().addClass('has-error');
+      err = true;
+    }
+    if (Number.isInteger(countnum) && count.val() !== '' && countnum > 0) {
+      count.parent().removeClass('has-error');
+    } else {
+      count.parent().addClass('has-error');
+      err = true;
+    }
+    if (err) {
+      last.val();
+    } else {
+      last.val(firstnum + countnum - 1);
+    }
+  }
+  first.on('change', updateLastNumber);
+  first.on('keyup', updateLastNumber);
+  count.on('change', updateLastNumber);
+  count.on('keyup', updateLastNumber);
+  updateLastNumber();
   $('form').on('submit', function () {
     const permissionsMethod = $('[name="permissions_method"]:checked').val();
     const permissionsHelpBlock = $('#permissionsHelpBlock');

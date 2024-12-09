@@ -174,7 +174,7 @@
               <input type="hidden" name="{{ user_permissions_form.permissions.name }}" value="{{ fixed_user_permissions[user_id].name.lower() }}" checked="checked" />
               {% endif %}
             </td>
-            {{ permissions_table_fields('user', user_permissions[user_id], [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT], false, user_permissions_form.permissions.name) }}
+            {{ permissions_table_fields('user', user_permissions[user_id], [Permissions.NONE, Permissions.READ, Permissions.WRITE, Permissions.GRANT], user_id in fixed_user_permissions, user_permissions_form.permissions.name) }}
           </tr>
         {% endfor %}
       {% else %}

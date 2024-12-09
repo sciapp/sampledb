@@ -92,7 +92,11 @@ def is_condition_fulfilled(
             condition['choice'] is not None and
             condition['property_name'] in instance and
             isinstance(instance[condition['property_name']], dict) and
-            instance[condition['property_name']].get('text') == condition['choice']
+            (
+                instance[condition['property_name']].get('text') == condition['choice'] or
+                instance[condition['property_name']].get('text') == {'en': condition['choice']} or
+                {'en': instance[condition['property_name']].get('text')} == condition['choice']
+            )
         )
     if condition['type'] == 'user_equals':
         return (

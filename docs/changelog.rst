@@ -1,6 +1,25 @@
 Changelog
 =========
 
+Version 0.30
+------------
+
+Released on December 9th, 2024.
+
+- Added starting number in batch object creation
+- Added support for filter_operator for object_reference properties and workflow views
+- Added support for event_utc_datetime when creating instrument log entries via the HTTP API
+- Improved .eln export and import
+- Only show action types with usable actions in the navbar Actions dropdown
+- Fixed search by array index
+- Fixed notification for automatic creation of federated identities
+- Introduce recursive workflow view
+- Added an option to disable user invitations (configurable with SAMPLEDB_DISABLE_USER_INVITATIONS)
+- Fixed notification for user languages change
+- Changed PostgreSQL version in the documentation and the docker-compose.yml.dist from 12 to 15, as PostgreSQL 12 is now end-of-life
+- Fixed handling of parentheses and chained operators in advanced search
+
+
 Version 0.29.1
 --------------
 

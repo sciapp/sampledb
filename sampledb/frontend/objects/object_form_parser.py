@@ -136,8 +136,10 @@ def parse_text_form_data(
             'text': str(text)
         }
         # if choice was a dict turned to a string, restore it
+        # also if the input and choice match if either the input or the choice is embedded in a language dict,
+        # interpreting it as the english translation the corresponding choice is used
         for choice in schema.get('choices', []):
-            if str(choice) == data['text']:
+            if str(choice) == data['text'] or choice == {'en': data['text']} or data['text'] == {'en': choice}:
                 data['text'] = choice
                 break
     else:

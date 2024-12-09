@@ -23,7 +23,7 @@ First, start your database container:
         -v `pwd`/pgdata:/var/lib/postgresql/data/pgdata:rw \
         --restart=always \
         --name sampledb-postgres \
-        postgres:12
+        postgres:15
 
 
 Next, start the SampleDB container:
@@ -42,7 +42,7 @@ Next, start the SampleDB container:
         --restart=always \
         --name sampledb \
         -p 8000:8000 \
-        sciapp/sampledb:0.29.1
+        sciapp/sampledb:0.30.0
 
 This will start a minimal SampleDB installation at ``http://localhost:8000`` and allow you to sign in with the username ``admin`` and the password ``password``.
 

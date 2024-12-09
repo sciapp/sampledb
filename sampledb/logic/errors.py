@@ -175,6 +175,7 @@ class AuthenticationMethodDoesNotExistError(Exception):
 
 class SchemaError(Exception):
     def __init__(self, message: str, path: typing.List[str]) -> None:
+        self.raw_message = message
         if path:
             message += ' (at ' + ' -> '.join(path) + ')'
         super().__init__(message)

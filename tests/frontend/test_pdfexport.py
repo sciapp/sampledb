@@ -2,8 +2,8 @@
 """
 
 """
-
-
+import json
+import os
 import requests
 import pytest
 
@@ -34,6 +34,10 @@ def action(flask_server):
                 'name': {
                     'title': 'Name',
                     'type': 'text'
+                },
+                'plotly_chart': {
+                    'title': 'Plotly Chart',
+                    'type': 'plotly_chart'
                 }
             },
             'required': ['name']
@@ -99,3 +103,22 @@ def test_generate_pdfexport_for_invalid_json(action, flask_server, user_session)
     }, user_session.user_id)
     r = user_session.get(flask_server.base_url + 'objects/{}/export?object_ids=[7"'.format(object.object_id))
     assert r.status_code == 400
+
+
+def test_generate_pdfexport_for_plotly_chart(action, flask_server, user_session):
+    with open(os.path.join(os.path.dirname(sampledb.__file__), 'scripts', 'demo_data', 'objects', 'plotly-example-data1.sampledb.json'), 'r') as f:
+        plotly_json = json.load(f)
+    object = sampledb.logic.objects.create_object(action.id, {
+        'name': {
+            '_type': 'text',
+            'text': 'Name'
+        },
+        'plotly_chart': {
+            '_type': 'plotly_chart',
+            'plotly': plotly_json
+        }
+    }, user_session.user_id)
+    r = user_session.get(flask_server.base_url + 'objects/{0}/export?object_ids=[{0}]'.format(object.object_id))
+    assert r.status_code == 200
+    assert len(r.content) > 0
+    assert r.headers["Content-Disposition"] == 'attachment; filename=sampledb_export.pdf'

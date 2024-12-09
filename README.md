@@ -46,7 +46,7 @@ docker run \
     -v `pwd`/pgdata:/var/lib/postgresql/data/pgdata:rw \
     --restart=always \
     --name sampledb-postgres \
-    postgres:12
+    postgres:15
 ```
 
 Next, start the SampleDB container:
@@ -63,7 +63,7 @@ docker run \
     --restart=always \
     --name sampledb \
     -p 8000:8000 \
-    sciapp/sampledb:0.29.1
+    sciapp/sampledb:0.30.0
 ```
 
 ### Once it's started

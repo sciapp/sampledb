@@ -53,7 +53,7 @@ from ..logic.actions import Action
 from ..logic.action_types import ActionType
 from ..logic.instruments import Instrument
 from ..logic.instrument_log_entries import InstrumentLogFileAttachment
-from ..logic.action_permissions import get_sorted_actions_for_user
+from ..logic.action_permissions import get_sorted_actions_for_user, get_actions_with_permissions
 from ..logic.languages import get_user_language
 from ..logic.locations import Location, LocationType, get_location, get_unhandled_object_responsibility_assignments, is_full_location_tree_hidden, get_locations_tree
 from ..logic.location_permissions import get_user_location_permissions, get_locations_with_user_permissions
@@ -1861,3 +1861,21 @@ def timeline_array_to_plotly_chart(
         }
     }
     return plotly_chart
+
+
+@JinjaFunction()
+def get_action_type_ids_with_usable_actions() -> typing.Set[int]:
+    action_type_ids_with_usable_actions = set()
+    if current_user.is_authenticated and not current_user.is_readonly:
+        actions = get_actions_with_permissions(current_user.id, permissions=Permissions.READ)
+        for action in actions:
+            if action.type is None:
+                continue
+            if action.admin_only and not current_user.is_admin:
+                continue
+            if action.disable_create_objects:
+                continue
+            if action.type.disable_create_objects:
+                continue
+            action_type_ids_with_usable_actions.add(action.type.id)
+    return action_type_ids_with_usable_actions

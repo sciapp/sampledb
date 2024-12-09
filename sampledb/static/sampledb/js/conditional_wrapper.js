@@ -10,72 +10,93 @@ if (!window.conditionalWrapperConditions) {
 
 /**
  * Set up condition handling for a form field.
+ * @param conditionsElement the element that contains the conditions for the field
  * @param idPrefix the ID prefix of the field
  * @param schemaConditions the conditions for the field
  */
-function conditionalWrapper (idPrefix, schemaConditions) {
+function conditionalWrapper (conditionsElement, idPrefix, schemaConditions) {
   if (typeof (idPrefix) !== 'string' || idPrefix.includes('!')) {
     return;
   }
   const parentIDPrefix = idPrefix.split('__').slice(0, -1).join('__') + '_';
-  schemaConditions.forEach(function () {
-    if (typeof window.conditionalWrapperConditions[idPrefix] === 'undefined') {
-      window.conditionalWrapperConditions[idPrefix] = [];
-    }
-    window.conditionalWrapperConditions[idPrefix].push(false);
-  });
-  const conditionWrapperElement = $(`[data-condition-wrapper-for="${idPrefix}"]`);
+  if (typeof window.conditionalWrapperConditions[idPrefix] === 'undefined') {
+    window.conditionalWrapperConditions[idPrefix] = { type: 'all', conditions: [], result: null };
+    schemaConditions.forEach(function () {
+      window.conditionalWrapperConditions[idPrefix].conditions.push(null);
+    });
+  }
+  const parentElement = conditionsElement.closest(`[data-id-prefix="${parentIDPrefix}"]`);
+  const conditionWrapperElement = parentElement.find(`[data-condition-wrapper-for="${idPrefix}"]`);
   if (!conditionWrapperElement.data('id-prefix')) {
     conditionWrapperElement.data('id-prefix', idPrefix);
     conditionWrapperElement.attr('data-id-prefix', idPrefix);
   }
-  window.conditionalWrapperScripts.push(function () {
-    function updateConditionsResult () {
-      function checkConditionFulfilled (condition) {
-        if (condition === true) {
-          return true;
-        } else if (condition === false) {
-          return false;
-        } else if (condition.type === 'not') {
-          return !checkConditionFulfilled(condition.condition);
-        } else if (condition.type === 'all') {
-          return checkAllConditionsFulfilled(condition.conditions);
-        } else if (condition.type === 'any') {
-          return checkAnyConditionsFulfilled(condition.conditions);
-        }
-      }
-      function checkAllConditionsFulfilled (conditions) {
-        for (let i = 0; i < conditions.length; i++) {
-          if (!checkConditionFulfilled(conditions[i])) {
-            return false;
-          }
-        }
-        return true;
-      }
-      function checkAnyConditionsFulfilled (conditions) {
-        for (let i = 0; i < conditions.length; i++) {
-          if (checkConditionFulfilled(conditions[i])) {
-            return true;
-          }
-        }
+  function checkConditionFulfilled (condition) {
+    if (condition === true) {
+      return true;
+    } else if (condition === false || condition === null) {
+      return false;
+    } else {
+      return checkConditionFulfilled(condition.result);
+    }
+  }
+  function checkAllConditionsFulfilled (conditions) {
+    for (let i = 0; i < conditions.length; i++) {
+      if (!checkConditionFulfilled(conditions[i])) {
         return false;
       }
+    }
+    return true;
+  }
+  function checkAnyConditionsFulfilled (conditions) {
+    for (let i = 0; i < conditions.length; i++) {
+      if (checkConditionFulfilled(conditions[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+  window.conditionalWrapperScripts.push(function () {
+    function updateConditionsResult () {
       const idPrefix = conditionWrapperElement.data('id-prefix');
-      const allConditionsFulfilled = checkAllConditionsFulfilled(window.conditionalWrapperConditions[idPrefix]);
+      const allConditionsFulfilled = checkConditionFulfilled(window.conditionalWrapperConditions[idPrefix]);
       if (allConditionsFulfilled) {
         conditionWrapperElement.removeClass('hidden').show();
-        $(`[data-condition-replacement-for="${idPrefix}"]`).hide();
+        conditionWrapperElement.siblings(`[data-condition-replacement-for="${idPrefix}"]`).hide();
       } else {
         conditionWrapperElement.hide();
-        $(`[data-condition-replacement-for="${idPrefix}"]`).removeClass('hidden').show();
+        conditionWrapperElement.siblings(`[data-condition-replacement-for="${idPrefix}"]`).removeClass('hidden').show();
       }
-      $(`[data-condition-wrapper-for="${idPrefix}"] input, [data-condition-wrapper-for="${idPrefix}"] textarea, [data-condition-wrapper-for="${idPrefix}"] select`).prop('disabled', !allConditionsFulfilled).attr('data-sampledb-disabled-by-condition', !allConditionsFulfilled).data('sampledb-disabled-by-condition', !allConditionsFulfilled).trigger('conditions_state_changed.sampledb');
-      $(`[data-condition-wrapper-for="${idPrefix}"] select`).not('.template-select').selectpicker('refresh');
+      conditionWrapperElement.find('input, textarea, select').each(function () {
+        const disabledByCondition = !allConditionsFulfilled;
+        let disabledByConditionList = $(this).data('sampledb-disabled-by-conditions');
+        if (!disabledByConditionList) {
+          disabledByConditionList = [];
+        }
+        const disabledByConditionsBefore = disabledByConditionList.length > 0;
+        if (disabledByConditionList.includes(idPrefix) === disabledByCondition) {
+          return;
+        }
+        if (disabledByCondition) {
+          disabledByConditionList.push(idPrefix);
+        } else {
+          disabledByConditionList = disabledByConditionList.filter(function (item) { return item !== idPrefix; });
+        }
+        $(this).attr('data-sampledb-disabled-by-conditions', disabledByConditionList).data('sampledb-disabled-by-conditions', disabledByConditionList);
+        const disabledByConditionsAfter = disabledByConditionList.length > 0;
+        if (disabledByConditionsBefore === disabledByConditionsAfter) {
+          return;
+        }
+        $(this).prop('disabled', disabledByConditionsAfter).trigger('conditions_state_changed.sampledb');
+        if ($(this).is('select:not(.template-select)')) {
+          $(this).selectpicker('refresh');
+        }
+      });
     }
 
     function handleCondition (condition, setConditionEntry) {
       if (condition.type === 'choice_equals') {
-        const choiceElement = $(`[name="${parentIDPrefix}_${condition.property_name}__text"]`);
+        const choiceElement = parentElement.find(`[name="${parentIDPrefix}_${condition.property_name}__text"]`);
 
         const evaluateCondition = function () {
           if (condition.choice === undefined || condition.choice === null) {
@@ -83,7 +104,6 @@ function conditionalWrapper (idPrefix, schemaConditions) {
           } else {
             setConditionEntry(!choiceElement.prop('disabled') && (!!choiceElement.selectpicker('val') && choiceElement.find('option:selected').data('valueBase64') === condition.encoded_choice));
           }
-          updateConditionsResult();
         };
 
         choiceElement.on('changed.bs.select', evaluateCondition);
@@ -92,11 +112,10 @@ function conditionalWrapper (idPrefix, schemaConditions) {
         choiceElement.on('conditions_state_changed.sampledb', evaluateCondition);
         evaluateCondition();
       } else if (condition.type === 'user_equals') {
-        const userElement = $(`[name="${parentIDPrefix}_${condition.property_name}__uid"]`);
+        const userElement = parentElement.find(`[name="${parentIDPrefix}_${condition.property_name}__uid"]`);
 
         const evaluateCondition = function () {
           setConditionEntry(!userElement.prop('disabled') && (userElement.selectpicker('val') === (condition.user_id !== null ? condition.user_id.toString() : '')));
-          updateConditionsResult();
         };
         userElement.on('changed.bs.select', evaluateCondition);
         userElement.on('loaded.bs.select', evaluateCondition);
@@ -104,20 +123,18 @@ function conditionalWrapper (idPrefix, schemaConditions) {
         userElement.on('conditions_state_changed.sampledb', evaluateCondition);
         evaluateCondition();
       } else if (condition.type === 'bool_equals') {
-        const boolElement = $(`[name="${parentIDPrefix}_${condition.property_name}__value"]`);
+        const boolElement = parentElement.find(`[name="${parentIDPrefix}_${condition.property_name}__value"]`);
 
         const evaluateCondition = function () {
           setConditionEntry(!boolElement.prop('disabled') && (boolElement.prop('checked') === Boolean(condition.value)));
-          updateConditionsResult();
         };
         boolElement.on('change', evaluateCondition);
         boolElement.on('conditions_state_changed.sampledb', evaluateCondition);
         evaluateCondition();
       } else if (condition.type === 'object_equals') {
-        const objectElement = $(`[name="${parentIDPrefix}_${condition.property_name}__oid"]`);
+        const objectElement = parentElement.find(`[name="${parentIDPrefix}_${condition.property_name}__oid"]`);
         const evaluateCondition = function () {
-          setConditionEntry(!objectElement.data('sampledb-disabled-by-condition') && ((objectElement.val() === (condition.object_id !== null ? condition.object_id.toString() : '')) || (objectElement.val() === condition.object_id)));
-          updateConditionsResult();
+          setConditionEntry((!objectElement.data('sampledb-disabled-by-conditions') || objectElement.data('sampledb-disabled-by-conditions').length === 0) && ((objectElement.val() === (condition.object_id !== null ? condition.object_id.toString() : '')) || (objectElement.val() === condition.object_id)));
         };
         objectElement.on('object_change.sampledb', evaluateCondition); // typeahead cases
         objectElement.on('changed.bs.select', evaluateCondition);
@@ -126,38 +143,61 @@ function conditionalWrapper (idPrefix, schemaConditions) {
         objectElement.on('conditions_state_changed.sampledb', evaluateCondition);
         evaluateCondition();
       } else if (condition.type === 'any') {
-        const conditionEntry = { type: 'any', conditions: [] };
+        const conditionEntry = { type: 'any', conditions: [], result: null };
         condition.conditions.forEach(function (subCondition, i) {
-          conditionEntry.conditions[i] = false;
+          conditionEntry.conditions[i] = null;
           handleCondition(subCondition, function (value) {
             conditionEntry.conditions[i] = value;
+            const valueResult = checkConditionFulfilled(value);
+            if (valueResult === conditionEntry.result) {
+              return;
+            }
+            const newResult = valueResult || checkAnyConditionsFulfilled(conditionEntry.conditions);
+            if (newResult === conditionEntry.result) {
+              return;
+            }
+            conditionEntry.result = newResult;
+            setConditionEntry(conditionEntry);
           });
         });
-        setConditionEntry(conditionEntry);
       } else if (condition.type === 'all') {
-        const conditionEntry = { type: 'all', conditions: [] };
+        const conditionEntry = { type: 'all', conditions: [], result: null };
         condition.conditions.forEach(function (subCondition, i) {
-          conditionEntry.conditions[i] = false;
+          conditionEntry.conditions[i] = null;
           handleCondition(subCondition, function (value) {
             conditionEntry.conditions[i] = value;
+            const valueResult = checkConditionFulfilled(value);
+            if (valueResult === conditionEntry.result) {
+              return;
+            }
+            const newResult = valueResult && checkAllConditionsFulfilled(conditionEntry.conditions);
+            if (newResult === conditionEntry.result) {
+              return;
+            }
+            conditionEntry.result = newResult;
+            setConditionEntry(conditionEntry);
           });
         });
-        setConditionEntry(conditionEntry);
       } else if (condition.type === 'not') {
-        const conditionEntry = { type: 'not', condition: false };
+        const conditionEntry = { type: 'not', condition: null, result: null };
         handleCondition(condition.condition, function (value) {
           conditionEntry.condition = value;
+          const valueResult = checkConditionFulfilled(value);
+          const newResult = !valueResult;
+          if (newResult === conditionEntry.result) {
+            return;
+          }
+          conditionEntry.result = newResult;
+          setConditionEntry(conditionEntry);
         });
-        setConditionEntry(conditionEntry);
       }
     }
 
     if (schemaConditions !== undefined) {
-      schemaConditions.forEach(function (condition, i) {
-        handleCondition(condition, function (value) {
-          const idPrefix = conditionWrapperElement.data('id-prefix');
-          window.conditionalWrapperConditions[idPrefix][i] = value;
-        });
+      handleCondition({ type: 'all', conditions: schemaConditions }, function (value) {
+        const idPrefix = conditionWrapperElement.data('id-prefix');
+        window.conditionalWrapperConditions[idPrefix] = value;
+        updateConditionsResult();
       });
     }
   });
@@ -168,10 +208,10 @@ function conditionalWrapper (idPrefix, schemaConditions) {
  * @param element a DOM element
  */
 function applySchemaConditions (element) {
-  $(element).find('.condition-wrapper').each(function () {
+  $(element).find('.condition-wrapper[data-id-prefix]').each(function () {
     const idPrefix = $(this).data('id-prefix');
     const conditions = $(this).data('conditions');
-    conditionalWrapper(idPrefix, conditions);
+    conditionalWrapper($(this), idPrefix, conditions);
   });
 
   $.each(window.conditionalWrapperScripts, function () {
@@ -181,6 +221,5 @@ function applySchemaConditions (element) {
 }
 
 export {
-  conditionalWrapper,
   applySchemaConditions
 };

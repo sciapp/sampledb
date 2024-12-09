@@ -16,11 +16,33 @@ from .datatypes import Quantity
 from .units import get_un_cefact_code_for_unit
 
 
+def _unpack_single_item_arrays(json_value: typing.Any) -> typing.Any:
+    if isinstance(json_value, dict):
+        return {
+            key: _unpack_single_item_arrays(value)
+            for key, value in json_value.items()
+        }
+    if isinstance(json_value, (list, tuple)):
+        if len(json_value) == 1:
+            return _unpack_single_item_arrays(json_value[0])
+        return [
+            _unpack_single_item_arrays(value)
+            for value in json_value
+        ]
+    return json_value
+
+
 def generate_ro_crate_metadata(
         archive_files: typing.Dict[str, typing.Union[str, bytes]],
-        infos: typing.Dict[str, typing.Any]
+        infos: typing.Dict[str, typing.Any],
+        user_id: int,
+        object_ids: typing.Optional[typing.List[int]]
 ) -> typing.Dict[str, bytes]:
     result_files: typing.Dict[str, bytes] = {}
+    date_created = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec='microseconds')
+    description = f"SampleDB .eln export generated for user #{user_id}"
+    if object_ids:
+        description += " for objects #" + ', #'.join(map(str, sorted(object_ids)))
     ro_crate_metadata: typing.Dict[str, typing.Any] = {
         "@context": "https://w3id.org/ro/crate/1.1/context",
         "@graph": [
@@ -38,13 +60,17 @@ def generate_ro_crate_metadata(
                     "@id": "SampleDB"
                 },
                 "version": "1.0",
-                "dateCreated": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat(timespec='microseconds')
+                "dateCreated": date_created
             },
             {
                 "@id": "./",
-                "@type": [
-                    "Dataset"
-                ],
+                "@type": "Dataset",
+                "name": "SampleDB .eln export",
+                "description": description,
+                "license": {
+                    "@id": "./license"
+                },
+                "datePublished": date_created,
                 "hasPart": []
             },
             {
@@ -55,13 +81,19 @@ def generate_ro_crate_metadata(
                 "slogan": "SampleDB is a web-based electronic lab notebook with a focus on sample and measurement metadata.",
                 "url": "https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/"
             },
+            {
+                "@id": "./license",
+                "@type": "CreativeWork",
+                "name": "No License",
+                "description": "This .eln file does not include a license."
+            }
         ]
     }
     directory_datasets = {
         "sampledb_export": ro_crate_metadata["@graph"][1]
     }
     exported_object_ids = {
-        object_info['id']: f"./objects/{object_info['id']}"
+        object_info['id']: f"./objects/{object_info['id']}/"
         for object_info in infos['objects']
     }
     exported_user_ids = {
@@ -86,8 +118,24 @@ def generate_ro_crate_metadata(
             for file_info in object_info['files']
             if 'path' in file_info
         }
+        property_values = _convert_metadata_to_property_values(
+            object_id=object_info['id'],
+            data=object_info['versions'][0]['data'],
+            schema=object_info['versions'][0]['schema'],
+            exported_object_ids=exported_object_ids,
+            exported_user_ids=exported_user_ids,
+            exported_file_ids=exported_file_ids,
+            property_id_prefix=f"./objects/{object_info['id']}/properties/"
+        ) if object_info['versions'][0]['data'] is not None else []
+        ro_crate_metadata["@graph"].extend(property_values)
+        property_value_references = [
+            {
+                '@id': property_value['@id']
+            }
+            for property_value in property_values
+        ]
         ro_crate_metadata["@graph"].append({
-            "@id": f"./objects/{object_info['id']}",
+            "@id": f"./objects/{object_info['id']}/",
             "@type": "Dataset",
             "identifier": f"{object_info['id']}",
             "name": f"{get_translated_text(object_info['versions'][-1]['data'].get('name', {}).get('text', {}), 'en')}" if object_info['versions'][-1]['data'] is not None else '',
@@ -104,19 +152,12 @@ def generate_ro_crate_metadata(
             ],
             "creator": {"@id": f"./users/{object_info['versions'][0]['user_id']}"} if object_info['versions'][0]['user_id'] is not None else None,
             "url": flask.url_for('frontend.object', object_id=object_info['id'], _external=True),
-            "variableMeasured": _convert_metadata_to_property_values(
-                object_id=object_info['id'],
-                data=object_info['versions'][0]['data'],
-                schema=object_info['versions'][0]['schema'],
-                exported_object_ids=exported_object_ids,
-                exported_user_ids=exported_user_ids,
-                exported_file_ids=exported_file_ids
-            ) if object_info['versions'][0]['data'] is not None else [],
+            "variableMeasured": property_value_references,
             "mentions": [],
             "comment": [],
             "hasPart": [
                 {
-                    "@id": f"./objects/{object_info['id']}/version/{version_info['id']}",
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
                 }
                 for version_info in object_info['versions']
             ] + [
@@ -146,11 +187,27 @@ def generate_ro_crate_metadata(
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/files"] = ro_crate_metadata["@graph"][-1]
         directory_datasets[f"sampledb_export/objects/{object_info['id']}/comments"] = ro_crate_metadata["@graph"][-1]
         directory_datasets["sampledb_export"]["hasPart"].append({
-            "@id": f"./objects/{object_info['id']}"
+            "@id": f"./objects/{object_info['id']}/"
         })
         for version_info in object_info['versions']:
+            property_values = _convert_metadata_to_property_values(
+                object_id=object_info['id'],
+                data=version_info['data'],
+                schema=version_info['schema'],
+                exported_object_ids=exported_object_ids,
+                exported_user_ids=exported_user_ids,
+                exported_file_ids=exported_file_ids,
+                property_id_prefix=f"./objects/{object_info['id']}/versions/{version_info['id']}/properties/"
+            ) if version_info['data'] is not None else []
+            ro_crate_metadata["@graph"].extend(property_values)
+            property_value_references = [
+                {
+                    '@id': property_value['@id']
+                }
+                for property_value in property_values
+            ]
             ro_crate_metadata["@graph"].append({
-                "@id": f"./objects/{object_info['id']}/version/{version_info['id']}",
+                "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
                 "@type": "Dataset",
                 "name": f"{get_translated_text(version_info['data'].get('name', {}).get('text', {}), 'en')}" if version_info['data'] is not None else '',
                 "description": f"Object #{object_info['id']} version #{version_info['id']}",
@@ -165,45 +222,38 @@ def generate_ro_crate_metadata(
                     })
                 ],
                 "url": flask.url_for('frontend.object_version', object_id=object_info['id'], version_id=version_info['id'], _external=True),
-                "variableMeasured": _convert_metadata_to_property_values(
-                    object_id=object_info['id'],
-                    data=version_info['data'],
-                    schema=version_info['schema'],
-                    exported_object_ids=exported_object_ids,
-                    exported_user_ids=exported_user_ids,
-                    exported_file_ids=exported_file_ids
-                ) if version_info['data'] is not None else [],
+                "variableMeasured": property_value_references,
                 "hasPart": [
                     {
-                        "@id": f"./objects/{object_info['id']}/version/{version_info['id']}/schema.json",
+                        "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/schema.json",
                     },
                     {
-                        "@id": f"./objects/{object_info['id']}/version/{version_info['id']}/data.json"
+                        "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/data.json"
                     }
                 ]
             })
 
             schema_json = json.dumps(version_info['schema'], indent=2).encode('utf-8')
-            result_files[f"sampledb_export/objects/{object_info['id']}/version/{version_info['id']}/schema.json"] = schema_json
+            result_files[f"sampledb_export/objects/{object_info['id']}/versions/{version_info['id']}/schema.json"] = schema_json
             ro_crate_metadata["@graph"].append({
-                "@id": f"./objects/{object_info['id']}/version/{version_info['id']}/schema.json",
+                "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/schema.json",
                 "@type": "File",
                 "description": f"Schema for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "schema.json",
                 "encodingFormat": "application/json",
-                "contentSize": len(schema_json),
+                "contentSize": str(len(schema_json)),
                 "sha256": hashlib.sha256(schema_json).hexdigest()
             })
 
             data_json = json.dumps(version_info['data'], indent=2).encode('utf-8')
-            result_files[f"sampledb_export/objects/{object_info['id']}/version/{version_info['id']}/data.json"] = data_json
+            result_files[f"sampledb_export/objects/{object_info['id']}/versions/{version_info['id']}/data.json"] = data_json
             ro_crate_metadata["@graph"].append({
-                "@id": f"./objects/{object_info['id']}/version/{version_info['id']}/data.json",
+                "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/data.json",
                 "@type": "File",
                 "description": f"Data for Object #{object_info['id']} version #{version_info['id']}",
                 "name": "data.json",
                 "encodingFormat": "application/json",
-                "contentSize": len(data_json),
+                "contentSize": str(len(data_json)),
                 "sha256": hashlib.sha256(data_json).hexdigest()
             })
 
@@ -212,7 +262,7 @@ def generate_ro_crate_metadata(
                 "@id": f"./objects/{object_info['id']}/comments/{comment['id']}",
                 "@type": "Comment",
                 "parentItem": {
-                    "@id": f"./objects/{object_info['id']}"
+                    "@id": f"./objects/{object_info['id']}/"
                 },
                 "author": {"@id": f"./users/{comment['author_id']}"} if comment['author_id'] is not None else None,
                 "dateCreated": comment['utc_datetime'],
@@ -230,7 +280,7 @@ def generate_ro_crate_metadata(
             "description": f"Data about files for Object #{object_info['id']}",
             "name": "files.json",
             "encodingFormat": "application/json",
-            "contentSize": len(files_json),
+            "contentSize": str(len(files_json)),
             "sha256": hashlib.sha256(files_json).hexdigest()
         })
 
@@ -267,7 +317,7 @@ def generate_ro_crate_metadata(
                     } if file_info['uploader_id'] is not None else None,
                     "dateCreated": file_info['utc_datetime'],
                     "encodingFormat": file_type,
-                    "contentSize": len(file_content),
+                    "contentSize": str(len(file_content)),
                     "contentUrl": flask.url_for('frontend.object_file', object_id=object_info['id'], file_id=file_info['id'], _external=True),
                     "sha256": file_hash
                 })
@@ -289,7 +339,7 @@ def generate_ro_crate_metadata(
         if user_info.get('orcid_id'):
             ro_crate_metadata["@graph"][-1]['identifier'] = user_info['orcid_id']
 
-    result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(ro_crate_metadata, indent=2).encode('utf-8')
+    result_files['sampledb_export/ro-crate-metadata.json'] = json.dumps(_unpack_single_item_arrays(ro_crate_metadata), indent=2).encode('utf-8')
     return result_files
 
 
@@ -299,16 +349,19 @@ def _convert_metadata_to_property_values(
         schema: typing.Dict[str, typing.Any],
         exported_object_ids: typing.Dict[int, str],
         exported_user_ids: typing.Dict[int, str],
-        exported_file_ids: typing.Dict[int, str]
+        exported_file_ids: typing.Dict[int, str],
+        property_id_prefix: str
 ) -> typing.List[typing.Dict[str, typing.Any]]:
     property_values = []
     for property_data, _property_path, full_property_path in flatten_metadata(data):
         property_type = property_data.get('_type')
         if not property_type:
             continue
+        property_id = '.'.join(str(path_element) for path_element in full_property_path)
         property_value: typing.Dict[str, typing.Any] = {
             "@type": "PropertyValue",
-            "propertyID": '/'.join(str(path_element) for path_element in full_property_path),
+            "@id": property_id_prefix + property_id,
+            "propertyID": property_id,
             "name": get_title_for_property(full_property_path, schema)
         }
         if property_type == 'text':

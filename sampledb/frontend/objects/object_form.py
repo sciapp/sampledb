@@ -116,7 +116,7 @@ def show_object_form(
             'has_grant_for_previous_object': Permissions.GRANT in get_user_object_permissions(user_id=flask_login.current_user.id, object_id=previous_object.id),
         })
     else:
-        # create object from scatch
+        # create object from scratch
         mode = 'create'
         if action.schema is None:
             return flask.abort(400)
@@ -181,6 +181,33 @@ def show_object_form(
         batch_names = _handle_batch_names(schema, form_data, raw_form_data, errors)
         object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id, previous_data=data)
         errors.update(parsing_errors)
+        if batch_names is not None:
+            for key in errors:
+                if key.startswith('object__name__'):
+                    errors[key] += _(' Batch numbering resulted in name: %(name)s', name=f'"{batch_names[0]["en"]}"' if len(batch_names[0]) == 1 else ', '.join([f'"{name}" ({get_translated_text(logic.languages.get_language_by_lang_code(lang_code).names)})' for lang_code, name in batch_names[0].items()]))
+        if object_data is not None and not errors and batch_names is not None:
+            data_sequence = []
+            object_data = typing.cast(typing.Dict[str, typing.Any], object_data)
+            for name in batch_names:
+                object_data['name']['text'] = name
+                data_sequence.append(deepcopy(object_data))
+                try:
+                    logic.schemas.validate(data_sequence[-1], schema, strict=True, file_names_by_id=actual_file_names_by_id)
+                except logic.errors.ValidationError as e:
+                    batch_error_message = _(
+                        '"%(error)s" for object name %(name)s',
+                        error=e.raw_message,
+                        name=f'"{name["en"]}"' if len(name) == 1 else ', '.join(
+                            [
+                                f'"{n}" ({get_translated_text(logic.languages.get_language_by_lang_code(lang_code).names)})'
+                                for lang_code, n in name.items()
+                            ]
+                        )
+                    )
+                    if 'batch' in errors:
+                        errors['batch'] += '\n' + batch_error_message
+                    else:
+                        errors['batch'] = batch_error_message
         if form_data['action_submit'] == 'inline_edit' and errors:
             return flask.jsonify({
                 'errors': errors
@@ -204,10 +231,6 @@ def show_object_form(
                     permanent_file_names_by_id[ind] = actual_file_names_by_id[-file_id]
                 logic.temporary_files.replace_file_reference_ids(object_data, permanent_file_map)
                 if batch_names is not None:
-                    data_sequence = []
-                    for name in batch_names:
-                        object_data['name']['text'] = name
-                        data_sequence.append(deepcopy(object_data))
                     objects = create_object_batch(
                         action_id=action.id,
                         data_sequence=data_sequence,
@@ -216,7 +239,8 @@ def show_object_form(
                         permissions_for_group_id=permissions_for_group_id,
                         permissions_for_project_id=permissions_for_project_id,
                         permissions_for_all_users=Permissions.READ if read_permissions_to_all_users else None,
-                        data_validator_arguments={'file_names_by_id': permanent_file_names_by_id}
+                        data_validator_arguments={'file_names_by_id': permanent_file_names_by_id},
+                        validate_data=False     # validated on data_sequence creation
                     )
                 else:
                     objects = [create_object(
@@ -393,29 +417,6 @@ def _handle_batch_names(
     if not schema.get('batch', False) or 'input_num_batch_objects' not in form_data:
         return None
 
-    # The object name might need the batch number to match the pattern
-    name_suffix_format = schema.get('batch_name_format', '{:d}')
-    try:
-        example_name_suffix = name_suffix_format.format(1)
-    except (ValueError, KeyError):
-        name_suffix_format = '{:d}'
-        example_name_suffix = ''
-    if 'object__name__text' in form_data:
-        batch_base_name = {'en': form_data['object__name__text']}
-        raw_form_data['object__name__text'] = [batch_base_name['en'] + example_name_suffix]
-    else:
-        enabled_languages_raw: typing.Union[str, typing.List[str]] = form_data.get('object__name__text_languages', [])
-        if isinstance(enabled_languages_raw, str):
-            enabled_languages = [enabled_languages_raw]
-        else:
-            enabled_languages = enabled_languages_raw
-        if 'en' not in enabled_languages:
-            enabled_languages.append('en')
-        batch_base_name = {}
-        for language_code in enabled_languages:
-            batch_base_name[language_code] = form_data.get('object__name__text_' + language_code, '')
-            raw_form_data['object__name__text_' + language_code] = [batch_base_name[language_code] + example_name_suffix]
-
     # parse the number of objects in the batch
     try:
         # the form allows notations like '1.2e1' for '12', however Python can only parse these as floats
@@ -434,12 +435,49 @@ def _handle_batch_names(
     if num_objects_in_batch > flask.current_app.config['MAX_BATCH_SIZE']:
         errors['input_num_batch_objects'] = _('The maximum number of objects in one batch is %(max_batch_size)s.', max_batch_size=flask.current_app.config['MAX_BATCH_SIZE'])
         return None
+    # parse the first number
+    try:
+        # the form allows notations like '1.2e1' for '12', however Python can only parse these as floats
+        first_number_float = float(form_data['input_first_number_batch'])
+        if first_number_float == int(first_number_float):
+            first_number = int(first_number_float)
+        else:
+            first_number = None
+    except ValueError:
+        first_number = None
+    if first_number is None:
+        errors['input_first_number_batch'] = _('The first number must be an integer.')
+        return None
+    form_data['input_first_number_batch'] = str(first_number)
+
+    # The object name might need the batch number to match the pattern
+    name_suffix_format = schema.get('batch_name_format', '{:d}')
+    try:
+        example_name_suffix = name_suffix_format.format(first_number)
+    except (ValueError, KeyError):
+        name_suffix_format = '{:d}'
+        example_name_suffix = ''
+    if 'object__name__text' in form_data:
+        batch_base_name = {'en': form_data['object__name__text']}
+        raw_form_data['object__name__text'] = [batch_base_name['en'] + example_name_suffix]
+    else:
+        enabled_languages_raw: typing.Union[str, typing.List[str]] = form_data.get('object__name__text_languages', [])
+        if isinstance(enabled_languages_raw, str):
+            enabled_languages = [enabled_languages_raw]
+        else:
+            enabled_languages = enabled_languages_raw
+        if 'en' not in enabled_languages:
+            enabled_languages.append('en')
+        batch_base_name = {}
+        for language_code in enabled_languages:
+            batch_base_name[language_code] = form_data.get('object__name__text_' + language_code, '')
+            raw_form_data['object__name__text_' + language_code] = [batch_base_name[language_code] + example_name_suffix]
     return [
         {
             language_code: batch_base_name_str + (name_suffix_format.format(i) if name_suffix_format else '')
             for language_code, batch_base_name_str in batch_base_name.items()
         }
-        for i in range(1, num_objects_in_batch + 1)
+        for i in range(first_number, first_number + num_objects_in_batch)
     ]
 
 
@@ -698,6 +736,8 @@ def get_errors_by_title(
             property_path = tuple(name.split('__')[1:-1])
             if property_path:
                 title = _get_title_by_property_path(schema, property_path)
+        elif name == 'batch':
+            title = _('Batch Object Creation')
         if not title:
             title = _('Unknown (%(name)s)', name=name)
         if title in errors_by_title:
