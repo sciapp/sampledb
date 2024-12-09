@@ -449,12 +449,19 @@ $(function () {
       checkbox.prop('checked', true);
       textbox.prop('disabled', false);
     }
+    const now = new Date();
+    const minDate = new Date();
+    minDate.setFullYear(now.getFullYear() - 999);
+    const maxDate = new Date();
+    maxDate.setFullYear(now.getFullYear() + 999);
     datetimepicker.datetimepicker({
       format: window.getTemplateValue('event_utc_datetime.format_moment'),
       showClear: true,
       showClose: true,
       showTodayButton: true,
-      timeZone: window.getTemplateValue('current_user.timezone')
+      timeZone: window.getTemplateValue('current_user.timezone'),
+      minDate: minDate,
+      maxDate: maxDate
     });
     checkbox.on('change', function () {
       const checked = checkbox.prop('checked');

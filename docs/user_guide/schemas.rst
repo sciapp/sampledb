@@ -237,7 +237,7 @@ workflow_views
 This attribute can be used to enable and define one or more workflow views. Workflow views display contents of related objects referencing or referenced by this object
 on the object page.
 
-By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. If both filters are set, both action and action type will have to match for an object to be included in the workflow view.
+By default, all directly related objects will be displayed, however you can filter the objects by action or action type. By setting ``referencing_action_id`` or ``referenced_action_id`` to a single ID or a list of IDs, you can limit the referencing or referenced objects to specific actions IDs. By setting ``referencing_action_type_id`` or ``referenced_action_type_id`` you can do the same by action type. ``referencing_filter_operator`` and ``referenced_filter_operator`` can each be set to ``"and"`` or ``"or"`` to control whether both action ID and action type ID filters needs to be fulfilled. If both filters are set and ``filter_operator`` is set to ``"and"`` (the default), both action and action type will have to match for an object to be included in the workflow view. If ``filter_operator`` is instead set to ``"or"`` only one of those filters will have to match.
 
 The workflow view also allows setting a custom ``title`` for the object page section section, e.g. ``{"en": "Processing"}`` or ``"Measurements"``.
 By setting ``show_action_ínfo`` to ``false`` you can disable displaying action information, which is enabled by default.
@@ -261,6 +261,31 @@ The ``sorting_properties`` can be set to a list of property names which will be 
     :alt: A workflow view, containing previews of related measurements
 
     A workflow view, containing previews of related measurements
+
+Recursive workflows can be defined by defining filters in the ``recursion_filters`` dictionary.
+These workflows also include objects referenced by or referencing other objects in the workflow based on the base workflow configuration.
+To set up a recursive view  ``recursion_filters`` dictionary, recursive workflows can be configured.
+If ``referenced_action_id`` and/or ``referenced_action_type_id`` are provided as single IDs or lists of IDs only referenced objects having matching actions are included. To disable a filter you can also set it to ``null``.
+Similarly, the filters ``referencing_action_id`` and ``referencing_action_type_id`` apply to referencing objects.
+If these values are omitted or set to ``null``, no additional filter is applied for the recursion.
+``referencing_filter_operator`` and ``referenced_filter_operator`` can be set to ``"and"`` or ``"or"`` for this as well, just as for the workflow view, to control whether only one (``"or"``) or both (``"and"``) filters need to be matched. Unlike the default for the workflow view, ``filter_operator`` defaults to ``"or"``.
+The maximum recursion depth of the view can be configured by providing a positive integer for ``max_depth``.
+
+.. code-block:: json
+    :caption: A recursive workflow view definition including samples (``-99``) and measurements (``-98``) referencing the object as well as referenced objects created using the action with ID ``1``. Only referenced objects created using the action with ID ``1`` are handled recursively to a maximum recursion depth of ``2``.
+
+    "workflow_views": [
+        {
+            "referencing_action_type_id": [-98, -99],
+            "referenced_action_id": 1,
+            "recursion_filters": {
+                "referenced_action_id": 1,
+                "referencing_action_id": [],
+                "max_depth": 2
+            },
+            "title": {"en": "Processing", "de": "Bearbeitung"}
+        }
+    ]
 
 workflow_show_more
 ^^^^^^^^^^^^^^^^^^
@@ -1136,10 +1161,15 @@ action_id
 
 This attribute is a number or list of numbers that sets the IDs of actions to limit that only objects created with these actions may be referenced by this property, e.g. ``1`` or ``[1, 3]``.
 
+filter_operator
+^^^^^^^^^^^^^^^
+
+This attribute is either ``"and"`` or ``"or"`` and when both ``action_type_id`` and ``action_id`` are set, this controls whether both these filters need to be fulfilled or only one. By default (``"and"``), objects referenced by an ``object_reference`` property need to match both the ``action_id`` and  ``action_type_id`` filters, however when ``filter_operator`` is set to ``"or"`` it is enough for an object to match one of these filters.
+
 Sample References
 ^^^^^^^^^^^^^^^^^
 
-Properties of this type are a special case of object reference, limited to referencing samples. The same can be achieved using an object reference with ``action_type_id`` set to -99. These properties support the same attributes as those of type ``object_reference``, aside from ``action_id`` and ``action_type_id``. Their type must be ``sample``.
+Properties of this type are a special case of object reference, limited to referencing samples. The same can be achieved using an object reference with ``action_type_id`` set to -99. These properties support the same attributes as those of type ``object_reference``, aside from ``action_id``, ``action_type_id`` and ``filter_operator``. Their type must be ``sample``.
 
 .. code-block:: json
     :caption: A sample reference property
@@ -1152,7 +1182,7 @@ Properties of this type are a special case of object reference, limited to refer
 Measurement References
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Properties of this type are a special case of object reference, limited to referencing measurements. The same can be achieved using an object reference with ``action_type_id`` set to -98. These properties support the same attributes as those of type ``object_reference``, aside from ``action_id`` and ``action_type_id``. Their type must be ``measurement``.
+Properties of this type are a special case of object reference, limited to referencing measurements. The same can be achieved using an object reference with ``action_type_id`` set to -98. These properties support the same attributes as those of type ``object_reference``, aside from ``action_id``, ``action_type_id`` and ``filter_operator``. Their type must be ``measurement``.
 
 .. code-block:: json
     :caption: A measurement reference property

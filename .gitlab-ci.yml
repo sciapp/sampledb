@@ -12,9 +12,9 @@ variables:
 test:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   services:
-    - name: postgres:12
+    - name: postgres:15
       alias: postgres-test
       variables:
         POSTGRES_HOST: postgres-test
@@ -52,7 +52,7 @@ test:
 analyze:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   script:
     - apt-get update
     # set up Python 3
@@ -63,7 +63,7 @@ analyze:
     - python3 -m pyflakes sampledb
     # install requirements to allow pylint and mypy to import them
     - python3 -m pip install -r requirements.txt
-    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213,E1136  --load-plugins=pylint.extensions.docparams sampledb/
+    - python3 -m pylint --score no --disable=R0401,R0801,R0902,R0903,R0911,R0912,R0913,R0914,R0915,R0916,R0917,R1702,R1704,R1705,R1711,R1720,R1721,R1723,R1724,R1730,R1731,C0103,C0112,C0114,C0115,C0116,C0123,C0301,C0302,C0413,C0415,W0212,W0511,W1202,W0603,W0613,W0621,W0622,W0703,W0707,E1101,E0213,E1136  --load-plugins=pylint.extensions.docparams sampledb/
     - MYPYPATH=./stubs python3 -m mypy --strict --ignore-missing-imports --follow-imports=silent sampledb/
 
 analyze-js:
@@ -80,7 +80,7 @@ analyze-js:
 .template-check-migrations:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   script:
     # define environment variables needed for SampleDB demo
     - export SAMPLEDB_CONTACT_EMAIL=example@example.org
@@ -220,9 +220,9 @@ check-translations:
 documentation:
   stage: test
   needs: []
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   services:
-    - name: postgres:12
+    - name: postgres:15
       alias: postgres-documentation
       variables:
         POSTGRES_HOST: postgres-documentation
@@ -277,7 +277,7 @@ test-container-status:
         -e POSTGRES_DB=postgres
         -e POSTGRES_USER=postgres
         -e POSTGRES_PASSWORD=postgres
-        postgres:12
+        postgres:15
     - sleep 5 # allow container to start
     - docker ps
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -407,7 +407,7 @@ deploy-to-dockerhub:
 
 deploy-to-pypi:
   stage: deploy
-  image: python:3.11-slim-bookworm
+  image: python:3.12-slim-bookworm
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:

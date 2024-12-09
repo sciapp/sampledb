@@ -304,8 +304,7 @@ function updateObjectPickers () {
       $x.on('typeahead:selected', changeHandler);
       $x.on('change', changeHandler);
     }
-
-    if (!$x.data('sampledbDisabledByCondition')) {
+    if (!$x.data('sampledbDisabledByConditions') || $x.data('sampledbDisabledByConditions').length === 0) {
       $x.prop('disabled', false);
     }
 

@@ -218,7 +218,7 @@ def apply_parentheses(tokens: typing.List[typing.Union[Text, Operator, Literal]]
         if token.operator == '(':
             inner_new_tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]] = []
             new_tokens.append(inner_new_tokens)
-            tokens_stack.append(new_tokens)
+            tokens_stack.append(inner_new_tokens)
             new_tokens = inner_new_tokens
             unopened_parentheses_stack.append(i)
             continue
@@ -238,15 +238,15 @@ def apply_binary_operator(
         tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]],
         operator: str
 ) -> typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]]:
-    previous_tokens = tokens
+    previous_tokens = [
+        apply_binary_operator(token, operator) if isinstance(token, list) else token
+        for token in tokens
+    ]
     new_tokens: typing.List[typing.Union[Text, Operator, Literal, typing.List[typing.Any]]] = []
     skip_next_token = False
     for i, token in enumerate(previous_tokens):
         if skip_next_token:
             skip_next_token = False
-            continue
-        if isinstance(token, list):
-            new_tokens.append(apply_binary_operator(token, operator))
             continue
         if not isinstance(token, Operator):
             new_tokens.append(token)

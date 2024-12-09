@@ -11,4 +11,4 @@ pipeline to provide the current version as returned by git describe.
 
 import os
 
-__version__ = os.environ.get('SAMPLEDB_VERSION') or '0.29.1'
+__version__ = os.environ.get('SAMPLEDB_VERSION') or '0.30.0'

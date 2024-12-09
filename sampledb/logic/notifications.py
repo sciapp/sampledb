@@ -710,13 +710,15 @@ def create_notification_for_a_remote_object_import_with_notes(
 
 def create_notification_for_being_automatically_linked(
     user_id: int,
-    component_id: int
+    component_id: int,
+    fed_id: int
 ) -> None:
     """
     Create a notification of type AUTOMATIC_USER_FEDERATION
 
     :param user_id: the ID of an existing user
     :param component_id: the ID of an existing component
+    :param fed_id: the ID of the user on that component
     :raise errors.ComponentDoesNotExistError: when no component with the
         given component ID exists
     """
@@ -726,7 +728,7 @@ def create_notification_for_being_automatically_linked(
         type=NotificationType.AUTOMATIC_USER_FEDERATION,
         user_id=user_id,
         data={
-            "user_id": user_id,
+            "user_id": fed_id,
             "component_id": component_id
         }
     )

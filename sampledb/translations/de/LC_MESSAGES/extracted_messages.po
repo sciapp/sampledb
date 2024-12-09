@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-04-02 10:34+0200\n"
+"POT-Creation-Date: 2024-12-09 12:45+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.14.0\n"
+"Generated-By: Babel 2.16.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -1099,6 +1099,14 @@ msgstr "Anonyme Nutzer"
 msgid "Creating objects with this action has been disabled."
 msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
 
+#, python-format
+msgid " Batch numbering resulted in name: %(name)s"
+msgstr " Batchnummerierung hat den folgenden Namen ergeben: %(name)s"
+
+#, python-format
+msgid "\"%(error)s\" for object name %(name)s"
+msgstr "\"%(error)s\" für den Objektnamen %(name)s"
+
 msgid "The object was created successfully."
 msgstr "Das Objekt wurde erfolgreich erstellt."
 
@@ -1144,6 +1152,12 @@ msgstr ""
 #, python-format
 msgid "The maximum number of objects in one batch is %(max_batch_size)s."
 msgstr "Die maximale Anzahl an Objekten in einer Charge ist %(max_batch_size)s."
+
+msgid "The first number must be an integer."
+msgstr "Die erste Zahl muss eine ganze Zahl sein."
+
+msgid "Batch Object Creation"
+msgstr "Batch-Objekterstellung"
 
 #, python-format
 msgid "Unknown (%(name)s)"
@@ -2953,6 +2967,13 @@ msgstr "Nein, diesen Aktionstyp nicht auf Startseite anzeigen"
 
 msgid "Show in Navbar"
 msgstr "In Navigationsleiste anzeigen"
+
+msgid ""
+"Only action types with usable actions are shown in the navbar Actions "
+"drop-down menu"
+msgstr ""
+"Nur Aktionstypen mit verwendbaren Aktionen werden im Aktions-Auswahlmenü "
+"in der Navigationsleiste angezeigt"
 
 msgid "Yes, actions of this type should be shown in the navbar"
 msgstr "Ja, Aktionen dieses Typs in der Navigationsleiste anzeigen"
@@ -5467,6 +5488,15 @@ msgstr "Chargeninformationen"
 msgid "Number of Objects in Batch"
 msgstr "Anzahl Objekte in dieser Charge"
 
+msgid "First Number"
+msgstr "Erste Zahl"
+
+msgid "Last Number"
+msgstr "Letzte Zahl"
+
+msgid "The generated batch object names resulted in the following errors:"
+msgstr "Die generierten Batch-Objektnamen führten zu folgenden Fehlern:"
+
 msgid "Initial Permissions"
 msgstr "Initiale Berechtigungen"
 
@@ -5739,13 +5769,6 @@ msgstr "Notebook erstellen"
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
 
-msgid ""
-"The relationship between these objects is outdated, please check their "
-"current information."
-msgstr ""
-"Der Zusammenhang zwischen diesen Objekten ist veraltet, bitte prüfen Sie "
-"die aktuellen Informationen."
-
 #, python-format
 msgid ""
 "Referenced by the metadata of %(object_name)s (#%(object_id)s) and "
@@ -5754,6 +5777,13 @@ msgstr ""
 "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s) und "
 "referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
 
+msgid ""
+"The relationship between these objects is outdated, please check their "
+"current information."
+msgstr ""
+"Der Zusammenhang zwischen diesen Objekten ist veraltet, bitte prüfen Sie "
+"die aktuellen Informationen."
+
 #, python-format
 msgid "Referenced by the metadata of %(object_name)s (#%(object_id)s)"
 msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
@@ -5761,6 +5791,12 @@ msgstr "Referenziert in den Metadaten von %(object_name)s (#%(object_id)s)"
 #, python-format
 msgid "References %(object_name)s (#%(object_id)s) in its metadata"
 msgstr "Referenziert %(object_name)s (#%(object_id)s) in seinen Metadaten"
+
+msgid "This is the object this workflow is based on."
+msgstr "Dieses Objekt ist ist das Ausgangsobjekt dieser Workflow Ansicht."
+
+msgid "This object is already included in this workflow."
+msgstr "Dieses Objekt ist bereits Teil dieser Workflow Ansicht."
 
 msgid "Download files as zip archive"
 msgstr "Dateien als ZIP-Archiv herunterladen"
@@ -7271,6 +7307,10 @@ msgstr "Unbenannte Aktion (#%(action_id)s)"
 #, python-format
 msgid "Database #%(id)s"
 msgstr "Datenbank #%(id)s"
+
+#, python-format
+msgid "Failed to import %(file_url)s as URL file"
+msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
 
 #, python-format
 msgid ""

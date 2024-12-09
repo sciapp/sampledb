@@ -28,7 +28,7 @@ from ..utils import get_groups_form_data
 
 from ... import logic
 from ...logic import user_log, errors
-from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server, get_api_tokens
 from ...logic.users import get_user, get_users, User
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
@@ -39,6 +39,7 @@ from ...logic.notifications import get_notification_modes, set_notification_mode
 from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
 from ...logic.webhooks import get_webhooks, create_webhook, remove_webhook
+from ...logic.instruments import get_user_instruments
 from ...models import Authentication, AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
 from ...models.webhooks import WebhookType
 from ...utils import FlaskResponseT
@@ -76,6 +77,7 @@ def user_preferences(user_id: int) -> FlaskResponseT:
 
 
 def change_preferences(user: User, user_id: int) -> FlaskResponseT:
+    is_instrument_responsible_user = bool(get_user_instruments(user.id, exclude_hidden=True))
     two_factor_authentication_methods = get_two_factor_authentication_methods(user_id)
     manage_two_factor_authentication_method_form = ManageTwoFactorAuthenticationMethodForm()
 
@@ -138,7 +140,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 )
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
-    api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
+    api_tokens = get_api_tokens(user_id)
     api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
@@ -248,11 +250,13 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     default_permissions_form=default_permissions_form,
                     add_user_permissions_form=add_user_permissions_form,
                     add_group_permissions_form=add_group_permissions_form,
+                    add_project_permissions_form=add_project_permissions_form,
                     notification_mode_form=notification_mode_form,
                     Permissions=Permissions,
                     NotificationMode=NotificationMode,
                     NotificationType=NotificationType,
                     notification_modes=get_notification_modes(flask_login.current_user.id),
+                    is_instrument_responsible_user=is_instrument_responsible_user,
                     user_settings=user_settings,
                     other_settings_form=other_settings_form,
                     all_timezones=all_timezones,
@@ -269,6 +273,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
+                    project_permissions=project_permissions,
                     all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     options=options,
@@ -371,11 +376,13 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     default_permissions_form=default_permissions_form,
                     add_user_permissions_form=add_user_permissions_form,
                     add_group_permissions_form=add_group_permissions_form,
+                    add_project_permissions_form=add_project_permissions_form,
                     notification_mode_form=notification_mode_form,
                     Permissions=Permissions,
                     NotificationMode=NotificationMode,
                     NotificationType=NotificationType,
                     notification_modes=get_notification_modes(flask_login.current_user.id),
+                    is_instrument_responsible_user=is_instrument_responsible_user,
                     user_settings=user_settings,
                     other_settings_form=other_settings_form,
                     all_timezones=all_timezones,
@@ -392,6 +399,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
+                    project_permissions=project_permissions,
                     all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     options=options,
@@ -456,11 +464,13 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     default_permissions_form=default_permissions_form,
                     add_user_permissions_form=add_user_permissions_form,
                     add_group_permissions_form=add_group_permissions_form,
+                    add_project_permissions_form=add_project_permissions_form,
                     notification_mode_form=notification_mode_form,
                     Permissions=Permissions,
                     NotificationMode=NotificationMode,
                     NotificationType=NotificationType,
                     notification_modes=get_notification_modes(flask_login.current_user.id),
+                    is_instrument_responsible_user=is_instrument_responsible_user,
                     user_settings=user_settings,
                     other_settings_form=other_settings_form,
                     all_timezones=all_timezones,
@@ -477,6 +487,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                     user_permissions=user_permissions,
                     group_permissions=group_permissions,
+                    project_permissions=project_permissions,
                     all_user_permissions=all_user_permissions,
                     authentication_method_form=authentication_method_form,
                     options=options,
@@ -516,11 +527,13 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 default_permissions_form=default_permissions_form,
                 add_user_permissions_form=add_user_permissions_form,
                 add_group_permissions_form=add_group_permissions_form,
+                add_project_permissions_form=add_project_permissions_form,
                 notification_mode_form=notification_mode_form,
                 Permissions=Permissions,
                 NotificationMode=NotificationMode,
                 NotificationType=NotificationType,
                 notification_modes=get_notification_modes(flask_login.current_user.id),
+                is_instrument_responsible_user=is_instrument_responsible_user,
                 user_settings=user_settings,
                 other_settings_form=other_settings_form,
                 all_timezones=all_timezones,
@@ -537,6 +550,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
                 user_permissions=user_permissions,
                 group_permissions=group_permissions,
+                project_permissions=project_permissions,
                 all_user_permissions=all_user_permissions,
                 authentication_method_form=authentication_method_form,
                 options=options,
@@ -650,6 +664,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
             show_hidden_users_as_admin = flask.request.form.get('input-show-hidden-users-as-admin', 'yes') != 'no'
             modified_settings['SHOW_HIDDEN_USERS_AS_ADMIN'] = show_hidden_users_as_admin
         set_user_settings(flask_login.current_user.id, modified_settings)
+        flask_login.current_user.clear_caches()
         refresh()
         flask.flash(lazy_gettext("Successfully updated your settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
@@ -664,62 +679,63 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 flask.flash(_('Failed to remove the webhook.'), 'error')
             return flask.redirect(flask.url_for('.user_preferences', user_id=user_id))
     if 'add_webhook' in flask.request.form:
+        if not may_use_webhooks:
+            flask.flash(_('You are not allowed to create Webhooks.'), 'error')
+            return flask.render_template(
+                'preferences.html',
+                user=user,
+                change_user_form=change_user_form,
+                authentication_password_form=authentication_password_form,
+                default_permissions_form=default_permissions_form,
+                add_user_permissions_form=add_user_permissions_form,
+                add_group_permissions_form=add_group_permissions_form,
+                add_project_permissions_form=add_project_permissions_form,
+                notification_mode_form=notification_mode_form,
+                NotificationMode=NotificationMode,
+                NotificationType=NotificationType,
+                notification_modes=get_notification_modes(flask_login.current_user.id),
+                is_instrument_responsible_user=is_instrument_responsible_user,
+                user_settings=user_settings,
+                other_settings_form=other_settings_form,
+                all_timezones=all_timezones,
+                your_locale=your_locale,
+                supported_locales=SUPPORTED_LOCALES,
+                allowed_language_codes=logic.locale.get_allowed_language_codes(),
+                Permissions=Permissions,
+                users=users,
+                get_user=get_user,
+                get_group=get_group,
+                show_groups_form=show_groups_form,
+                groups_treepicker_info=groups_treepicker_info,
+                show_projects_form=show_projects_form,
+                projects_treepicker_info=projects_treepicker_info,
+                get_project=get_project,
+                EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
+                user_permissions=user_permissions,
+                group_permissions=group_permissions,
+                project_permissions=project_permissions,
+                all_user_permissions=all_user_permissions,
+                authentication_method_form=authentication_method_form,
+                options=options,
+                authentication_form=authentication_form,
+                create_api_token_form=create_api_token_form,
+                created_api_token=created_api_token,
+                confirmed_authentication_methods=confirmed_authentication_methods,
+                authentications=authentication_methods,
+                two_factor_authentication_methods=two_factor_authentication_methods,
+                manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
+                has_active_method=any(method.active for method in two_factor_authentication_methods),
+                api_tokens=api_tokens,
+                api_access_tokens=api_access_tokens,
+                webhooks=webhooks,
+                may_use_webhooks=may_use_webhooks,
+                add_webhook_form=add_webhook_form,
+                show_add_form=show_add_form,
+                remove_webhook_form=remove_webhook_form,
+                webhook_secret=webhook_secret,
+            )
         show_add_form = True
         if add_webhook_form.validate_on_submit():
-            if not may_use_webhooks:
-                add_webhook_form.address.errors.append(_('You are not allowed to create Webhooks.'))
-                add_webhook_form.name.errors.append(_('You are not allowed to create Webhooks.'))
-                flask.render_template(
-                    'preferences.html',
-                    user=user,
-                    change_user_form=change_user_form,
-                    authentication_password_form=authentication_password_form,
-                    default_permissions_form=default_permissions_form,
-                    add_user_permissions_form=add_user_permissions_form,
-                    add_group_permissions_form=add_group_permissions_form,
-                    add_project_permissions_form=add_project_permissions_form,
-                    notification_mode_form=notification_mode_form,
-                    NotificationMode=NotificationMode,
-                    NotificationType=NotificationType,
-                    notification_modes=get_notification_modes(flask_login.current_user.id),
-                    user_settings=user_settings,
-                    other_settings_form=other_settings_form,
-                    all_timezones=all_timezones,
-                    your_locale=your_locale,
-                    supported_locales=SUPPORTED_LOCALES,
-                    allowed_language_codes=logic.locale.get_allowed_language_codes(),
-                    Permissions=Permissions,
-                    users=users,
-                    get_user=get_user,
-                    get_group=get_group,
-                    show_groups_form=show_groups_form,
-                    groups_treepicker_info=groups_treepicker_info,
-                    show_projects_form=show_projects_form,
-                    projects_treepicker_info=projects_treepicker_info,
-                    get_project=get_project,
-                    EXTRA_USER_FIELDS=flask.current_app.config['EXTRA_USER_FIELDS'],
-                    user_permissions=user_permissions,
-                    group_permissions=group_permissions,
-                    project_permissions=project_permissions,
-                    all_user_permissions=all_user_permissions,
-                    authentication_method_form=authentication_method_form,
-                    authentication_form=authentication_form,
-                    create_api_token_form=create_api_token_form,
-                    created_api_token=created_api_token,
-                    confirmed_authentication_methods=confirmed_authentication_methods,
-                    authentications=authentication_methods,
-                    two_factor_authentication_methods=two_factor_authentication_methods,
-                    manage_two_factor_authentication_method_form=manage_two_factor_authentication_method_form,
-                    has_active_method=any(method.active for method in two_factor_authentication_methods),
-                    api_tokens=api_tokens,
-                    api_access_tokens=api_access_tokens,
-                    webhooks=webhooks,
-                    may_use_webhooks=may_use_webhooks,
-                    add_webhook_form=add_webhook_form,
-                    show_add_form=show_add_form,
-                    remove_webhook_form=remove_webhook_form,
-                    webhook_secret=webhook_secret,
-                )
             try:
                 name = add_webhook_form.name.data
                 address = add_webhook_form.address.data
@@ -755,6 +771,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         NotificationMode=NotificationMode,
         NotificationType=NotificationType,
         notification_modes=get_notification_modes(flask_login.current_user.id),
+        is_instrument_responsible_user=is_instrument_responsible_user,
         user_settings=user_settings,
         other_settings_form=other_settings_form,
         all_timezones=all_timezones,
@@ -811,10 +828,7 @@ def confirm_email() -> FlaskResponseT:
         else:
             data = data2
             salt = 'add_login'
-        if isinstance(data, list) and len(data) == 2:
-            # TODO: remove support for old token data
-            email, user_id = data
-        elif isinstance(data, dict) and 'email' in data and 'user_id' in data:
+        if isinstance(data, dict) and 'email' in data and 'user_id' in data:
             email = data['email']
             user_id = data['user_id']
         else:

@@ -63,7 +63,7 @@ class Webhook:
                 timeout=WEBHOOK_TIMEOUT,
                 headers=headers
             )
-            update_webhook(self.id, datetime.datetime.utcnow())
+            update_webhook(self.id, datetime.datetime.now(tz=datetime.timezone.utc).replace(tzinfo=None))
         except requests.RequestException:
             raise errors.WebhookConnectionException()
 
