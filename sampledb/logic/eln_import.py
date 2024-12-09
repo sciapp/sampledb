@@ -8,6 +8,7 @@ import json
 import os.path
 import string
 import typing
+import urllib.parse
 import zipfile
 
 import flask
@@ -92,7 +93,7 @@ class ParsedELNURLFile:
     url: str
     title: typing.Optional[str]
     description: typing.Optional[str]
-    user_id: str
+    user_id: typing.Optional[str]
     date_created: typing.Optional[datetime.datetime]
 
 
@@ -822,6 +823,31 @@ def parse_eln_file(
                         if 'description' in object_part:
                             _eln_assert(isinstance(object_part.get('description'), str), "Invalid description for File")
                         file_path = object_part['@id']
+                        try:
+                            file_url_parse_result = urllib.parse.urlparse(file_path)
+                        except ValueError:
+                            file_url_parse_result = None
+                        if file_url_parse_result is not None and file_url_parse_result.netloc and file_url_parse_result.scheme in ('http', 'https'):
+                            file_url = object_part.get('url', file_path)
+                            try:
+                                parse_url(file_url, valid_schemes=('http', 'https'))
+                            except Exception:
+                                parsed_data.import_notes[object_node["@id"]].append(gettext('Failed to import %(file_url)s as URL file', file_url=file_url))
+                            else:
+                                date_created = None
+                                if 'dateCreated' in object_part:
+                                    _eln_assert(isinstance(object_part.get('dateCreated'), str), "Invalid dateCreated for File")
+                                    date_created = _parse_eln_import_datetime(object_part['dateCreated'])
+                                author_ref = object_part.get('author')
+                                author_id = _parse_author_ref(author_ref, graph_nodes_by_id)
+                                files.append(ParsedELNURLFile(
+                                    url=file_url,
+                                    title=object_part.get('name'),
+                                    description=object_part.get('description'),
+                                    user_id=author_id,
+                                    date_created=date_created
+                                ))
+                            continue
                         if file_path.startswith('./'):
                             file_path = file_path[1:]
                         elif not file_path.startswith('/'):
