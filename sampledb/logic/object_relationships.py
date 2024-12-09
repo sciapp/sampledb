@@ -19,7 +19,6 @@ from .objects import get_object, find_object_references
 from .object_permissions import get_user_permissions_for_multiple_objects, get_objects_with_permissions
 from ..models import ObjectLogEntryType, ObjectLogEntry, Permissions, Object
 from .. import db
-from .utils import get_translated_text
 
 # limit tree depth to avoid hitting the recursion limit in the frontend
 _MAXIMUM_TREE_DEPTH = sys.getrecursionlimit() - 100
@@ -134,60 +133,6 @@ class RelatedObjectsTree:
         return self.object_ref.eln_object_url
 
 
-def build_related_objects_tree(
-        object_id: int,
-        user_id: typing.Optional[int],
-) -> RelatedObjectsTree:
-    """
-    Get the tree of related objects for a given object.
-
-    Each node in the tree contains:
-    - the ID of an object
-    - one possible path from the given object to this object
-
-    All nodes for an object contain the same path to it, and the node at this
-    path also contains lists of nodes for previous objects, measurements and
-    samples.
-
-    :param object_id: the ID of an existing object
-    :param user_id: the ID of an existing user
-    :return: the related objects tree
-    """
-    subtrees = {
-        object_ref: (
-            RelatedObjectsTree(
-                object_ref=object_ref,
-                path=[],
-                object=None,
-                object_name=None,
-                referenced_objects=None,
-                referencing_objects=None,
-            ),
-            subtree.referenced_objects,
-            subtree.referencing_objects,
-        )
-        for object_ref, subtree in gather_related_object_subtrees(object_id).items()
-    }
-
-    object_ids = tuple(
-        object_ref.object_id
-        for object_ref in subtrees
-        if object_ref.is_local
-    )
-    objects = get_objects_with_permissions(user_id=user_id, permissions=Permissions.READ, object_ids=object_ids, name_only=True)
-    objects_by_id = {
-        object.object_id: object
-        for object in objects
-    }
-    object_ref = ObjectRef(
-        object_id=object_id,
-        component_uuid=None,
-        eln_source_url=None,
-        eln_object_url=None
-    )
-    return _assemble_tree(subtrees[object_ref][0], objects_by_id, subtrees)
-
-
 def get_referencing_object_ids(
         object_ids: typing.Set[int]
 ) -> typing.Dict[int, typing.Set[ObjectRef]]:
@@ -285,53 +230,6 @@ def gather_related_object_subtrees(
                 referencing_object_ids_by_id.update(get_referencing_object_ids(local_child_object_ids))
                 referenced_object_ids_by_id.update(_get_referenced_object_ids(local_child_object_ids))
     return subtrees
-
-
-def _assemble_tree(
-        tree: RelatedObjectsTree,
-        objects_by_id: typing.Dict[int, Object],
-        subtrees: typing.Dict[ObjectRef, typing.Tuple[RelatedObjectsTree, typing.List[ObjectRef], typing.List[ObjectRef]]],
-        path_prefix: typing.Optional[typing.List[typing.Union[int, ObjectRef]]] = None
-) -> RelatedObjectsTree:
-    if path_prefix is None:
-        path_prefix = []
-    root_object_ref = tree.object_ref
-    root_tree = tree
-    tree_stack: typing.List[typing.Tuple[ObjectRef, typing.List[typing.Union[int, ObjectRef]], typing.Optional[RelatedObjectsTree]]] = [
-        (root_object_ref, path_prefix, None)
-    ]
-    while tree_stack:
-        object_ref, path_prefix, parent_tree = tree_stack.pop()
-
-        tree, referenced_object_ids, referencing_object_ids = subtrees[object_ref]
-        if not tree.path:
-
-            tree.path = path_prefix + [object_ref]
-            if len(path_prefix) // 2 < _MAXIMUM_TREE_DEPTH:
-                if object_ref.is_local and object_ref.object_id in objects_by_id:
-                    object = objects_by_id[object_ref.object_id]
-                    tree.object = object
-                    if object is not None and object.name is not None:
-                        tree.object_name = get_translated_text(object.name)
-                    # create a copy that will contain subtrees
-                    tree = dataclasses.replace(
-                        tree,
-                        referenced_objects=[],
-                        referencing_objects=[]
-                    )
-                    if object_ref == root_object_ref:
-                        root_tree = tree
-                    for referenced_object_id in referenced_object_ids:
-                        tree_stack.append((referenced_object_id, tree.path + [-1], tree))
-                    for referencing_object_id in referencing_object_ids:
-                        if referencing_object_id.is_local and referencing_object_id.object_id in objects_by_id:
-                            tree_stack.append((referencing_object_id, tree.path + [-2], tree))
-        if parent_tree is not None:
-            if path_prefix[-1] == -1 and parent_tree.referenced_objects is not None:
-                parent_tree.referenced_objects.append(tree)
-            if path_prefix[-1] == -2 and parent_tree.referencing_objects is not None:
-                parent_tree.referencing_objects.append(tree)
-    return root_tree
 
 
 @dataclasses.dataclass(frozen=True)
