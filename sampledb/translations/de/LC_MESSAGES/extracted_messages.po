@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-10-10 13:03+0200\n"
+"POT-Creation-Date: 2024-12-09 12:45+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -7307,6 +7307,10 @@ msgstr "Unbenannte Aktion (#%(action_id)s)"
 #, python-format
 msgid "Database #%(id)s"
 msgstr "Datenbank #%(id)s"
+
+#, python-format
+msgid "Failed to import %(file_url)s as URL file"
+msgstr "Importieren von %(file_url)s als URL-Datei ist fehlgeschlagen"
 
 #, python-format
 msgid ""
