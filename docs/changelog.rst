@@ -4,7 +4,7 @@ Changelog
 Version 0.30
 ------------
 
-Currently in development.
+Released on December 9th, 2024.
 
 - Added starting number in batch object creation
 - Added support for filter_operator for object_reference properties and workflow views
