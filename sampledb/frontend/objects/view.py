@@ -455,13 +455,22 @@ def object(object_id: int) -> FlaskResponseT:
             related_object_refs_by_object_id[related_object.object_id]: related_object
             for related_object in related_objects
         }
+        related_objects_object_refs = list(related_objects_subtrees)
+        related_objects_index_by_object_ref = {
+            object_ref: index
+            for index, object_ref in enumerate(related_objects_object_refs)
+        }
     else:
         related_objects_subtrees = None
         related_object_by_object_ref = None
+        related_objects_object_refs = None
+        related_objects_index_by_object_ref = None
     template_kwargs.update({
         "related_objects_subtrees": related_objects_subtrees,
         "related_object_by_object_ref": related_object_by_object_ref,
         "object_ref": logic.object_relationships.ObjectRef(object_id=object_id, component_uuid=None, eln_object_url=None, eln_source_url=None),
+        "related_objects_object_refs": related_objects_object_refs,
+        "related_objects_index_by_object_ref": related_objects_index_by_object_ref
     })
 
     # various getters

@@ -8,6 +8,7 @@ Currently in development.
 
 - Added federated login
 - Added setting for disabling object assignments for individual locations
+- Refactored related objects tree to improve performance
 
 Version 0.30
 ------------

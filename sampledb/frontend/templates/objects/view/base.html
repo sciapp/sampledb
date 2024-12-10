@@ -1631,13 +1631,49 @@
     <h2 id="related_objects">{{ _('Related Objects') }}</h2>
 
     <div class="related-objects">
-      {% with current_object_ref = object_ref %}
-        {% set root_object_ref = current_object_ref %}
-        {% set object_refs_encountered = [current_object_ref] %}
-        {% set show_related_objects = True %}
-        {% set in_export_data_modal = False %}
-        {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
-      {% endwith %}
+    </div>
+  {% endif %}
+  {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
+    <div class="hidden"  id="related-objects-entries" data-sampledb-root-object-index="{{ related_objects_index_by_object_ref[object_ref] }}">
+    {% for current_object_ref, subtree in related_objects_subtrees.items() %}
+      {% set referenced_objects = [] %}
+      {% for referenced_object_ref in subtree.referenced_objects %}
+        {% do referenced_objects.append(related_objects_index_by_object_ref[referenced_object_ref]) %}
+      {% endfor %}
+      {% set referencing_objects = [] %}
+      {% for referencing_object_ref in subtree.referencing_objects %}
+        {% do referencing_objects.append(related_objects_index_by_object_ref[referencing_object_ref]) %}
+      {% endfor %}
+      {% set object = related_object_by_object_ref.get(current_object_ref) %}
+      {% set object_name = object.name | get_translated_text('–') if object is not none and object.name is not none else '–' %}
+      {% set object_id = current_object_ref.object_id or '–' %}
+      <span id="related-objects-entry-{{ related_objects_index_by_object_ref[current_object_ref] }}" data-sampledb-object-index="{{ related_objects_index_by_object_ref[current_object_ref] }}" data-sampledb-referenced-objects="{{ referenced_objects | tojson }}" data-sampledb-referencing-objects="{{ referencing_objects | tojson }}" {% if current_object_ref.is_local %}data-sampledb-is-local="true" data-sampledb-object-name="{{ object_name }}" data-sampledb-object-id="{{ object.object_id }}"{% endif %}>
+        {% if current_object_ref.is_local %}
+          <a href="{{ url_for('.object', object_id=current_object_ref.object_id) }}">{{ object_name }} &bullet; #{{ current_object_ref.object_id }}</a>
+          {% if object is not none %}
+            {{ import_information_symbol(object) }}
+          {% endif %}
+        {% elif current_object_ref.component_uuid is not none %}
+          {% if current_object_ref.component_uuid != config['FEDERATION_UUID'] %}
+            {% set object_ref = FederationObjectRef(fed_id=current_object_ref.object_id, component_uuid=current_object_ref.component_uuid) %}
+            #{{ current_object_ref.object_id }} @ {{ object_ref.component.get_name() }}
+            {{ import_information_symbol(object_ref) }}
+          {% else %}
+            <a href="{{ url_for('frontend.object', object_id=current_object_ref.object_id) }}">#{{  current_object_ref.object_id }}</a>
+          {% endif %}
+        {% else %}
+          {% if current_object_ref.eln_object_url %}
+            <a href="{{ current_object_ref.eln_object_url }}">
+          {% endif %}
+          {{ _('Object') }} #{{ current_object_ref.object_id }} @
+          {% if not current_object_ref.eln_object_url %}
+            <a href="{{ current_object_ref.eln_source_url }}">
+          {% endif %}
+          {{ current_object_ref.eln_source_url }}
+          </a>
+        {% endif %}
+      </span>
+    {% endfor %}
     </div>
   {% endif %}
 
@@ -1715,15 +1751,8 @@
             </div>
 
             {% if related_objects_subtrees and action is not none and action.type.enable_related_objects %}
+            <strong>{{ _('Objects') }}</strong>
             <div class="related-objects">
-              <div>{{ _('Objects') }}</div>
-              {% with current_object_ref = object_ref %}
-                {% set root_object_ref = current_object_ref %}
-                {% set object_refs_encountered = [current_object_ref] %}
-                {% set show_related_objects = True %}
-                {% set in_export_data_modal = True %}
-                {% include "objects/view/related_objects_tree_toggle.html" %}{% include "objects/view/related_objects.html" %}
-              {% endwith %}
             </div>
             {% endif %}
           </div>
@@ -1856,6 +1885,9 @@
   {% do set_template_value("translations.enter_a_number_between_minimum_and_maximum", _('Please enter a number between {minimum} and {maximum}.')) %}
   {% do set_template_value("translations.select_an_existing_label_paper_format", _('Please select an existing label paper format.')) %}
   {% do set_template_value("translations.select_qr_code_data", _('Please select which data should be stored in the qr codes.')) %}
+  {% do set_template_value("translations.referenced_relationship_text", _('Referenced by the metadata of %(object_name)s (#%(object_id)s)', object_name='OBJECT_NAME_PLACEHOLDER', object_id='OBJECT_ID_PLACEHOLDER')) %}
+  {% do set_template_value("translations.referencing_relationship_text", _('References %(object_name)s (#%(object_id)s) in its metadata', object_name='OBJECT_NAME_PLACEHOLDER', object_id='OBJECT_ID_PLACEHOLDER')) %}
+  {% do set_template_value("translations.include_object_in_export", _('Include #%(object_id)s in Export', object_id='OBJECT_ID_PLACEHOLDER')) %}
 
   {{ super() }}
 {% endblock %}
