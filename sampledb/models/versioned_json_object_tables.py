@@ -276,7 +276,7 @@ class VersionedJSONSerializableObjectTables:
         if utc_datetime is None and fed_object_id is None:
             utc_datetime = datetime.datetime.now(datetime.timezone.utc)
         if schema is not None or data is not None:
-            if schema is None and action_id is not None and self._action_schema_column is not None:
+            if schema is None and action_id is not None and self._action_schema_column is not None and self._action_id_column is not None:
                 action = connection.execute(
                     db
                     .select(
@@ -490,7 +490,7 @@ class VersionedJSONSerializableObjectTables:
             get_missing_schema_from_action: bool = True
     ) -> typing.Optional[Object]:
         assert connection is not None  # ensured by decorator
-        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None:
+        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None and self._action_id_column is not None:
             action = connection.execute(
                 db
                 .select(
@@ -647,7 +647,7 @@ class VersionedJSONSerializableObjectTables:
         assert connection is not None  # ensured by decorator
         if utc_datetime_subversion is None:
             utc_datetime_subversion = datetime.datetime.now(datetime.timezone.utc)
-        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None:
+        if schema is None and get_missing_schema_from_action and self._action_schema_column is not None and self._action_id_column is not None:
             action = connection.execute(
                 db
                 .select(
