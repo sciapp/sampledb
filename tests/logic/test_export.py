@@ -339,7 +339,7 @@ def test_eln_export(user, app):
                     "requirement_severity_only": False,
                     "inherit_profiles": True,
                     "verbose": True,
-                    "data_path": rocrate_dir,
+                    "rocrate_uri": rocrate_dir,
                     "ontology_path": None,
                     "abort_on_first": False
                 })
