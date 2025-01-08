@@ -54,11 +54,10 @@ class File:
     object_id: int
     user_id: typing.Optional[int]
     data: typing.Dict[str, typing.Any]
+    _mutable_file: files.File
     utc_datetime: typing.Optional[datetime.datetime] = None
-    binary_data: typing.Optional[bytes] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
-    preview_image_binary_data: typing.Optional[bytes] = None
     preview_image_mime_type: typing.Optional[str] = None
 
     @dataclasses.dataclass(frozen=True)
@@ -89,7 +88,13 @@ class File:
         url: typing.Optional[str] = None
         description: typing.Optional[str] = None
 
-    _cache: InfoCache = dataclasses.field(default_factory=InfoCache, kw_only=True, repr=False, compare=False)
+    _info_cache: InfoCache = dataclasses.field(default_factory=InfoCache, kw_only=True, repr=False, compare=False)
+
+    @dataclasses.dataclass
+    class DataCache:
+        binary_data: typing.Optional[bytes] = None
+        preview_image_binary_data: typing.Optional[bytes] = None
+    _data_cache: DataCache = dataclasses.field(default_factory=DataCache, kw_only=True, repr=False, compare=False)
 
     @classmethod
     def from_database(cls, file: files.File) -> 'File':
@@ -112,13 +117,24 @@ class File:
             user_id=file.user_id,
             utc_datetime=file.utc_datetime,
             data=data,
-            binary_data=file.binary_data,
             fed_id=file.fed_id,
             component_id=file.component_id,
             hash=hash,
-            preview_image_binary_data=file.preview_image_binary_data,
             preview_image_mime_type=file.preview_image_mime_type,
+            _mutable_file=file
         )
+
+    @property
+    def binary_data(self) -> typing.Optional[bytes]:
+        if self._data_cache.binary_data is None:
+            self._data_cache.binary_data = self._mutable_file.binary_data
+        return self._data_cache.binary_data
+
+    @property
+    def preview_image_binary_data(self) -> typing.Optional[bytes]:
+        if self._data_cache.preview_image_binary_data is None:
+            self._data_cache.preview_image_binary_data = self._mutable_file.preview_image_binary_data
+        return self._data_cache.preview_image_binary_data
 
     @property
     def storage(self) -> str:
@@ -143,17 +159,17 @@ class File:
     @property
     def url(self) -> str:
         if self.data is not None and self.storage == 'url':
-            if self._cache.url is None:
+            if self._info_cache.url is None:
                 log_entry = FileLogEntry.query.filter_by(
                     object_id=self.object_id,
                     file_id=self.id,
                     type=FileLogEntryType.EDIT_URL
                 ).order_by(FileLogEntry.utc_datetime.desc()).first()
                 if log_entry is not None:
-                    self._cache.url = log_entry.data['url']
+                    self._info_cache.url = log_entry.data['url']
                 else:
-                    self._cache.url = self.data['url']
-            return self._cache.url
+                    self._info_cache.url = self.data['url']
+            return self._info_cache.url
         else:
             raise InvalidFileStorageError()
 
@@ -165,9 +181,9 @@ class File:
 
     @property
     def title(self) -> typing.Optional[str]:
-        if self._cache.title is None:
-            self._cache.title = self.real_title
-            if self._cache.title is None:
+        if self._info_cache.title is None:
+            self._info_cache.title = self.real_title
+            if self._info_cache.title is None:
                 if self.storage in {'database', 'federation'}:
                     return self.original_file_name
                 elif self.storage == 'local_reference':
@@ -176,7 +192,7 @@ class File:
                     return self.url
                 else:
                     raise InvalidFileStorageError()
-        return self._cache.title
+        return self._info_cache.title
 
     @property
     def real_title(self) -> typing.Optional[str]:
@@ -193,7 +209,7 @@ class File:
 
     @property
     def description(self) -> typing.Union[str, None]:
-        if self._cache.description is None:
+        if self._info_cache.description is None:
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
@@ -201,8 +217,8 @@ class File:
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
                 return None
-            self._cache.description = log_entry.data['description']
-        return self._cache.description
+            self._info_cache.description = log_entry.data['description']
+        return self._info_cache.description
 
     @property
     def log_entries(self) -> typing.List[FileLogEntry]:
@@ -220,33 +236,33 @@ class File:
 
     @property
     def is_hidden(self) -> bool:
-        if self._cache.is_hidden is None:
+        if self._info_cache.is_hidden is None:
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
                 type=FileLogEntryType.HIDE_FILE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                self._cache.is_hidden = False
+                self._info_cache.is_hidden = False
                 return False
             hide_time = log_entry.utc_datetime
-            self._cache.hide_reason = log_entry.data['reason']
+            self._info_cache.hide_reason = log_entry.data['reason']
             log_entry = FileLogEntry.query.filter_by(
                 object_id=self.object_id,
                 file_id=self.id,
                 type=FileLogEntryType.UNHIDE_FILE
             ).order_by(FileLogEntry.utc_datetime.desc()).first()
             if log_entry is None:
-                self._cache.is_hidden = True
+                self._info_cache.is_hidden = True
                 return True
             unhide_time = log_entry.utc_datetime
-            self._cache.is_hidden = hide_time > unhide_time
-        return bool(self._cache.is_hidden)
+            self._info_cache.is_hidden = hide_time > unhide_time
+        return bool(self._info_cache.is_hidden)
 
     @property
     def hide_reason(self) -> typing.Optional[str]:
         if self.is_hidden:
-            return self._cache.hide_reason
+            return self._info_cache.hide_reason
         return None
 
     def open(self, read_only: bool = True) -> typing.BinaryIO:
