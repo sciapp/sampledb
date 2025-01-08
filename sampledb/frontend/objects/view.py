@@ -359,6 +359,8 @@ def object(object_id: int) -> FlaskResponseT:
         location_form = ObjectLocationAssignmentForm()
 
         def location_filter(location: Location, action_type_id: typing.Optional[int] = action_type.id if action_type is not None else None) -> bool:
+            if not location.enable_object_assignments:
+                return False
             if not location.type.enable_object_assignments:
                 return False
             if location.type.enable_capacities:
@@ -893,7 +895,7 @@ def post_object_location(object_id: int) -> FlaskResponseT:
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), get_location_name(location, include_id=True, has_read_permissions=True))
         for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if location.type is None or location.type.enable_object_assignments
+        if location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments)
     ]
     possible_responsible_users = [('-1', '—')]
     for user in get_users(exclude_hidden=not flask_login.current_user.is_admin or not flask_login.current_user.settings['SHOW_HIDDEN_USERS_AS_ADMIN']):

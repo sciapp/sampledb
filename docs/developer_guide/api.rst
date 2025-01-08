@@ -1976,7 +1976,8 @@ Reading a list of all locations
                 "description": "This is an example location",
                 "parent_location_id": null,
                 "type_id": -99,
-                "is_hidden": false
+                "is_hidden": false,
+                "enable_object_assignments": true
             }
         ]
 
@@ -2012,7 +2013,8 @@ Reading a location
             "description": "This is an example location",
             "parent_location_id": null,
             "type_id": -99,
-            "is_hidden": false
+            "is_hidden": false,
+            "enable_object_assignments": true
         }
 
     :>json number location_id: the location's ID
@@ -2021,6 +2023,7 @@ Reading a location
     :>json number parent_location_id: the parent location's ID
     :>json number type_id: the location type's ID
     :>json bool is_hidden: whether or not the location is hidden
+    :>json bool enable_object_assignments: whether object assignments are enabled for this location
     :statuscode 200: no error
     :statuscode 403: the user does not have READ permissions for this location
     :statuscode 404: the location does not exist

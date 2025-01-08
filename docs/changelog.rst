@@ -7,7 +7,7 @@ Version 0.31
 Currently in development.
 
 - Added federated login
-
+- Added setting for disabling object assignments for individual locations
 
 Version 0.30
 ------------
