@@ -13,7 +13,6 @@ import flask
 from flask_babel import refresh, _, lazy_gettext
 import flask_login
 from fido2.webauthn import PublicKeyCredentialUserEntity, ResidentKeyRequirement, UserVerificationRequirement
-import sqlalchemy.sql.expression
 import pytz
 
 from ... import db
@@ -28,7 +27,7 @@ from ..utils import get_groups_form_data
 
 from ... import logic
 from ...logic import user_log, errors
-from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server, get_api_tokens
+from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server, get_api_tokens, get_authentication_methods, get_authentication_method, confirm_authentication_method_by_email, ALL_AUTHENTICATION_TYPES
 from ...logic.users import get_user, get_users, User
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
@@ -40,7 +39,7 @@ from ...logic.settings import get_user_settings, set_user_settings
 from ...logic.locale import SUPPORTED_LOCALES
 from ...logic.webhooks import get_webhooks, create_webhook, remove_webhook
 from ...logic.instruments import get_user_instruments
-from ...models import Authentication, AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
+from ...models import AuthenticationType, Permissions, NotificationType, NotificationMode, BackgroundTaskStatus
 from ...models.webhooks import WebhookType
 from ...utils import FlaskResponseT
 
@@ -140,14 +139,24 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 )
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
-    confirmed_authentication_methods_query = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN, Authentication.type != AuthenticationType.FIDO2_PASSKEY)
-    if not flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
-        confirmed_authentication_methods_query = confirmed_authentication_methods_query.filter(Authentication.type != AuthenticationType.FEDERATED_LOGIN)
     api_tokens = get_api_tokens(user_id)
-    api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
-    authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
+    api_access_tokens = get_authentication_methods(
+        user_id=user_id,
+        authentication_types={AuthenticationType.API_ACCESS_TOKEN}
+    )
+    authentication_methods = get_authentication_methods(
+        user_id=user_id,
+        authentication_types=ALL_AUTHENTICATION_TYPES - {
+            AuthenticationType.API_TOKEN,
+            AuthenticationType.API_ACCESS_TOKEN
+        } - ({AuthenticationType.FEDERATED_LOGIN} if not flask.current_app.config['ENABLE_FEDERATED_LOGIN'] else set())
+    )
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = confirmed_authentication_methods_query.count()
+    confirmed_authentication_methods = len([
+        authentication_method
+        for authentication_method in authentication_methods
+        if authentication_method.confirmed and authentication_method.type != AuthenticationType.FIDO2_PASSKEY
+    ])
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     if flask.current_app.config["ENABLE_FIDO2_PASSKEY_AUTHENTICATION"]:
@@ -511,7 +520,6 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                     remove_webhook_form=remove_webhook_form,
                     webhook_secret=webhook_secret,
                 )
-            authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
         else:
             flask.flash(_("Failed to add an authentication method."), 'error')
     if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
@@ -519,7 +527,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         description = create_api_token_form.description.data
         try:
             add_api_token(flask_login.current_user.id, created_api_token, description)
-            api_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_TOKEN).all()
+            api_tokens = get_api_tokens(user_id)
         except Exception as e:
             flask.flash(_("Failed to add an API token."), 'error')
             return flask.render_template(
@@ -595,10 +603,18 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                         break
         flask.flash(_("Successfully updated your notification settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods_query = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN)
-    if not flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
-        confirmed_authentication_methods_query = confirmed_authentication_methods_query.filter(Authentication.type != AuthenticationType.FEDERATED_LOGIN)
-    confirmed_authentication_methods = confirmed_authentication_methods_query.count()
+    confirmed_authentication_methods = len([
+        authentication_method
+        for authentication_method in get_authentication_methods(
+            user_id=user_id,
+            authentication_types=ALL_AUTHENTICATION_TYPES - {
+                AuthenticationType.API_TOKEN,
+                AuthenticationType.API_ACCESS_TOKEN,
+                AuthenticationType.FIDO2_PASSKEY,
+            } - ({AuthenticationType.FEDERATED_LOGIN} if not flask.current_app.config['ENABLE_FEDERATED_LOGIN'] else set())
+        )
+        if authentication_method.confirmed
+    ])
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         modified_settings: typing.Dict[str, typing.Any] = {
@@ -846,14 +862,13 @@ def confirm_email() -> FlaskResponseT:
                 email=email
             )
         elif salt == 'add_login':
-            auth = Authentication.query.filter(
-                Authentication.user_id == user_id,
-                Authentication.login['login'].astext == email
-            ).first()
-            if auth is None:
+            try:
+                confirm_authentication_method_by_email(
+                    user_id=user_id,
+                    email=email
+                )
+            except errors.AuthenticationMethodDoesNotExistError:
                 return flask.abort(400)
-            auth.confirmed = True
-            db.session.add(auth)
         else:
             return flask.abort(400)
         db.session.commit()
@@ -900,7 +915,7 @@ def reset_password() -> FlaskResponseT:
     authentication_id = verify_token(token, salt='password', secret_key=flask.current_app.config['SECRET_KEY'])
     if not authentication_id:
         return flask.abort(404)
-    authentication_method = Authentication.query.filter(Authentication.id == authentication_id).first()
+    authentication_method = get_authentication_method(authentication_method_id=authentication_id)
     password_form = PasswordForm()
     has_error = False
     if authentication_method is None:
