@@ -234,6 +234,7 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
         all_timezones=all_timezones,
         supported_locales=SUPPORTED_LOCALES,
         your_locale=your_locale,
+        allowed_language_codes=logic.locale.get_allowed_language_codes(),
     )
 
     user_permissions = get_default_permissions_for_users(creator_id=flask_login.current_user.id)
@@ -594,7 +595,6 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
             flask.flash(_('You are not allowed to create Webhooks.'), 'error')
             return flask.render_template(
                 'preferences.html',
-                allowed_language_codes=logic.locale.get_allowed_language_codes(),
                 **template_kwargs
             )
         template_kwargs.update(
@@ -627,7 +627,6 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
 
     return flask.render_template(
         'preferences.html',
-        allowed_language_codes=logic.locale.get_allowed_language_codes(),
         **template_kwargs
     )
 
