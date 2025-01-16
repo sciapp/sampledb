@@ -156,11 +156,6 @@ def _handle_account_information_forms(
 def _handle_authentication_methods_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-
-    api_access_tokens = get_authentication_methods(
-        user_id=flask_login.current_user.id,
-        authentication_types={AuthenticationType.API_ACCESS_TOKEN}
-    )
     authentication_methods = get_authentication_methods(
         user_id=flask_login.current_user.id,
         authentication_types=ALL_AUTHENTICATION_TYPES - {
@@ -169,11 +164,6 @@ def _handle_authentication_methods_forms(
         } - ({AuthenticationType.FEDERATED_LOGIN} if not flask.current_app.config['ENABLE_FEDERATED_LOGIN'] else set())
     )
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = len([
-        authentication_method
-        for authentication_method in authentication_methods
-        if authentication_method.confirmed and authentication_method.type != AuthenticationType.FIDO2_PASSKEY
-    ])
 
     authentication_form = AuthenticationForm()
     if flask.current_app.config["ENABLE_FIDO2_PASSKEY_AUTHENTICATION"]:
@@ -200,9 +190,16 @@ def _handle_authentication_methods_forms(
         authentication_password_form=authentication_password_form,
         authentication_method_form=authentication_method_form,
         authentication_form=authentication_form,
-        confirmed_authentication_methods=confirmed_authentication_methods,
+        confirmed_authentication_methods=len([
+            authentication_method
+            for authentication_method in authentication_methods
+            if authentication_method.confirmed and authentication_method.type != AuthenticationType.FIDO2_PASSKEY
+        ]),
         authentications=authentication_methods,
-        api_access_tokens=api_access_tokens,
+        api_access_tokens=get_authentication_methods(
+            user_id=flask_login.current_user.id,
+            authentication_types={AuthenticationType.API_ACCESS_TOKEN}
+        ),
         options=options,
     )
 
@@ -284,14 +281,12 @@ def _handle_authentication_methods_forms(
 def _handle_create_api_token_form(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-
-    created_api_token = None
     create_api_token_form = CreateAPITokenForm()
 
     template_kwargs.update(
         api_tokens=get_api_tokens(flask_login.current_user.id),
         create_api_token_form=create_api_token_form,
-        created_api_token=created_api_token
+        created_api_token=None
     )
     if 'create_api_token' in flask.request.form and create_api_token_form.validate_on_submit():
         created_api_token = secrets.token_hex(32)
@@ -386,7 +381,6 @@ def _handle_webhook_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
     may_use_webhooks = flask_login.current_user.is_admin or flask.current_app.config['ENABLE_WEBHOOKS_FOR_USERS']
-    webhooks = get_webhooks(user_id=flask_login.current_user.get_id())
     add_webhook_form = AddWebhookForm()
     if add_webhook_form.address.data is None:
         add_webhook_form.address.data = ''
@@ -396,7 +390,7 @@ def _handle_webhook_forms(
 
     template_kwargs.update(
         may_use_webhooks=may_use_webhooks,
-        webhooks=webhooks,
+        webhooks=get_webhooks(user_id=flask_login.current_user.get_id()),
         show_add_form=False,
         webhook_secret=None,
         add_webhook_form=add_webhook_form,
@@ -417,9 +411,6 @@ def _handle_webhook_forms(
         if not may_use_webhooks:
             flask.flash(_('You are not allowed to create Webhooks.'), 'error')
             return None
-        template_kwargs.update(
-            show_add_form=True
-        )
         if add_webhook_form.validate_on_submit():
             try:
                 name = add_webhook_form.name.data
@@ -440,10 +431,13 @@ def _handle_webhook_forms(
             else:
                 flask.flash(_('The webhook has been added successfully'), 'success')
                 template_kwargs.update(
-                    show_add_form=False,
                     webhooks=get_webhooks(user_id=flask_login.current_user.get_id()),
                     webhook_secret=new_webhook.secret,
                 )
+                return None
+        template_kwargs.update(
+            show_add_form=True
+        )
     return None
 
 
@@ -545,15 +539,13 @@ def _handle_other_settings_forms(
 ) -> typing.Optional[FlaskResponseT]:
     other_settings_form = OtherSettingsForm()
     all_timezones = list(pytz.all_timezones)
-    your_locale = flask.request.accept_languages.best_match(SUPPORTED_LOCALES)
 
-    user_settings = get_user_settings(flask_login.current_user.id)
     template_kwargs.update(
-        user_settings=user_settings,
+        user_settings=get_user_settings(flask_login.current_user.id),
         other_settings_form=other_settings_form,
         all_timezones=all_timezones,
         supported_locales=SUPPORTED_LOCALES,
-        your_locale=your_locale,
+        your_locale=flask.request.accept_languages.best_match(SUPPORTED_LOCALES),
         allowed_language_codes=logic.locale.get_allowed_language_codes(),
     )
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
