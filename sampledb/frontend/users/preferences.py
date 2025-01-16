@@ -28,7 +28,7 @@ from ..utils import get_groups_form_data
 from ... import logic
 from ...logic import user_log, errors
 from ...logic.authentication import add_authentication_method, remove_authentication_method, change_password_in_authentication_method, add_api_token, get_two_factor_authentication_methods, activate_two_factor_authentication_method, deactivate_two_factor_authentication_method, delete_two_factor_authentication_method, get_all_fido2_passkey_credentials, add_fido2_passkey, get_webauthn_server, get_api_tokens, get_authentication_methods, get_authentication_method, confirm_authentication_method_by_email, ALL_AUTHENTICATION_TYPES
-from ...logic.users import get_user, get_users, User
+from ...logic.users import get_user, get_users
 from ...logic.utils import send_email_confirmation_email, send_recovery_email
 from ...logic.security_tokens import verify_token
 from ...logic.default_permissions import default_permissions, get_default_permissions_for_users, get_default_permissions_for_groups, get_default_permissions_for_projects, get_default_permissions_for_all_users, get_default_permissions_for_anonymous_users
@@ -68,9 +68,8 @@ def user_preferences(user_id: int) -> FlaskResponseT:
             if not flask_login.login_fresh():
                 # ensure only fresh sessions can edit preferences including passwords and api tokens
                 return flask.redirect(flask.url_for('.refresh_sign_in', next=flask.url_for('.user_preferences', user_id=flask_login.current_user.id)))
-            # user eingeloggt, change preferences möglich
-            user = flask_login.current_user
-            return change_preferences(user, user_id)
+            # user is logged in and can edit their preferences
+            return change_preferences()
     else:
         return typing.cast(flask_login.LoginManager, flask.current_app.login_manager).unauthorized()  # type: ignore[attr-defined, no-any-return]
 
@@ -78,9 +77,6 @@ def user_preferences(user_id: int) -> FlaskResponseT:
 def _handle_account_information_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-    user = flask_login.current_user
-    user_id = user.id
-
     change_user_form = ChangeUserForm()
 
     template_kwargs.update(
@@ -89,37 +85,37 @@ def _handle_account_information_forms(
     )
     if 'change' not in flask.request.form:
         if change_user_form.name.data is None or change_user_form.name.data == "":
-            change_user_form.name.data = user.name
+            change_user_form.name.data = flask_login.current_user.name
         if change_user_form.email.data is None or change_user_form.email.data == "":
-            change_user_form.email.data = user.email
+            change_user_form.email.data = flask_login.current_user.email
         if change_user_form.orcid.data is None or change_user_form.orcid.data == "":
-            change_user_form.orcid.data = user.orcid
+            change_user_form.orcid.data = flask_login.current_user.orcid
         if change_user_form.affiliation.data is None or change_user_form.affiliation.data == "":
-            change_user_form.affiliation.data = user.affiliation
+            change_user_form.affiliation.data = flask_login.current_user.affiliation
         if change_user_form.role.data is None or change_user_form.role.data == "":
-            change_user_form.role.data = user.role
+            change_user_form.role.data = flask_login.current_user.role
     if 'change' in flask.request.form and flask.request.form['change'] == 'Change':
         if change_user_form.validate_on_submit():
-            if change_user_form.name.data != user.name:
+            if change_user_form.name.data != flask_login.current_user.name:
                 logic.users.update_user(
-                    user.id,
-                    updating_user_id=user.id,
+                    flask_login.current_user.id,
+                    updating_user_id=flask_login.current_user.id,
                     name=str(change_user_form.name.data)
                 )
-                user_log.edit_user_preferences(user_id=user_id)
+                user_log.edit_user_preferences(user_id=flask_login.current_user.id)
                 flask.flash(_("Successfully updated your user name."), 'success')
-            if change_user_form.email.data != user.email:
+            if change_user_form.email.data != flask_login.current_user.email:
                 # send confirm link
                 mail_send_status = send_email_confirmation_email(
                     email=change_user_form.email.data,
-                    user_id=user.id,
+                    user_id=flask_login.current_user.id,
                     salt='edit_profile'
                 )[0]
                 if mail_send_status == BackgroundTaskStatus.FAILED:
                     flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
                 else:
                     flask.flash(_("Please see your email to confirm this change."), 'success')
-            if change_user_form.orcid.data != user.orcid or change_user_form.affiliation.data != user.affiliation or change_user_form.role.data != user.role:
+            if change_user_form.orcid.data != flask_login.current_user.orcid or change_user_form.affiliation.data != flask_login.current_user.affiliation or change_user_form.role.data != flask_login.current_user.role:
                 if change_user_form.orcid.data and change_user_form.orcid.data.strip():
                     orcid = change_user_form.orcid.data.strip()
                 else:
@@ -137,20 +133,20 @@ def _handle_account_information_forms(
                     extra_field_value = flask.request.form.get('extra_field_' + str(extra_field_id))
                     if extra_field_value:
                         extra_fields[extra_field_id] = extra_field_value
-                change_orcid = (user.orcid != orcid and (orcid is not None or user.orcid is not None))
-                change_affiliation = (user.affiliation != affiliation and (affiliation is not None or user.affiliation is not None))
-                change_role = (user.role != role and (role is not None or user.role is not None))
-                change_extra_fields = user.extra_fields != extra_fields
+                change_orcid = (flask_login.current_user.orcid != orcid and (orcid is not None or flask_login.current_user.orcid is not None))
+                change_affiliation = (flask_login.current_user.affiliation != affiliation and (affiliation is not None or flask_login.current_user.affiliation is not None))
+                change_role = (flask_login.current_user.role != role and (role is not None or flask_login.current_user.role is not None))
+                change_extra_fields = flask_login.current_user.extra_fields != extra_fields
                 if change_orcid or change_affiliation or change_role or change_extra_fields:
                     logic.users.update_user(
-                        user.id,
-                        updating_user_id=user.id,
+                        flask_login.current_user.id,
+                        updating_user_id=flask_login.current_user.id,
                         orcid=orcid,
                         affiliation=affiliation,
                         role=role,
                         extra_fields=extra_fields
                     )
-                    user_log.edit_user_preferences(user_id=user_id)
+                    user_log.edit_user_preferences(user_id=flask_login.current_user.id)
                     flask.flash(_("Successfully updated your user information."), 'success')
 
             return flask.redirect(flask.url_for('frontend.user_me_preferences'))
@@ -160,14 +156,13 @@ def _handle_account_information_forms(
 def _handle_authentication_methods_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-    user_id = flask_login.current_user.id
 
     api_access_tokens = get_authentication_methods(
-        user_id=user_id,
+        user_id=flask_login.current_user.id,
         authentication_types={AuthenticationType.API_ACCESS_TOKEN}
     )
     authentication_methods = get_authentication_methods(
-        user_id=user_id,
+        user_id=flask_login.current_user.id,
         authentication_types=ALL_AUTHENTICATION_TYPES - {
             AuthenticationType.API_TOKEN,
             AuthenticationType.API_ACCESS_TOKEN
@@ -224,7 +219,7 @@ def _handle_authentication_methods_forms(
                 return None
             else:
                 flask.flash(_("Successfully updated your password."), 'success')
-                user_log.edit_user_preferences(user_id=user_id)
+                user_log.edit_user_preferences(user_id=flask_login.current_user.id)
                 return flask.redirect(flask.url_for('frontend.user_me_preferences'))
         else:
             flask.flash(_("Failed to change password."), 'error')
@@ -241,7 +236,7 @@ def _handle_authentication_methods_forms(
                 return None
             else:
                 flask.flash(_("Successfully removed the authentication method."), 'success')
-                user_log.edit_user_preferences(user_id=user_id)
+                user_log.edit_user_preferences(user_id=flask_login.current_user.id)
                 return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
         if authentication_form.validate_on_submit():
@@ -272,7 +267,7 @@ def _handle_authentication_methods_forms(
                     )
                     del flask.session["webauthn_enroll_state"]
                 else:
-                    add_authentication_method(user_id, authentication_form.login.data, authentication_form.password.data, authentication_method)
+                    add_authentication_method(flask_login.current_user.id, authentication_form.login.data, authentication_form.password.data, authentication_method)
                 flask.flash(_("Successfully added the authentication method."), 'success')
                 return flask.redirect(flask.url_for('.user_me_preferences'))
             except Exception as e:
@@ -289,14 +284,12 @@ def _handle_authentication_methods_forms(
 def _handle_create_api_token_form(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-    user = flask_login.current_user
-    user_id = user.id
 
     created_api_token = None
     create_api_token_form = CreateAPITokenForm()
 
     template_kwargs.update(
-        api_tokens=get_api_tokens(user_id),
+        api_tokens=get_api_tokens(flask_login.current_user.id),
         create_api_token_form=create_api_token_form,
         created_api_token=created_api_token
     )
@@ -306,7 +299,7 @@ def _handle_create_api_token_form(
         try:
             add_api_token(flask_login.current_user.id, created_api_token, description)
             template_kwargs.update(
-                api_tokens=get_api_tokens(user_id),
+                api_tokens=get_api_tokens(flask_login.current_user.id),
                 created_api_token=created_api_token,
             )
         except Exception as e:
@@ -320,9 +313,7 @@ def _handle_create_api_token_form(
 def _handle_two_factor_authentication_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-    user_id = flask_login.current_user.id
-
-    two_factor_authentication_methods = get_two_factor_authentication_methods(user_id)
+    two_factor_authentication_methods = get_two_factor_authentication_methods(flask_login.current_user.id)
     manage_two_factor_authentication_method_form = ManageTwoFactorAuthenticationMethodForm()
     template_kwargs.update(
         two_factor_authentication_methods=two_factor_authentication_methods,
@@ -459,7 +450,6 @@ def _handle_webhook_forms(
 def _handle_notification_forms(
         template_kwargs: typing.Dict[str, typing.Any]
 ) -> typing.Optional[FlaskResponseT]:
-    user = flask_login.current_user
     notification_mode_form = NotificationModeForm()
 
     template_kwargs.update(
@@ -467,7 +457,7 @@ def _handle_notification_forms(
         notification_mode_form=notification_mode_form,
         NotificationMode=NotificationMode,
         NotificationType=NotificationType,
-        is_instrument_responsible_user=bool(get_user_instruments(user.id, exclude_hidden=True))
+        is_instrument_responsible_user=bool(get_user_instruments(flask_login.current_user.id, exclude_hidden=True))
     )
 
     if 'edit_notification_settings' in flask.request.form and notification_mode_form.validate_on_submit():
@@ -651,10 +641,8 @@ def _handle_other_settings_forms(
     return None
 
 
-def change_preferences(user: User, user_id: int) -> FlaskResponseT:
-    template_kwargs = {
-        'user': user,
-    }
+def change_preferences() -> FlaskResponseT:
+    template_kwargs: typing.Dict[str, typing.Any] = {}
 
     response = _handle_account_information_forms(template_kwargs)
     if response is not None:

@@ -29,7 +29,7 @@
 {% block content %}
 <h1>{{ _('Preferences') }}</h1>
 <h2 id="account_information">{{ _('Account Information') }}</h2>
-<form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+<form class="form-horizontal" method="post" name="form-preference-name-and-email" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
     {{ change_user_form.csrf_token() }}
     <div class="form-group {% if change_user_form.name.errors %} has-error{% endif %}">
         <label for="input-username" class="col-sm-4 control-label">{{ _('Name') }}</label>
@@ -85,7 +85,7 @@
     <div class="form-group">
         <label for="extra_field_{{ extra_field_id }}" class="col-sm-4 control-label">{{ (extra_field.name | get_translated_text) or extra_field_id }}</label>
         <div class="col-sm-8">
-          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (user.extra_fields or {}).get(extra_field_id, '') }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
+          <input class="form-control" type="text" id="extra_field_{{ extra_field_id }}" name="extra_field_{{ extra_field_id }}" value="{{ (current_user.extra_fields or {}).get(extra_field_id, '') }}" placeholder="{{ (extra_field.placeholder | get_translated_text) or (extra_field.name | get_translated_text) or extra_field_id }}">
         </div>
     </div>
     {% endfor %}
@@ -120,7 +120,7 @@
                </td>
                <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other'), 'fido2_passkey': _('FIDO2 Passkey'), 'federated_login': _('Federated Login')}[authentication.type.name.lower()] }}</td>
                <td class="text-right">
-                   <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+                   <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
                        <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
                        {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
@@ -186,7 +186,7 @@
              <td>{{ authentication.login['description'] }}</td>
              <td><a href="{{ url_for('.current_user_api_log', api_token_id=authentication.id) }}">{{ _('View Log')}}</a></td>
              <td class="text-right">
-               <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+               <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
                  {{ authentication_method_form.csrf_token() }}
                  <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
                  <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -228,7 +228,7 @@
          <td>{{ authentication.login['expiration_utc_datetime'] | babel_format_datetime }}</td>
          <td style="white-space: nowrap"><a href="{{ url_for('.current_user_api_log', api_token_id=authentication.id) }}">{{ _('View Log')}}</a></td>
          <td class="text-right">
-           <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+           <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
              {{ authentication_method_form.csrf_token() }}
              <input class="form-control" type="hidden" name="{{authentication_method_form.id.name}}" value={{authentication.id}}>
              <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -550,7 +550,7 @@
         </select>
       </span>
     </div>
-    {% if user.is_admin %}
+    {% if current_user.is_admin %}
   <h2 id="administrator_settings">{{ _('Administrator Settings') }}</h2>
     <div class="form-group">
       <label class="col-md-4 control-label" for="input-use-admin-permissions-yes">
@@ -613,7 +613,7 @@
 <div class="modal fade" id="addAuthenticationMethodModal" tabindex="-1" role="dialog" aria-labelledby="addAuthenticationMethodModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form class="form-horizontal" id="form-add-authentication-methods" method="post" name="form-add-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <form class="form-horizontal" id="form-add-authentication-methods" method="post" name="form-add-authentication-methods" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="addAuthenticationMethodModalLabel">{{ _('Add Authentication Method') }}</h4>
@@ -672,7 +672,7 @@
 <div class="modal fade" id="pwModal{{authentication.id}}" tabindex="-1" role="dialog" aria-labelledby="pwModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form class="form-horizontal" id="form-change-password" method="post" name="form-change-password" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <form class="form-horizontal" id="form-change-password" method="post" name="form-change-password" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="pwModalLabel">{{ _('Change Password') }}</h4>
@@ -712,7 +712,7 @@
 <div class="modal fade" id="createApiTokenModal" tabindex="-1" role="dialog" aria-labelledby="createApiTokenModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form class="form-horizontal" id="form-add-api-token" method="post" name="form-add-api-token" action="{{ url_for('.user_preferences', user_id=user.id) }}">
+      <form class="form-horizontal" id="form-add-api-token" method="post" name="form-add-api-token" action="{{ url_for('.user_preferences', user_id=current_user.id) }}">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="createApiTokenModalLabel">{{ _('Create API Token') }}</h4>
@@ -772,7 +772,7 @@
           <button type="button" class="close" data-dismiss="modal" aria-label="{{ _('Close') }}"><span aria-hidden="true">&times;</span></button>
           <h4 class="modal-title" id="addWebhookModalLabel">{{ _('Add Webhook') }}</h4>
         </div>
-        <form method="post" action="{{ url_for('.user_preferences', user_id=user.id) }}" class="form-horizontal">
+        <form method="post" action="{{ url_for('.user_preferences', user_id=current_user.id) }}" class="form-horizontal">
           {{ add_webhook_form.csrf_token() }}
           <div class="modal-body">
             <div class="form-group {% if add_webhook_form.name.errors %}has-error{% endif %}">
