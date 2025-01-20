@@ -207,17 +207,18 @@ def _handle_authentication_methods_forms(
         if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
             authentication_method_id = authentication_password_form.id.data
             try:
-                change_password_in_authentication_method(authentication_method_id, authentication_password_form.password.data)
+                password_was_changed = change_password_in_authentication_method(authentication_method_id, authentication_password_form.password.data)
             except Exception as e:
-                flask.flash(_("Failed to change password."), 'error')
+                password_was_changed = False
                 template_kwargs.update(
                     error=str(e),
                 )
+            if not password_was_changed:
+                flask.flash(_("Failed to change password."), 'error')
                 return None
-            else:
-                flask.flash(_("Successfully updated your password."), 'success')
-                user_log.edit_user_preferences(user_id=flask_login.current_user.id)
-                return flask.redirect(flask.url_for('frontend.user_me_preferences'))
+            flask.flash(_("Successfully updated your password."), 'success')
+            user_log.edit_user_preferences(user_id=flask_login.current_user.id)
+            return flask.redirect(flask.url_for('frontend.user_me_preferences'))
         else:
             flask.flash(_("Failed to change password."), 'error')
     if 'remove' in flask.request.form and flask.request.form['remove'] == 'Remove':
