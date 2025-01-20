@@ -80,7 +80,7 @@ def _is_url_safe_for_redirect(url: str) -> bool:
     # prevent double slashes that would change the domain
     if url.startswith('//'):
         return False
-    return url.startswith(server_path) and all(c in '/=?&_.,+-' or c.isalnum() for c in url)
+    return url.startswith(server_path) and all(c in '/=?&_.,+-%' or c.isalnum() for c in url)
 
 
 def _redirect_to_next_url(

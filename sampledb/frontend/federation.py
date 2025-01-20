@@ -762,14 +762,14 @@ def federated_login(component_id: int) -> FlaskResponseT:
     is_shared_device = bool(flask.request.form.get('shared_device'))
 
     try:
-        redirect_form = sp_login(component, shared_device=is_shared_device)
+        redirect = sp_login(component, shared_device=is_shared_device)
     except errors.FailedMetadataFetchingError:
         flask.flash(_("%(component_name)s disabled the federated login.", component_name=component.get_name()), 'error')
         return flask.redirect(flask.url_for('frontend.sign_in'))
     except errors.InvalidSAMLRequestError:
         flask.flash(_("Failed to use federated login. Please contact an administrator."), 'error')
         return flask.redirect(flask.url_for('frontend.sign_in'))
-    return redirect_form
+    return redirect
 
 
 @frontend.route("/federated-login/sp/metadata.xml/<string:component>", methods=['GET'])
@@ -858,7 +858,7 @@ def assertion_consumer_service() -> FlaskResponseT:
 @login_required_saml
 def federated_login_verify() -> FlaskResponseT:
     form_data: dict[str, typing.Any] = {}
-    form_data.update(flask.request.form)
+    form_data.update(flask.request.args)
     if 'SAMLRequest' in flask.session:
         form_data.update({
             'SAMLRequest': flask.session['SAMLRequest']
@@ -868,7 +868,7 @@ def federated_login_verify() -> FlaskResponseT:
     try:
         response = process_login(form_data)
     except errors.InvalidSAMLRequestError:
-        flask.flash(_("Failed to verify the authentication request. Please try again."), "error")
+        flask.flash(_('Failed to verify the authentication request. Please try again or contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/federation.html#federated-login"), "error-url")
         return flask.redirect(flask.url_for('.index'))
 
     if response is None:

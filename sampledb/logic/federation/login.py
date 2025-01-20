@@ -6,7 +6,7 @@ import hashlib
 
 import flask
 import flask_login
-from saml2 import BINDING_HTTP_ARTIFACT, BINDING_HTTP_POST, BINDING_SOAP, response as saml_response, saml, time_util, element_to_extension_element
+from saml2 import BINDING_HTTP_ARTIFACT, BINDING_SOAP, BINDING_HTTP_REDIRECT, response as saml_response, saml, time_util, element_to_extension_element, SAMLError
 from saml2.assertion import _authn_context_class_ref, Policy
 from saml2.authn_context import PASSWORDPROTECTEDTRANSPORT
 from saml2.client import Saml2Client
@@ -62,7 +62,7 @@ def get_pysaml_sp_config(component: Component) -> SPConfig:
                 "want_authn_requests_signed": False,
                 "endpoints": {
                     "assertion_consumer_service": [
-                        (flask.url_for("frontend.assertion_consumer_service", _external=True), BINDING_HTTP_POST),
+                        (flask.url_for("frontend.assertion_consumer_service", _external=True), BINDING_HTTP_REDIRECT),
                         (flask.url_for("frontend.assertion_consumer_service", _external=True), BINDING_HTTP_ARTIFACT),
                         (flask.url_for("frontend.assertion_consumer_service", _external=True), BINDING_SOAP)
                     ],
@@ -95,7 +95,7 @@ def get_pysaml_idp_config() -> IdPConfig:
                 "name": "SampleDB Federation IdP",
                 "endpoints": {
                     "single_sign_on_service": [
-                        (flask.url_for("frontend.federated_login_verify", _external=True), BINDING_HTTP_POST),
+                        (flask.url_for("frontend.federated_login_verify", _external=True), BINDING_HTTP_REDIRECT),
                     ],
                     "artifact_resolution_service": [
                         (flask.url_for("frontend.artifact_resolution_service", _external=True), BINDING_SOAP),
@@ -124,7 +124,7 @@ def sp_login(component: Component, shared_device: bool) -> flask.Response:
 
     try:
         binding, destination = sp.pick_binding(
-            "single_sign_on_service", [BINDING_HTTP_POST], "idpsso", entity_id=f"idp-{component.uuid}"
+            "single_sign_on_service", [BINDING_HTTP_REDIRECT], "idpsso", entity_id=f"idp-{component.uuid}"
         )
     except UnknownSystemEntity:
         raise errors.InvalidSAMLRequestError()
@@ -152,15 +152,17 @@ def process_login(args: dict[str, str]) -> typing.Optional[FlaskResponseT]:
     IDP = Server(config=config)
 
     try:
-        authnRequest = IDP.parse_authn_request(msg, binding=BINDING_HTTP_POST)
+        authnRequest = IDP.parse_authn_request(msg, binding=BINDING_HTTP_REDIRECT)
     except saml_response.StatusError:
         raise errors.AuthnRequestParsingError()
 
     authnRequestMsg = authnRequest.message
     try:
-        response_args = IDP.response_args(authnRequestMsg)
+        response_args = IDP.response_args(authnRequestMsg, bindings=[BINDING_HTTP_REDIRECT])
     except UnknownSystemEntity:
         return None
+    except SAMLError:
+        raise errors.InvalidSAMLRequestError()
 
     entityid = authnRequestMsg.issuer.text.strip()
 
@@ -219,7 +221,7 @@ def _create_artifact_response(config: dict[str, typing.Any], IDP: Server, ent_id
         ),
         encrypt_assertion=False,
         name_id=_generate_name_id(IDP.config.entityid, ent_id, str(identity['email'])),
-        binding=BINDING_HTTP_POST,
+        binding=BINDING_HTTP_REDIRECT,
         **response_args
     )
 

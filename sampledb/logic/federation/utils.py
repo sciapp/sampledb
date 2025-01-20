@@ -479,7 +479,7 @@ def login_required_saml(f: FlaskRouteT) -> FlaskRouteT:
     def decorated(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
         if flask_login.current_user.is_authenticated:
             return f(*args, **kwargs)
-        flask.session['SAMLRequest'] = flask.request.form.get("SAMLRequest", None)
+        flask.session['SAMLRequest'] = flask.request.args.get("SAMLRequest", None)
         return flask.current_app.login_manager.unauthorized()  # type: ignore[attr-defined]
 
     return typing.cast(FlaskRouteT, decorated)

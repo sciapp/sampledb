@@ -84,3 +84,6 @@ After both instances have set up the environment variables, it is required to im
 If set up properly, an additional button ("Sign in with …") will be added to the sign in page for each federation partner that is available for the federated login.
 
 When using the federated login, the user must have a federated identity on the target database which links an existing local user with the used federated user from the other database. As an alternative to linking a local user, it is also possible to enable that new users can be created. To allow this, the environment variable :ref:`SAMPLEDB_ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER <federation_configuration>` can be set to ``true``.
+
+.. note::
+    The federated login requires that the domain used in the configuration of the federated database is the same the user will use to access the database.
