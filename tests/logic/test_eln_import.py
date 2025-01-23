@@ -1,5 +1,6 @@
 import copy
 import datetime
+import glob
 import itertools
 import os.path
 import string
@@ -569,3 +570,27 @@ def test_map_property_values_to_paths():
             'value': 6
         }
     }
+
+
+def _get_reference_eln_file_paths():
+    reference_eln_file_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files')
+    return list(glob.glob('**/*.eln', root_dir=reference_eln_file_directory, recursive=True))
+
+
+@pytest.mark.parametrize(['eln_file_path'], [[eln_file_path] for eln_file_path in _get_reference_eln_file_paths()])
+def test_import_reference_eln_files(user, eln_file_path):
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'test_data', 'eln_files', eln_file_path), 'rb') as eln_export_file:
+        eln_zip_bytes = eln_export_file.read()
+    eln_import_id = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.eln',
+        zip_bytes=eln_zip_bytes
+    ).id
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
+    for import_notes in parsed_eln_import.import_notes.values():
+        if import_notes:
+            assert import_notes == ['The .eln file did not contain any valid flexible metadata for this object.']
+    object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
+    assert not errors
+    assert len(object_ids) >= 1
+    assert len(users_by_id) >= 1
