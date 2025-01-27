@@ -551,10 +551,10 @@ def redirect_login_confirmation(component: str) -> FlaskResponseT:
     return flask.redirect(redirect_url)
 
 
-@frontend.route("/other-databases/link-identity/", methods=["POST"])
+@frontend.route("/other-databases/finalize-link-identity/", methods=["GET"])
 def link_identity() -> FlaskResponseT:
-    identity_token = flask.request.form.get('token')
-    federation_partner_uuid = flask.request.form.get('federation_partner_uuid')
+    identity_token = flask.request.args.get('token')
+    federation_partner_uuid = flask.request.args.get('federation_partner_uuid')
 
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
 
@@ -650,7 +650,7 @@ def confirm_identity() -> FlaskResponseT:
     if component_address and not component_address.endswith('/'):
         component_address += '/'
 
-    confirmation_url = f"{component_address}other-databases/link-identity/"
+    confirmation_url = f"{component_address}other-databases/finalize-link-identity"
     cancel_url = f"{component_address}other-databases/redirect-uuid/{flask.current_app.config['FEDERATION_UUID']}"
 
     verified_linked = flask_login.current_user.id in verified_ids

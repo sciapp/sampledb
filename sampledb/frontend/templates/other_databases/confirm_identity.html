@@ -11,7 +11,7 @@
         {% else %}
             <p>{{ _("You have to confirm that you want to create a federated identity using the currently signed-in user (%(username)s #%(user_id)s).", username=current_user.name, user_id=current_user.id) }}</p>
         {% endif %}
-        <form method="post" class="form" action="{{ confirmation_url }}">
+        <form method="get" class="form" action="{{ confirmation_url }}">
           <input type="hidden" name="token" value="{{ identity_token }}">
           <input type="hidden" name="federation_partner_uuid" value="{{ config['FEDERATION_UUID'] }}">
           <a class="btn btn-danger" href="{{ cancel_url }}">{{ _('Cancel') }}</a>

@@ -441,6 +441,7 @@ def test_status_codes(flask_server, user, driver):
         'other-databases/alias/': 200,
         f'other-databases/edit-eln-identity/{eln_import_id}': 405,
         'other-databases/link-identity/': 302,
+        'other-databases/finalize-link-identity/': 302,
         f'other-databases/redirect-uuid/{component.uuid}': 302,
         'other-databases/validate-identity-token/': 400,
         'projects/': 200,
