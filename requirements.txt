@@ -59,6 +59,7 @@ pydyf==0.11.0
 pyotp==2.9.0
 pyphen==0.15.0
 python-dateutil==2.9.0.post0
+pysaml2==7.5.0
 pytz==2024.2
 qrcode==8.0
 reportlab==4.2.5

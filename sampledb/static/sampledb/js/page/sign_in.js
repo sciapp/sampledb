@@ -64,6 +64,11 @@ $(function () {
     return true;
   });
 
+  $('.federated-login-form').on('submit', function () {
+    updateFormHiddenFields($(this));
+    return true;
+  });
+
   $('#input-shared_device').on('change', function () {
     Cookies.set('SAMPLEDB_SHARED_DEVICE_DEFAULT', $(this).prop('checked') || '', { sameSite: 'Lax' });
     if ($(this).prop('checked')) {

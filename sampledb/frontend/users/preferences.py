@@ -140,11 +140,14 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                 )
         flask.flash(_('Something went wrong, please try again.'), 'error')
 
+    confirmed_authentication_methods_query = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN, Authentication.type != AuthenticationType.FIDO2_PASSKEY)
+    if not flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
+        confirmed_authentication_methods_query = confirmed_authentication_methods_query.filter(Authentication.type != AuthenticationType.FEDERATED_LOGIN)
     api_tokens = get_api_tokens(user_id)
     api_access_tokens = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type == AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).all()
     authentication_method_ids = [authentication_method.id for authentication_method in authentication_methods]
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN, Authentication.type != AuthenticationType.FIDO2_PASSKEY).count()
+    confirmed_authentication_methods = confirmed_authentication_methods_query.count()
     change_user_form = ChangeUserForm()
     authentication_form = AuthenticationForm()
     if flask.current_app.config["ENABLE_FIDO2_PASSKEY_AUTHENTICATION"]:
@@ -592,7 +595,10 @@ def change_preferences(user: User, user_id: int) -> FlaskResponseT:
                         break
         flask.flash(_("Successfully updated your notification settings."), 'success')
         return flask.redirect(flask.url_for('.user_preferences', user_id=flask_login.current_user.id))
-    confirmed_authentication_methods = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
+    confirmed_authentication_methods_query = Authentication.query.filter(Authentication.user_id == user_id, Authentication.confirmed == sqlalchemy.sql.expression.true(), Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN)
+    if not flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
+        confirmed_authentication_methods_query = confirmed_authentication_methods_query.filter(Authentication.type != AuthenticationType.FEDERATED_LOGIN)
+    confirmed_authentication_methods = confirmed_authentication_methods_query.count()
     if 'edit_other_settings' in flask.request.form and other_settings_form.validate_on_submit():
         use_schema_editor = flask.request.form.get('input-use-schema-editor', 'yes') != 'no'
         modified_settings: typing.Dict[str, typing.Any] = {

@@ -13,7 +13,7 @@ from fido2.webauthn import AttestationConveyancePreference, PublicKeyCredentialR
 
 from .. import logic, db
 from .ldap import validate_user, create_user_from_ldap, is_ldap_configured
-from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod
+from ..models import Authentication, AuthenticationType, TwoFactorAuthenticationMethod, HTTPMethod, FederatedIdentity
 from . import errors, api_log
 
 # enable JSON mapping for webauthn options
@@ -206,6 +206,34 @@ def get_user_id_for_fido2_passkey_credential_id(credential_id: bytes) -> typing.
     if authentication is None:
         return None
     return authentication.user_id
+
+
+def add_federated_login_authentication(federated_identity: FederatedIdentity) -> None:
+    """
+    Add a federated login authentication method for a given federated identity.
+
+    :param federated_identity: the federated identity
+    """
+    if Authentication.query.filter(
+        Authentication.type == AuthenticationType.FEDERATED_LOGIN,
+        Authentication.user_id == federated_identity.user_id,
+        Authentication.login['fed_user_id'].astext.cast(db.Integer) == federated_identity.local_fed_user.fed_id,
+        Authentication.login['component_id'].astext.cast(db.Integer) == federated_identity.local_fed_user.component_id
+    ).first():
+        raise errors.AuthenticationMethodAlreadyExists('An authentication method for this federated identity already exists')
+
+    authentication = Authentication(
+        login={
+            'fed_user_id': federated_identity.local_fed_user.fed_id,
+            'component_id': federated_identity.local_fed_user.component_id
+        },
+        authentication_type=AuthenticationType.FEDERATED_LOGIN,
+        user_id=federated_identity.user_id,
+        confirmed=True
+    )
+
+    db.session.add(authentication)
+    db.session.commit()
 
 
 @functools.cache
@@ -503,7 +531,10 @@ def remove_authentication_method(authentication_method_id: int) -> bool:
     if authentication_method is None:
         return False
     if authentication_method.type not in {AuthenticationType.API_TOKEN, AuthenticationType.API_ACCESS_TOKEN}:
-        authentication_methods_count = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN).count()
+        authentication_methods_query = Authentication.query.filter(Authentication.user_id == authentication_method.user_id, Authentication.type != AuthenticationType.API_TOKEN, Authentication.type != AuthenticationType.API_ACCESS_TOKEN)
+        if not flask.current_app.config['ENABLE_FEDERATED_LOGIN']:
+            authentication_methods_query = authentication_methods_query.filter(Authentication.type != AuthenticationType.FEDERATED_LOGIN)
+        authentication_methods_count = authentication_methods_query.count()
         if authentication_methods_count <= 1:
             raise errors.OnlyOneAuthenticationMethod('one authentication-method must at least exist, delete not possible')
     db.session.delete(authentication_method)

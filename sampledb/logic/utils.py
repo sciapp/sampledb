@@ -124,6 +124,49 @@ def send_recovery_email(
     )
 
 
+def send_federated_login_account_creation_email(
+    email: str,
+    username: str,
+    component_id: int,
+    fed_id: int
+) -> typing.Tuple[BackgroundTaskStatus, typing.Optional[BackgroundTask]]:
+    token_data = {
+        'email': email,
+        'username': username,
+        'component_id': component_id,
+        'fed_id': fed_id
+    }
+    token = generate_token(
+        token_data,
+        salt='federated_login_account',
+        secret_key=flask.current_app.config['SECRET_KEY']
+    )
+
+    service_name = flask.current_app.config['SERVICE_NAME']
+    subject = f"{service_name} Account Creation"
+    confirm_url = flask.url_for('.create_account_by_federated_login', token=token, _external=True)
+
+    text = flask.render_template(
+        "mails/federated_login_account_creation.txt",
+        confirm_url=confirm_url,
+        username=token_data['username'],
+        service_name=service_name
+    )
+    html = flask.render_template(
+        "mails/federated_login_account_creation.html",
+        confirm_url=confirm_url,
+        username=token_data['username'],
+        service_name=service_name
+    )
+
+    return post_send_mail_task(
+        subject=subject,
+        recipients=[email],
+        text=text,
+        html=html
+    )
+
+
 def build_confirm_url(
         authentication_method: Authentication,
         salt: str = 'password'

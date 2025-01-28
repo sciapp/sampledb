@@ -354,9 +354,16 @@ def test_status_codes(flask_server, user, driver):
         'eln_imports': 200,
         f'eln_imports/{eln_import_id}': 302,
         'favicon.ico': 200,
+        'federated-login/create-account/invalid': 302,
+        'federated-login/idp/metadata.xml': 302,
+        'federated-login/idp/verify': 302,
+        'federated-login/sp/acs': 302,
+        f'federated-login/sp/metadata.xml/{component.uuid}': 302,
+        f'federated-login/sp/{component_id}': 302,
         'federation/v1/shares/components/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
+        'federation/v1/shares/metadata/': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{other_object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         'groups/': 200,
@@ -432,9 +439,11 @@ def test_status_codes(flask_server, user, driver):
         'other-databases/': 200,
         f'other-databases/{component_id}': 200,
         'other-databases/alias/': 200,
-        'other-databases/link-identity/': 302,
-        'other-databases/validate-identity-token/': 400,
         f'other-databases/edit-eln-identity/{eln_import_id}': 405,
+        'other-databases/link-identity/': 302,
+        'other-databases/finalize-link-identity/': 302,
+        f'other-databases/redirect-uuid/{component.uuid}': 302,
+        'other-databases/validate-identity-token/': 400,
         'projects/': 200,
         f'projects/{project_id}': 200,
         f'projects/{project_id}/permissions': 200,

@@ -107,9 +107,18 @@
          </thead>
          <tbody>
            {% for authentication in authentications %}
+           {% if authentication.type.name.lower() != 'federated_login' or (authentication.type.name.lower() == 'federated_login' and config["ENABLE_FEDERATED_LOGIN"]) %}
            <tr>
-               <td style="vertical-align: middle;">{{authentication.login.get('login', authentication.login.get('description', ''))}}</td>
-               <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other'), 'fido2_passkey': _('FIDO2 Passkey')}[authentication.type.name.lower()] }}</td>
+               <td style="vertical-align: middle;">
+                  {% if authentication.type.name.lower() != 'federated_login' %}
+                    {{authentication.login.get('login', authentication.login.get('description', ''))}}
+                  {% else %}
+                    {% set fed_user = get_user(user_id=authentication.login.get('fed_user_id'), component_id=authentication.login.get('component_id')) %}
+                    <a href="{{ url_for('.user_profile', user_id=fed_user.id) }}">{{ fed_user.get_name() }}</a> (<a href="{{ url_for('.component', component_id=fed_user.component.id) }}">{{ fed_user.component.get_name() }}</a>)
+                    {{ import_information_symbol(fed_user) }}
+                  {% endif %}
+               </td>
+               <td style="vertical-align: middle;">{{ {'ldap': 'LDAP', 'email': _('Email'), 'other': _('Other'), 'fido2_passkey': _('FIDO2 Passkey'), 'federated_login': _('Federated Login')}[authentication.type.name.lower()] }}</td>
                <td class="text-right">
                    <form method="post" name="form-remove-authentication-methods" action="{{ url_for('.user_preferences', user_id=user.id) }}">
                        {{ authentication_method_form.csrf_token() }}
@@ -117,13 +126,17 @@
                        {% if error %} <span class='help-block'>{{error}} </span> {%endif%}
                        {% if authentications|length > 1 %}
                           {% if confirmed_authentication_methods > 1 %}
-                             {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
+                             {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' and authentication.type.name.lower() != 'federated_login' %}
                                 <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                              {% endif %}
-                             <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+                             {% if authentication.type.name.lower() != 'federated_login' %}
+                               <button type="submit" class="btn btn-danger" name="remove" value="Remove"><i class="fa fa-times" aria-hidden="true"></i></button>
+                             {% else %}
+                               <button type="submit" class="btn btn-danger" name="remove" value="Remove" data-toggle="tooltip" data-placement="top" title="{{ _('To remove this authentication method, revoke the corresponding federated identity.') }}" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
+                             {% endif %}
                           {% else %}
                                {% if authentication.confirmed  %}
-                                 {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
+                                 {% if authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' and authentication.type.name.lower() != 'federated_login' %}
                                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                                  {% endif %}
                                  <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -132,7 +145,7 @@
                                {% endif %}
                           {% endif %}
                        {% else %}
-                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' %}
+                         {% if authentication.confirmed and authentication.type.name.lower() != 'ldap' and authentication.type.name.lower() != 'fido2_passkey' and authentication.type.name.lower() != 'federated_login' %}
                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#pwModal{{authentication.id}}"><i class="fa fa-edit" aria-hidden="true"></i></button>
                          {% endif %}
                          <button type="submit" class="btn btn-danger" name="remove" disabled><i class="fa fa-times" aria-hidden="true"></i></button>
@@ -140,6 +153,7 @@
                    </form>
               </td>
            </tr>
+           {% endif %}
            {% endfor %}
          </tbody>
          <tfoot>

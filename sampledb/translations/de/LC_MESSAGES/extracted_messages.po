@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2024-12-09 12:45+0100\n"
+"POT-Creation-Date: 2025-01-20 06:50+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -296,11 +296,6 @@ msgstr "Unbekannte Datenbank (%(uuid)s)"
 msgid "An error occurred: Users could not be linked."
 msgstr "Ein Fehler ist aufgetreten: Nutzer konnten nicht verknüpft werden."
 
-msgid "The federated user already has a federated identity in this database."
-msgstr ""
-"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
-"Identität."
-
 #, python-format
 msgid ""
 "You were successfully linked with a federated user from "
@@ -308,6 +303,14 @@ msgid ""
 msgstr ""
 "Sie wurden erfolgreich mit einem föderierten Nutzer von "
 "%(component_name)s verknüpft."
+
+msgid "The identity was successfully verified."
+msgstr "Die Identität wurde erfolgreich verifiziert."
+
+msgid "The federated user already has a federated identity in this database."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität."
 
 msgid "Could not confirm identity: The databases are not in a federation."
 msgstr ""
@@ -319,6 +322,13 @@ msgstr "Entfernen der Nutzerverknüpfungen fehlgeschlagen."
 
 msgid "Failed to revoke user links."
 msgstr "Widerrufen der Nutzerverknüpfungen fehlgeschlagen"
+
+msgid ""
+"You must keep at least one federated identity to login or add another "
+"authentication method first."
+msgstr ""
+"Sie müssen mindestens eine föderierte Identität für die Anmeldung "
+"behalten oder zuerst eine weitere Authentifizierungsmethode hinzufügen."
 
 msgid "An error occurred: Failed to edit federated identity."
 msgstr ""
@@ -333,6 +343,101 @@ msgstr "Nutzerverknüpfungen erfolgreich widerrufen."
 
 msgid "Successfully enabled user link."
 msgstr "Nutzerverknüpfungen erfolgreich aktiviert."
+
+#, python-format
+msgid "The federated login is not available for %(component_name)s."
+msgstr "Die föderierte Anmeldung ist für %(component_name)s nicht verfügbar."
+
+#, python-format
+msgid "%(component_name)s disabled the federated login."
+msgstr "%(component_name)s hat den föderierten Login deaktiviert."
+
+msgid "Failed to use federated login. Please contact an administrator."
+msgstr ""
+"Fehler beim nutzen der föderierten Anmeldung. Bitte kontaktieren Sie "
+"einen Administrator."
+
+msgid "An error occurred: Failed to use federated login. Please try again."
+msgstr ""
+"Ein Fehler ist aufgetreten: Fehler beim verwenden der föderierten "
+"Anmeldung. Bitte versuchen Sie es erneut."
+
+msgid ""
+"An error occurred: The authentication could not be verified. Please try "
+"again."
+msgstr ""
+"Ein Fehler ist aufgetreten: Die Authentifizierung konnte nicht bestätigt "
+"werden. Bitte versuchen Sie es erneut."
+
+msgid "Failed to use federated login. Please try again."
+msgstr ""
+"Fehler beim verwenden der föderierten Anmeldung. Bitte versuchen Sie es "
+"erneut."
+
+msgid ""
+"The federated user already has a federated identity in this database "
+"which is not verified. Please sign in to the corresponding user."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität, die nicht verifiziert ist. Bitte melden Sie sich mit dem "
+"entsprechenden Nutzer an."
+
+msgid ""
+"A user with this email address exists already. If you own this account, "
+"please use the sign in."
+msgstr ""
+"Ein Nutzer mit dieser E-Mail-Adresse existiert bereits. Falls Sie dieses "
+"Konto besitzen, nutzen Sie bitte die Anmeldung."
+
+#, python-format
+msgid ""
+"Failed to verify the authentication request. Please try again or contact "
+"an administrator. If you are an administrator, follow the <a "
+"href=\"%(docs_url)s\">documentation</a>."
+msgstr ""
+"Fehler beim Verifizieren der Authentifizierungsanfrage. Bitte "
+"kontaktieren Sie einen Administrator. Wenn sie ein Administrator sind, "
+"folgen Sie der <a href=\"%(docs_url)s\">Dokumentation</a>."
+
+#, python-format
+msgid ""
+"Failed to use federated login because of missing metadata. Please contact"
+" an administrator. If you are an administrator, follow the <a "
+"href=\"%(docs_url)s\">documentation</a>."
+msgstr ""
+"Der föderierte Login konnte wegen fehlender Metadaten nicht verwendet "
+"werden. Bitte kontaktieren Sie einen Administrator. Wenn sie ein "
+"Administrator sind, folgen Sie der <a "
+"href=\"%(docs_url)s\">Dokumentation</a>."
+
+msgid ""
+"Sending an email failed. Please try again later or contact an "
+"administrator."
+msgstr ""
+"Das Senden einer E-Mail ist fehlgeschlagen. Bitte versuchen Sie es später"
+" erneut oder kontaktieren Sie einen Administrator."
+
+msgid "Please see your email to confirm this mail address and create the user."
+msgstr ""
+"Bitte schauen Sie in Ihre E-Mails, um diese E-Mail-Adresse zu bestätigen "
+"und den Nutzer zu erstellen."
+
+#, python-format
+msgid "The selected username is not valid: %(error)s"
+msgstr "Der gewählte Nutzername ist ungültig: %(error)s"
+
+msgid "Invalid token. Please login again."
+msgstr "Fehlerhafter Token. Bitte melden Sie sich erneut an."
+
+msgid ""
+"The federated user already has a local federated identity. Please login "
+"with this user."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität. Bitte melden Sie sich mit diesem Nutzer an."
+
+msgid "The user was successfully created. Please sign in."
+msgstr "Der Nutzer wurde erfolgreich erstellt. Bitte melden Sie sich an."
 
 msgid "Please enter your name as: surname, given names."
 msgstr "Bitte geben Sie ihren Namen wie folgt an: Nachname, Vornamen."
@@ -2221,6 +2326,16 @@ msgstr "Andere"
 msgid "FIDO2 Passkey"
 msgstr "FIDO2 Passkey"
 
+msgid "Federated Login"
+msgstr "Föderierte Anmeldung"
+
+msgid ""
+"To remove this authentication method, revoke the corresponding federated "
+"identity."
+msgstr ""
+"Um diese Authentifizierungsmethode zu entfernen müssen Sie die zugehörige"
+" föderierte Identität widerrufen."
+
 msgid ""
 "API tokens are an authentication method for use with the <a href=\"https"
 "://scientific-it-systems.iffgit.fz-"
@@ -2849,6 +2964,10 @@ msgstr "Bedingung hinzufügen"
 #, python-format
 msgid "Sign in to %(service_name)s"
 msgstr "Anmelden bei %(service_name)s"
+
+#, python-format
+msgid "Sign in with %(component_name)s"
+msgstr "Anmelden mit %(component_name)s"
 
 msgid "To ensure the security of your account information, please sign in again."
 msgstr ""
@@ -6608,6 +6727,26 @@ msgstr "Aktive Nutzerverknüpfungen"
 msgid "Federated user"
 msgstr "Föderierte Nutzer"
 
+msgid "Login"
+msgstr "Anmeldung"
+
+msgid ""
+"You have to keep at least one federated user link for authentication "
+"purposes. Please see the hint below."
+msgstr ""
+"Sie müssen mindestens eine föderierte Identität für die Authentifizierung"
+" behalten. Bitte beachten Sie den untenstehenden Hinweis."
+
+msgid ""
+"You do not have any other authentication methods added, but the federated"
+" login with this federation partner. To keep the user accessible, you "
+"must keep at least one federated identity, which can be used to login."
+msgstr ""
+"Sie haben keine andere Authentifizierungsmethoden hinzugefügt außer die "
+"föderierte Anmeldung mit diesem Föderationspartner. Um den Zugriff zum "
+"Nutzer zu behalten müssen Sie mindestens eine föderierte Identität, die "
+"für die Anmeldung genutzt werden kann, behalten."
+
 msgid "Revoke selection"
 msgstr "Auswahl widerrufen"
 
@@ -6619,7 +6758,7 @@ msgid ""
 " as they are not removed, these links won't be created when importing "
 "updates."
 msgstr ""
-"Widerrufene Nutzerverknüpfungen werden nicht zum repräsentieren von "
+"Widerrufene Nutzerverknüpfungen werden nicht zum Repräsentieren von "
 "föderierten Nutzern verwendet. So lange sie nicht entfernt werden, wird "
 "diese Nutzerverknüpfung nicht durch das Importieren von Updates erneut "
 "erzeugt."
@@ -6632,6 +6771,16 @@ msgstr "Identität verknüpfen"
 
 #, python-format
 msgid ""
+"You have to confirm that you want to verify the federated identity using "
+"the currently signed-in user (%(username)s #%(user_id)s). After verifying"
+" the identity, it can be used for the federated login."
+msgstr ""
+"Sie müssen bestätigen, dass Sie mit dem angemeldeten Nutzer eine "
+"föderierte Identität erstellen möchten (%(username)s #%(user_id)s). "
+"Danach kann die Identität für die föderierte Anmeldung verwendet werden."
+
+#, python-format
+msgid ""
 "You have to confirm that you want to create a federated identity using "
 "the currently signed-in user (%(username)s #%(user_id)s)."
 msgstr ""
@@ -6640,6 +6789,57 @@ msgstr ""
 
 msgid "Confirm Identity"
 msgstr "Identität bestätigen"
+
+#, python-format
+msgid ""
+"The currently signed in user (%(username)s #%(user_id)s) is already "
+"linked with a different user."
+msgstr ""
+"Der derzeit angemeldete Nutzer (%(username)s #%(user_id)s) ist bereits "
+"mit einem anderen Nutzer verknüpft."
+
+#, python-format
+msgid ""
+"The currently signed in user (%(username)s #%(user_id)s) is already "
+"linked with you."
+msgstr ""
+"Der derzeit angemeldete Nutzer (%(username)s #%(user_id)s) ist bereits "
+"mit Ihnen verknüpft."
+
+msgid "Back to federation overview"
+msgstr "Zurück zur Föderationsübersicht"
+
+msgid ""
+"A federated identity was found for the federated user, but has not been "
+"verified. Please login to the corresponding user so that the federated "
+"identity can be enabled for login. This needs to be done once."
+msgstr ""
+"Eine föderierte Identität wurde für den föderierteren Nutzer gefunden, "
+"die noch nicht verifiziert wurde. Bitte melden Sie sich mit dem "
+"zugehörigen lokalen Nutzer an, sodass die föderierte Identität für die "
+"Anmeldung freigeschaltet werden kann. Dies muss nur einmal durchgeführt "
+"werden."
+
+msgid ""
+"The federated user does not have a federated identity at the local "
+"SampleDB service, which is needed to get access. Therefore, you need to "
+"sign in to an existing account."
+msgstr ""
+"Der föderierte Nutzer hat noch keine föderierte Identität bei dem lokalen"
+" SampleDB-Dienst, die erforderlich ist, um Zugriff zu bekommen. Dazu "
+"müssen Sie sich bei einem existierenden Nutzer anmelden."
+
+msgid "As an alternative you can also create a new user."
+msgstr "Alternativ dazu können Sie auch einen neuen Nutzer erstellen."
+
+msgid "Sign in to existing account"
+msgstr "Bei bestehendem Konto anmelden"
+
+msgid "Sign up"
+msgstr "Registrieren"
+
+msgid "Create User"
+msgstr "Nutzer erstellen"
 
 #, python-format
 msgid ""
@@ -6658,6 +6858,9 @@ msgstr "UUID von %(service_name)s: "
 
 msgid "Add Database"
 msgstr "Datenbank hinzufügen"
+
+msgid "Federated Login is available"
+msgstr "Föderierte Anmeldung ist verfügbar"
 
 #, python-format
 msgid ""
@@ -7045,6 +7248,16 @@ msgstr "Für diesen Passkey wurde kein Nutzer gefunden."
 msgid "Please sign in again."
 msgstr "Bitte melden Sie sich erneut an."
 
+msgid "The federated login token expired. No federated identity link was created."
+msgstr ""
+"Das föderierte Anmeldetoken ist abgelaufen. Es wurde keine föderierte "
+"Identitätsverknüpfung erzeugt."
+
+msgid "The federated user already has a federated identity with a different user."
+msgstr ""
+"Der föderierte Nutzer hat in dieser Datenbank bereits eine föderierte "
+"Identität mit einem anderen Nutzer."
+
 msgid "Please enter a valid user name."
 msgstr "Bitte geben Sie einen gültigen Nutzernamen ein."
 
@@ -7189,13 +7402,6 @@ msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 msgid "Successfully updated your user name."
 msgstr "Der Nutzername wurde erfolgreich geändert."
 
-msgid ""
-"Sending an email failed. Please try again later or contact an "
-"administrator."
-msgstr ""
-"Das Senden einer E-Mail ist fehlgeschlagen. Bitte versuchen Sie es später"
-" erneut oder kontaktieren Sie einen Administrator."
-
 msgid "Please see your email to confirm this change."
 msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
 
@@ -7339,6 +7545,10 @@ msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
 msgid "Imported User"
 msgstr "Importierter Nutzer"
+
+#, python-format
+msgid "Federated login is disabled for %(service_name)s."
+msgstr "Die föderierte Anmeldung ist für %(service_name)s deaktiviert."
 
 #, python-format
 msgid ""

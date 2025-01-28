@@ -16,17 +16,21 @@ from flask_babel import _
 
 from . import frontend
 from .federation_forms import AddComponentForm, EditComponentForm, SyncComponentForm, CreateAPITokenForm, \
-    AddOwnAPITokenForm, AuthenticationMethodForm, AddAliasForm, EditAliasForm, DeleteAliasForm, ModifyELNIdentityForm
+    AddOwnAPITokenForm, AuthenticationMethodForm, AddAliasForm, EditAliasForm, DeleteAliasForm, ModifyELNIdentityForm, \
+    FederatedUserCreationForm
 from ..logic import errors
+from ..logic.utils import send_federated_login_account_creation_email
 from .utils import check_current_user_is_not_readonly
 from ..logic.component_authentication import remove_component_authentication_method, add_token_authentication, remove_own_component_authentication_method, add_own_token_authentication
 from ..logic.components import get_component, update_component, add_component, get_components, check_component_exists, get_component_infos, ComponentInfo, get_component_by_uuid
 from ..logic.federation.update import import_updates
-from ..logic.users import get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, get_user_alias, delete_user_link, \
+from ..logic.federation.utils import login_required_saml, federated_login_route
+from ..logic.federation.login import sp_login, get_idp_metadata, get_sp_metadata, process_login, resolve_artifact, eval_artifact_resolve, delete_old_artifacts
+from ..logic.users import create_user, get_user_aliases_for_user, create_user_alias, update_user_alias, delete_user_alias, get_user_alias, delete_user_link, \
     get_federated_identity, get_federated_identities, revoke_user_links_by_fed_ids, create_sampledb_federated_identity, delete_user_links_by_fed_ids, \
-    revoke_user_link, enable_user_link
+    revoke_user_link, enable_user_link, get_user_by_federated_user, get_user, get_active_federated_identity_by_federated_user, enable_federated_identity_for_login, identity_not_required_for_auth, set_user_hidden
 from ..logic.background_tasks import post_poke_components_task
-from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication
+from ..models import OwnComponentAuthentication, ComponentAuthenticationType, ComponentAuthentication, User, UserType, BackgroundTaskStatus, Authentication, AuthenticationType
 from ..utils import FlaskResponseT
 
 
@@ -197,6 +201,8 @@ def component(component_id: int) -> FlaskResponseT:
     if component_address and not component_address.endswith('/'):
         component_address += '/'
 
+    has_other_auth_methods = identity_not_required_for_auth(component_id)
+
     return flask.render_template(
         'other_databases/component.html',
         component=component,
@@ -213,7 +219,8 @@ def component(component_id: int) -> FlaskResponseT:
         created_api_token=created_api_token,
         active_identities=active_identities,
         inactive_identities=inactive_identities,
-        federation_user_base_url=f"{component_address}users"
+        federation_user_base_url=f"{component_address}users",
+        has_other_auth_methods=has_other_auth_methods
     )
 
 
@@ -508,28 +515,46 @@ def user_alias() -> FlaskResponseT:
     )
 
 
-@frontend.route("/other-databases/redirect-identity-confirmation/<component_uuid>", methods=["POST"])
+@frontend.route("/other-databases/redirect-identity-confirmation/<string:component>", methods=["POST"])
 @flask_login.login_required
-def redirect_login_confirmation(component_uuid: str) -> FlaskResponseT:
+def redirect_login_confirmation(component: str) -> FlaskResponseT:
     try:
-        component = get_component_by_uuid(component_uuid)
+        database = get_component_by_uuid(component)
     except errors.InvalidComponentUUIDError:
-        return flask.redirect("frontend.federation")
+        return flask.redirect(flask.url_for("frontend.federation"))
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
     session_state = hashlib.sha256(os.urandom(1024)).hexdigest()
     flask.session['fim_state'] = session_state
     link_identity_token = serializer.dumps({'user_id': flask_login.current_user.id, 'state': session_state})
-    component_address = component.address
+
+    component_address = database.address
     if component_address and not component_address.endswith('/'):
         component_address += '/'
-    return flask.redirect(f"{component_address}other-databases/link-identity?source_db={flask.current_app.config['FEDERATION_UUID']}&token={str(link_identity_token)}&state={session_state}")
+
+    all_fed_identities = get_federated_identities(user_id=flask_login.current_user.id, component=database)
+    all_component_fed_ids = {identity.local_fed_user.fed_id for identity in get_federated_identities(component=database)}
+    different_linked_ids = all_component_fed_ids.difference(identity.local_fed_user.fed_id for identity in all_fed_identities)
+
+    url_enc_verified_fed_identities = ",".join(str(identity.local_fed_user.fed_id) for identity in all_fed_identities if identity.login)
+    url_enc_unverified_fed_identities = ",".join(str(identity.local_fed_user.fed_id) for identity in all_fed_identities if not identity.login)
+    url_enc_different_linked_fed_identities = ",".join(str(id) for id in different_linked_ids)
+
+    redirect_url = f"{component_address}other-databases/link-identity?source_db={flask.current_app.config['FEDERATION_UUID']}&token={str(link_identity_token)}&state={session_state}"
+
+    if url_enc_verified_fed_identities:
+        redirect_url += f"&verified_ids={url_enc_verified_fed_identities}"
+    if url_enc_unverified_fed_identities:
+        redirect_url += f"&unverified_ids={url_enc_unverified_fed_identities}"
+    if url_enc_different_linked_fed_identities:
+        redirect_url += f"&linked_ids={url_enc_different_linked_fed_identities}"
+
+    return flask.redirect(redirect_url)
 
 
-@frontend.route("/other-databases/link-identity/", methods=["POST"])
-@flask_login.login_required
+@frontend.route("/other-databases/finalize-link-identity/", methods=["GET"])
 def link_identity() -> FlaskResponseT:
-    identity_token = flask.request.form.get('token')
-    federation_partner_uuid = flask.request.form.get('federation_partner_uuid')
+    identity_token = flask.request.args.get('token')
+    federation_partner_uuid = flask.request.args.get('federation_partner_uuid')
 
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
 
@@ -565,13 +590,31 @@ def link_identity() -> FlaskResponseT:
         return flask.redirect(flask.url_for(".federation"))
 
     try:
-        create_sampledb_federated_identity(flask_login.current_user.id, federation_partner, fed_user_id, update_if_inactive=True)
+        federation_user = get_user(user_id=fed_user_id, component_id=federation_partner.id)
+        identity = get_federated_identity(token_data['user_id'], federation_user.id)
+    except (errors.FederatedIdentityNotFoundError, errors.UserDoesNotExistError):
+        identity = None
+
+    try:
+        if identity is None or not identity.active:
+            create_sampledb_federated_identity(token_data['user_id'], federation_partner, fed_user_id, update_if_inactive=True, use_for_login=True)
+            flask.flash(_("You were successfully linked with a federated user from %(component_name)s.", component_name=federation_partner.get_name()), 'success')
+        else:
+            enable_federated_identity_for_login(identity)
+            flask.flash(_("The identity was successfully verified."), 'success')
     except errors.FederatedUserInFederatedIdentityError:
         flask.flash(_("The federated user already has a federated identity in this database."), 'error')
-    else:
-        flask.flash(_("You were successfully linked with a federated user from %(component_name)s.", component_name=federation_partner.name), 'success')
 
     return flask.redirect(flask.url_for('.component', component_id=federation_partner.id))
+
+
+@frontend.route("/other-databases/redirect-uuid/<string:component>", methods=["GET"])
+def redirect_by_federation_uuid(component: str) -> FlaskResponseT:
+    try:
+        database = get_component_by_uuid(component_uuid=component)
+    except errors.ComponentDoesNotExistError:
+        return flask.redirect(flask.url_for('.federation'))
+    return flask.redirect(flask.url_for('.component', component_id=database.id))
 
 
 @frontend.route("/other-databases/link-identity/", methods=["GET"])
@@ -579,6 +622,19 @@ def link_identity() -> FlaskResponseT:
 def confirm_identity() -> FlaskResponseT:
     source_database_uuid = flask.request.args.get('source_db', '')
     token = flask.request.args.get('token')
+
+    def int_or_none(s: str) -> typing.Optional[int]:
+        try:
+            return int(s)
+        except ValueError:
+            return None
+
+    form_verified_ids = flask.request.args.get('verified_ids')
+    form_unverified_ids = flask.request.args.get('unverified_ids')
+    form_linked_ids = flask.request.args.get('linked_ids')
+    verified_ids = [int_or_none(id) for id in form_verified_ids.split(',')] if form_verified_ids else []
+    unverified_ids = [int_or_none(id) for id in form_unverified_ids.split(',')] if form_unverified_ids else []
+    linked_ids = [int_or_none(id) for id in form_linked_ids.split(',')] if form_linked_ids else []
     serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='identity-token-validation')
 
     source_database = None
@@ -594,13 +650,22 @@ def confirm_identity() -> FlaskResponseT:
     if component_address and not component_address.endswith('/'):
         component_address += '/'
 
-    confirmation_url = f"{component_address}other-databases/link-identity/"
+    confirmation_url = f"{component_address}other-databases/finalize-link-identity"
+    cancel_url = f"{component_address}other-databases/redirect-uuid/{flask.current_app.config['FEDERATION_UUID']}"
+
+    verified_linked = flask_login.current_user.id in verified_ids
+    unverified_linked = flask_login.current_user.id in unverified_ids
+    linked = flask_login.current_user.id in linked_ids
 
     return flask.render_template(
         "other_databases/confirm_identity.html",
         source_database=source_database,
         confirmation_url=confirmation_url,
-        identity_token=identity_token
+        cancel_url=cancel_url,
+        identity_token=identity_token,
+        verified_linked=verified_linked,
+        unverified_linked=unverified_linked,
+        linked=linked
     )
 
 
@@ -648,7 +713,10 @@ def revoke_active_identities(component_id: int) -> FlaskResponseT:
         return flask.redirect(flask.url_for(".component", component_id=component_id))
 
     if fed_ids:
-        revoke_user_links_by_fed_ids(flask_login.current_user.id, component.id, fed_ids)
+        try:
+            revoke_user_links_by_fed_ids(flask_login.current_user.id, component.id, fed_ids)
+        except errors.NoAuthenticationMethodError:
+            flask.flash(_('You must keep at least one federated identity to login or add another authentication method first.'), 'error')
 
     return flask.redirect(flask.url_for(".component", component_id=component_id))
 
@@ -677,3 +745,214 @@ def modify_eln_identity(eln_import_id: int) -> FlaskResponseT:
     else:
         flask.flash(_('An error occurred: Failed to edit federated identity.'), 'error')
     return flask.redirect(flask.url_for('.eln_import', eln_import_id=eln_import_id))
+
+
+@frontend.route("/federated-login/sp/<int:component_id>", methods=['POST', 'GET'])
+@federated_login_route
+def federated_login(component_id: int) -> FlaskResponseT:
+    try:
+        component = get_component(component_id)
+    except errors.ComponentDoesNotExistError:
+        return flask.redirect(flask.url_for("frontend.sign_in"))
+
+    if not component.fed_login_available:
+        flask.flash(_('The federated login is not available for %(component_name)s.', component_name=component.get_name()), 'error')
+        return flask.redirect(flask.url_for("frontend.sign_in"))
+
+    is_shared_device = bool(flask.request.form.get('shared_device'))
+
+    try:
+        redirect = sp_login(component, shared_device=is_shared_device)
+    except errors.FailedMetadataFetchingError:
+        flask.flash(_("%(component_name)s disabled the federated login.", component_name=component.get_name()), 'error')
+        return flask.redirect(flask.url_for('frontend.sign_in'))
+    except errors.InvalidSAMLRequestError:
+        flask.flash(_("Failed to use federated login. Please contact an administrator."), 'error')
+        return flask.redirect(flask.url_for('frontend.sign_in'))
+    return redirect
+
+
+@frontend.route("/federated-login/sp/metadata.xml/<string:component>", methods=['GET'])
+@federated_login_route
+def service_provider_metadata(component: str) -> FlaskResponseT:
+    try:
+        database = get_component_by_uuid(component)
+    except errors.ComponentDoesNotExistError:
+        return flask.redirect(flask.url_for("frontend.sign_in"))
+
+    return flask.Response(get_sp_metadata(database), mimetype="text/xml")
+
+
+@frontend.route("/federated-login/sp/acs", methods=['GET'])
+@federated_login_route
+def assertion_consumer_service() -> FlaskResponseT:
+    args = flask.request.args
+    if 'SAMLart' not in args and 'current_saml_artifact' not in flask.session:
+        flask.flash(_('An error occurred: Failed to use federated login. Please try again.'), 'error')
+        return flask.redirect(flask.url_for('frontend.sign_in'))
+
+    if 'SAMLart' in args:
+        saml_artifact = args['SAMLart']
+        flask.session['current_saml_artifact'] = args['SAMLart']
+    else:
+        saml_artifact = flask.session['current_saml_artifact']
+
+    try:
+        federated_user_information = resolve_artifact(saml_artifact)
+    except errors.MismatchedResponseToRequestError:
+        flask.flash(_('An error occurred: The authentication could not be verified. Please try again.'), 'error')
+        return flask.redirect(flask.url_for('.sign_in'))
+
+    if 'saml_sso_component' not in flask.session:
+        flask.flash(_('Failed to use federated login. Please try again.'), 'error')
+        return flask.redirect(flask.url_for("frontend.sign_in"))
+
+    component = get_component_by_uuid(flask.session['saml_sso_component'])
+
+    try:
+        fed_user = get_user(int(federated_user_information["uid"]), component.id)
+    except errors.UserDoesNotExistError:
+        fed_user = create_user(name=None, email=None, type=UserType.FEDERATION_USER, component_id=component.id, fed_id=int(federated_user_information["uid"]))
+        set_user_hidden(fed_user.id, hidden=True)
+
+    local_user = get_user_by_federated_user(fed_user.id, login=True)
+
+    if local_user is not None:
+        flask_login.login_user(local_user)
+        return flask.redirect(flask.url_for('.index'))
+
+    federated_identity_exists = get_active_federated_identity_by_federated_user(federated_user_id=fed_user.id) is not None
+
+    flask.session['saml_sso_user_details'] = {
+        "fed_user_id": fed_user.fed_id,
+        "component_id": fed_user.component_id,
+        "user_email": federated_user_information['email']
+    }
+
+    authentication_mails = [auth.login['login'] for auth in Authentication.query.filter_by(type=AuthenticationType.EMAIL).all()]
+    user_by_email = User.query.filter_by(email=federated_user_information['email']).first()
+
+    if federated_identity_exists:
+        flask.flash(_('The federated user already has a federated identity in this database which is not verified. Please sign in to the corresponding user.'), 'info')
+    elif user_by_email or federated_user_information['email'] in authentication_mails:
+        flask.flash(_('A user with this email address exists already. If you own this account, please use the sign in.'), 'info')
+
+    create_user_form = FederatedUserCreationForm()
+    serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated-identities')
+    federated_login_token = serializer.dumps((fed_user.fed_id, fed_user.component_id))
+
+    return flask.render_template(
+        "other_databases/federated_login.html",
+        component=component,
+        has_errors=False,
+        federated_user_information=federated_user_information,
+        allow_create_user=flask.current_app.config['ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER'] and not federated_identity_exists,
+        create_user_form=create_user_form,
+        federated_login_token=federated_login_token,
+        not_verified=federated_identity_exists
+    )
+
+
+@frontend.route("/federated-login/idp/verify", methods=['GET', 'POST'])
+@federated_login_route
+@login_required_saml
+def federated_login_verify() -> FlaskResponseT:
+    form_data: dict[str, typing.Any] = {}
+    form_data.update(flask.request.args)
+    if 'SAMLRequest' in flask.session:
+        form_data.update({
+            'SAMLRequest': flask.session['SAMLRequest']
+        })
+        del flask.session['SAMLRequest']
+
+    try:
+        response = process_login(form_data)
+    except errors.InvalidSAMLRequestError:
+        flask.flash(_('Failed to verify the authentication request. Please try again or contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/federation.html#federated-login"), "error-url")
+        return flask.redirect(flask.url_for('.index'))
+
+    if response is None:
+        flask.flash(_('Failed to use federated login because of missing metadata. Please contact an administrator. If you are an administrator, follow the <a href="%(docs_url)s">documentation</a>.', docs_url="https://scientific-it-systems.iffgit.fz-juelich.de/SampleDB/administrator_guide/federation.html#federated-login"), 'error-url')
+        return flask.redirect(flask.url_for('.index'))
+    return response
+
+
+@frontend.route("/federated-login/idp/metadata.xml", methods=['GET'])
+@federated_login_route
+def identity_provider_metadata() -> FlaskResponseT:
+    return flask.Response(get_idp_metadata(), mimetype="text/xml")
+
+
+@frontend.route("/federated-login/idp/ars", methods=['POST'])
+@federated_login_route
+def artifact_resolution_service() -> FlaskResponseT:
+    try:
+        response = eval_artifact_resolve(flask.request.data)
+    except Exception:
+        return flask.Response("Artifact not found", status=404)
+    delete_old_artifacts()
+    return flask.Response(response=response['data'], headers=response['headers'])
+
+
+@frontend.route("/federated-login/sp/finalize", methods=['POST'])
+@federated_login_route
+def finalize_federated_login() -> FlaskResponseT:
+    create_user_form = FederatedUserCreationForm()
+    sso_details = flask.session['saml_sso_user_details']
+
+    if create_user_form.validate_on_submit():
+        mail_status_send = send_federated_login_account_creation_email(
+            email=sso_details['user_email'],
+            username=create_user_form.username.data,
+            component_id=sso_details['component_id'],
+            fed_id=sso_details['fed_user_id']
+        )[0]
+
+        if mail_status_send == BackgroundTaskStatus.FAILED:
+            flask.flash(_("Sending an email failed. Please try again later or contact an administrator."), 'error')
+        else:
+            flask.flash(_("Please see your email to confirm this mail address and create the user."), 'success')
+
+    else:
+        flask.flash(_('The selected username is not valid: %(error)s', error=create_user_form.username.errors[0]), 'error')
+        return flask.redirect(flask.url_for('.assertion_consumer_service'))
+    return flask.redirect(flask.url_for('.index'))
+
+
+@frontend.route("/federated-login/create-account/<string:token>", methods=['GET'])
+@federated_login_route
+def create_account_by_federated_login(token: str) -> FlaskResponseT:
+    serializer = itsdangerous.URLSafeTimedSerializer(secret_key=flask.current_app.config['SECRET_KEY'], salt='federated_login_account')
+    try:
+        token_data = serializer.loads(token, max_age=flask.current_app.config['INVITATION_TIME_LIMIT'])
+    except itsdangerous.BadData:
+        flask.flash(_("Invalid token. Please login again."), 'error')
+        return flask.redirect(flask.url_for('.index'))
+
+    try:
+        federated_user = get_user(user_id=token_data['fed_id'], component_id=token_data['component_id'])
+    except errors.UserDoesNotExistError:
+        federated_user = None
+
+    if federated_user is not None and get_user_by_federated_user(federated_user_id=federated_user.id):
+        flask.flash(_("The federated user already has a local federated identity. Please login with this user."), 'error')
+        return flask.redirect(flask.url_for('.index'))
+
+    local_user = create_user(
+        name=token_data['username'],
+        email=token_data['email'],
+        type=UserType.PERSON
+    )
+
+    create_sampledb_federated_identity(
+        user_id=local_user.id,
+        component=get_component(component_id=token_data['component_id']),
+        fed_id=token_data['fed_id'],
+        use_for_login=True
+    )
+
+    flask.flash(_("The user was successfully created. Please sign in."), 'success')
+    return flask.render_template('sign_in.html',
+                                 saml_user_creation=True,
+                                 component=get_component(token_data['component_id']),
+                                 )
