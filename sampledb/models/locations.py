@@ -118,6 +118,7 @@ class Location(Model):
     type: Mapped[LocationType] = relationship('LocationType')
     responsible_users: Mapped[typing.List['User']] = relationship("User", secondary=location_user_association_table, order_by="User.name")
     is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
+    enable_object_assignments: Mapped[bool] = db.Column(db.Boolean, default=True, server_default=db.true(), nullable=False)
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Location"]]

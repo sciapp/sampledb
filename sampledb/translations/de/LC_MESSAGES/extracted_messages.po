@@ -4644,6 +4644,12 @@ msgstr ""
 msgid "This location has been hidden from location lists."
 msgstr "Dieser Ort wurde aus Ortslisten versteckt."
 
+msgid "Objects may not be assigned to locations of this type."
+msgstr "Orten dieses Typs dürfen keine Objekte zugewiesen werden."
+
+msgid "Objects may not be assigned to this location."
+msgstr "Diesem Ort dürfen keine Objekte zugewiesen werden."
+
 msgid "Sub-Locations"
 msgstr "Unter-Orte"
 
@@ -4818,6 +4824,9 @@ msgstr "Verantwortliche Nutzer"
 
 msgid "Hide this location from location lists"
 msgstr "Diesen Ort aus Ortslisten verstecken"
+
+msgid "Objects may be assigned to this location"
+msgstr "Diesem Ort dürfen Objekte zugewiesen werden"
 
 msgid "Location Permissions"
 msgstr "Ortsberechtigungen"

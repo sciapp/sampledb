@@ -44,6 +44,7 @@ class LocationForm(FlaskForm):
     type = SelectField(validators=[DataRequired()])
     responsible_users = SelectMultipleField()
     is_hidden = BooleanField(default=False)
+    enable_object_assignments = BooleanField(default=True)
     capacities = FieldList(FormField(LocationCapacityForm))
 
 
@@ -400,9 +401,11 @@ def _show_location_form(
     if location is not None:
         submit_text = "Save"
         may_change_hidden = flask_login.current_user.is_admin
+        may_change_enable_object_assignments = flask_login.current_user.is_admin and (location.type is None or location.type.enable_object_assignments)
     else:
         submit_text = "Create"
         may_change_hidden = False
+        may_change_enable_object_assignments = False
 
     location_types = logic.locations.get_location_types()
 
@@ -515,6 +518,10 @@ def _show_location_form(
             location_form.is_hidden.data = location.is_hidden
         else:
             location_form.is_hidden.data = False
+        if location is not None:
+            location_form.enable_object_assignments.data = location.enable_object_assignments
+        else:
+            location_form.enable_object_assignments.data = True
 
         if location is not None:
             capacities = get_location_capacities(location.id)
@@ -704,6 +711,7 @@ def _show_location_form(
                 user_id=flask_login.current_user.id,
                 type_id=location_type_id,
                 is_hidden=location_form.is_hidden.data if may_change_hidden else location.is_hidden,
+                enable_object_assignments=location_form.enable_object_assignments.data if may_change_enable_object_assignments else location.enable_object_assignments,
             )
             flask.flash(_('The location was updated successfully.'), 'success')
         if has_grant_permissions:
@@ -736,4 +744,5 @@ def _show_location_form(
         previous_parent_location_is_invalid=previous_parent_location_is_invalid,
         has_grant_permissions=has_grant_permissions,
         may_change_hidden=may_change_hidden,
+        may_change_enable_object_assignments=may_change_enable_object_assignments,
     )

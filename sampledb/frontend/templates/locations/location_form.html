@@ -203,6 +203,14 @@
         <input type="checkbox" id="input-hidden" name="{{ location_form.is_hidden.name }}" {% if location_form.is_hidden.data != False %}checked="checked"{% endif %}> {{ _('Hide this location from location lists') }}
       </label>
     {% endif %}
+
+    {% if may_change_enable_object_assignments %}
+      <div>
+        <label for="input-enable_object_assignments" style="font-weight:400">
+          <input type="checkbox" id="input-enable_object_assignments" name="{{ location_form.enable_object_assignments.name }}" {% if location_form.enable_object_assignments.data != False %}checked="checked"{% endif %}> {{ _('Objects may be assigned to this location') }}
+        </label>
+      </div>
+    {% endif %}
     </div>
 
     <div class="form-group row clearfix" style="padding-right:0.75em">

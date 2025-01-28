@@ -23,6 +23,17 @@
     {% endif %}
     </p>
   {% endif %}
+  {% if location.type is not none and not location.type.enable_object_assignments %}
+    <p class="text-muted">
+      <i class="fa fa-ban fa-fw" aria-hidden="true"></i>
+      {{_("Objects may not be assigned to locations of this type.") }}
+    </p>
+  {% elif not location.enable_object_assignments %}
+    <p class="text-muted">
+      <i class="fa fa-ban fa-fw" aria-hidden="true"></i>
+      {{_("Objects may not be assigned to this location.") }}
+    </p>
+  {% endif %}
   {% include "locations/responsible_users.html" %}
   {% if locations_tree %}
     <h2>{{ _('Sub-Locations') }}</h2>

@@ -113,6 +113,7 @@ def import_location(
                 user_id=None,
                 type_id=location_type_id,
                 is_hidden=location.is_hidden,
+                enable_object_assignments=location.enable_object_assignments
             )
             set_location_responsible_users(
                 location_id=location.id,

@@ -892,7 +892,7 @@ def objects() -> FlaskResponseT:
     projects_treepicker_info = None
     if edit_location:
         location_form = ObjectLocationAssignmentForm()
-        all_choices, choices = get_locations_form_data(filter=lambda location: location.type is None or location.type.enable_object_assignments)
+        all_choices, choices = get_locations_form_data(filter=lambda location: location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments))
         location_form.location.all_choices = all_choices
         location_form.location.choices = choices
         possible_resposible_users = [('-1', '-')]
@@ -1599,7 +1599,7 @@ def edit_multiple_locations() -> FlaskResponseT:
     location_form.location.choices = [('-1', '—')] + [
         (str(location.id), get_location_name(location, include_id=True))
         for location in get_locations_with_user_permissions(flask_login.current_user.id, Permissions.READ)
-        if location.type is None or location.type.enable_object_assignments
+        if location.enable_object_assignments and (location.type is None or location.type.enable_object_assignments)
     ]
 
     possible_resposible_users = [('-1', '-')]
