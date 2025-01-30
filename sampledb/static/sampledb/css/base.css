@@ -803,10 +803,6 @@ th:hover .search-helper {
     margin-right: 0;
 }
 
-.related-objects > div:first-of-type {
-    font-weight: bold;
-}
-
 .object-user-content,
 .instrument-user-content,
 .topic-user-content,

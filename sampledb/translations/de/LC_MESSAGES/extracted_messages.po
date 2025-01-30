@@ -6563,15 +6563,15 @@ msgstr "Bitte wählen Sie ein existierendes Etikettenpapierformat aus."
 msgid "Please select which data should be stored in the qr codes."
 msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
 
+#, python-format
+msgid "Include #%(object_id)s in Export"
+msgstr "#%(object_id)s in Export aufnehmen"
+
 msgid "hide plot"
 msgstr "Plot ausblenden"
 
 msgid "show plot"
 msgstr "Plot einblenden"
-
-#, python-format
-msgid "Include #%(object_id)s in Export"
-msgstr "#%(object_id)s in Export aufnehmen"
 
 msgid "Show all"
 msgstr "Alle anzeigen"
