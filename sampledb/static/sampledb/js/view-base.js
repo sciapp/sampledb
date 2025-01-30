@@ -371,8 +371,12 @@ $(function () {
     updateDataExportLink();
   });
   $('#button-related-objects-select-all').on('click', function () {
-    $('#dataExportModal .related-objects-tree-toggle').prop('checked', true);
-    $('input.data_export_object').prop('checked', true);
+    const exportModal = $('#dataExportModal');
+    for (let toggles = exportModal.find('.related-objects-tree-toggle:not(:checked)'); toggles.length > 0; toggles = exportModal.find('.related-objects-tree-toggle:not(:checked)')) {
+      toggles.prop('checked', true);
+      toggles.trigger('change');
+    }
+    exportModal.find('input.data_export_object').prop('checked', true);
     updateDataExportLink();
   });
   $('#button-related-objects-deselect-all').on('click', function () {
