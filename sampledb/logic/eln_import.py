@@ -561,7 +561,13 @@ def parse_eln_file(
             _eln_assert('ro-crate-metadata.json' in graph_nodes_by_id, "ro-crate-metadata.json @graph must contain entry with @id value 'ro-crate-metadata.json'")
             metadata_node = graph_nodes_by_id['ro-crate-metadata.json']
             _eln_assert(root_node['@type'] == 'Dataset' or root_node['@type'] == ['Dataset'], "ro-crate-metadata.json @graph root node must be Dataset")
-            _eln_assert(root_node.get('version') == '1.0' or metadata_node.get('version') == '1.0', "ro-crate-metadata.json @graph root node or ro-crate-metadata.json node must have version 1.0")
+            if 'version' in metadata_node:
+                supported_ro_crate_versions = [
+                    '1.0',
+                    '1.1',
+                    '1.2',
+                ]
+                _eln_assert(metadata_node['version'] in supported_ro_crate_versions or any(metadata_node['version'].startswith(supported_ro_crate_version + '.') for supported_ro_crate_version in supported_ro_crate_versions), f"ro-crate-metadata.json node has unsupported RO-Crate version (supported are: {', '.join(supported_ro_crate_versions)})")
             root_sdpublisher = root_node.get('sdPublisher')
             metadata_sdpublisher = metadata_node.get('sdPublisher')
             _eln_assert(isinstance(root_sdpublisher, dict) or isinstance(metadata_sdpublisher, dict), "ro-crate-metadata.json @graph root node or ro-crate-metadata.json node must contain valid sdPublisher")
@@ -602,6 +608,10 @@ def parse_eln_file(
                 _eln_assert(isinstance(object_node.get('description', ''), (str, dict)), "Invalid description for Dataset")
                 description = object_node.get('description', '')
                 if isinstance(description, dict):
+                    if list(description.keys()) == ['@id']:
+                        _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
+                        description = graph_nodes_by_id[description['@id']]
+                    _eln_assert(isinstance(object_node_ref, dict), "Invalid description")
                     _eln_assert(description.get('@type') == 'TextObject', "Invalid description for Dataset")
                     description_is_markdown = description.get('encodingFormat') == 'text/markdown'
                     description = description.get('text', '')
@@ -821,7 +831,16 @@ def parse_eln_file(
                     if object_part['@type'] == 'File':
                         _eln_assert(isinstance(object_part.get('name'), str), "Invalid name for File")
                         if 'description' in object_part:
-                            _eln_assert(isinstance(object_part.get('description'), str), "Invalid description for File")
+                            description = object_part.get('description')
+                            if isinstance(description, dict):
+                                if list(description.keys()) == ['@id']:
+                                    _eln_assert(description['@id'] in graph_nodes_by_id, "Reference to unknown ID")
+                                    description = graph_nodes_by_id[description['@id']]
+                                _eln_assert(isinstance(object_node_ref, dict), "Invalid description")
+                                _eln_assert(description.get('@type') == 'TextObject', "Invalid description for File")
+                                description = description.get('text', '')
+                            else:
+                                _eln_assert(isinstance(object_part.get('description'), str), "Invalid description for File")
                         file_path = object_part['@id']
                         try:
                             file_url_parse_result = urllib.parse.urlparse(file_path)
@@ -843,7 +862,7 @@ def parse_eln_file(
                                 files.append(ParsedELNURLFile(
                                     url=file_url,
                                     title=object_part.get('name'),
-                                    description=object_part.get('description'),
+                                    description=description,
                                     user_id=author_id,
                                     date_created=date_created
                                 ))

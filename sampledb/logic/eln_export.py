@@ -59,7 +59,7 @@ def generate_ro_crate_metadata(
                 "sdPublisher": {
                     "@id": "SampleDB"
                 },
-                "version": "1.0",
+                "version": "1.1",
                 "dateCreated": date_created
             },
             {
