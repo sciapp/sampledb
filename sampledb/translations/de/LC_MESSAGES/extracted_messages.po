@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-01-20 06:50+0100\n"
+"POT-Creation-Date: 2025-02-03 10:26+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.16.0\n"
+"Generated-By: Babel 2.17.0\n"
 
 msgid "Editing imported action types is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionstypen wird noch nicht unterstützt."
@@ -5154,9 +5154,11 @@ msgstr "Wählen Sie ein Papierformat aus"
 msgid "The quantity must be an integer value greater than 0."
 msgstr "Die Anzahl muss ein ganzzahliger Wert größer als 0 sein."
 
+#, python-brace-format
 msgid "The width must be a number between {minWidth} and {maxWidth}."
 msgstr "Die Breite muss eine Zahl zwischen {minWidth} und {maxWidth} sein."
 
+#, python-brace-format
 msgid "The minimum height must be a number between 0 and {maxHeight}."
 msgstr "Die Mindesthöhe muss eine Zahl zwischen 0 und {maxHeight} sein."
 
@@ -6554,6 +6556,7 @@ msgstr "Bitte wählen Sie einen verantwortlichen Nutzer oder einen Ort aus"
 msgid "Please select a paper format."
 msgstr "Bitte wählen Sie ein Papierformat aus."
 
+#, python-brace-format
 msgid "Please enter a number between {minimum} and {maximum}."
 msgstr "Bitte geben Sie eine Zahl zwischen {minimum} und {maximum} ein."
 
