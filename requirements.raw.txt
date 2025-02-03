@@ -24,5 +24,6 @@ pyotp
 qrcode
 reportlab
 requests
+pysaml2
 SQLAlchemy
 weasyprint
