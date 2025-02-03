@@ -155,6 +155,12 @@ def generate_ro_crate_metadata(
             "variableMeasured": property_value_references,
             "mentions": [],
             "comment": [],
+            "isBasedOn": [
+                {
+                    "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
+                }
+                for version_info in object_info['versions']
+            ],
             "hasPart": [
                 {
                     "@id": f"./objects/{object_info['id']}/versions/{version_info['id']}/",
@@ -232,6 +238,14 @@ def generate_ro_crate_metadata(
                     }
                 ]
             })
+            previous_version_refs = []
+            for other_version_info in object_info['versions']:
+                if other_version_info['id'] < version_info['id']:
+                    previous_version_refs.append({
+                        "@id": f"./objects/{object_info['id']}/versions/{other_version_info['id']}/"
+                    })
+            if previous_version_refs:
+                ro_crate_metadata["@graph"][-1]['isBasedOn'] = previous_version_refs
 
             schema_json = json.dumps(version_info['schema'], indent=2).encode('utf-8')
             result_files[f"sampledb_export/objects/{object_info['id']}/versions/{version_info['id']}/schema.json"] = schema_json
