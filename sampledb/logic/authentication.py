@@ -1,5 +1,7 @@
 import base64
+import copy
 import datetime
+import dataclasses
 import functools
 import secrets
 import typing
@@ -26,6 +28,30 @@ fido2.features.webauthn_json_mapping.enabled = True
 NUM_BCYRPT_ROUNDS = 12
 
 
+@dataclasses.dataclass(frozen=True)
+class AuthenticationMethod:
+    """
+    This class provides an immutable wrapper around models.authentication.Authentication.
+    """
+    id: int
+    user_id: int
+    login: typing.Dict[str, typing.Any]
+    type: AuthenticationType
+    confirmed: bool
+    user: logic.users.User
+
+    @classmethod
+    def from_database(cls, authentication_method: Authentication) -> 'AuthenticationMethod':
+        return AuthenticationMethod(
+            id=authentication_method.id,
+            user_id=authentication_method.user_id,
+            login=copy.deepcopy(authentication_method.login),
+            type=authentication_method.type,
+            confirmed=authentication_method.confirmed,
+            user=logic.users.get_user(authentication_method.user_id)
+        )
+
+
 def _hash_password(password: str) -> str:
     return str(bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=NUM_BCYRPT_ROUNDS)).decode('utf-8'))
 
@@ -41,7 +67,7 @@ def _validate_password_authentication(authentication_method: Authentication, pas
 
 def _add_password_authentication(user_id: int, login: str, password: str, authentication_type: AuthenticationType, confirmed: bool = True) -> None:
     login = login.lower().strip()
-    if Authentication.query.filter(Authentication.login['login'].astext == login).first():
+    if check_authentication_method_with_login_exists(login=login):
         raise errors.AuthenticationMethodAlreadyExists('An authentication method with this login already exists')
     authentication = Authentication(
         login={'login': login, 'bcrypt_hash': _hash_password(password)},
@@ -147,14 +173,90 @@ def add_api_token(user_id: int, api_token: str, description: str) -> None:
     db.session.commit()
 
 
-def get_api_tokens(user_id: int) -> typing.Sequence[Authentication]:
+ALL_AUTHENTICATION_TYPES = {
+    authentication_type
+    for authentication_type in AuthenticationType.__members__.values()
+}
+
+
+def get_authentication_methods(
+        user_id: int,
+        authentication_types: typing.Set[AuthenticationType]
+) -> typing.Sequence[AuthenticationMethod]:
+    """
+    Get all authentication methods for a given user.
+
+    :param user_id: the ID of an existing user
+    :param authentication_types: the authentication types to filter for
+    :return: the authentication methods for the user
+    """
+    authentication_methods = Authentication.query.filter(
+        Authentication.user_id == user_id,
+        Authentication.type.in_(authentication_types)
+    ).all()
+    return [
+        AuthenticationMethod.from_database(authentication_method)
+        for authentication_method in authentication_methods
+    ]
+
+
+def get_api_tokens(user_id: int) -> typing.Sequence[AuthenticationMethod]:
     """
     Get all API tokens for a given user.
 
     :param user_id: the ID of an existing user
     :return: the API tokens for the user
     """
-    return Authentication.query.filter_by(user_id=user_id, type=AuthenticationType.API_TOKEN).all()
+    return get_authentication_methods(
+        user_id=user_id,
+        authentication_types={AuthenticationType.API_TOKEN}
+    )
+
+
+def get_authentication_method(authentication_method_id: int) -> AuthenticationMethod:
+    """
+    Get an authentication method by its ID.
+
+    :param authentication_method_id: the ID of an existing authentication method
+    :return: the authentication method
+    :raise errors.AuthenticationMethodDoesNotExistError: if the authentication method does not exist
+    """
+    authentication_method = Authentication.query.filter_by(id=authentication_method_id).first()
+    if authentication_method is None:
+        raise errors.AuthenticationMethodDoesNotExistError()
+    return AuthenticationMethod.from_database(authentication_method)
+
+
+def check_authentication_method_with_login_exists(login: str) -> bool:
+    """
+    Return whether an authentication method with a given login exists.
+
+    :param login: the login to check
+    :return: whether an authentication method with the login exists
+    """
+    return bool(db.session.query(db.exists().where(Authentication.login['login'].astext == login)).scalar())
+
+
+def confirm_authentication_method_by_email(
+        user_id: int,
+        email: str
+) -> None:
+    """
+    Mark an authentication method as confirmed by its associated email.
+
+    :param user_id: the ID of an existing user
+    :param email: the email for this authentication method
+    :raise errors.AuthenticationMethodDoesNotExistError: if the authentication method does not exist
+    """
+    authentication_method = Authentication.query.filter(
+        Authentication.user_id == user_id,
+        Authentication.login['login'].astext == email
+    ).first()
+    if authentication_method is None:
+        raise errors.AuthenticationMethodDoesNotExistError()
+    authentication_method.confirmed = True
+    db.session.add(authentication_method)
+    db.session.commit()
 
 
 def add_fido2_passkey(user_id: int, credential_data: AttestedCredentialData, description: str) -> None:

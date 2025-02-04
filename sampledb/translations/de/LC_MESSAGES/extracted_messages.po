@@ -7387,6 +7387,30 @@ msgstr "Die Benachrichtigung wurde gelöscht."
 msgid "The notification has been marked as read."
 msgstr "Die Benachrichtigung wurde als gelesen markiert."
 
+msgid "Successfully updated your user name."
+msgstr "Der Nutzername wurde erfolgreich geändert."
+
+msgid "Please see your email to confirm this change."
+msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
+
+msgid "Successfully updated your user information."
+msgstr "Ihre Nutzerinformationen wurden erfolgreich geändert."
+
+msgid "Failed to change password."
+msgstr "Das Ändern des Passworts ist fehlgeschlagen."
+
+msgid "Successfully updated your password."
+msgstr "Das Passwort wurde erfolgreich geändert."
+
+msgid "Successfully added the authentication method."
+msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
+
+msgid "Failed to add an authentication method."
+msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
+
+msgid "Failed to add an API token."
+msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
+
 msgid "You cannot delete an active two-factor authentication method."
 msgstr "Sie können eine aktive Zwei-Faktor-Authentisierungsmethode nicht löschen."
 
@@ -7401,42 +7425,6 @@ msgstr "Die Zwei-Faktor-Authentisierungsmethode wurde deaktiviert."
 
 msgid "Something went wrong, please try again."
 msgstr "Etwas ist fehlgeschlagen, bitte versuchen Sie es erneut."
-
-msgid "Successfully updated your password."
-msgstr "Das Passwort wurde erfolgreich geändert."
-
-msgid "Failed to change password."
-msgstr "Das Ändern des Passworts ist fehlgeschlagen."
-
-msgid "Successfully deleted your stored Dataverse API Token."
-msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
-
-msgid "Successfully updated your user name."
-msgstr "Der Nutzername wurde erfolgreich geändert."
-
-msgid "Please see your email to confirm this change."
-msgstr "Bitte schauen Sie in Ihre E-Mails, um diese Änderung zu bestätigen."
-
-msgid "Successfully updated your user information."
-msgstr "Ihre Nutzerinformationen wurden erfolgreich geändert."
-
-msgid "Successfully added the authentication method."
-msgstr "Die Authentifizierungsmethode wurde erfolgreich hinzugefügt."
-
-msgid "Failed to add an authentication method."
-msgstr "Das Hinzufügen einer Authentifizierungsmethode ist fehlgeschlagen."
-
-msgid "Failed to add an API token."
-msgstr "Das Hinzufügen eines API-Tokens ist fehlgeschlagen."
-
-msgid "Successfully updated default permissions."
-msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
-
-msgid "Successfully updated your notification settings."
-msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
-
-msgid "Successfully updated your settings."
-msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
 
 msgid "Successfully removed the webhook."
 msgstr "Der Webhook wurde erfolgreich entfernt."
@@ -7458,6 +7446,18 @@ msgstr "Das Registrieren des Webhooks ist fehlgeschlagen"
 
 msgid "The webhook has been added successfully"
 msgstr "Der Webhook wurde erfolgreich erstellt"
+
+msgid "Successfully updated your notification settings."
+msgstr "Die Benachrichtigungseinstellungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully updated default permissions."
+msgstr "Die Standard-Berechtigungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully updated your settings."
+msgstr "Ihre Einstellungen wurden erfolgreich aktualisiert."
+
+msgid "Successfully deleted your stored Dataverse API Token."
+msgstr "Das gespeicherte Dataverse API-Token wurde erfolgreich gelöscht."
 
 msgid "Your password has been reset."
 msgstr "Ihr Passwort wurde zurückgesetzt."
