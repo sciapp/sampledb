@@ -381,14 +381,13 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
 
         for object_id in object_ids:
             action_id = initial_object_version_by_id[object_id].action_id
+            action = None
             if action_id:
                 if action_id in actions_by_id:
                     action = actions_by_id[action_id]
                 else:
                     action = get_action(action_id)
                     actions_by_id[action_id] = action
-            else:
-                action = None
 
             if (
                 wf.is_none or

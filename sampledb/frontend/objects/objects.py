@@ -932,7 +932,7 @@ def objects() -> FlaskResponseT:
             actions = logic.actions.get_actions(action_type_id=use_in_action_type_id)
 
         for action in actions:
-            if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action.id not in favorite_actions:
+            if action.type_id == use_in_action_type_id and action.id in all_favorite_action_ids and action not in favorite_actions:
                 favorite_actions.append(action)
 
     elif generate_labels:
