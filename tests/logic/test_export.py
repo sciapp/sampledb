@@ -332,17 +332,12 @@ def test_eln_export(user, app):
             for severity in [
                 rocrate_validator.models.Severity.REQUIRED
             ]:
-                result = rocrate_validator.services.validate({
-                    "profiles_path": rocrate_validator.utils.get_profiles_path(),
-                    "profile_identifier": "ro-crate",
-                    "requirement_severity": severity.name,
-                    "requirement_severity_only": False,
-                    "inherit_profiles": True,
-                    "verbose": True,
-                    "rocrate_uri": rocrate_dir,
-                    "ontology_path": None,
-                    "abort_on_first": False
-                })
+                result = rocrate_validator.services.validate(rocrate_validator.models.ValidationSettings(
+                    profiles_path=rocrate_validator.utils.get_profiles_path(),
+                    profile_identifier="ro-crate-1.1",
+                    requirement_severity=severity.name,
+                    rocrate_uri=rocrate_validator.utils.URI(rocrate_dir),
+                ))
                 result_dict = result.to_dict()
                 assert result_dict['issues'] == []
                 assert result_dict['passed']
