@@ -11,6 +11,7 @@ from . import action_type_translations
 from . import api_log
 from . import authentication
 from . import background_tasks
+from . import caching
 from . import comments
 from . import components
 from . import component_authentication
@@ -80,6 +81,7 @@ __all__ = [
     'api_log',
     'authentication',
     'background_tasks',
+    'caching',
     'comments',
     'datatypes',
     'dataverse_export',

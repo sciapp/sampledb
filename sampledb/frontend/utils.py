@@ -36,6 +36,7 @@ import pytz
 import numpy as np
 
 from ..logic import errors
+from ..logic.caching import cache_per_request
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
 from ..logic.eln_import import get_eln_import_for_object
@@ -1711,6 +1712,7 @@ def current_utc_datetime() -> datetime:
 
 
 @JinjaFunction()
+@cache_per_request()
 def get_federated_identity(user: User | int) -> tuple[User, typing.Optional[User]]:
     if isinstance(user, int):
         user = get_user(user)

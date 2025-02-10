@@ -62,7 +62,7 @@ class User:
     orcid: typing.Optional[str]
     affiliation: typing.Optional[str]
     role: typing.Optional[str]
-    extra_fields: typing.Dict[str, typing.Any]
+    extra_fields: typing.Dict[str, typing.Any] = dataclasses.field(compare=False)
     fed_id: typing.Optional[int]
     component_id: typing.Optional[int]
     last_modified: datetime.datetime
