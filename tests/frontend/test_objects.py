@@ -2236,6 +2236,8 @@ def test_object_federation_references(flask_server, user, simple_object, compone
 
 
 def test_update_recipes_for_input(mock_current_user):
+    mock_current_user.id = 1
+
     schema = {
         'type': 'object',
         'title': 'Example Schema',
