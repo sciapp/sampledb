@@ -11,6 +11,8 @@ from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, current_user
 from flask_mail import Mail
+import orjson
+from flask_orjson import OrjsonProvider
 from flask_sqlalchemy import SQLAlchemy
 from bs4 import BeautifulSoup
 
@@ -158,6 +160,9 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
     app = flask.Flask(__name__)
     app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore
 
+    json_provider = OrjsonProvider(app)
+    json_provider.option = orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC | orjson.OPT_NON_STR_KEYS
+    app.json = json_provider
     app.config.from_object(sampledb.config)
 
     internal_config = sampledb.config.check_config(app.config)
