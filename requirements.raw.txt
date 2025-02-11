@@ -9,7 +9,8 @@ Flask-Babel
 Flask-HTTPAuth
 Flask-Login
 Flask-Mail
-Flask-MonitoringDashboard
+Flask-MonitoringDashboard @ git+https://github.com/FlorianRhiem/Flask-MonitoringDashboard.git@fix-requests-version
+flask-orjson
 Flask-SQLAlchemy
 Flask-WTF
 itsdangerous
