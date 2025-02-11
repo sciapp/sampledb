@@ -98,6 +98,7 @@ analyze-js:
     - dropdb -h $POSTGRES_HOST -U postgres postgres
     - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out stable version
+    - pip uninstall -y -r <(pip freeze)
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
     - git fetch upstream master
     - git checkout FETCH_HEAD
@@ -105,6 +106,7 @@ analyze-js:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # check out current version again
+    - pip uninstall -y -r <(pip freeze)
     - git checkout $CI_COMMIT_SHA
     # upgrade database using migrations
     - python3 -m pip install -r requirements.txt
@@ -117,6 +119,7 @@ analyze-js:
     - dropdb -h $POSTGRES_HOST -U postgres postgres
     - createdb -h $POSTGRES_HOST -U postgres postgres
     # check out development version
+    - pip uninstall -y -r <(pip freeze)
     - git fetch upstream develop
     - git checkout FETCH_HEAD
     # do not check migrating from develop to this commit if this commit is not a descendant of develop
@@ -125,6 +128,7 @@ analyze-js:
     - python3 -m pip install -r requirements.txt
     - python3 -m sampledb list_actions
     # check out current version again
+    - pip uninstall -y -r <(pip freeze)
     - git checkout $CI_COMMIT_SHA
     # upgrade database using migrations
     - python3 -m pip install -r requirements.txt
