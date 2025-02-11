@@ -65,7 +65,7 @@ from ..logic.objects import get_object
 from ..logic.groups import Group, get_groups
 from ..logic.projects import Project, get_projects, get_child_project_ids, get_parent_project_ids, get_project
 from ..logic.group_categories import get_group_category_tree, get_group_categories, get_basic_group_categories, get_project_group_categories, get_full_group_category_name, GroupCategoryTree
-from ..logic.files import File
+from ..logic.files import File, get_file as get_file_logic
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
 
@@ -139,6 +139,19 @@ def generate_qrcode(url: str, should_cache: bool = True) -> str:
     if should_cache:
         qrcode_cache[url] = qrcode_url
     return qrcode_url
+
+
+@JinjaFunction()
+def get_file(
+        file_id: int,
+        object_id: int,
+        component_uuid: typing.Optional[str] = None
+) -> typing.Optional[File]:
+    component_id = get_component_id_by_uuid(component_uuid)
+    try:
+        return get_file_logic(file_id, object_id, component_id)
+    except errors.FileDoesNotExistError:
+        return None
 
 
 @JinjaFilter()
