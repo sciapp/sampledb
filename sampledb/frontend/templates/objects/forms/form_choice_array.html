@@ -45,6 +45,8 @@
           >{{ option | get_translated_text }}</option>
         {% endfor %}
       </select>
+      {% if 'note' in schema['items'] %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['items']['note'] | get_translated_text }}</span>{% endif %}
+      {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
       {% block property_errors %}
       <span class="help-block error-note"></span>
       {% endblock %}

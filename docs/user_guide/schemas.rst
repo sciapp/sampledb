@@ -393,6 +393,11 @@ This attribute is a string or dict mapping ``"form"``, ``"view"`` and ``"inline_
 
 .. note:: Using a style other than the default may lead to issues when entering or viewing object data. Please test the action and how its objects are displayed. If you encounter issues with a style, you can `report it on GitHub <https://github.com/sciapp/sampledb/issues/new>`_.
 
+note
+^^^^
+
+A note to display below the field when creating or editing an object using this schema, as a JSON string or object, e.g. ``"Please describe the process in detail."`` or ``{"en": "Can be filled in later."}``.
+
 conditions
 ^^^^^^^^^^
 

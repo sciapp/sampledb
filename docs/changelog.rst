@@ -9,6 +9,7 @@ Currently in development.
 - Added federated login
 - Added setting for disabling object assignments for individual locations
 - Refactored related objects tree to improve performance
+- Allow notes on arrays in schema
 
 Version 0.30
 ------------
