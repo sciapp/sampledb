@@ -194,4 +194,10 @@
       </tfoot>
     </table>
   {% endif %}
+  <div class="form-group row">
+    <div class="col-md-9 col-md-offset-3" style="left: -2.5em;">
+      {% if 'note' in schema['items'] %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['items']['note'] | get_translated_text }}</span>{% endif %}
+      {% if 'note' in schema %}<span class="help-block"><strong>{{ _('Note:') }}</strong> {{ schema['note'] | get_translated_text }}</span>{% endif %}
+    </div>
+  </div>
 </div>

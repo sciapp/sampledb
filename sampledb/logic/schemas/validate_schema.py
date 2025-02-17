@@ -229,7 +229,7 @@ def _validate_array_schema(
     :param all_language_codes: the set of existing language codes
     :raise ValidationError: if the schema is invalid.
     """
-    valid_keys = {'type', 'title', 'items', 'style', 'tooltip', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions'}
+    valid_keys = {'type', 'title', 'items', 'style', 'tooltip', 'minItems', 'maxItems', 'defaultItems', 'default', 'may_copy', 'conditions', 'note'}
     required_keys = {'type', 'title', 'items'}
     schema_keys = set(schema.keys())
     invalid_keys = schema_keys - valid_keys
@@ -276,6 +276,7 @@ def _validate_array_schema(
         if has_default_items:
             raise ValidationError('default and defaultItems are mutually exclusive', path)
         validate(schema['default'], schema, path + ['(default)'], strict=strict)
+    _validate_note_in_schema(schema, path, all_language_codes=all_language_codes, strict=strict)
 
 
 def _validate_tags_schema(
