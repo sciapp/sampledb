@@ -338,6 +338,48 @@ def add_federated_login_authentication(federated_identity: FederatedIdentity) ->
     db.session.commit()
 
 
+def add_oidc_authentication(user_id: int, iss: str, sub: str) -> None:
+    """
+    Add an authentication method of type OIDC for a given user.
+
+    :param user_id: the ID of an existing user
+    :param iss: the issuer
+    :param sub: the subject identifier
+    """
+    authentication = Authentication(
+        login={
+            'iss': iss,
+            'sub': sub,
+        },
+        authentication_type=AuthenticationType.OIDC,
+        confirmed=True,
+        user_id=user_id
+    )
+    db.session.add(authentication)
+    db.session.commit()
+
+
+def get_oidc_authentications_by_sub(iss: str, sub: str) -> typing.List[AuthenticationMethod]:
+    """
+    Get all authentication methods of type OIDC with the given issuer and
+    subject identifier.
+
+    :param iss: the issuer
+    :param sub: the subject identifier
+    """
+    return [
+        AuthenticationMethod.from_database(method)
+        for method in
+        Authentication.query.filter(
+            db.and_(
+                Authentication.type == AuthenticationType.OIDC,
+                Authentication.login['iss'].astext == iss,
+                Authentication.login['sub'].astext == sub,
+            )
+        ).all()
+    ]
+
+
 @functools.cache
 def _verify_origin(origin: str) -> bool:
     origin_parsed = urllib.parse.urlparse(origin)

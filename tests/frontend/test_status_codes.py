@@ -468,6 +468,8 @@ def test_status_codes(flask_server, user, driver):
         f'users/me/api_token_id/{api_token_id}/log/': 302,
         'users/me/export': 302,
         'users/me/notifications': 302,
+        'users/me/oidc/callback': 302,
+        'users/me/oidc/start': 302,
         'users/me/preferences': 302,
         'users/me/shared_device_state': 200,
         'users/me/refresh_sign_in': 302,

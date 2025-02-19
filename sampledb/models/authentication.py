@@ -26,6 +26,7 @@ class AuthenticationType(enum.Enum):
     API_ACCESS_TOKEN = 5
     FIDO2_PASSKEY = 6
     FEDERATED_LOGIN = 7
+    OIDC = 8
 
 
 class Authentication(Model):

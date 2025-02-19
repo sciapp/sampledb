@@ -67,6 +67,37 @@ LDAP
 
 If you use LDAP for user management, you can use these variables to configure how SampleDB should connect to your LDAP server.
 
+.. _oidc_configuration:
+
+OpenID Connect (OIDC)
+----
+
+.. list-table:: OIDC Configuration Environment Variables
+   :header-rows: 1
+
+   * - Variable Name
+     - Description
+   * - SAMPLEDB_OIDC_NAME
+     - The name of the OIDC provider shown to the users
+   * - SAMPLEDB_OIDC_ISSUER
+     - The issuer value of the OIDC provider server. Configuration will be requested from ``$SAMPLEDB_OIDC_ISSUER/.well-known/openid-configuration``
+   * - SAMPLEDB_OIDC_CLIENT_ID
+     - The statically registered client_id at the OIDC provider.
+   * - SAMPLEDB_OIDC_CLIENT_SECRET
+     - The corresponding secret key.
+   * - SAMPLEDB_OIDC_SCOPES
+     - The scopes to request, defaults to ``openid profile email``. Must include the ``email``, ``email_verified`` and ``name`` properties.
+   * - SAMPLEDB_OIDC_DISABLE_NONCE
+     - If set, the ``nonce`` parameter, which protects against replay attacks, will not be used. This is not recommended but allowed for compatibility.
+   * - SAMPLEDB_OIDC_ROLES
+     - If set, reads roles using this attribute path.
+   * - SAMPLEDB_OIDC_ONLY
+     - If set, other login methods and invitations will be disabled. This does not affect API keys.
+   * - SAMPLEDB_OIDC_CREATE_ACCOUNT
+     - Which method should be used to create or link accounts. If ``auto_link`` (the default), new accounts will be automatically created and existing accounts linked via email. If ``deny_existing``, new accounts will be automatically created, but existing accounts must be manually configured to use OIDC. If ``no``, authentication methods must be manually added.
+
+If you use OIDC for user management, you can use these variables to configure how SampleDB should use your OIDC provider. See :ref:`OIDC<oidc>` for a detailed explanation.
+
 .. _customization_configuration:
 
 Customization

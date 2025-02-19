@@ -42,6 +42,13 @@ LDAP_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'LDAP_OBJECT_DEF',
 }
 
+OIDC_REQUIRED_CONFIG_KEYS: typing.Set[str] = {
+    'OIDC_NAME',
+    'OIDC_ISSUER',
+    'OIDC_CLIENT_ID',
+    'OIDC_CLIENT_SECRET',
+}
+
 
 def use_environment_configuration(env_prefix: str) -> None:
     """
@@ -123,6 +130,8 @@ def parse_configuration_values() -> None:
         'DISABLE_TOPICS',
         'ENABLE_FEDERATED_LOGIN',
         'ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER',
+        'OIDC_ONLY',
+        'OIDC_DISABLE_NONCE',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -269,6 +278,17 @@ def check_config(
     if missing_config_keys:
         print(
             'LDAP authentication will be disabled, because the following '
+            'configuration values are missing:\n -',
+            '\n - '.join(missing_config_keys),
+            '\n',
+            file=sys.stderr
+        )
+        show_config_info = True
+
+    missing_config_keys = OIDC_REQUIRED_CONFIG_KEYS - defined_config_keys
+    if missing_config_keys:
+        print(
+            'OIDC authentication will be disabled, because the following '
             'configuration values are missing:\n -',
             '\n - '.join(missing_config_keys),
             '\n',
@@ -626,6 +646,10 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if config['OIDC_CREATE_ACCOUNT'] not in ('no', 'deny_existing', 'auto_link'):
+        can_run = False
+        show_config_info = True
+
     if show_config_info:
         print(
             'For more information on setting SampleDB configuration, see: '
@@ -671,6 +695,17 @@ LDAP_CONNECT_TIMEOUT = 5
 # LDAP credentials, may both be None if anonymous access is enabled
 LDAP_USER_DN = None
 LDAP_PASSWORD = None
+
+# OIDC settings
+OIDC_NAME = None
+OIDC_ISSUER = None
+OIDC_CLIENT_ID = None
+OIDC_CLIENT_SECRET = None
+OIDC_SCOPES = 'openid profile email'
+OIDC_DISABLE_NONCE = False
+OIDC_ROLES = None
+OIDC_ONLY = False
+OIDC_CREATE_ACCOUNT = 'auto_link'
 
 # email settings
 MAIL_SERVER = None
@@ -837,3 +872,6 @@ if isinstance(SCICAT_FRONTEND_URL, str) and SCICAT_FRONTEND_URL.endswith('/'):
 # remove trailing slashes from Download Service url
 if isinstance(DOWNLOAD_SERVICE_URL, str) and DOWNLOAD_SERVICE_URL.endswith('/'):
     DOWNLOAD_SERVICE_URL = DOWNLOAD_SERVICE_URL[:-1]  # pylint: disable=unsubscriptable-object
+
+if OIDC_ONLY:
+    DISABLE_INVITATIONS = True

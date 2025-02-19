@@ -47,6 +47,7 @@ from . import object_search
 from . import object_search_parser
 from . import object_permissions
 from . import object_sorting
+from . import oidc
 from . import projects
 from . import publications
 from . import rdf
@@ -118,6 +119,7 @@ __all__ = [
     'object_search_parser',
     'object_permissions',
     'object_sorting',
+    'oidc',
     'projects',
     'publications',
     'rdf',

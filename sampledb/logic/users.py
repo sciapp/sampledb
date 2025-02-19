@@ -420,6 +420,14 @@ def get_users(
     ]
 
 
+def get_users_by_email(email: str) -> typing.List[User]:
+    return [
+        User.from_database(user)
+        for user in
+        users.User.query.filter_by(email=email).all()
+    ]
+
+
 def get_users_for_component(
         component_id: int,
         exclude_hidden: bool = False,
