@@ -423,7 +423,7 @@ def get_workflow_references(object: Object, user_id: int, actions_by_id: typing.
                     rf.is_none or (
                         object_id in referenced_object_ids and elem_object.action_id and rf.referenced_objects_filter(get_action(elem_object.action_id))
                     ) or (
-                        object_id in referenced_object_ids and elem_object.action_id and rf.referencing_objects_filter(get_action(elem_object.action_id))
+                        object_id in referencing_object_ids and elem_object.action_id and rf.referencing_objects_filter(get_action(elem_object.action_id))
                     )
                 ):
                     _handle_object(elem_object, workflow_index, path + [welem], actions_by_id, workflow_action_filters, recursion_action_filters, max_depth)
