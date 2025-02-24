@@ -179,6 +179,7 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
 
     app.register_blueprint(sampledb.api.server.api)
     app.register_blueprint(sampledb.api.federation.federation_api)
+    app.register_blueprint(sampledb.api.frontend.frontend_api)
 
     app.register_blueprint(sampledb.frontend.frontend)
 

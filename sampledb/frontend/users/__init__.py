@@ -7,7 +7,6 @@ from . import activity
 from . import api_log
 from . import authentication
 from . import create_other_user
-from . import favorites
 from . import groups
 from . import invitation
 from . import list
@@ -22,7 +21,6 @@ __all__ = [
     'api_log',
     'authentication',
     'create_other_user',
-    'favorites',
     'groups',
     'invitation',
     'list',

@@ -75,29 +75,27 @@
     </div>
   {% endif %}
   {% for action in actions %}
-    <form action="{{ url_for('.toggle_favorite_action', object_id=request.args.getlist('object_id'), t=request.args.get('t', None), topic_ids=request.args.get('topic_ids', None)) }}" method="post">
-      <input type="hidden" name="action_id" value="{{ action.id }}">
-      {{ toggle_favorite_action_form.csrf_token() }}
-      <h2>
-        {% if action.user is not none %}
-          {% set action_owner = get_user(action.user_id) %}
-          {% set federated_user, imported_user = get_federated_identity(action_owner) %}
-          <a href="{{ url_for('.user_profile', user_id=federated_user.id) }}" title="{{ federated_user.get_name() }}">{{ federated_user.get_name() }}</a>
-          {% if imported_user is not none %}
-            {{ import_information_symbol(imported_user) }} /
-          {% else %}
-            {{ import_information_symbol(action_owner) }} /
-          {% endif %}
+    <h2>
+      {% if action.user is not none %}
+        {% set action_owner = get_user(action.user_id) %}
+        {% set federated_user, imported_user = get_federated_identity(action_owner) %}
+        <a href="{{ url_for('.user_profile', user_id=federated_user.id) }}" title="{{ federated_user.get_name() }}">{{ federated_user.get_name() }}</a>
+        {% if imported_user is not none %}
+          {{ import_information_symbol(imported_user) }} /
+        {% else %}
+          {{ import_information_symbol(action_owner) }} /
         {% endif %}
-        {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
-          <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
-          {{ import_information_symbol(action.instrument) }} &mdash;
-        {% endif %}
-        <a href="{{ url_for('.action', action_id=action.id, object_id=request.args.getlist('object_id')) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
-        {{ import_information_symbol(action) }}
-        <button type="submit" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value=""></button>
-      </h2>
-    </form>
+      {% endif %}
+      {% if action.instrument is not none and not config['DISABLE_INSTRUMENTS'] %}
+        <a href="{{ url_for('.instrument', instrument_id=action.instrument.id) }}" title="{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}">{{ action.instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}</a>
+        {{ import_information_symbol(action.instrument) }} &mdash;
+      {% endif %}
+      <a href="{{ url_for('.action', action_id=action.id, object_id=request.args.getlist('object_id')) }}" title="{{ action.name | get_translated_text(default=_('Unnamed Action')) }}">{{ action.name | get_translated_text(default=_('Unnamed Action')) }}</a>
+      {{ import_information_symbol(action) }}
+      {% if action.id in user_favorite_action_ids or not current_user.is_readonly %}
+        <button type="button" class="fa {% if action.id in user_favorite_action_ids %}fav-star-on{% else %}fav-star-off{% endif %}" value="" {% if not current_user.is_readonly %}data-action-id="{{ action.id }}"{% endif %}></button>
+      {% endif %}
+    </h2>
     {% if action.is_hidden %}
     <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _("This action has been hidden from action lists.") }} </p>
     {% endif %}
@@ -138,5 +136,6 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ fingerprinted_static('sampledb/js/markdown_image_viewer.js') }}" type="module"></script>
+  <script src="{{ fingerprinted_static('sampledb/js/favorites.js') }}" type="module"></script>
   <script src="{{ fingerprinted_static('bootstrap-select/js/bootstrap-select.min.js') }}"></script>
 {% endblock %}
