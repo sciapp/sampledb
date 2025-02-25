@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-02-25 13:35+0100\n"
+"POT-Creation-Date: 2025-03-19 13:07+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -81,6 +81,17 @@ msgstr ""
 
 msgid "Editing imported actions is not yet supported."
 msgstr "Das Bearbeiten importierter Aktionen wird noch nicht unterstützt."
+
+msgid "Using imported instruments to create actions is not supported."
+msgstr ""
+"Das Verwenden importierter Instrumente zur Erstellung von Aktionen wird "
+"nicht unterstützt."
+
+msgid "Insufficient permissions to use the requested instrument."
+msgstr "Unzureichende Berechtigungen, um das angefragte Instrument zu nutzen."
+
+msgid "The requested instrument does not exist."
+msgstr "Das angefragte Instrument existiert nicht."
 
 msgid "Insufficient permissions to use the requested action as a template."
 msgstr ""
