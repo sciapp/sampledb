@@ -38,4 +38,13 @@ $(function () {
     editModal.modal('show');
     editModal.addClass('fade');
   }
+
+  const inviteUserModal = $('#inviteUserModal');
+  inviteUserModal.find('input[name="add_directly"]').on('change', function () {
+    let buttonText = window.getTemplateValue('translations.invite_user');
+    if ($(this).prop('checked')) {
+      buttonText = window.getTemplateValue('translations.add_user');
+    }
+    inviteUserModal.find('button[name="add_user"]').text(buttonText);
+  });
 });
