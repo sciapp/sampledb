@@ -11,6 +11,7 @@ import typing
 import flask
 import pydantic
 from furl import furl
+from simple_openid_connect.pkce import generate_pkce_pair
 from simple_openid_connect.client import OpenidClient
 from simple_openid_connect.data import (
     IdToken, RpInitiatedLogoutRequest, TokenErrorResponse,
@@ -72,6 +73,8 @@ class _Data(pydantic.BaseModel):
     redirect_uri: str
     state: str
     nonce_value: str | None
+    code_challenge_method: typing.Literal['S256'] | None
+    code_verifier: str | None
     started: float = pydantic.Field(default_factory=time.time)
 
 
@@ -100,14 +103,26 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
         nonce_value = secrets.token_urlsafe(32)
         nonce_hash = hashlib.sha256(nonce_value.encode()).hexdigest()
 
+    if 'S256' in getattr(client.provider_config, 'code_challenge_methods_supported', []):
+        code_challenge_method = 'S256'
+        code_verifier, code_challenge = generate_pkce_pair()
+    else:
+        code_challenge_method = None
+        code_verifier = None
+        code_challenge = None
+
     url = client.authorization_code_flow.start_authentication(
         state=state,
         nonce=nonce_hash,
+        code_challenge_method=code_challenge_method,
+        code_challenge=code_challenge,
     )
     data = _Data(
         redirect_uri=redirect_uri,
         state=state,
         nonce_value=nonce_value,
+        code_challenge_method=code_challenge_method,
+        code_verifier=code_verifier,
     ).model_dump_json()
     return url, data
 
@@ -145,6 +160,7 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str, str]:
     token_response = client.authorization_code_flow.handle_authentication_result(
         url,
         state=data.state,
+        code_verifier=data.code_verifier,
     )
 
     if isinstance(token_response, TokenErrorResponse):

@@ -10,10 +10,12 @@ The client must be statically registered, while the configuration and keys must
 be dynamically discoverable.
 
 Only the Authorization Code Flow with ``client_secret_basic`` authentication
-is supported. The OIDC provider should support the ``nonce`` parameter to
-allow for the detection of replay attacks. To increase compatibility with some
-providers, the use of the parameter can be disabled using a configuration
-variable. This is not recommended.
+is supported. Proof Key for Code Exchange (PKCE) is used if the OIDC provider
+signals support for the ``S256`` method. The provider should support the
+``nonce`` parameter to allow for the detection of replay attacks. To increase
+compatibility with some providers, the use of the parameter can be disabled
+using a configuration variable. If a provider supports neither PKCE with
+method ``S256``, nor ``nonce``, using it is not recommended.
 
 RP-Initiated Logout will be used if the provider indicates support.
 Back-Channel and Front-Channel Logout are not currently implemented.
