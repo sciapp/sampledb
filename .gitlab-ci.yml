@@ -102,8 +102,10 @@ analyze-js:
     - git remote add upstream https://github.com/sciapp/sampledb.git || git remote set-url upstream https://github.com/sciapp/sampledb.git
     - git fetch upstream master
     - git checkout FETCH_HEAD
+    # remove requests dependency due to issue with Flask-MonitoringDashboard
+    - grep -v "requests" requirements.txt > requirements.without_requests.txt
     # set up database with stable version
-    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements.without_requests.txt
     - python3 -m sampledb list_actions
     # check out current version again
     - pip uninstall -y -r <(pip freeze)
@@ -124,8 +126,10 @@ analyze-js:
     - git checkout FETCH_HEAD
     # do not check migrating from develop to this commit if this commit is not a descendant of develop
     - git merge-base --is-ancestor HEAD $CI_COMMIT_SHA || exit 0
+    # remove requests dependency due to issue with Flask-MonitoringDashboard
+    - grep -v "requests" requirements.txt > requirements.without_requests.txt
     # set up database with development version
-    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements.without_requests.txt
     - python3 -m sampledb list_actions
     # check out current version again
     - pip uninstall -y -r <(pip freeze)
