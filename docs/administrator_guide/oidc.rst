@@ -6,8 +6,10 @@ OpenID Connect (OIDC)
 If you use OIDC for user management, you can configure SampleDB to connect to
 a single OIDC provider using the
 :ref:`OIDC Configuration Environment Variables <oidc_configuration>`.
-The client must be statically registered, while the configuration and keys must
-be dynamically discoverable.
+
+The client must be statically registered, while the configuration and keys
+must be dynamically discoverable. The ``name``, ``email`` and
+``email_verified`` claims are required.
 
 Only the Authorization Code Flow with ``client_secret_basic`` authentication
 is supported. Proof Key for Code Exchange (PKCE) is used if the OIDC provider
@@ -63,5 +65,5 @@ Based on the provided ID Token and variable
 user as active and not hidden, and will not change whether they are readonly
 or an admin.
 
-Note: Setting the ``is_not_active`` role will prevent the user from logging
-in.
+.. note::
+  Setting the ``is_not_active`` role will prevent the user from logging in.
