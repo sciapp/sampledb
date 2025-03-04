@@ -6,6 +6,9 @@
   <h1>
     {{ _('Instrument') }} #{{ instrument.id }}: {{ instrument.name | get_translated_text(default=_('Unnamed Instrument')) }}
     {{ import_information_symbol(instrument) }}
+    {% if instrument_is_favorite or not current_user.is_readonly %}
+      <button type="button" class="fa {% if instrument_is_favorite %}fav-star-on{% else %}fav-star-off{% endif %}" value="" {% if not current_user.is_readonly %}data-instrument-id="{{ instrument.id }}"{% endif %}></button>
+    {% endif %}
   </h1>
   {% if instrument.is_hidden %}
   <p class="text-muted"><i class="fa fa-eye-slash" aria-hidden="true"></i> {{ _('This instrument has been hidden from instrument lists.')}}</p>

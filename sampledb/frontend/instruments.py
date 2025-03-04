@@ -481,9 +481,11 @@ def instrument(instrument_id: int) -> FlaskResponseT:
         if Permissions.READ in get_user_action_permissions(action.id, flask_login.current_user.id) and (not action.is_hidden or flask_login.current_user.is_admin)
     ]
     instrument_actions.sort(key=lambda action: (action.id not in user_favorite_action_ids, get_translated_text(action.name), action.id))
+    instrument_is_favorite = instrument.id in get_user_favorite_instrument_ids(flask_login.current_user.id)
     return flask.render_template(
         'instruments/instrument.html',
         instrument=instrument,
+        instrument_is_favorite=instrument_is_favorite,
         instrument_actions=instrument_actions,
         instrument_log_entries=instrument_log_entries,
         instrument_log_users=instrument_log_users,
