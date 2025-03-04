@@ -67,3 +67,30 @@ or an admin.
 
 .. note::
   Setting the ``is_not_active`` role will prevent the user from logging in.
+
+Access Tokens as API keys
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SampleDB can be configured to allow OIDC Access Tokens as API tokens using the
+``Bearer Authentication`` of the :ref:`HTTP API<http_api>`. These tokens work
+like regular user-bound API tokens and are validated for every request. The
+lifetime of the Access Token is set by the provider.
+
+OIDC Access Tokens are validated by making an HTTP request to the
+Introspection Endpoint of the provider, which then returns either the relevant
+user details or an error. Alternatively, if the provider encodes its Access
+Tokens as JSON Web Tokens (JWT), then validation may omit the introspection
+request and rely on the cryptographic signature of the token.
+
+.. note::
+  SampleDB will first try to validate other types of API tokens,
+  then try to validate the token as a JWT, and only if it is not a JWT and
+  introspection is enabled, will SampleDB make the introspection request.
+  Meaning, if introspection is enabled, every API request with an invalid
+  API token will result in a request to the OIDC provider.
+
+.. note::
+  API requests will not create user accounts or update user
+  profiles, meaning the user making the API request must already have their
+  account linked to the provider. However, if OIDC roles are used, they will
+  be updated. Or, if they are missing or invalid, fail the login.

@@ -78,7 +78,7 @@ qrcode==8.0
 requests==2.32.3
 scipy==1.15.1
 setuptools==75.8.0
-simple_openid_connect @ git+https://github.com/timhallmann/py_simple_openid_connect.git@9125e1dc9da9a0233a5f5b504a7416006afc5e70
+simple_openid_connect @ git+https://github.com/fsinfuhh/py_simple_openid_connect.git@9135e68896bb2b3d2aecc80114fc34a36b19a457
 six==1.17.0
 soupsieve==2.6
 SQLAlchemy==2.0.38

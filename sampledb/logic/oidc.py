@@ -14,8 +14,9 @@ from furl import furl
 from simple_openid_connect.pkce import generate_pkce_pair
 from simple_openid_connect.client import OpenidClient
 from simple_openid_connect.data import (
-    IdToken, RpInitiatedLogoutRequest, TokenErrorResponse,
-    TokenSuccessResponse, UserinfoErrorResponse
+    IdToken, JwtAccessToken, RpInitiatedLogoutRequest, TokenErrorResponse,
+    TokenIntrospectionSuccessResponse, TokenSuccessResponse,
+    UserinfoErrorResponse
 )
 from simple_openid_connect.exceptions import UnsupportedByProviderError
 
@@ -229,6 +230,69 @@ def logout(id_token_hint: str, post_logout_redirect_uri: str) -> str:
         return post_logout_redirect_uri
 
 
+def validate_access_token(access_token: str) -> typing.Tuple[authentication.AuthenticationMethod, users.User]:
+    """
+    Validate the access token and return the corresponding authentication
+    method and user, or raise an error if it's not a valid token.
+
+    This does not create or update user accounts, aside from the OIDC roles.
+    Those will be updated and their omission will fail the validation.
+
+    Depending on the access token, a network request may be necessary to
+    validate the token. OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION can be used to
+    permit or deny making that request.
+
+    :param access_token: The Access Token.
+    :return: A tuple of the authentication method and the user.
+    """
+
+    response = _validate_access_token(access_token)
+
+    if not response.iss or not response.sub:
+        raise RuntimeError('Missing iss or sub.')
+
+    [authentication_method] = authentication.get_oidc_authentications_by_sub(
+        response.iss,
+        response.sub,
+    )
+
+    user = users.get_user(authentication_method.user_id)
+    # Do not handle errors, see note in function.
+    user = _handle_roles(user, response)
+
+    return authentication_method, user
+
+
+def _validate_access_token(access_token: str) -> typing.Union[JwtAccessToken, TokenIntrospectionSuccessResponse]:
+    client = _get_client()
+
+    # Try to parse the token as a JwtAccessToken. If it's a JWT, validate it
+    # and return the result or bail out if the validation fails.
+    # If it's not a JWT and the config permits token introspection, use the
+    # Introspection Endpoint and return a valid response or bail out.
+    try:
+        token = JwtAccessToken.parse_jwt(access_token, client.provider_keys)
+    except Exception:
+        pass
+    else:
+        token.validate_extern(
+            client.provider_config.issuer,
+            client.client_auth.client_id,
+        )
+        return token
+
+    if flask.current_app.config['OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION']:
+        introspection_response = client.introspect_token(
+            access_token,
+            token_type_hint='access_token',
+        )
+        if isinstance(introspection_response, TokenIntrospectionSuccessResponse):
+            return introspection_response
+        raise RuntimeError('Introspection Endpoint returned an error')
+
+    raise RuntimeError('Not a JWT and not allowed to use introspection')
+
+
 def _update_user(user: users.User, id_token: IdToken) -> users.User:
     name = typing.cast(
         typing.Union[str, None],
@@ -323,14 +387,17 @@ def _handle_new_user(client: OpenidClient, token_response: TokenSuccessResponse,
     return user
 
 
-def _handle_roles(user: users.User, id_token: IdToken) -> users.User:
+def _handle_roles(
+        user: users.User,
+        obj: typing.Union[IdToken, JwtAccessToken, TokenIntrospectionSuccessResponse],
+) -> users.User:
     if not flask.current_app.config['OIDC_ROLES']:
         return user
 
     # Note: Intentionally fail on any error. It's probably a config error and
     # we do not want anyone to login with incorrect permissions.
 
-    i = id_token.model_dump()
+    i = obj.model_dump()
     for path in flask.current_app.config['OIDC_ROLES'].split('.'):
         if isinstance(i, list):
             path = int(path)
