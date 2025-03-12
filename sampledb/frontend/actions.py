@@ -287,9 +287,11 @@ def action(action_id: int) -> FlaskResponseT:
             return flask.abort(403)
         return show_action_form(action, action_schema=action_schema)
 
+    action_is_favorite = action.id in get_user_favorite_action_ids(flask_login.current_user.id)
     return flask.render_template(
         'actions/action.html',
         action=action,
+        action_is_favorite=action_is_favorite,
         may_edit=may_edit,
         may_grant=may_grant,
         is_public=Permissions.READ in get_action_permissions_for_all_users(action_id),

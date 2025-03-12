@@ -390,13 +390,16 @@ th:hover .search-helper {
     -webkit-appearance: none;
     font-size: 0.8em;
 }
+.fav-star-loading {
+    cursor: default;
+    pointer-events: none;
+}
 .fav-star-off:before {
     content: "\f006";
     color: #cccccc;
     transition: color 0.2s;
 }
 .fav-star-off:hover:before {
-    content: "\f005";
     color: #444444;
     transition: color 0.2s;
 }
@@ -405,8 +408,7 @@ th:hover .search-helper {
     color: #dddddd;
     transition: color 0.2s;
 }
-.fav-star-on:hover:before {
-    content: "\f006";
+.fav-star-on[data-action-id]:hover:before, .fav-star-on[data-instrument-id]:hover:before {
     color: #444444;
     transition: color 0.2s;
 }

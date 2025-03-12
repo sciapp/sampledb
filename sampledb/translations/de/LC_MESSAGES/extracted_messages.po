@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-02-17 16:47+0100\n"
+"POT-Creation-Date: 2025-02-24 12:52+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -7294,30 +7294,6 @@ msgstr "Dieser Name wird bereits verwendet."
 
 msgid "The user has been created successfully."
 msgstr "Der Nutzer wurde erfolgreich erstellt."
-
-msgid "The action has been added to your favorites."
-msgstr "Diese Aktion wurde zu Ihren Favoriten hinzugefügt."
-
-msgid "The action has been removed from your favorites."
-msgstr "Diese Aktion wurde aus Ihren Favoriten entfernt."
-
-msgid "An error occurred while editing your favorite actions. Please try again."
-msgstr ""
-"Beim Ändern Ihrer Aktionsfavoriten ist ein Problem aufgetreten. Bitte "
-"versuchen Sie es später erneut."
-
-msgid "The instrument has been added to your favorites."
-msgstr "Dieses Instrument wurde zu Ihren Favoriten hinzugefügt."
-
-msgid "The instrument has been removed from your favorites."
-msgstr "Dieses Instrument wurde aus Ihren Favoriten entfernt."
-
-msgid ""
-"An error occurred while editing your favorite instruments. Please try "
-"again."
-msgstr ""
-"Beim Ändern Ihrer Instrumentfavoriten ist ein Problem aufgetreten. Bitte "
-"versuchen Sie es später erneut."
 
 msgid "A basic group with this name already exists."
 msgstr "Eine einfache Gruppe mit diesem Namen existiert bereits."
