@@ -23,7 +23,10 @@ import flask_login
 import pytest
 import requests
 from selenium.webdriver import Chrome
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import staleness_of
 import sqlalchemy
 import sqlalchemy.exc
 
@@ -266,3 +269,9 @@ def mock_current_user():
 
     for module in modules:
         setattr(module, 'current_user', current_user_backup)
+
+@contextlib.contextmanager
+def wait_for_page_load(driver, timeout=10):
+    old_page = driver.find_element(By.TAG_NAME, 'html')
+    yield
+    WebDriverWait(driver, timeout).until(staleness_of(old_page))

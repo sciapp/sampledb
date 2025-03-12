@@ -15,6 +15,8 @@ import sampledb
 import sampledb.logic
 import sampledb.models
 
+from ..conftest import wait_for_page_load
+
 
 @pytest.fixture
 def user(flask_server):
@@ -78,7 +80,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     filters_modal.find_element(By.CSS_SELECTOR, '[data-id="filter_permissions"]').click()
     filters_modal.find_element(By.XPATH, '//select[@id="filter_permissions"]/parent::div/descendant::span[contains(text(), "Write")]').click()
 
-    filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_FILTERS'] == {}
@@ -93,7 +96,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Save")]').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Save")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_FILTERS'] == {
@@ -120,7 +124,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['user'] == [str(user.id)]
@@ -132,7 +137,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Clear")]').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.XPATH, '//div[@id="filtersModal"]/descendant::button[contains(text(), "Clear")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_FILTERS'] == {}
@@ -147,7 +153,8 @@ def test_object_list_filters_settings(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(filters_modal, element_locations))
 
-    filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        filters_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert 'user' not in query_params or query_params['user'] == [str(user.id)]
@@ -171,7 +178,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     options_modal.find_element(By.CSS_SELECTOR, 'input[name="last_edit_info"][value="user"]').click()
     options_modal.find_element(By.CSS_SELECTOR, 'input[name="action_info"][value="instrument"]').click()
 
-    options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_OPTIONS'] == {}
@@ -190,7 +198,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(options_modal, element_locations))
 
-    options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Save")]').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Save")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_OPTIONS'] == {
@@ -215,7 +224,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(options_modal, element_locations))
 
-    options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.CLASS_NAME, 'btn-primary').click()
 
     query_params = parse_qs(urlparse(driver.current_url).query)
     assert query_params['creation_info'] == ['user']
@@ -230,7 +240,8 @@ def test_object_list_filters_options(flask_server, driver, user):
     element_locations = {}
     WebDriverWait(driver, 10).until(lambda driver: _element_stopped_moving(options_modal, element_locations))
 
-    options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Clear")]').click()
+    with wait_for_page_load(driver):
+        options_modal.find_element(By.XPATH, '//div[@id="optionsModal"]/descendant::button[contains(text(), "Clear")]').click()
 
     user_settings = sampledb.logic.settings.get_user_settings(user.id)
     assert user_settings['DEFAULT_OBJECT_LIST_OPTIONS'] == {}
