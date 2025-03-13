@@ -831,7 +831,8 @@ def test_new_object(flask_server, driver, user):
 
     driver.find_element(By.NAME, 'object__substrate__text_en').send_keys("Ag")
 
-    driver.find_element(By.NAME, 'action_submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.NAME, 'action_submit').click()
 
     assert len(sampledb.logic.objects.get_objects()) == 1
     object = sampledb.logic.objects.get_objects()[0]
