@@ -17,6 +17,8 @@ import sampledb
 import sampledb.models
 import sampledb.logic
 
+from ..conftest import wait_for_page_load
+
 SCHEMA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'schemas'))
 OBJECTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_data', 'objects'))
 UUID_1 = '28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71'
@@ -1185,7 +1187,8 @@ def test_new_object_javascript_fields_array(flask_server, driver, user):
     driver.find_element(By.XPATH, '//select[@name="object__choices__0__text"]/following-sibling::button').click()
     driver.find_element(By.XPATH, '//select[@name="object__choices__0__text"]/following-sibling::div/div/ul/li/a/span[text()="D"]/parent::a/parent::li').click()
 
-    driver.find_element(By.NAME, 'action_submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.NAME, 'action_submit').click()
 
     assert len(sampledb.logic.objects.get_objects()) == 2
 
