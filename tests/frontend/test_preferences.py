@@ -1103,7 +1103,8 @@ def test_user_add_email_authentication_method_empty_email_selenium(flask_server,
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
     assert len(outbox) == 0
     assert 'Failed to add an authentication method.' in driver.find_element(By.CSS_SELECTOR, '.alert-danger').get_attribute('innerText')
 
@@ -1144,7 +1145,8 @@ def test_user_preferences_change_password_too_short_selenium(flask_server, drive
     WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw')))
     driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw').send_keys('pw', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} #input-pw-confirmation').send_keys('pw', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, f'#pwModal{authentication_method.id} button[type="submit"][name="edit"]').click()
 
     sampledb.db.session.refresh(authentication_method)
     assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'abc.123')
@@ -1748,7 +1750,8 @@ def test_disable_totp_two_factor_authentication_selenium(flask_server, driver, u
     for _ in range(2):
         form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
         form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
-        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        with wait_for_page_load(driver):
+            form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
         # the form might have failed if the code expired in just the wrong moment
         if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0:
             break
@@ -1774,7 +1777,8 @@ def test_enable_totp_two_factor_authentication_selenium(flask_server, driver, us
     for _ in range(2):
         form = driver.find_element(By.CSS_SELECTOR, '#main .container form')
         form.find_element(By.CSS_SELECTOR, 'input[name="code"]').send_keys(pyotp.TOTP(secret).now(), Keys.TAB)
-        form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
+        with wait_for_page_load(driver):
+            form.find_element(By.CSS_SELECTOR, 'input[type="submit"]').click()
         # the form might have failed if the code expired in just the wrong moment
         if len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1:
             break
@@ -1811,7 +1815,8 @@ def test_delete_active_totp_two_factor_authentication_selenium(flask_server, dri
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
 
     sampledb.logic.authentication.activate_two_factor_authentication_method(method.id)
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id)) == 1
     assert "You cannot delete an active two-factor authentication method." in driver.find_element(By.CSS_SELECTOR, ".alert-danger").get_attribute("innerText")
 
@@ -1834,7 +1839,8 @@ def test_reset_email_password_selenium(flask_server, driver, user):
     recovery_url = flask_server.base_url + message.split(flask_server.base_url)[2].split('"')[0]
     driver.get(recovery_url)
     driver.find_element(By.CSS_SELECTOR, "#form-password-recovery #input-password").send_keys('password', Keys.TAB)
-    driver.find_element(By.CSS_SELECTOR, '#form-password-recovery button[type="submit"]').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '#form-password-recovery button[type="submit"]').click()
 
     sampledb.db.session.refresh(authentication_method)
     assert sampledb.logic.authentication._validate_password_authentication(authentication_method, 'password')

@@ -494,7 +494,8 @@ def test_object_list_change_signed_in_min_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -520,7 +521,8 @@ def test_object_list_change_signed_in_max_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_all_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
 
@@ -552,7 +554,8 @@ def test_object_list_change_anonymous_min_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-min'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -582,7 +585,8 @@ def test_object_list_change_anonymous_max_permission(object, flask_server, drive
     assert driver.execute_script("return $('input:radio[name=\"update_mode\"]:checked').val()") == 'set-max'
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'none'
 
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
 
     assert sampledb.logic.object_permissions.get_object_permissions_for_anonymous_users(object_id=object.id) == sampledb.logic.permissions.Permissions.NONE
 
@@ -621,7 +625,8 @@ def test_object_list_change_user_min_permission(object, flask_server, driver, us
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
     assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.WRITE
 
 
@@ -660,7 +665,8 @@ def test_object_list_change_user_max_permission(object, flask_server, driver, us
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_user_object_permissions(object_id=object.id, user_id=test_user.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -695,7 +701,8 @@ def test_object_list_change_group_min_permission(object, flask_server, driver, u
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
     assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.WRITE
 
 
@@ -733,7 +740,8 @@ def test_object_list_change_group_max_permission(object, flask_server, driver, u
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     assert driver.find_element(By.ID, 'multiselect-submit').is_enabled()
-    driver.find_element(By.ID, 'multiselect-submit').click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, 'multiselect-submit').click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_groups(object_id=object.id).get(test_group.id) == sampledb.logic.permissions.Permissions.READ
 
 
@@ -768,7 +776,8 @@ def test_object_list_change_project_group_min_permission(object, flask_server, d
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'write'
 
     assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
-    driver.find_element(By.ID, "multiselect-submit").click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.WRITE
 
 
@@ -806,5 +815,6 @@ def test_object_list_change_project_group_max_permission(object, flask_server, d
     assert driver.execute_script("return $('input:radio[name=\"permission\"]:checked').val()") == 'read'
 
     assert driver.find_element(By.ID, "multiselect-submit").is_enabled()
-    driver.find_element(By.ID, "multiselect-submit").click()
+    with wait_for_page_load(driver):
+        driver.find_element(By.ID, "multiselect-submit").click()
     assert sampledb.logic.object_permissions.get_object_permissions_for_projects(object_id=object.id).get(test_project.id) == sampledb.models.Permissions.READ
