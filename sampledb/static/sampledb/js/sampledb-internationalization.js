@@ -49,7 +49,7 @@ function updateTranslationLanguages (languageSelect, templateID, inputIDPrefix, 
   selected = selected.concat($(languageSelect).val());
   const languagesToRemove = existingLanguages.filter(n => !selected.includes(n));
   const languagesToAdd = selected.filter(n => !existingLanguages.includes(n));
-  const formGroup = $(languageSelect).parent().parent().parent();
+  const formGroup = $(languageSelect).closest('.form-group[data-name]');
   for (const languageToRemove of languagesToRemove) {
     const inputGroup = formGroup.find('[data-language-id=' + languageToRemove.toString() + ']');
     if (inputGroup.length > 0) {
