@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-02-24 12:52+0100\n"
+"POT-Creation-Date: 2025-02-25 13:35+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -998,11 +998,14 @@ msgstr "Sie können diesen Nutzer nicht hinzufügen."
 msgid "Please select read permissions (or higher) for the invitation."
 msgstr "Bitte wählen Sie Lese-Berechtigungen (oder höher) für diese Einladung aus."
 
-msgid "This user is already a member of this project group."
-msgstr "Dieser Nutzer ist bereits ein Mitglied dieser Projektgruppe."
+msgid "The user was successfully added to the project group."
+msgstr "Der Nutzer wurde erfolgreich zu der Projektgruppe hinzugefügt."
 
 msgid "The user was successfully invited to the project group."
 msgstr "Der Nutzer wurde erfolgreich in die Projektgruppe eingeladen."
+
+msgid "This user is already a member of this project group."
+msgstr "Dieser Nutzer ist bereits ein Mitglied dieser Projektgruppe."
 
 msgid "You cannot add this basic group."
 msgstr "Sie können diese einfache Gruppe nicht hinzufügen."
@@ -4116,8 +4119,14 @@ msgstr "Bitte geben Sie einen kürzeren Gruppennamen ein (höchstens 100 Zeichen
 msgid "No category selected"
 msgstr "Keine Kategorie ausgewählt"
 
+msgid "Add user directly, without sending an invitation"
+msgstr "Nutzer direkt hinzufügen, ohne eine Einladung zu versenden"
+
 msgid "Are you certain you want to delete this basic group?"
 msgstr "Sind Sie sich sicher, dass Sie diese einfache Gruppe löschen wollen?"
+
+msgid "Add User"
+msgstr "Nutzer hinzufügen"
 
 msgid "Member"
 msgstr "Mitglied"
@@ -5049,9 +5058,6 @@ msgstr "Sondergruppen"
 
 msgid "Administrators"
 msgstr "Administratoren"
-
-msgid "Add User"
-msgstr "Nutzer hinzufügen"
 
 msgid "Select User"
 msgstr "Nutzer auswählen"
@@ -7324,11 +7330,14 @@ msgstr "Diese Gruppen-Einladung wurde bereits akzeptiert."
 msgid "Basic group information updated successfully."
 msgstr "Die Gruppen-Informationen wurden erfolgreich aktualisiert."
 
-msgid "This user is already a member of this basic group."
-msgstr "Dieser Nutzer ist bereits ein Mitglied dieser einfachen Gruppe."
+msgid "The user was successfully added to the basic group."
+msgstr "Der Nutzer wurde erfolgreich zu der einfachen Gruppe hinzugefügt."
 
 msgid "The user was successfully invited to the basic group."
 msgstr "Der Nutzer wurde erfolgreich in die einfache Gruppe eingeladen."
+
+msgid "This user is already a member of this basic group."
+msgstr "Dieser Nutzer ist bereits ein Mitglied dieser einfachen Gruppe."
 
 msgid "You have already left the basic group."
 msgstr "Sie haben diese einfache Gruppe bereits verlassen."

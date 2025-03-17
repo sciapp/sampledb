@@ -12,6 +12,7 @@ Currently in development.
 - Added setting for default notification types
 - Refactored related objects tree to improve performance
 - Allow notes on arrays in schema
+- Allow administrators to add users to groups without an invitation
 
 Version 0.30
 ------------
