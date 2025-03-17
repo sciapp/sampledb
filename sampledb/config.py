@@ -24,6 +24,7 @@ from reportlab.lib.units import mm
 
 from .utils import generate_secret_key, load_environment_configuration, ansi_color, text_to_bool
 from .frontend.labels import PAGE_SIZE_KEYS, PAGE_SIZES
+from .models.notifications import NotificationMode, NotificationType
 
 REQUIRED_CONFIG_KEYS: typing.Set[str] = {
     'SQLALCHEMY_DATABASE_URI',
@@ -86,7 +87,13 @@ def parse_configuration_values() -> None:
                 pass
 
     # parse values as json
-    for config_name in ['SERVICE_DESCRIPTION', 'EXTRA_USER_FIELDS', 'DOWNLOAD_SERVICE_WHITELIST', 'LABEL_PAPER_FORMATS']:
+    for config_name in [
+        'SERVICE_DESCRIPTION',
+        'EXTRA_USER_FIELDS',
+        'DOWNLOAD_SERVICE_WHITELIST',
+        'LABEL_PAPER_FORMATS',
+        'DEFAULT_NOTIFICATION_MODES'
+    ]:
         value = globals().get(config_name)
         if isinstance(value, str) and (value.startswith('{') or value.startswith('[')):
             try:
@@ -235,6 +242,27 @@ def is_label_paper_formats_valid() -> bool:
             return False
 
     return is_valid
+
+
+def is_default_notification_modes_valid() -> bool:
+    """
+    Check if the default notification mode dict is valid.
+    """
+    if DEFAULT_NOTIFICATION_MODES is None:
+        return True
+    if not isinstance(DEFAULT_NOTIFICATION_MODES, dict):
+        print(ansi_color(f'DEFAULT_NOTIFICATION_MODES must be dict, but got {type(DEFAULT_NOTIFICATION_MODES)}.\n', color=31))
+        return False
+    for key, value in DEFAULT_NOTIFICATION_MODES.items():
+        valid_keys = [notification_type.name.upper() for notification_type in NotificationType] + ["DEFAULT"]
+        if key not in valid_keys:
+            print(ansi_color(f'DEFAULT_NOTIFICATION_MODES keys must be one of {valid_keys!r}, but got {key!r}.\n', color=31))
+            return False
+        valid_modes = [notification_mode.name.upper() for notification_mode in NotificationMode]
+        if value not in valid_modes:
+            print(ansi_color(f'DEFAULT_NOTIFICATION_MODES values must be one of {valid_modes!r}, but got {value!r}.\n', color=31))
+            return False
+    return True
 
 
 def check_config(
@@ -646,6 +674,10 @@ def check_config(
         can_run = False
         show_config_info = True
 
+    if not is_default_notification_modes_valid():
+        can_run = False
+        show_config_info = True
+
     if config['OIDC_CREATE_ACCOUNT'] not in ('no', 'deny_existing', 'auto_link'):
         can_run = False
         show_config_info = True
@@ -855,6 +887,8 @@ DISABLE_OUTDATED_USE_AS_TEMPLATE = False
 DISABLE_TOPICS = False
 
 MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
+
+DEFAULT_NOTIFICATION_MODES = None
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

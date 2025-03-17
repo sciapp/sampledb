@@ -5,6 +5,7 @@
 
 import dataclasses
 import datetime
+import functools
 import typing
 
 import flask
@@ -293,23 +294,37 @@ def set_notification_mode_for_type(type: NotificationType, user_id: int, mode: N
     db.session.commit()
 
 
-def set_notification_mode_for_all_types(user_id: int, mode: NotificationMode) -> None:
-    """
-    Set the notification mode for a user for all notification types.
+@functools.cache
+def _get_default_notification_modes_impl(config_default_notification_modes_set: typing.FrozenSet[typing.Tuple[str, str]]) -> typing.Dict[NotificationType, NotificationMode]:
+    config_default_notification_modes = dict(config_default_notification_modes_set)
+    default_notification_modes = {}
+    for notification_type in NotificationType:
+        notification_mode = NotificationMode.WEBAPP
+        for notification_type_key in (
+            'DEFAULT',
+            notification_type.name.upper()
+        ):
+            notification_mode_str = config_default_notification_modes.get(notification_type_key)
+            if notification_mode_str:
+                notification_mode = {
+                    'WEBAPP': NotificationMode.WEBAPP,
+                    'EMAIL': NotificationMode.EMAIL,
+                    'IGNORE': NotificationMode.IGNORE,
+                }[notification_mode_str]
+        default_notification_modes[notification_type] = notification_mode
+    return default_notification_modes
 
-    :param user_id: the ID of an existing user
-    :param mode: the notification mode to set for the type and user
-    :raise errors.UserDoesNotExistError: when no user with the given user ID
-        exists
+
+def get_default_notification_modes(config_default_notification_modes: typing.Optional[typing.Dict[str, str]]) -> typing.Dict[NotificationType, NotificationMode]:
     """
-    # ensure the user exists
-    logic.users.check_user_exists(user_id)
-    notification_mode_for_types = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
-    for notification_mode_for_type in notification_mode_for_types:
-        db.session.delete(notification_mode_for_type)
-    notification_mode_for_all_types = notifications.NotificationModeForType(type=None, user_id=user_id, mode=mode)
-    db.session.add(notification_mode_for_all_types)
-    db.session.commit()
+    Get the default notification modes.
+
+    :param config_default_notification_modes: the default notification modes using strings from config
+    :return: the default notification modes using internal types
+    """
+    if config_default_notification_modes is None:
+        config_default_notification_modes = {}
+    return dict(_get_default_notification_modes_impl(frozenset(config_default_notification_modes.items())))
 
 
 def get_notification_mode_for_type(type: NotificationType, user_id: int) -> NotificationMode:
@@ -328,15 +343,11 @@ def get_notification_mode_for_type(type: NotificationType, user_id: int) -> Noti
     notification_mode_for_type = notifications.NotificationModeForType.query.filter_by(type=type, user_id=user_id).first()
     if notification_mode_for_type is not None:
         return notification_mode_for_type.mode
-    notification_mode_for_all_types = notifications.NotificationModeForType.query.filter_by(type=None, user_id=user_id).first()
-    if notification_mode_for_all_types is not None:
-        return notification_mode_for_all_types.mode
-    if type == NotificationType.INSTRUMENT_LOG_ENTRY_EDITED:
-        return NotificationMode.IGNORE
-    return NotificationMode.WEBAPP
+    default_notification_modes = get_default_notification_modes(flask.current_app.config['DEFAULT_NOTIFICATION_MODES'])
+    return default_notification_modes[type]
 
 
-def get_notification_modes(user_id: int) -> typing.Dict[typing.Optional[NotificationType], NotificationMode]:
+def get_notification_modes(user_id: int) -> typing.Dict[NotificationType, NotificationMode]:
     """
     Get the notification modes for a user.
 
@@ -346,11 +357,10 @@ def get_notification_modes(user_id: int) -> typing.Dict[typing.Optional[Notifica
     """
     # ensure the user exists
     logic.users.check_user_exists(user_id)
-    notification_modes = notifications.NotificationModeForType.query.filter_by(user_id=user_id).all()
-    return {
-        notification_mode_for_type.type: notification_mode_for_type.mode
-        for notification_mode_for_type in notification_modes
-    }
+    notification_modes = get_default_notification_modes(flask.current_app.config['DEFAULT_NOTIFICATION_MODES'])
+    for notification_mode_for_type in notifications.NotificationModeForType.query.filter_by(user_id=user_id).all():
+        notification_modes[notification_mode_for_type.type] = notification_mode_for_type.mode
+    return notification_modes
 
 
 def create_other_notification(user_id: int, message: str) -> None:

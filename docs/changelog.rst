@@ -9,6 +9,7 @@ Currently in development.
 - Added federated login
 - Added OpenID Connect (OIDC) login
 - Added setting for disabling object assignments for individual locations
+- Added setting for default notification types
 - Refactored related objects tree to improve performance
 - Allow notes on arrays in schema
 
