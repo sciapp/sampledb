@@ -58,7 +58,7 @@ packaging==24.2
 pillow==11.1.0
 Pint==0.24.4
 platformdirs==4.3.6
-plotly==6.0.0
+plotly==6.0.1
 portend==3.2.0
 psutil==6.1.1
 psycopg2-binary==2.9.10
