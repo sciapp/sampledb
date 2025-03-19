@@ -48,6 +48,9 @@
       <a href="{{ url_for('.edit_instrument', instrument_id=instrument.id) }}" class="btn btn-default">{{ _('Edit Instrument') }}</a>
     {% endif %}
   {% endif %}
+  {% if is_instrument_responsible_user and not current_user.is_readonly and (not action_type or not action_type.admin_only or current_user.is_admin) and not instrument.component_id and not instrument.is_hidden %}
+    <a href="{{ url_for('.new_action', instrument_id=instrument.id) }}" class="btn btn-default">{{ _("Create Action") }}</a>
+  {% endif %}
   {% if not current_user.is_readonly and is_instrument_responsible_user and object_link_form %}
     {% if instrument.object_id %}
       <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#unlinkObjectModal">{{ _('Unlink Object') }}</button>
