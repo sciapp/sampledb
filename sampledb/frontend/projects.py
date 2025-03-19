@@ -220,7 +220,11 @@ def project(project_id: int) -> FlaskResponseT:
             add_subproject_form = AddSubprojectForm()
         if child_project_ids:
             remove_subproject_form = RemoveSubprojectForm()
-        delete_project_form = DeleteProjectForm()
+        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_PROJECTS'] or (
+                set(project_member_user_ids) == {flask_login.current_user.id} and
+                not project_member_group_ids
+        ) or 'remove_all_permissions' in flask.request.form:
+            delete_project_form = DeleteProjectForm()
         remove_project_member_form = RemoveProjectMemberForm()
         remove_project_group_form = RemoveProjectGroupForm()
 

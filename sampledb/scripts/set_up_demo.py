@@ -87,6 +87,7 @@ def main(arguments: typing.List[str]) -> None:
         project_id7 = projects.create_project({"en": "1-B-Example", "de": "1-B-Beispiel"}, {"en": "", "de": ""}, instrument_responsible_user.id).id
         projects.create_subproject_relationship(parent_project_id=project_id5, child_project_id=project_id6)
         projects.create_subproject_relationship(parent_project_id=project_id5, child_project_id=project_id7)
+        projects.add_user_to_project(project_id5, admin.id, sampledb.models.Permissions.READ)
 
         markdown_notes = """# Header
 This example shows how Markdown can be used for instrument Notes.

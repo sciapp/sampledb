@@ -296,9 +296,11 @@ Miscellaneous
    * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_GROUPS
      - If set, only administrators will be able to create basic groups.
    * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_GROUPS
-     - If set, only administrators will be able to delete non-empty basic groups.
+     - If set, only administrators will be able to delete non-empty basic groups. Group members can still remove all other group members and then delete the group.
    * - SAMPLEDB_ONLY_ADMINS_CAN_CREATE_PROJECTS
      - If set, only administrators will be able to create project groups.
+   * - SAMPLEDB_ONLY_ADMINS_CAN_DELETE_PROJECTS
+     - If set, only administrators will be able to delete non-empty project groups. Group members with GRANT permissions can still remove all other group members (or revoke their permissions) and then delete the group.
    * - SAMPLEDB_DISABLE_USE_IN_MEASUREMENT
      - If set, the "Use in Measurement" button will not be shown.
    * - SAMPLEDB_DISABLE_SUBPROJECTS

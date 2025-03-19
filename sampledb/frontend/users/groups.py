@@ -230,7 +230,7 @@ def group(group_id: int) -> FlaskResponseT:
             (str(category.id), category)
             for category in group_categories
         ]
-        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_GROUPS']:
+        if flask_login.current_user.is_admin or not flask.current_app.config['ONLY_ADMINS_CAN_DELETE_GROUPS'] or set(group_member_ids) == {flask_login.current_user.id}:
             delete_group_form = DeleteGroupForm()
         else:
             delete_group_form = None

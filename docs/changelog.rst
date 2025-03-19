@@ -13,6 +13,7 @@ Currently in development.
 - Refactored related objects tree to improve performance
 - Allow notes on arrays in schema
 - Allow administrators to add users to groups without an invitation
+- Allow disabling project group deletion by non-administrators
 
 Version 0.30
 ------------
