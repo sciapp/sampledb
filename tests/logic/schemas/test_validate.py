@@ -539,6 +539,33 @@ def test_validate_quantity_min_and_max_magnitude():
         validate(instance, schema)
 
 
+def test_validate_quantity_with_logarithmic_units():
+    schema = {
+        'title': 'Example',
+        'type': 'quantity',
+        'units': 'dBm'
+    }
+    instance = {
+        '_type': 'quantity',
+        'units': 'dBm',
+        'magnitude': 0
+    }
+    validate(instance, schema)
+    instance = {
+        '_type': 'quantity',
+        'units': 'dBm',
+        'magnitude_in_base_units': sampledb.logic.datatypes.Quantity(0, 'dBm').magnitude_in_base_units
+    }
+    validate(instance, schema)
+    instance = {
+        '_type': 'quantity',
+        'units': 'dBm',
+        'magnitude': 0,
+        'magnitude_in_base_units': 0.001
+    }
+    validate(instance, schema)
+
+
 def test_validate_datetime():
     schema = {
         'title': 'Example',

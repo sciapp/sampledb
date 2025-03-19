@@ -470,8 +470,10 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
         except Exception:
             raise ValidationError('Unable to create quantity based on given magnitude_in_base_units', path)
 
-    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None and not math.isclose(
-            quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude):
+    if quantity_magnitude is not None and quantity_magnitude_in_base_units is not None and not (
+            math.isclose(quantity_magnitude.magnitude, quantity_magnitude_in_base_units.magnitude) or
+            math.isclose(quantity_magnitude.magnitude_in_base_units, quantity_magnitude_in_base_units.magnitude_in_base_units)
+    ):
         raise ValidationError('magnitude and magnitude_in_base_units do not match, either set only one or make sure both match', path)
     if quantity_magnitude is None:
         if quantity_magnitude_in_base_units is None:
