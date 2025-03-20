@@ -137,6 +137,7 @@ __all__ = [
     'utils',
     'webhooks',
     'where_filters',
+    'minisign_keys',
 ]
 
 Objects._data_validator = validate

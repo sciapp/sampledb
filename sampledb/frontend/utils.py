@@ -39,7 +39,7 @@ from ..logic import errors
 from ..logic.caching import cache_per_request
 from ..logic.components import get_component_or_none, get_component_id_by_uuid, get_component_by_uuid, Component
 from ..logic.datatypes import Quantity
-from ..logic.eln_import import get_eln_import_for_object
+from ..logic.eln_import import get_eln_import_for_object, get_import_signed_by
 from ..logic.errors import UserIsReadonlyError
 from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
@@ -116,7 +116,7 @@ JinjaFunction()(zip_longest)
 JinjaFunction()(get_default_data)
 JinjaFunction()(apply_diff)
 JinjaFunction()(invert_diff)
-
+JinjaFunction()(get_import_signed_by)
 
 qrcode_cache: typing.Dict[str, str] = {}
 

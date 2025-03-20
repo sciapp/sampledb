@@ -1,3 +1,4 @@
+import binascii
 import copy
 import dataclasses
 import datetime
@@ -10,9 +11,12 @@ import string
 import typing
 import urllib.parse
 import zipfile
+from urllib.parse import urlsplit
 
 import flask
+import requests
 from flask_babel import gettext
+import minisign
 
 from .. import db
 from .utils import parse_url, relative_url_for
@@ -40,6 +44,7 @@ class ELNImport:
     import_utc_datetime: typing.Optional[datetime.datetime]
     invalid_reason: typing.Optional[str]
     user: User
+    signed_by: typing.Optional[str]
 
     @classmethod
     def from_database(cls, eln_import: eln_imports.ELNImport) -> 'ELNImport':
@@ -50,7 +55,8 @@ class ELNImport:
             upload_utc_datetime=eln_import.upload_utc_datetime,
             import_utc_datetime=eln_import.import_utc_datetime,
             invalid_reason=eln_import.invalid_reason,
-            user=User.from_database(eln_import.user)
+            user=User.from_database(eln_import.user),
+            signed_by=eln_import.signed_by
         )
 
     @property
@@ -121,6 +127,7 @@ class ParsedELNImport:
     objects: typing.List[ParsedELNObject]
     users: typing.List[ParsedELNUser]
     import_notes: typing.Dict[str, typing.List[str]]
+    signed_by: typing.Optional[str]
 
 
 def get_eln_import(eln_import_id: int) -> ELNImport:
@@ -236,6 +243,7 @@ def import_eln_file(
         return [], {}, ['Invalid Action Type ID information for this ELN file']
 
     eln_import.import_utc_datetime = datetime.datetime.now(datetime.timezone.utc)
+    eln_import.signed_by = parsed_data.signed_by
     db.session.add(eln_import)
     db.session.commit()
 
@@ -504,6 +512,91 @@ def _parse_person_ref(
     return person_id
 
 
+def _json_has_valid_signature(json_bytes: bytes, signature: minisign.Signature) -> typing.Tuple[bool, typing.Optional[str]]:
+    valid_schemes = ["https"]
+    if flask.current_app.config["ELN_FILE_IMPORT_ALLOW_HTTP"]:
+        valid_schemes.append("http")
+
+    url = signature.trusted_comment
+
+    try:
+        split_url = urlsplit(url)
+    except ValueError:
+        return False, gettext("The signature does not contain a valid URL.")
+
+    if split_url.scheme == "":
+        return False, gettext("Missing URL scheme")
+    if split_url.scheme not in valid_schemes:
+        return False, gettext("Invalid URL scheme: %(scheme)s", scheme=split_url.scheme)
+    if split_url.path != "/.well-known/keys.json":
+        return False, gettext("The signature does not contain a valid URL pointing to /.well-known/keys.json.")
+
+    try:
+        res = requests.get(url, timeout=3)
+    except requests.exceptions.ConnectionError:
+        return False, gettext("Failed to connect to %(url)s.", url=url)
+
+    if res.status_code != 200:
+        return False, gettext("Received an error from %(url)s.", url=url)
+
+    try:
+        key_list = res.json()
+    except requests.exceptions.JSONDecodeError:
+        return False, gettext("%(url)s did not return a valid JSON object.", url=url)
+
+    if isinstance(key_list, dict):
+        key_list = [key_list]
+    if not isinstance(key_list, list):
+        return False, gettext("%(url)s did not return a valid JSON list.", url=url)
+
+    num_failed_keys = 0
+    for elem in key_list:
+        if not isinstance(elem, dict):
+            num_failed_keys += 1
+            continue
+        if "contentUrl" in elem:
+            try:
+                response = requests.get(elem['contentUrl'], timeout=3)
+            except requests.exceptions.ConnectionError:
+                num_failed_keys += 1
+                continue
+        else:
+            num_failed_keys += 1
+            continue
+
+        if response.status_code != 200:
+            num_failed_keys += 1
+            continue
+
+        try:
+            pub = minisign.PublicKey.from_base64(response.content)
+        except binascii.Error:
+            # not in base64 format
+            num_failed_keys += 1
+            continue
+        except ValueError:
+            # invalid content, e.g. wrong bytes specifying minisign SignatureAlgorithm
+            num_failed_keys += 1
+            continue
+
+        try:
+            pub.verify(json_bytes, signature)
+            return True, None
+        except minisign.exceptions.VerifyError:
+            continue
+
+    if num_failed_keys > 0:
+        return False, gettext(
+            "There was an error checking %(num_failed_keys)s of %(num_keys)s public keys. No matching public key was found.",
+            num_failed_keys=num_failed_keys,
+            num_keys=len(key_list)
+        )
+    return False, gettext(
+        "Successfully fetched all %(num_keys)s keys but no matching public key was found.",
+        num_keys=len(key_list)
+    )
+
+
 def parse_eln_file(
         eln_import_id: int
 ) -> ParsedELNImport:
@@ -516,7 +609,8 @@ def parse_eln_file(
     parsed_data = ParsedELNImport(
         objects=[],
         users=[],
-        import_notes={}
+        import_notes={},
+        signed_by=None
     )
 
     try:
@@ -542,6 +636,33 @@ def parse_eln_file(
                     ro_crate_metadata = json.load(ro_crate_metadata_file)
             except Exception:
                 raise errors.InvalidELNFileError("ro-crate-metadata.json must contain a JSON-encoded object")
+
+            with zip_file.open(root_path_name + '/ro-crate-metadata.json') as ro_crate_metadata_file:
+                ro_crate_metadata_bytes = ro_crate_metadata_file.read()
+
+            ro_crate_metadata_sig_file_name = root_path_name + '/ro-crate-metadata.json.minisig'
+            ro_crate_metadata_sig_file_name = os.path.normpath(ro_crate_metadata_sig_file_name)
+            if ro_crate_metadata_sig_file_name in member_names:
+                skip_validation = False
+                try:
+                    with zip_file.open(member_names[ro_crate_metadata_sig_file_name]) as ro_crate_metadata_sig_bytes:
+                        ro_crate_metadata_sig = minisign.Signature.from_bytes(ro_crate_metadata_sig_bytes.read())
+                except minisign.ParseError:
+                    raise errors.InvalidELNFileError("ro-crate-metadata.json.minisig must contain a minisign signature")
+                except Exception:
+                    skip_validation = True
+
+                if not skip_validation:
+                    has_valid_signature, note = _json_has_valid_signature(ro_crate_metadata_bytes, ro_crate_metadata_sig)
+                    if not has_valid_signature and note is not None:
+                        parsed_data.import_notes["Signature"] = [note]
+                    else:
+                        parsed_data = ParsedELNImport(
+                            parsed_data.objects,
+                            parsed_data.users,
+                            parsed_data.import_notes,
+                            ro_crate_metadata_sig.trusted_comment.removesuffix("/.well-known/keys.json") if has_valid_signature else None
+                        )
             _eln_assert(isinstance(ro_crate_metadata, dict), "ro-crate-metadata.json must contain a JSON-encoded object")
             _eln_assert(_json_contains_no_invalid_data(ro_crate_metadata), "ro-crate-metadata.json must not contain invalid data")
             _eln_assert(ro_crate_metadata.get('@context') == 'https://w3id.org/ro/crate/1.1/context', "ro-crate-metadata.json @context must be RO-Crate 1.1 context")
@@ -962,9 +1083,17 @@ def parse_eln_file(
                         _eln_assert(schema_file_name in member_names, "SampleDB .eln file must contain data and schema for each version")
                         try:
                             with zip_file.open(member_names[data_file_name]) as data_file:
-                                version_data = json.load(data_file)
+                                data_file_content = data_file.read()
+                                _eln_assert(isinstance(graph_nodes_by_id[object_part['@id'] + 'data.json'].get('sha256'), str), "Invalid SHA256 hash for data.json")
+                                _eln_assert(hashlib.sha256(data_file_content).hexdigest() == graph_nodes_by_id[object_part['@id'] + 'data.json']['sha256'], "Hash mismatch for data.json")
+                                version_data = json.loads(data_file_content.decode('utf-8'))
                             with zip_file.open(member_names[schema_file_name]) as schema_file:
-                                version_schema = json.load(schema_file)
+                                schema_file_content = schema_file.read()
+                                _eln_assert(isinstance(graph_nodes_by_id[object_part['@id'] + 'schema.json'].get('sha256'), str), "Invalid SHA256 hash for schema.json")
+                                _eln_assert(hashlib.sha256(schema_file_content).hexdigest() == graph_nodes_by_id[object_part['@id'] + 'schema.json']['sha256'], "Hash mismatch for schema.json")
+                                version_schema = json.loads(schema_file_content.decode('utf-8'))
+                        except errors.InvalidELNFileError:
+                            raise
                         except Exception:
                             raise errors.InvalidELNFileError("SampleDB .eln file must contain data and schema for each version")
                         creator_ref = object_part.get('creator')
@@ -1149,6 +1278,15 @@ def get_eln_import_users(
         User.from_database(eln_import_user)
         for eln_import_user in eln_import_users
     ]
+
+
+def get_import_signed_by(
+        eln_import_id: int
+) -> typing.Optional[str]:
+    eln_import = eln_imports.ELNImport.query.filter_by(id=eln_import_id).first()
+    if eln_import is None:
+        return None
+    return eln_import.signed_by
 
 
 def _replace_references(

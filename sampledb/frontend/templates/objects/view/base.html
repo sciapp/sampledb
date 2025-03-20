@@ -1434,7 +1434,15 @@
                   {% if object.component %}
                     <i class="fa fa-fw fa-share-alt" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from %(component_name)s', component_name=object.component.get_name()) }}"></i>
                   {% elif object.eln_import %}
-                    <i class="fa fa-fw fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from .eln file #%(eln_import_id)s', eln_import_id=object.eln_import_id) }}"></i>
+                    {% set signed_by = get_import_signed_by(object.eln_import_id) %}
+                    {% if signed_by != None %}
+                      <span class="fa-stack" data-toggle="tooltip" data-placement="top" title="" data-original-title="./objects/3 @ .eln file #{{ object.eln_import_id }} {{ _('Signed by') }} {{ signed_by }}">
+                        <i aria-hidden="true" class="fa fa-file-archive-o fa-stack-1x"></i>
+                        <i class="fa fa-lock fa-stack-1x" aria-hidden="true" style="padding-left: .8em; padding-top: .3em;"></i>
+                      </span>
+                    {% else %}
+                      <i class="fa fa-fw fa-file-archive-o" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Log entry from .eln file #%(eln_import_id)s', eln_import_id=object.eln_import_id) }}"></i>
+                    {% endif %}
                   {% else %}
                     <i class="fa fa-fw fa-question-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="{{ _('Imported log entry') }}"></i>
                   {% endif %}
@@ -1623,6 +1631,10 @@
       <h2 id="import">{{ _('Import') }}</h2>
       <p>
         {{ _('This object was imported from <a href="%(eln_import_url)s">.eln file #%(eln_import_id)s</a> by %(user_ref)s.', eln_import_id=object.eln_import_id, eln_import_url=url_for('.eln_import', eln_import_id=object.eln_import_id), user_ref=user_reference(object.eln_import.user)) }} {% if eln_import_url is not none and eln_import_url.startswith('http') %}{{ _('The original URL is <a href="%(eln_import_url)s">%(eln_import_url)s</a>.', eln_import_url=eln_import_url) }}{% endif %}
+        {% set signed_by = get_import_signed_by(object.eln_import_id) %}
+        {% if signed_by is not none %}
+          {{ _('The .eln file was signed by <a href="%(signed_by)s">%(signed_by)s.</a>', signed_by=signed_by) }}
+        {% endif %}
       </p>
     {% endif %}
   {% endif %}

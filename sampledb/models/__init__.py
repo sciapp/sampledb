@@ -59,6 +59,7 @@ from .location_log import LocationLogEntry, LocationLogEntryType
 from .location_permissions import AllUserLocationPermissions, UserLocationPermissions, GroupLocationPermissions, ProjectLocationPermissions
 from .markdown_to_html_cache import MarkdownToHTMLCacheEntry
 from .markdown_images import MarkdownImage
+from .minisign_keys import KeyPair
 from .notifications import Notification, NotificationType, NotificationMode, NotificationModeForType
 from .objects import Objects, Object
 from .object_log import ObjectLogEntry, ObjectLogEntryType
@@ -216,4 +217,5 @@ __all__ = [
     'FedObjectLocationAssignmentLogEntryType',
     'Webhook',
     'WebhookType',
+    'KeyPair'
 ]

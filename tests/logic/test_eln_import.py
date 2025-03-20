@@ -1,10 +1,13 @@
 import copy
 import datetime
 import glob
+import hashlib
+import io
 import itertools
 import os.path
 import string
 import sys
+import zipfile
 
 import pytest
 
@@ -25,15 +28,42 @@ def user(flask_server):
 
 
 @pytest.fixture
-def eln_zip_bytes(user, app):
+def eln_zip_bytes(user, app, flask_server):
+    set_up_state(user)
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
+    with app.app_context():
+        zip_bytes = export.get_eln_archive(user.id)
+    app.config['SERVER_NAME'] = server_name
+    return zip_bytes
+
+
+@pytest.fixture
+def eln_zip_bytes_unsigned(user, app):
     set_up_state(user)
 
     server_name = app.config['SERVER_NAME']
     app.config['SERVER_NAME'] = 'localhost'
     with app.app_context():
-        zip_bytes = export.get_eln_archive(user.id)
+        archive_files, infos = export.get_export_infos(
+            user_id=user.id,
+            object_ids=None,
+            include_rdf_files=False,
+            include_users=True,
+            include_actions=False,
+            include_instruments=False,
+            include_locations=False,
+        )
+        binary_archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos, user.id, None)
+        zip_bytes = io.BytesIO()
+        with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+            for file_name, file_content in binary_archive_files.items():
+                if file_name == 'sampledb_export/ro-crate-metadata.json.minisig':
+                    continue
+                zip_file.writestr(file_name, file_content)
     app.config['SERVER_NAME'] = server_name
-    return zip_bytes
+    return zip_bytes.getvalue()
 
 
 @pytest.fixture
@@ -144,9 +174,139 @@ def test_mark_eln_import_invalid(eln_import_id):
         logic.eln_import.mark_eln_import_invalid(eln_import_id, "test")
 
 
-def test_parse_sampledb_eln_file(sampledb_eln_import_id):
+def test_parse_sampledb_eln_file(app, flask_server, sampledb_eln_import_id):
+    allow_http = app.config["ELN_FILE_IMPORT_ALLOW_HTTP"]
+    app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = True
     parsed_eln_import = logic.eln_import.parse_eln_file(sampledb_eln_import_id)
+    app.config["ELN_FILE_IMPORT_ALLOW_HTTP"] = allow_http
+
     assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
+    assert parsed_eln_import.signed_by == f"{flask_server.base_url}".rstrip('/')
+
+
+def test_parse_sampledb_eln_file_unsigned(user, eln_zip_bytes_unsigned):
+    with zipfile.ZipFile(io.BytesIO(eln_zip_bytes_unsigned)) as zip_file:
+        assert zip_file.testzip() is None
+
+        member_names = {
+            os.path.normpath(member_name): member_name
+            for member_name in zip_file.namelist()
+        }
+        assert 'sampledb_export/ro-crate-metadata.json.minisig' not in member_names
+
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=eln_zip_bytes_unsigned
+    )
+
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    assert all(len(import_notes) == 0 for import_notes in parsed_eln_import.import_notes.values())
+    assert parsed_eln_import.signed_by is None
+
+
+def test_parse_sampledb_eln_file_ro_crate_metadata_modified(user, app, flask_server):
+    set_up_state(user)
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
+    with app.app_context():
+        archive_files, infos = export.get_export_infos(
+            user_id=user.id,
+            object_ids=None,
+            include_rdf_files=False,
+            include_users=True,
+            include_actions=False,
+            include_instruments=False,
+            include_locations=False,
+        )
+        binary_archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos, user.id, None)
+        zip_bytes = io.BytesIO()
+        with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+            for file_name, file_content in binary_archive_files.items():
+                if file_name == 'sampledb_export/ro-crate-metadata.json':
+                    file_content = file_content.decode().replace(
+                        '"description": "SampleDB .eln export generated for user #1"',
+                        '"description": "SampleDB .eln export generated for user #1 modified"'
+                    ).encode()
+                zip_file.writestr(file_name, file_content)
+    app.config['SERVER_NAME'] = server_name
+
+    eln_zip_bytes_modified = zip_bytes.getvalue()
+
+    with zipfile.ZipFile(io.BytesIO(eln_zip_bytes_modified)) as zip_file:
+        assert zip_file.testzip() is None
+
+        member_names = {
+            os.path.normpath(member_name): member_name
+            for member_name in zip_file.namelist()
+        }
+        assert 'sampledb_export/ro-crate-metadata.json' in member_names
+        assert 'sampledb_export/ro-crate-metadata.json.minisig' in member_names
+
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=eln_zip_bytes_modified
+    )
+
+    parsed_eln_import = logic.eln_import.parse_eln_file(eln_import.id)
+    assert "Signature" in parsed_eln_import.import_notes and parsed_eln_import.import_notes["Signature"] == ['Invalid URL scheme: http']
+    assert all(len(import_notes) == 0 for key, import_notes in parsed_eln_import.import_notes.items() if key != "Signature")
+    assert parsed_eln_import.signed_by is None
+
+@pytest.mark.parametrize(
+    'modify_file',
+    [
+        'sampledb_export/objects/1/versions/0/data.json',
+        'sampledb_export/objects/1/versions/0/schema.json',
+        'sampledb_export/objects/1/files/0/test.txt'
+    ]
+)
+def test_parse_sampledb_eln_file_object_modified(user, app, flask_server, modify_file):
+    set_up_state(user)
+
+    server_name = app.config['SERVER_NAME']
+    app.config['SERVER_NAME'] = flask_server.base_url[7:-1]
+    with app.app_context():
+        archive_files, infos = export.get_export_infos(
+            user_id=user.id,
+            object_ids=None,
+            include_rdf_files=False,
+            include_users=True,
+            include_actions=False,
+            include_instruments=False,
+            include_locations=False,
+        )
+        binary_archive_files = logic.eln_export.generate_ro_crate_metadata(archive_files, infos, user.id, None)
+        zip_bytes = io.BytesIO()
+        with zipfile.ZipFile(zip_bytes, 'w') as zip_file:
+            for file_name, file_content in binary_archive_files.items():
+                if file_name == modify_file:
+                    file_content = (file_content.decode()[:-8] + "modified").encode()
+                zip_file.writestr(file_name, file_content)
+    app.config['SERVER_NAME'] = server_name
+    eln_zip_bytes_modified = zip_bytes.getvalue()
+
+    with zipfile.ZipFile(io.BytesIO(eln_zip_bytes_modified)) as zip_file:
+        assert zip_file.testzip() is None
+
+        member_names = {
+            os.path.normpath(member_name): member_name
+            for member_name in zip_file.namelist()
+        }
+        assert 'sampledb_export/ro-crate-metadata.json' in member_names
+        assert 'sampledb_export/ro-crate-metadata.json.minisig' in member_names
+
+    eln_import = logic.eln_import.create_eln_import(
+        user_id=user.id,
+        file_name='test.zip',
+        zip_bytes=eln_zip_bytes_modified
+    )
+
+    with pytest.raises(errors.InvalidELNFileError) as exc_info:
+        logic.eln_import.parse_eln_file(eln_import.id)
+    assert 'Hash mismatch' in exc_info.value.args[0]
 
 
 def test_import_sampledb_eln_file(sampledb_eln_import_id):
@@ -587,9 +747,15 @@ def test_import_reference_eln_files(user, eln_file_path):
         zip_bytes=eln_zip_bytes
     ).id
     parsed_eln_import = logic.eln_import.parse_eln_file(eln_import_id)
-    for import_notes in parsed_eln_import.import_notes.values():
+    for import_notes_key, import_notes in parsed_eln_import.import_notes.items():
         if import_notes:
-            assert import_notes == ['The .eln file did not contain any valid flexible metadata for this object.']
+            if import_notes_key == 'Signature':
+                # PASTA currently produces a trusted comment that cannot be parsed by SampleDB
+                assert eln_file_path in {
+                    'PASTA/PASTA.eln'
+                }
+            else:
+                assert import_notes == ['The .eln file did not contain any valid flexible metadata for this object.']
     object_ids, users_by_id, errors = logic.eln_import.import_eln_file(eln_import_id)
     assert not errors
     assert len(object_ids) >= 1

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-03-19 13:07+0100\n"
+"POT-Creation-Date: 2025-03-20 08:31+0100\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -3918,6 +3918,17 @@ msgstr ""
 "%(service_name)s kann Objekte aus von anderen elektronischen Laborbüchern"
 " erzeugten .eln-Dateien importieren."
 
+#, python-format
+msgid "This .eln file was signed by %(sign_url)s."
+msgstr "Diese .eln-Datei wurde von %(sign_url)s signiert."
+
+#, python-format
+msgid "Unsigned import: %(note)s"
+msgstr "Unsignierter Import: %(note)s"
+
+msgid "Unsigned import"
+msgstr "Unsignierter Import"
+
 msgid "The following objects can be imported from this .eln file:"
 msgstr "Die folgenden Objekte können aus dieser .eln-Datei importiert werden:"
 
@@ -3994,6 +4005,9 @@ msgstr "Widerrufen"
 #, python-format
 msgid "Removes the federated identity with %(username)s permanently."
 msgstr "Entfernt die föderierte Identität mit %(username)s endgültig."
+
+msgid "Signed by"
+msgstr "Signiert von"
 
 msgid "Bad Request"
 msgstr "Fehlerhafte Anfrage"
@@ -6548,6 +6562,12 @@ msgstr ""
 "Die ursprüngliche URL ist <a "
 "href=\"%(eln_import_url)s\">%(eln_import_url)s</a>."
 
+#, python-format
+msgid "The .eln file was signed by <a href=\"%(signed_by)s\">%(signed_by)s.</a>"
+msgstr ""
+"Diese .eln-Datei wurde von <a href=\"%(signed_by)s\">%(signed_by)s</a> "
+"signiert."
+
 msgid ""
 "The schema for this object is out-of-date and the action it was created "
 "with has a new schema available. Do you want to use the new schema?"
@@ -7534,6 +7554,54 @@ msgstr "Unbenannte Aktion (#%(action_id)s)"
 #, python-format
 msgid "Database #%(id)s"
 msgstr "Datenbank #%(id)s"
+
+msgid "The signature does not contain a valid URL."
+msgstr "Die Signatur enthält keine gültige URL."
+
+msgid "Missing URL scheme"
+msgstr "URL-Schema fehlt"
+
+#, python-format
+msgid "Invalid URL scheme: %(scheme)s"
+msgstr "Ungültiges URL-Schema: %(scheme)s"
+
+msgid ""
+"The signature does not contain a valid URL pointing to /.well-"
+"known/keys.json."
+msgstr "Die Signatur enthält keine gültige URL auf /.well-known/keys.json."
+
+#, python-format
+msgid "Failed to connect to %(url)s."
+msgstr "Keine Verbindung zu %(url)s möglich."
+
+#, python-format
+msgid "Received an error from %(url)s."
+msgstr "%(url)s gibt einen Fehler zurück."
+
+#, python-format
+msgid "%(url)s did not return a valid JSON object."
+msgstr "Rückgabewert von %(url)s ist kein gültiges JSON-Objekt."
+
+#, python-format
+msgid "%(url)s did not return a valid JSON list."
+msgstr "Rückgabewert von %(url)s ist keine gültige JSON-Liste."
+
+#, python-format
+msgid ""
+"There was an error checking %(num_failed_keys)s of %(num_keys)s public "
+"keys. No matching public key was found."
+msgstr ""
+"Bei der Überprüfung von %(num_failed_keys)s von %(num_keys)s öffentlichen"
+" Schlüsseln ist ein Fehler aufgetreten. Es wurde kein passender "
+"öffentlicher Schlüssel gefunden"
+
+#, python-format
+msgid ""
+"Successfully fetched all %(num_keys)s keys but no matching public key was"
+" found."
+msgstr ""
+"Alle %(num_keys)s Schlüssel überprüft, aber kein passender öffentlicher "
+"Schlüssel gefunden"
 
 #, python-format
 msgid "Failed to import %(file_url)s as URL file"
