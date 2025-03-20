@@ -268,6 +268,7 @@ def test_status_codes(flask_server, user, driver):
             description_is_markdown=True,
             short_description_is_markdown=True
         ).id
+        keypair_id = sampledb.logic.minisign_keys.get_current_key_pair().id
 
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
@@ -478,7 +479,9 @@ def test_status_codes(flask_server, user, driver):
         'users/me/two_factor_authentication/fido2_passkey/confirm': 302,
         'users/me/two_factor_authentication/fido2_passkey/setup': 200,
         'users/me/two_factor_authentication/totp/confirm': 302,
-        'users/me/two_factor_authentication/totp/setup': 200
+        'users/me/two_factor_authentication/totp/setup': 200,
+        '.well-known/keys.json': 200,
+        f'.well-known/keys/{keypair_id}': 200,
     }
     for relative_url, expected_status_code in expected_status_codes.items():
         if relative_url.startswith('api/v1/'):
@@ -533,4 +536,5 @@ def test_status_codes(flask_server, user, driver):
         'error_code': 400,
         'eln_import_id': eln_import_id,
         'topic_id': topic_id,
+        'keypair_id': keypair_id,
     })

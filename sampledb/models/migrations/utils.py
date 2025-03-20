@@ -249,6 +249,7 @@ def get_migrations() -> typing.List[typing.Tuple[int, str, typing.Callable[[typi
         "locations_add_enable_object_assignments",
         "authentication_type_add_oidc",
         "notification_mode_for_types_add_not_null_constraint",
+        'eln_imports_add_signed_by',
     ]
 
     migrations = []

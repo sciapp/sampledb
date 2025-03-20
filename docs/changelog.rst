@@ -14,6 +14,8 @@ Currently in development.
 - Allow notes on arrays in schema
 - Allow administrators to add users to groups without an invitation
 - Allow disabling project group deletion by non-administrators
+- Added signed export and import for .eln files
+
 
 Version 0.30
 ------------

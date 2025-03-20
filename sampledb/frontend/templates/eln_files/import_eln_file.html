@@ -8,6 +8,15 @@
     <p class="text-center help-block">{{ _('%(service_name)s can import objects from .eln files exported by other electronic lab notebooks.', service_name=service_name) }} <a href="https://github.com/TheELNConsortium/TheELNFileFormat">{{ _('Read more.') }}</a></p>
     <form class="form-horizontal" method="post" id="form-eln_import" enctype="multipart/form-data">
       {{ import_eln_file_form.csrf_token() }}
+      {% if parsed_eln_file_data.signed_by %}
+        <p>{{ _("This .eln file was signed by %(sign_url)s.", sign_url=parsed_eln_file_data.signed_by) }}</p>
+      {% else %}
+        {% if "Signature" in parsed_eln_file_data.import_notes %}
+          <p>{{ _('Unsigned import: %(note)s', note=parsed_eln_file_data.import_notes["Signature"][0]) }}</p>
+        {% else %}
+          <p>{{ _('Unsigned import') }}</p>
+        {% endif %}
+      {% endif %}
       <p>{{ _('The following objects can be imported from this .eln file:') }}</p>
       <ul>
       {% for object_info in parsed_eln_file_data['objects'] %}
