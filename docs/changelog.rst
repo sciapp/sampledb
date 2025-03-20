@@ -15,6 +15,7 @@ Currently in development.
 - Allow administrators to add users to groups without an invitation
 - Allow disabling project group deletion by non-administrators
 - Added signed export and import for .eln files
+- Fix handling of quantities with logarithmic units
 
 
 Version 0.30

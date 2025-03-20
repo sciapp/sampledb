@@ -173,6 +173,8 @@ def test_quantity_equals():
     assert datatypes.Quantity(1, None) != datatypes.Quantity(2, None)
     assert datatypes.Quantity(1, 'meter') == datatypes.Quantity(0.001, 'kilometers')
     assert datatypes.Quantity(1, 'meter') != datatypes.Quantity(1, 'second')
+    assert datatypes.Quantity(0, 'dBm') == datatypes.Quantity(1, 'mW')
+    assert datatypes.Quantity(0, 'dBm') != datatypes.Quantity(0, 'mW')
 
 
 def test_quantity_invalid_value():
@@ -228,6 +230,18 @@ def test_quantity_invalid_data():
     raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
     with pytest.raises(jsonschema.exceptions.ValidationError):
         jsonschema.validate(raw_data, schema)
+
+def test_quantity_logarithmic_units():
+    assert datatypes.Quantity(0, 'dBm') == datatypes.Quantity(1, 'mW') == datatypes.Quantity(0.001, 'mW', already_in_base_units=True)
+    schema = {
+        'type': 'object',
+        'properties': {
+            'test': datatypes.Quantity.JSON_SCHEMA
+        }
+    }
+    data = {'test': datatypes.Quantity(1, 'dBm')}
+    raw_data = json.loads(json.dumps(data, cls=datatypes.JSONEncoder))
+    jsonschema.validate(raw_data, schema)
 
 
 def test_datetime_serialization():
