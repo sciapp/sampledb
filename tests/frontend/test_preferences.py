@@ -1022,7 +1022,8 @@ def test_user_add_email_authentication_method_selenium(flask_server, driver, use
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('user@example.com', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
         WebDriverWait(driver, 10).until(visibility_of_element_located((By.CSS_SELECTOR, '#authentication_methods + div tbody tr:nth-child(2)')))
 
     # check if the authentication method got added
@@ -1073,7 +1074,8 @@ def test_user_add_email_authentication_method_already_exists_selenium(flask_serv
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-login').send_keys('user@example.com', Keys.TAB)
     driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal #input-password').send_keys('password', Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.CSS_SELECTOR, '#addAuthenticationMethodModal button[type="submit"]').click()
     assert len(outbox) == 0
     assert 'Failed to add an authentication method.' in driver.find_element(By.CSS_SELECTOR, '.alert-danger').get_attribute('innerText')
 
@@ -1743,7 +1745,8 @@ def test_disable_totp_two_factor_authentication_selenium(flask_server, driver, u
     assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
     assert not rows[0].find_elements(By.CSS_SELECTOR, 'button[value="enable"]')
     assert rows[0].find_element(By.CSS_SELECTOR, 'button[value="delete"]').get_attribute("disabled")
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="disable"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="disable"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 1
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 0
 
@@ -1770,7 +1773,8 @@ def test_enable_totp_two_factor_authentication_selenium(flask_server, driver, us
     assert len(rows) == 1
     assert rows[0].find_element(By.CSS_SELECTOR, 'td:first-child').get_attribute("innerText") == "Example TOTP"
     assert not rows[0].find_elements(By.CSS_SELECTOR, 'button[value="disable"]')
-    rows[0].find_element(By.CSS_SELECTOR, 'button[value="enable"]').click()
+    with wait_for_page_load(driver):
+        rows[0].find_element(By.CSS_SELECTOR, 'button[value="enable"]').click()
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=True)) == 0
     assert len(sampledb.logic.authentication.get_two_factor_authentication_methods(user_id=user.id, active=False)) == 1
 
