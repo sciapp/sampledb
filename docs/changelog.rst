@@ -10,6 +10,7 @@ Currently in development.
 - Added OpenID Connect (OIDC) login
 - Added setting for disabling object assignments for individual locations
 - Added setting for default notification types
+- Added info pages
 - Refactored related objects tree to improve performance
 - Allow notes on arrays in schema
 - Allow administrators to add users to groups without an invitation

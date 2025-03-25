@@ -27,6 +27,7 @@ from . import export
 from . import favicon
 from . import group_categories
 from . import index
+from . import info_pages
 from . import instruments
 from . import locations
 from . import location_types
@@ -61,6 +62,7 @@ __all__ = [
     'favicon',
     'group_categories',
     'index',
+    'info_pages',
     'instruments',
     'locations',
     'location_types',

@@ -60,6 +60,7 @@ Administrator Guide
     administrator_guide/jupyterhub_support.rst
     administrator_guide/dataverse_export.rst
     administrator_guide/scicat_export.rst
+    administrator_guide/info_pages.rst
     administrator_guide/languages.rst
     administrator_guide/federation.rst
     administrator_guide/monitoring_dashboard.rst

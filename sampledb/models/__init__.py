@@ -13,6 +13,7 @@ from . import files
 from . import file_log
 from . import groups
 from . import group_categories
+from . import info_pages
 from . import instruments
 from . import instrument_log_entries
 from . import instrument_translation
@@ -50,6 +51,7 @@ from .files import File
 from .file_log import FileLogEntry, FileLogEntryType
 from .groups import Group
 from .group_categories import GroupCategory
+from .info_pages import InfoPage, InfoPageAcknowledgement
 from .instruments import Instrument
 from .instrument_log_entries import InstrumentLogEntry
 from .instrument_translation import InstrumentTranslation
@@ -90,6 +92,7 @@ __all__ = [
     'file_log',
     'groups',
     'group_categories',
+    'info_pages',
     'instruments',
     'instrument_log_entries',
     'instrument_translation',
@@ -135,6 +138,8 @@ __all__ = [
     'Group',
     'GroupCategory',
     'HTTPMethod',
+    'InfoPage',
+    'InfoPageAcknowledgement',
     'Instrument',
     'InstrumentTranslation',
     'InstrumentLogEntry',

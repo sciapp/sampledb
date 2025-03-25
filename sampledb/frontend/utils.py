@@ -52,6 +52,7 @@ from ..logic.schemas.utils import get_property_paths_for_schema
 from ..logic.schemas import get_default_data
 from ..logic.actions import Action
 from ..logic.action_types import ActionType
+from ..logic.info_pages import InfoPage, get_info_pages_for_endpoint
 from ..logic.instruments import Instrument
 from ..logic.instrument_log_entries import InstrumentLogFileAttachment
 from ..logic.action_permissions import get_sorted_actions_for_user, get_actions_with_permissions
@@ -68,6 +69,7 @@ from ..logic.group_categories import get_group_category_tree, get_group_categori
 from ..logic.files import File, get_file as get_file_logic
 from ..models import Permissions, Object
 from ..utils import generate_content_security_policy_nonce
+from .info_pages import InfoPageAcknowledgementForm
 
 
 class JinjaFilter:
@@ -117,6 +119,7 @@ JinjaFunction()(get_default_data)
 JinjaFunction()(apply_diff)
 JinjaFunction()(invert_diff)
 JinjaFunction()(get_import_signed_by)
+JinjaFunction()(InfoPageAcknowledgementForm)
 
 qrcode_cache: typing.Dict[str, str] = {}
 
@@ -1894,3 +1897,14 @@ def get_action_type_ids_with_usable_actions() -> typing.Set[int]:
                 continue
             action_type_ids_with_usable_actions.add(action.type.id)
     return action_type_ids_with_usable_actions
+
+
+@JinjaFunction()
+def get_info_pages() -> typing.Sequence[InfoPage]:
+    if not current_user.is_authenticated or current_user.is_readonly:
+        return []
+    return get_info_pages_for_endpoint(
+        endpoint=flask.request.endpoint,
+        user_id=current_user.id,
+        exclude_disabled=True
+    )

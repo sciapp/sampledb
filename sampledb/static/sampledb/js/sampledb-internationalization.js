@@ -231,7 +231,7 @@ function updateMarkdownField (checkboxID, mdeAttribute, dataName, height) {
     item.toTextArea();
   });
   window.mdeFields[mdeAttribute] = [];
-  if ($('#' + checkboxID).prop('checked')) {
+  if (checkboxID === null || $('#' + checkboxID).prop('checked')) {
     $(`.form-group[data-name="${dataName}"] [data-language-id], .inline-edit-regular-property[data-name="${dataName}"] [data-language-id], .inline-edit-horizontal-property[data-name="${dataName}"] [data-language-id]`).each(function () {
       const textarea = $(this).find('textarea.form-control');
       if (textarea.length === 1) {
