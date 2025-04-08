@@ -1,0 +1,65 @@
+{% extends "labels/base.html" %}
+
+{% block style %}
+    @page {
+        size: {{ paper_width }}mm {{ paper_height }}mm;
+        margin: {{page_margin[0]}}mm {{page_margin[1]}}mm {{page_margin[2]}}mm {{page_margin[3]}}mm;
+    }
+    .outbox {
+        margin: {{label_margin[0]}}mm {{label_margin[1]}}mm;
+        display: flex;
+        align-items: center;
+        border: 1.35px solid black;
+        height: {{box_height}}mm;
+        min-width: {{min_label_width}}mm;
+        padding-top: {{padding_top}}mm;
+        padding-right: {{padding_right}}mm;
+    }
+    .outer_most_box {
+        display: flex;
+        line-height: 3.325mm;
+    }
+    .labeltext {
+        position:relative;
+    }
+    .extrabox {
+        position: absolute;
+        top: -1.45mm;
+        right: -0.1mm;
+        display: flex;
+        align-items: center;
+    }
+    .extrabox .qrcode {
+        background-position: right center;
+        flex: 0 0 {{qrcode_width + 1}}mm;
+    }
+{% endblock %}
+
+{% block body %}
+    {%- for object_index in range(object_amount) -%}
+        {%- for label_index in range(num_labels) -%}
+            <div class="outer_most_box">
+                <div class="outbox" style="white-space: nowrap;">
+                    <div class="labeltext" style="padding: 0 {{ text_extra_width_list[object_index] + 1 }}mm 0 0.8mm">
+                        <b>{{ object_name_list[object_index] }}</b> &bullet; #{{ object_id_list[object_index]}}<br>
+                        {{ username_list[object_index] }}
+                        {%- if include_qrcode -%}
+                            <br>
+                            {{ creation_date_list[object_index] }}
+                        {%- else -%}
+                            &nbsp;&bullet; {{ creation_date_list[object_index] }}
+                        {%- endif -%}
+                        <div class="extrabox" style="width: {{ text_extra_width_list[object_index] }}mm;">
+                            {%- for hazard_code in hazard_list[object_index] -%}
+                                <div class="ghs ghs0{{hazard_code}}"></div>
+                            {%- endfor -%}
+                            {%- if include_qrcode -%}
+                                <div class="qrcode" style="background-image: url({{ qr_code_uri_list[object_index] }});"></div>
+                            {%- endif -%}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {%- endfor -%}
+    {%- endfor -%}
+{%- endblock -%}

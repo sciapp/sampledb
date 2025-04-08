@@ -13,7 +13,6 @@ import flask
 import flask_login
 import itsdangerous
 from flask_babel import _
-from reportlab.lib.units import mm
 
 from .. import frontend
 from ... import logic
@@ -214,7 +213,6 @@ def object(object_id: int) -> FlaskResponseT:
         "PAGE_SIZES": PAGE_SIZES,
         "HORIZONTAL_LABEL_MARGIN": HORIZONTAL_LABEL_MARGIN,
         "VERTICAL_LABEL_MARGIN": VERTICAL_LABEL_MARGIN,
-        "mm": mm,
     })
 
     # dataverse export
@@ -545,8 +543,8 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         paper_format = flask.request.args.get('width-paper-format', '')
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
-        maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
-        maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
+        maximum_width = math.floor(PAGE_SIZES[paper_format][0] - 2 * HORIZONTAL_LABEL_MARGIN)
+        maximum_height = math.floor(PAGE_SIZES[paper_format][1] - 2 * VERTICAL_LABEL_MARGIN)
         ghs_classes_side_by_side = 'side-by-side' in flask.request.args
         label_minimum_width = 20.0
         if ghs_classes_side_by_side:
@@ -579,7 +577,7 @@ def print_object_label(object_id: int) -> FlaskResponseT:
         paper_format = flask.request.args.get('height-paper-format', '')
         if paper_format not in PAGE_SIZES:
             paper_format = DEFAULT_PAPER_FORMAT
-        maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
+        maximum_width = math.floor(PAGE_SIZES[paper_format][0] - 2 * HORIZONTAL_LABEL_MARGIN)
         include_qrcode_in_long_labels = 'include-qrcode' in flask.request.args
         label_width = 0
         label_minimum_height = 0
@@ -758,8 +756,8 @@ def multiselect_labels() -> FlaskResponseT:
     if paper_format not in PAGE_SIZES:
         paper_format = DEFAULT_PAPER_FORMAT
 
-    maximum_width = math.floor(PAGE_SIZES[paper_format][0] / mm - 2 * HORIZONTAL_LABEL_MARGIN)
-    maximum_height = math.floor(PAGE_SIZES[paper_format][1] / mm - 2 * VERTICAL_LABEL_MARGIN)
+    maximum_width = math.floor(PAGE_SIZES[paper_format][0] - 2 * HORIZONTAL_LABEL_MARGIN)
+    maximum_height = math.floor(PAGE_SIZES[paper_format][1] - 2 * VERTICAL_LABEL_MARGIN)
 
     qr_code_width = 18.0
     min_label_width = 0.0

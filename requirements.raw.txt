@@ -25,7 +25,6 @@ psycopg2-binary
 pyotp
 pysaml2
 qrcode
-reportlab
 requests
 simple_openid_connect
 SQLAlchemy
