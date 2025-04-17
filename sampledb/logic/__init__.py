@@ -28,6 +28,7 @@ from . import fed_logs
 from . import files
 from . import groups
 from . import group_categories
+from . import info_pages
 from . import instruments
 from . import instrument_log_entries
 from . import languages
@@ -99,6 +100,7 @@ __all__ = [
     'files',
     'groups',
     'group_categories',
+    'info_pages',
     'instruments',
     'instrument_translations',
     'instrument_log_entries',

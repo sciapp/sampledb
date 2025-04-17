@@ -531,3 +531,7 @@ class ServiceProviderMetadataUnavailableError(Exception):
 
 class FederatedLoginError(Exception):
     pass
+
+
+class InfoPageDoesNotExistError(Exception):
+    pass

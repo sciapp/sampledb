@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Info Page') }} #{{ info_page.id }} — {{ service_name }}{% endblock %}
+
+{% block content %}
+<h1>{{ _('Info Page') }} #{{ info_page.id }}</h1>
+
+{% if info_page.disabled %}
+  <p class="text-muted"><i class="fa fa-ban" aria-hidden="true"></i> {{ _('This info page is currently disabled and will not be shown.') }}</p>
+{% elif None in acknowledgements.values() %}
+  <p class="text-muted"><i class="fa fa-ban" aria-hidden="true"></i> {{ _('This info page will not be shown to users that existed when it was created.') }}</p>
+{% endif %}
+
+{% if not current_user.is_readonly %}
+  <div class="form-group">
+    <a href="{{ url_for('.admin_info_page', info_page_id=info_page.id, mode='edit') }}" class="btn btn-default">{{ _('Edit') }}</a>
+
+    <form action="{{ url_for('.admin_info_page', info_page_id=info_page.id) }}" method="post" style="display: inline">
+      {{ set_info_page_disabled_form.csrf_token() }}
+      {% if not info_page.disabled %}
+        <input type="hidden" name="{{ set_info_page_disabled_form.disabled.name }}" value="on" />
+      {% endif %}
+      <button type="submit" class="btn btn-default" name="{{ set_info_page_disabled_form.submit_set_info_page_disabled.name }}" value="set_info_page_disabled">
+        {% if info_page.disabled %}
+          {{ _("Enable") }}
+        {% else %}
+          {{ _("Disable") }}
+        {% endif %}
+      </button>
+    </form>
+
+    <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteInfoPageModal">
+      {{ _('Delete') }}
+    </button>
+  </div>
+{% endif %}
+
+<dl>
+  <dt>
+    {{ _('Title') }}
+  </dt>
+  <dd>
+    {{ info_page.title | get_translated_text(default='—') }}
+  </dd>
+  <dt>
+    {{ _('Routes') }}
+  </dt>
+  <dd>
+    {% if info_page.endpoint %}
+      {% set url_rules = url_map.iter_rules(info_page.endpoint) | list %}
+      {% if url_rules %}
+        <ul>
+        {%- for rule in url_rules -%}
+          <li><code>{{ rule.rule }}</code></li>
+        {%- endfor -%}
+        </ul>
+      {% else %}
+        {{ _('Unknown route') }}
+      {% endif %}
+    {% else %}
+      {{ _('All routes') }}
+    {% endif %}
+  </dd>
+  <dt>{{ _('Content') }}</dt>
+  <dd>
+    <pre style="font-family: inherit; word-wrap: break-word; white-space: normal; word-break: normal;"  class="info-page-user-content">{{ info_page.content | get_translated_text(metadata_language) | markdown_to_safe_html | safe }}</pre>
+  </dd>
+</dl>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">{{ _('ID') }}</th>
+      <th scope="col">{{ _('Name') }}</th>
+      <th scope="col">{{ _('Acknowledgement') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <th scope="row">
+        {{ user.id}}
+      </th>
+      <td>
+        {% if user.name is not none %} {{ user.name }} {% else %} &mdash; {% endif %}
+        {{ import_information_symbol(user) }}
+        {% if user.is_admin %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Administrators can manage actions, objects and other %(service_name)s content.', service_name=service_name) }}">{{ _('administrator') }}</span>{% endif %}{% if user.type.name.lower() == 'other' %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Bot users are meant for the automation of object creation and other tasks.') }}">{{ _('bot') }}</span>{% endif %}{% if user.is_readonly %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts can be marked as read only if they should not create or change entries in %(service_name)s.', service_name=service_name) }}">{{ _('read only') }}</span>{% endif %}{% if user.is_hidden %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Accounts marked as hidden will not be shown in user lists.') }}">{{ _('hidden') }}</span>{% endif %}{% if not user.is_active %} <span class="label label-default" data-toggle="tooltip" data-placement="top" title="{{ _('Deactivated accounts cannot be used until they are activated again.') }}">{{ _('deactivated') }}</span>{% endif %}
+      <td>
+        {% if user.id in acknowledgements %}
+          {% if acknowledgements[user.id] is none %}
+            &mdash;
+          {% else %}
+            <i class="fa fa-fw fa-check" aria-hidden="true"></i> ({{ acknowledgements[user.id] | babel_format_datetime }})
+          {% endif %}
+        {% else %}
+          <i class="fa fa-fw fa-times" aria-hidden="true"></i>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="modal fade" id="deleteInfoPageModal" tabindex="-1" role="dialog" aria-labelledby="deleteInfoPageModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="deleteInfoPageModalLabel">{{ _('Delete Info Page') }}</h4>
+      </div>
+      <div class="modal-body">
+        <p>
+          {{ _('Are you sure you want to delete the info page "%(info_page_title)s"?', info_page_title=info_page.title | get_translated_text(default='—')) }}
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+        <form action="{{ url_for('.admin_info_page', info_page_id=info_page.id) }}" method="post" style="display: inline;">
+          {{ delete_info_page_form.csrf_token() }}
+          <button type="submit" class="btn btn-danger"  name="{{ delete_info_page_form.submit_delete_info_page.name }}" value="delete_info_page">{{ _('Delete') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

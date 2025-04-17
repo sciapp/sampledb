@@ -262,4 +262,29 @@ $(function () {
       collapseExpandButton.tooltip('setContent').tooltip('show');
     });
   });
+
+  const infoPageModal = $('#infoPageModal');
+  const infoPages = infoPageModal.find('.modal-content');
+  infoPages.hide();
+  infoPages.first().show();
+  const infoPageModalButtons = infoPages.find('[data-info-page-button]');
+  infoPageModalButtons.filter('[data-info-page-button="back"]').on('click', function () {
+    const infoPage = $(this).closest('.modal-content');
+    infoPage.hide();
+    infoPage.prev('.modal-content').show();
+  });
+  infoPageModalButtons.filter('[data-info-page-button="next"]').on('click', function () {
+    const infoPage = $(this).closest('.modal-content');
+    infoPage.hide();
+    infoPage.next('.modal-content').show();
+  });
+  infoPageModalButtons.filter('[data-info-page-button="acknowledge"]').on('click', function () {
+    infoPageModal.modal('hide');
+    const infoPageForm = $(this).closest('form');
+    $.post(
+      infoPageForm.attr('action'),
+      infoPageForm.serialize()
+    );
+  });
+  infoPageModal.modal({ keyboard: false, backdrop: 'static' });
 });

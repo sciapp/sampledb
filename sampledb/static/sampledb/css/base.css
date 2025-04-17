@@ -808,6 +808,7 @@ th:hover .search-helper {
 .object-user-content,
 .instrument-user-content,
 .topic-user-content,
+.info-page-user-content,
 .action-user-content {
     border-left: 1px solid #ddd;
     padding-left: 20px;
@@ -816,6 +817,7 @@ th:hover .search-helper {
 .object-user-content .multiline-text-wrapper,
 .instrument-user-content .multiline-text-wrapper,
 .topic-user-content .multiline-text-wrapper,
+.info-page-user-content .multiline-text-wrapper,
 .action-user-content .multiline-text-wrapper {
     white-space: pre-wrap;
 }
@@ -823,6 +825,7 @@ th:hover .search-helper {
 .object-user-content table td, .object-user-content table th,
 .instrument-user-content table td, .instrument-user-content table th,
 .topic-user-content table td, .topic-user-content table th,
+.info-page-user-content table td, .info-page-user-content table th,
 .action-user-content table td, .action-user-content table th {
     padding: 8px;
     line-height: 1.42857143;
@@ -831,6 +834,7 @@ th:hover .search-helper {
 .object-user-content table td[align="left"], .object-user-content table th[align="left"],
 .instrument-user-content table td[align="left"], .instrument-user-content table th[align="left"],
 .topic-user-content table td[align="left"], .topic-user-content table th[align="left"],
+.info-page-user-content table td[align="left"], .info-page-user-content table th[align="left"],
 .action-user-content table td[align="left"], .action-user-content table th[align="left"] {
     text-align: left;
 }
@@ -838,6 +842,7 @@ th:hover .search-helper {
 .object-user-content table td[align="right"], .object-user-content table th[align="right"],
 .instrument-user-content table td[align="right"], .instrument-user-content table th[align="right"],
 .topic-user-content table td[align="right"], .topic-user-content table th[align="right"],
+.info-page-user-content table td[align="right"], .info-page-user-content table th[align="right"],
 .action-user-content table td[align="right"], .action-user-content table th[align="right"] {
     text-align: right;
 }
@@ -845,6 +850,7 @@ th:hover .search-helper {
 .object-user-content table td[align="center"], .object-user-content table th[align="center"],
 .instrument-user-content table td[align="center"], .instrument-user-content table th[align="center"],
 .topic-user-content table td[align="center"], .topic-user-content table th[align="center"],
+.info-page-user-content table td[align="center"], .info-page-user-content table th[align="center"],
 .action-user-content table td[align="center"], .action-user-content table th[align="center"] {
     text-align: center;
 }
@@ -852,6 +858,7 @@ th:hover .search-helper {
 .object-user-content table td,
 .instrument-user-content table td,
 .topic-user-content table td,
+.info-page-user-content table td,
 .action-user-content table td {
     vertical-align: top;
     border-top: 1px solid #ddd;
@@ -860,6 +867,7 @@ th:hover .search-helper {
 .object-user-content table th,
 .instrument-user-content table th,
 .topic-user-content table th,
+.info-page-user-content table th,
 .action-user-content table th {
     vertical-align: bottom;
     border-bottom: 2px solid #ddd;
@@ -868,6 +876,7 @@ th:hover .search-helper {
 .object-user-content img,
 .instrument-user-content img,
 .topic-user-content img,
+.info-page-user-content img,
 .action-user-content img {
     max-width: 100%;
     cursor: pointer;

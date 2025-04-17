@@ -270,6 +270,17 @@ def test_status_codes(flask_server, user, driver):
         ).id
         keypair_id = sampledb.logic.minisign_keys.get_current_key_pair().id
 
+        info_page_id = sampledb.logic.info_pages.create_info_page(
+            title={
+                'en': 'Test Info Page',
+            },
+            content={
+                'en': 'Example Info Page Content'
+            },
+            endpoint='frontend.admin_info_pages',
+            disabled=False,
+        ).id
+
     session = requests.session()
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     driver.get(flask_server.base_url + f'users/{user.id}/autologin')
@@ -285,6 +296,9 @@ def test_status_codes(flask_server, user, driver):
         f'actions/{other_action_id}/permissions': 200,
         'actions/new/': 200,
         'admin/background_tasks/': 200,
+        'admin/info_pages/': 200,
+        f'admin/info_pages/{info_page_id}': 200,
+        'admin/info_pages/new': 200,
         'admin/warnings/': 200,
         'api/v1/action_types/': 200,
         f'api/v1/action_types/{action_type_id}': 200,
@@ -537,4 +551,5 @@ def test_status_codes(flask_server, user, driver):
         'eln_import_id': eln_import_id,
         'topic_id': topic_id,
         'keypair_id': keypair_id,
+        'info_page_id': info_page_id,
     })

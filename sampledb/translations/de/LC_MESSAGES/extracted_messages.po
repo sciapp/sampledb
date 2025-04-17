@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-03-20 08:31+0100\n"
+"POT-Creation-Date: 2025-04-08 12:30+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -464,6 +464,33 @@ msgstr "Ungültige Eltern-Kategorie."
 
 msgid "The group category was updated successfully."
 msgstr "Die Gruppen-Kategorie wurde erfolgreich aktualisiert."
+
+msgid "The info page has been deleted successfully."
+msgstr "Die Infoseite wurde erfolgreich gelöscht."
+
+msgid "The info page has already been disabled."
+msgstr "Die Infoseite wurde bereits deaktiviert."
+
+msgid "The info page has already been enabled."
+msgstr "Die Infoseite wurde bereits aktiviert."
+
+msgid "The info page has been disabled successfully."
+msgstr "Die Infoseite wurde erfolgreich deaktiviert."
+
+msgid "The info page has been enabled successfully."
+msgstr "Die Infoseite wurde erfolgreich aktiviert."
+
+msgid "The fields for title and content are required."
+msgstr "Die Felder für Titel und Inhalt sind Pflichtfelder."
+
+msgid "Please enter a shorter title (at most 100 characters)."
+msgstr "Bitte geben Sie einen kürzeren Titel ein (höchstens 100 Zeichen)."
+
+msgid "The info page has been created successfully."
+msgstr "Die Infoseite wurde erfolgreich erstellt."
+
+msgid "The info page has been updated successfully."
+msgstr "Die Infoseite wurde erfolgreich aktualisiert."
 
 msgid "You have successfully updated the instrument log entry."
 msgstr "Sie haben den Instrument-Log-Eintrag erfolgreich aktualisiert."
@@ -1609,6 +1636,15 @@ msgstr "Endpunkt"
 msgid "This %(api_token_type)s has not been used so far."
 msgstr "Dieses %(api_token_type)s ist noch nicht benutzt worden."
 
+msgid "Back"
+msgstr "Zurück"
+
+msgid "Next"
+msgstr "Weiter"
+
+msgid "Acknowledge"
+msgstr "Bestätigen"
+
 msgid "Toggle Navigation"
 msgstr "Navigation aus-/einklappen"
 
@@ -1680,6 +1716,9 @@ msgstr "Sprachen"
 
 msgid "Monitoring Dashboard"
 msgstr "Monitoring Dashboard"
+
+msgid "Info Pages"
+msgstr "Infoseiten"
 
 #, python-format
 msgid ""
@@ -4169,6 +4208,85 @@ msgstr "Einfache Gruppe erstellen"
 msgid "Manage Group Categories"
 msgstr "Gruppen-Kategorien verwalten"
 
+msgid "Info Page"
+msgstr "Infoseite"
+
+msgid "This info page is currently disabled and will not be shown."
+msgstr "Diese Infoseite ist aktuell deaktiviert und wird nicht angezeigt."
+
+msgid ""
+"This info page will not be shown to users that existed when it was "
+"created."
+msgstr ""
+"Diese Infoseite wird Nutzern, die zum Zeitpunkt ihrer Erstellung bereits "
+"ein Nutzerkonto hatten, nicht angezeigt."
+
+msgid "Routes"
+msgstr "Routen"
+
+msgid "Unknown route"
+msgstr "Unbekannte Route"
+
+msgid "All routes"
+msgstr "Alle Routen"
+
+msgid "Content"
+msgstr "Inhalt"
+
+msgid "Acknowledgement"
+msgstr "Bestätigung"
+
+msgid "Delete Info Page"
+msgstr "Infoseite löschen"
+
+#, python-format
+msgid "Are you sure you want to delete the info page \"%(info_page_title)s\"?"
+msgstr ""
+"Sind Sie sich sicher, dass Sie die Infoseite \"%(info_page_title)s\" "
+"löschen wollen?"
+
+msgid "Please enter content."
+msgstr "Bitte geben Sie einen Inhalt ein."
+
+msgid "Do not show to previously existing users"
+msgstr "Bestehenden Nutzern nicht anzeigen"
+
+msgid ""
+"The info page will not be shown to users that already had an account at "
+"the time it was created."
+msgstr ""
+"Die Infoseite wird Nutzern, die zum Zeitpunkt ihrer Erstellung bereits "
+"ein Nutzerkonto hatten, nicht angezeigt werden."
+
+msgid "Clear previous acknowledgements"
+msgstr "Bisherige Bestätigungen zurücksetzen"
+
+msgid ""
+"All previous acknowledgements of the info page will be cleared and users "
+"will need to acknowledge it again."
+msgstr ""
+"Alle bisherigen Bestätigungen der Infoseite werden zurückgesetzt und "
+"Nutzer werden diese neu bestätigen müssen."
+
+msgid "Info Pages are shown when users visit specific routes for the first time."
+msgstr "Infoseiten werden Nutzern angezeigt, wenn diese bestimmte Routen besuchen."
+
+msgid "Create Info Page"
+msgstr "Infoseite erstellen"
+
+msgid "disabled"
+msgstr "deaktiviert"
+
+msgid ""
+"Are you sure you want to delete the info page \"<span "
+"id=\"deleteInfoPageTitle\"></span>\"?"
+msgstr ""
+"Sind Sie sich sicher, dass Sie die Infoseite \"<span "
+"id=\"deleteInfoPageTitle\"></span>\" löschen wollen?"
+
+msgid "There are no info pages set up at this time."
+msgstr "Aktuell sind keine Infoseiten eingerichtet."
+
 msgid "This instrument has been hidden from instrument lists."
 msgstr "Dieses Instrument wurde aus Instrumentlisten versteckt."
 
@@ -4358,9 +4476,6 @@ msgstr "Änderungen speichern"
 
 msgid "There are no log entries for this instrument."
 msgstr "Es gibt keine Log-Einträge für dieses Instrument."
-
-msgid "Content"
-msgstr "Inhalt"
 
 msgid "Please enter a text or add an attachment."
 msgstr "Bitte geben Sie einen Text ein oder fügen Sei einen Anhang hinzu."
@@ -4972,9 +5087,6 @@ msgstr "Export"
 
 msgid "This object has already been exported as:"
 msgstr "Dieses Objekt wurde bereits exportiert als:"
-
-msgid "Back"
-msgstr "Zurück"
 
 #, python-format
 msgid ""
