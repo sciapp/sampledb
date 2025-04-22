@@ -4,7 +4,7 @@ import typing
 from . import errors
 from .utils import cache
 from .. import db, models
-from ..models import actions, topics, instruments
+from ..models import actions, topics, instruments, locations
 
 
 @dataclasses.dataclass(frozen=True)
@@ -215,7 +215,7 @@ def add_topic_to_order(topic: Topic) -> None:
 
 
 def _set_topics(
-        mutable_object: typing.Union[actions.Action, instruments.Instrument],
+        mutable_object: typing.Union[actions.Action, instruments.Instrument, locations.Location],
         topic_ids: typing.Sequence[int]
 ) -> None:
     set_topics = topics.Topic.query.filter(topics.Topic.id.in_(topic_ids)).all()
@@ -246,3 +246,13 @@ def set_instrument_topics(
     if instrument is None:
         raise errors.InstrumentDoesNotExistError()
     _set_topics(instrument, topic_ids)
+
+
+def set_location_topics(
+        location_id: int,
+        topic_ids: typing.Sequence[int]
+) -> None:
+    location = locations.Location.query.filter_by(id=location_id).first()
+    if location is None:
+        raise errors.LocationDoesNotExistError()
+    _set_topics(location, topic_ids)

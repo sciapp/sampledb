@@ -156,6 +156,17 @@
 
       <input type="hidden" id="input-translations" name="{{ location_form.translations.name }}" value="">
 
+      {% if not config['DISABLE_TOPICS'] %}
+        <div class="form-group">
+          <label for="input-location-topics" class="control-label">{{ _('Topics')}}</label>
+          <select id="input-location-topics" name="{{ location_form.topics.name }}" class="selectpicker form-control" multiple="multiple" data-none-selected-text="{{ _('No topic selected') }}">
+            {% for topic_id_str, topic in location_form.topics.choices %}
+              <option value="{{ topic_id_str }}" {% if (location_form.topics.data and topic_id_str in location_form.topics.data) or (not location_form.topics.data and location_form.topics.default and topic_id_str in location_form.topics.default) %}selected="selected"{% endif %}>{{ topic.name | get_translated_text(default='—') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+
       <div id="capacity-field-list">
       {% if not (location_types | length == 1 and location_form.type.data == location_types[0].id | string and not location_types[0].enable_capacities) %}
         <label>{{ _('Storage Capacities') }}</label>

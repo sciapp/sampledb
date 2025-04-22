@@ -67,6 +67,25 @@ def main(arguments: typing.List[str]) -> None:
             enabled_for_user_interface=True
         )
 
+        topic = sampledb.logic.topics.create_topic(
+            name={
+                "en": "Example Topic",
+                "de": "Beispielthema"
+            },
+            description={
+                "en": "This is an example topic.",
+                "de": "Dies ist ein Beispielthema."
+            },
+            short_description={
+                "en": "This is an example topic.",
+                "de": "Dies ist ein Beispielthema."
+            },
+            show_on_frontpage=False,
+            show_in_navbar=True,
+            description_is_markdown=False,
+            short_description_is_markdown=False
+        )
+
         group_id = groups.create_group({"en": "Example Group", "de": "Beispielgruppe"},
                                        {"en": "This is an example group for testing purposes.", "de": "Dies ist eine Beispielgruppe für Testzwecke"},
                                        instrument_responsible_user.id).id
@@ -106,6 +125,7 @@ This example shows how Markdown can be used for instrument Notes.
             users_can_create_log_entries=True,
             notes_is_markdown=True
         )
+        sampledb.logic.topics.set_instrument_topics(instrument.id, [topic.id])
         set_instrument_translation(
             language_id=sampledb.models.Language.ENGLISH,
             instrument_id=instrument.id,
@@ -191,6 +211,7 @@ This example shows how Markdown can be used for instrument Notes.
             schema=schema,
             instrument_id=instrument.id
         )
+        sampledb.logic.topics.set_action_topics(instrument_action.id, [topic.id])
 
         set_action_translation(Language.ENGLISH, instrument_action.id, "Sample Creation", "This is an example action")
 
@@ -638,6 +659,7 @@ This example shows how Markdown can be used for instrument Notes.
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42a.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.location_permissions.set_location_permissions_for_all_users(room_42b.id, sampledb.models.Permissions.WRITE)
         sampledb.logic.instruments.set_instrument_location(instrument.id, room_42a.id)
+        sampledb.logic.topics.set_location_topics(room_42a.id, [topic.id])
 
         container_type = sampledb.logic.locations.create_location_type(
             name={"en": "Container"},

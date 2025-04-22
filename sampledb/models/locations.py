@@ -17,6 +17,7 @@ from .utils import Model
 
 if typing.TYPE_CHECKING:
     from .components import Component
+    from .topics import Topic
 
 
 location_user_association_table = db.Table(
@@ -24,6 +25,13 @@ location_user_association_table = db.Table(
     db.metadata,
     db.Column('location_id', db.Integer, db.ForeignKey('locations.id')),
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
+)
+
+topic_location_association_table = db.Table(
+    'location_topics',
+    db.metadata,
+    db.Column('location_id', db.Integer, db.ForeignKey('locations.id')),
+    db.Column('topic_id', db.Integer, db.ForeignKey('topics.id'))
 )
 
 
@@ -119,6 +127,7 @@ class Location(Model):
     responsible_users: Mapped[typing.List['User']] = relationship("User", secondary=location_user_association_table, order_by="User.name")
     is_hidden: Mapped[bool] = db.Column(db.Boolean, default=False, nullable=False)
     enable_object_assignments: Mapped[bool] = db.Column(db.Boolean, default=True, server_default=db.true(), nullable=False)
+    topics: Mapped[typing.List['Topic']] = relationship('Topic', secondary=topic_location_association_table, back_populates='locations')
 
     if typing.TYPE_CHECKING:
         query: typing.ClassVar[Query["Location"]]

@@ -34,6 +34,14 @@
       {{_("Objects may not be assigned to this location.") }}
     </p>
   {% endif %}
+  {% if not config['DISABLE_TOPICS'] and location.topics %}
+    <p>
+      {{ _('Topics') }}:
+      {% for topic in location.topics %}
+        <a class="badge badge-secondary" href="{{ url_for('.topic', topic_id=topic.id) }}">{{ topic.name | get_translated_text }}</a>
+      {% endfor %}
+    </p>
+  {% endif %}
   {% include "locations/responsible_users.html" %}
   {% if locations_tree %}
     <h2>{{ _('Sub-Locations') }}</h2>

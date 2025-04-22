@@ -12,7 +12,7 @@ import datetime
 import typing
 
 from .components import Component
-from . import actions
+from . import actions, topics
 from .action_types import check_action_type_exists
 from .. import db, models, logic
 from . import user_log, object_log, location_log, objects, users, errors, languages, components
@@ -77,6 +77,7 @@ class Location:
     responsible_users: typing.List[users.User]
     is_hidden: bool
     enable_object_assignments: bool
+    topics: typing.List[topics.Topic]
     parent_location_id: typing.Optional[int] = None
     fed_id: typing.Optional[int] = None
     component_id: typing.Optional[int] = None
@@ -100,6 +101,7 @@ class Location:
             ],
             is_hidden=location.is_hidden,
             enable_object_assignments=location.enable_object_assignments,
+            topics=[topics.Topic.from_database(topic) for topic in location.topics],
         )
 
 
