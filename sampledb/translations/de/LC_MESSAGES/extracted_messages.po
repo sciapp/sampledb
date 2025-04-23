@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-04-22 13:38+0200\n"
+"POT-Creation-Date: 2025-05-08 13:14+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -5429,6 +5429,9 @@ msgstr "Ort anzeigen"
 msgid "Show Responsible User"
 msgstr "Verantwortlichen Nutzer anzeigen"
 
+msgid "Show Topics"
+msgstr "Themen anzeigen"
+
 msgid "Filter by User Activity"
 msgstr "Nach Nutzeraktivität filtern"
 
@@ -5612,6 +5615,12 @@ msgstr "Geteilt von %(component_name)s"
 #, python-format
 msgid "Shared with %(component_name)s"
 msgstr "Geteilt mit %(component_name)s"
+
+msgid "via"
+msgstr "über"
+
+msgid "a different source"
+msgstr "eine andere Quelle"
 
 msgid "Pages"
 msgstr "Seiten"
@@ -7232,6 +7241,12 @@ msgstr "Ja, Aktionen dieses Themas in der Navigationsleiste anzeigen"
 msgid "No, this topic should not be shown in the navbar"
 msgstr "Nein, Aktionen dieses Themas nicht in der Navigationsleiste anzeigen"
 
+msgid "View Instruments"
+msgstr "Instrumente anzeigen"
+
+msgid "View Locations"
+msgstr "Orte anzeigen"
+
 msgid "Modify the settings for this topic."
 msgstr "Einstellungen für dieses Thema modifizieren."
 
@@ -7257,12 +7272,6 @@ msgstr "Themen erlauben das Filtern von Informationen in %(service_name)s."
 
 msgid "Create Topic"
 msgstr "Thema erstellen"
-
-msgid "View Instruments"
-msgstr "Instrumente anzeigen"
-
-msgid "View Locations"
-msgstr "Orte anzeigen"
 
 msgid "Use FIDO2 Passkey"
 msgstr "FIDO2 Passkey verwenden"
