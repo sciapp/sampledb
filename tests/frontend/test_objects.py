@@ -1448,7 +1448,7 @@ def test_object_permissions_add_user(flask_server, user):
     assert session.get(flask_server.base_url + 'users/{}/autologin'.format(user.id)).status_code == 200
     r = session.get(flask_server.base_url + 'objects/{}/permissions'.format(object.object_id))
     assert r.status_code == 200
-    csrf_token = BeautifulSoup(r.content, 'html.parser').findAll('input', {'name': 'csrf_token'})[1]['value']
+    csrf_token = BeautifulSoup(r.content, 'html.parser').find_all('input', {'name': 'csrf_token'})[1]['value']
 
     with flask_server.app.app_context():
         user2 = sampledb.models.User(name="New User", email="example@example.com", type=sampledb.models.UserType.PERSON)
