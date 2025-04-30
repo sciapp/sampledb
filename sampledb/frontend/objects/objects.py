@@ -480,7 +480,7 @@ def objects() -> FlaskResponseT:
             except logic.errors.ObjectDoesNotExistError:
                 pass
         try:
-            filter_func_with_notes, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search)
+            filter_func_with_notes, search_tree, use_advanced_search = generate_filter_func(query_string, use_advanced_search, use_permissions_filter_for_referenced_objects=not flask_login.current_user.has_admin_permissions)
         except Exception:
             # TODO: ensure that advanced search does not cause exceptions
             if use_advanced_search:

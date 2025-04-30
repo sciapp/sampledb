@@ -273,7 +273,7 @@ class Objects(Resource):
         query_string = flask.request.args.get('q', '')
         if query_string:
             try:
-                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, text_to_bool(flask.request.args.get('use_advanced_search', 'true')))
+                unwrapped_filter_func, _search_tree, _use_advanced_search = generate_filter_func(query_string, text_to_bool(flask.request.args.get('use_advanced_search', 'true')), use_permissions_filter_for_referenced_objects=not flask.g.user.has_admin_permissions)
             except Exception:
                 # TODO: ensure that advanced search does not cause exceptions
                 def unwrapped_filter_func(data: typing.Any, search_notes: typing.List[typing.Tuple[str, str, int, typing.Optional[int]]]) -> typing.Any:

@@ -230,6 +230,7 @@ class VersionedJSONSerializableObjectTables:
         self._component_id_column = component_id_column
         self._eln_import_id_column = eln_import_id_column
         self.object_id_column = self._current_table.c.object_id
+        self.data_column = self._current_table.c.data
         self.bind = bind
         if self.bind is not None:
             self.metadata.create_all(self.bind)

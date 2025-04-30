@@ -341,6 +341,38 @@ def test_search_objects(flask_server, user):
         else:
             assert name not in str(document.find('tbody'))
 
+    schema = action.schema
+    schema['properties']['object_reference'] = {
+        'title': 'Object Reference',
+        'type': 'object_reference'
+    }
+    sampledb.logic.actions.update_action(
+        action_id=action.id,
+        schema=schema
+    )
+    object = sampledb.logic.objects.create_object(
+        data={
+            'name': {
+                '_type': 'text',
+                'text': 'Example4'
+            },
+            'object_reference': {
+                '_type': 'object_reference',
+                'object_id': objects[0].id
+            }
+        },
+        user_id=user.id,
+        action_id=action.id
+    )
+    r = session.get(flask_server.base_url + 'objects', params={'q': '*object_reference.name == "Example1"'})
+    assert r.status_code == 200
+    document = BeautifulSoup(r.content, 'html.parser')
+    assert len(document.find('tbody').find_all('tr')) == 1
+    for name in names + ['Example4']:
+        if 'Example4' in name:
+            assert name in str(document.find('tbody'))
+        else:
+            assert name not in str(document.find('tbody'))
 
 def test_objects_referencable(flask_server, user):
     schema = json.load(open(os.path.join(SCHEMA_DIR, 'minimal.json'), encoding="utf-8"))
