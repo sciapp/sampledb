@@ -63,7 +63,7 @@ ACTION_DATA: typing.Dict[typing.Any, typing.Any] = {'action_id': 2, 'component_u
 ACTION_TYPE_DATA: typing.Dict[typing.Any, typing.Any] = {'action_type_id': 1, 'component_uuid': UUID_1, 'admin_only': False, 'enable_labels': True, 'enable_files': True, 'enable_locations': True, 'enable_publications': False, 'enable_comments': True, 'enable_activity_log': True, 'enable_related_objects': True, 'enable_project_link': False, 'translations': {'en': {'name': 'Action Type', 'description': 'Description', 'object_name': 'Action Object', 'object_name_plural': 'Action Objects', 'view_text': 'Show Action Objects', 'perform_text': 'Perform Action Type Action'}, 'de': {'name': 'Aktionstyp', 'description': 'Beschreibung', 'object_name': 'Aktionsobjekt', 'object_name_plural': 'Aktionsobjekte', 'view_text': 'Zeige Aktionsobjekte', 'perform_text': 'Führe Aktionstyp-Aktion aus'}}}
 INSTRUMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'instrument_id': 4, 'component_uuid': UUID_1, 'description_is_markdown': False, 'short_description_is_markdown': False, 'notes_is_markdown': False, 'is_hidden': False, 'translations': {'en': {'name': 'Example Instrument', 'description': 'Test instrument description', 'short_description': 'Test instrument short description', 'notes': 'Notes'}, 'de': {'name': 'Beispielinstrument', 'description': 'Beschreibung des Testinstrumentes', 'short_description': 'Kurzbeschreibung eines Beispielinstrumentes', 'notes': 'Notizen'}}}
 USER_DATA: typing.Dict[typing.Any, typing.Any] = {'user_id': 3, 'component_uuid': UUID_1, 'name': 'Example User', 'email': 'example@example.com', 'orcid': '0000-0002-1825-0097', 'affiliation': 'FZJ', 'role': 'Role', 'extra_fields': {'website': 'example.com'}}
-LOCATION_DATA: typing.Dict[typing.Any, typing.Any] = {'location_id': 2, 'component_uuid': UUID_1, 'name': {'en': 'Location', 'de': 'Ort'}, 'description': {'en': 'Example description', 'de': 'Beispielbeschreibung'}, 'parent_location': {'location_id': 1, 'component_uuid': UUID_1}, 'location_type': {'location_type_id': -99, 'component_uuid': UUID_1}, 'responsible_users': [{'user_id': 3, 'component_uuid': UUID_1}]}
+LOCATION_DATA: typing.Dict[typing.Any, typing.Any] = {'location_id': 2, 'component_uuid': UUID_1, 'name': {'en': 'Location', 'de': 'Ort'}, 'description': {'en': 'Example description', 'de': 'Beispielbeschreibung'}, 'parent_location': {'location_id': 1, 'component_uuid': UUID_1}, 'location_type': {'location_type_id': -99, 'component_uuid': UUID_1}, 'responsible_users': [{'user_id': 3, 'component_uuid': UUID_1}], 'permissions': {'all_users': 'read'}}
 LOCATION_TYPE_DATA: typing.Dict[typing.Any, typing.Any] = {'location_type_id': 5,  'component_uuid': UUID_1, 'name': {'en': 'Location Type'}, 'location_name_singular': {'en': 'Location'}, 'location_name_plural': {'en': 'Locations'}, 'admin_only': False, 'enable_parent_location': True, 'enable_sub_locations': True, 'enable_object_assignments': True, 'enable_responsible_users': True, 'show_location_log': True}
 COMMENT_DATA: typing.Dict[typing.Any, typing.Any] = {'comment_id': 1, 'component_uuid': UUID_1, 'user': {'user_id': 1, 'component_uuid': UUID_1}, 'content': 'Comment Text', 'utc_datetime': '2021-05-03 05:04:54.729462'}
 FILE_DATA: typing.Dict[typing.Any, typing.Any] = {'file_id': 1, 'component_uuid': UUID_1, 'user': {'user_id': 3, 'component_uuid': UUID_1}, 'data': {"storage": "url", "url": "https://example.com/file"}, 'utc_datetime': '2021-05-03 05:04:54.516344'}
@@ -2427,6 +2427,8 @@ def test_import_location(component):
     assert log_entries[0].location_id == location.id
     assert log_entries[0].utc_datetime >= start_datetime
     assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
+    assert sampledb.logic.location_permissions.get_location_permissions_for_all_users(location.id) == sampledb.models.Permissions.READ
+    assert sampledb.logic.location_permissions.get_location_permissions_for_all_users(location.parent_location_id) == sampledb.models.Permissions.NONE
 
 
 def test_import_location_unknown_language(component):
@@ -2450,8 +2452,11 @@ def test_import_location_unknown_language(component):
 
 def test_update_location(component):
     old_location_data = deepcopy(LOCATION_DATA)
+    del old_location_data['permissions']
     start_datetime = datetime.datetime.now(datetime.timezone.utc)
     old_location = parse_import_location(old_location_data, component)
+    assert sampledb.logic.location_permissions.get_location_permissions_for_all_users(old_location.id) == sampledb.models.Permissions.NONE
+    assert sampledb.logic.location_permissions.get_location_permissions_for_all_users(old_location.parent_location_id) == sampledb.models.Permissions.NONE
 
     location_data = deepcopy(LOCATION_DATA)
     location_data['name'] = {'en': 'Updated Location', 'de': 'Aktualisierter Ort'}
@@ -2480,6 +2485,9 @@ def test_update_location(component):
     assert log_entries[0].utc_datetime >= start_datetime
     assert log_entries[0].utc_datetime <= datetime.datetime.now(datetime.timezone.utc)
     assert log_entries[0].utc_datetime >= log_entries[1].utc_datetime
+
+    assert sampledb.logic.location_permissions.get_location_permissions_for_all_users(location.id) == sampledb.models.Permissions.READ
+    assert sampledb.logic.location_permissions.get_location_permissions_for_all_users(location.parent_location_id) == sampledb.models.Permissions.NONE
 
 
 def test_parse_location_invalid_data():
@@ -3555,8 +3563,22 @@ def test_shared_instrument_preprocessor_does_not_exist(instrument, component):
     assert markdown_images == {}
 
 
-def test_shared_location_preprocessor(locations, component):
+@pytest.mark.parametrize(
+    ['all_users_permissions'],
+    [
+        [sampledb.models.Permissions.NONE],
+        [sampledb.models.Permissions.READ]
+    ]
+)
+def test_shared_location_preprocessor(locations, component, all_users_permissions):
     parent_location, sub_location, _ = locations
+
+    if all_users_permissions != sampledb.models.Permissions.NONE:
+        sampledb.logic.location_permissions.set_location_permissions_for_all_users(sub_location.id, sampledb.models.Permissions.WRITE)
+        assert sampledb.logic.location_permissions.location_is_public(sub_location.id)
+    else:
+        assert not sampledb.logic.location_permissions.location_is_public(sub_location.id)
+
     refs = []
     markdown_images = {}
     processed_location = shared_location_preprocessor(sub_location.id, component, refs, markdown_images)
@@ -3574,6 +3596,9 @@ def test_shared_location_preprocessor(locations, component):
     assert ('location_types', logic.locations.LocationType.LOCATION) in refs
     assert len(refs) == 2
     assert markdown_images == {}
+
+    assert 'permissions' in processed_location
+    assert processed_location['permissions'].get('all_users') == all_users_permissions.name.lower()
 
 
 def test_shared_location_preprocessor_does_not_exist(component):

@@ -151,3 +151,30 @@ def get_locations_with_user_permissions(
         if permissions in location_permissions[location.id]:
             locations_with_user_permissions.append(location)
     return locations_with_user_permissions
+
+
+def location_is_public(location_id: int) -> bool:
+    """
+    Returns whether a location is public.
+
+    A location is considered public if its permission settings match those set
+    for locations created as public via the frontend, i.e. WRITE permissions
+    for all users and no explicitly set permissions for users, groups or
+    projects.
+
+    :param location_id: the id of the location
+    :return: whether the location is public
+    :raise errors.LocationDoesNotExistError: if no location with the given ID
+        exists
+    """
+    if get_location_permissions_for_all_users(location_id) != Permissions.WRITE:
+        return False
+
+    if db.session.query(db.exists().where(UserLocationPermissions.location_id == location_id)).scalar():
+        return False
+    if db.session.query(db.exists().where(GroupLocationPermissions.location_id == location_id)).scalar():
+        return False
+    if db.session.query(db.exists().where(ProjectLocationPermissions.location_id == location_id)).scalar():
+        return False
+    locations.check_location_exists(location_id)
+    return True

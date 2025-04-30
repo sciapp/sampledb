@@ -915,3 +915,13 @@ def test_assigned_object_to_location_with_capacity(user, object, location):
     sampledb.logic.locations.assign_location_to_object(object.id, location.id, user.id, user.id, None)
     assert sampledb.logic.locations.get_current_object_location_assignment(object.id).location_id == location.id
     assert sampledb.logic.locations.get_current_object_location_assignment(object.id).responsible_user_id == user.id
+
+
+def test_location_is_public(user, location):
+    assert not sampledb.logic.location_permissions.location_is_public(location.id)
+    sampledb.logic.location_permissions.set_location_permissions_for_all_users(location.id, sampledb.models.Permissions.WRITE)
+    assert sampledb.logic.location_permissions.location_is_public(location.id)
+    sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.READ)
+    assert not sampledb.logic.location_permissions.location_is_public(location.id)
+    sampledb.logic.location_permissions.set_user_location_permissions(location.id, user.id, sampledb.models.Permissions.NONE)
+    assert sampledb.logic.location_permissions.location_is_public(location.id)
