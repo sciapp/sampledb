@@ -83,6 +83,10 @@ def action():
                             }
                         }
                     }
+                },
+                'object_reference': {
+                    'title': 'Object Reference',
+                    'type': 'object_reference'
                 }
             },
             'required': ['name']
@@ -1194,6 +1198,7 @@ def test_search_objects(flask_server, auth, user, other_user, action):
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
         'q': '"http://example.org/test.txt" == file_name'
     })
+    assert r.json() == []
     assert r.status_code == 200
     assert r.json() == []
     r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
@@ -1365,6 +1370,29 @@ def test_search_objects(flask_server, auth, user, other_user, action):
             ]
         else:
             assert r.json() == []
+
+    data['object_reference'] = {
+        '_type': 'object_reference',
+        'object_id': object.object_id,
+    }
+    sampledb.logic.objects.update_object(object.object_id, data, user.id)
+    object = sampledb.logic.objects.get_object(object.id)
+    r = requests.get(flask_server.base_url + 'api/v1/objects/', auth=auth, allow_redirects=False, params={
+        'q': '*object_reference.name == "Example"'
+    })
+    assert r.status_code == 200
+    assert r.json() == [
+        {
+            "object_id": object.object_id,
+            "version_id": object.version_id,
+            "action_id": object.action_id,
+            "schema": object.schema,
+            "data": object.data,
+            "fed_object_id": object.fed_object_id,
+            "fed_version_id": object.fed_version_id,
+            "component_id": object.component_id
+        }
+    ]
 
 
 def test_get_objects_by_action_id(flask_server, auth, user, other_user, action, other_action):

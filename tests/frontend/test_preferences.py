@@ -1832,7 +1832,8 @@ def test_reset_email_password_selenium(flask_server, driver, user):
     driver.get(flask_server.base_url + 'users/me/preferences')
     driver.find_element(By.CSS_SELECTOR, '#input-email').send_keys("example@example.com", Keys.TAB)
     with sampledb.mail.record_messages() as outbox:
-        driver.find_element(By.XPATH, f'//button[text()="Send Recovery Email"]').click()
+        with wait_for_page_load(driver):
+            driver.find_element(By.XPATH, f'//button[text()="Send Recovery Email"]').click()
 
     # check if a recovery mail was sent
     assert len(outbox) == 1

@@ -12,6 +12,8 @@ Currently in development.
 - Added setting for default notification types
 - Added info pages
 - Refactored related objects tree to improve performance
+- Improved support of array index placeholders and object references in search queries
+- Allow searching for multiple conditions inside a subtree of an object's properties
 - Allow notes on arrays in schema
 - Allow administrators to add users to groups without an invitation
 - Allow disabling project group deletion by non-administrators

@@ -118,7 +118,11 @@
       {{ search_tree.input_text }}
       {% elif search_tree | length  == 2 %}
         <span style="display:flex;flex-direction:row;justify-content: center; align-items:center; background-color: rgba(0, 128, 255, 0.075); border-radius:8px;">
+          {% if search_tree[0].operator %}
           <span style="margin:5px; font-weight: 800;">{{ search_tree[0].operator }}</span>
+          {% else %}
+          <span style="margin:5px 0 5px 5px;">{{ search_tree[0].input_text }}</span>
+          {% endif %}
           {% if search_tree[1].input_text %}
             <span style="margin:5px; ">{{ search_tree[1].input_text }}</span>
           {% else %}
