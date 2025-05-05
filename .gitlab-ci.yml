@@ -419,8 +419,8 @@ deploy-to-pypi:
   only:
     - tags@Scientific-IT-Systems/SampleDB
   script:
-    - python3 -m pip install setuptools wheel twine
-    - python3 setup.py sdist
+    - python3 -m pip install setuptools wheel twine build
+    - python3 -m build --sdist
     - if echo "$CI_COMMIT_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
         export VERSION=`echo "$CI_COMMIT_TAG" | sed 's/^v//'`;
         python3 -m twine upload dist/sampledb-$VERSION.tar.gz;
