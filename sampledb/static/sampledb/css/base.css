@@ -1636,3 +1636,12 @@ table .div-apply-recipe  .btn {
     width: 100%;
 }
 
+.location-muted li {
+    color: #333;
+}
+.location-muted, .location-muted li.location-muted, .location-muted > pre, .location-muted > p {
+    color: #777777;
+}
+.location-muted > a {
+    color: #52799a;
+}

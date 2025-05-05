@@ -186,6 +186,9 @@ def actions() -> FlaskResponseT:
     else:
         filter_topic_ids = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_ACTION_LIST_FILTERS'].get('filter_topic_ids', [])
 
+    if filter_topic_ids is None:
+        filter_topic_ids = []
+
     if filter_topic_ids:
         actions = [
             action

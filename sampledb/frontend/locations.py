@@ -7,6 +7,7 @@ import json
 
 import flask
 import flask_login
+import werkzeug.datastructures
 from flask_babel import _
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, SelectMultipleField, BooleanField, IntegerField, FormField, FieldList
@@ -26,10 +27,18 @@ from ..logic.location_permissions import get_user_location_permissions, get_loca
 from ..logic.users import get_user, get_users
 from ..logic.groups import get_group
 from ..logic.projects import get_project
-from .utils import check_current_user_is_not_readonly, get_location_name, get_groups_form_data
+from ..logic.settings import get_user_settings, set_user_settings
+from ..logic.topics import get_topics, set_location_topics
+from .utils import check_current_user_is_not_readonly, get_location_name, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ..utils import FlaskResponseT
 from ..logic.utils import get_translated_text
 from ..models import Permissions, LocationLogEntryType
+
+
+LOCATION_LIST_FILTER_PARAMETERS = (
+    'location_list_filters',
+    'topic_ids'
+)
 
 
 class LocationCapacityForm(FlaskForm):
@@ -46,6 +55,7 @@ class LocationForm(FlaskForm):
     is_hidden = BooleanField(default=False)
     enable_object_assignments = BooleanField(default=True)
     capacities = FieldList(FormField(LocationCapacityForm))
+    topics = SelectMultipleField()
 
 
 @frontend.route('/locations/')
@@ -56,40 +66,152 @@ def locations() -> FlaskResponseT:
         location_id: get_user_location_permissions(location_id, flask_login.current_user.id)
         for location_id in locations_map
     }
-    filtered_locations_tree = _filter_location_tree_for_read_permissions(locations_tree, permissions_by_id)
+
+    topics = get_topics()
+    topics_by_id = {
+        topic.id: topic
+        for topic in topics
+    }
+    valid_topic_ids = [topic.id for topic in topics]
+
+    if 'location_list_filters' in flask.request.args or any(any(flask.request.args.getlist(param)) for param in LOCATION_LIST_FILTER_PARAMETERS):
+        (
+            success,
+            filter_topic_ids,
+        ) = _parse_location_list_filters(
+            params=flask.request.args,
+            valid_topic_ids=valid_topic_ids
+        )
+        if not success:
+            return flask.abort(400)
+    else:
+        filter_topic_ids = get_user_settings(user_id=flask_login.current_user.id)['DEFAULT_LOCATION_LIST_FILTERS'].get('filter_topic_ids', [])
+
+    if filter_topic_ids is None or flask.current_app.config['DISABLE_TOPICS']:
+        filter_topic_ids = []
+
+    if filter_topic_ids:
+        def locations_filter(location: Location) -> bool:
+            return location_has_topic_ids(location, frozenset(filter_topic_ids))
+        locations_tree = filter_location_tree_by_predicate(locations_tree, locations_map, locations_filter)
+    else:
+        def locations_filter(location: Location) -> bool:
+            return True
+
+    filter_topic_infos = []
+    if filter_topic_ids:
+        for topic_id in filter_topic_ids:
+            topic = topics_by_id[topic_id]
+            filter_topic_infos.append({
+                'name': get_translated_text(topic.name, default=_('Unnamed Topic')),
+                'url': flask.url_for('.topic', topic_id=topic_id)
+            })
+
+    filtered_locations_tree = filter_location_tree_by_predicate(locations_tree, locations_map, lambda location: user_has_read_permissions_for_location(location, permissions_by_id))
     has_hidden_locations = filtered_locations_tree != locations_tree
     return flask.render_template(
         'locations/locations.html',
         locations_map=locations_map,
         locations_tree=filtered_locations_tree,
-        sort_location_ids_by_name=_sort_location_ids_by_name,
+        sort_location_ids_by_name=sort_location_ids_by_name,
         has_hidden_locations=has_hidden_locations,
         permissions_by_id=permissions_by_id,
         Permissions=Permissions,
         get_component=get_component,
-        get_user=get_user
+        get_user=get_user,
+        topics=topics,
+        filter_topic_infos=filter_topic_infos,
+        filter_topic_ids=filter_topic_ids,
+        locations_filter=locations_filter
     )
 
 
 _LocationTree = typing.Dict[int, '_LocationTree']
 
 
-def _filter_location_tree_for_read_permissions(
+def location_has_topic_ids(location: Location, topic_ids: typing.FrozenSet[int]) -> bool:
+    location_topic_ids = {
+        topic.id
+        for topic in location.topics
+    }
+    return len(location_topic_ids.intersection(topic_ids)) > 0
+
+
+def user_has_read_permissions_for_location(location: Location, permissions_by_id: typing.Dict[int, Permissions]) -> bool:
+    return Permissions.READ in permissions_by_id[location.id]
+
+
+def filter_location_tree_by_predicate(
         location_tree: _LocationTree,
-        permissions_by_id: typing.Dict[int, Permissions]
+        locations_map: typing.Dict[int, Location],
+        predicate: typing.Callable[[Location], bool]
 ) -> _LocationTree:
-    """
-    Remove all location IDs from a location tree that can neither be read, nor
-    have child locations that can be read.
-    """
     filtered_locations_tree: _LocationTree = {}
     for location_id in location_tree:
         sub_location_tree = location_tree[location_id]
         if sub_location_tree:
-            sub_location_tree = _filter_location_tree_for_read_permissions(sub_location_tree, permissions_by_id)
-        if Permissions.READ in permissions_by_id[location_id] or sub_location_tree:
+            sub_location_tree = filter_location_tree_by_predicate(sub_location_tree, locations_map, predicate)
+        if predicate(locations_map[location_id]) or sub_location_tree:
             filtered_locations_tree[location_id] = sub_location_tree
     return filtered_locations_tree
+
+
+def _parse_location_list_filters(
+        params: werkzeug.datastructures.MultiDict[str, str],
+        valid_topic_ids: typing.List[int]
+) -> typing.Tuple[
+    bool,
+    typing.Optional[typing.List[int]],
+]:
+    FALLBACK_RESULT = False, None
+    success, filter_topic_ids = parse_filter_id_params(
+        params=params,
+        param_aliases=['topic_ids'],
+        valid_ids=valid_topic_ids,
+        id_map={},
+        multi_params_error='',
+        parse_error=_('Unable to parse topic IDs.'),
+        invalid_id_error=_('Invalid topic ID.')
+    )
+    if not success:
+        return FALLBACK_RESULT
+
+    return (
+        True,
+        filter_topic_ids,
+    )
+
+
+@frontend.route('/locations/', methods=['POST'])
+@flask_login.login_required
+def save_location_list_defaults() -> FlaskResponseT:
+    if 'save_default_location_filters' in flask.request.form:
+        topics = get_topics()
+        valid_topic_ids = [topic.id for topic in topics]
+        success, filter_topic_ids = _parse_location_list_filters(
+            params=flask.request.form,
+            valid_topic_ids=valid_topic_ids
+        )
+        if not success:
+            return flask.abort(400)
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_LOCATION_LIST_FILTERS': {
+                    'filter_topic_ids': filter_topic_ids,
+                }
+            }
+        )
+        return flask.redirect(build_modified_url('.locations', blocked_parameters=LOCATION_LIST_FILTER_PARAMETERS))
+    if 'clear_default_location_filters' in flask.request.form:
+        set_user_settings(
+            user_id=flask_login.current_user.id,
+            data={
+                'DEFAULT_LOCATION_LIST_FILTERS': {}
+            }
+        )
+        return flask.redirect(build_modified_url('.locations', blocked_parameters=LOCATION_LIST_FILTER_PARAMETERS))
+    return flask.abort(400)
 
 
 @frontend.route('/locations/<int:location_id>', methods=['GET', 'POST'])
@@ -145,7 +267,7 @@ def location(location_id: int) -> FlaskResponseT:
         descendent_location_ids=descendent_location_ids,
         location=location,
         ancestors=ancestors,
-        sort_location_ids_by_name=_sort_location_ids_by_name,
+        sort_location_ids_by_name=sort_location_ids_by_name,
         permissions=permissions,
         permissions_by_id=permissions_by_id,
         Permissions=Permissions,
@@ -376,7 +498,7 @@ def decline_responsibility_for_object() -> FlaskResponseT:
     )
 
 
-def _sort_location_ids_by_name(location_ids: typing.Iterable[int], location_map: typing.Dict[int, Location]) -> typing.List[int]:
+def sort_location_ids_by_name(location_ids: typing.Iterable[int], location_map: typing.Dict[int, Location]) -> typing.List[int]:
     location_ids = list(location_ids)
     location_ids.sort(key=lambda location_id: get_location_name(location_map[location_id]))
     return location_ids
@@ -441,6 +563,21 @@ def _show_location_form(
         for location_id in locations_map
         if location_id not in invalid_location_ids and locations_map[location_id].type.enable_sub_locations
     ]
+    location_form.topics.choices = [
+        (str(topic.id), topic)
+        for topic in get_topics()
+    ]
+    topic_ids_str = flask.request.args.get('topic_ids')
+    if topic_ids_str is not None:
+        valid_topic_id_strs = [
+            topic_id_str
+            for topic_id_str, topic in location_form.topics.choices
+        ]
+        location_form.topics.default = [
+            topic_id_str
+            for topic_id_str in topic_ids_str.split(',')
+            if topic_id_str in valid_topic_id_strs
+        ]
     action_types = logic.action_types.get_action_types(filter_fed_defaults=True)
     valid_action_types = [
         action_type
@@ -505,6 +642,8 @@ def _show_location_form(
         ]:
             previous_parent_location_is_invalid = True
             location_form.parent_location.data = str(-1)
+        if location is not None:
+            location_form.topics.data = [str(topic.id) for topic in location.topics]
         if location is not None:
             location_form.type.data = str(location.type_id)
         else:
@@ -716,6 +855,12 @@ def _show_location_form(
             flask.flash(_('The location was updated successfully.'), 'success')
         if has_grant_permissions:
             logic.locations.set_location_responsible_users(location.id, responsible_user_ids)
+        if not flask.current_app.config['DISABLE_TOPICS']:
+            topic_ids = [
+                int(topic_id)
+                for topic_id in location_form.topics.data
+            ]
+            set_location_topics(location.id, topic_ids)
         if location_type.enable_capacities:
             for entry in location_form.capacities.entries:
                 logic.locations.set_location_capacity(location.id, entry.action_type_id.data, entry.capacity.data)

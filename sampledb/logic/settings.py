@@ -38,6 +38,7 @@ DEFAULT_SETTINGS: typing.Dict[str, typing.Any] = {
     "DEFAULT_ACTION_LIST_FILTERS": {},
     "DEFAULT_OBJECT_LIST_FILTERS": {},
     "DEFAULT_OBJECT_LIST_OPTIONS": {},
+    "DEFAULT_LOCATION_LIST_FILTERS": {},
     "AUTO_LC": True,
     "TIMEZONE": "UTC",
     "AUTO_TZ": True,

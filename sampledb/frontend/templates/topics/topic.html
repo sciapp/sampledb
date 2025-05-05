@@ -70,6 +70,16 @@
           {% endif %}
       {% endfor %}
     {% endif %}
+
+    {% if locations_tree %}
+      <h2>{{ _('Locations') }}</h2>
+      <ul>
+      {% set location_ids_sorted_by_name = sort_location_ids_by_name(locations_tree.keys(), locations_map) %}
+      {% for location_id in location_ids_sorted_by_name %}
+        {% include "locations/locations_tree.html" %}
+      {% endfor %}
+      </ul>
+    {% endif %}
   {% else %}
     <p class="text-danger">{{ _('Topics are not enabled in %(service_name)s.', service_name=service_name) }}</p>
   {% endif %}

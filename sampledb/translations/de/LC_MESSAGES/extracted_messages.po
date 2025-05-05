@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-04-08 12:30+0200\n"
+"POT-Creation-Date: 2025-04-22 13:38+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -7260,6 +7260,9 @@ msgstr "Thema erstellen"
 
 msgid "View Instruments"
 msgstr "Instrumente anzeigen"
+
+msgid "View Locations"
+msgstr "Orte anzeigen"
 
 msgid "Use FIDO2 Passkey"
 msgstr "FIDO2 Passkey verwenden"
