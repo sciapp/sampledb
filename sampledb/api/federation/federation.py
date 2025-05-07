@@ -10,8 +10,10 @@ import flask
 
 from ..utils import Resource, ResponseData
 from ...logic import errors
+from ...logic.objects import get_fed_object
+from ...logic.languages import get_languages
 from ...logic.components import Component, get_components, get_component_infos
-from ...logic.shares import get_shares_for_component, get_share, ObjectShare, set_object_share_import_status, parse_object_share_import_status
+from ...logic.shares import get_shares_for_component, get_share, ObjectShare, set_object_share_import_status, parse_object_share_import_status, get_object_import_specification
 from ...logic.federation.action_types import shared_action_type_preprocessor
 from ...logic.federation.actions import shared_action_preprocessor
 from ...logic.federation.instruments import shared_instrument_preprocessor
@@ -21,10 +23,11 @@ from ...logic.federation.login import get_idp_metadata, get_sp_metadata, check_c
 from ...logic.federation.objects import shared_object_preprocessor
 from ...logic.federation.update import import_updates, PROTOCOL_VERSION_MAJOR, PROTOCOL_VERSION_MINOR
 from ...logic.federation.users import shared_user_preprocessor
+from ...logic.federation.conflicts import get_object_conflicts
 from ...api.federation.authentication import http_token_auth
 from ...logic.files import get_file
 from ...logic.users import get_user_aliases_for_component, get_users, get_user_email_hashes, User
-from ...models import UserType
+from ...models import UserType, Objects as ObjectsModel
 
 preprocessors = {
     'actions': shared_action_preprocessor,
@@ -45,6 +48,7 @@ def _get_header(component: Component) -> typing.Dict[str, typing.Any]:
             'minor': PROTOCOL_VERSION_MINOR
         },
         'sync_timestamp': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S.%f'),
+        'bidirectional_editing': True
     }
 
 
@@ -126,6 +130,9 @@ class Objects(Resource):
     def get(self) -> ResponseData:
         component = flask.g.component
         shares = get_shares_for_component(component.id)
+        received = ObjectsModel.get_federated_objects_by_component(component_id=component.id)
+        conflicts_local_objects: typing.Dict[int, typing.Dict[int, typing.Dict[str, typing.Any]]] = {}
+        conflicts_federated_objects: typing.Dict[int, typing.Dict[int, typing.Dict[str, typing.Any]]] = {}
         refs: typing.List[typing.Tuple[str, int]] = []
         markdown_images: typing.Dict[str, str] = {}
         ref_ids: typing.Dict[str, typing.List[int]] = {
@@ -150,6 +157,38 @@ class Objects(Resource):
         for share in shares:
             obj = shared_object_preprocessor(share.object_id, share.policy, refs, markdown_images, sharing_user_id=share.user_id)
             result_lists['objects'].append(obj)
+            object_conflicts = get_object_conflicts(object_id=share.object_id, component_id=component.id)
+            conflict_result = {}
+            for conflict in object_conflicts:
+                if conflict.local_version_id is not None:
+                    conflict_result[conflict.local_version_id] = {
+                        'fed_version_id': conflict.fed_version_id,
+                        'version_solved_in': conflict.version_solved_in,
+                        'automerged': conflict.automerged,
+                    }
+
+            if conflict_result:
+                conflicts_federated_objects[share.object_id] = conflict_result
+
+        for received_object in received:
+            specification = get_object_import_specification(object_id=received_object.id)
+            policy = {"access": specification.access_policy if specification else {}}
+            obj = shared_object_preprocessor(received_object.object_id, policy=policy, refs=refs, markdown_images=markdown_images)
+            result_lists['objects'].append(obj)
+            object_conflicts = get_object_conflicts(object_id=received_object.object_id)
+
+            conflict_result = {}
+
+            for conflict in object_conflicts:
+                if conflict.local_version_id is not None:
+                    conflict_result[conflict.local_version_id] = {
+                        'fed_version_id': conflict.fed_version_id,
+                        'version_solved_in': conflict.version_solved_in,
+                        'automerged': conflict.automerged
+                    }
+            if conflict_result:
+                assert received_object.fed_object_id is not None
+                conflicts_local_objects[received_object.fed_object_id] = conflict_result
 
         while len(refs) > 0:
             type, id = refs.pop()
@@ -170,7 +209,9 @@ class Objects(Resource):
             'locations': result_lists['locations'],
             'location_types': result_lists['location_types'],
             'objects': result_lists['objects'],
-            'action_types': result_lists['action_types']
+            'action_types': result_lists['action_types'],
+            'conflicts_local_objects': conflicts_local_objects,
+            'conflicts_federated_objects': conflicts_federated_objects,
         }
 
 
@@ -230,21 +271,45 @@ class File(Resource):
     @http_token_auth.login_required
     def get(self, object_id: int, file_id: int) -> ResponseData:
         component = flask.g.component
+        object_type = flask.request.args.get("type", "shared")
 
-        try:
-            share = get_share(object_id, component.id)
-            if 'access' not in share.policy or not share.policy['access'].get('files'):
+        fed_object = None
+        if object_type == "local":
+            try:
+                fed_object = get_fed_object(fed_object_id=object_id, component_id=component.id)
+                specification = get_object_import_specification(fed_object.object_id)
+
+                if specification is None or not specification.access_policy.get("files"):
+                    return {
+                        "message": f"files linked to object {object_id} are not shared"
+                    }, 403
+
+                object_id = fed_object.object_id
+            except errors.ObjectDoesNotExistError:
                 return {
-                    "message": f"files linked to object {object_id} are not shared"
+                    "message": f"object {object_id} does not exist"
+                }, 404
+
+        elif object_type == "shared":
+            try:
+                share = get_share(object_id, component.id)
+                if 'access' not in share.policy or not share.policy['access'].get('files'):
+                    return {
+                        "message": f"files linked to object {object_id} are not shared"
+                    }, 403
+            except errors.ObjectDoesNotExistError:
+                return {
+                    "message": f"object {object_id} does not exist"
+                }, 404
+            except errors.ShareDoesNotExistError:
+                return {
+                    "message": f"object {object_id} is not shared"
                 }, 403
-        except errors.ObjectDoesNotExistError:
+
+        else:
             return {
-                "message": f"object {object_id} does not exist"
-            }, 404
-        except errors.ShareDoesNotExistError:
-            return {
-                "message": f"object {object_id} is not shared"
-            }, 403
+                "message": f"invalid type argument {object_type}"
+            }, 400
 
         try:
             file = get_file(file_id, object_id)
@@ -253,7 +318,7 @@ class File(Resource):
                 "message": f"file {file_id} of object {object_id} does not exist"
             }, 404
 
-        if file.storage == 'database':
+        if file.storage in ['database', 'federation']:
             try:
                 with file.open() as f:
                     response = flask.make_response(f.read())
@@ -319,3 +384,24 @@ class FederatedLoginMetadata(Resource):
             }
         else:
             return {}
+
+
+class Languages(Resource):
+    @http_token_auth.login_required
+    def get(self) -> ResponseData:
+        return {
+            "languages": [
+                {
+                    "id": language.id,
+                    "lang_code": language.lang_code,
+                    "names": language.names,
+                    "datetime_format_datetime": language.datetime_format_datetime,
+                    "datetime_format_moment": language.datetime_format_moment,
+                    "datetime_format_moment_output": language.datetime_format_moment_output,
+                    "date_format_moment_output": language.date_format_moment_output,
+                    "enabled_for_input": language.enabled_for_input,
+                    "enabled_for_user_interface": language.enabled_for_user_interface
+                }
+                for language in get_languages(only_local=True) if language.lang_code != 'en'
+            ]
+        }

@@ -35,6 +35,7 @@ from ...logic.languages import get_language_by_lang_code, get_language, get_lang
 from ...logic.errors import UserDoesNotExistError
 from ...logic.components import get_component, check_component_exists
 from ...logic.shares import get_shares_for_object
+from ...logic.federation.conflicts import get_object_ids_with_conflicts_by_object_ids
 from ..utils import get_locations_form_data, get_location_name, get_search_paths, get_groups_form_data, parse_filter_id_params, build_modified_url
 from ...logic.utils import get_translated_text, relative_url_for
 from .forms import ObjectLocationAssignmentForm, UseInActionForm, GenerateLabelsForm, EditPermissionsForm
@@ -1094,9 +1095,12 @@ def objects() -> FlaskResponseT:
     ) -> str:
         return build_modified_url('.objects', blocked_parameters, **query_parameters)
 
+    object_conflicts = get_object_ids_with_conflicts_by_object_ids([object['object_id'] for object in objects])
+
     return flask.render_template(
         'objects/objects.html',
         objects=objects,
+        object_conflicts=object_conflicts,
         display_properties=display_properties,
         display_property_titles=display_property_titles,
         search_query=query_string,
@@ -1182,6 +1186,7 @@ def objects() -> FlaskResponseT:
         projects_treepicker_info=projects_treepicker_info,
         sorted_action_topics=sorted_action_topics,
         sorted_instrument_topics=sorted_instrument_topics,
+        get_user_object_permissions=logic.object_permissions.get_user_object_permissions
     )
 
 
