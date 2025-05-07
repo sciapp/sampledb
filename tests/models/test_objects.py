@@ -61,7 +61,7 @@ def objects(engine):
         user_id_column=User.id,
         action_id_column=Action.id,
         action_schema_column=Action.schema,
-        data_validator=lambda data, schema, allow_disabled_languages=False: jsonschema.validate(data, schema),
+        data_validator=lambda data, schema, component_id=None, allow_disabled_languages=False: jsonschema.validate(data, schema),
         schema_validator=lambda schema: jsonschema.Draft4Validator.check_schema(schema)
     )
     objects.bind = engine
@@ -77,7 +77,7 @@ def test_create_object(session: sessionmaker(), objects: VersionedJSONSerializab
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
     assert object1.version_id == 0
     assert object1.action_id == action.id
     assert object1.user_id is not None and object1.user_id == user.id
@@ -95,7 +95,7 @@ def test_create_object_with_action_schema(session: sessionmaker(), objects: Vers
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema=None, user_id=user.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema=None, user_id=user.id, calculate_hashes=False)
     assert object1.version_id == 0
     assert object1.action_id == action.id
     assert object1.user_id is not None and object1.user_id == user.id
@@ -112,7 +112,7 @@ def test_create_object_with_missing_action(session: sessionmaker(), objects: Ver
     session.add(user)
     session.commit()
     with pytest.raises(ValueError):
-        objects.create_object(action_id=0, data={}, schema=None, user_id=user.id)
+        objects.create_object(action_id=0, data={}, schema=None, user_id=user.id, calculate_hashes=False)
 
 
 def test_update_object(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
@@ -121,13 +121,13 @@ def test_update_object(session: sessionmaker(), objects: VersionedJSONSerializab
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user1.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user1.id, calculate_hashes=False)
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
     user2 = User(name="User 2")
     session.add(user2)
     session.commit()
-    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id)
+    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id, calculate_hashes=False)
     assert object2.object_id == object1.object_id
     assert object2.version_id == 1
     assert object2.user_id is not None and object2.user_id == user2.id
@@ -145,8 +145,8 @@ def test_get_current_objects(session: sessionmaker(), objects: VersionedJSONSeri
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
-    object2 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
+    object2 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
     current_objects = objects.get_current_objects()
     assert current_objects == [object1, object2] or current_objects == [object2, object1]
 
@@ -159,8 +159,8 @@ def test_get_current_objects_action_filter(session: sessionmaker(), objects: Ver
     session.add(action1)
     session.add(action2)
     session.commit()
-    object1 = objects.create_object(action_id=action1.id, data={}, schema={}, user_id=user.id)
-    object2 = objects.create_object(action_id=action2.id, data={}, schema={}, user_id=user.id)
+    object1 = objects.create_object(action_id=action1.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
+    object2 = objects.create_object(action_id=action2.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
 
     current_objects = objects.get_current_objects(action_table=Action.__table__, action_filter=(Action.schema == {'x': 1}))
     assert current_objects == [object1]
@@ -172,8 +172,8 @@ def test_get_current_object(session: sessionmaker(), objects: VersionedJSONSeria
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
-    object2 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
+    object2 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
     assert object1 == objects.get_current_object(object1.object_id)
     assert object2 == objects.get_current_object(object2.object_id)
 
@@ -184,11 +184,11 @@ def test_get_object_versions(session: sessionmaker(), objects: VersionedJSONSeri
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user1.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user1.id, calculate_hashes=False)
     user2 = User(name="User 2")
     session.add(user2)
     session.commit()
-    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id)
+    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id, calculate_hashes=False)
     object_versions = objects.get_object_versions(object1.object_id)
     assert object_versions == [object1, object2]
 
@@ -204,11 +204,11 @@ def test_get_object_version(session: sessionmaker(), objects: VersionedJSONSeria
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user1.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user1.id, calculate_hashes=False)
     user2 = User(name="User 2")
     session.add(user2)
     session.commit()
-    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id)
+    object2 = objects.update_object(object1.object_id, data={'test': 1}, schema={}, user_id=user2.id, calculate_hashes=False)
     object_version1 = objects.get_object_version(object1.object_id, 0)
     object_version2 = objects.get_object_version(object1.object_id, 1)
     object_version3 = objects.get_object_version(object1.object_id, 2)
@@ -227,7 +227,7 @@ def test_create_object_invalid_schema(session: sessionmaker(), objects: Versione
         'type': 'invalid'
     }
     with pytest.raises(jsonschema.exceptions.SchemaError):
-        objects.create_object(action_id=action.id, data={}, schema=schema, user_id=user.id)
+        objects.create_object(action_id=action.id, data={}, schema=schema, user_id=user.id, calculate_hashes=False)
 
 
 def test_create_object_invalid_data(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
@@ -245,7 +245,7 @@ def test_create_object_invalid_data(session: sessionmaker(), objects: VersionedJ
         }
     }
     with pytest.raises(jsonschema.exceptions.ValidationError):
-        objects.create_object(action_id=action.id, data={'test': False}, schema=schema, user_id=user.id)
+        objects.create_object(action_id=action.id, data={'test': False}, schema=schema, user_id=user.id, calculate_hashes=False)
 
 
 def test_update_object_invalid_schema(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
@@ -254,14 +254,14 @@ def test_update_object_invalid_schema(session: sessionmaker(), objects: Versione
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
     schema = {
         'type': 'invalid'
     }
     with pytest.raises(jsonschema.exceptions.SchemaError):
-        objects.update_object(object1.object_id, data={'test': 1}, schema=schema, user_id=user.id)
+        objects.update_object(object1.object_id, data={'test': 1}, schema=schema, user_id=user.id, calculate_hashes=False)
 
 
 def test_update_object_invalid_data(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
@@ -270,7 +270,7 @@ def test_update_object_invalid_data(session: sessionmaker(), objects: VersionedJ
     action = Action(id=0, schema={})
     session.add(action)
     session.commit()
-    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id)
+    object1 = objects.create_object(action_id=action.id, data={}, schema={}, user_id=user.id, calculate_hashes=False)
     assert [object1] == objects.get_current_objects()
     assert object1 == objects.get_current_object(object1.object_id)
     schema = {
@@ -282,7 +282,7 @@ def test_update_object_invalid_data(session: sessionmaker(), objects: VersionedJ
         }
     }
     with pytest.raises(jsonschema.exceptions.ValidationError):
-        objects.update_object(object1.object_id, data={'test': '1'}, schema=schema, user_id=user.id)
+        objects.update_object(object1.object_id, data={'test': '1'}, schema=schema, user_id=user.id, calculate_hashes=False)
 
 
 def test_restore_object_version(engine, session: sessionmaker()) -> None:
@@ -315,17 +315,17 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
     session.add(action)
     session.commit()
 
-    object = objects.create_object(action_id=action.id, data={'d': 0}, schema={'s': 0}, user_id=user.id)
+    object = objects.create_object(action_id=action.id, data={'d': 0}, schema={'s': 0}, user_id=user.id, calculate_hashes=False)
     assert data_validator_calls == [
-        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False})
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False, 'component_id': None})
     ]
     assert schema_validator_calls == [
         (({'s': 0},), {})
     ]
-    objects.update_object(object.object_id, data={'d': 1}, schema={'s': 1}, user_id=user.id)
+    objects.update_object(object.object_id, data={'d': 1}, schema={'s': 1}, user_id=user.id, calculate_hashes=False)
     assert data_validator_calls == [
-        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False}),
-        (({'d': 1}, {'s': 1}), {})
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False, 'component_id': None}),
+        (({'d': 1}, {'s': 1}), {'component_id': None})
     ]
     assert schema_validator_calls == [
         (({'s': 0},), {}),
@@ -333,9 +333,9 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
     ]
     objects.restore_object_version(object.object_id, version_id=0, user_id=user.id)
     assert data_validator_calls == [
-        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False}),
-        (({'d': 1}, {'s': 1}), {}),
-        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': True})
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': False, 'component_id': None}),
+        (({'d': 1}, {'s': 1}), {'component_id': None}),
+        (({'d': 0}, {'s': 0}), {'allow_disabled_languages': True, 'component_id': None})
     ]
     assert schema_validator_calls == [
         (({'s': 0},), {}),
@@ -350,8 +350,8 @@ def test_restore_object_version(engine, session: sessionmaker()) -> None:
 def test_get_previous_subversion(session: sessionmaker(), objects: VersionedJSONSerializableObjectTables) -> None:
     v1_datetime = datetime.datetime.now(datetime.timezone.utc)
     v2_datetime = v1_datetime + datetime.timedelta(seconds=10)
-    object = objects.create_object(action_id=None, data=None, schema=None, user_id=None, utc_datetime=v1_datetime, component_id=1, fed_object_id=1, fed_version_id=1)
-    objects.update_object_version(object_id=object.object_id, version_id=object.version_id, action_id=None, data=None, schema=None, user_id=None, utc_datetime=v2_datetime)
+    object = objects.create_object(action_id=None, data=None, schema=None, user_id=None, utc_datetime=v1_datetime, component_id=1, fed_object_id=1, fed_version_id=1, calculate_hashes=False)
+    objects.update_object_version(object_id=object.object_id, version_id=object.version_id, action_id=None, data=None, schema=None, user_id=None, utc_datetime=v2_datetime, hash_metadata='')
     previous_subversion = objects.get_previous_subversion(object_id=object.object_id, version_id=object.version_id)
     assert previous_subversion is not None
     assert previous_subversion.utc_datetime == v1_datetime
