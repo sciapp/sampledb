@@ -1,3 +1,14 @@
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+    {% set conflicting = 'imported' in data %}
+    {% if conflicting %}
+      {% set imported_data = data['imported']%}
+      {% set local_data = data['local'] %}
+      {% set data = data['local'] %}
+    {% endif %}
+{% endif %}
 <div class="checkbox">
   <label>
     <span class="sr-only">{{ schema.title | get_translated_text }}</span>
@@ -11,5 +22,10 @@
              {% if schema.default %}checked="checked"{% endif %}
            {% endif %}
     />
+      {% if conflicting %}
+      {% set true_value_icon = '<span class="fa fa-check"></span>' %}
+      {% set false_value_icon = '<span class="fa fa-times"></span>' %}
+      <span class="text-muted">{{ _("(Local: %(local_value_icon)s, Imported: %(imported_value_icon)s)", local_value_icon=(true_value_icon if local_data.value else false_value_icon), imported_value_icon=(true_value_icon if imported_data.value else false_value_icon)) }}</span>
+      {% endif %}
   </label>
 </div>

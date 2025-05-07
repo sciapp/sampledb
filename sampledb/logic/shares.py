@@ -10,7 +10,7 @@ import typing
 import flask
 
 from .objects import get_object, check_object_exists
-from .components import check_component_exists, Component
+from .components import check_component_exists, Component, get_component
 from .notifications import create_notification_for_a_failed_remote_object_import, create_notification_for_a_remote_object_import_with_notes
 from . import errors, fed_logs
 from ..models import Object, Permissions
@@ -61,6 +61,42 @@ class DefaultShare:
             policy=default_share.policy,
             component=Component.from_database(default_share.component),
         )
+
+@dataclasses.dataclass(frozen=True)
+class ObjectImportSpecification:
+    """
+    This class provides an immutable wrapper around models.shares.ObjectImportSpecification.
+    """
+    object_id: int
+    data: bool
+    files: bool
+    action: bool
+    users: bool
+    comments: bool
+    object_location_assignments: bool
+
+    @classmethod
+    def from_database(cls, object_import_specification: models.ObjectImportSpecification) -> 'ObjectImportSpecification':
+        return ObjectImportSpecification(
+            object_id=object_import_specification.object_id,
+            data=object_import_specification.data,
+            files=object_import_specification.files,
+            action=object_import_specification.action,
+            comments=object_import_specification.comments,
+            users=object_import_specification.users,
+            object_location_assignments=object_import_specification.object_location_assignments
+        )
+
+    @property
+    def access_policy(self) -> dict[str, bool]:
+        return {
+            "data": self.data,
+            "files": self.files,
+            "action": self.action,
+            "comments": self.comments,
+            "users": self.users,
+            "object_location_assignments": self.object_location_assignments
+        }
 
 
 def get_all_shares() -> typing.List[ObjectShare]:
@@ -178,6 +214,14 @@ def set_object_share_import_status(
             component_id=component_id,
             import_status=import_status
         )
+
+
+def get_components_object_shared_with(
+    object_id: int
+) -> list[Component]:
+    check_object_exists(object_id)
+    shares = models.ObjectShare.query.filter_by(object_id=object_id).all()
+    return [get_component(share.component_id) for share in shares]
 
 
 class ObjectShareImportStatus(typing.TypedDict):
@@ -335,3 +379,43 @@ def delete_default_share(
         raise errors.ShareDoesNotExistError()
     db.session.delete(share)
     db.session.commit()
+
+def add_object_import_specification(object_id: int, access_policy: dict[str, typing.Any]) -> ObjectImportSpecification:
+    object = get_object(object_id)
+    if not (object.fed_object_id and object.fed_id):
+        raise errors.ObjectNotSharedError()
+
+    if get_object_import_specification(object_id) is not None:
+        raise errors.ObjectImportSpecificationAlreadyExistsError()
+
+    specification = models.ObjectImportSpecification(
+        object_id=object_id,
+        data=access_policy.get('data', False),
+        files=access_policy.get('files', False),
+        action=access_policy.get('action', False),
+        comments=access_policy.get('comments', False),
+        users=access_policy.get('users', False),
+        object_location_assignments=access_policy.get('object_location_assignments', False)
+    )
+    db.session.add(specification)
+    db.session.commit()
+    return ObjectImportSpecification.from_database(specification)
+
+
+def update_object_import_specification(object_id: int, access_policy: dict[str, typing.Any]) -> ObjectImportSpecification:
+    specification = models.ObjectImportSpecification.query.filter_by(object_id=object_id).first()
+    if specification is None:
+        raise errors.ObjectImportSpecificationDoesNotExist()
+    specification.data = access_policy.get('data', False)
+    specification.files = access_policy.get('files', False)
+    specification.action = access_policy.get('action', False)
+    specification.users = access_policy.get('users', False)
+    specification.object_location_assignments = access_policy.get('object_location_assignments', False)
+    db.session.add(specification)
+    db.session.commit()
+    return ObjectImportSpecification.from_database(specification)
+
+
+def get_object_import_specification(object_id: int) -> typing.Optional[ObjectImportSpecification]:
+    specification = models.ObjectImportSpecification.query.filter_by(object_id=object_id).first()
+    return ObjectImportSpecification.from_database(specification) if specification else None

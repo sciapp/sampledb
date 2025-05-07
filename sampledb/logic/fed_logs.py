@@ -143,6 +143,31 @@ def remote_import_object(object_id: int, component_id: int, import_status: typin
     )
 
 
+def create_version_conflict(object_id: int, component_id: int, fed_version_id: int) -> None:
+    _store_new_fed_object_log_entry(
+        type=models.FedObjectLogEntryType.CREATE_VERSION_CONFLICT,
+        object_id=object_id,
+        component_id=component_id,
+        user_id=None,
+        data={
+            'fed_version_id': fed_version_id
+        }
+    )
+
+
+def solve_version_conflict(object_id: int, component_id: int, fed_version_id: int, automerged: bool, user_id: typing.Optional[int]) -> None:
+    _store_new_fed_object_log_entry(
+        type=models.FedObjectLogEntryType.SOLVE_VERSION_CONFLICT,
+        object_id=object_id,
+        component_id=component_id,
+        user_id=user_id,
+        data={
+            'fed_version_id': fed_version_id,
+            'automerged': automerged
+        }
+    )
+
+
 def _store_new_fed_location_log_entry(
         type: models.FedLocationLogEntryType,
         location_id: int,

@@ -223,6 +223,10 @@ function initMarkdownField (element, height) {
   });
   // override .CodeMirror default height, so InscrybMDE min-height can work
   $(element).siblings('.CodeMirror').css('height', 'auto');
+  if (!window.markdownEditors) {
+    window.markdownEditors = {};
+  }
+  window.markdownEditors[$(element).attr('name')] = mdeField;
   return mdeField;
 }
 
