@@ -16,8 +16,12 @@
     <tr>
       <td>{{ object_version.utc_datetime | babel_format_date }}</td>
       <td>
-        <a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.get_name() }}</a>
-        {{ import_information_symbol(user) }}
+        {% if user is not none %}
+          <a href="{{ url_for('.user_profile', user_id=user.id) }}">{{ user.get_name() }}</a>
+          {{ import_information_symbol(user) }}
+        {% else %}
+          <span>–</span>
+        {% endif %}
       </td>
       <td><a href="{{ url_for('.object_version', object_id=object.object_id, version_id=object_version.version_id) }}">{{ _('View') }}</a></td>
     </tr>

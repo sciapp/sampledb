@@ -2,10 +2,15 @@
   {% include "objects/fields/text_choices_field.html" %}
 {% else %}
   {% for language in input_languages %}
-    <div data-sampledb-language-input-for="{{ language.lang_code }}"
+<div data-sampledb-language-input-for="{{ language.lang_code }}"
       {% if input_languages | length > 1 %}style="display: none; {% if loop.index0 %}margin-top: 15px;{% endif %}"{% endif %}
-      class="{% if input_languages | length > 1 %}input-group{% endif %} {% if not language.enabled_for_input %}has-error{% endif %}"
+      class="{% if input_languages | length > 1 %}input-group{% endif %} {% if not language.enabled_for_input and not federation_shared_object %}has-error{% endif %}"
     >
+
+    {% if conflicting and language in conflicting_languages and ((local_data.text | get_translated_text(language.lang_code)) != (imported_data.text | get_translated_text(language.lang_code))) %}
+    {% set conflicting_component = get_component(conflict_component_id) %}
+    <div class="input-group {% if conflicting %}has-conflict conflict-field-resizing{% endif %}">
+    {% endif %}
       {% if schema.markdown %}
         <textarea
           style="resize: vertical; min-height: 171px;"
@@ -40,11 +45,28 @@
           name="{{ id_prefix }}_text_{{ language.lang_code }}"
           placeholder="{{ (schema.placeholder or schema.title) | get_translated_text  }}"
           {% if id_prefix+'_text_' + language.lang_code in form_data %}
-            value="{{ form_data[id_prefix + '_text_' + language.lang_code] }}"
+        value="{{ form_data[id_prefix + '_text_' + language.lang_code] }}"
           {% elif data is not none and "text" in data %}
-            value="{{ data.text | get_translated_text(language.lang_code) }}"
+        value="{{ data.text | get_translated_text(language.lang_code) }}"
           {% endif %}
         />
+      {% endif %}
+      {% if conflicting and language in conflicting_languages and (local_data.text | get_translated_text(language.lang_code)) != (imported_data.text | get_translated_text(language.lang_code)) %}
+      <div
+        class="input-group-btn"
+        data-field-type="{% if not schema.markdown %}text{%else%}text-markdown{% endif %}"
+        data-reference-field="[name='{{ id_prefix }}_text_{{ language.lang_code }}']"
+        data-conflict="true"
+        data-content-local="{% if local_data is not none %}{{ local_data.text | get_translated_text(language.lang_code) | base64encode }}{% endif %}"
+        data-content-imported="{% if imported_data is not none %}{{ imported_data.text | get_translated_text(language.lang_code) | base64encode }}{% endif %}"
+      >
+        <button class="btn btn-default dropdown-toggle conflict-dropdown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+        <ul class="dropdown-menu dropdown-menu-right">
+          <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _('Local Version') }}</button></li>
+          <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _('Imported Version') }} </button></li>
+        </ul>
+      </div>
+      </div>
       {% endif %}
       {% if input_languages | length > 1 %}
         <span class="input-group-addon language-addon">{{ language.names | get_translated_text }}</span>
@@ -52,8 +74,8 @@
     </div>
   {% endfor %}
 {% endif %}
-{% if disabled_input_language_codes and not (id_prefix + '_text' in errors or id_prefix + '_text_en' in errors) %}
+{% if disabled_input_language_codes and not (id_prefix + '_text' in errors or id_prefix + '_text_en' in errors) and not federation_shared_object %}
   <div class="has-error" data-sampledb-disabled-languages-codes="{{ disabled_language_codes | join(',')}}" data-sampledb-disabled-languages-picker="{{ id_prefix }}-select-language">
-    <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ _('The following languages have been disabled for input:') }} {{ disabled_language_names | join(', ') }}</span>
+    <span class="help-block"><strong>{{ _('Error:') }}</strong> {{ _('The following languages have been disabled for input:') }} {{ disabled_language_names | join(', ') }} {{ federation_shared_object }}</span>
   </div>
 {% endif %}

@@ -1,8 +1,44 @@
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+  {% set conflicting = 'imported' in data or 'local' in data %}
+  {% if conflicting %}
+    {% set imported_data = data.get('imported', {}) %}
+    {% set local_data = data.get('local', {}) %}
+    {% set data = data.get('local', {}) %}
+  {% endif %}
+{% endif %}
+
 <div>
   <label class="control-label" for="{{ id_prefix }}_data">{{ _('Data (as CSV)') }}</label>
-  <textarea type="text" class="form-control" id="{{ id_prefix }}_data" name="{{ id_prefix }}_data" rows="5" placeholder="{{ _('CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or relative time in seconds, and magnitude') }}">{% if id_prefix+'_data' in form_data %}{{ form_data[id_prefix+'_data'] }}{% elif data is not none and data.data %}{{ data.data | to_timeseries_csv }}{% endif %}</textarea>
+  <div class="has-conflict {% if conflicting %} input-group conflict-field-resizing {% endif %}" >
+    <textarea type="text" class="form-control" {% if conflicting %} style="resize: vertical; min-height: 36px;" {% endif %} id="{{ id_prefix }}_data" name="{{ id_prefix }}_data" rows="5" placeholder="{{ _('CSV data of datetime (as &quot;YYYY-MM-DD hh:mm:ss.ffffff&quot;) or relative time in seconds, and magnitude') }}">{% if id_prefix+'_data' in form_data %}{{ form_data[id_prefix+'_data'] }}{% elif data is not none and data.data %}{{ data.data | to_timeseries_csv }}{% endif %}</textarea>
+    {% if conflicting %}
+      <div
+        class="input-group-btn"
+        data-field-type="timeseries"
+        data-reference-field="[name='{{ id_prefix }}_data']"
+        data-conflict="true"
+        data-content-local="{% if local_data is not none and 'data' in local_data %} {{ local_data.data | to_timeseries_csv | base64encode}} {% endif %}"
+        data-content-imported="{% if imported_data is not none and 'data' in imported_data %} {{ imported_data.data | to_timeseries_csv | base64encode}} {% endif %}"
+        {% if schema['units'] is not string and schema['units'] | length >= 1 %}
+          data-unit-local="{% if local_data is not none %}{{ (local_data | to_datatype).units | base64encode }}{% endif %}"
+          data-unit-imported="{% if imported_data is not none %}{{ (imported_data | to_datatype).units | base64encode }}{% endif %}"
+          data-unit-field="select[name='{{ id_prefix }}_units']"
+        {% endif %}
+      >
+        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+        <ul class="dropdown-menu dropdown-menu-right">
+          <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ ('Local Version') }}</button></li>
+          <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ ('Imported Version') }}</button></li>
+        </ul>
+      </div>
+
+    {% endif %}
+  </div>
 </div>
-<div>
+<div class="{% if conflicting %} has-conflict {% endif %}">
   <label class="control-label" for="{{ id_prefix }}_units">{{ _('Units') }}</label>
   {% if schema['units'] is string or schema['units'] | length == 1 %}
     {% set unit = schema["units"] if schema["units"] is string else schema["units"][0] %}

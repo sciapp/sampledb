@@ -185,6 +185,32 @@ def restore_object_version(user_id: int, object_id: int, version_id: int, restor
     )
 
 
+def import_conflicting_version(user_id: int, object_id: int, fed_version_id: int, component_id: int) -> None:
+    _store_new_log_entry(
+        type=ObjectLogEntryType.IMPORT_CONFLICTING_VERSION,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'fed_version_id': fed_version_id,
+            'component_id': component_id
+        }
+    )
+
+
+def solve_version_conflict(user_id: int, object_id: int, component_id: int, version_id: int, solved_in: int, automerged: bool = False) -> None:
+    _store_new_log_entry(
+        type=ObjectLogEntryType.SOLVE_VERSION_CONFLICT,
+        object_id=object_id,
+        user_id=user_id,
+        data={
+            'solved_in': solved_in,
+            'version_id': version_id,
+            'component_id': component_id,
+            'automerged': automerged
+        }
+    )
+
+
 def use_object_in_measurement(user_id: int, object_id: int, measurement_id: int) -> None:
     _store_new_log_entry(
         type=ObjectLogEntryType.USE_OBJECT_IN_MEASUREMENT,
