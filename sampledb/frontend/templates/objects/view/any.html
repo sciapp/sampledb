@@ -1,3 +1,6 @@
+{% if modal_prefix is none %}
+{% set modal_prefix = "" %}
+{% endif %}
 {% if diff is not none and previous_schema is not none and ('_before' in diff or '_after' in diff) %}
   {% set current_schema = schema %}
   {% if '_before' in diff %}
@@ -15,21 +18,32 @@
     </div>
   {% endif %}
   {% if '_before' in diff and '_after' in diff %}
-    <div class="modal fade" id="diff_modal__{{ id_prefix }}" tabindex="-1" role="dialog" aria-labelledby="diff_modal_label__{{ id_prefix }}">
+    <div class="modal fade" id="{{ modal_prefix }}diff_modal__{{ id_prefix }}" tabindex="-1" role="dialog" aria-labelledby="{{modal_prefix}}diff_modal_label__{{ id_prefix }}">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title" id="diff_modal_label__{{ id_prefix }}">{{ _('Changes between version #%(previous_version_id)s and version #%(version_id)s', previous_version_id=version_id-1, version_id=version_id) }}</h4>
+          {% if conflicting_import %}
+            <h4 class="modal-title" id="{{ modal_prefix }}diff_modal_label__{{ id_prefix }}">{{ _('Changes between current version #%(version_id)s and imported version #%(version_id)s', version_id=version_id) }}</h4>
+          {% else %}
+            <h4 class="modal-title" id="{{ modal_prefix }}diff_modal_label__{{ id_prefix }}">{{ _('Changes between version #%(previous_version_id)s and version #%(version_id)s', previous_version_id=version_id-1, version_id=version_id) }}</h4>
+          {% endif %}
         </div>
           <div class="modal-body">
-            {{ to_diff_table( diff['_before'] | to_json_no_extra_escapes(4),  diff['_after'] | to_json_no_extra_escapes(4), _("Version #%(version_id)s", version_id=version_id - 1), _("Version #%(version_id)s", version_id=version_id)) | safe }}
+            {% if conflicting_import %}
+              {% set fromdesc = _("Local Version #%(version_id)s", version_id=version_id) %}
+              {% set todesc = _("Imported Version #%(version_id)s from %(component_name)s", version_id=version_id, component_name=component_name) %}
+            {% else %}
+              {% set fromdesc = _("Version #%(version_id)s", version_id=version_id - 1) %}
+              {% set todesc = _("Version #%(version_id)s", version_id=version_id) %}
+            {% endif %}
+            {{ to_diff_table( diff['_before'] | to_json_no_extra_escapes(4),  diff['_after'] | to_json_no_extra_escapes(4), fromdesc, todesc) | safe }}
           </div>
         </div>
       </div>
     </div>
     <div class="text-center">
-      <button type="button" class="btn btn-default btn-xs diff-modal-button" data-toggle="modal" data-target="#diff_modal__{{ id_prefix }}">{{ _('Show Changes') }}</button>
+      <button type="button" class="btn btn-default btn-xs diff-modal-button" data-toggle="modal" data-target="#{{modal_prefix}}diff_modal__{{ id_prefix }}">{{ _('Show Changes') }}</button>
     </div>
   {% endif %}
 {% else %}
