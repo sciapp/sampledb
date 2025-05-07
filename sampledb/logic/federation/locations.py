@@ -46,12 +46,11 @@ class SharedLocationData(typing.TypedDict):
 
 def parse_location(
         location_data: typing.Dict[str, typing.Any]
-) -> LocationData:
+) -> typing.Optional[LocationData]:
     fed_id = _get_id(location_data.get('location_id'))
     uuid = _get_uuid(location_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError(f'Invalid update for local location {fed_id}')
+        return None
     responsible_users = []
     for responsible_user_data in _get_list(location_data.get('responsible_users'), default=[]):
         responsible_user_ref = _parse_user_ref(_get_dict(responsible_user_data))
@@ -154,11 +153,13 @@ def parse_import_location(
         component: Component
 ) -> Location:
     parsed_location_data = parse_location(location_data)
-    locations = {
-        (parsed_location_data['fed_id'], parsed_location_data['component_uuid']): parsed_location_data
-    }
-    locations_check_for_cyclic_dependencies(locations)
-    return import_location(parsed_location_data, component, locations, [])
+    if parsed_location_data is not None:
+        locations = {
+            (parsed_location_data['fed_id'], parsed_location_data['component_uuid']): parsed_location_data
+        }
+        locations_check_for_cyclic_dependencies(locations)
+        return import_location(parsed_location_data, component, locations, [])
+    return get_location(location_id=location_data['location_id'])
 
 
 def _parse_location_ref(

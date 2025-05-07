@@ -151,12 +151,11 @@ def import_action_type(
 
 def parse_action_type(
         action_type_data: typing.Dict[str, typing.Any]
-) -> ActionTypeData:
+) -> typing.Optional[ActionTypeData]:
     fed_id = _get_id(action_type_data.get('action_type_id'), special_values=[ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION, ActionType.TEMPLATE])
     uuid = _get_uuid(action_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not accept updates for own data
-        raise errors.InvalidDataExportError(f'Invalid update for local action type {fed_id}')
+        return None
     result = ActionTypeData(
         fed_id=fed_id,
         component_uuid=uuid,
@@ -204,7 +203,9 @@ def parse_import_action_type(
         action_type_data: typing.Dict[str, typing.Any],
         component: Component
 ) -> ActionType:
-    return import_action_type(parse_action_type(action_type_data), component)
+    if parsed_action_type := parse_action_type(action_type_data):
+        return import_action_type(parsed_action_type, component)
+    return get_action_type(action_type_id=action_type_data['action_type_id'])
 
 
 def _parse_action_type_ref(

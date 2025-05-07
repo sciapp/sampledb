@@ -1,1 +1,35 @@
-<textarea type="text" class="form-control plotly-chart-editor" name="{{ id_prefix }}_plotly" rows="5" placeholder="">{% if id_prefix+'_plotly' in form_data %}{{ form_data[id_prefix+'_plotly'] }}{% elif data is not none and "plotly" in data %}{{ data.plotly | to_json_no_extra_escapes(indent=None) }}{% endif %}</textarea>
+{% set local_data = none %}
+{% set imported_data = none %}
+{% set conflicting = false %}
+{% if data %}
+  {% set conflicting = 'imported' in data or 'local' in data %}
+  {% if conflicting %}
+    {% set local_data = data.get('local') %}
+    {% set imported_data = data.get('imported') %}
+    {% set data = data.get('local') or data.get('imported') %}
+  {% endif %}
+{% endif %}
+
+{% if conflicting %}
+<div class="input-group has-conflict conflict-field-resizing">
+{% endif %}
+
+  <textarea type="text" {% if conflicting %} style="resize: vertical; min-height: 36px;" {% endif %} class="form-control plotly-chart-editor" name="{{ id_prefix }}_plotly" rows="5" placeholder="">{% if id_prefix+'_plotly' in form_data %}{{ form_data[id_prefix+'_plotly'] }}{% elif data is not none and "plotly" in data %}{{ data.plotly | to_json_no_extra_escapes(indent=none) }}{% endif %}</textarea>
+
+{% if conflicting %}
+  <div
+    class="input-group-btn"
+    data-field-type="plotly"
+    data-reference-field="textarea[name='{{ id_prefix }}_plotly']"
+    data-conflict="true"
+    data-content-local="{% if local_data is not none %}{{ local_data.plotly | to_json_no_extra_escapes(indent=4) | base64encode }}{% endif %}"
+    data-content-imported="{% if local_data is not none %}{{ imported_data.plotly | to_json_no_extra_escapes(indent=4) | base64encode }}{% endif %}"
+  >
+    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="caret"></span></button>
+    <ul class="dropdown-menu dropdown-menu-right">
+      <li><button type="button" class="btn btn-link dropdown-menu-button apply-local">{{ _('Local Version') }}</button></li>
+      <li><button type="button" class="btn btn-link dropdown-menu-button apply-imported">{{ _('Imported Version') }}</button></li>
+    </ul>
+  </div>
+</div>
+{% endif %}

@@ -3,6 +3,7 @@ import datetime
 import typing
 
 import flask
+from flask_babel import _
 
 from .utils import _get_id, _get_uuid, _get_str, _get_dict, _get_list, _get_utc_datetime, _get_permissions
 from .users import _parse_user_ref, _get_or_create_user_id, UserRef
@@ -11,7 +12,8 @@ from .comments import import_comment, parse_comment, CommentData
 from .files import import_file, parse_file, FileData
 from .object_location_assignments import import_object_location_assignment, parse_object_location_assignment, ObjectLocationAssignmentData
 from .locations import LocationRef
-from ..files import get_files_for_object
+from .conflicts import create_object_version_conflict, update_object_version_conflict, get_object_version_conflict, get_next_object_version_conflict, solve_conflict_by_strategy, try_automerge_open_conflicts, SolvingStrategy
+from ..files import get_files_for_object, get_file
 from ..markdown_images import find_referenced_markdown_images, get_markdown_image
 from ..object_permissions import set_user_object_permissions, set_group_object_permissions, set_project_object_permissions, set_object_permissions_for_all_users, object_permissions
 from ..schemas import validate_schema, validate
@@ -21,22 +23,25 @@ from ..comments import get_comments_for_object
 from ..components import get_component_by_uuid, get_component, Component
 from ..groups import get_group
 from ..locations import get_location, get_object_location_assignments
-from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions
-from ..object_log import create_object, edit_object
+from ..objects import get_fed_object, get_object, update_object_version, insert_fed_object_version, get_object_versions, create_conflicting_federated_object, get_conflicting_federated_object_version, update_conflicting_federated_object_version, add_subversion, update_federated_object_version
 from ..projects import get_project
 from ..users import get_user, check_user_exists
-from .. import errors, fed_logs, languages, markdown_to_html
+from ..components import add_component
+from .. import errors, fed_logs, languages, markdown_to_html, object_log
 from ...models import Permissions, Object
 from ...models.file_log import FileLogEntry, FileLogEntryType
 
 
 class ObjectVersionData(typing.TypedDict):
     fed_version_id: int
+    version_component_id: typing.Optional[int]
     user: typing.Optional[UserRef]
     data: typing.Optional[typing.Dict[str, typing.Any]]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
     utc_datetime: typing.Optional[datetime.datetime]
     import_notes: typing.List[str]
+    hash_data: typing.Optional[str]
+    hash_metadata: typing.Optional[str]
 
 
 class ObjectPermissionsData(typing.TypedDict):
@@ -48,7 +53,7 @@ class ObjectPermissionsData(typing.TypedDict):
 
 class ObjectData(typing.TypedDict):
     fed_object_id: int
-    component_id: int
+    component_id: typing.Optional[int]
     action: typing.Optional[ActionRef]
     versions: typing.List[ObjectVersionData]
     comments: typing.List[CommentData]
@@ -83,10 +88,13 @@ class SharedCommentData(typing.TypedDict):
 
 class SharedObjectVersionData(typing.TypedDict):
     version_id: int
+    version_component_uuid: str
     user: typing.Optional[UserRef]
     data: typing.Optional[typing.Dict[str, typing.Any]]
     schema: typing.Optional[typing.Dict[str, typing.Any]]
     utc_datetime: typing.Optional[str]
+    hash_data: typing.Optional[str]
+    hash_metadata: typing.Optional[str]
 
 
 class SharedObjectLocationAssignmentData(typing.TypedDict):
@@ -113,88 +121,278 @@ class SharedObjectData(typing.TypedDict):
     sharing_user: typing.Optional[UserRef]
 
 
+class ConflictDetails(typing.TypedDict):
+    fed_version_id: int
+    base_version_id: int
+    automerged: bool
+
+
+class ImportContext(typing.TypedDict):
+    component: Component
+    action_id: typing.Optional[int]
+    local_object_id: typing.Optional[int]
+    user_id: typing.Optional[int]
+    sharing_user_id: typing.Optional[int]
+    base_version_id: int
+    current_local_version_id: int
+    changes: bool
+    conflicting: bool
+    conflict_between_solutions: bool
+    conflict_details: typing.Optional[ConflictDetails]
+    next_conflict_solution_version_id: typing.Optional[int]
+    skip_until_fed_version_id: int
+
+
 def import_object(
         object_data: ObjectData,
         component: Component,
         *,
-        import_status: typing.Optional[typing.Dict[str, typing.Any]] = None
-) -> Object:
+        import_status: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        conflict_status: typing.Optional[typing.Dict[str, typing.Any]] = None
+) -> typing.Tuple[Object, bool]:
     action_id = _get_or_create_action_id(object_data['action'])
     object = None
-    all_import_notes = []
-    did_perform_import = False
+    all_import_notes: list[str] = []
+
+    if conflict_status is None:
+        conflict_status = {}
+
+    import_context = ImportContext(
+        component=component,
+        action_id=action_id,
+        local_object_id=None,
+        user_id=None,
+        sharing_user_id=None,
+        base_version_id=0,
+        current_local_version_id=0,
+        changes=False,
+        conflicting=False,
+        conflict_between_solutions=False,
+        conflict_details=None,
+        next_conflict_solution_version_id=None,
+        skip_until_fed_version_id=-1
+    )
+
     for version in object_data['versions']:
         try:
-            object = get_fed_object(object_data['fed_object_id'], component.id, version['fed_version_id'])
+            if object_data['component_id'] is not None:
+                object = get_fed_object(object_data['fed_object_id'], component.id, fed_version_id=import_context['current_local_version_id'], local_version=True)
+            else:
+                object = get_object(object_data['fed_object_id'], version_id=import_context['current_local_version_id'])
+            import_context['local_object_id'] = object.object_id
         except errors.ObjectDoesNotExistError:
             object = None
         except errors.ObjectVersionDoesNotExistError:
             object = None
 
-        user_id = _get_or_create_user_id(version['user'])
-        sharing_user_id = _get_or_create_user_id(object_data.get('sharing_user'))
+        import_context['user_id'] = _get_or_create_user_id(version['user'])
 
-        if object is None:
-            object = insert_fed_object_version(
-                fed_object_id=object_data['fed_object_id'],
-                fed_version_id=version['fed_version_id'],
+        if object_data['component_id'] is not None:
+            import_context['sharing_user_id'] = _get_or_create_user_id(object_data.get('sharing_user'))
+        else:
+            import_context['sharing_user_id'] = import_context['user_id']  # Use the version user id as sharing user for changes made by a federated instance on a local object
+
+        if version['fed_version_id'] < import_context['skip_until_fed_version_id'] and import_context['local_object_id'] is not None:
+            _add_or_update_conflicting_version(version=version, import_context=import_context)
+            continue
+
+        if import_context['next_conflict_solution_version_id'] is not None and import_context['conflicting'] and import_context['local_object_id'] is not None:
+            if import_context['next_conflict_solution_version_id'] == version['fed_version_id']:
+                if object is None:
+                    _add_federated_conflict_solution(
+                        object_data=object_data,
+                        version=version,
+                        import_context=import_context,
+                        notes=all_import_notes,
+                    )
+
+                else:
+                    _update_federated_conflict_solution(
+                        object=object,
+                        version=version,
+                        import_context=import_context,
+                        notes=all_import_notes
+                    )
+        elif not import_context['conflicting'] or import_context['conflict_between_solutions']:
+            if object is None:
+                object = _add_new_local_version(object_data=object_data, version=version, import_context=import_context)
+            elif object.hash_metadata != version['hash_metadata']:
+                if object.hash_data == version['hash_data']:
+                    import_context['current_local_version_id'] += 1
+                    import_context['base_version_id'] = object.version_id
+                    if add_subversion(
+                        object_id=object.object_id,
+                        version_id=object.version_id,
+                        data=version['data'],
+                        schema=version['schema'],
+                        user_id=import_context['user_id'],
+                        action_id=action_id,
+                        utc_datetime=version['utc_datetime'],
+                        version_component_id=version['version_component_id'],
+                        hash_metadata=version['hash_metadata'],
+                        allow_disabled_languages=True,
+                        get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
+                    ):
+                        fed_logs.update_object(object.id, component.id, version.get('import_notes', []), import_context['sharing_user_id'], version['fed_version_id'])
+                elif object.hash_data is None and object.hash_metadata is None:
+                    if import_context['local_object_id'] is None:
+                        raise errors.FederationObjectImportError()
+                    update_object_version(
+                        object_id=import_context['local_object_id'],
+                        version_id=import_context['current_local_version_id'],
+                        action_id=action_id,
+                        data=version['data'],
+                        user_id=import_context['user_id'],
+                        schema=version['schema'],
+                        utc_datetime=version['utc_datetime'],
+                        hash_metadata=version['hash_metadata'],
+                        hash_data_none_replacement=version['hash_data'],
+                        version_component_id=version['version_component_id'],
+                    )
+                    import_context['current_local_version_id'] += 1
+                    import_context['base_version_id'] = object.version_id
+                else:
+                    import_context['conflicting'] = True
+                    _check_conflicting_version_exists(version=version, import_context=import_context)
+                    _find_and_apply_conflict_solution(
+                        object_data=object_data,
+                        version=version,
+                        import_context=import_context,
+                        conflict_status=conflict_status
+                    )
+            else:
+                if (
+                    object.hash_metadata == version['hash_metadata'] and
+                    object.hash_data == version['hash_data'] and
+                    object.version_component_id is not None and
+                    (
+                        object.data != version['data'] or
+                        object.schema != version['schema'] or
+                        object.action_id != action_id or
+                        object.user_id != import_context['user_id'] or
+                        object.utc_datetime != version['utc_datetime']
+                    )
+                ):
+                    if import_context['local_object_id'] is None:
+                        raise errors.FederationObjectImportError()
+                    update_object_version(
+                        object_id=import_context['local_object_id'],
+                        version_id=import_context['current_local_version_id'],
+                        action_id=action_id,
+                        data=version['data'],
+                        user_id=import_context['user_id'],
+                        schema=version['schema'],
+                        utc_datetime=version['utc_datetime'],
+                        hash_metadata=version['hash_metadata'],
+                        version_component_id=version['version_component_id'],
+                    )
+                import_context['current_local_version_id'] += 1
+                import_context['base_version_id'] = object.version_id
+            all_import_notes.extend(version.get('import_notes', []))
+        else:
+            if import_context['local_object_id'] is None or import_context['conflict_details'] is None:
+                raise errors.FederationObjectImportError()
+
+            try:
+                conflicting_object_version = get_conflicting_federated_object_version(object_id=import_context['local_object_id'], fed_version_id=version['fed_version_id'], version_component_id=component.id)
+            except errors.FederatedObjectVersionDoesNotExistError:
+                conflicting_object_version = None
+            import_context['conflict_details']['fed_version_id'] = version['fed_version_id']
+            if conflicting_object_version is None:
+                if version['version_component_id'] is None:
+                    raise errors.FederationObjectImportError()
+                create_conflicting_federated_object(
+                    object_id=import_context['local_object_id'],
+                    fed_version_id=version['fed_version_id'],
+                    version_component_id=version['version_component_id'],
+                    data=version['data'],
+                    schema=version['schema'],
+                    action_id=action_id,
+                    utc_datetime=version['utc_datetime'],
+                    user_id=import_context['user_id'],
+                    local_parent=None,
+                    hash_data=version['hash_data'],
+                    hash_metadata=version['hash_metadata']
+                )
+                if import_context['user_id'] is not None:
+                    object_log.import_conflicting_version(
+                        user_id=import_context['user_id'],
+                        object_id=import_context['local_object_id'],
+                        fed_version_id=version['fed_version_id'],
+                        component_id=version['version_component_id']
+                    )
+            elif conflicting_object_version.data != version['data']:
+                update_federated_object_version(
+                    object_id=conflicting_object_version.object_id,
+                    fed_version_id=conflicting_object_version.fed_version_id,
+                    version_component_id=conflicting_object_version.version_component_id,
+                    data=version['data'],
+                    schema=version['schema'],
+                    action_id=action_id,
+                    user_id=import_context['user_id'],
+                    utc_datetime=version['utc_datetime'],
+                )
+
+    last_version = object_data['versions'][-1]
+    if import_context['conflicting'] and last_version is not None:
+        if import_context['conflict_details'] is None or import_context['local_object_id'] is None:
+            raise errors.FederationObjectImportError()
+
+        try:
+            conflict = get_object_version_conflict(
+                object_id=import_context['local_object_id'],
                 component_id=component.id,
-                data=version['data'],
-                schema=version['schema'],
-                user_id=user_id,
-                action_id=action_id,
-                utc_datetime=version['utc_datetime'],
-                allow_disabled_languages=True,
-                get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
+                fed_version_id=import_context['conflict_details']['fed_version_id']
             )
-            if object:
-                fed_logs.import_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
-                if user_id is not None:
-                    if version['fed_version_id'] == 0:
-                        create_object(
-                            user_id=user_id,
-                            object_id=object.id,
-                            utc_datetime=version['utc_datetime'],
-                            is_imported=True
+        except errors.ObjectVersionConflictDoesNotExistError:
+            conflict = None
+
+        if object is not None:
+            if not conflict:
+                conflict = create_object_version_conflict(
+                    object_id=import_context['local_object_id'],
+                    component_id=component.id,
+                    fed_version_id=import_context['conflict_details']['fed_version_id'],
+                    base_version_id=import_context['conflict_details']['base_version_id']
+                )
+                all_import_notes.append(_("A conflict with version #%(version_id)s occurred.", version_id=last_version['fed_version_id']))
+                if object.fed_object_id is not None and object.component_id is not None:
+                    fed_logs.create_version_conflict(object.object_id, object.component_id, fed_version_id=last_version['fed_version_id'])
+
+            if conflict.local_version_id is None:
+                try:
+                    solve_conflict_by_strategy(conflict, SolvingStrategy.AUTOMERGE, None)
+                    import_context['changes'] = True
+                    if object.fed_object_id is not None and object.component_id is not None:
+                        fed_logs.solve_version_conflict(
+                            object_id=object.object_id,
+                            component_id=object.component_id,
+                            fed_version_id=last_version['fed_version_id'],
+                            automerged=True,
+                            user_id=None
                         )
-                    else:
-                        edit_object(
-                            user_id=user_id,
-                            object_id=object.id,
-                            version_id=object.version_id,
-                            utc_datetime=version['utc_datetime'],
-                            is_imported=True
-                        )
-                did_perform_import = True
-        elif object.schema != version['schema'] or object.data != version['data'] or object.user_id != user_id or object.action_id != action_id or object.utc_datetime != version['utc_datetime']:
-            object = update_object_version(
-                object_id=object.object_id,
-                version_id=object.version_id,
-                data=version['data'],
-                schema=version['schema'],
-                user_id=user_id,
-                action_id=action_id,
-                utc_datetime=version['utc_datetime'],
-                allow_disabled_languages=True,
-                get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
-            )
-            fed_logs.update_object(object.id, component.id, version.get('import_notes', []), sharing_user_id, version['fed_version_id'])
-            did_perform_import = True
-        all_import_notes.extend(version.get('import_notes', []))
+                except errors.FailedSolvingByStrategyError:
+                    pass
+    elif import_context['local_object_id'] is not None:
+        try_automerge_open_conflicts(object_id=import_context['local_object_id'])
+
     if object is None:
         object = get_fed_object(
             fed_object_id=object_data['fed_object_id'],
             component_id=object_data['component_id']
-        )
+        ) if object_data['component_id'] is not None else get_object(object_data['fed_object_id'])
 
     for comment_data in object_data['comments']:
-        import_comment(comment_data, object, component)
+        _c, comment_changes = import_comment(comment_data, object, component)
+        import_context['changes'] = import_context['changes'] or comment_changes
 
     for file_data in object_data['files']:
-        import_file(file_data, object, component)
+        _f, file_changes = import_file(file_data, object, component)
+        import_context['changes'] = import_context['changes'] or file_changes
 
     for assignment_data in object_data['object_location_assignments']:
-        import_object_location_assignment(assignment_data, object, component)
+        _a, assignment_changes = import_object_location_assignment(assignment_data, object, component)
+        import_context['changes'] = import_context['changes'] or assignment_changes
 
     # apply policy permissions as a minimum, but do not reduce existing permissions
     current_permissions_for_users = object_permissions.get_permissions_for_users(resource_id=object.object_id)
@@ -217,13 +415,414 @@ def import_object(
     if permission not in current_permissions_for_all_users:
         set_object_permissions_for_all_users(object.object_id, permission)
 
-    if import_status is not None and did_perform_import:
+    if import_status is not None and import_context['changes']:
         import_status['success'] = True
         import_status['notes'] = all_import_notes
         import_status['object_id'] = object.object_id
         import_status['utc_datetime'] = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
+    return object, import_context['changes']
+
+
+def _add_or_update_conflicting_version(version: ObjectVersionData, import_context: ImportContext) -> None:
+    """
+    If the federated version does not exist, it will be created. Otherwise it will be updated if changes are detected. The versions are
+    added/updated on the federated_objects table.
+
+    :param version: the object version that should be processed
+    :param import_context: the internal data used in the import process
+    """
+    if version['version_component_id'] is not None and import_context['local_object_id'] is not None:
+        try:
+            existing_version = get_conflicting_federated_object_version(
+                import_context['local_object_id'],
+                fed_version_id=version['fed_version_id'],
+                version_component_id=version['version_component_id']
+            )
+        except errors.FederatedObjectVersionDoesNotExistError:
+            create_conflicting_federated_object(
+                import_context['local_object_id'],
+                fed_version_id=version['fed_version_id'],
+                version_component_id=version['version_component_id'],
+                data=version['data'],
+                schema=version['schema'],
+                action_id=import_context['action_id'],
+                utc_datetime=version['utc_datetime'],
+                user_id=import_context['user_id'],
+                local_parent=None,
+                hash_data=version['hash_data'],
+                hash_metadata=version['hash_metadata']
+            )
+            if import_context['user_id'] is not None:
+                object_log.import_conflicting_version(
+                    user_id=import_context['user_id'],
+                    object_id=import_context['local_object_id'],
+                    fed_version_id=version['fed_version_id'],
+                    component_id=version['version_component_id']
+                )
+        else:
+            if existing_version.user_id != import_context['user_id'] or existing_version.data != version['data'] or existing_version.schema != version['schema'] or existing_version.utc_datetime != version['utc_datetime'] or existing_version.action_id != import_context['action_id']:
+                update_conflicting_federated_object_version(
+                    object_id=import_context['local_object_id'],
+                    fed_version_id=version['fed_version_id'],
+                    version_component_id=version['version_component_id'],
+                    data=version['data'],
+                    schema=version['schema'],
+                    action_id=import_context['action_id'],
+                    utc_datetime=version['utc_datetime'],
+                    user_id=import_context['user_id'],
+                )
+
+
+def _add_federated_conflict_solution(
+    object_data: ObjectData,
+    version: ObjectVersionData,
+    import_context: ImportContext,
+    notes: list[str],
+) -> None:
+    """
+    Creates a solution for the conflict specified in the `import_context`. `notes` parameter is used to add an import note
+    to the object when a new version is successfully created.
+
+    :param object_data: fully parsed object data
+    :param version: the object version that should be imported
+    :param import_context: the internal data used in the import process
+    :param notes: contains import notes for the object
+    :raise errors.FederationObjectImportError: if an internal error occurs
+    """
+    import_context['changes'] = True
+    object = insert_fed_object_version(
+        fed_object_id=object_data['fed_object_id'],
+        fed_version_id=version['fed_version_id'],
+        component_id=object_data['component_id'],
+        data=version['data'],
+        schema=version['schema'],
+        user_id=import_context['user_id'],
+        action_id=import_context['action_id'],
+        utc_datetime=version['utc_datetime'],
+        version_component_id=version['version_component_id'],
+        hash_data=version['hash_data'],
+        hash_metadata=version['hash_metadata'],
+        allow_disabled_languages=True,
+        get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
+    )
+    if object is not None:
+        if import_context['conflict_details'] is None or import_context['local_object_id'] is None:
+            raise errors.FederationObjectImportError()
+        _create_or_update_object_version_conflict(
+            object_id=import_context['local_object_id'],
+            fed_version_id=import_context['conflict_details']['fed_version_id'],
+            component_id=import_context['component'].id,
+            base_version_id=import_context['conflict_details']['base_version_id'],
+            solver_id=import_context['user_id'],
+            version_solved_in=object.version_id,
+            local_version_id=object.version_id - 1,
+            automerged=import_context['conflict_details']['automerged'],
+            notes=notes,
+        )
+        fed_logs.update_object(
+            object.id,
+            import_context['component'].id,
+            version.get('import_notes', []),
+            import_context['sharing_user_id'],
+            version['fed_version_id']
+        )
+        if import_context['user_id'] is not None:
+            object_log.solve_version_conflict(
+                user_id=import_context['user_id'],
+                object_id=import_context['local_object_id'],
+                component_id=import_context['component'].id,
+                version_id=import_context['conflict_details']['fed_version_id'],
+                solved_in=object.version_id,
+                automerged=import_context['conflict_details']['automerged'],
+            )
+
+    import_context['current_local_version_id'] += 1
+    import_context['next_conflict_solution_version_id'] = None
+
+
+def _update_federated_conflict_solution(
+    object: Object,
+    version: ObjectVersionData,
+    import_context: ImportContext,
+    notes: list[str],
+) -> None:
+    """
+    Updates the current object version conflict specified in the `import_context`. If the import version and the current version
+    have the same data but were created by different users, a subversion will be created.
+
+    :param object: the current local object version
+    :param version: the object version that should be imported
+    :param import_context: the internal data used in the import process
+    :param notes: contains import notes for the object
+    :raise errors.FederationObjectImportError: if an internal error occurs
+    """
+    if object.hash_data == version['hash_data']:
+        if import_context['conflict_details'] is None or import_context['local_object_id'] is None:
+            raise errors.FederationObjectImportError()
+        import_context['current_local_version_id'] += 1
+        import_context['next_conflict_solution_version_id'] = None
+        import_context['conflicting'] = False
+        _create_or_update_object_version_conflict(
+            object_id=import_context['local_object_id'],
+            fed_version_id=import_context['conflict_details']['fed_version_id'],
+            component_id=import_context['component'].id,
+            base_version_id=import_context['conflict_details']['base_version_id'],
+            solver_id=import_context['user_id'],
+            version_solved_in=object.version_id,
+            local_version_id=object.version_id - 1,
+            automerged=import_context['conflict_details']['automerged'],
+            notes=notes,
+        )
+
+        if version['hash_metadata'] != object.hash_metadata:
+            add_subversion(
+                object_id=import_context['local_object_id'],
+                version_id=object.version_id,
+                action_id=object.action_id,
+                schema=object.schema,
+                data=object.data,
+                user_id=import_context['user_id'],
+                utc_datetime=version['utc_datetime'],
+                version_component_id=version['version_component_id'],
+                hash_metadata=version['hash_metadata']
+            )
+
+    else:
+        if import_context['local_object_id'] is None or version['version_component_id'] is None:
+            raise errors.FederationObjectImportError()
+        try:
+            get_object_version_conflict(object_id=import_context['local_object_id'], fed_version_id=version['fed_version_id'], component_id=version['version_component_id'])
+        except errors.ObjectVersionConflictDoesNotExistError:
+            create_object_version_conflict(
+                object_id=import_context['local_object_id'],
+                fed_version_id=version['fed_version_id'],
+                component_id=version['version_component_id'],
+                base_version_id=import_context['base_version_id']
+            )
+            notes.append(_("A conflict with version #%(version_id)s occurred.", version_id=version['fed_version_id']))
+
+        if object.fed_object_id is not None and object.component_id is not None:
+            fed_logs.create_version_conflict(object.object_id, object.component_id, fed_version_id=version['fed_version_id'])
+
+
+def _add_new_local_version(
+    object_data: ObjectData,
+    version: ObjectVersionData,
+    import_context: ImportContext,
+) -> typing.Optional[Object]:
+    """
+    Creates a new local object version.
+
+    :param object_data: fully parsed object data
+    :param version: the object version that should be imported
+    :param import_context: the internal data used in the import process
+    :return: the new local object version or none
+    """
+    object = insert_fed_object_version(
+        fed_object_id=object_data['fed_object_id'],
+        fed_version_id=version['fed_version_id'],
+        component_id=object_data['component_id'],
+        data=version['data'],
+        schema=version['schema'],
+        user_id=import_context['user_id'],
+        action_id=import_context['action_id'],
+        utc_datetime=version['utc_datetime'],
+        version_component_id=version['version_component_id'],
+        hash_data=version['hash_data'],
+        hash_metadata=version['hash_metadata'],
+        allow_disabled_languages=True,
+        get_missing_schema_from_action=False  # if the version contains None for the schema, do not try to load it from the action
+    )
+    import_context['changes'] = True
+    if object:
+        import_context['base_version_id'] = object.version_id
+        import_context['current_local_version_id'] += 1
+        fed_logs.import_object(object.id, import_context['component'].id, version.get('import_notes', []), import_context['sharing_user_id'], version['fed_version_id'])
+        if import_context['user_id'] is not None:
+            if version['fed_version_id'] == 0:
+                object_log.create_object(
+                    user_id=import_context['user_id'],
+                    object_id=object.id,
+                    utc_datetime=version['utc_datetime'],
+                    is_imported=True
+                )
+            else:
+                object_log.edit_object(
+                    user_id=import_context['user_id'],
+                    object_id=object.id,
+                    version_id=object.version_id,
+                    utc_datetime=version['utc_datetime'],
+                    is_imported=True
+                )
     return object
+
+
+def _check_conflicting_version_exists(version: ObjectVersionData, import_context: ImportContext) -> None:
+    """
+    Checks if the conflicting object version `version` already exists locally. If the object version already exists
+    locally stored version gets updated if changes were made. If the object version does not exist locally, it will be
+    created.
+
+    :param version: the object version that should be imported
+    :param import_context: the internal data used in the import process
+    :raise errors.FederationObjectImportError: if an internal error occurs
+    """
+    if version['version_component_id'] is None or import_context['local_object_id'] is None:
+        raise errors.FederationObjectImportError()
+    try:
+        conflicting_object_version = get_conflicting_federated_object_version(
+            object_id=import_context['local_object_id'],
+            fed_version_id=version['fed_version_id'],
+            version_component_id=version['version_component_id']
+        )
+    except Exception:
+        conflicting_object_version = None
+
+    import_context['conflict_details'] = ConflictDetails(
+        fed_version_id=version['fed_version_id'],
+        base_version_id=import_context['base_version_id'],
+        automerged=False
+    )
+
+    if not conflicting_object_version:
+        create_conflicting_federated_object(
+            object_id=import_context['local_object_id'],
+            fed_version_id=version['fed_version_id'],
+            version_component_id=version['version_component_id'],
+            data=version['data'],
+            schema=version['schema'],
+            action_id=import_context['action_id'],
+            utc_datetime=version['utc_datetime'],
+            user_id=import_context['user_id'],
+            local_parent=import_context['base_version_id'],
+            hash_data=version['hash_data'],
+            hash_metadata=version['hash_metadata']
+        )
+        if import_context['user_id'] is not None:
+            object_log.import_conflicting_version(
+                user_id=import_context['user_id'],
+                object_id=import_context['local_object_id'],
+                fed_version_id=version['fed_version_id'],
+                component_id=version['version_component_id']
+            )
+
+    elif (conflicting_object_version.user_id != import_context['user_id'] or
+          conflicting_object_version.data != version['data'] or
+          conflicting_object_version.schema != version['schema'] or
+          conflicting_object_version.utc_datetime != version['utc_datetime']):
+        update_conflicting_federated_object_version(
+            object_id=import_context['local_object_id'],
+            fed_version_id=conflicting_object_version.fed_version_id,
+            version_component_id=version['version_component_id'],
+            data=version['data'],
+            schema=version['schema'],
+            action_id=conflicting_object_version.action_id,
+            utc_datetime=version['utc_datetime'],
+            user_id=import_context['user_id'],
+        )
+
+
+def _find_and_apply_conflict_solution(
+    object_data: ObjectData,
+    version: ObjectVersionData,
+    import_context: ImportContext,
+    conflict_status: typing.Dict[str, typing.Any]
+) -> None:
+    """
+    Check if a solution for the current conflict (specified in the `import_context`) already exists in the local database
+    or at the federation partner (using the `conflict_status`). If a solution exists, it will be applied.
+
+    In case of two differing conflict solutions, both solutions will be discarded.
+
+    :param object_data: fully parsed object data
+    :param version: the object version that should be imported
+    :param import_context: the internal data used in the import process
+    :param conflict_status: the conflict solutions of the federation partner
+    :raise errors.FederationObjectImportError: if an internal error occurs
+    """
+    if import_context['local_object_id'] is None or import_context['conflict_details'] is None:
+        raise errors.FederationObjectImportError()
+    try:
+        local_solution = get_next_object_version_conflict(
+            object_id=import_context['local_object_id'],
+            base_version_id=import_context['base_version_id'],
+            current_fed_version_id=version['fed_version_id'],
+            component_id=import_context['component'].id
+        )
+    except errors.ObjectVersionConflictDoesNotExistError:
+        local_solution = None
+
+    next_version_ids = [
+        int(version_id) for version_id in conflict_status.keys()
+        if int(version_id) >= version['fed_version_id']
+    ]
+
+    imported_conflict_next_version_id = None
+    if next_version_ids:
+        imported_conflict_next_version_id = sorted(next_version_ids)[0]
+
+    if local_solution is not None and local_solution.version_solved_in is not None:
+        if imported_conflict_next_version_id is not None:
+            imported_solution_id = conflict_status.get(str(imported_conflict_next_version_id), {}).get('version_solved_in')
+            imported_solution_version = _get_specific_version_from_object_data(imported_solution_id, object_data)
+            local_solution_version = get_object(import_context['local_object_id'], version_id=local_solution.version_solved_in)
+
+            import_context['conflict_between_solutions'] = (
+                imported_solution_version is not None and
+                local_solution_version.hash_data != imported_solution_version['hash_data']
+            )
+        else:
+            import_context['conflict_between_solutions'] = object_data['versions'][-1]['fed_version_id'] > local_solution.fed_version_id
+
+        if import_context['conflict_between_solutions']:
+            import_context['conflicting'] = True
+            import_context['base_version_id'] = local_solution.base_version_id
+        else:
+            import_context['conflicting'] = False
+            import_context['base_version_id'] = local_solution.version_solved_in
+
+        import_context['next_conflict_solution_version_id'] = None
+        import_context['current_local_version_id'] = local_solution.version_solved_in
+        import_context['skip_until_fed_version_id'] = local_solution.fed_version_id + 1
+
+    elif imported_conflict_next_version_id is not None:
+        imported_solution = conflict_status.get(str(imported_conflict_next_version_id))
+
+        if imported_solution is not None:
+            import_context['next_conflict_solution_version_id'] = imported_solution.get('version_solved_in')
+            import_context['current_local_version_id'] = imported_solution.get('fed_version_id') + 1
+            import_context['skip_until_fed_version_id'] = imported_conflict_next_version_id + 1
+            import_context['conflict_details']['fed_version_id'] = imported_conflict_next_version_id
+
+            try:
+                next_local_version = get_object(object_id=import_context['local_object_id'], version_id=import_context['current_local_version_id'])
+            except errors.ObjectVersionDoesNotExistError:
+                next_local_version = None
+
+            imported_solution_version = _get_specific_version_from_object_data(import_context['next_conflict_solution_version_id'], object_data)
+            if next_local_version is not None and imported_solution_version is not None and next_local_version.hash_data != imported_solution_version['hash_data']:
+                import_context['conflict_between_solutions'] = True
+                import_context['next_conflict_solution_version_id'] = None
+    else:
+        import_context['conflicting'] = True
+
+
+def _get_specific_version_from_object_data(fed_version_id: typing.Optional[int], object_data: ObjectData) -> typing.Optional[ObjectVersionData]:
+    """
+    Returns the object version data for a specific federated version id (`fed_version_id`).
+
+    :param fed_version_id: the federated version id
+    :param object_data: fully parsed object data
+    :return: if a version with the specified `fed_version_id` exists, the version data, otherwise None
+    """
+    if fed_version_id is None:
+        return None
+
+    for version in object_data['versions']:
+        if version['fed_version_id'] == fed_version_id:
+            return version
+    return None
 
 
 def parse_object(
@@ -236,9 +835,12 @@ def parse_object(
     for version in versions:
         import_notes = []
         fed_version_id = _get_id(version.get('version_id'), mandatory=True, min=0)
+        component_uuid = _get_uuid(version.get('version_component_uuid', component.uuid), mandatory=True)
+        hash_data = _get_str(version.get('hash_data'))
+        hash_metadata = _get_str(version.get('hash_metadata'))
         data: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(version.get('data'))
         schema: typing.Optional[typing.Dict[str, typing.Any]] = _get_dict(version.get('schema'))
-        if schema is None or schema is None:
+        if data is None or schema is None:
             data = None
             schema = None
         else:
@@ -253,20 +855,45 @@ def parse_object(
                 schema = None
                 data = None
                 import_notes.append(f'Invalid data or schema in version {fed_version_id} of object #{fed_object_id} @ {component.uuid} ({e})')
+
+        component_id = None
+        if component_uuid != flask.current_app.config['FEDERATION_UUID']:
+            try:
+                component_id = get_component_by_uuid(component_uuid).id
+            except errors.ComponentDoesNotExistError:
+                component_id = add_component(component_uuid, is_hidden=True).id
+
         parsed_versions.append(ObjectVersionData(
             fed_version_id=fed_version_id,
+            version_component_id=component_id,
             data=data,
             schema=schema,
             user=_parse_user_ref(_get_dict(version.get('user'))),
             utc_datetime=_get_utc_datetime(version.get('utc_datetime'), default=None),
-            import_notes=import_notes
+            import_notes=import_notes,
+            hash_data=hash_data,
+            hash_metadata=hash_metadata
         ))
+
+    component_id = None
+    if object_data.get('component_uuid', None) is None:
+        component_id = component.id
+    elif object_data['component_uuid'] != flask.current_app.config['FEDERATION_UUID']:
+        try:
+            component_id = get_component_by_uuid(object_data['component_uuid']).id
+        except errors.ComponentDoesNotExistError:
+            component_id = add_component(object_data['component_uuid'], is_hidden=True).id
+
+    action_ref = _parse_action_ref(_get_dict(object_data.get('action')))
+
+    if action_ref is None and component_id is None:
+        action_ref = _get_action_from_older_version(fed_object_id)
 
     result = ObjectData(
         fed_object_id=fed_object_id,
-        component_id=component.id,
+        component_id=component_id,
         versions=parsed_versions,
-        action=_parse_action_ref(_get_dict(object_data.get('action'))),
+        action=action_ref,
         comments=[],
         files=[],
         object_location_assignments=[],
@@ -282,17 +909,20 @@ def parse_object(
     comments = _get_list(object_data.get('comments'))
     if comments is not None:
         for comment in comments:
-            result['comments'].append(parse_comment(comment))
+            if parsed_comment := parse_comment(comment):
+                result['comments'].append(parsed_comment)
 
     files = _get_list(object_data.get('files'))
     if files is not None:
         for file in files:
-            result['files'].append(parse_file(file))
+            if parsed_file := parse_file(file):
+                result['files'].append(parsed_file)
 
     assignments = _get_list(object_data.get('object_location_assignments'))
     if assignments is not None:
         for assignment in assignments:
-            result['object_location_assignments'].append(parse_object_location_assignment(assignment))
+            if parsed_assignment := parse_object_location_assignment(assignment):
+                result['object_location_assignments'].append(parsed_assignment)
 
     policy = _get_dict(object_data.get('policy'), mandatory=True)
 
@@ -346,9 +976,10 @@ def parse_object(
 
 def parse_import_object(
         object_data: typing.Dict[str, typing.Any],
-        component: Component
-) -> Object:
-    return import_object(parse_object(object_data, component), component)
+        component: Component,
+        conflict_status: typing.Optional[typing.Dict[str, typing.Any]] = None,
+) -> typing.Tuple[Object, bool]:
+    return import_object(parse_object(object_data, component), component, conflict_status=conflict_status)
 
 
 def shared_object_preprocessor(
@@ -359,10 +990,13 @@ def shared_object_preprocessor(
         *,
         sharing_user_id: typing.Optional[int] = None
 ) -> SharedObjectData:
+
+    object = get_object(object_id)
+
     result = SharedObjectData(
-        object_id=object_id,
+        object_id=object.fed_object_id if object.fed_object_id and object.component else object_id,
         versions=[],
-        component_uuid=flask.current_app.config['FEDERATION_UUID'],
+        component_uuid=object.component.uuid if object.component and object.fed_object_id else flask.current_app.config['FEDERATION_UUID'],
         action=None,
         comments=[],
         object_location_assignments=[],
@@ -384,7 +1018,6 @@ def shared_object_preprocessor(
                 'user_id': sharing_user.id,
                 'component_uuid': flask.current_app.config['FEDERATION_UUID']
             }
-    object = get_object(object_id)
     object_versions = get_object_versions(object_id)
     if 'access' in policy:
         if 'action' in policy['access'] and policy['access']['action'] and object.action_id is not None:
@@ -573,7 +1206,7 @@ def shared_object_preprocessor(
                     comp = get_component(ola.component_id)
                     component_uuid = comp.uuid
                 result['object_location_assignments'].append(SharedObjectLocationAssignmentData(
-                    id=ola.id,
+                    id=ola.id if component_uuid == flask.current_app.config['FEDERATION_UUID'] or ola.fed_id is None else ola.fed_id,
                     component_uuid=component_uuid,
                     location=location_ref,
                     responsible_user=responsible_user_ref,
@@ -590,7 +1223,7 @@ def shared_object_preprocessor(
         if policy.get('access', {'data': True}).get('data', True):
             if version.data is not None:
                 version_data = version.data.copy()
-                entry_preprocessor(version_data, refs, markdown_images)
+                entry_preprocessor(version_data, refs, markdown_images, object_id)
             if version.schema is not None:
                 version_schema = version.schema.copy()
                 schema_entry_preprocessor(version_schema, refs)
@@ -636,10 +1269,13 @@ def shared_object_preprocessor(
                         }
         result['versions'].append(SharedObjectVersionData(
             version_id=version.version_id,
+            version_component_uuid=version.version_component.uuid if version.version_component else flask.current_app.config['FEDERATION_UUID'],
             schema=version_schema,
             data=version_data,
             user=version_user,
-            utc_datetime=version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if version.utc_datetime else None
+            utc_datetime=version.utc_datetime.strftime('%Y-%m-%d %H:%M:%S.%f') if version.utc_datetime else None,
+            hash_data=version.hash_data,
+            hash_metadata=version.hash_metadata
         ))
     return result
 
@@ -647,15 +1283,16 @@ def shared_object_preprocessor(
 def entry_preprocessor(
         data: typing.Any,
         refs: typing.List[typing.Tuple[str, int]],
-        markdown_images: typing.Dict[str, str]
+        markdown_images: typing.Dict[str, str],
+        object_id: typing.Optional[int] = None,
 ) -> None:
     if type(data) is list:
         for entry in data:
-            entry_preprocessor(entry, refs, markdown_images)
+            entry_preprocessor(entry, refs, markdown_images, object_id)
     elif type(data) is dict:
         if '_type' not in data.keys():
             for key in data:
-                entry_preprocessor(data[key], refs, markdown_images)
+                entry_preprocessor(data[key], refs, markdown_images, object_id)
         else:
             if data['_type'] in ['sample', 'object_reference', 'measurement']:
                 if (data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']) and 'eln_source_url' not in data:
@@ -679,23 +1316,49 @@ def entry_preprocessor(
                     except errors.UserDoesNotExistError:
                         pass
             if data['_type'] == 'file':
-                if data.get('component_uuid') is None:
-                    data['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+                if (data.get('component_uuid') is None or data.get('component_uuid') == flask.current_app.config['FEDERATION_UUID']) and 'eln_source_url' not in data:
+                    file_id = data.get('file_id')
+                    if object_id is None:
+                        data['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+                    elif file_id is not None:
+                        file = get_file(file_id, object_id)
+                        if file.component_id is None:
+                            data['component_uuid'] = flask.current_app.config['FEDERATION_UUID']
+                        else:
+                            c = get_component(file.component_id)
+                            data['file_id'] = file.fed_id
+                            data['component_uuid'] = c.uuid
 
             if data['_type'] == 'text' and data.get('is_markdown'):
                 if isinstance(data.get('text'), str):
                     markdown_as_html = markdown_to_html.markdown_to_safe_html(data['text'])
                     for file_name in find_referenced_markdown_images(markdown_as_html):
-                        markdown_image_b = get_markdown_image(file_name, None)
-                        data['text'] = data['text'].replace('/markdown_images/' + file_name, '/markdown_images/' + flask.current_app.config['FEDERATION_UUID'] + '/' + file_name)
+                        pure_filename = file_name
+                        component_id = None
+                        if '/' not in file_name:
+                            data['text'] = data['text'].replace('/markdown_images/' + file_name, '/markdown_images/' + flask.current_app.config['FEDERATION_UUID'] + '/' + file_name)
+                        else:
+                            component_uuid, pure_filename = file_name.split('/')
+                            if component_uuid != flask.current_app.config['FEDERATION_UUID']:
+                                component_id = get_component_by_uuid(component_uuid=component_uuid).id
+
+                        markdown_image_b = get_markdown_image(pure_filename, None, component_id=component_id)
                         if markdown_image_b is not None and file_name not in markdown_images:
                             markdown_images[file_name] = base64.b64encode(markdown_image_b).decode('utf-8')
                 elif isinstance(data.get('text'), dict):
                     for lang in data['text'].keys():
                         markdown_as_html = markdown_to_html.markdown_to_safe_html(data['text'][lang])
                         for file_name in find_referenced_markdown_images(markdown_as_html):
-                            markdown_image_b = get_markdown_image(file_name, None)
-                            data['text'][lang] = data['text'][lang].replace('/markdown_images/' + file_name, '/markdown_images/' + flask.current_app.config['FEDERATION_UUID'] + '/' + file_name)
+                            pure_filename = file_name
+                            component_id = None
+                            if '/' not in file_name:
+                                data['text'][lang] = data['text'][lang].replace('/markdown_images/' + file_name, '/markdown_images/' + flask.current_app.config['FEDERATION_UUID'] + '/' + file_name)
+                            else:
+                                component_uuid, pure_filename = file_name.split('/')
+                                if component_uuid != flask.current_app.config['FEDERATION_UUID']:
+                                    component_id = get_component_by_uuid(component_uuid=component_uuid).id
+
+                            markdown_image_b = get_markdown_image(pure_filename, None, component_id=component_id)
                             if markdown_image_b is not None and file_name not in markdown_images:
                                 markdown_images[file_name] = base64.b64encode(markdown_image_b).decode('utf-8')
 
@@ -775,3 +1438,57 @@ def parse_entry(
                     for lang_code in list(text_data.keys()):
                         if lang_code not in all_lang_codes:
                             del entry_data['text'][lang_code]
+
+
+def _get_action_from_older_version(object_id: int) -> typing.Optional[ActionRef]:
+    try:
+        object = get_object(object_id)
+    except (errors.ObjectDoesNotExistError, errors.ObjectVersionDoesNotExistError):
+        object = None
+
+    if object is not None and object.action_id is not None:
+        return ActionRef(
+            action_id=object.action_id,
+            component_uuid=flask.current_app.config['FEDERATION_UUID']
+        )
+    return None
+
+
+def _create_or_update_object_version_conflict(
+    object_id: int,
+    fed_version_id: int,
+    component_id: int,
+    base_version_id: int,
+    version_solved_in: int,
+    local_version_id: int,
+    automerged: bool,
+    solver_id: typing.Optional[int],
+    notes: list[str],
+) -> None:
+    try:
+        conflict = get_object_version_conflict(object_id, fed_version_id=fed_version_id, component_id=component_id)
+    except errors.ObjectVersionConflictDoesNotExistError:
+        create_object_version_conflict(
+            object_id=object_id,
+            fed_version_id=fed_version_id,
+            component_id=component_id,
+            base_version_id=base_version_id,
+            version_solved_in=version_solved_in,
+            local_version_id=local_version_id,
+            automerged=automerged,
+            solver_id=solver_id,
+        )
+        notes.append(_("A conflict with version #%(version_id)s was solved.", version_id=fed_version_id))
+    else:
+        if conflict.local_version_id is not None:
+            notes.append(_("A conflict with version #%(version_id)s was solved.", version_id=fed_version_id))
+        update_object_version_conflict(
+            object_id=object_id,
+            fed_version_id=fed_version_id,
+            component_id=component_id,
+            base_version_id=base_version_id,
+            version_solved_in=version_solved_in,
+            local_version_id=local_version_id,
+            automerged=automerged,
+            solver_id=solver_id,
+        )

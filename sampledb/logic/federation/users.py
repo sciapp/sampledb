@@ -87,18 +87,20 @@ def parse_import_user(
         user_data: typing.Dict[str, typing.Any],
         component: Component
 ) -> User:
-    return import_user(parse_user(user_data, component), component)
+    user = parse_user(user_data, component)
+    if user is None:
+        return get_user(user_data['fed_id'])
+    return import_user(user, component)
 
 
 def parse_user(
         user_data: typing.Dict[str, typing.Any],
         component: Component
-) -> UserData:
+) -> typing.Optional[UserData]:
     uuid = _get_uuid(user_data.get('component_uuid'))
     fed_id = _get_id(user_data.get('user_id'))
-    if uuid != component.uuid:
-        # only accept user data from original source
-        raise errors.InvalidDataExportError(f'User data update for user #{fed_id} @ {uuid}')
+    if uuid == flask.current_app.config['FEDERATION_UUID']:
+        return None
     return UserData(
         fed_id=fed_id,
         component_uuid=uuid,

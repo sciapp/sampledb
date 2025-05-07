@@ -15,14 +15,14 @@
   {% set default_option = ns.default_option %}
 {% endif %}
 
-<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker" {% endif %} data-sampledb-default="{{ default_option }}" {% if schema.choices | length >= config['MIN_NUM_TEXT_CHOICES_FOR_SEARCH'] >= 0 %}data-live-search="true"{% endif %} name="{{ id_prefix }}_text">
+<select {% if is_template %} class="template-select" data-template-class="form-control selectpicker choicepicker" {% else %} class="choicepicker form-control selectpicker {%if conflicting %}has-conflict{% endif %}" {% endif %} data-sampledb-default="{{ default_option }}" {% if schema.choices | length >= config['MIN_NUM_TEXT_CHOICES_FOR_SEARCH'] >= 0 %}data-live-search="true"{% endif %} name="{{ id_prefix }}_text">
   {% if form_data.get(id_prefix+'_text', '') != '' or (data is not none and data.get('text', '') != '') %}
     {% if not is_required %}
-      <option value="">&mdash;</option>
+  <option value="" data-subtext="{%- if conflicting -%}{%- if local_data is none -%}Local Selection{%- elif imported_data is none -%}Imported Selection{%- endif -%}{%- endif -%}">&mdash;</option>
     {% endif %}
   {% else %}
     {% if not (is_template and schema['default'] and is_required) %}
-      <option selected="selected" value="">&mdash;</option>
+      <option selected="selected" value="" data-subtext="{%- if conflicting -%}{%- if local_data is none -%}Local Selection{%- elif imported_data is none -%}Imported Selection{%- endif -%}{%- endif -%}">&mdash;</option>
     {% endif %}
   {% endif %}
   {% for option in schema.choices %}
@@ -33,6 +33,6 @@
     {% else %}
       {% set is_selected = false %}
     {% endif %}
-    <option value="{{ option }}" data-value-base64="{{ option | base64encode }}" {% if is_selected %}selected="selected"{% endif %}>{{ option | get_translated_text }}</option>
+  <option value="{{ option }}" data-x="" data-value-base64="{{ option | base64encode }}" data-x="{{ data }}" data-subtext="{%- if conflicting -%}{%- if local_data is not none and 'text' in local_data and local_data.text == option -%}Local Selection{%- elif imported_data is not none and 'text' in imported_data and imported_data.text == option -%}Imported Selection{%- endif -%}{%- endif -%}" {% if is_selected %}selected="selected"{% endif %}>{{ option | get_translated_text }}</option>
   {% endfor %}
 </select>
