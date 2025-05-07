@@ -551,3 +551,47 @@ class AutomaticSchemaUpdateAlreadyInProgressError(Exception):
 
 class AutomaticSchemaUpdateDoesNotExistError(Exception):
     pass
+
+
+class ObjectImportSpecificationAlreadyExistsError(Exception):
+    pass
+
+
+class ObjectImportSpecificationDoesNotExist(Exception):
+    pass
+
+
+class ObjectVersionConflictError(Exception):
+    pass
+
+
+class ObjectVersionConflictDoesNotExistError(Exception):
+    pass
+
+
+class ObjectVersionConflictAlreadyDiscardedError(Exception):
+    pass
+
+
+class ObjectVersionConflictAlreadySolvedError(Exception):
+    pass
+
+
+class ObjectVersionConflictAlreadyExistsError(Exception):
+    pass
+
+
+class FederatedObjectVersionDoesNotExistError(Exception):
+    pass
+
+
+class UnknownConflictSolvingStrategyError(Exception):
+    pass
+
+
+class FailedSolvingByStrategyError(Exception):
+    pass
+
+
+class FederationObjectImportError(Exception):
+    pass

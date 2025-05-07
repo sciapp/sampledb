@@ -13,7 +13,7 @@ from ...logic.actions import get_action
 from ...logic.action_types import get_action_type
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.settings import get_user_setting
-from ...logic.objects import get_object, get_object_versions, get_current_object_version_id
+from ...logic.objects import get_object, get_object_versions, get_current_object_version_id, get_conflicting_federated_object_version
 from ...logic.languages import get_languages_in_object_data, get_language, get_languages, Language
 from ...logic.errors import ObjectDoesNotExistError, ValidationError
 from ...logic.components import get_component
@@ -38,12 +38,17 @@ def object_versions(object_id: int) -> FlaskResponseT:
 
 
 @frontend.route('/objects/<int:object_id>/versions/<int:version_id>')
-@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized)
+@object_permissions_required(Permissions.READ, on_unauthorized=on_unauthorized, check_conflicting_versions=True)
 def object_version(object_id: int, version_id: int) -> FlaskResponseT:
-    object = get_object(object_id=object_id, version_id=version_id)
+    is_fed = 'component_id' in flask.request.args
+    if is_fed:
+        object = get_conflicting_federated_object_version(object_id, fed_version_id=version_id, version_component_id=int(flask.request.args['component_id'])).as_object()
+    else:
+        object = get_object(object_id=object_id, version_id=version_id)
+
     previous_version_data_diff = None
     previous_version_schema = None
-    if 'diff' in flask.request.args and object.data is not None:
+    if not is_fed and 'diff' in flask.request.args and object.data is not None:
         if version_id > 0:
             try:
                 previous_version_object = get_object(object_id=object_id, version_id=version_id - 1)
@@ -114,7 +119,8 @@ def object_version(object_id: int, version_id: int) -> FlaskResponseT:
         component=object.component,
         fed_object_id=object.fed_object_id,
         fed_version_id=object.fed_version_id,
-        get_component=get_component
+        get_component=get_component,
+        is_fed=is_fed
     )
 
 

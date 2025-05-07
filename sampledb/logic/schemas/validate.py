@@ -24,6 +24,7 @@ from ..utils import get_translated_text, parse_url
 from ..units import get_dimensionality_for_units, get_magnitude_in_base_units, get_old_dimensionality
 
 OPT_IMPORT_KEYS = {'export_edit_note', 'component_uuid', 'eln_source_url', 'eln_object_url', 'eln_user_url'}
+CONFLICT_KEYS = {'local', 'imported'}
 
 
 def validate(
@@ -32,7 +33,9 @@ def validate(
         path: typing.Optional[typing.List[str]] = None,
         allow_disabled_languages: bool = False,
         strict: bool = False,
-        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None,
+        component_id: typing.Optional[int] = None,
+        is_conflict: bool = False
 ) -> None:
     """
     Validates the given instance using the given schema and raises a ValidationError if it is invalid.
@@ -43,6 +46,8 @@ def validate(
     :param allow_disabled_languages: whether disabled languages are allowed
     :param strict: whether the data should be evaluated in strict mode, or backwards compatible otherwise
     :param file_names_by_id: a dict mapping file IDs to file names, or None
+    :param component_id: if set, the languages of this component will be used for text validation
+    :param is_conflict: if True, the conflict keys will be ignored
     :raise ValidationError: if the schema is invalid.
     """
     if path is None:
@@ -52,35 +57,35 @@ def validate(
     if 'type' not in schema:
         raise ValidationError('invalid schema (must contain type)', path)
     if schema['type'] == 'array' and isinstance(instance, list):
-        return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
+        return _validate_array(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id, component_id=component_id, is_conflict=is_conflict)
     elif schema['type'] == 'object' and isinstance(instance, dict):
-        return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
+        return _validate_object(instance, schema, path, allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id, component_id=component_id, is_conflict=is_conflict)
     elif schema['type'] == 'text' and isinstance(instance, dict):
-        return _validate_text(instance, schema, path, allow_disabled_languages=allow_disabled_languages)
+        return _validate_text(instance, schema, path, allow_disabled_languages=allow_disabled_languages, component_id=component_id)
     elif schema['type'] == 'datetime' and isinstance(instance, dict):
-        return _validate_datetime(instance, schema, path)
+        return _validate_datetime(instance, schema, path, is_conflict)
     elif schema['type'] == 'bool' and isinstance(instance, dict):
-        return _validate_bool(instance, schema, path)
+        return _validate_bool(instance, schema, path, is_conflict)
     elif schema['type'] == 'quantity' and isinstance(instance, dict):
-        return _validate_quantity(instance, schema, path)
+        return _validate_quantity(instance, schema, path, is_conflict)
     elif schema['type'] == 'sample' and isinstance(instance, dict):
-        return _validate_sample(instance, schema, path)
+        return _validate_sample(instance, schema, path, is_conflict)
     elif schema['type'] == 'measurement' and isinstance(instance, dict):
-        return _validate_measurement(instance, schema, path)
+        return _validate_measurement(instance, schema, path, is_conflict)
     elif schema['type'] == 'object_reference' and isinstance(instance, dict):
-        return _validate_object_reference(instance, schema, path)
+        return _validate_object_reference(instance, schema, path, is_conflict)
     elif schema['type'] == 'tags' and isinstance(instance, dict):
-        return _validate_tags(instance, schema, path, strict=strict)
+        return _validate_tags(instance, schema, path, strict=strict, is_conflict=is_conflict)
     elif schema['type'] == 'hazards' and isinstance(instance, dict):
-        return _validate_hazards(instance, schema, path)
+        return _validate_hazards(instance, schema, path, is_conflict)
     elif schema['type'] == 'user' and isinstance(instance, dict):
-        return _validate_user(instance, schema, path)
+        return _validate_user(instance, schema, path, is_conflict)
     elif schema['type'] == 'plotly_chart' and isinstance(instance, dict):
-        return _validate_plotly_chart(instance, schema, path)
+        return _validate_plotly_chart(instance, schema, path, is_conflict)
     elif schema['type'] == 'timeseries' and isinstance(instance, dict):
-        return _validate_timeseries(instance, schema, path)
+        return _validate_timeseries(instance, schema, path, is_conflict)
     elif schema['type'] == 'file' and isinstance(instance, dict):
-        return _validate_file(instance, schema, path, file_names_by_id=file_names_by_id)
+        return _validate_file(instance, schema, path, file_names_by_id=file_names_by_id, is_conflict=is_conflict)
     else:
         raise ValidationError('invalid type', path)
 
@@ -90,7 +95,9 @@ def _validate_array(
         schema: typing.Dict[str, typing.Any], path: typing.List[str],
         allow_disabled_languages: bool = False,
         strict: bool = False,
-        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None,
+        component_id: typing.Optional[int] = None,
+        is_conflict: bool = False
 ) -> None:
     """
     Validates the given instance using the given array schema and raises a ValidationError if it is invalid.
@@ -111,7 +118,7 @@ def _validate_array(
     errors = []
     for index, item in enumerate(instance):
         try:
-            validate(item, schema['items'], path + [str(index)], allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
+            validate(item, schema['items'], path + [str(index)], allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id, component_id=component_id)
         except ValidationError as e:
             errors.append(e)
     if len(errors) == 1:
@@ -120,7 +127,7 @@ def _validate_array(
         raise ValidationMultiError(errors)
 
 
-def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validate the given instance using the given GHS hazards schema and raise a ValidationError if it is invalid.
 
@@ -136,7 +143,7 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
     valid_keys = {'_type', 'hazards'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -167,7 +174,8 @@ def _validate_hazards(instance: typing.Dict[str, typing.Any], schema: typing.Dic
 def _validate_tags(
         instance: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any], path: typing.List[str],
-        strict: bool = False
+        strict: bool = False,
+        is_conflict: bool = False
 ) -> None:
     """
     Validates the given instance using the given tags schema and raises a ValidationError if it is invalid.
@@ -183,7 +191,7 @@ def _validate_tags(
     valid_keys = {'_type', 'tags'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -221,7 +229,9 @@ def _validate_object(
         path: typing.List[str],
         allow_disabled_languages: bool = False,
         strict: bool = False,
-        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None,
+        component_id: typing.Optional[int] = None,
+        is_conflict: bool = False
 ) -> None:
     """
     Validates the given instance using the given object schema and raises a ValidationError if it is invalid.
@@ -256,7 +266,7 @@ def _validate_object(
             if property_name not in schema['properties']:
                 raise ValidationError(f'unknown property "{property_name}"', path + [property_name])
             else:
-                validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id)
+                validate(property_value, schema['properties'][property_name], path + [property_name], allow_disabled_languages=allow_disabled_languages, strict=strict, file_names_by_id=file_names_by_id, component_id=component_id)
         except ValidationError as e:
             errors.append(e)
     if len(errors) == 1:
@@ -265,7 +275,7 @@ def _validate_object(
         raise ValidationMultiError(errors)
 
 
-def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], allow_disabled_languages: bool = False) -> None:
+def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], allow_disabled_languages: bool = False, component_id: typing.Optional[int] = None, is_conflict: bool = False) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
 
@@ -281,7 +291,7 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     if schema.get('markdown', False):
         valid_keys.add('is_markdown')
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -308,7 +318,7 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         if max_length is not None and len(instance['text']) > max_length:
             raise ValidationError(_('The text must be at most %(max_length)s characters long.', max_length=max_length), path)
     elif not choices:
-        all_languages = languages.get_languages()
+        all_languages = languages.get_languages_by_component(component_id=component_id, english=True)
         language_names = {
             language.lang_code: get_translated_text(language.names)
             for language in all_languages
@@ -352,7 +362,7 @@ def _validate_text(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         raise ValidationError('is_markdown must be bool', path)
 
 
-def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given datetime object schema and raises a ValidationError if it is invalid.
 
@@ -366,7 +376,7 @@ def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Di
     valid_keys = {'_type', 'utc_datetime'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -382,7 +392,7 @@ def _validate_datetime(instance: typing.Dict[str, typing.Any], schema: typing.Di
         raise ValidationError(_('Please enter the date and time in the format: %(datetime_format)s', datetime_format='YYYY-MM-DD HH:MM:SS'), path)
 
 
-def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given boolean object schema and raises a ValidationError if it is invalid.
 
@@ -396,7 +406,7 @@ def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     valid_keys = {'_type', 'value'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -408,7 +418,7 @@ def _validate_bool(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
         raise ValidationError('value must be bool', path)
 
 
-def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given quantity object schema and raises a ValidationError if it is invalid.
 
@@ -422,7 +432,7 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
     required_keys = {'_type'}
     valid_keys = required_keys.union({'units', 'dimensionality', 'magnitude_in_base_units', 'magnitude'})
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -503,7 +513,7 @@ def _validate_quantity(instance: typing.Dict[str, typing.Any], schema: typing.Di
         raise ValidationError(f'Invalid dimensionality, expected "{str(schema_quantity.dimensionality)}"', path)
 
 
-def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given sample object schema and raises a ValidationError if it is invalid.
 
@@ -517,7 +527,7 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
     valid_keys = {'_type', 'object_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -545,7 +555,7 @@ def _validate_sample(instance: typing.Dict[str, typing.Any], schema: typing.Dict
             raise ValidationError('object must be sample', path)
 
 
-def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given measurement object schema and raises a ValidationError if it is invalid.
 
@@ -559,7 +569,7 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
     valid_keys = {'_type', 'object_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -587,7 +597,7 @@ def _validate_measurement(instance: typing.Dict[str, typing.Any], schema: typing
             raise ValidationError('object must be measurement', path)
 
 
-def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given user object schema and raises a ValidationError if it is invalid.
 
@@ -601,7 +611,7 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
     valid_keys = {'_type', 'user_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -624,7 +634,7 @@ def _validate_user(instance: typing.Dict[str, typing.Any], schema: typing.Dict[s
             raise ValidationError('user does not exist', path)
 
 
-def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given object reference object schema and raises a ValidationError if it is invalid.
 
@@ -638,7 +648,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
     valid_keys = {'_type', 'object_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -694,7 +704,7 @@ def _validate_object_reference(instance: typing.Dict[str, typing.Any], schema: t
             raise ValidationError(action_id_error, path)
 
 
-def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str]) -> None:
+def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typing.Dict[str, typing.Any], path: typing.List[str], is_conflict: bool) -> None:
     """
     Validates the given instance using the given text object schema and raises a ValidationError if it is invalid.
 
@@ -708,7 +718,7 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
     valid_keys = {'_type', 'plotly'}
     required_keys = ['_type', 'plotly']
     schema_keys = instance.keys()
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -736,7 +746,8 @@ def _validate_plotly_chart(instance: typing.Dict[str, typing.Any], schema: typin
 def _validate_timeseries(
         instance: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any],
-        path: typing.List[str]
+        path: typing.List[str],
+        is_conflict: bool
 ) -> None:
     """
     Validates the given instance using the given timeseries schema and raises a ValidationError if it is invalid.
@@ -751,7 +762,7 @@ def _validate_timeseries(
     required_keys = {'_type', 'data'}
     valid_keys = required_keys.union({'units', 'dimensionality', 'data'})
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys
@@ -827,7 +838,8 @@ def _validate_file(
         instance: typing.Dict[str, typing.Any],
         schema: typing.Dict[str, typing.Any],
         path: typing.List[str],
-        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None
+        file_names_by_id: typing.Optional[typing.Dict[int, str]] = None,
+        is_conflict: bool = False
 ) -> None:
     """
     Validates the given instance using the given file object schema and raises a ValidationError if it is invalid.
@@ -843,7 +855,7 @@ def _validate_file(
     valid_keys = {'_type', 'file_id'}
     required_keys = valid_keys
     schema_keys = set(instance.keys())
-    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS
+    invalid_keys = schema_keys - valid_keys - OPT_IMPORT_KEYS - (CONFLICT_KEYS if is_conflict else set())
     if invalid_keys:
         raise ValidationError(f'unexpected keys in schema: {invalid_keys}', path)
     missing_keys = required_keys - schema_keys

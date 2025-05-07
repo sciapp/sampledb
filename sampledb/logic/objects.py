@@ -19,12 +19,12 @@ import flask
 import sqlalchemy
 
 from .components import get_component_by_uuid
-from ..models import Objects, Object, Action, ActionType, Permissions
+from ..models import Objects, Object, FederatedObject, Action, ActionType, Permissions
 from . import object_log, user_log, object_permissions, errors, users, actions, tags
 from .notifications import create_notification_for_being_referenced_by_object_metadata
 from .errors import CreatingObjectsDisabledError
 from .utils import cache
-from ..logic.schemas.utils import data_iter
+from .schemas.utils import data_iter
 from .. import db
 
 
@@ -39,7 +39,9 @@ def create_object(
         permissions_for_project_id: typing.Optional[int] = None,
         permissions_for_all_users: typing.Optional[Permissions] = None,
         validate_data: bool = True,
-        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None
+        data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        hash_data: typing.Optional[str] = None,
+        hash_metadata: typing.Optional[str] = None
 ) -> Object:
     """
     Creates an object using the given action and its schema. This function
@@ -62,6 +64,8 @@ def create_object(
     :param validate_data: whether the data should be validated
     :param data_validator_arguments: additional keyword arguments to the data
         validator
+    :param hash_data: the hash value of the data and schema
+    :param hash_metadata: the hash value of the metadata (user and timestamp)
     :return: the created object
     :raise errors.ActionDoesNotExistError: when no action with the given
         action ID exists
@@ -85,7 +89,9 @@ def create_object(
         user_id=user_id,
         action_id=action_id,
         validate_data=validate_data,
-        data_validator_arguments=data_validator_arguments
+        data_validator_arguments=data_validator_arguments,
+        hash_data=hash_data,
+        hash_metadata=hash_metadata
     )
     if copy_permissions_object_id is not None:
         object_permissions.copy_permissions(object.id, copy_permissions_object_id)
@@ -144,12 +150,15 @@ def create_eln_import_object(
 def insert_fed_object_version(
         fed_object_id: int,
         fed_version_id: int,
-        component_id: int,
+        component_id: typing.Optional[int],
         action_id: typing.Optional[int],
         schema: typing.Optional[typing.Dict[str, typing.Any]],
         data: typing.Optional[typing.Dict[str, typing.Any]],
         user_id: typing.Optional[int],
         utc_datetime: typing.Optional[datetime.datetime],
+        version_component_id: typing.Optional[int] = None,
+        hash_data: typing.Optional[str] = None,
+        hash_metadata: typing.Optional[str] = None,
         allow_disabled_languages: bool = False,
         get_missing_schema_from_action: bool = True
 ) -> typing.Optional[Object]:
@@ -165,6 +174,9 @@ def insert_fed_object_version(
     :param data: the object's data, which must fit to the action's schema, optional
     :param user_id: the ID of the user who created the object, optional
     :param utc_datetime: the creation datetime of the version to insert
+    :param version_component_id: the ID of the component where the version was created
+    :param hash_data: hash value of the data of the object version
+    :param hash_metadata: hash value of the metadata of the object version
     :param allow_disabled_languages: whether disabled languages may be allowed
         in data
     :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
@@ -178,6 +190,10 @@ def insert_fed_object_version(
         actions.check_action_exists(action_id)
     if user_id is not None:
         users.check_user_exists(user_id)
+    if data is not None:
+        from .federation.components import create_components_from_data
+        create_components_from_data(data)
+
     object = Objects.insert_fed_object_version(
         data=data,
         schema=schema,
@@ -187,6 +203,9 @@ def insert_fed_object_version(
         fed_object_id=fed_object_id,
         fed_version_id=fed_version_id,
         component_id=component_id,
+        version_component_id=version_component_id,
+        hash_data=hash_data,
+        hash_metadata=hash_metadata,
         allow_disabled_languages=allow_disabled_languages,
         get_missing_schema_from_action=get_missing_schema_from_action
     )
@@ -279,11 +298,15 @@ def create_object_batch(
 def update_object(
         object_id: int,
         data: typing.Optional[typing.Dict[str, typing.Any]],
-        user_id: int,
+        user_id: typing.Optional[int],
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        version_component_id: typing.Optional[int] = None,
+        hash_data: typing.Optional[str] = None,
+        hash_metadata: typing.Optional[str] = None,
         data_validator_arguments: typing.Optional[typing.Dict[str, typing.Any]] = None,
         create_log_entries: bool = True,
-        utc_datetime: typing.Optional[datetime.datetime] = None
+        utc_datetime: typing.Optional[datetime.datetime] = None,
+        created_by_automerge: bool = False
 ) -> None:
     """
     Updates the object to a new version. This function also handles logging
@@ -293,10 +316,14 @@ def update_object(
     :param data: the object's new data, which must fit to the object's schema
     :param user_id: the ID of the user who updated the object
     :param schema: the schema for the new object data
+    :param version_component_id: the ID of the component where the version was created
+    :param hash_data: hash value of the data of the object version
+    :param hash_metadata: hash value of the metadata of the object version
     :param data_validator_arguments: additional keyword arguments to the data
         validator
     :param create_log_entries: whether log entries should be created
     :param utc_datetime: the datetime of the update, or None
+    :param created_by_automerge: whether the object was created by an automerge of two differing versions
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.UserDoesNotExistError: when no user with the given
@@ -317,15 +344,20 @@ def update_object(
         schema=schema,
         user_id=user_id,
         data_validator_arguments=data_validator_arguments,
-        utc_datetime=utc_datetime
+        utc_datetime=utc_datetime,
+        version_component_id=version_component_id,
+        hash_data=hash_data,
+        hash_metadata=hash_metadata
     )
     if object is None:
         raise errors.ObjectDoesNotExistError()
     if create_log_entries:
-        user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
-        object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
-    _update_object_references(object, user_id=user_id)
-    _send_user_references_notifications(object, user_id)
+        if user_id is not None:
+            user_log.edit_object(user_id=user_id, object_id=object.object_id, version_id=object.version_id)
+            object_log.edit_object(object_id=object.object_id, user_id=user_id, version_id=object.version_id)
+    if user_id is not None:
+        _update_object_references(object, user_id=user_id)
+        _send_user_references_notifications(object, user_id)
     tags.update_object_tag_usage(object)
 
 
@@ -337,6 +369,9 @@ def update_object_version(
         user_id: typing.Optional[int],
         schema: typing.Optional[typing.Dict[str, typing.Any]] = None,
         utc_datetime: typing.Optional[datetime.datetime] = None,
+        hash_metadata: typing.Optional[str] = None,
+        hash_data_none_replacement: typing.Optional[str] = None,
+        version_component_id: typing.Optional[int] = None,
         allow_disabled_languages: bool = False,
         get_missing_schema_from_action: bool = True
 ) -> Object:
@@ -348,6 +383,9 @@ def update_object_version(
         data=data,
         user_id=user_id,
         utc_datetime=utc_datetime,
+        hash_metadata=hash_metadata,
+        hash_data_none_replacement=hash_data_none_replacement,
+        version_component_id=version_component_id,
         allow_disabled_languages=allow_disabled_languages,
         get_missing_schema_from_action=get_missing_schema_from_action
     )
@@ -357,6 +395,51 @@ def update_object_version(
     tags.update_object_tag_usage(object, new_subversion=True)
 
     return object
+
+
+def add_subversion(
+    object_id: int,
+    version_id: int,
+    action_id: typing.Optional[int],
+    schema: typing.Optional[typing.Dict[str, typing.Any]],
+    data: typing.Optional[typing.Dict[str, typing.Any]],
+    user_id: typing.Optional[int],
+    utc_datetime: typing.Optional[datetime.datetime],
+    version_component_id: typing.Optional[int],
+    hash_metadata: typing.Optional[str],
+    allow_disabled_languages: bool = False,
+    get_missing_schema_from_action: bool = True
+) -> bool:
+    """
+    Add a subversion for a specified version of an object.
+
+    :param object_id: the ID of the existing object
+    :param version_id: the version ID of the existing object
+    :param action_id: the ID of the existing action
+    :param schema: a JSON schema describing data (optional, defaults to the current object schema)
+    :param data: a JSON serializable object containing the updated object data
+    :param user_id: the ID of the user who updated the object
+    :param utc_datetime: the datetime (in UTC) when the object was updated
+    :param version_component_id: the ID of the component where the object version was created
+    :param hash_metadata: the hash value of the object metadata
+    :param allow_disabled_languages: whether using disabled languages should be allowed in this update
+    :param get_missing_schema_from_action: whether to use an action schema (if available) when None is passed for schema
+    :return: True if a new subversion was added
+    """
+    return Objects.add_subversion(
+        object_id=object_id,
+        version_id=version_id,
+        action_id=action_id,
+        schema=schema,
+        data=data,
+        user_id=user_id,
+        utc_datetime=utc_datetime,
+        version_component_id=version_component_id,
+        hash_metadata=hash_metadata,
+        utc_datetime_subversion=None,
+        allow_disabled_languages=allow_disabled_languages,
+        get_missing_schema_from_action=get_missing_schema_from_action
+    )
 
 
 def restore_object_version(object_id: int, version_id: int, user_id: int) -> None:
@@ -405,19 +488,20 @@ def check_object_exists(object_id: int) -> None:
 
 
 @cache
-def check_object_version_exists(object_id: int, version_id: int) -> None:
+def check_object_version_exists(object_id: int, version_id: int, component_id: typing.Optional[int] = None) -> None:
     """
     Ensures that an object version with the given IDs exists.
 
     :param object_id: the ID of the existing object
     :param version_id: the ID of the existing version for that object
+    :param component_id: the ID of the component of the object version (None, checks the regular object history. Otherwise, checks the federated object version)
 
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
     :raise errors.ObjectVersionDoesNotExistError: when no object version
         with the given object ID and version ID combination exists
     """
-    if not Objects.is_existing_object_version(object_id=object_id, version_id=version_id):
+    if not Objects.is_existing_object_version(object_id=object_id, version_id=version_id, version_component_id=component_id):
         check_object_exists(object_id)
         raise errors.ObjectVersionDoesNotExistError()
 
@@ -454,13 +538,14 @@ def get_object(object_id: int, version_id: typing.Optional[int] = None) -> Objec
     return object
 
 
-def get_fed_object(fed_object_id: int, component_id: int, fed_version_id: typing.Optional[int] = None) -> Object:
+def get_fed_object(fed_object_id: int, component_id: int, fed_version_id: typing.Optional[int] = None, local_version: bool = False) -> Object:
     """
     Returns either the current or a specific version of the federated object.
 
     :param fed_object_id: the federated ID of the existing object
     :param component_id: the ID of the existing component
     :param fed_version_id: the ID of the object's existing version
+    :param local_version: if local_version is set to true, the fed_version_id will be used as the local version id
     :return: the object with the given object and version IDs
     :raise errors.ObjectDoesNotExistError: when no object with the given
         object ID exists
@@ -479,7 +564,8 @@ def get_fed_object(fed_object_id: int, component_id: int, fed_version_id: typing
         object = Objects.get_fed_object_version(
             component_id=component_id,
             fed_object_id=fed_object_id,
-            fed_version_id=fed_version_id
+            fed_version_id=fed_version_id,
+            local_version=local_version
         )
         if object is None:
             if Objects.get_current_fed_object(fed_object_id=fed_object_id, component_id=component_id) is None:
@@ -721,3 +807,178 @@ def get_max_object_id() -> typing.Optional[int]:
     :return: the largest existing object ID, or None if no objects exist
     """
     return typing.cast(typing.Optional[int], db.session.query(db.func.max(Objects.object_id_column)).scalar())
+
+
+def create_conflicting_federated_object(
+    object_id: int,
+    fed_version_id: int,
+    version_component_id: int,
+    data: typing.Optional[dict[str, typing.Any]],
+    schema: typing.Optional[dict[str, typing.Any]],
+    action_id: typing.Optional[int],
+    utc_datetime: typing.Optional[datetime.datetime],
+    user_id: typing.Optional[int],
+    local_parent: typing.Optional[int],
+    hash_data: typing.Optional[str],
+    hash_metadata: typing.Optional[str],
+) -> FederatedObject:
+    """
+    Create a conflicting version.
+
+    :param object_id: the ID of the existing object
+    :param fed_version_id: the version ID of the existing object at the federation partner
+    :param version_component_id: the ID of the component where the version was created
+    :param data: a JSON serializable object containing the object data
+    :param schema: a JSON schema describing data
+    :param action_id: the ID of the action
+    :param utc_datetime: the datetime (in UTC) when the object version was created
+    :param user_id: the ID of the user who created the object version
+    :param local_parent: the ID of the local parent object version (None if parent is a conflicting version)
+    :param hash_data: the hash of the data and schema
+    :param hash_metadata: the hash of the metadata (user and time)
+    :return: the created federated object
+    """
+    return Objects.create_conflicting_federated_object(
+        object_id=object_id,
+        fed_version_id=fed_version_id,
+        version_component_id=version_component_id,
+        data=data,
+        schema=schema,
+        action_id=action_id,
+        utc_datetime=utc_datetime,
+        user_id=user_id,
+        local_parent=local_parent,
+        hash_data=hash_data,
+        hash_metadata=hash_metadata
+    )
+
+
+def update_conflicting_federated_object_version(
+    object_id: int,
+    fed_version_id: int,
+    version_component_id: int,
+    data: typing.Optional[dict[str, typing.Any]],
+    schema: typing.Optional[dict[str, typing.Any]],
+    action_id: typing.Optional[int],
+    utc_datetime: typing.Optional[datetime.datetime],
+    user_id: typing.Optional[int]
+) -> FederatedObject:
+    """
+    Update a conflicting object version.
+
+    :param object_id: the ID of the existing object
+    :param fed_version_id: the version ID of the existing object at the federation partner
+    :param version_component_id: the ID of the component where the version was created
+    :param data: a JSON serializable object containing the object data
+    :param schema: a JSON schema describing data
+    :param action_id: the ID of the action
+    :param utc_datetime: the datetime (in UTC) when the object version was created
+    :param user_id: the ID of the user who created the object version
+    :return: the updated federated object
+    :raise errors.FederatedObjectVersionDoesNotExistError: when the federated object version to update does not exist
+    """
+    object = Objects.update_conflicting_federated_object(
+        object_id=object_id,
+        fed_version_id=fed_version_id,
+        version_component_id=version_component_id,
+        data=data,
+        schema=schema,
+        action_id=action_id,
+        utc_datetime=utc_datetime,
+        user_id=user_id
+    )
+
+    if object is None:
+        raise errors.FederatedObjectVersionDoesNotExistError()
+    return object
+
+
+def get_conflicting_federated_object_version(
+    object_id: int,
+    fed_version_id: int,
+    version_component_id: int
+) -> FederatedObject:
+    """
+    Get a conflicting federated object version.
+
+    :param object_id: the local ID of the existing object
+    :param fed_version_id: the version ID of the existing object at the federation partner
+    :param version_component_id: the ID of the component where the object version was created
+    :return: the federated object version or none
+    :raise errors.FederatedObjectVersionDoesNotExistError: when no federated object version exists that matches the given parameters
+    """
+    object = Objects.get_conflicting_federated_object(object_id, fed_version_id, version_component_id)
+    if object is None:
+        raise errors.FederatedObjectVersionDoesNotExistError()
+    return object
+
+
+def update_federated_object_version(
+    object_id: int,
+    fed_version_id: int,
+    version_component_id: int,
+    data: typing.Optional[dict[str, typing.Any]],
+    schema: typing.Optional[typing.Dict[str, typing.Any]],
+    action_id: typing.Optional[int],
+    user_id: typing.Optional[int],
+    utc_datetime: typing.Optional[datetime.datetime],
+) -> FederatedObject:
+    """
+    Update a conflicting object version and add updated version to the federated subversions table.
+
+    :param object_id: the ID of the existing object
+    :param fed_version_id: the version ID of the existing object at the federation partner
+    :param version_component_id: the ID of the component where the version was created
+    :param data: a JSON serializable object containing the object data
+    :param schema: a JSON schema describing data
+    :param action_id: the ID of the action
+    :param utc_datetime: the datetime (in UTC) when the object version was created
+    :param user_id: the ID of the user who created the object version
+    :return: the created federated object
+    :raise errors.FederatedObjectVersionDoesNotExistError: when the federated object version to update does not exist
+    """
+    if object := Objects.update_conflicting_federated_object(
+        object_id,
+        fed_version_id,
+        version_component_id,
+        data,
+        schema,
+        action_id,
+        user_id,
+        utc_datetime
+    ):
+        return object
+    raise errors.FederatedObjectVersionDoesNotExistError()
+
+
+def get_first_conflicting_object_version_by_conflict(
+    object_id: int,
+    version_component_id: int,
+    local_parent: int
+) -> FederatedObject:
+    """
+    Get the first federated object version of an object version conflict.
+
+    :param object_id: the local ID of the existing object
+    :param version_component_id: the ID of the component where the object version was created
+    :param local_parent: the local version ID of the parent
+    :return: the first federated object version of an conflict or none
+    :raise errors.ObjectVersionDoesNotExistError: when no federated object version exists that matches the given parameters
+    """
+    if object := Objects.get_first_conflicting_object_version_by_conflict(object_id, version_component_id, local_parent):
+        return object
+    raise errors.ObjectVersionDoesNotExistError()
+
+
+def get_latest_version_containing_data_information(object_id: int) -> typing.Optional[Object]:
+    """
+    Returns the latest local version that contains data and schema information.
+
+    :param object_id: the ID of the existing object
+    :return: local object version containing data and schema informations or none
+    """
+    versions = get_object_versions(object_id)
+    for version in versions[::-1]:
+        if version.data is not None and version.schema is not None:
+            return version
+    return None

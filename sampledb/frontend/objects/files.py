@@ -18,6 +18,8 @@ from ... import logic
 from ...logic.objects import get_object
 from ...models import Permissions
 from ...logic.errors import UserDoesNotExistError, FederationFileNotAvailableError
+from ...logic.shares import get_object_import_specification
+from ...logic.federation.update import poke_affected_components
 from .forms import FileForm, FileInformationForm, FileHidingForm, ExternalLinkForm
 from ...utils import object_permissions_required, FlaskResponseT
 from ..utils import check_current_user_is_not_readonly
@@ -86,12 +88,18 @@ def object_file(object_id: int, file_id: int) -> FlaskResponseT:
 def update_file_information(object_id: int, file_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
-    if object.fed_object_id is not None:
-        flask.flash(_('Uploading files for imported objects is not yet supported.'), 'error')
-        return flask.abort(403)
+    if object.fed_object_id:
+        specification = get_object_import_specification(object_id)
+        if specification is None:
+            return flask.abort(403)
     if object.action_id is None:
         return flask.abort(403)
     form = FileInformationForm()
+    file = logic.files.get_file_for_object(object_id=object_id, file_id=file_id)
+    if file is None:
+        return flask.abort(404)
+    if file.component_id is not None or file.fed_id is not None:
+        return flask.abort(403)
     if form.validate_on_submit():
         title = form.title.data
         url = form.url.data
@@ -107,6 +115,7 @@ def update_file_information(object_id: int, file_id: int) -> FlaskResponseT:
             )
         except logic.errors.FileDoesNotExistError:
             return flask.abort(404)
+        poke_affected_components(object)
         return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor=f'file-{file_id}'))
     else:
         if 'url' in form.errors:
@@ -120,21 +129,29 @@ def update_file_information(object_id: int, file_id: int) -> FlaskResponseT:
 def hide_file(object_id: int, file_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
-    if object.fed_object_id is not None or object.action_id is None:
+    if object.fed_object_id:
+        specification = get_object_import_specification(object_id)
+        if specification is None:
+            return flask.abort(403)
+    if object.action_id is None:
         return flask.abort(403)
     form = FileHidingForm()
     if not form.validate_on_submit():
         return flask.abort(400)
     reason = form.reason.data
-    try:
-        logic.files.hide_file(
-            object_id=object_id,
-            file_id=file_id,
-            user_id=flask_login.current_user.id,
-            reason=reason
-        )
-    except logic.errors.FileDoesNotExistError:
+    file = logic.files.get_file_for_object(object_id=object_id, file_id=file_id)
+    if file is None:
         return flask.abort(404)
+    if file.component_id is not None or file.fed_id is not None:
+        return flask.abort(403)
+
+    logic.files.hide_file(
+        object_id=object_id,
+        file_id=file_id,
+        user_id=flask_login.current_user.id,
+        reason=reason
+    )
+    poke_affected_components(object)
     flask.flash(_('The file was hidden successfully.'), 'success')
     return flask.redirect(flask.url_for('.object', object_id=object_id, _anchor=f'file-{file_id}'))
 
@@ -190,9 +207,6 @@ def post_mobile_file_upload(object_id: int, token: str) -> FlaskResponseT:
 @object_permissions_required(Permissions.WRITE)
 def post_object_files(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
-    object = get_object(object_id)
-    if object.fed_object_id is not None or object.action_id is None:
-        return flask.abort(403)
     external_link_form = ExternalLinkForm()
     file_form = FileForm()
     if file_form.validate_on_submit():
@@ -205,12 +219,14 @@ def post_object_files(object_id: int) -> FlaskResponseT:
                 else:
                     file_name = 'file'
                 logic.files.create_database_file(object_id, flask_login.current_user.id, file_name, typing.cast(typing.Callable[[typing.BinaryIO], None], lambda stream, file_storage=file_storage: file_storage.save(dst=stream)))
+                poke_affected_components(get_object(object_id))
             flask.flash(_('Successfully uploaded files.'), 'success')
         else:
             flask.flash(_('Failed to upload files.'), 'error')
     elif external_link_form.validate_on_submit():
         url = external_link_form.url.data
         logic.files.create_url_file(object_id, flask_login.current_user.id, url)
+        poke_affected_components(get_object(object_id))
         flask.flash(_('Successfully posted link.'), 'success')
     elif external_link_form.errors:
         errorcode = 1

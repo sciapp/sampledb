@@ -279,7 +279,11 @@ class File:
                 raise InvalidFileStorageError()
             from .federation.update import get_binary
             try:
-                file_data = get_binary(f'/federation/v1/shares/objects/{object.fed_object_id}/files/{self.fed_id}', component)
+                if object.fed_object_id is not None and object.component_id is not None:
+                    object_source_component = get_component(object.component_id)
+                    file_data = get_binary(f'/federation/v1/shares/objects/{object.fed_object_id}/files/{self.fed_id}?type=shared', object_source_component)
+                else:
+                    file_data = get_binary(f'/federation/v1/shares/objects/{object.object_id}/files/{self.fed_id}?type=local', component)
             except errors.UnauthorizedRequestError:
                 raise FederationFileNotAvailableError()
             except errors.MissingComponentAddressError:

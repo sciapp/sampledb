@@ -18,7 +18,7 @@
       {% set component_uuid = none %}
     {% endif %}
     {% with component_id = get_component_id_by_uuid(component_uuid) %}
-      {% with referenced_user = get_user(data.user_id, component_id) %}
+      {% with referenced_user = get_user_or_none(data.user_id, component_id) %}
         {% if referenced_user is not none %}
           {{ user_reference(referenced_user) }}
         {% elif component_uuid is not none %}

@@ -28,16 +28,19 @@ from ...logic.fed_logs import get_fed_object_log_entries_for_object
 from ...logic.object_relationships import get_workflow_references
 from ...logic.users import get_user, get_users, User
 from ...logic.settings import get_user_settings
-from ...logic.objects import get_object
+from ...logic.objects import get_object, get_first_conflicting_object_version_by_conflict, get_conflicting_federated_object_version
 from ...logic.projects import get_project, Project
 from ...logic.locations import get_location, get_object_location_assignment, get_object_location_assignments, assign_location_to_object
 from ...logic.locations import Location, get_location_capacities, get_assigned_object_count_by_action_types
 from ...logic.location_permissions import get_locations_with_user_permissions
-from ...logic.languages import get_language_by_lang_code, get_language, get_languages, Language
+from ...logic.languages import get_language_by_lang_code, get_language, Language, get_languages_by_component, get_languages_in_object_data
 from ...logic.components import get_component
-from ...logic.shares import get_shares_for_object
+from ...logic.shares import get_shares_for_object, get_object_import_specification
 from ...logic.notebook_templates import get_notebook_templates
 from ...logic.utils import get_translated_text, get_data_and_schema_by_id_path
+from ...logic.federation.conflicts import check_object_has_unsolved_conflicts, solve_conflict_by_strategy, get_object_version_conflict, get_object_conflict_from_solution, get_solvable_conflicts, SolvingStrategy
+from ...logic.files import get_files_for_object
+from ...logic.federation.update import poke_affected_components
 from .forms import ObjectForm, CommentForm, FileForm, FileInformationForm, FileHidingForm, ObjectLocationAssignmentForm, ExternalLinkForm, ObjectPublicationForm, GenerateLabelsForm
 from ...utils import object_permissions_required
 from ..utils import generate_qrcode, get_user_if_exists, get_locations_form_data
@@ -89,43 +92,85 @@ def get_project_if_it_exists(project_id: int) -> typing.Optional[Project]:
 def object(object_id: int) -> FlaskResponseT:
     object = get_object(object_id=object_id)
     user_permissions = get_user_object_permissions(object_id=object_id, user_id=flask_login.current_user.id)
-    user_may_edit = Permissions.WRITE in user_permissions and object.fed_object_id is None and object.action_id is not None
-    user_may_assign_location = user_may_edit
-    user_may_link_publication = user_may_edit
-    user_may_comment = user_may_edit
-    user_may_upload_files = user_may_edit
+    has_write_permission = Permissions.WRITE in user_permissions
+    user_may_link_publication = has_write_permission
+    if object.fed_object_id is not None:
+        specification = get_object_import_specification(object_id)
+        user_may_edit = has_write_permission and specification is not None and specification.data and specification.action
+        user_may_assign_location = specification is not None and specification.object_location_assignments and has_write_permission
+        user_may_comment = specification is not None and specification.comments and has_write_permission
+        user_may_upload_files = specification is not None and specification.files and has_write_permission
+    else:
+        user_may_edit = has_write_permission
+        user_may_assign_location = user_may_edit
+        user_may_comment = user_may_edit
+        user_may_upload_files = user_may_edit
+
+    is_local_object = object.component_id is None
+
     if object.eln_import_id is not None:
         user_may_edit = False
     user_may_grant = Permissions.GRANT in user_permissions
 
     mode = flask.request.args.get('mode', '')
-    if not user_may_edit and mode in {'edit', 'upgrade'}:
+    if not user_may_edit and mode in {'edit', 'upgrade', 'conflict'}:
         if object.fed_object_id is not None or object.eln_import_id is not None:
             flask.flash(_('Editing imported objects is not yet supported.'), 'error')
         return flask.abort(403)
     if not flask.current_app.config['DISABLE_INLINE_EDIT']:
         if not user_may_edit and mode == 'inline_edit':
             return flask.abort(403)
-    if mode in {'edit', 'upgrade'} or flask.request.method == 'POST':
+    if mode in {'edit', 'upgrade', 'conflict'} or flask.request.method == 'POST':
         check_current_user_is_not_readonly()
         action = get_action(object.action_id) if object.action_id else None
-        if action is None:
-            return flask.abort(400)
+
+        if action is None or object.data is None or object.schema is None:
+            if object.fed_object_id is None and object.data is None and mode == 'edit' and action is not None:
+                obj = logic.objects.get_latest_version_containing_data_information(object_id=object_id)
+                if obj is None:
+                    return flask.abort(400)
+                flask.flash(_("The latest version does not contain any data. Switching to latest version that is editable: Version #%(version_id)s.", version_id=obj.version_id))
+                object = obj
+            else:
+                return flask.abort(400)
         should_upgrade_schema = mode == 'upgrade'
-        if should_upgrade_schema and (not action.schema or action.schema == object.schema):
+        solve_conflict = mode == 'conflict'
+        if should_upgrade_schema and (action is None or not action.schema or action.schema == object.schema):
             flask.flash(_('The schema for this object cannot be updated.'), 'error')
             return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+        try:
+            component_id = flask.request.args.get('component_id', type=int)
+        except (ValueError, TypeError):
+            component_id = None
+        object_conflict = None
+        if solve_conflict:
+            try:
+                object_conflict = get_object_version_conflict(object.object_id, component_id=component_id, only_unsolved=True)
+            except errors.ObjectVersionConflictDoesNotExistError:
+                flask.flash(_('No conflict found for object #%(object_id)s.', object_id=object.object_id), 'error')
+                return flask.redirect(flask.url_for('.object', object_id=object_id))
+            fed_version = get_conflicting_federated_object_version(
+                object_id,
+                fed_version_id=object_conflict.fed_version_id,
+                version_component_id=object_conflict.component_id
+            )
+
+            if fed_version.schema is not None and object.schema is not None and fed_version.schema != object.schema:
+                should_upgrade_schema = True
         return show_object_form(
             object=object,
             action=action,
-            should_upgrade_schema=should_upgrade_schema
+            should_upgrade_schema=should_upgrade_schema,
+            solve_conflicts=solve_conflict,
+            object_conflict=object_conflict
         )
 
     template_kwargs: typing.Dict[str, typing.Any] = {}
 
     # languages
     english = get_language(Language.ENGLISH)
-    all_languages = get_languages()
+    all_languages = get_languages_by_component(component_id=object.component_id, replace_with_local=True, english=True)
     languages_by_lang_code = {
         language.lang_code: language
         for language in all_languages
@@ -173,6 +218,16 @@ def object(object_id: int) -> FlaskResponseT:
         new_schema_available = False
         user_may_use_as_template = False
         usable_in_action_types = None
+
+    if object.fed_object_id is not None:
+        import_specification = get_object_import_specification(object.object_id)
+    else:
+        import_specification = None
+
+    # Version conflicts
+    object_has_conflicts = check_object_has_unsolved_conflicts(object_id=object_id)
+    solvable_conflicts = get_solvable_conflicts(object_id=object_id)
+
     template_kwargs.update({
         "object": object,
         "object_id": object_id,
@@ -187,12 +242,15 @@ def object(object_id: int) -> FlaskResponseT:
         "name": object.name,
         "component": object.component,
         "fed_object_id": object.fed_object_id,
-        "fed_version_id": object.fed_version_id,
         "new_schema_available": new_schema_available,
         "user_may_edit": user_may_edit,
         "user_may_grant": user_may_grant,
+        "is_local_object": is_local_object,
         "user_may_use_as_template": user_may_use_as_template,
+        "object_has_conflicts": object_has_conflicts,
+        "solvable_conflicts": solvable_conflicts,
         "restore_form": None,
+        "import_specification": import_specification,
     })
 
     # user settings
@@ -453,7 +511,7 @@ def object(object_id: int) -> FlaskResponseT:
         "get_shares_for_object": get_shares_for_object,
     })
 
-    if mode in {'', 'inline_edit'} and not flask.current_app.config['DISABLE_INLINE_EDIT'] and user_may_edit:
+    if mode in {'', 'inline_edit'} and not flask.current_app.config['DISABLE_INLINE_EDIT'] and user_may_edit and (import_specification is None or import_specification.data):
         template_kwargs.update({
             "errors": {},
             "form_data": {},
@@ -461,7 +519,7 @@ def object(object_id: int) -> FlaskResponseT:
             "mode": 'edit',
         })
 
-        template_kwargs.update(get_object_form_template_kwargs(object_id))
+        template_kwargs.update(get_object_form_template_kwargs(object_id, component_id=object.component_id))
 
         return flask.render_template(
             'objects/inline_edit/inline_edit_base.html',
@@ -514,6 +572,215 @@ def related_objects_entries(object_id: int) -> FlaskResponseT:
         object_ref=logic.object_relationships.ObjectRef(object_id=object_id, component_uuid=None, eln_object_url=None, eln_source_url=None),
         related_objects_object_refs=related_objects_object_refs,
         related_objects_index_by_object_ref=related_objects_index_by_object_ref,
+    )
+
+
+@frontend.route('/objects/<int:object_id>/conflicts/component/<int:component_id>', methods=['GET', 'POST'])
+@object_permissions_required(Permissions.WRITE, on_unauthorized=on_unauthorized)
+def conflict_overview(object_id: int, component_id: int) -> FlaskResponseT:
+    try:
+        solved_in = flask.request.args.get('solved_in', type=int)
+    except ValueError:
+        solved_in = None
+
+    try:
+        if solved_in is None:
+            object_conflict = get_object_version_conflict(object_id=object_id, component_id=component_id, only_unsolved=True)
+        else:
+            object_conflict = get_object_conflict_from_solution(object_id=object_id, version_solved_in=int(solved_in))
+    except errors.ObjectVersionConflictDoesNotExistError:
+        object_conflict = None
+
+    if object_conflict is None:
+        flask.flash(_('This object does not have any unsolved version conflicts.'), 'error')
+        return flask.redirect(flask.url_for('.object', object_id=object_id))
+
+    try:
+        object = logic.objects.get_object(object_id=object_id)
+    except errors.ObjectDoesNotExistError:
+        flask.flash(_('Object with the id %(object_id)s does not exist.', object_id=object_id), 'error')
+        return flask.redirect(flask.url_for('.objects'))
+
+    template_kwargs: typing.Dict[str, typing.Any] = {}
+
+    base_object_version = get_object(object_id=object_id, version_id=object_conflict.base_version_id)
+    imported_object = logic.objects.get_conflicting_federated_object_version(object_id=object_id, fed_version_id=object_conflict.fed_version_id, version_component_id=object_conflict.component_id)
+
+    imported_diff = logic.schemas.calculate_diff(base_object_version.data, imported_object.data)
+    local_diff = logic.schemas.calculate_diff(base_object_version.data, object.data)
+
+    object_languages = (
+        (get_languages_in_object_data(object.data) if object.data is not None else set()) |
+        (get_languages_in_object_data(base_object_version.data) if base_object_version.data is not None else set()) |
+        (get_languages_in_object_data(imported_object.data) if imported_object.data is not None else set())
+    )
+
+    languages = []
+    for lang_code in object_languages:
+        languages.append(get_language_by_lang_code(lang_code))
+
+    specified_language = flask.request.args.get('lang', None)
+    if not any(language.lang_code == specified_language for language in languages):
+        specified_language = None
+
+    template_kwargs.update({
+        "languages": languages,
+        "metadata_language": specified_language
+    })
+
+    local_versions = [
+        get_object(object.object_id, version_id=version_id)
+        for version_id in range(
+            base_object_version.version_id + 1,
+            object.version_id + 1 if object_conflict.version_solved_in is None else object_conflict.version_solved_in
+        )
+    ]
+    solution_version = get_object(object_id, version_id=solved_in)
+
+    special_review_versions: dict[str, typing.Any] = {
+        f'local-version-{base_object_version.version_id}': {
+            "title": _("Base Version (#%(version_id)s)", version_id=base_object_version.version_id),
+            "schema": base_object_version.schema,
+            "data": base_object_version.data,
+            "version_id": base_object_version.version_id
+        }
+    }
+
+    if solved_in is not None:
+        special_review_versions.update({
+            f'local-version-{solution_version.version_id}': {
+                "title": _("Solution Version (#%(version_id)s)", version_id=solution_version.version_id),
+                "schema": solution_version.schema,
+                "data": solution_version.data,
+                "version_id": solution_version.version_id
+            },
+            'diff-base-solution': {
+                "title": _("Changes between solution version and base version"),
+                "previous_schema": base_object_version.schema,
+                "schema": solution_version.schema,
+                "data": solution_version.data,
+                "version_id": solution_version.version_id,
+                "diff": logic.schemas.calculate_diff(base_object_version.data, solution_version.data),
+                "is_diff_with_base_version": True,
+                "hint": _("Showing the changes between the base version and the final solution of the conflict.")
+            }
+        })
+
+    local_review_versions: dict[str, typing.Any] = {}
+    previous_data = base_object_version.data
+    previous_schema = base_object_version.schema
+    for version in local_versions:
+        title = _("Local Version #%(version_id)s", version_id=version.version_id)
+
+        local_review_versions[f'local-version-{version.version_id}'] = {
+            "title": title,
+            "schema": version.schema,
+            "data": version.data,
+            "version_id": version.version_id
+        }
+
+        if version.version_id == base_object_version.version_id + 1:
+            hint = _("Showing the changes between the base version and the local version #%(new_version_id)s.", new_version_id=version.version_id)
+        else:
+            hint = _("Showing the changes between the local versions #%(prev_version_id)s and #%(new_version_id)s.", prev_version_id=version.version_id - 1, new_version_id=version.version_id)
+
+        local_review_versions[f'local-diff-{version.version_id}'] = {
+            "title": _("Changes Local Version #%(local_version_id)s", local_version_id=version.version_id),
+            "previous_schema": previous_schema,
+            "schema": version.schema,
+            "data": version.data,
+            "version_id": version.version_id,
+            "diff": logic.schemas.calculate_diff(previous_data, version.data),
+            "is_diff_with_base_version": previous_data == base_object_version.data,
+            "hint": hint
+        }
+        previous_data = version.data
+        previous_schema = version.schema
+
+    first_federated_version = get_first_conflicting_object_version_by_conflict(
+        object_id=object_conflict.object_id,
+        version_component_id=object_conflict.component_id,
+        local_parent=object_conflict.base_version_id
+    )
+
+    federated_versions = [first_federated_version] + [
+        get_conflicting_federated_object_version(object_id=object_conflict.object_id, fed_version_id=version_id, version_component_id=object_conflict.component_id)
+        for version_id in range(first_federated_version.fed_version_id + 1, object_conflict.fed_version_id + 1)
+    ]
+
+    federated_review_versions: dict[str, typing.Any] = {}
+    previous_data = base_object_version.data
+    previous_schema = base_object_version.schema
+    for fed_version in federated_versions:
+        federated_review_versions[f'fed-version-{fed_version.fed_version_id}'] = {
+            "title": _("Imported Version #%(version_id)s", version_id=fed_version.fed_version_id),
+            "schema": fed_version.schema,
+            "data": fed_version.data,
+            "version_id": fed_version.fed_version_id,
+        }
+
+        if fed_version.local_parent is not None:
+            hint = _("Showing the changes between the base version and the imported version #%(new_version_id)s.", new_version_id=fed_version.fed_version_id)
+        else:
+            hint = _("Showing the changes between the imported versions #%(prev_version_id)s and #%(new_version_id)s.", prev_version_id=fed_version.fed_version_id - 1, new_version_id=fed_version.fed_version_id)
+
+        federated_review_versions[f'fed-diff-{fed_version.fed_version_id}'] = {
+            "title": _("Changes Imported Version #%(fed_version_id)s", fed_version_id=fed_version.fed_version_id),
+            "previous_schema": previous_schema,
+            "schema": fed_version.schema,
+            "data": fed_version.data,
+            "version_id": fed_version.fed_version_id,
+            "diff": logic.schemas.calculate_diff(previous_data, fed_version.data),
+            "is_diff_with_base_version": previous_data == base_object_version.data,
+            "hint": hint
+        }
+        previous_data = fed_version.data
+        previous_schema = fed_version.schema
+
+    template_kwargs.update({
+        "current_object": object,
+        "base_version": base_object_version,
+        "imported_version": imported_object.as_object(),
+        "imported_version_diff": imported_diff,
+        "local_version_diff": local_diff,
+        "get_object_if_current_user_has_read_permissions": get_object_if_current_user_has_read_permissions,
+        "get_fed_object_if_current_user_has_read_permissions": get_fed_object_if_current_user_has_read_permissions,
+        "get_component": get_component,
+        "component_ids": [],
+        "special_review_versions": special_review_versions,
+        "local_review_versions": local_review_versions,
+        "federated_review_versions": federated_review_versions
+    })
+
+    if flask.request.method == 'POST':
+        if 'strategy' in flask.request.form and flask.request.form['strategy'] in [SolvingStrategy.APPLY_LOCAL.value, SolvingStrategy.APPLY_IMPORTED.value]:
+            strategy = SolvingStrategy(flask.request.form['strategy'])
+            try:
+                solve_conflict_by_strategy(
+                    conflict=object_conflict,
+                    solving_strategy=strategy,
+                    user_id=flask_login.current_user.id
+                )
+                poke_affected_components(object)
+            except errors.FailedSolvingByStrategyError:
+                flask.flash(_('Could not use the selected strategy to solve the conflict. Switching to interactive mode.'), 'warning')
+                return flask.redirect(flask.url_for('frontend.object', object_id=object_conflict.object_id, mode='conflict', component_id=imported_object.component_id))
+            except (errors.ObjectVersionConflictAlreadyDiscardedError, errors.ObjectVersionConflictAlreadySolvedError, errors.ObjectVersionConflictError, errors.UnknownConflictSolvingStrategyError):
+                flask.flash(_('Could not solve the conflict due to an unexpected error. Please try again.'), 'error')
+                return flask.redirect(flask.url_for('frontend.object', object_id=object_conflict.object_id))
+
+        return flask.redirect(flask.url_for('.object', object_id=object_conflict.object_id))
+
+    files = get_files_for_object(object_id=object_id)
+
+    return flask.render_template(
+        'objects/conflicts.html',
+        object_id=object_id,
+        component_name=get_component(object_conflict.component_id).get_name(),
+        conflict_component_id=object_conflict.component_id,
+        files=files,
+        view_only=solved_in is not None,
+        **template_kwargs
     )
 
 
@@ -900,9 +1167,10 @@ def multiselect_labels() -> FlaskResponseT:
 def post_object_comments(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
-    if object.fed_object_id is not None:
-        flask.flash(_('Commenting on imported objects is not yet supported.'), 'error')
-        return flask.abort(403)
+    if object.fed_object_id:
+        specification = get_object_import_specification(object_id)
+        if specification is None or not specification.comments:
+            return flask.abort(403)
     if object.action_id is None:
         return flask.abort(403)
     comment_form = CommentForm()
@@ -910,6 +1178,7 @@ def post_object_comments(object_id: int) -> FlaskResponseT:
         content = comment_form.content.data
         comments.create_comment(object_id=object_id, user_id=flask_login.current_user.id, content=content)
         flask.flash(_('Successfully posted a comment.'), 'success')
+        poke_affected_components(object)
     else:
         flask.flash(_('Please enter a comment text.'), 'error')
     return flask.redirect(flask.url_for('.object', object_id=object_id))
@@ -920,9 +1189,10 @@ def post_object_comments(object_id: int) -> FlaskResponseT:
 def post_object_location(object_id: int) -> FlaskResponseT:
     check_current_user_is_not_readonly()
     object = get_object(object_id)
-    if object.fed_object_id is not None:
-        flask.flash(_('Assigning locations to imported objects is not yet supported.'), 'error')
-        return flask.abort(403)
+    if object.fed_object_id:
+        specification = get_object_import_specification(object_id)
+        if specification is None or not specification.object_location_assignments:
+            return flask.abort(403)
     if object.action_id is None:
         return flask.abort(403)
     location_form = ObjectLocationAssignmentForm()
@@ -968,6 +1238,7 @@ def post_object_location(object_id: int) -> FlaskResponseT:
                 flask.flash(_('The selected location does not have the capacity to store this object.'), 'error')
             else:
                 flask.flash(_('Successfully assigned a new location to this object.'), 'success')
+                poke_affected_components(object=object)
         else:
             flask.flash(_('Please select a location or a responsible user.'), 'error')
     else:

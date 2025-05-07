@@ -41,7 +41,8 @@ def object_permissions_required(
         auth_extension: typing.Any = flask_login,
         user_id_callable: typing.Callable[[], typing.Optional[int]] = lambda: flask_login.current_user.get_id() if flask_login.current_user else None,
         on_unauthorized: typing.Callable[[int], FlaskResponseT] = lambda object_id: flask.abort(403),
-        may_enable_anonymous_users: bool = True
+        may_enable_anonymous_users: bool = True,
+        check_conflicting_versions: bool = False,
 ) -> typing.Callable[[typing.Any], typing.Any]:
     def decorator(
             func: typing.Callable[[typing.Any], typing.Any],
@@ -58,11 +59,12 @@ def object_permissions_required(
             assert 'object_id' in kwargs
             object_id = kwargs['object_id']
             version_id = kwargs.get('version_id')
+            component_id = flask.request.args.get('component_id') if check_conflicting_versions else None
             try:
                 if version_id is None:
                     logic.objects.check_object_exists(object_id)
                 else:
-                    logic.objects.check_object_version_exists(object_id, version_id)
+                    logic.objects.check_object_version_exists(object_id, version_id, component_id)
             except logic.errors.ObjectDoesNotExistError:
                 return flask.abort(404)
             except logic.errors.ObjectVersionDoesNotExistError:

@@ -1,3 +1,15 @@
+{% set conflicting = False %}
+{% set imported_data = none %}
+{% set local_data = none %}
+{% if data %}
+  {% set conflicting = 'imported' in data %}
+  {% if conflicting %}
+    {% set imported_data = data['imported']%}
+    {% set local_data = data['local'] %}
+    {% set data = data['local'] %}
+  {% endif %}
+{% endif %}
+
 {% if data is not none and "object_id" in data %}
   {% if ("component_uuid" in data and data.component_uuid is not none and data.component_uuid != config['FEDERATION_UUID']) %}
     {% set component = get_component_by_uuid(data.component_uuid) %}
@@ -52,6 +64,82 @@
   {% endif %}
 {% endif %}
 
+<!-- Get local object of conflict -->
+
+{% if conflicting %}
+{% if local_data is not none and "object_id" in local_data %}
+  {% if ("component_uuid" in local_data and local_data.component_uuid is not none and local_data.component_uuid != config['FEDERATION_UUID']) %}
+    {% set component = get_component_by_uuid(local_data.component_uuid) %}
+    {% if component is none %}
+      {% set component_name = _('Unknown database (%(uuid)s)', uuid=local_data.component_uuid[:8]) %}
+    {% else %}
+      {% set component_name = component.get_name() %}
+    {% endif %}
+    {% set local_value_text = _('Object') + ' #' + (local_data.object_id | string) + ' @ ' + component_name %}
+    {% set local_value_data_icon = 'fa fa-share-alt' %}
+    {% set local_value_is_fed = true %}
+  {% elif "eln_source_url" in local_data and local_data.eln_source_url is not none %}
+    {% set local_data_value_text = _('Object') + ' #' + (local_data.object_id | string) + ' @ ' + (local_data.eln_source_url | string) %}
+    {% set local_data_value_is_fed = false %}
+  {% else %}
+    {% set local_value_text = none %}
+    {% set local_value_is_fed = false %}
+  {% endif %}
+{% else %}
+  {% set local_value_text = none %}
+  {% set local_value_is_fed = false %}
+{% endif %}
+
+{% if local_data is not none and "object_id" in local_data %}
+  {% if local_value_text is not none %}
+    {% set local_id = "-2" %}
+  {% else %}
+    {% set local_id = local_data.object_id | string %}
+  {% endif %}
+{% else %}
+  {% set local_id = none %}
+{% endif %}
+
+<!-- Get imported object of conflict -->
+
+{% if imported_data is not none and "object_id" in imported_data %}
+  {% if ("component_uuid" in imported_data and imported_data.component_uuid is not none and imported_data.component_uuid != config['FEDERATION_UUID']) %}
+    {% set component = get_component_by_uuid(imported_data.component_uuid) %}
+    {% if component is none %}
+      {% set component_name = _('Unknown database (%(uuid)s)', uuid=imported_data.component_uuid[:8]) %}
+    {% else %}
+      {% set component_name = component.get_name() %}
+    {% endif %}
+    {% set imported_value_text = _('Object') + ' #' + (imported_data.object_id | string) + ' @ ' + component_name %}
+    {% set imported_value_data_icon = 'fa fa-share-alt' %}
+    {% set imported_value_is_fed = true %}
+  {% elif "eln_source_url" in imported_data and imported_data.eln_source_url is not none %}
+    {% set imported_data_value_text = _('Object') + ' #' + (imported_data.object_id | string) + ' @ ' + (imported_data.eln_source_url | string) %}
+    {% set imported_data_value_is_fed = false %}
+  {% else %}
+    {% set imported_value_text = none %}
+    {% set imported_value_is_fed = false %}
+  {% endif %}
+{% else %}
+  {% set imported_value_text = none %}
+  {% set imported_value_is_fed = false %}
+{% endif %}
+
+{% if imported_data is not none and "object_id" in imported_data %}
+  {% if imported_value_text is not none %}
+    {% set imported_id = "-3" %}
+  {% else %}
+    {% set imported_id = imported_data.object_id | string %}
+  {% endif %}
+{% else %}
+  {% set imported_id = none %}
+{% endif %}
+
+{% endif %}
+
+{% if conflicting %}
+<div class="has-conflict">
+{% endif %}
 {% if config['USE_TYPEAHEAD_FOR_OBJECTS'] %}
   <div class="{% if is_template %} template-typeahead-container {% else %} objectpicker-container {% endif %}">
     <input type="text" class="form-control {% if not is_template %} typeahead {% else %} template-typeahead {% endif %}" name="typeahead_text_{{ id_prefix }}" style="width: 100%" value="{% if selected_id is not none %}#{{ selected_id }}{% endif %}" placeholder="{{ _('No object selected') }}" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1" {% if current_value_text %}data-sampledb-current-value-text="{{ current_value_text }}"{% endif %} {% if current_value_is_fed %}data-sampledb-current-value-is-fed="true"{% endif %}/>
@@ -59,24 +147,34 @@
     <input type="hidden" name="{{ id_prefix+'_oid' }}" value="{% if selected_id is not none %}{{ selected_id }}{% endif %}" />
   </div>
 {% else %}
-  <select {% if is_template %} class="template-select" data-template-class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% else %} class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% endif %} name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" data-sampledb-required-perm="1">
+  <select {% if is_template %} class="template-select" data-template-class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% else %} class="selectpicker {% if valid_action_ids is none or valid_action_ids | length > 1 %}objectpicker{% endif %} form-control selectpicker" {% endif %} name="{{ id_prefix }}_oid" data-none-selected-text="&mdash;" data-hide-disabled="true" data-live-search="true" data-sampledb-valid-action-ids="{% if valid_action_ids is none %}[]{% else %}{{ valid_action_ids | tojson }}{% endif %}" data-sampledb-default-selected="{{ selected_id }}" {% if conflicting %} data-sampledb-conflicting="true" data-sampledb-conflict-local-id="{{ local_id }}" data-sampledb-conflict-imported-id="{{ imported_id }}" data-sampledb-conflict-local-subtext="{{ _('Local Selection') }}" data-sampledb-conflict-imported-subtext="{{ _('Imported Selection') }}" data-sampledb-conflict-local-value-text="{{ local_value_text }}" data-sampledb-conflict-imported-value-text="{{ imported_value_text }}" {% endif %} data-sampledb-required-perm="1">
     <option value="">&mdash;</option>
-  {% if selected_id == "-1" and current_value_text is not none %}
-    <option value="-1" selected="selected" {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %}>{{ current_value_text }}</option>
-  {% endif %}
-  {% if selected_id and current_value_text is none %}
-    {% set obj = get_object_if_current_user_has_read_permissions(selected_id | int) %}
-    {% if (obj is not none) and (valid_action_ids is none or obj.action_id in valid_action_ids) %}
-      <option {% if obj.component_id is not none %}data-icon="fa fa-share-alt"{% elif obj.eln_object_id is not none %}data-icon="fa fa-file-archive-o"{% endif %} value="{{ obj.object_id }}" {% if obj.action_id is not none %}data-action-id="{{ obj.action_id }}" {% endif %}{% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if obj.data is not none and 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.name | get_translated_text }}"{% endif %}>{% if obj.name | get_translated_text == '' %}&mdash;{% else %}{{ obj.name | get_translated_text }}{% endif %} (#{{ obj.object_id }}{% if obj.component_id is not none %}, #{{ obj.fed_object_id }} @ {{ obj.component.get_name() }}{% endif %})</option>
+    {% if conflicting %}
+      {% if local_id == '-2' and local_value_text is not none %}
+        <option value="-2" data-conflict-relation="true" {% if selected_id == "-1" or selected_id == "-2" %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %} data-subtext="{{ _('Local Selection') }}">{{ local_value_text }}</option>
+      {% endif %}
+      {% if imported_id == '-3' and imported_value_text is not none %}
+        <option data-conflict-relation="true" value="-3" {% if selected_id == "-3" %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %} data-subtext="{{ _('Imported Selection') }}">{{ imported_value_text }}</option>
+      {% endif %}
+    {% else %}
+      {% if selected_id == "-1" and current_value_text is not none %}
+        <option value="-1" {% if not conflicting %} selected="selected" {% endif %} {% if current_value_is_fed %}data-icon="fa fa-share-alt"{% endif %}>{{ current_value_text }}</option>
+      {% endif %}
+      {% if selected_id and current_value_text is none %}
+        {% set obj = get_object_if_current_user_has_read_permissions(selected_id | int) %}
+        {% if (obj is not none) and (valid_action_ids is none or obj.action_id in valid_action_ids) %}
+          <option {% if obj.component_id is not none %}data-icon="fa fa-share-alt"{% elif obj.eln_object_id is not none %}data-icon="fa fa-file-archive-o"{% endif %} value="{{ obj.object_id }}" {% if obj.action_id is not none %}data-action-id="{{ obj.action_id }}" {% endif %}{% if selected_id == obj.object_id | string %}selected="selected"{% endif %} {% if obj.data is not none and 'tags' in obj.data and obj.data.tags._type == "tags" and obj.data.tags.tags %}data-tokens="{% for tag in obj.data.tags.tags %}#{{ tag }} {% endfor %}{{ obj.name | get_translated_text }}"{% endif %}>{% if obj.name | get_translated_text == '' %}&mdash;{% else %}{{ obj.name | get_translated_text }}{% endif %} (#{{ obj.object_id }}{% if obj.component_id is not none %}, #{{ obj.fed_object_id }} @ {{ obj.component.get_name() }}{% endif %})</option>
+        {% endif %}
+      {% endif %}
     {% endif %}
-  {% endif %}
+
   </select>
   {% if valid_action_ids is none or valid_action_ids | length > 1 %}
     <select {% if is_template %} class="template-select" data-template-class="selectpicker objectpicker-actionpicker" {% else %} class="selectpicker objectpicker-actionpicker" {% endif %} data-live-search="true" data-width="100%">
       <option selected="selected" value="">{{ _('All Actions') }}</option>
       {% for action in sorted_actions %}
         {% if valid_action_ids is none or action.id in valid_action_ids %}
-      <option value="{{ action.id }}" {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %}>
+          <option value="{{ action.id }}" {% if action.component_id is not none %}data-icon="fa fa-share-alt"{% endif %}>
           {% if action.user is not none %}
             {{ action.user.name }} /
           {% endif %}

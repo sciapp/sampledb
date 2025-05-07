@@ -1206,11 +1206,6 @@ msgstr ""
 msgid "File stored in other database is not available."
 msgstr "Datei aus anderer Datenbank ist nicht verfügbar."
 
-msgid "Uploading files for imported objects is not yet supported."
-msgstr ""
-"Das Hochladen von Dateien wird für importierte Objekte noch nicht "
-"unterstützt."
-
 msgid "The file was hidden successfully."
 msgstr "Die Datei wurde erfolgreich versteckt."
 
@@ -1277,6 +1272,18 @@ msgstr "Anonyme Nutzer"
 msgid "Creating objects with this action has been disabled."
 msgstr "Das Erzeugen von Objekten mit dieser Aktion wurde deaktiviert."
 
+msgid ""
+"The current version of this object contains no data because it was "
+"disabled by policies and the latest version was created by a federated "
+"database. To edit the latest version edit the policy or alternatively an "
+"older version is used for editing."
+msgstr ""
+"Die aktuelle Version des Objekts enthält keine Daten, da diese mittels "
+"der Berechtigungen für den Föderationspartner deaktiviert wurden, "
+"allerdings wurde die Version bei einem Föderationspartner erzeugt. Um die"
+" neuste Version zu bearbeiten, muss die Freigabe der Daten erfolgen oder "
+"als Alternative wird nun eine ältere bekannte Version verwendet."
+
 #, python-format
 msgid " Batch numbering resulted in name: %(name)s"
 msgstr " Batchnummerierung hat den folgenden Namen ergeben: %(name)s"
@@ -1293,6 +1300,16 @@ msgstr "Die Objekte wurden erfolgreich erstellt."
 
 msgid "The object was updated successfully."
 msgstr "Das Objekt wurde erfolgreich aktualisiert."
+
+#, python-format
+msgid ""
+"Solving conflict between the local latest version and the latest imported"
+" version from federation partner %(component_name)s. The fields "
+"highlighted in orange are conflicting between the versions."
+msgstr ""
+"Löse Konflikt zwischen der lokalen neusten Version und der neusten "
+"Version vom Föderationspartner %(component_name)s. Die orange "
+"hervorgehobenen Felder enthalten Konflikte zwischen den Versionen."
 
 msgid "Unable to copy permissions. Default permissions will be applied."
 msgstr ""
@@ -1559,8 +1576,20 @@ msgstr ""
 msgid "Editing imported objects is not yet supported."
 msgstr "Das Bearbeiten importierter Objekte wird noch nicht unterstützt."
 
+#, python-format
+msgid ""
+"The latest version does not contain any data. Switching to latest version"
+" that is editable: Version #%(version_id)s."
+msgstr ""
+"Die neuste Version enthält keine Daten. Wechseln auf die letzte Version, "
+"die editierbar ist: Version #%(version_id)s."
+
 msgid "The schema for this object cannot be updated."
 msgstr "Das Schema für dieses Objekt kann nicht aktualisiert werden."
+
+#, python-format
+msgid "No conflict found for object #%(object_id)s."
+msgstr "Es wurde kein Konflikt für Objekt #%(object_id)s gefunden."
 
 msgid "Please enter a valid URL."
 msgstr "Bitte geben Sie eine gültige URL ein."
@@ -1574,23 +1603,102 @@ msgstr "Die eingegebene IP-Adresse ist ungültig."
 msgid "The port number you entered is invalid."
 msgstr "Die eingegebene Port-Nummer ist ungültig."
 
+msgid "This object does not have any unsolved version conflicts."
+msgstr "Dieses Objekt hat keine ungelösten Versionskonflikte."
+
+#, python-format
+msgid "Object with the id %(object_id)s does not exist."
+msgstr "Ein Objekt mit der ID %(object_id)s existiert nicht."
+
+#, python-format
+msgid "Base Version (#%(version_id)s)"
+msgstr "Basisversion (#%(version_id)s)"
+
+#, python-format
+msgid "Solution Version (#%(version_id)s)"
+msgstr "Lösungsversion (#%(version_id)s)"
+
+msgid "Changes between solution version and base version"
+msgstr "Änderungen zwischen der Lösungsversion und der Basisversion"
+
+msgid ""
+"Showing the changes between the base version and the final solution of "
+"the conflict."
+msgstr ""
+"Zeigt die Änderungen zwischen der Basisversion und finalen Lösungsversion"
+" des Konflikts."
+
+#, python-format
+msgid "Local Version #%(version_id)s"
+msgstr "Lokale Version #%(version_id)s"
+
+#, python-format
+msgid ""
+"Showing the changes between the base version and the local version "
+"#%(new_version_id)s."
+msgstr ""
+"Zeigt die Änderungen zwischen der Basisversion und der lokalen Version "
+"#%(new_version_id)s."
+
+#, python-format
+msgid ""
+"Showing the changes between the local versions #%(prev_version_id)s and "
+"#%(new_version_id)s."
+msgstr ""
+"Zeigt die Änderungen zwischen den lokalen Versionen #%(prev_version_id)s "
+"und #%(new_version_id)s."
+
+#, python-format
+msgid "Changes Local Version #%(local_version_id)s"
+msgstr "Änderungen Lokale Version #%(local_version_id)s"
+
+#, python-format
+msgid "Imported Version #%(version_id)s"
+msgstr "Importierte Version #%(version_id)s"
+
+#, python-format
+msgid ""
+"Showing the changes between the base version and the imported version "
+"#%(new_version_id)s."
+msgstr ""
+"Zeigt die Änderungen zwischen der Basisversion und der importierten "
+"Version #%(new_version_id)s."
+
+#, python-format
+msgid ""
+"Showing the changes between the imported versions #%(prev_version_id)s "
+"and #%(new_version_id)s."
+msgstr ""
+"Zeigt die Änderungen zwischen den importierten Versionen "
+"#%(prev_version_id)s und #%(new_version_id)s."
+
+#, python-format
+msgid "Changes Imported Version #%(fed_version_id)s"
+msgstr "Änderungen Importierte Version #%(fed_version_id)s"
+
+msgid ""
+"Could not use the selected strategy to solve the conflict. Switching to "
+"interactive mode."
+msgstr ""
+"Die ausgewählte Strategie konnte nicht zum Lösen des Konflikts verwendet "
+"werden. Wechseln zum interaktiven Modus."
+
+msgid "Could not solve the conflict due to an unexpected error. Please try again."
+msgstr ""
+"Der Konflikt konnte wegen einem unerwarteten Fehler nicht gelöst werden. "
+"Bitte versuchen Sie es erneut."
+
 msgid "Unknown"
 msgstr "Unbekannt"
 
 msgid "Unknown Object"
 msgstr "Unbekanntes Objekt"
 
-msgid "Commenting on imported objects is not yet supported."
-msgstr "Das Kommentieren importierter Objekte wird noch nicht unterstützt."
-
 msgid "Successfully posted a comment."
 msgstr "Kommentar erfolgreich eingetragen."
 
 msgid "Please enter a comment text."
 msgstr "Bitte geben Sie einen Kommentartext ein."
-
-msgid "Assigning locations to imported objects is not yet supported."
-msgstr "Das Zuweisen importierter Objekte zu Orten wird noch nicht unterstützt."
 
 msgid "The selected location does not have the capacity to store this object."
 msgstr ""
@@ -5240,6 +5348,32 @@ msgstr ""
 "style=\"color: #337ab7;\"> Nutzer #%(user_id)s</a> von %(component_name)s"
 " verknüpft."
 
+msgid "Solve Conflicts"
+msgstr "Konflikte lösen"
+
+#, python-format
+msgid "Solving conflicts from %(component_name)s"
+msgstr "Löse Konflikte von %(component_name)s"
+
+#, python-format
+msgid "Conflicts from %(component_name)s"
+msgstr "Konflikte von %(component_name)s"
+
+msgid "Change Language"
+msgstr "Sprache wechseln"
+
+msgid "Solve"
+msgstr "Lösen"
+
+msgid "Interactive solving"
+msgstr "Interaktives Lösen"
+
+msgid "Apply local version"
+msgstr "Lokale Version anwenden"
+
+msgid "Apply imported version"
+msgstr "Importierte Version anwenden"
+
 #, python-format
 msgid "Export to %(dataverse_name)s"
 msgstr "Nach %(dataverse_name)s exportieren"
@@ -5423,16 +5557,6 @@ msgstr "Die ID eines Nutzers finden Sie in dessen Profil in der anderen Datenban
 
 msgid "User ID"
 msgstr "Nutzer-ID"
-
-msgid ""
-"Objects from other databases are currently read-only, but "
-"<strong>WRITE</strong> permissions may allow users to edit the object or "
-"add comments or files to it in the future."
-msgstr ""
-"Objekte aus anderen Datenbanken erlauben aktuell nur lesenden Zugriff, "
-"allerdings können <strong>SCHREIB</strong>-Berechtigungen es Nutzern "
-"zukünftig erlauben, das Objekt zu editieren oder Kommentare oder Dateien "
-"hinzuzufügen."
 
 msgid "Add Basic Group"
 msgstr "Einfache Gruppe hinzufügen"
@@ -5810,6 +5934,16 @@ msgstr ""
 "Sie benötigen Rechtevergabe-Berechtigungen um die Berechtigungen dieses "
 "Objekts zu verändern."
 
+msgid "There exist two differing object versions for this object."
+msgstr "Es existieren zwei abweichende Objektversionen für dieses Objekt."
+
+msgid ""
+"There exist two differing object versions for this object. Ask someone "
+"with write permission to solve this conflict."
+msgstr ""
+"Es existieren zwei abweichende Objektversionen für das Objekt. Fragen Sie"
+" jemanden mit Schreib-Berechtigung den Konflikt zu lösen."
+
 #, python-format
 msgid "Shared by %(component_name)s"
 msgstr "Geteilt von %(component_name)s"
@@ -5921,8 +6055,24 @@ msgstr "Möchten Sie Lese-Berechtigungen anfragen?"
 msgid "Send Request"
 msgstr "Anfrage senden"
 
+#, python-format
+msgid "(Local: %(local_value_icon)s, Imported: %(imported_value_icon)s)"
+msgstr "(Lokal: %(local_value_icon)s, Importiert: %(imported_value_icon)s)"
+
+msgid "Local Version"
+msgstr "Lokale Version"
+
+msgid "Imported Version"
+msgstr "Importierte Version"
+
 msgid "Please upload a file."
 msgstr "Bitte laden Sie eine Datei hoch."
+
+msgid "Local Selection"
+msgstr "Lokale Auswahl"
+
+msgid "Imported Selection"
+msgstr "Importierte Auswahl"
 
 msgid "This object does not pose any of these hazards."
 msgstr "Dieses Objekt stellt keine dieser Gefahren dar."
@@ -5945,6 +6095,9 @@ msgid ""
 msgstr ""
 "CSV-Daten für Zeitpunkt (als &quot;JJJJ-MM-TT hh:mm:ss.ffffff&quot;) oder"
 " relative Zeitangabe in Sekunden und Wert"
+
+msgid "Unknown User"
+msgstr "Unbekannter Nutzer"
 
 #, python-format
 msgid "Remove %(item_name)s"
@@ -6113,11 +6266,23 @@ msgstr "Nutzer #%(user_id)s aus einem ELN auf %(eln_source_url)s"
 
 #, python-format
 msgid ""
+"Changes between current version #%(version_id)s and imported version "
+"#%(version_id)s"
+msgstr ""
+"Änderungen zwischen aktueller Version #%(version_id)s und importierter "
+"Version #%(version_id)s"
+
+#, python-format
+msgid ""
 "Changes between version #%(previous_version_id)s and version "
 "#%(version_id)s"
 msgstr ""
 "Änderungen zwischen Version #%(previous_version_id)s und Version "
 "#%(version_id)s"
+
+#, python-format
+msgid "Imported Version #%(version_id)s from %(component_name)s"
+msgstr "Importierte Version #%(version_id)s von %(component_name)s"
 
 #, python-format
 msgid "Version #%(version_id)s"
@@ -6169,14 +6334,28 @@ msgstr ""
 "Die stets aktuellen Informationen finden Sie <a "
 "href=\"%(latest_version_url)s\">hier</a>."
 
+msgid "Conflict"
+msgstr "Konflikt"
+
+msgid "The object version is conflicting with an imported object version."
+msgstr "Die Objektversion steht im Konflikt mit einer importierten Objektversion."
+
+msgid ""
+"The object version is conflicting with an imported object version. The "
+"conflict cannot be solved until the data for this object is shared with "
+"the federation partner and the data for the conflicting object versions "
+"has been imported."
+msgstr ""
+"Die Objektversion steht im Konflikt mit einer importierten Objektversion "
+"von einem Föderationspartner. Der Konflikt kann nicht gelöst werden bis "
+"die Daten für dieses Objekt mit dem Föderationspartner geteilt werden und"
+" anschließend die Daten für diese Objekt vollständig importiert wurden."
+
 msgid "This object has been imported without data."
 msgstr "Dieses Objekt wurde ohne Daten importiert."
 
 msgid "View object information in a different language."
 msgstr "Zeigt Objektinformationen in einer anderen Sprache an."
-
-msgid "Change Language"
-msgstr "Sprache wechseln"
 
 msgid "Create a new version of the information for this object."
 msgstr "Eine neue Version aus den Informationen für dieses Objekt erstellen."
@@ -6247,6 +6426,20 @@ msgstr "Zeigt Objektinformationen in %(dataverse_name)s an."
 #, python-format
 msgid "View on %(dataverse_name)s"
 msgstr "In %(dataverse_name)s anzeigen"
+
+#, python-format
+msgid "Solve conflicts caused by an import of updates from %(component_name)s."
+msgstr ""
+"Löse Konflikte, die durch das Importieren von Aktualisierungen von "
+"%(component_name)s entstanden sind."
+
+msgid "Solve conflicts caused by an import of updates from a federation partner."
+msgstr ""
+"Löse Konflikte, die durch das Importieren von Aktualisierungen eines "
+"Föderationspartners entstanden sind."
+
+msgid "Solving Conflicts with..."
+msgstr "Konflikt mit ... lösen"
 
 #, python-format
 msgid "Create a Jupyter Notebook in %(jupyterhub_name)s to analyze this object."
@@ -6734,6 +6927,34 @@ msgid "%(user_ref)s imported this object from an .eln file."
 msgstr "%(user_ref)s hat dieses Objekt aus einer .eln-Datei importiert."
 
 #, python-format
+msgid ""
+"The imported version #%(fed_version_id)s from %(component_name)s is "
+"conflicting with the local object version."
+msgstr ""
+"Die importierte Version #%(fed_version_id)s von %(component_name)s steht "
+"in Konflikt mit der lokalen Objektversion."
+
+#, python-format
+msgid ""
+"The conflict with imported version #%(version_id)s from "
+"%(component_name)s was solved automatically."
+msgstr ""
+"Der Konflikt mit der importierten Version #%(version_id)s von "
+"%(component_name)s wurde automatisch gelöst."
+
+#, python-format
+msgid ""
+"The conflict with imported version #%(version_id)s from "
+"%(component_name)s was solved by %(user_ref)s."
+msgstr ""
+"Der Konlikt mit der importierten Version #%(version_id)s von "
+"%(component_name)s wurde von %(user_ref)s gelöst."
+
+#, python-format
+msgid "<a href=\"%(view_url)s\">View Conflict</a>"
+msgstr "<a href=\"%(view_url)s\">Zeige Konflikt</a>"
+
+#, python-format
 msgid "Log entry from %(component_name)s"
 msgstr "Log-Eintrag von %(component_name)s"
 
@@ -6746,12 +6967,10 @@ msgstr "Importierter Log-Eintrag"
 
 #, python-format
 msgid ""
-"This object version was created as object #%(fed_object_id)s, version "
-"%(fed_version_id)s in database <a "
+"This object was created as object #%(fed_object_id)s in database <a "
 "href=\"%(component_url)s\">%(component_name)s</a>."
 msgstr ""
-"Diese Objektversion wurde als Objekt #%(fed_object_id)s, Version "
-"%(fed_version_id)s in der Datenbank <a "
+"Dieses Objekt wurde als Objekt #%(fed_object_id)s in der Datenbank <a "
 "href=\"%(component_url)s\">%(component_name)s</a> erstellt."
 
 msgid "This object is being shared with users from the following databases:"
@@ -6870,6 +7089,44 @@ msgstr "Eine unbekannte Datenbank konnte das Objekt nicht erfolgreich importiere
 
 msgid "The other database returned the following notes:"
 msgstr "Die andere Datenbank hat die folgenden Hinweise zurückgegeben:"
+
+#, python-format
+msgid ""
+"A version conflict was created between the local object version and the "
+"imported version #%(fed_version_id)s from <a "
+"href=\"%(component_url)s\">%(component_name)s</a>."
+msgstr ""
+"Ein Versionskonflikt wurde zwischen der lokalen Objektversion und der "
+"importierten Version #%(fed_version_id)s von <a "
+"href=\"%(component_url)s\">%(component_name)s</a> erstellt."
+
+#, python-format
+msgid ""
+"A version conflict was created between the local object version and the "
+"imported version #%(fed_version_id)s from an unknown database."
+msgstr ""
+"Ein Versionskonflikt wurde zwischen der lokalen Objektversion und der "
+"importierten Version #%(fed_version_id)s einer unbekannten Datenbank "
+"erstellt."
+
+#, python-format
+msgid ""
+"The version conflict between the local object version and the imported "
+"version #%(fed_version_id)s from <a "
+"href=\"%(component_url)s\">%(component_name)s</a> was solved."
+msgstr ""
+"Der Versionskonflikt zwischen der lokalen Objektversion und der "
+"importierten Version #%(fed_version_id)s von <a "
+"href=\"%(component_url)s\">%(component_name)s</a> wurde gelöst."
+
+#, python-format
+msgid ""
+"The version conflict between the local object version and the imported "
+"version #%(fed_version_id)s from an unknown database was solved."
+msgstr ""
+"Der Versionskonflikt zwischen der lokalen Objektversion und der "
+"importierten Version #%(fed_version_id)s einer unbekannten Datenbank "
+"wurde gelöst."
 
 #, python-format
 msgid ""
@@ -7966,6 +8223,14 @@ msgstr "Unbenanntes Instrument (#%(instrument_id)s)"
 
 msgid "Imported User"
 msgstr "Importierter Nutzer"
+
+#, python-format
+msgid "A conflict with version #%(version_id)s occurred."
+msgstr "Ein Konflikt mit Version #%(version_id)s ist aufgetreten."
+
+#, python-format
+msgid "A conflict with version #%(version_id)s was solved."
+msgstr "Ein Konflikt mit Version #%(version_id)s wurde gelöst."
 
 #, python-format
 msgid "Federated login is disabled for %(service_name)s."

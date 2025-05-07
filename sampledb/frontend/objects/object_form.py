@@ -20,9 +20,11 @@ from ...logic.action_permissions import get_sorted_actions_for_user
 from ...logic.object_permissions import get_user_object_permissions
 from ...logic.users import get_users
 from ...logic.schemas import generate_placeholder
-from ...logic.objects import create_object, create_object_batch, update_object
-from ...logic.languages import get_language, get_languages, Language
+from ...logic.objects import create_object, create_object_batch, update_object, get_conflicting_federated_object_version, get_latest_version_containing_data_information
+from ...logic.languages import get_language, Language, get_languages_by_component
 from ...logic.components import get_component
+from ...logic.federation.conflicts import ObjectVersionConflict, automerge_conflict
+from ...logic.federation.update import poke_affected_components
 from .forms import ObjectForm
 from ..utils import default_format_datetime, custom_format_number, format_time
 from .object_form_parser import parse_form_data
@@ -40,9 +42,10 @@ def show_object_form(
         placeholder_data: typing.Optional[typing.Dict[typing.Sequence[typing.Union[str, int]], typing.Any]] = None,
         possible_object_id_properties: typing.Optional[typing.Dict[str, typing.Any]] = None,
         passed_object_ids: typing.Optional[typing.List[int]] = None,
-        show_selecting_modal: bool = False
+        show_selecting_modal: bool = False,
+        solve_conflicts: bool = False,
+        object_conflict: typing.Optional[ObjectVersionConflict] = None,
 ) -> FlaskResponseT:
-
     if object is None:
         if action.type is None or action.type.disable_create_objects or action.disable_create_objects or (action.admin_only and not flask_login.current_user.is_admin):
             flask.flash(_('Creating objects with this action has been disabled.'), 'error')
@@ -72,7 +75,7 @@ def show_object_form(
         'previous_schema': None,
         'diff': None
     })
-    if should_upgrade_schema and previous_object is None:
+    if should_upgrade_schema and previous_object is None and not solve_conflicts:
         # edit object with schema upgrade
         mode = 'upgrade'
         if action.schema is None or object is None or object.schema is None or object.data is None:
@@ -87,11 +90,57 @@ def show_object_form(
         })
     elif object is not None:
         # edit object
-        mode = 'edit'
+        mode = 'edit' if not solve_conflicts else 'conflict'
+        template_arguments.update({
+            'federation_shared_object': object.fed_object_id is not None and object.component_id is not None
+        })
         if object.data is None or object.schema is None:
-            return flask.abort(400)
+            if object.version_component_id is not None:
+                object = get_latest_version_containing_data_information(object.object_id)
+                if object is None or object.data is None or object.schema is None:
+                    return flask.abort(400)
+                else:
+                    flask.flash(_('The current version of this object contains no data because it was disabled by policies and the latest version was created by a federated database. To edit the latest version edit the policy or alternatively an older version is used for editing.'), 'warning')
+            else:
+                return flask.abort(400)
         schema = object.schema
-        data = copy.deepcopy(object.data)
+
+        if solve_conflicts and object_conflict is not None:
+            if should_upgrade_schema:
+                fed_object_version = get_conflicting_federated_object_version(
+                    object_id=object_conflict.object_id,
+                    fed_version_id=object_conflict.fed_version_id,
+                    version_component_id=object_conflict.component_id
+                )
+
+                merge_args = {}
+
+                if object.component_id is None:
+                    if fed_object_version.data is None:
+                        return flask.abort(400)
+                    schema = object.schema
+                    updated_data, upgrade_warnings = logic.schemas.convert_to_schema(fed_object_version.data, previous_schema=object.schema, new_schema=schema)
+                    merge_args['imported_data'] = updated_data
+                else:
+                    if fed_object_version.schema is None or object.data is None:
+                        return flask.abort(400)
+                    schema = fed_object_version.schema
+                    updated_data, upgrade_warnings = logic.schemas.convert_to_schema(object.data, previous_schema=object.schema, new_schema=schema)
+                    merge_args['local_data'] = updated_data
+
+                for upgrade_warning in upgrade_warnings:
+                    flask.flash(upgrade_warning, 'warning')
+
+                data = automerge_conflict(object_version_conflict=object_conflict, **merge_args)[1]
+
+                template_arguments.update({
+                    'previous_schema': object.schema,
+                })
+            else:
+                data = automerge_conflict(object_version_conflict=object_conflict)[1]
+
+        else:
+            data = copy.deepcopy(object.data)
     elif previous_object is not None:
         # create object via 'Use as Template'
         mode = 'create'
@@ -169,7 +218,7 @@ def show_object_form(
         'form_data': form_data,
     })
 
-    template_arguments.update(get_object_form_template_kwargs(object.id if object is not None else None))
+    template_arguments.update(get_object_form_template_kwargs(object.id if object is not None else None, component_id=object.component_id if object is not None else None))
 
     actual_file_names_by_id = {
         file_id: file_names[0]
@@ -179,7 +228,7 @@ def show_object_form(
 
     if "action_submit" in form_data:
         batch_names = _handle_batch_names(schema, form_data, raw_form_data, errors)
-        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id, previous_data=data)
+        object_data, parsing_errors = parse_form_data(raw_form_data, schema, file_names_by_id=actual_file_names_by_id, previous_data=data, component_id=object.component_id if object else None)
         errors.update(parsing_errors)
         if batch_names is not None:
             for key in errors:
@@ -285,15 +334,33 @@ def show_object_form(
                     flask.flash(_('The objects were created successfully.'), 'success')
                     return flask.redirect(flask.url_for('.objects', ids=','.join([str(object_id) for object_id in object_ids])))
             else:
-                if object_data != object.data or schema != object.schema:
+                if object_data != object.data or schema != object.schema or solve_conflicts:
                     actual_temporary_file_id_map = logic.temporary_files.copy_temporary_files(file_ids=referenced_temporary_file_ids, context_id=context_id, user_id=flask_login.current_user.id, object_ids=[object.id])
                     logic.temporary_files.delete_temporary_files(context_id=context_id)
                     logic.temporary_files.replace_file_reference_ids(object_data, actual_temporary_file_id_map)
                     update_object(object_id=object.id, user_id=flask_login.current_user.id, data=object_data, schema=schema)
                     flask.flash(_('The object was updated successfully.'), 'success')
+                    if solve_conflicts and object_conflict is not None:
+                        logic.federation.conflicts.solve_conflict(
+                            unsolved_conflict=object_conflict,
+                            version_solved_in=object.version_id + 1,
+                            local_version_id=object.version_id,
+                            solver_id=flask_login.current_user.id
+                        )
+
+                    logic.federation.conflicts.try_automerge_open_conflicts(object_id=object.id)
+                    poke_affected_components(object=object)
                 return flask.redirect(flask.url_for('.object', object_id=object.id))
 
     _update_recipes_for_input(schema)
+
+    if solve_conflicts and object_conflict is not None and object is not None:
+        template_arguments.update({
+            'local_version_id': object.version_id,
+            'conflict_version_id': object_conflict.fed_version_id,
+            'conflict_component_id': object_conflict.component_id
+        })
+        flask.flash(_("Solving conflict between the local latest version and the latest imported version from federation partner %(component_name)s. The fields highlighted in orange are conflicting between the versions.", component_name=object_conflict.component.get_name()), 'info')
 
     if object is None:
         # alternatives to default permissions
@@ -319,7 +386,8 @@ def show_object_form(
             'objects/forms/form_edit.html',
             object_id=object.object_id,
             mode=mode,
-            **template_arguments
+            solve_conflicts=solve_conflicts,
+            **template_arguments,
         )
 
 
@@ -604,10 +672,11 @@ def _apply_action_to_form_data(action: str, form_data: typing.Dict[str, typing.A
     return new_form_data
 
 
-def get_object_form_template_kwargs(object_id: typing.Optional[int]) -> typing.Dict[str, typing.Any]:
+def get_object_form_template_kwargs(object_id: typing.Optional[int], component_id: typing.Optional[int]) -> typing.Dict[str, typing.Any]:
+    languages = get_languages_by_component(component_id=component_id, english=True, replace_with_local=True)
     template_kwargs = {
         'datetime': datetime,
-        'languages': get_languages(),
+        'languages': languages
     }
 
     # actions and action types

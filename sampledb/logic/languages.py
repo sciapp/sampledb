@@ -28,6 +28,8 @@ class Language:
     date_format_moment_output: str
     enabled_for_input: bool
     enabled_for_user_interface: bool
+    fed_lang_id: typing.Optional[int]
+    component_id: typing.Optional[int]
 
     ENGLISH = models.Language.ENGLISH
     GERMAN = models.Language.GERMAN
@@ -43,7 +45,9 @@ class Language:
             datetime_format_moment_output=language.datetime_format_moment_output,
             date_format_moment_output=language.date_format_moment_output,
             enabled_for_input=language.enabled_for_input,
-            enabled_for_user_interface=language.enabled_for_user_interface
+            enabled_for_user_interface=language.enabled_for_user_interface,
+            fed_lang_id=language.fed_lang_id,
+            component_id=language.component_id
         )
 
 
@@ -56,7 +60,10 @@ def create_language(
         datetime_format_moment_output: str,
         date_format_moment_output: str,
         enabled_for_input: bool,
-        enabled_for_user_interface: bool
+        enabled_for_user_interface: bool,
+        fed_lang_id: typing.Optional[int] = None,
+        component_id: typing.Optional[int] = None,
+        lang_codes_to_add: typing.Optional[set[str]] = None
 ) -> Language:
     """
     Create a new language.
@@ -70,22 +77,28 @@ def create_language(
     :param enabled_for_input: whether the language is enabled for input
     :param enabled_for_user_interface: whether the language is enabled
         for the user interface
+    :param fed_lang_id: the ID of the language at the federation partner
+    :param component_id: the ID of the federation partner
+    :param lang_codes_to_add: a set of additional language codes which will be additionally added
     :return: the new language
     :raise errors.LanguageAlreadyExistsError: if another language with this
         language code already exists
     :raise errors.LanguageDoesNotExistError: if the language name contains a
         translation for an unknown language code
     """
-    if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
+    if models.Language.query.filter_by(lang_code=lang_code, component_id=component_id).first() is not None:
         raise errors.LanguageAlreadyExistsError()
 
     all_language_codes = {
         language.lang_code
-        for language in models.Language.query.all()
+        for language in models.Language.query.filter_by(component_id=component_id).all()
     }
     all_language_codes.add(lang_code)
 
-    if set(names.keys()) - all_language_codes:
+    if lang_codes_to_add is None:
+        lang_codes_to_add = set()
+
+    if set(names.keys()) - all_language_codes - lang_codes_to_add:
         raise errors.LanguageDoesNotExistError()
 
     language = models.Language(
@@ -96,7 +109,9 @@ def create_language(
         datetime_format_moment_output=datetime_format_moment_output,
         date_format_moment_output=date_format_moment_output,
         enabled_for_input=enabled_for_input,
-        enabled_for_user_interface=enabled_for_user_interface
+        enabled_for_user_interface=enabled_for_user_interface,
+        fed_lang_id=fed_lang_id,
+        component_id=component_id
     )
     db.session.add(language)
     db.session.commit()
@@ -112,7 +127,9 @@ def update_language(
         datetime_format_moment_output: str,
         date_format_moment_output: str,
         enabled_for_input: bool,
-        enabled_for_user_interface: bool
+        enabled_for_user_interface: bool,
+        component_id: typing.Optional[int] = None,
+        lang_codes_to_add: typing.Optional[set[str]] = None,
 ) -> None:
     """
     Update a language.
@@ -127,6 +144,8 @@ def update_language(
     :param enabled_for_input: whether the language is enabled for input
     :param enabled_for_user_interface: whether the language is enabled
         for the user interface
+    :param component_id: the ID of the federation partner
+    :param lang_codes_to_add: a set of additional language codes which will be additionally added
     :raise errors.LanguageAlreadyExistsError: when the language code already
         exists for a different language or the current language code matches
         a supported locale language code
@@ -137,21 +156,28 @@ def update_language(
 
     all_language_codes = {
         language.lang_code
-        for language in models.Language.query.all()
+        for language in models.Language.query.filter_by(component_id=component_id).all()
     }
     all_language_codes.add(lang_code)
 
-    language = models.Language.query.filter_by(id=language_id).first()
+    if lang_codes_to_add is None:
+        lang_codes_to_add = set()
+
+    if component_id is None:
+        language = models.Language.query.filter_by(id=language_id).first()
+    else:
+        language = models.Language.query.filter_by(fed_lang_id=language_id, component_id=component_id).first()
     if language is None:
         raise errors.LanguageDoesNotExistError()
+
     if language.lang_code != lang_code:
-        if models.Language.query.filter_by(lang_code=lang_code).first() is not None:
+        if models.Language.query.filter_by(lang_code=lang_code, component_id=component_id).first() is not None:
             raise errors.LanguageAlreadyExistsError()
         if language.lang_code in locale.SUPPORTED_LOCALES:
             raise errors.LanguageAlreadyExistsError()
         all_language_codes.remove(language.lang_code)
 
-    if set(names.keys()) - all_language_codes:
+    if set(names.keys()) - all_language_codes - lang_codes_to_add:
         raise errors.LanguageDoesNotExistError()
 
     language.names = names
@@ -167,19 +193,23 @@ def update_language(
 
 
 def get_languages(
-        only_enabled_for_input: bool = False
+        only_enabled_for_input: bool = False,
+        only_local: bool = True
 ) -> typing.List[Language]:
     """
     Return all languages.
 
     :param only_enabled_for_input: if True, only return languages which are
         enabled for input
+    :param only_local: if True, only local languages are returned
 
     :return: the list of all languages
     """
     language_query = models.Language.query
     if only_enabled_for_input:
         language_query = language_query.filter_by(enabled_for_input=True)
+    if only_local:
+        language_query = language_query.filter_by(fed_lang_id=None, component_id=None)
     language_query = language_query.order_by(models.Language.id)
     return [
         Language.from_database(language)
@@ -187,29 +217,85 @@ def get_languages(
     ]
 
 
-def get_language(language_id: int) -> Language:
+def get_languages_by_component(
+        component_id: typing.Optional[int],
+        only_enabled_for_input: bool = False,
+        replace_with_local: bool = True,
+        english: bool = False
+) -> typing.List[Language]:
+    """
+    Return all languages from a specific component
+    """
+    query = models.Language.query.filter_by(component_id=component_id)
+    if only_enabled_for_input:
+        query = query.filter_by(enabled_for_input=True)
+    query = query.order_by(models.Language.id)
+    component_languages = [
+        Language.from_database(language)
+        for language in query.all()
+    ]
+    if replace_with_local:
+        languages = []
+        for component_language in component_languages:
+            try:
+                local_lang = get_language_by_lang_code(component_language.lang_code)
+            except errors.LanguageDoesNotExistError:
+                local_lang = None
+
+            if local_lang is not None:  # Use formats of local instance but settings/usages of fed language
+                local_lang = Language(
+                    id=local_lang.id,
+                    lang_code=local_lang.lang_code,
+                    names=local_lang.names,
+                    datetime_format_datetime=local_lang.datetime_format_datetime,
+                    datetime_format_moment=local_lang.datetime_format_moment,
+                    datetime_format_moment_output=local_lang.datetime_format_moment_output,
+                    date_format_moment_output=local_lang.date_format_moment_output,
+                    enabled_for_input=component_language.enabled_for_input,
+                    enabled_for_user_interface=component_language.enabled_for_user_interface,
+                    fed_lang_id=component_language.fed_lang_id,
+                    component_id=component_language.component_id
+                )
+
+            languages.append(local_lang if local_lang else component_language)
+    else:
+        languages = component_languages
+
+    if english:
+        english_language = get_language(Language.ENGLISH)
+        if english_language not in languages:
+            languages.insert(0, english_language)
+    return languages
+
+
+def get_language(language_id: int, component_id: typing.Optional[int] = None) -> Language:
     """
     Returns the language with the given language ID.
 
     :param language_id: the ID of an existing language
+    :param component_id: the ID the component where the language was created (language_id will be treated as fed_lang_id)
     :return: the language
     :raise errors.LanguageDoesNotExistError: when no language with the given language ID exists
     """
-    language = models.Language.query.filter_by(id=language_id).first()
+    if component_id is None:
+        language = models.Language.query.filter_by(id=language_id).first()
+    else:
+        language = models.Language.query.filter_by(fed_lang_id=language_id, component_id=component_id).first()
     if language is None:
         raise errors.LanguageDoesNotExistError()
     return Language.from_database(language)
 
 
-def get_language_by_lang_code(lang_code: str) -> Language:
+def get_language_by_lang_code(lang_code: str, component_id: typing.Optional[int] = None) -> Language:
     """
     Returns the language with the given lang_code.
 
     :param lang_code: the lang_code of an existing language
+    :param component_id: the ID the component where the language was created or none for local languages
     :return: the language with the lang_code
     :raise errors.LanguageDoesNotExistError: when there is no language for the given lang code
     """
-    language = models.Language.query.filter_by(lang_code=lang_code).first()
+    language = models.Language.query.filter_by(lang_code=lang_code, component_id=component_id).first()
 
     if language is None:
         raise errors.LanguageDoesNotExistError()
@@ -266,11 +352,12 @@ def get_languages_in_object_data(
 
 
 def filter_translations(
-        translations: typing.Dict[str, str]
+        translations: typing.Dict[str, str],
+        component_id: typing.Optional[int] = None
 ) -> typing.Dict[str, str]:
     allowed_language_codes = {
         language.lang_code
-        for language in get_languages(only_enabled_for_input=True)
+        for language in get_languages_by_component(component_id=component_id, only_enabled_for_input=True, english=True)
     }
 
     filtered_translations = {}
@@ -285,7 +372,8 @@ def filter_translations(
 
 def get_language_codes(
         only_enabled_for_input: bool = False,
-        only_enabled_for_user_interface: bool = False
+        only_enabled_for_user_interface: bool = False,
+        only_local: bool = True
 ) -> typing.Set[str]:
     """
     Return a set of known language codes.
@@ -294,6 +382,7 @@ def get_language_codes(
         for input
     :param only_enabled_for_user_interface: only return codes for languages
         enabled for the user interface
+    :param only_local: if True, only local languages will be returned
     :return: the set of language codes
     """
     query = models.Language.query
@@ -301,8 +390,20 @@ def get_language_codes(
         query = query.filter_by(enabled_for_input=True)
     if only_enabled_for_user_interface:
         query = query.filter_by(enabled_for_user_interface=True)
+    if only_local:
+        query = query.filter_by(component_id=None)
     language_code_tuples = query.with_entities(models.Language.lang_code).all()
     return {
         language_code_tuple[0]
         for language_code_tuple in language_code_tuples
     }
+
+
+def check_language_exists(language_id: int, component_id: typing.Optional[int] = None) -> bool:
+    """
+    Checks whether a language exists.
+    """
+
+    if component_id is not None:
+        return models.Language.query.filter_by(fed_lang_id=language_id, component_id=component_id).first() is not None
+    return models.Language.query.filter_by(id=language_id).first() is not None

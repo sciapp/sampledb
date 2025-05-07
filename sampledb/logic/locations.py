@@ -548,7 +548,7 @@ def create_fed_assignment(
                 'en': description
             }
         assert isinstance(description, dict)
-        description = languages.filter_translations(description)
+        description = languages.filter_translations(description, component_id)
 
     objects.check_object_exists(object_id)
     # ensure the component exists
