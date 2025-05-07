@@ -413,7 +413,8 @@ def test_objects_referencable(flask_server, user):
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=objects[2].object_id, user_id=new_user_id, permissions=sampledb.logic.object_permissions.Permissions.GRANT)
 
     component = sampledb.logic.components.add_component(address=None, uuid='28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71', name='Example Component', description='')
-    fed_object = sampledb.logic.objects.insert_fed_object_version(1, 0, component.id, None, schema, {'name': {'_type': 'text', 'text': 'Fed Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}}, None, None)
+    data = {'name': {'_type': 'text', 'text': 'Fed Object'}, 'tags': {'_type': 'tags', 'tags': ['a', 'b']}}
+    fed_object = sampledb.logic.objects.insert_fed_object_version(1, 0, component.id, None, schema, data, None, None)
     sampledb.logic.object_permissions.set_user_object_permissions(object_id=fed_object.object_id, user_id=user.id, permissions=sampledb.logic.object_permissions.Permissions.READ)
 
     session = requests.session()

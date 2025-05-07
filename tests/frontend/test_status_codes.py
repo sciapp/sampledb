@@ -381,6 +381,7 @@ def test_status_codes(flask_server, user, driver):
         'federation/v1/shares/objects/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/users/': 401,  # 401 because federation API requires federation token
         'federation/v1/shares/metadata/': 401,  # 401 because federation API requires federation token
+        'federation/v1/shares/languages/': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         f'federation/v1/shares/objects/{other_object_id}/files/{file_id}': 401,  # 401 because federation API requires federation token
         'groups/': 200,
@@ -430,6 +431,7 @@ def test_status_codes(flask_server, user, driver):
         f'objects/{object_id}/versions/0': 200,
         f'objects/{object_id}/versions/0/dc.rdf': 200,
         f'objects/{object_id}/versions/0/restore': 200,
+        f'objects/{object_id}/conflicts/component/{component_id}': 302,
         f'objects/{other_object_id}': 200,
         f'objects/{other_object_id}/dataverse_export/': 200,
         f'objects/{other_object_id}/download_service/': 404,
@@ -447,6 +449,7 @@ def test_status_codes(flask_server, user, driver):
         f'objects/{other_object_id}/versions/0': 200,
         f'objects/{other_object_id}/versions/0/dc.rdf': 200,
         f'objects/{other_object_id}/versions/0/restore': 404,
+        f'objects/{other_object_id}/conflicts/component/{component_id}': 302,
         'objects/new': 404,  # 404 because /objects/new requires action_id or previous_object_id
         f'objects/new?action_id={action_id}': 200,
         f'objects/new?action_id={other_action_id}': 302,
