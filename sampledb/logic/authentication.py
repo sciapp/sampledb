@@ -633,6 +633,24 @@ def login_via_api_refresh_token(api_refresh_token: str) -> typing.Optional[logic
     return None
 
 
+def login_via_oidc_access_token(access_token: str) -> typing.Optional[logic.users.User]:
+    """
+    Authenticate a user using an OIDC Access Token, if OIDC is configured and
+    Access Tokens may be used as API keys.
+
+    :param access_token: the access token to use for authentication
+    :return: the user, or None
+    """
+    if not flask.current_app.config['OIDC_ACCESS_TOKEN_AS_API_KEY']:
+        return None
+    try:
+        authentication_method, user = logic.oidc.validate_access_token(access_token)
+    except Exception:
+        return None
+    api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
+    return user
+
+
 def add_authentication_method(user_id: int, login: str, password: str, authentication_type: AuthenticationType) -> bool:
     """
     Add an authentication method for a user.

@@ -291,7 +291,7 @@ def oidc_start() -> FlaskResponseT:
         flask.flash(_('OIDC is disabled.'), 'error')
         return flask.redirect(flask.url_for('.index'))
 
-    if flask_login.current_user.is_authenticated:
+    if flask_login.current_user.is_authenticated and flask_login.login_fresh():
         return _redirect_to_next_url()
 
     url, token = oidc.start_authentication(
@@ -307,7 +307,7 @@ def oidc_callback() -> FlaskResponseT:
         flask.flash(_('OIDC is disabled.'), 'error')
         return flask.redirect(flask.url_for('.index'))
 
-    if flask_login.current_user.is_authenticated:
+    if flask_login.current_user.is_authenticated and flask_login.login_fresh():
         return _redirect_to_next_url()
 
     try:

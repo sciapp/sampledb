@@ -11,10 +11,12 @@ import typing
 import flask
 import pydantic
 from furl import furl
+from simple_openid_connect.pkce import generate_pkce_pair
 from simple_openid_connect.client import OpenidClient
 from simple_openid_connect.data import (
-    IdToken, RpInitiatedLogoutRequest, TokenErrorResponse,
-    TokenSuccessResponse, UserinfoErrorResponse
+    IdToken, JwtAccessToken, RpInitiatedLogoutRequest, TokenErrorResponse,
+    TokenIntrospectionSuccessResponse, TokenSuccessResponse,
+    UserinfoErrorResponse
 )
 from simple_openid_connect.exceptions import UnsupportedByProviderError
 
@@ -72,6 +74,8 @@ class _Data(pydantic.BaseModel):
     redirect_uri: str
     state: str
     nonce_value: str | None
+    code_challenge_method: typing.Literal['S256'] | None
+    code_verifier: str | None
     started: float = pydantic.Field(default_factory=time.time)
 
 
@@ -100,14 +104,27 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
         nonce_value = secrets.token_urlsafe(32)
         nonce_hash = hashlib.sha256(nonce_value.encode()).hexdigest()
 
+    code_challenge_method: typing.Optional[typing.Literal['S256']]
+    if 'S256' in getattr(client.provider_config, 'code_challenge_methods_supported', []):
+        code_challenge_method = 'S256'
+        code_verifier, code_challenge = generate_pkce_pair()
+    else:
+        code_challenge_method = None
+        code_verifier = None
+        code_challenge = None
+
     url = client.authorization_code_flow.start_authentication(
         state=state,
         nonce=nonce_hash,
+        code_challenge_method=code_challenge_method,
+        code_challenge=code_challenge,
     )
     data = _Data(
         redirect_uri=redirect_uri,
         state=state,
         nonce_value=nonce_value,
+        code_challenge_method=code_challenge_method,
+        code_verifier=code_verifier,
     ).model_dump_json()
     return url, data
 
@@ -145,6 +162,7 @@ def handle_authentication(url: str, token: str) -> tuple[users.User, str, str]:
     token_response = client.authorization_code_flow.handle_authentication_result(
         url,
         state=data.state,
+        code_verifier=data.code_verifier,
     )
 
     if isinstance(token_response, TokenErrorResponse):
@@ -211,6 +229,69 @@ def logout(id_token_hint: str, post_logout_redirect_uri: str) -> str:
         ))
     except UnsupportedByProviderError:
         return post_logout_redirect_uri
+
+
+def validate_access_token(access_token: str) -> typing.Tuple[authentication.AuthenticationMethod, users.User]:
+    """
+    Validate the access token and return the corresponding authentication
+    method and user, or raise an error if it's not a valid token.
+
+    This does not create or update user accounts, aside from the OIDC roles.
+    Those will be updated and their omission will fail the validation.
+
+    Depending on the access token, a network request may be necessary to
+    validate the token. OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION can be used to
+    permit or deny making that request.
+
+    :param access_token: The Access Token.
+    :return: A tuple of the authentication method and the user.
+    """
+
+    response = _validate_access_token(access_token)
+
+    if not response.iss or not response.sub:
+        raise RuntimeError('Missing iss or sub.')
+
+    [authentication_method] = authentication.get_oidc_authentications_by_sub(
+        response.iss,
+        response.sub,
+    )
+
+    user = users.get_user(authentication_method.user_id)
+    # Do not handle errors, see note in function.
+    user = _handle_roles(user, response)
+
+    return authentication_method, user
+
+
+def _validate_access_token(access_token: str) -> typing.Union[JwtAccessToken, TokenIntrospectionSuccessResponse]:
+    client = _get_client()
+
+    # Try to parse the token as a JwtAccessToken. If it's a JWT, validate it
+    # and return the result or bail out if the validation fails.
+    # If it's not a JWT and the config permits token introspection, use the
+    # Introspection Endpoint and return a valid response or bail out.
+    try:
+        token = JwtAccessToken.parse_jwt(access_token, client.provider_keys)
+    except Exception:
+        pass
+    else:
+        token.validate_extern(
+            client.provider_config.issuer,
+            client.client_auth.client_id,
+        )
+        return token
+
+    if flask.current_app.config['OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION']:
+        introspection_response = client.introspect_token(
+            access_token,
+            token_type_hint='access_token',
+        )
+        if isinstance(introspection_response, TokenIntrospectionSuccessResponse):
+            return introspection_response
+        raise RuntimeError('Introspection Endpoint returned an error')
+
+    raise RuntimeError('Not a JWT and not allowed to use introspection')
 
 
 def _update_user(user: users.User, id_token: IdToken) -> users.User:
@@ -307,14 +388,17 @@ def _handle_new_user(client: OpenidClient, token_response: TokenSuccessResponse,
     return user
 
 
-def _handle_roles(user: users.User, id_token: IdToken) -> users.User:
+def _handle_roles(
+        user: users.User,
+        obj: typing.Union[IdToken, JwtAccessToken, TokenIntrospectionSuccessResponse],
+) -> users.User:
     if not flask.current_app.config['OIDC_ROLES']:
         return user
 
     # Note: Intentionally fail on any error. It's probably a config error and
     # we do not want anyone to login with incorrect permissions.
 
-    i = id_token.model_dump()
+    i = obj.model_dump()
     for path in flask.current_app.config['OIDC_ROLES'].split('.'):
         if isinstance(i, list):
             path = int(path)

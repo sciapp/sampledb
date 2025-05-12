@@ -140,6 +140,8 @@ def parse_configuration_values() -> None:
         'ENABLE_FEDERATED_LOGIN_CREATE_NEW_USER',
         'OIDC_ONLY',
         'OIDC_DISABLE_NONCE',
+        'OIDC_ACCESS_TOKEN_AS_API_KEY',
+        'OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -739,6 +741,8 @@ OIDC_DISABLE_NONCE = False
 OIDC_ROLES = None
 OIDC_ONLY = False
 OIDC_CREATE_ACCOUNT = 'auto_link'
+OIDC_ACCESS_TOKEN_AS_API_KEY = False
+OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION = False
 
 # email settings
 MAIL_SERVER = None
