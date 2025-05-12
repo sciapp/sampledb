@@ -1,10 +1,11 @@
 import dataclasses
+import enum
 import typing
 
 from . import errors
 from .utils import cache
-from .. import db, models
-from ..models import actions, topics, instruments, locations
+from .. import db, models, logic
+from ..models import actions, topics, instruments, locations, objects
 
 
 @dataclasses.dataclass(frozen=True)
@@ -256,3 +257,71 @@ def set_location_topics(
     if location is None:
         raise errors.LocationDoesNotExistError()
     _set_topics(location, topic_ids)
+
+
+class TopicSource(enum.IntEnum):
+    ACTION = 1
+    INSTRUMENT = 2
+    LOCATION = 3
+
+
+def get_topic_ids_by_object_ids(
+        object_ids: typing.Sequence[int],
+        user_id: typing.Optional[int] = None
+) -> typing.Dict[int, typing.Dict[int, typing.Set[TopicSource]]]:
+    action_topics_select = db.select(
+        objects.Objects.current_table.c.object_id, actions.topic_action_association_table.c.topic_id, TopicSource.ACTION, actions.topic_action_association_table.c.action_id
+    ).filter(
+        actions.topic_action_association_table.c.action_id == objects.Objects.current_table.c.action_id
+    )
+    if object_ids is not None:
+        action_topics_select = action_topics_select.filter(
+            objects.Objects.current_table.c.object_id.in_(object_ids)
+        )
+    instrument_topics_select = db.select(
+        objects.Objects.current_table.c.object_id, instruments.topic_instrument_association_table.c.topic_id, TopicSource.INSTRUMENT, instruments.topic_instrument_association_table.c.instrument_id
+    ).filter(
+        objects.Objects.current_table.c.action_id == actions.Action.id,
+        actions.Action.instrument_id == instruments.topic_instrument_association_table.c.instrument_id
+    )
+    if object_ids is not None:
+        instrument_topics_select = instrument_topics_select.filter(
+            objects.Objects.current_table.c.object_id.in_(object_ids)
+        )
+
+    location_topics_select = db.select(
+        locations.ObjectLocationAssignment.object_id, locations.topic_location_association_table.c.topic_id, TopicSource.LOCATION, locations.topic_location_association_table.c.location_id
+    ).filter(
+        locations.ObjectLocationAssignment.location_id == locations.topic_location_association_table.c.location_id
+    )
+    if object_ids is not None:
+        location_topics_select = location_topics_select.filter(
+            locations.ObjectLocationAssignment.object_id.in_(object_ids)
+        )
+    object_id_topic_id_tuples = db.session.execute(
+        action_topics_select.union(
+            instrument_topics_select,
+            location_topics_select
+        )
+    ).fetchall()
+    topic_ids_by_object_id: typing.Dict[int, typing.Dict[int, typing.Set[TopicSource]]] = {}
+    for object_id in object_ids:
+        topic_ids_by_object_id[object_id] = {}
+    action_ids = set()
+    location_ids = set()
+    for _, _, topic_source, topic_source_id in object_id_topic_id_tuples:
+        if topic_source == TopicSource.ACTION:
+            action_ids.add(topic_source_id)
+        elif topic_source == TopicSource.LOCATION:
+            location_ids.add(topic_source_id)
+    action_permissions = logic.action_permissions.get_user_permissions_for_multiple_actions(list(action_ids), user_id)
+    location_permissions = logic.location_permissions.get_user_permissions_for_multiple_locations(list(location_ids), user_id)
+    for object_id, topic_id, topic_source, topic_source_id in object_id_topic_id_tuples:
+        if topic_source == TopicSource.ACTION and models.Permissions.READ not in action_permissions.get(topic_source_id, models.Permissions.NONE):
+            continue
+        if topic_source == TopicSource.LOCATION and models.Permissions.READ not in location_permissions.get(topic_source_id, models.Permissions.NONE):
+            continue
+        if topic_id not in topic_ids_by_object_id[object_id]:
+            topic_ids_by_object_id[object_id][topic_id] = set()
+        topic_ids_by_object_id[object_id][topic_id].add(topic_source)
+    return topic_ids_by_object_id

@@ -1206,3 +1206,7 @@ class VersionedJSONSerializableObjectTables:
             if object_id not in result:
                 result[object_id] = None
         return result
+
+    @property
+    def current_table(self) -> db.Table:
+        return self._current_table

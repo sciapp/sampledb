@@ -194,6 +194,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert query_params['action_info'] == ['action']
     assert 'other_databases_info' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
     assert 'display_properties' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
@@ -212,6 +213,7 @@ def test_object_list_filters_options(flask_server, driver, user):
         "action_info": ["action"],
         "other_databases_info": False,
         "location_info": [],
+        "topic_info": [],
         "display_properties": [],
     }
 
@@ -221,6 +223,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert 'action_info' not in query_params
     assert 'display_properties' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
 
@@ -237,6 +240,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert query_params['action_info'] == ['action']
     assert 'display_properties' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
 
     driver.find_element(By.XPATH, '//button[contains(text(), "Options")]').click()
 
@@ -256,6 +260,7 @@ def test_object_list_filters_options(flask_server, driver, user):
     assert 'action_info' not in query_params
     assert 'other_databases_info' not in query_params
     assert 'location_info' not in query_params
+    assert 'topic_info' not in query_params
     assert 'display_properties' not in query_params
 
 

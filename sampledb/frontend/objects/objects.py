@@ -74,6 +74,7 @@ OBJECT_LIST_OPTION_PARAMETERS = (
     'action_info',
     'display_properties',
     'location_info',
+    'topic_info',
 )
 
 
@@ -689,7 +690,7 @@ def objects() -> FlaskResponseT:
             display_property_titles[property_name] = property_title
 
     if any(param in flask.request.args for param in OBJECT_LIST_OPTION_PARAMETERS):
-        creation_info, last_edit_info, action_info, other_databases_info, location_info = _parse_object_list_options(flask.request.args)
+        creation_info, last_edit_info, action_info, other_databases_info, location_info, topic_info = _parse_object_list_options(flask.request.args)
     else:
         creation_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('creation_info', ['user', 'date'])
         last_edit_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('last_edit_info', ['user', 'date'])
@@ -702,6 +703,7 @@ def objects() -> FlaskResponseT:
             location_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('location_info', [])
         else:
             location_info = ['location', 'responsible_user']
+        topic_info = user_settings['DEFAULT_OBJECT_LIST_OPTIONS'].get('topic_info', [])
     if not flask.current_app.config['FEDERATION_UUID']:
         other_databases_info = False
 
@@ -720,6 +722,24 @@ def objects() -> FlaskResponseT:
             else:
                 object['location_id'] = object_location_assignment.location_id
                 object['responsible_user_id'] = object_location_assignment.responsible_user_id
+
+    if topic_info:
+        object_ids = {
+            object['object_id']
+            for object in objects
+        }
+        topic_ids_by_object_ids = logic.topics.get_topic_ids_by_object_ids(list(object_ids), flask_login.current_user.id)
+        for object in objects:
+            if object['object_id'] in topic_ids_by_object_ids:
+                object['topic_ids'] = topic_ids_by_object_ids[object['object_id']]
+            else:
+                object['topic_ids'] = {}
+        topics_by_id = {
+            topic.id: topic
+            for topic in logic.topics.get_topics()
+        }
+    else:
+        topics_by_id = {}
 
     object_name_plural = _('Objects')
 
@@ -1040,6 +1060,8 @@ def objects() -> FlaskResponseT:
         action_info=action_info,
         other_databases_info=other_databases_info,
         location_info=location_info,
+        topic_info=topic_info,
+        topics_by_id=topics_by_id,
         object_name_plural=object_name_plural,
         filter_action_type_infos=filter_action_type_infos,
         filter_action_infos=filter_action_infos,
@@ -1399,6 +1421,7 @@ def _parse_object_list_options(
     typing.List[str],
     bool,
     typing.List[str],
+    typing.List[str],
 ]:
     creation_info_set = set()
     for creation_info_str in params.getlist('creation_info'):
@@ -1428,8 +1451,15 @@ def _parse_object_list_options(
             location_info_set.add(location_info_str)
     location_info = list(location_info_set)
 
+    topic_info_set = set()
+    for topic_info_str in params.getlist('topic_info'):
+        topic_info_str = topic_info_str.strip().lower()
+        if topic_info_str in {'topics'}:
+            topic_info_set.add(topic_info_str)
+    topic_info = list(topic_info_set)
+
     other_databases_info = 'other_databases_info' in params
-    return creation_info, last_edit_info, action_info, other_databases_info, location_info
+    return creation_info, last_edit_info, action_info, other_databases_info, location_info, topic_info
 
 
 def _parse_display_properties(
@@ -1540,6 +1570,7 @@ def save_object_list_defaults() -> FlaskResponseT:
             action_info,
             other_databases_info,
             location_info,
+            topic_info,
         ) = _parse_object_list_options(
             params=flask.request.form
         )
@@ -1555,6 +1586,7 @@ def save_object_list_defaults() -> FlaskResponseT:
                     'action_info': action_info,
                     'other_databases_info': other_databases_info,
                     'location_info': location_info,
+                    'topic_info': topic_info,
                     'display_properties': display_properties
                 }
             }

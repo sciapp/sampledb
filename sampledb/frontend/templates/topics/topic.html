@@ -19,6 +19,11 @@
         <dt>{{ _('Show in Navbar') }}</dt><dd>{% if topic.show_in_navbar %}<i class="fa fa-check" aria-hidden="true"></i> {{ _('Yes, this topic should be shown in the navbar') }}{% else %}<i class="fa fa-times" aria-hidden="true"></i> {{ _('No, this topic should not be shown in the navbar') }}{% endif %}</dd>
       </dl>
     {% endif %}
+      {% if not config['DISABLE_INSTRUMENTS'] %}
+        <a href="{{ url_for('.instruments', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Instruments') }}</a>
+      {% endif %}
+      <a href="{{ url_for('.actions', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Actions') }}</a>
+      <a href="{{ url_for('.locations', topic_ids=topic.id) }}" class="btn btn-default">{{ _('View Locations') }}</a>
     {% if current_user.is_admin and not current_user.is_readonly %}
       <a href="{{ url_for('.topic', topic_id=topic.id, mode='edit') }}" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="{{ _('Modify the settings for this topic.') }}">{{ _('Edit Topic') }}</a>
     {% endif %}

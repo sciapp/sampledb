@@ -389,6 +389,16 @@
               </label>
               </div>
             </div>
+            <div class="form-group">
+              <label class="control-label">
+                {{ _('Show Topics') }}
+              </label>
+              <div>
+                <label style="font-weight: normal">
+                  <input type="checkbox" {% if 'topics' in topic_info %}checked="checked"{% endif %} name="topic_info" value="topics" /> {{ _('Show Topics') }}
+                </label>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="submit" class="btn btn-default" name="save_default_options" formmethod="post">{{ _('Save') }}</button>
@@ -940,6 +950,9 @@
         {% if 'responsible_user' in location_info %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Responsible User') }}</th>
         {% endif %}
+        {% if 'topics' in topic_info %}
+          <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ _('Topics') }}</th>
+        {% endif %}
         {% for property_name in display_properties %}
           <th scope="col" {% if creation_info or last_edit_info %}rowspan="2"{% endif %}>{{ display_property_titles.get(property_name, property_name | e) | get_translated_text | safe }}{% if property_name not in ('hazards', 'tags') %} {% if sorting_enabled %}<span class="icons-sorting"><a href="{{ build_modified_url(sortby=property_name, order='asc') }}"><i class="glyphicon glyphicon glyphicon-triangle-top {% if sorting_property == property_name and sorting_order == 'asc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a><a href="{{ build_modified_url(sortby=property_name, order='desc') }}"><i class="glyphicon glyphicon glyphicon-triangle-bottom {% if sorting_property == property_name and sorting_order == 'desc' %}current_sorting_property{% endif %}" aria-hidden="true"></i></a></span>{% endif %}{% endif %}</th>
         {% endfor %}
@@ -1080,6 +1093,30 @@
               &mdash;
             {% else %}
               {{ user_reference(object.responsible_user_id) }}
+            {% endif %}
+          </td>
+        {% endif %}
+        {% if 'topics' in topic_info %}
+          <td>
+            {% if object.topic_ids %}
+              {% for topic_id in object.topic_ids %}
+                {% set topic = topics_by_id.get(topic_id) %}
+                {% if topic is not none %}
+                  <a class="badge badge-secondary" href="{{ url_for('.topic', topic_id=topic.id) }}"
+                    {% if object.topic_ids[topic_id] %}
+                      data-toggle="tooltip" data-placement="top"
+                      title="{{ _('via') }} {% for topic_source in object.topic_ids[topic_id] -%}
+                        {%- if not loop.first -%}
+                          {% if loop.last %} {{ _('and') }} {% else %}, {% endif -%}
+                        {%- endif -%}
+                         {{ {1: _('Action'), 2: _('Instrument'), 3: _('Locations')}.get(topic_source | int, _('a different source')) }}
+                       {%- endfor %}"
+                    {% endif %}
+                  >{{ topic.name | get_translated_text }}</a>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              &mdash;
             {% endif %}
           </td>
         {% endif %}
