@@ -645,7 +645,7 @@ def login_via_oidc_access_token(access_token: str) -> typing.Optional[logic.user
         return None
     try:
         authentication_method, user = logic.oidc.validate_access_token(access_token)
-    except:
+    except Exception:
         return None
     api_log.create_log_entry(authentication_method.id, HTTPMethod.from_name(flask.request.method), flask.request.path)
     return user

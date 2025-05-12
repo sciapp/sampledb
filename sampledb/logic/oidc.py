@@ -104,6 +104,7 @@ def start_authentication(redirect_uri: str) -> typing.Tuple[str, str]:
         nonce_value = secrets.token_urlsafe(32)
         nonce_hash = hashlib.sha256(nonce_value.encode()).hexdigest()
 
+    code_challenge_method: typing.Optional[typing.Literal['S256']]
     if 'S256' in getattr(client.provider_config, 'code_challenge_methods_supported', []):
         code_challenge_method = 'S256'
         code_verifier, code_challenge = generate_pkce_pair()
