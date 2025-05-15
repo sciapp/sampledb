@@ -11,6 +11,7 @@ Currently in development.
 - Added setting for disabling object assignments for individual locations
 - Added setting for default notification types
 - Added info pages
+- Added query placeholder
 - Refactored related objects tree to improve performance
 - Improved support of array index placeholders and object references in search queries
 - Allow searching for multiple conditions inside a subtree of an object's properties

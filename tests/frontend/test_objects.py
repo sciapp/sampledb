@@ -1234,6 +1234,74 @@ def test_new_object_javascript_fields_array(flask_server, driver, user):
     assert object.data['choices'][0]['text'] == 'D'
 
 
+@pytest.mark.parametrize(
+    [
+        'property_name', 'property_schema', 'default_property_data', 'expected_property_data', 'query_parameter'
+    ],
+    [
+        ('text', {"title": "Test Property", "type": "text"}, None, {"_type": "text", "text": {"en": "Example Text"}}, "properties.text=Example Text"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": "1"}, None, {"_type": "quantity", "magnitude": 123.0, "magnitude_in_base_units": 123.0, "units": "1", "dimensionality": "dimensionless"}, "properties.quantity=123"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": ["1", "percent"]}, None, {"_type": "quantity", "magnitude": 123.0, "magnitude_in_base_units": 1.23, "units": "percent", "dimensionality": "dimensionless"}, "properties.quantity=123percent"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": "kg"}, None, {"_type": "quantity", "magnitude": 42.0, "magnitude_in_base_units": 42.0, "units": "kg", "dimensionality": "[mass]"}, "properties.quantity=42kg"),
+        ('quantity', {"title": "Test Property", "type": "quantity", "units": ["kg", "g"]}, None, {"_type": "quantity", "magnitude": 42.0, "magnitude_in_base_units": 0.042, "units": "g", "dimensionality": "[mass]"}, "properties.quantity=42g"),
+        ('boolean', {"title": "Test Property", "type": "bool"}, {"_type": "bool", "value": False}, {"_type": "bool", "value": True}, "properties.boolean=true"),
+        ('boolean', {"title": "Test Property", "type": "bool"}, {"_type": "bool", "value": False}, {"_type": "bool", "value": False}, "properties.boolean=false"),
+        ('datetime', {"title": "Test Property", "type": "datetime"}, None, {"_type": "datetime", "utc_datetime": "2025-01-02 03:04:05"}, "properties.datetime=2025-01-02 03:04:05"),
+        ('tags', {"title": "Test Property", "type": "tags"}, {"_type": "tags", "tags": []}, {"_type": "tags", "tags": ["example", "tags"]}, "properties.tags=example,tags"),
+        ('user', {"title": "Test Property", "type": "user"}, None, {"_type": "user", "user_id": 'USER_ID'}, "properties.user=USER_ID"),
+        ('object', {"title": "Test Property", "type": "object_reference"}, None, {"_type": "object_reference", "object_id": 'OBJECT_ID'}, "properties.object=OBJECT_ID"),
+    ]
+)
+def test_new_object_query_parameter_placeholders(flask_server, driver, user, property_name, property_schema, default_property_data, expected_property_data, query_parameter):
+    schema = {
+        "title": "Object Information",
+        "type": "object",
+        "properties": {
+            "name": {
+                "title": "Name",
+                "type": "text",
+                "default": "Default Name"
+            },
+            property_name: property_schema
+        },
+        "required": ["name"]
+    }
+    action = sampledb.logic.actions.create_action(
+        action_type_id=sampledb.models.ActionType.SAMPLE_CREATION,
+        schema=schema
+    )
+    sampledb.logic.action_permissions.set_action_permissions_for_all_users(action.id, sampledb.models.Permissions.READ)
+    driver.get(f"{flask_server.base_url}users/{user.id}/autologin")
+
+    driver.get(f"{flask_server.base_url}objects/new?action_id={action.id}")
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+    assert driver.current_url.startswith(f'{flask_server.base_url}objects/')
+    object_id = int(driver.current_url.split(f'{flask_server.base_url}objects/', 1)[1])
+    data = sampledb.logic.objects.get_object(object_id).data
+    if property_schema['type'] == "datetime":
+        assert abs((datetime.datetime.strptime(data[property_name]['utc_datetime'], '%Y-%m-%d %H:%M:%S') - datetime.datetime.now()).total_seconds()) < 10
+    elif default_property_data is None:
+        assert property_name not in data
+    else:
+        assert data[property_name] == default_property_data
+
+    if property_schema['type'] == 'user':
+        expected_property_data['user_id'] = user.id
+        query_parameter = query_parameter.replace('USER_ID', str(user.id))
+    if property_schema['type'] == 'object_reference':
+        expected_property_data['object_id'] = object_id
+        query_parameter = query_parameter.replace('OBJECT_ID', str(object_id))
+
+    driver.get(f"{flask_server.base_url}objects/new?action_id={action.id}&{query_parameter}")
+    with wait_for_page_load(driver):
+        driver.find_element(By.CSS_SELECTOR, '[name="action_submit"]').click()
+    assert driver.current_url.startswith(f'{flask_server.base_url}objects/')
+    object_id = int(driver.current_url.split(f'{flask_server.base_url}objects/', 1)[1])
+    data = sampledb.logic.objects.get_object(object_id).data
+    assert data[property_name] == expected_property_data
+
+
 def test_restore_object_version(flask_server, user):
     schema = {
         'title': 'Example Object',

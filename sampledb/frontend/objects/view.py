@@ -5,6 +5,7 @@
 import csv
 import io
 import json
+import re
 import typing
 
 import math
@@ -1235,6 +1236,31 @@ def new_object() -> FlaskResponseT:
                         'object_id': passed_object_ids[0]
                     }
 
+    url_properties: dict[typing.Sequence[str | int], typing.Any] = {}
+    prefix = 'properties.'
+    for k, [*_vs, v] in flask.request.args.lists():
+        if not k.startswith(prefix):
+            continue
+        path = parse_property_path(k.removeprefix(prefix))
+        try:
+            schema = iter_schema_path(action.schema, path)
+        except Exception:
+            flask.flash(_('The path "%(path)s" is not valid for the schema of this action.', path=k), 'error')
+            continue
+        try:
+            url_properties[path] = parse_default_for_subschema(
+                schema,
+                v,
+            )
+        except errors.MismatchedUnitError:
+            flask.flash(_('The unit of "%(path)s=%(value)s" does not match the unit(s) of the schema: %(units)s', path=k, value=v, units=schema["units"]), 'error')
+        except Exception:
+            flask.flash(_('The value of "%(path)s=%(value)s" is not valid for this schema: %(schema)s', path=k, value=v, schema=schema), 'error')
+    if url_properties:
+        if not placeholder_data:
+            placeholder_data = {}
+        placeholder_data.update(url_properties)
+
     if previous_object is not None:
         should_upgrade_schema = flask.request.args.get('mode', '') == 'upgrade'
         if action.schema != previous_object.schema and not should_upgrade_schema and flask.current_app.config['DISABLE_OUTDATED_USE_AS_TEMPLATE']:
@@ -1253,6 +1279,72 @@ def new_object() -> FlaskResponseT:
         passed_object_ids=passed_object_ids,
         show_selecting_modal=(not fields_selected)
     )
+
+
+def parse_property_path(path: str) -> tuple[int | str, ...]:
+    def f(v: str) -> str | int:
+        try:
+            return int(v)
+        except Exception:
+            return v
+    return tuple(f(v) for v in path.split('.'))
+
+
+def iter_schema_path(schema: dict[str, typing.Any], path: tuple[int | str, ...]) -> dict[str, typing.Any]:
+    s = schema
+    for k in path:
+        while s.get('type', None) in ('object', 'array'):
+            if s['type'] == 'object':
+                s = s['properties']
+            else:
+                s = s['items']
+        if isinstance(k, int):
+            continue
+        s = s[k]
+    return s
+
+
+def parse_default_for_subschema(schema: dict[str, typing.Any], value: str) -> dict[str, typing.Any]:
+    def quantity() -> dict[str, typing.Any]:
+        m = re.match(r'^(\d+\.?\d*)(.*)', value)
+        if not m:
+            raise ValueError()
+        magnitude = m.group(1)
+        unit = m.group(2) or '1'
+        if unit not in schema['units']:
+            raise errors.MismatchedUnitError()
+        return {
+            'magnitude': float(magnitude),
+            'units': unit,
+        }
+
+    def simple(
+            k: str,
+            f: typing.Callable[[str], typing.Any] | None = None,
+    ) -> typing.Callable[[], dict[str, typing.Any]]:
+        return lambda: {
+            k: f(value) if f else value
+        }
+
+    functions = {
+        'quantity': quantity,
+        'text': simple('text'),
+        'bool': simple('value', lambda v: v == 'true'),
+        'datetime': simple('utc_datetime'),
+        'tags': simple('tags', lambda v: v.split(',')),
+        'user': simple('user_id', int),
+        'object_reference': simple('object_id', int),
+        'sample': simple('object_id', int),
+        'measurement': simple('object_id', int),
+    }
+
+    instance = {
+        '_type': schema['type'],
+    } | functions[schema['type']]()
+
+    logic.schemas.validate(instance, schema)
+
+    return instance
 
 
 @frontend.route('/objects/<int:object_id>/timeseries_data/<timeseries_id>')

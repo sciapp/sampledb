@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-05-08 13:14+0200\n"
+"POT-Creation-Date: 2025-05-14 18:13+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -1607,6 +1607,26 @@ msgstr "Das ausgewählte Objekt kann nicht in dieser Aktion verwendet werden."
 
 msgid "The selected objects cannot be used in this action."
 msgstr "Die ausgewählten Objekte können nicht in dieser Aktion verwendet werden."
+
+#, python-format
+msgid "The path \"%(path)s\" is not valid for the schema of this action."
+msgstr "Der Pfad \"%(path)s\" ist für das Schema dieser Aktion nicht gültig."
+
+#, python-format
+msgid ""
+"The unit of \"%(path)s=%(value)s\" does not match the unit(s) of the "
+"schema: %(units)s"
+msgstr ""
+"Die Einheit von \"%(path)s=%(value)s\" stimmt nicht mit den Einheiten des"
+" Schemas überein: %(units)s"
+
+#, python-format
+msgid ""
+"The value of \"%(path)s=%(value)s\" is not valid for this schema: "
+"%(schema)s"
+msgstr ""
+"Der Wert von \"%(path)s=%(value)s\" ist nicht gültig für dieses Schema: "
+"%(schema)s"
 
 msgid "API Log"
 msgstr "API Log"
