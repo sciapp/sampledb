@@ -616,6 +616,15 @@ def _handle_other_settings_forms(
             full_width_objects_table = None
         modified_settings['FULL_WIDTH_OBJECTS_TABLE'] = full_width_objects_table
 
+        workflow_view_modals_text = flask.request.form.get('input-workflow-view-modals', 'default')
+        if workflow_view_modals_text == 'yes':
+            workflow_view_modals = True
+        elif workflow_view_modals_text == 'no':
+            workflow_view_modals = False
+        else:
+            workflow_view_modals = None
+        modified_settings['WORKFLOW_VIEW_MODALS'] = workflow_view_modals
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions

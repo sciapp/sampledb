@@ -517,6 +517,29 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-workflow-view-modals-yes">
+        {{ _('Show workflow views in popup windows') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-workflow-view-modals" id="input-workflow-view-modals-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_MODALS"] is true %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Show workflow views in popup windows.') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-modals" id="input-workflow-view-modals-no" value="no" {% if user_settings["WORKFLOW_VIEW_MODALS"] is false %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Show workflow views directly on the object page.') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-modals" id="input-workflow-view-modals-default" value="default" {% if user_settings["WORKFLOW_VIEW_MODALS"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
       <label class="col-md-4 control-label" for="select-locale">
         {{ _('Language') }}
       </label>

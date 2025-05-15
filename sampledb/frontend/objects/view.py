@@ -199,6 +199,7 @@ def object(object_id: int) -> FlaskResponseT:
     template_kwargs.update({
         "show_object_type_and_id_on_object_page_text": user_settings["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
         "show_object_title": user_settings["SHOW_OBJECT_TITLE"],
+        "workflow_view_modals": flask.current_app.config['WORKFLOW_VIEW_MODALS'] if user_settings['WORKFLOW_VIEW_MODALS'] is None else user_settings['WORKFLOW_VIEW_MODALS'],
     })
 
     # QR code
@@ -434,6 +435,7 @@ def object(object_id: int) -> FlaskResponseT:
     workflows = get_workflow_references(object, flask_login.current_user.id, actions_by_id)
     template_kwargs.update({
         "workflows": workflows,
+        "only_empty_workflows": all(len(workflow) == 0 for workflow in workflows),
     })
 
     # related objects tree
