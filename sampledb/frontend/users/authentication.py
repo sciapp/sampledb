@@ -97,7 +97,10 @@ def _redirect_to_next_url(
 
 def _sign_in_impl(is_for_refresh: bool) -> FlaskResponseT:
     if oidc.is_oidc_only_auth_method():
-        return flask.redirect(flask.url_for('frontend.oidc_start'))
+        return flask.redirect(flask.url_for(
+            'frontend.oidc_start',
+            next=flask.request.args.get('next', '/'),
+        ))
 
     form = SigninForm()
     passkey_form = WebAuthnLoginForm()
