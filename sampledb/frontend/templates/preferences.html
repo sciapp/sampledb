@@ -540,6 +540,29 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="col-md-4 control-label" for="input-workflow-view-collapsed-collapsible">
+        {{ _('Collapse objects in workflow views') }}
+      </label>
+      <div class="radio col-md-8">
+        <label>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-expandable" value="yes" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          {{ _('Yes &mdash; Collapse objects in workflow views') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-collapsible" value="no" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          {{ _('No &mdash; Expand objects in workflow views') }}
+        </label>
+      </div>
+      <div class="radio col-md-8 col-md-offset-4">
+        <label>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-default" value="default" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] is none %}checked="checked"{% endif %}>
+          {{ _('Default &mdash; Use the site-wide default setting') }}
+        </label>
+      </div>
+    </div>
+    <div class="form-group">
       <label class="col-md-4 control-label" for="select-locale">
         {{ _('Language') }}
       </label>
@@ -621,7 +644,7 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="col-md-4 control-label" for="input-show-hidden-users-as-admin">
+      <label class="col-md-4 control-label" for="input-show-hidden-users-as-admin-yes">
         {{ _('Show hidden users in user lists') }}
       </label>
       <div class="radio col-md-4">

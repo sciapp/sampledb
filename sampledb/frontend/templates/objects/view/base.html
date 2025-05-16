@@ -316,6 +316,10 @@
         {% else %}
           <h2 id="{{ workflow_id }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</h2>
         {% endif %}
+        <div>
+          <button class="btn btn-default btn-xs expand-all-button" data-collapse-group-id="{{ workflow_id }}"><i class="fa fa-plus-square-o"></i> {{ _('Expand All') }}</button>
+          <button class="btn btn-default btn-xs collapse-all-button" data-collapse-group-id="{{ workflow_id }}"><i class="fa fa-minus-square-o"></i> {{ _('Collapse All') }}</button>
+        </div>
         {# counter for plotly_chart_plots #}
         {% set plot_counter = namespace(value=0) %}
         {% set object_reference_counter = namespace(value=0) %}
@@ -449,9 +453,12 @@
               {% if elem.object %}
                 {{ import_information_symbol(elem.object) }}
               {% endif %}
+              {% if not elem.duplicate %}
+                <i class="fa fa-w {% if not workflow_view_collapsed %}fa-minus-square-o{% else %}fa-plus-square-o{% endif %} collapse-expand-button" data-id-prefix="{{ workflow_id }}-{{ loop.index }}" data-collapse-group-id="{{ workflow_id }}" style="font-size:0.8em;" data-toggle="tooltip" data-placement="top" title="{% if not workflow_view_collapsed %}{{ _("Collapse") }}{% else %}{{ _("Expand") }}{% endif %}" data-collapse-text="{{ _("Collapse") }}" data-expand-text="{{ _("Expand") }}"></i>
+              {% endif %}
             </h4>
             <div
-              {% if (not elem.is_referncing and elem.is_referenced and not elem.is_current_referenced)
+              {% if (not elem.is_referencing and elem.is_referenced and not elem.is_current_referenced)
                   or (not elem.is_referenced and elem.is_referencing and not elem.is_current_referencing)
                   or (elem.is_referenced and elem.is_referencing and not elem.is_current_referencing and not elem.is_current_referenced)
               %}
@@ -482,6 +489,7 @@
                   </div>
                 </div>
               {% endif %}
+              <div style="border-left: 1px solid transparent; margin-left: 9px; padding-left: 5px; {% if workflow_view_collapsed %}display:none;{% endif %}" class="collapsible-object-container" data-id-prefix="{{ workflow_id }}-{{ loop.index }}" data-collapse-group-id="{{ workflow_id }}">
               {% if elem.object is none %}
                 <div class="row" style="padding-right:0.75em">
                   <label class="col-md-3" style="text-align: right">{{ _('Data') }}<i class="fa fa-search" style="visibility:hidden" aria-hidden="true"></i></label>
@@ -509,6 +517,7 @@
                 {% set show_indent_border = False %}
                 {% include "objects/view/any.html" %}
               {% endif %}
+              </div>
             {% endif %}
             </div>
           </div>

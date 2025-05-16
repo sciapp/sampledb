@@ -373,5 +373,7 @@ Miscellaneous
      - A JSON object mapping notification types (``"OTHER"``, ``"ASSIGNED_AS_RESPONSIBLE_USER"``, ``"INVITED_TO_GROUP"``, ``"INVITED_TO_PROJECT"``, ``"ANNOUNCEMENT"``, ``"RECEIVED_OBJECT_PERMISSIONS_REQUEST"``, ``"INSTRUMENT_LOG_ENTRY_CREATED"``, ``"REFERENCED_BY_OBJECT_METADATA"``, ``"INSTRUMENT_LOG_ENTRY_EDITED"``, ``"RESPONSIBILITY_ASSIGNMENT_DECLINED"``, ``"REMOTE_OBJECT_IMPORT_FAILED"``, ``"REMOTE_OBJECT_IMPORT_NOTES"``, ``"AUTOMATIC_USER_FEDERATION"``, or ``"DEFAULT"`` as a default) to the desired default notification mode (``"EMAIL"``, ``"WEBAPP"`` or ``"IGNORE"``), e.g. ``{"ANNOUNCEMENT": "EMAIL", "DEFAULT": "WEBAPP"}`` to set only announcement notifications to email while setting every other notification type to web app.
    * - SAMPLEDB_WORKFLOW_VIEW_MODALS
      - Use modals to display workflow views by default if set to True, else the workflow views are displayed directly on the objects page (default: False)
+   * - SAMPLEDB_WORKFLOW_VIEW_COLLAPSED
+     - Sets if objects in a workflow view should be collapsed or expanded. Set to True to collapse objects, False to expand object contents (default: False).
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

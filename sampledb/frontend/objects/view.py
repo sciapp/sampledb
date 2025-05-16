@@ -200,6 +200,7 @@ def object(object_id: int) -> FlaskResponseT:
         "show_object_type_and_id_on_object_page_text": user_settings["SHOW_OBJECT_TYPE_AND_ID_ON_OBJECT_PAGE"],
         "show_object_title": user_settings["SHOW_OBJECT_TITLE"],
         "workflow_view_modals": flask.current_app.config['WORKFLOW_VIEW_MODALS'] if user_settings['WORKFLOW_VIEW_MODALS'] is None else user_settings['WORKFLOW_VIEW_MODALS'],
+        "workflow_view_collapsed": flask.current_app.config['WORKFLOW_VIEW_COLLAPSED'] if user_settings['WORKFLOW_VIEW_COLLAPSED'] is None else user_settings['WORKFLOW_VIEW_COLLAPSED'],
     })
 
     # QR code

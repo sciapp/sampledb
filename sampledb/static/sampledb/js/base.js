@@ -263,6 +263,42 @@ $(function () {
     });
   });
 
+  $('.collapse-all-button').each(function () {
+    $(this).on('click', function () {
+      const collapseExpandButton = $(this);
+      const groupId = collapseExpandButton.data('collapse-group-id');
+      const collapsibleDivs = $(`.collapsible-object-container[data-collapse-group-id=${groupId}]`);
+      collapsibleDivs.each(function () {
+        $(this).toggle(false);
+      });
+      const collapseExpandButtons = $(`.collapse-expand-button[data-collapse-group-id=${groupId}]`);
+      collapseExpandButtons.each(function () {
+        const collapseTooltipText = $(this).data('expandText');
+        $(this).toggleClass('fa-minus-square-o', false);
+        $(this).toggleClass('fa-plus-square-o', true);
+        $(this).attr('data-original-title', collapseTooltipText);
+      });
+    });
+  });
+
+  $('.expand-all-button').each(function () {
+    $(this).on('click', function () {
+      const collapseExpandButton = $(this);
+      const groupId = collapseExpandButton.data('collapse-group-id');
+      const collapsibleDivs = $(`.collapsible-object-container[data-collapse-group-id=${groupId}]`);
+      collapsibleDivs.each(function () {
+        $(this).toggle(true);
+      });
+      const collapseExpandButtons = $(`.collapse-expand-button[data-collapse-group-id=${groupId}]`);
+      collapseExpandButtons.each(function () {
+        const collapseTooltipText = $(this).data('collapseText');
+        $(this).attr('data-original-title', collapseTooltipText);
+        $(this).toggleClass('fa-minus-square-o', true);
+        $(this).toggleClass('fa-plus-square-o', false);
+      });
+    });
+  });
+
   const infoPageModal = $('#infoPageModal');
   const infoPages = infoPageModal.find('.modal-content');
   infoPages.hide();

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-05-16 16:42+0200\n"
+"POT-Creation-Date: 2025-05-20 12:59+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2631,6 +2631,15 @@ msgstr "Ja &mdash; Zeige Workflow Ansichten in Dialogfenstern."
 
 msgid "No &mdash; Show workflow views directly on the object page."
 msgstr "Nein &mdash; Zeige Workflow Ansichten direkt auf der Objektseite."
+
+msgid "Collapse objects in workflow views"
+msgstr "Objekte in Workflow Ansichten einklappen"
+
+msgid "Yes &mdash; Collapse objects in workflow views"
+msgstr "Ja &mdash; Objekte in Workflow Ansichten einklappen"
+
+msgid "No &mdash; Expand objects in workflow views"
+msgstr "Nein &mdash; Objekte in Workflow Ansichten ausklappen"
 
 msgid "Language"
 msgstr "Sprache"
