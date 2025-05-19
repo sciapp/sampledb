@@ -19,7 +19,7 @@
 {% set template_order_index = template_order_index + 1 if template_order_index else 1 %}
 {% set col_order_index = col_order_index + 1 if col_order_index else 1 %}
 {% set parent_prefix = id_prefix %}
-<div style="padding-left:2.5em;">
+<div {% if get_style_variant(schema.style, template_mode) == "full_width_table" %}class="full-width-table-wrapper"{% else %}style="padding-left:2.5em;"{% endif %}>
   <input type="hidden" name="{{ id_prefix }}_hidden" value="array" />
   {% if schema['items']['type'] == 'object' %}
     {% set item_property_names = get_property_names_in_order(schema["items"], previous_schema["items"]) %}
