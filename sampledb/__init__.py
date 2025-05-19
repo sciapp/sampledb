@@ -193,6 +193,9 @@ def create_app(include_dashboard: bool = True) -> flask.Flask:
         if sampledb.logic.oidc.is_oidc_configured():
             sampledb.logic.oidc.init_app(app)
 
+            if sampledb.logic.oidc.is_oidc_only_auth_method():
+                login_manager.login_message = ''
+
     def custom_send_static_file(filename: str) -> sampledb.utils.FlaskResponseT:
         response = flask.make_response(
             flask.send_from_directory(app.static_folder, filename)  # type: ignore
