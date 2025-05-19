@@ -26,6 +26,7 @@ email_validator==2.2.0
 fido2==1.2.0
 Flask==3.1.0
 flask-babel==4.0.0
+Flask-Cors==6.0.0
 Flask-HTTPAuth==4.8.0
 Flask-Login==0.6.3
 Flask-Mail==0.10.0
