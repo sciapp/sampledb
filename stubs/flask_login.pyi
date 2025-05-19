@@ -71,6 +71,7 @@ class LoginManager:
             self.anonymous_user: typing.Type[typing.Any] = AnonymousUserMixin
             self.login_view: typing.Optional[str] = None
             self.session_protection: str = "basic"
+            self.login_message: str = ''
 
     def init_app(
             self,
