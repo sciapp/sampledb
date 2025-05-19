@@ -4,6 +4,7 @@ RESTful API for SampleDB
 """
 
 from flask import Blueprint
+from flask_cors import CORS
 from .objects import Object, Objects, ObjectVersion, ObjectVersions, RelatedObjects
 from .actions import Action, Actions
 from .action_types import ActionType, ActionTypes
@@ -20,6 +21,7 @@ from .groups import Group, Groups
 from .projects import Project, Projects
 
 api = Blueprint('api', __name__)
+CORS(api)
 api.add_url_rule('/api/v1/objects/', endpoint='objects', view_func=Objects.as_view('objects'))
 api.add_url_rule('/api/v1/objects/<int:object_id>', endpoint='object', view_func=Object.as_view('object'))
 api.add_url_rule('/api/v1/objects/<int:object_id>/versions/', endpoint='object_versions', view_func=ObjectVersions.as_view('object_versions'))

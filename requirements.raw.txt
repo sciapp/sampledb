@@ -6,6 +6,7 @@ email-validator
 fido2
 Flask
 Flask-Babel
+Flask-Cors
 Flask-HTTPAuth
 Flask-Login
 Flask-Mail
