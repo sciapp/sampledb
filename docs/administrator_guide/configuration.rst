@@ -371,5 +371,7 @@ Miscellaneous
      - The minimum number of choices a text field needs to have for search to be enabled (default: 10). Set to 0 to enable search for all choice text fields or to -1 to disable search for them.
    * - SAMPLEDB_DEFAULT_NOTIFICATION_MODES
      - A JSON object mapping notification types (``"OTHER"``, ``"ASSIGNED_AS_RESPONSIBLE_USER"``, ``"INVITED_TO_GROUP"``, ``"INVITED_TO_PROJECT"``, ``"ANNOUNCEMENT"``, ``"RECEIVED_OBJECT_PERMISSIONS_REQUEST"``, ``"INSTRUMENT_LOG_ENTRY_CREATED"``, ``"REFERENCED_BY_OBJECT_METADATA"``, ``"INSTRUMENT_LOG_ENTRY_EDITED"``, ``"RESPONSIBILITY_ASSIGNMENT_DECLINED"``, ``"REMOTE_OBJECT_IMPORT_FAILED"``, ``"REMOTE_OBJECT_IMPORT_NOTES"``, ``"AUTOMATIC_USER_FEDERATION"``, or ``"DEFAULT"`` as a default) to the desired default notification mode (``"EMAIL"``, ``"WEBAPP"`` or ``"IGNORE"``), e.g. ``{"ANNOUNCEMENT": "EMAIL", "DEFAULT": "WEBAPP"}`` to set only announcement notifications to email while setting every other notification type to web app.
+   * - SAMPLEDB_WORKFLOW_VIEW_MODALS
+     - Use modals to display workflow views by default if set to True, else the workflow views are displayed directly on the objects page (default: False)
 
 There are other configuration values related to packages used by SampleDB. For more information on those, see the documentation of the corresponding packages.

@@ -20,14 +20,20 @@
   <nav>
     <ul>
       <li><a href="#information">{{ _('Information') }}</a></li>
-      {% if schema and 'workflow_view' in schema and workflows | length > 0 and workflows[0] | length > 0 %}
-        <li><a href="#workflow_1">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</a></li>
-      {% elif schema and 'workflow_views' in schema %}
-        {% for workflow_view in schema['workflow_views'] %}
-          {% if workflows | length > loop.index0 and workflows[loop.index0] | length  %}
-            <li><a href="#workflow_{{ loop.index }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</a></li>
-          {% endif %}
-        {% endfor %}
+      {% if workflow_view_modals %}
+        {% if not only_empty_workflows %}
+          <li><a href="#workflow_views">_('Workflow Views')</a></li>
+        {% endif %}
+      {% else %}
+        {% if schema and 'workflow_view' in schema and workflows | length > 0 and workflows[0] | length > 0 %}
+          <li><a href="#workflow_1">{% if 'title' in schema['workflow_view'] %}{{ schema['workflow_view']['title'] | get_translated_text }}{% else %}{{ _('Workflow') }}{% endif %}</a></li>
+        {% elif schema and 'workflow_views' in schema %}
+          {% for workflow_view in schema['workflow_views'] %}
+            {% if workflows | length > loop.index0 and workflows[loop.index0] | length  %}
+              <li><a href="#workflow_{{ loop.index }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</a></li>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
       {% endif %}
       <li><a href="#files">{{ _('Files') }}</a></li>
       <li><a href="#locations">{{ _('Locations') }}</a></li>
@@ -279,11 +285,37 @@
     {% if 'workflow_view' in schema %}
       {% do workflow_views.append(schema.workflow_view) %}
     {% endif %}
+    {% if workflow_view_modals %}
+      {% if not only_empty_workflows %}
+        <h2>{{ _('Workflow Views') }}</h2>
+        <div class="object-button-bar">
+        {% for workflow_view in workflow_views %}
+          {% if workflows | length > loop.index0 and workflows[loop.index0] | length > 0 %}
+            {% set workflow_id = "workflow_" ~ loop.index %}
+            <div class="form-group">
+              <button type="button" class="btn btn-primary button-workflow-view-modal" data-workflow_view="{{ workflow_id }}" id="button-show-workflow-view-modal-{{ workflow_id }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</button>
+            </div>
+          {% endif %}
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
     {% for workflow_view in workflow_views %}
       {% if workflows | length > loop.index0 and workflows[loop.index0] | length > 0 %}
-        {% set workflow = workflows[loop.index0] %}
         {% set workflow_id = "workflow_" ~ loop.index %}
-        <h2 id="{{ workflow_id }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</h2>
+        {% set workflow = workflows[loop.index0] %}
+        {% if workflow_view_modals %}
+          <div style="margin: 10px;" class="modal fade modal-workflow-view" id="workflowModal-{{ workflow_id }}" tabindex="-1" role="dialog" aria-labelledby="workflowModalLabel-{{ workflow_id }}">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</h4>
+                </div>
+                <div class="modal-body">
+        {% else %}
+          <h2 id="{{ workflow_id }}">{% if 'title' in workflow_view %}{{ workflow_view.title | get_translated_text }}{% else %}{{ _('Workflow') }} #{{ loop.index }}{% endif %}</h2>
+        {% endif %}
         {# counter for plotly_chart_plots #}
         {% set plot_counter = namespace(value=0) %}
         {% set object_reference_counter = namespace(value=0) %}
@@ -481,6 +513,12 @@
             </div>
           </div>
         {% endfor %}
+        {% if workflow_view_modals %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
       {% endif %}
     {% endfor %}
   {% endif %}

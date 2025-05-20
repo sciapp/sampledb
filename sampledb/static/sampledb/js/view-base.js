@@ -235,6 +235,11 @@ $(function () {
     $('#button-show-object-label-modal').click(function () {
       $('#objectLabelModal').modal('show');
     });
+
+    $('.button-workflow-view-modal').on('click', function () {
+      const workflowView = $(this).attr('data-workflow_view');
+      $('#workflowModal-' + workflowView).modal('show');
+    });
     if (window.getTemplateValue('files_enabled')) {
       const changeHandler = function () {
         const files = $('#input-file-upload').get(0).files;

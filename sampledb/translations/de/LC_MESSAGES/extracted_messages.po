@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  1\n"
 "Report-Msgid-Bugs-To: f.rhiem@fz-juelich.de\n"
-"POT-Creation-Date: 2025-05-14 18:13+0200\n"
+"POT-Creation-Date: 2025-05-16 16:42+0200\n"
 "PO-Revision-Date: 2022-04-18 17:38+0200\n"
 "Last-Translator: Florian Rhiem <f.rhiem@fz-juelich.de>\n"
 "Language: de\n"
@@ -2622,6 +2622,15 @@ msgstr "Ja &mdash; Mache die Objekttabelle so breit wie das Browserfenster"
 
 msgid "No &mdash; Limit the objects table to the regular content width"
 msgstr "Nein &mdash; Begrenze die Objekttabelle auf die normale Inhaltsbreite"
+
+msgid "Show workflow views in popup windows"
+msgstr "Zeige Workflow Ansichten in Dialogfenstern"
+
+msgid "Yes &mdash; Show workflow views in popup windows."
+msgstr "Ja &mdash; Zeige Workflow Ansichten in Dialogfenstern."
+
+msgid "No &mdash; Show workflow views directly on the object page."
+msgstr "Nein &mdash; Zeige Workflow Ansichten direkt auf der Objektseite."
 
 msgid "Language"
 msgstr "Sprache"
@@ -6077,6 +6086,9 @@ msgstr "Notebook erstellen"
 
 msgid "Restore Version"
 msgstr "Version wiederherstellen"
+
+msgid "Workflow Views"
+msgstr "Workflow Ansichten"
 
 #, python-format
 msgid ""
