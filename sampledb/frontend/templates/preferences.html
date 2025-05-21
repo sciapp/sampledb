@@ -545,13 +545,13 @@
       </label>
       <div class="radio col-md-8">
         <label>
-          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-expandable" value="yes" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-yes" value="yes" {% if user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
           {{ _('Yes &mdash; Collapse objects in workflow views') }}
         </label>
       </div>
       <div class="radio col-md-8 col-md-offset-4">
         <label>
-          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-collapsible" value="no" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
+          <input type="radio" name="input-workflow-view-collapsed" id="input-workflow-view-collapsed-no" value="no" {% if not user_settings["WORKFLOW_VIEW_COLLAPSED"] %}checked="checked"{% endif %}>
           {{ _('No &mdash; Expand objects in workflow views') }}
         </label>
       </div>
