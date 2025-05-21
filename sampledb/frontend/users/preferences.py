@@ -625,6 +625,15 @@ def _handle_other_settings_forms(
             workflow_view_modals = None
         modified_settings['WORKFLOW_VIEW_MODALS'] = workflow_view_modals
 
+        workflow_view_collapsed_text = flask.request.form.get('input-workflow-view-collapsed', 'default')
+        if workflow_view_collapsed_text == 'yes':
+            workflow_view_collapsed = True
+        elif workflow_view_collapsed_text == 'no':
+            workflow_view_collapsed = False
+        else:
+            workflow_view_collapsed = None
+        modified_settings['WORKFLOW_VIEW_COLLAPSED'] = workflow_view_collapsed
+
         if flask_login.current_user.is_admin:
             use_admin_permissions = flask.request.form.get('input-use-admin-permissions', 'yes') != 'no'
             modified_settings['USE_ADMIN_PERMISSIONS'] = use_admin_permissions

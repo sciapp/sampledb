@@ -143,6 +143,7 @@ def parse_configuration_values() -> None:
         'OIDC_ACCESS_TOKEN_AS_API_KEY',
         'OIDC_ACCESS_TOKEN_ALLOW_INTROSPECTION',
         'WORKFLOW_VIEW_MODALS',
+        'WORKFLOW_VIEW_COLLAPSED',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -844,6 +845,7 @@ DISABLE_INLINE_EDIT = False
 
 SHOW_OBJECT_TITLE = False
 WORKFLOW_VIEW_MODALS = False
+WORKFLOW_VIEW_COLLAPSED = True
 
 FULL_WIDTH_OBJECTS_TABLE = True
 
