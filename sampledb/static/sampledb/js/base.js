@@ -2,6 +2,26 @@
 /* eslint-env jquery */
 /* globals Image, Cookies, Plotly, moment, ResizeObserver */
 
+/**
+ * Set up elements with a UTC datetime to display local datetimes for anonymous users if the timezone has not been set in the config
+ * @param container a DOM element
+ */
+function setUpUTCDateTimeElements (container) {
+  if (!window.getTemplateValue('current_user.has_timezone')) {
+    $(container).find('span[data-utc-datetime]').each(function (_, element) {
+      const utcDatetimeStr = $(element).data('utcDatetime');
+      const utcDatetime = moment.utc(utcDatetimeStr);
+      const localDatetime = utcDatetime.local();
+      const langCode = window.getTemplateValue('current_user.language.lang_code');
+      const format = $(element).data('sampledb-time-only') ? 'LTS' : window.getTemplateValue($(element).data('sampledb-date-only') ? 'current_user.language.date_format_moment_output' : 'current_user.language.datetime_format_moment_output');
+      element.innerText = localDatetime.locale(langCode).format(format);
+    });
+  }
+}
+
+// functions that will need to be run on new containers inserted into the DOM.
+window.setUpFunctions = [setUpUTCDateTimeElements];
+
 $(function () {
   $('[data-toggle="tooltip"]').tooltip();
   if (typeof window.Plotly !== 'undefined') {
@@ -24,17 +44,7 @@ $(function () {
     }
   }
 
-  // localize datetimes for anonymous users if the timezone has not been set in the config
-  if (!window.getTemplateValue('current_user.has_timezone')) {
-    $('span[data-utc-datetime]').each(function (_, element) {
-      const utcDatetimeStr = $(element).data('utcDatetime');
-      const utcDatetime = moment.utc(utcDatetimeStr);
-      const localDatetime = utcDatetime.local();
-      const langCode = window.getTemplateValue('current_user.language.lang_code');
-      const format = $(element).data('sampledb-time-only') ? 'LTS' : window.getTemplateValue($(element).data('sampledb-date-only') ? 'current_user.language.date_format_moment_output' : 'current_user.language.datetime_format_moment_output');
-      element.innerText = localDatetime.locale(langCode).format(format);
-    });
-  }
+  setUpUTCDateTimeElements(document);
 
   if (window.getTemplateValue('current_user.is_authenticated') && $('#session-timeout-marker').length > 0) {
     // there will be a small offset between client and server which can be ignored, however this can help catch larger offsets due to a wrongly set computer clock
