@@ -705,6 +705,7 @@ def parse_eln_file(
                 _eln_assert(isinstance(sdpublisher['@id'], str), "ro-crate-metadata.json @graph sdPublisher is invalid")
                 sdpublisher = graph_nodes_by_id.get(sdpublisher['@id'])
                 _eln_assert(isinstance(sdpublisher, dict), "ro-crate-metadata.json @graph sdPublisher is invalid")
+                sdpublisher = typing.cast(typing.Dict[str, typing.Any], sdpublisher)
                 _eln_assert(all(isinstance(key, str) for key in sdpublisher), "ro-crate-metadata.json @graph sdPublisher is invalid")
             _eln_assert(sdpublisher.get('@type') == 'Organization', "ro-crate-metadata.json @graph sdPublisher is invalid")
             if sdpublisher.get('name') == 'SampleDB':

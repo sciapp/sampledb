@@ -155,7 +155,7 @@ class InstrumentLogEntryVersion:
             utc_datetime=instrument_log_entry_version.utc_datetime,
             categories=[
                 InstrumentLogCategory.from_database(category)
-                for category in sorted(instrument_log_entry_version.categories, key=lambda category: typing.cast(int, category.theme.value))
+                for category in sorted(instrument_log_entry_version.categories, key=lambda category: category.theme.value)
             ],
             content_is_markdown=instrument_log_entry_version.content_is_markdown,
             event_utc_datetime=instrument_log_entry_version.event_utc_datetime
