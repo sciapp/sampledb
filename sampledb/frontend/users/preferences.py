@@ -203,10 +203,6 @@ def _handle_authentication_methods_forms(
         options=options,
     )
 
-    if logic.oidc.is_oidc_only_auth_method():
-        # The form isn't shown to the user, so ignore attempts.
-        return None
-
     if 'edit' in flask.request.form and flask.request.form['edit'] == 'Edit':
         if authentication_password_form.validate_on_submit() and authentication_password_form.id.data in authentication_method_ids:
             authentication_method_id = authentication_password_form.id.data
@@ -241,6 +237,10 @@ def _handle_authentication_methods_forms(
                 user_log.edit_user_preferences(user_id=flask_login.current_user.id)
                 return flask.redirect(flask.url_for('frontend.user_me_preferences'))
     if 'add' in flask.request.form and flask.request.form['add'] == 'Add':
+        if logic.oidc.is_oidc_only_auth_method():
+            # The form isn't shown to the user, so ignore attempts.
+            return None
+
         if authentication_form.validate_on_submit():
             # check, if login already exists
             all_authentication_methods = {
