@@ -6730,6 +6730,9 @@ msgstr ""
 "Diese .eln-Datei wurde von <a href=\"%(signed_by)s\">%(signed_by)s</a> "
 "signiert."
 
+msgid "Loading related objects..."
+msgstr "Zugehörige Objekte werden geladen..."
+
 msgid ""
 "The schema for this object is out-of-date and the action it was created "
 "with has a new schema available. Do you want to use the new schema?"
@@ -6775,6 +6778,9 @@ msgstr "Wählen Sie aus, welche Daten in den QR-Codes gespeichert werden soll."
 #, python-format
 msgid "Include #%(object_id)s in Export"
 msgstr "#%(object_id)s in Export aufnehmen"
+
+msgid "Failed to load related objects."
+msgstr "Die zugehörigen Objekte konnten nicht geladen werden."
 
 msgid "hide plot"
 msgstr "Plot ausblenden"
