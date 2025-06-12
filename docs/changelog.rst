@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.33
+------------
+
+Currently in development.
+
+- Implemented caching for object data rendered to html
+
+
 Version 0.32
 ------------
 

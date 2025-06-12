@@ -73,6 +73,7 @@ def setup_database(app: flask.Flask) -> None:
         db.metadata.create_all(bind=db.engine)
         sampledb.models.Objects.bind = db.engine
         sampledb.models.migrations.run(db)
+        sampledb.logic.object_data_to_html.clear_object_data_to_html_cache()
 
 
 def setup_admin_account_from_config(app: flask.Flask) -> None:
