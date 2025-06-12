@@ -110,6 +110,7 @@
           {% if config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] and not diff and not previous_schema %}
             {{ object_data_to_html(
                 object_id=object.object_id,
+                version_id=object.version_id,
                 metadata_language=metadata_language,
                 data=data,
                 schema=schema,
@@ -522,6 +523,7 @@
                 {% if config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] %}
                   {{ object_data_to_html(
                       object_id=elem.object.object_id,
+                      version_id=elem.object.version_id,
                       metadata_language=metadata_language,
                       data=data,
                       schema=schema,

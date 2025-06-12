@@ -45,7 +45,7 @@ from ..logic.units import prettify_units
 from ..logic.notifications import get_num_notifications
 from ..logic.markdown_to_html import markdown_to_safe_html
 from ..logic.users import get_user, User, get_user_by_federated_user
-from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for
+from ..logic.utils import get_translated_text, get_all_translated_texts, show_numeric_tags_warning, relative_url_for, get_hash
 from ..logic.schemas.conditions import are_conditions_fulfilled
 from ..logic.schemas.data_diffs import DataDiff, apply_diff, invert_diff
 from ..logic.schemas.utils import get_property_paths_for_schema
@@ -108,6 +108,7 @@ JinjaFilter()(markdown_to_safe_html)
 JinjaFilter()(get_translated_text)
 JinjaFilter()(get_all_translated_texts)
 JinjaFilter()(bool)
+JinjaFilter()(get_hash)
 
 JinjaFunction()(get_component_or_none)
 JinjaFunction()(get_component_id_by_uuid)
@@ -769,12 +770,6 @@ def get_user_if_exists(user_id: int, component_id: typing.Optional[int] = None) 
         return None
     except errors.ComponentDoesNotExistError:
         return None
-
-
-@JinjaFilter()
-@functools.lru_cache(maxsize=None)
-def get_hash(text: str) -> str:
-    return hashlib.sha256(text.encode('utf-8'), usedforsecurity=False).hexdigest()
 
 
 @functools.lru_cache(maxsize=None)
