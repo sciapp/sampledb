@@ -145,6 +145,7 @@ def parse_configuration_values() -> None:
         'WORKFLOW_VIEW_MODALS',
         'WORKFLOW_VIEW_COLLAPSED',
         'ENABLE_ISOLATED_OBJECT_DATA_RENDERING',
+        'ENABLE_OBJECT_DATA_HTML_CACHE',
     ]:
         value = globals().get(config_name)
         if isinstance(value, str):
@@ -903,7 +904,9 @@ MIN_NUM_TEXT_CHOICES_FOR_SEARCH = 10
 
 DEFAULT_NOTIFICATION_MODES = None
 
+# variables controlling object data rendering, these should only be modified for testing purposes
 ENABLE_ISOLATED_OBJECT_DATA_RENDERING = True
+ENABLE_OBJECT_DATA_HTML_CACHE = True
 
 # environment variables override these values
 use_environment_configuration(env_prefix='SAMPLEDB_')

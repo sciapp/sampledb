@@ -4,6 +4,7 @@
 """
 import datetime
 import functools
+import hashlib
 import re
 import typing
 import sys
@@ -473,3 +474,8 @@ def get_postgres_timezone_alias(timezone_name: str, reference_date: datetime.dat
     elif '-' in current_timezone_name:
         current_timezone_name = current_timezone_name.replace('-', '+')
     return current_timezone_name
+
+
+@functools.lru_cache(maxsize=None)
+def get_hash(text: str) -> str:
+    return hashlib.sha256(text.encode('utf-8'), usedforsecurity=False).hexdigest()

@@ -2766,15 +2766,72 @@ def test_object_data_to_html(flask_server, app, driver, user):
     ]:
         sampledb.logic.settings.set_user_settings(user.id, settings_data)
 
+        with app.app_context():
+            cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                user_language=settings_data['LOCALE'],
+                metadata_language=settings_data['LOCALE'],
+                timezone=settings_data['TIMEZONE'],
+                workflow_display_mode=False,
+                increase_cache_hit_counter=False
+            )
+            assert cache_entry is None
+
         flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
+        flask_server.app.config['ENABLE_OBJECT_DATA_HTML_CACHE'] = False
         driver.get(flask_server.base_url + f'objects/{object.object_id}')
         object_data_html_included = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+        with app.app_context():
+            cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                user_language=settings_data['LOCALE'],
+                metadata_language=settings_data['LOCALE'],
+                timezone=settings_data['TIMEZONE'],
+                workflow_display_mode=False,
+                increase_cache_hit_counter=False
+            )
+            assert cache_entry is None
 
         flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = True
         driver.get(flask_server.base_url + f'objects/{object.object_id}')
         object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
 
         assert object_data_html_included == object_data_html_rendered
+
+        with app.app_context():
+            cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                user_language=settings_data['LOCALE'],
+                metadata_language=settings_data['LOCALE'],
+                timezone=settings_data['TIMEZONE'],
+                workflow_display_mode=False,
+                increase_cache_hit_counter=False
+            )
+            assert cache_entry is None
+
+        flask_server.app.config['ENABLE_OBJECT_DATA_HTML_CACHE'] = True
+        driver.get(flask_server.base_url + f'objects/{object.object_id}')
+        object_data_html_cached = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
+
+        assert object_data_html_included == object_data_html_cached
+
+        with app.app_context():
+            cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                object_id = object.object_id,
+                version_id = object.version_id,
+                user_language = settings_data['LOCALE'],
+                metadata_language = settings_data['LOCALE'],
+                timezone = settings_data['TIMEZONE'],
+                workflow_display_mode = False,
+                increase_cache_hit_counter = False
+            )
+
+            assert cache_entry is not None
+            assert cache_entry.cache_hit_counter == 0
 
         for language_code in ['en', 'de']:
             flask_server.app.config['ENABLE_ISOLATED_OBJECT_DATA_RENDERING'] = False
@@ -2786,6 +2843,19 @@ def test_object_data_to_html(flask_server, app, driver, user):
             object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
 
             assert object_data_html_included == object_data_html_rendered
+
+            with app.app_context():
+                cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                    object_id=object.object_id,
+                    version_id=object.version_id,
+                    user_language=settings_data['LOCALE'],
+                    metadata_language=language_code,
+                    timezone=settings_data['TIMEZONE'],
+                    workflow_display_mode=False,
+                    increase_cache_hit_counter=False
+                )
+                assert cache_entry is not None
+                assert cache_entry.cache_hit_counter == (1 if settings_data['LOCALE'] == language_code else 0)
 
         for function in [
             lambda: sampledb.logic.object_permissions.set_user_object_permissions(referenced_object.id, user.id, sampledb.models.Permissions.NONE),
@@ -2811,10 +2881,36 @@ def test_object_data_to_html(flask_server, app, driver, user):
 
             assert object_data_html_included == object_data_html_rendered
 
+            with app.app_context():
+                cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                    object_id=object.object_id,
+                    version_id=object.version_id,
+                    user_language=settings_data['LOCALE'],
+                    metadata_language=settings_data['LOCALE'],
+                    timezone=settings_data['TIMEZONE'],
+                    workflow_display_mode=False,
+                    increase_cache_hit_counter=False
+                )
+                assert cache_entry is not None
+                assert cache_entry.cache_hit_counter == 0
+
             driver.get(flask_server.base_url + f'objects/{object.object_id}')
             object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
 
             assert object_data_html_included == object_data_html_rendered
+
+            with app.app_context():
+                cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                    object_id=object.object_id,
+                    version_id=object.version_id,
+                    user_language=settings_data['LOCALE'],
+                    metadata_language=settings_data['LOCALE'],
+                    timezone=settings_data['TIMEZONE'],
+                    workflow_display_mode=False,
+                    increase_cache_hit_counter=False
+                )
+                assert cache_entry is not None
+                assert cache_entry.cache_hit_counter == 1
 
         for style in ['include', {'view': 'include'}]:
             schema['properties']['object']['style'] = style
@@ -2835,6 +2931,18 @@ def test_object_data_to_html(flask_server, app, driver, user):
             object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#information + .row + .row + div").get_attribute("outerHTML")
 
             assert object_data_html_included == object_data_html_rendered
+
+            with app.app_context():
+                cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                    object_id=object.object_id,
+                    version_id=object.version_id,
+                    user_language=settings_data['LOCALE'],
+                    metadata_language=settings_data['LOCALE'],
+                    timezone=settings_data['TIMEZONE'],
+                    workflow_display_mode=False,
+                    increase_cache_hit_counter=False
+                )
+                assert cache_entry is None
 
         del schema['properties']['object']['style']
         sampledb.logic.objects.update_object(
@@ -2874,10 +2982,36 @@ def test_object_data_to_html(flask_server, app, driver, user):
 
         assert object_data_html_included == object_data_html_rendered
 
+        with app.app_context():
+            cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                user_language=settings_data['LOCALE'],
+                metadata_language=settings_data['LOCALE'],
+                timezone=settings_data['TIMEZONE'],
+                workflow_display_mode=True,
+                increase_cache_hit_counter=False
+            )
+            assert cache_entry is not None
+            assert cache_entry.cache_hit_counter == num_workflow_views - 1
+
         driver.get(flask_server.base_url + f'objects/{referenced_object.object_id}')
         object_data_html_rendered = driver.find_element(By.CSS_SELECTOR, "#workflow_1 + div + div").get_attribute("outerHTML")
 
         assert object_data_html_included == object_data_html_rendered
+
+        with app.app_context():
+            cache_entry = sampledb.logic.object_data_to_html._get_object_data_to_html_cache_entry(
+                object_id=object.object_id,
+                version_id=object.version_id,
+                user_language=settings_data['LOCALE'],
+                metadata_language=settings_data['LOCALE'],
+                timezone=settings_data['TIMEZONE'],
+                workflow_display_mode=True,
+                increase_cache_hit_counter=False
+            )
+            assert cache_entry is not None
+            assert cache_entry.cache_hit_counter == num_workflow_views * 2 - 1
 
         data = copy.deepcopy(object.data)
         data["plot"] = {
