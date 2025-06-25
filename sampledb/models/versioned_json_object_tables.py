@@ -426,7 +426,6 @@ class VersionedJSONSerializableObjectTables:
                         data_validator_arguments['component_id'] = component_id
                         self._data_validator(data, schema, **data_validator_arguments)
 
-        # TODO: Fix circular import
         if calculate_hashes and hash_data is None and data is not None and schema is not None:
             from ..logic.federation.conflicts import calculate_data_hash
             hash_data = calculate_data_hash(data, schema)
