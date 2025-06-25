@@ -593,6 +593,7 @@ def new_instrument() -> FlaskResponseT:
                             flask.flash(_('Please enter an instrument name.'), 'error')
                             return flask.render_template('instruments/instrument_form.html',
                                                          submit_text='Create Instrument',
+                                                         cancel_url=flask.url_for('.instruments'),
                                                          instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                          ENGLISH=get_language(Language.ENGLISH),
                                                          languages=get_languages(only_enabled_for_input=True),
@@ -602,6 +603,7 @@ def new_instrument() -> FlaskResponseT:
                         flask.flash(_('Please enter an instrument name.'), 'error')
                         return flask.render_template('instruments/instrument_form.html',
                                                      submit_text='Create Instrument',
+                                                     cancel_url=flask.url_for('.instruments'),
                                                      instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
                                                      ENGLISH=get_language(Language.ENGLISH),
                                                      languages=get_languages(only_enabled_for_input=True),
@@ -703,6 +705,7 @@ def new_instrument() -> FlaskResponseT:
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text='Create Instrument',
+        cancel_url=flask.url_for('.instruments'),
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: typing.cast(int, t.value)),
         ENGLISH=get_language(Language.ENGLISH),
         languages=get_languages(only_enabled_for_input=True),
@@ -853,6 +856,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
                         return flask.render_template(
                             'instruments/instrument_form.html',
                             submit_text=_('Save'),
+                            cancel_url=flask.url_for('.instrument', instrument_id=instrument_id),
                             instrument_log_category_themes=sorted(
                                 InstrumentLogCategoryTheme,
                                 key=lambda t: int(t.value)
@@ -961,6 +965,7 @@ def edit_instrument(instrument_id: int) -> FlaskResponseT:
     return flask.render_template(
         'instruments/instrument_form.html',
         submit_text=_('Save'),
+        cancel_url=flask.url_for('.instrument', instrument_id=instrument_id),
         instrument_log_category_themes=sorted(InstrumentLogCategoryTheme, key=lambda t: int(t.value)),
         instrument_translations=instrument_translations,
         instrument_language_ids=instrument_language_ids,
