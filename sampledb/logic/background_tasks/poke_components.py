@@ -7,8 +7,8 @@ from ... import logic
 
 
 def post_poke_components_task(component_ids: typing.Optional[typing.Sequence[int]] = None) -> None:
-    if not component_ids:
-        component_ids = []
+    if component_ids is not None and len(component_ids) == 0:
+        return
     data = {'component_ids': component_ids}
     if flask.current_app.config["ENABLE_BACKGROUND_TASKS"]:
         core.post_background_task(
@@ -17,7 +17,7 @@ def post_poke_components_task(component_ids: typing.Optional[typing.Sequence[int
             auto_delete=True
         )
     else:
-        handle_poke_components_task({}, None)
+        handle_poke_components_task(data, None)
 
 
 def handle_poke_components_task(
