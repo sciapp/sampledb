@@ -55,6 +55,8 @@ Reading a list of all objects
                 "object_id": 1,
                 "version_id": 0,
                 "action_id": 0,
+                "user_id": 1,
+                "utc_datetime": "2025-01-02 03:04:05",
                 "schema": {
                     "title": "Object Information",
                     "type": "object",
@@ -76,6 +78,8 @@ Reading a list of all objects
                 "object_id": 2,
                 "version_id": 3,
                 "action_id": 0,
+                "user_id": 1,
+                "utc_datetime": "2025-01-02 03:04:05",
                 "schema": {
                     "title": "Object Information",
                     "type": "object",
