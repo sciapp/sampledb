@@ -26,6 +26,10 @@ def parse_comment(
     uuid = _get_uuid(comment_data.get('component_uuid'))
     fed_id = _get_id(comment_data.get('comment_id'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            get_comment(comment_id=fed_id)
+        except errors.CommentDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local comment {fed_id} does not exist')
         return None
     return CommentData(
         fed_id=fed_id,

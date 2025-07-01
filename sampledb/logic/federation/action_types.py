@@ -155,6 +155,10 @@ def parse_action_type(
     fed_id = _get_id(action_type_data.get('action_type_id'), special_values=[ActionType.SAMPLE_CREATION, ActionType.MEASUREMENT, ActionType.SIMULATION, ActionType.TEMPLATE])
     uuid = _get_uuid(action_type_data.get('component_uuid'))
     if uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            get_action_type(action_type_id=fed_id)
+        except errors.ActionDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local action type {fed_id} does not exist')
         return None
     result = ActionTypeData(
         fed_id=fed_id,

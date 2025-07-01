@@ -30,13 +30,20 @@ class FileData(typing.TypedDict):
 
 
 def parse_file(
-        file_data: typing.Dict[str, typing.Any]
+        file_data: typing.Dict[str, typing.Any],
+        object_id: typing.Optional[int],
 ) -> typing.Optional[FileData]:
     uuid = _get_uuid(file_data.get('component_uuid'))
-    if uuid == flask.current_app.config['FEDERATION_UUID']:
-        # do not allow changes from federation
-        return None
     fed_id = _get_id(file_data.get('file_id'), min=0)
+    if uuid == flask.current_app.config['FEDERATION_UUID']:
+        # do not allow changes from federation but reference must exist
+        if object_id is None:
+            raise errors.InvalidDataExportError(f'Object id is missing for local file #{fed_id}')
+        try:
+            get_file(file_id=fed_id, object_id=object_id)
+        except errors.FileDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local file {fed_id} for object {object_id} does not exist')
+        return None
     data = _get_dict(file_data.get('data'))
 
     if data:
@@ -133,6 +140,6 @@ def parse_import_file(
         object: Object,
         component: Component
 ) -> tuple[File, bool]:
-    if parsed_file := parse_file(file_data):
+    if parsed_file := parse_file(file_data, object.id):
         return import_file(parsed_file, object, component)
     return get_file(file_data['file_id'], object_id=object.id), False
