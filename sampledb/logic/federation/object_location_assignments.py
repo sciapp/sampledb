@@ -87,6 +87,12 @@ def parse_object_location_assignment(
     responsible_user_data = _get_dict(assignment_data.get('responsible_user'))
     location_data = _get_dict(assignment_data.get('location'))
     description = _get_translation(assignment_data.get('description'))
+    if uuid == flask.current_app.config['FEDERATION_UUID']:
+        try:
+            get_object_location_assignment(object_location_assignment_id=id_or_fed_id)
+        except errors.ObjectLocationAssignmentDoesNotExistError:
+            raise errors.InvalidDataExportError(f'Local object location assignment {id_or_fed_id} does not exist')
+        return None
     if responsible_user_data is None and location_data is None and description is None:
         raise errors.InvalidDataExportError(f'Empty object location assignment {id_or_fed_id} @ {uuid}')
 
